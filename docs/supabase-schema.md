@@ -1,3 +1,4 @@
+
 # Supabase Database Schema Documentation
 
 ## Overview
@@ -75,102 +76,63 @@ CREATE TABLE rooms (
 - **Enums:**
   - `room_type_enum`: 'courtroom' | 'judges_chambers' | 'jury_room' | 'conference_room' | 'office' | 'filing_room' | 'male_locker_room' | 'female_locker_room' | 'robing_room' | 'stake_holder' | 'records_room' | 'administrative_office' | 'break_room' | 'it_room' | 'utility_room'
 
-### 4. Doors
-**Table Name:** `doors`
-```sql
-CREATE TABLE doors (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  floor_id UUID NOT NULL REFERENCES floors(id) ON DELETE CASCADE,
-  type door_type_enum NOT NULL,
-  status status_enum NOT NULL DEFAULT 'active',
-  security_level TEXT DEFAULT 'standard',
-  passkey_enabled BOOLEAN DEFAULT false,
-  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_doors_floor_id ON doors(floor_id);
-CREATE INDEX idx_doors_status ON doors(status);
-```
-- **Purpose:** Manages door information and access control
-- **Relationships:**
-  - Belongs to a floor (`floor_id`)
-- **Key Fields:**
-  - `name`: Door identifier/name
-  - `type`: Type of door (standard/emergency/secure/maintenance)
-  - `status`: Current status (active/inactive/under_maintenance)
-  - `security_level`: Access security level
-  - `passkey_enabled`: Whether electronic access is enabled
-
-### 5. Issues
-**Table Name:** `issues`
-```sql
-CREATE TABLE issues (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  room_id UUID REFERENCES rooms(id),
-  type issue_type_enum NOT NULL,
-  title TEXT NOT NULL,
-  description TEXT,
-  assigned_to party_enum NOT NULL,
-  status issue_status_enum DEFAULT 'open',
-  resolved_at TIMESTAMPTZ,
-  resolution_notes TEXT,
-  photos TEXT[] DEFAULT '{}',
-  building_id UUID REFERENCES buildings(id),
-  priority TEXT DEFAULT 'medium',
-  due_date TIMESTAMPTZ,
-  sla_hours INTEGER DEFAULT 48,
-  status_history JSONB[] DEFAULT '{}',
-  seen BOOLEAN DEFAULT false,
-  floor_id UUID REFERENCES floors(id),
-  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-);
-```
-- **Purpose:** Tracks maintenance issues and their resolution
-- **Enums:**
-  - `issue_type_enum`: 'HVAC' | 'Leak' | 'Electrical' | 'Plaster' | 'Cleaning' | 'Other'
-  - `issue_status_enum`: 'open' | 'in_progress' | 'resolved'
-  - `party_enum`: 'DCAS' | 'OCA' | 'Self' | 'Outside_Vendor'
-
-### 6. Lighting Fixtures
+### 4. Lighting Fixtures
 **Table Name:** `lighting_fixtures`
 ```sql
 CREATE TABLE lighting_fixtures (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
-  type light_fixture_type_enum NOT NULL,
+  type lighting_fixture_type_enum NOT NULL,
   status light_status_enum DEFAULT 'functional',
-  installation_date DATE,
-  last_maintenance_date DATE,
-  next_maintenance_date DATE,
-  maintenance_notes TEXT,
-  last_inspection_date DATE,
-  next_inspection_date DATE,
-  maintenance_priority TEXT,
-  zone_id UUID REFERENCES lighting_zones(id),
-  scheduled_maintenance_date DATE,
-  maintenance_frequency_days INTEGER DEFAULT 90,
-  last_scheduled_by UUID REFERENCES profiles(id),
-  maintenance_history JSONB[] DEFAULT '{}',
+  technology lighting_technology_enum,
+  electrical_issues JSONB DEFAULT '{"short_circuit": false, "wiring_issues": false, "voltage_problems": false}',
+  ballast_issue BOOLEAN DEFAULT false,
+  emergency_circuit BOOLEAN DEFAULT false,
+  bulb_count INTEGER DEFAULT 1,
+  space_id UUID,
+  space_type TEXT,
+  position lighting_position_enum DEFAULT 'ceiling',
+  sequence_number INTEGER,
+  zone_id UUID,
   created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE VIEW lighting_fixture_details AS
+SELECT 
+  f.*,
+  r.room_number,
+  r.name as space_name,
+  fl.name as floor_name,
+  b.name as building_name,
+  fl.id as floor_id,
+  b.id as building_id
+FROM lighting_fixtures f
+LEFT JOIN rooms r ON f.space_id = r.id AND f.space_type = 'room'
+LEFT JOIN floors fl ON r.floor_id = fl.id
+LEFT JOIN buildings b ON fl.building_id = b.id;
 ```
 - **Purpose:** Manages lighting fixture information and maintenance
+- **Relationships:**
+  - Can be associated with a space (`space_id`)
+  - Can belong to a zone (`zone_id`)
 - **Enums:**
-  - `light_fixture_type_enum`: 'standard' | 'emergency' | 'motion_sensor'
+  - `lighting_fixture_type_enum`: 'standard' | 'emergency' | 'motion_sensor'
   - `light_status_enum`: 'functional' | 'maintenance_needed' | 'non_functional' | 'pending_maintenance' | 'scheduled_replacement'
+  - `lighting_position_enum`: 'ceiling' | 'wall' | 'floor' | 'desk'
+  - `lighting_technology_enum`: 'LED' | 'Fluorescent' | 'Bulb'
 
-### 7. Lighting Zones
+### 5. Lighting Zones
 **Table Name:** `lighting_zones`
 ```sql
 CREATE TABLE lighting_zones (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   floor_id UUID REFERENCES floors(id),
-  type zone_type_enum NOT NULL,
+  type TEXT NOT NULL,
+  parent_zone_id UUID REFERENCES lighting_zones(id),
+  zone_path TEXT[],
+  floor_coverage JSONB DEFAULT '[]',
   created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
@@ -178,146 +140,41 @@ CREATE TABLE lighting_zones (
 - **Purpose:** Manages lighting zones within floors
 - **Relationships:**
   - Belongs to a floor (`floor_id`)
-- **Key Fields:**
-  - `name`: Zone name/designation
-  - `type`: Zone type (general/emergency/restricted)
-  - `floor_id`: Reference to the floor this zone belongs to
+  - Can have a parent zone (`parent_zone_id`)
 
-### 8. Keys
-**Table Name:** `keys`
+### 6. Issues
+**Table Name:** `issues`
 ```sql
-CREATE TABLE keys (
+CREATE TABLE issues (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  type key_type_enum NOT NULL,
-  status key_status_enum DEFAULT 'available',
+  title TEXT NOT NULL,
+  description TEXT,
+  type issue_type_enum NOT NULL,
+  status issue_status_enum DEFAULT 'open',
+  priority TEXT DEFAULT 'medium',
+  assigned_to party_enum NOT NULL,
+  room_id UUID REFERENCES rooms(id),
   building_id UUID REFERENCES buildings(id),
   floor_id UUID REFERENCES floors(id),
-  door_id UUID REFERENCES doors(id),
-  is_passkey BOOLEAN DEFAULT false,
+  fixture_id UUID,
+  photos TEXT[] DEFAULT '{}',
+  resolved_at TIMESTAMPTZ,
+  resolution_notes TEXT,
   created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  last_activity_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  seen BOOLEAN DEFAULT false,
+  status_history JSONB[] DEFAULT '{}',
+  sla_hours INTEGER DEFAULT 48,
+  due_date TIMESTAMPTZ,
+  lighting_details JSONB DEFAULT '{"fixture_status": null, "detected_issues": [], "maintenance_history": []}'
 );
 ```
-- **Purpose:** Tracks physical keys and access devices
+- **Purpose:** Tracks maintenance issues and their resolution
 - **Enums:**
-  - `key_type_enum`: 'physical_key' | 'elevator_pass'
-  - `key_status_enum`: 'available' | 'assigned' | 'lost' | 'decommissioned'
-
-### 9. Occupants
-**Table Name:** `occupants`
-```sql
-CREATE TABLE occupants (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  first_name TEXT NOT NULL,
-  last_name TEXT NOT NULL,
-  email TEXT,
-  phone TEXT,
-  department TEXT,
-  status TEXT DEFAULT 'active',
-  room_id UUID REFERENCES rooms(id),
-  title TEXT,
-  start_date DATE,
-  end_date DATE,
-  access_level TEXT DEFAULT 'standard',
-  emergency_contact JSONB DEFAULT '{"name": null, "phone": null, "relationship": null}',
-  notes TEXT,
-  assigned_resources JSONB DEFAULT '[]',
-  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-);
-```
-- **Purpose:** Manages occupant information and assignments
-
-### 10. Profiles
-**Table Name:** `profiles`
-```sql
-CREATE TABLE profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users(id),
-  username TEXT,
-  avatar_url TEXT,
-  theme TEXT DEFAULT 'light',
-  phone TEXT,
-  department TEXT,
-  title TEXT,
-  last_login TIMESTAMPTZ,
-  job_title_validated BOOLEAN DEFAULT false,
-  notification_preferences JSONB,
-  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-);
-```
-- **Purpose:** Stores user profile information
-- **Relationships:**
-  - Links to Supabase auth users
-
-## Views
-
-### 1. Room Occupancy Stats
-**View Name:** `room_occupancy_stats`
-- Provides current occupancy information for rooms
-- Includes department distribution and occupancy status
-
-### 2. Maintenance Summary
-**View Name:** `maintenance_summary`
-- Summarizes maintenance needs by floor
-- Tracks fixtures needing maintenance and maintenance schedules
-
-### 3. Key Inventory Stats
-**View Name:** `key_inventory_stats`
-- Provides key inventory and assignment statistics
-- Tracks current assignments and key status
-
-## Enums
-
-### Status Enum
-```sql
-CREATE TYPE status_enum AS ENUM (
-  'active',
-  'inactive',
-  'under_maintenance'
-);
-```
-
-### Access Level Enum
-```sql
-CREATE TYPE access_level_enum AS ENUM (
-  'none',
-  'read',
-  'write',
-  'admin'
-);
-```
-
-### Direction Enum
-```sql
-CREATE TYPE direction_enum AS ENUM (
-  'north',
-  'south',
-  'east',
-  'west',
-  'adjacent'
-);
-```
-
-### Door Type Enum
-```sql
-CREATE TYPE door_type_enum AS ENUM (
-  'standard',
-  'emergency',
-  'secure',
-  'maintenance'
-);
-```
-
-### Zone Type Enum
-```sql
-CREATE TYPE zone_type_enum AS ENUM (
-  'general',
-  'emergency',
-  'restricted'
-);
-```
+  - `issue_type_enum`: 'HVAC' | 'Leak' | 'Electrical' | 'Plaster' | 'Cleaning' | 'Other'
+  - `issue_status_enum`: 'open' | 'in_progress' | 'resolved'
+  - `party_enum`: 'DCAS' | 'OCA' | 'Self' | 'Outside_Vendor'
 
 ## Functions and Triggers
 
@@ -338,11 +195,21 @@ $$ LANGUAGE plpgsql;
 CREATE FUNCTION record_room_history()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.previous_functions = array_append(NEW.previous_functions, jsonb_build_object(
-        'function', OLD.current_function,
-        'date', OLD.function_change_date
-    ));
-    NEW.function_change_date = CURRENT_TIMESTAMP;
+    IF TG_OP = 'UPDATE' THEN
+        INSERT INTO room_history (
+            room_id,
+            changed_by,
+            change_type,
+            previous_values,
+            new_values
+        ) VALUES (
+            NEW.id,
+            auth.uid(),
+            'updated',
+            row_to_json(OLD),
+            row_to_json(NEW)
+        );
+    END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -354,10 +221,16 @@ $$ LANGUAGE plpgsql;
 CREATE FUNCTION update_issue_status_history()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.status_history = array_append(NEW.status_history, jsonb_build_object(
-        'status', OLD.status,
-        'updated_at', OLD.updated_at
-    ));
+    IF OLD.status IS DISTINCT FROM NEW.status THEN
+        NEW.status_history = array_append(
+            COALESCE(OLD.status_history, ARRAY[]::jsonb[]),
+            jsonb_build_object(
+                'status', NEW.status,
+                'changed_at', CURRENT_TIMESTAMP,
+                'previous_status', OLD.status
+            )
+        );
+    END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
