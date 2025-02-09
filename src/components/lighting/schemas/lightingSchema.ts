@@ -5,7 +5,7 @@ export const lightingFixtureSchema = z.object({
   name: z.string()
     .min(1, "Name is required")
     .refine((name) => {
-      const roomPattern = /^Room \d+ - (ceiling|wall|floor) Light \d+$/;
+      const roomPattern = /^Room \d+[A-Za-z]* - (ceiling|wall|floor) Light \d+$/;
       const hallwayPattern = /^Hallway .+ - Light \d+$/;
       return roomPattern.test(name) || hallwayPattern.test(name);
     }, "Name must follow the format: 'Room {number} - {position} Light {sequence}' or 'Hallway {name} - Light {sequence}'"),
