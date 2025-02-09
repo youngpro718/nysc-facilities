@@ -41,8 +41,7 @@ export function useRoomsQuery() {
             new_values,
             created_at
           )
-        `)
-        .order('created_at', { foreignTable: 'issues', ascending: false });
+        `);
 
       if (roomsError) {
         console.error('Error fetching rooms:', roomsError);
@@ -60,7 +59,7 @@ export function useRoomsQuery() {
       const { data: fixturesData, error: fixturesError } = await supabase
         .from('lighting_fixture_details')
         .select('*')
-        .eq('space_type', 'room');
+        .in('space_id', roomsData.map(room => room.id));
 
       if (fixturesError) {
         console.error('Error fetching lighting fixtures:', fixturesError);
@@ -78,15 +77,6 @@ export function useRoomsQuery() {
         }
         return acc;
       }, {} as Record<string, any>);
-
-      // Add debug logging for room 723
-      const room723 = roomsData.find(room => room.room_number === '723');
-      if (room723) {
-        console.log("Room 723 data:", room723);
-        console.log("Room 723 lighting fixture:", fixturesByRoomId[room723.id]);
-      } else {
-        console.log("Room 723 not found");
-      }
 
       // Transform the room data to match the Room type
       const transformedRooms: Room[] = roomsData.map(room => {
