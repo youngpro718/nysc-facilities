@@ -10,7 +10,7 @@ export const useLightingSubmit = (onFixtureCreated: () => void, onZoneCreated: (
   const onSubmitFixture = async (data: LightingFixtureFormData) => {
     try {
       const { error } = await supabase
-        .from('lighting_configs')
+        .from('lighting_fixtures')
         .insert({
           name: data.name,
           type: data.type,
@@ -24,17 +24,18 @@ export const useLightingSubmit = (onFixtureCreated: () => void, onZoneCreated: (
           ballast_check_notes: data.ballast_check_notes,
           space_id: data.space_id,
           space_type: data.space_type,
-          zone_id: data.zone_id || null
+          zone_id: data.zone_id || null,
+          position: data.position
         });
 
       if (error) throw error;
 
-      toast.success("Lighting configuration saved successfully");
+      toast.success("Lighting fixture saved successfully");
       onFixtureCreated();
       setOpen(false);
       return true;
     } catch (error: any) {
-      toast.error(error.message || "Failed to save lighting configuration");
+      toast.error(error.message || "Failed to save lighting fixture");
       return false;
     }
   };

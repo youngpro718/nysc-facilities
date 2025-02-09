@@ -3992,6 +3992,17 @@ export type Database = {
           },
         ]
       }
+      lighting_fixture_stats: {
+        Row: {
+          functional_count: number | null
+          needs_maintenance: number | null
+          needs_replacement: number | null
+          non_functional: number | null
+          total: number | null
+          type: Database["public"]["Enums"]["light_fixture_type_enum"] | null
+        }
+        Relationships: []
+      }
       low_stock_items: {
         Row: {
           category: string | null
@@ -4001,6 +4012,16 @@ export type Database = {
           quantity: number | null
           room_name: string | null
           storage_location: string | null
+        }
+        Relationships: []
+      }
+      maintenance_summary: {
+        Row: {
+          fixtures_needing_maintenance: number | null
+          hallways_under_maintenance: number | null
+          next_maintenance_due: string | null
+          non_functional_fixtures: number | null
+          rooms_under_maintenance: number | null
         }
         Relationships: []
       }
