@@ -4354,6 +4354,12 @@ export type Database = {
         | "pending_maintenance"
         | "scheduled_replacement"
       lighting_fixture_type_enum: "standard" | "emergency" | "motion_sensor"
+      lighting_issue_type_enum:
+        | "Lighting_Ballast"
+        | "Lighting_Replacement"
+        | "Lighting_Emergency"
+        | "Lighting_Sensor"
+        | "Lighting_Control"
       lighting_position_enum: "ceiling" | "wall" | "floor" | "desk" | "recessed"
       lighting_status:
         | "functional"
