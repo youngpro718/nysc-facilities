@@ -1,0 +1,39 @@
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import Layout from "@/components/layout/Layout";
+import Index from "@/pages/Index";
+import Auth from "@/pages/Auth";
+import NotFound from "@/pages/NotFound";
+import Spaces from "@/pages/Spaces";
+import Issues from "@/pages/Issues";
+import Occupants from "@/pages/Occupants";
+import Keys from "@/pages/Keys";
+import Profile from "@/pages/Profile";
+import Lighting from "@/pages/Lighting";
+
+// Create a client
+const queryClient = new QueryClient();
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <Routes>
+          <Route element={<Layout />}>
+            <Route index element={<Index />} />
+            <Route path="auth" element={<Auth />} />
+            <Route path="spaces" element={<Spaces />} />
+            <Route path="issues" element={<Issues />} />
+            <Route path="occupants" element={<Occupants />} />
+            <Route path="keys" element={<Keys />} />
+            <Route path="lighting" element={<Lighting />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </QueryClientProvider>
+  );
+}
+
+export default App;

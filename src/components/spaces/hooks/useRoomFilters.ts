@@ -1,0 +1,96 @@
+
+import { useMemo } from 'react';
+import { Room } from '../rooms/types/RoomTypes';
+
+interface UseRoomFiltersProps {
+  rooms: Room[] | undefined;
+  searchQuery: string;
+  sortBy: string;
+  statusFilter: string;
+  selectedBuilding: string;
+  selectedFloor: string;
+}
+
+export function useRoomFilters({
+  rooms,
+  searchQuery,
+  sortBy,
+  statusFilter,
+  selectedBuilding,
+  selectedFloor,
+}: UseRoomFiltersProps) {
+  const filteredAndSortedRooms = useMemo(() => {
+    if (!rooms) return [];
+    
+    let filtered = rooms.filter(room => {
+      const searchFields = [
+        room.name.toLowerCase(),
+        room.room_number.toLowerCase(),
+        room.floors?.buildings?.name?.toLowerCase() || '',
+        room.floors?.name?.toLowerCase() || '',
+        room.room_type.toLowerCase(),
+        room.description?.toLowerCase() || ''
+      ].join(' ');
+
+      const matchesSearch = searchFields.includes(searchQuery.toLowerCase());
+      const matchesStatus = statusFilter === 'all' || room.status === statusFilter;
+      
+      // Building filter logic - compare building_id from the floor's building
+      const matchesBuilding = selectedBuilding === 'all' || 
+        room.floors?.buildings?.id === selectedBuilding;
+      
+      // Floor filter logic - compare floor_id directly
+      const matchesFloor = selectedFloor === 'all' || 
+        room.floor_id === selectedFloor;
+
+      // Debug logs to help identify filtering issues
+      console.log('Room:', room.name, {
+        buildingId: room.floors?.buildings?.id,
+        floorId: room.floor_id,
+        selectedBuilding,
+        selectedFloor,
+        matchesBuilding,
+        matchesFloor
+      });
+
+      return matchesSearch && matchesStatus && matchesBuilding && matchesFloor;
+    });
+
+    return filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'name_asc':
+          return a.name.localeCompare(b.name);
+        case 'name_desc':
+          return b.name.localeCompare(a.name);
+        case 'created_desc':
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case 'created_asc':
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case 'room_number_asc':
+          return a.room_number.localeCompare(b.room_number);
+        case 'room_number_desc':
+          return b.room_number.localeCompare(a.room_number);
+        default:
+          return 0;
+      }
+    });
+  }, [rooms, searchQuery, sortBy, statusFilter, selectedBuilding, selectedFloor]);
+
+  const buildings = useMemo(() => {
+    if (!rooms) return [];
+    const uniqueBuildings = new Set(rooms.map(room => room.floors?.buildings?.name).filter(Boolean));
+    return Array.from(uniqueBuildings);
+  }, [rooms]);
+
+  const floors = useMemo(() => {
+    if (!rooms) return [];
+    const uniqueFloors = new Set(rooms.map(room => room.floors?.name).filter(Boolean));
+    return Array.from(uniqueFloors);
+  }, [rooms]);
+
+  return {
+    filteredAndSortedRooms,
+    buildings,
+    floors,
+  };
+}

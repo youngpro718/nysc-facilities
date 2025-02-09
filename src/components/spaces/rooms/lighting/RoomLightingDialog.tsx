@@ -1,0 +1,105 @@
+
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Form } from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { useForm } from "react-hook-form";
+import { RoomLightingConfig } from "@/components/lighting/types";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { BasicConfigSection } from "./form-sections/BasicConfigSection";
+import { ElectricalIssuesSection } from "./form-sections/ElectricalIssuesSection";
+import { AdditionalSettingsSection } from "./form-sections/AdditionalSettingsSection";
+
+interface RoomLightingDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  roomId: string;
+  initialData?: RoomLightingConfig;
+}
+
+export function RoomLightingDialog({ 
+  open, 
+  onOpenChange, 
+  roomId, 
+  initialData 
+}: RoomLightingDialogProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
+
+  const form = useForm<RoomLightingConfig>({
+    defaultValues: initialData || {
+      room_id: roomId,
+      name: `Room ${roomId} Lighting`,
+      type: "standard",
+      technology: "LED",
+      bulb_count: 1,
+      status: "functional",
+      electrical_issues: {
+        short_circuit: false,
+        wiring_issues: false,
+        voltage_problems: false
+      },
+      ballast_issue: false,
+      emergency_circuit: false,
+      maintenance_notes: "",
+      ballast_check_notes: ""
+    }
+  });
+
+  const onSubmit = async (values: RoomLightingConfig) => {
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('room_lighting_config')
+        .upsert({
+          ...values,
+          room_id: roomId
+        });
+
+      if (error) throw error;
+
+      toast.success("Lighting configuration saved successfully");
+      queryClient.invalidateQueries({ queryKey: ['room-lighting', roomId] });
+      onOpenChange(false);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to save lighting configuration");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Configure Room Lighting</DialogTitle>
+        </DialogHeader>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="space-y-6">
+              <BasicConfigSection form={form} />
+              <ElectricalIssuesSection form={form} />
+              <AdditionalSettingsSection form={form} />
+            </div>
+
+            <div className="flex justify-end space-x-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                Save Changes
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
