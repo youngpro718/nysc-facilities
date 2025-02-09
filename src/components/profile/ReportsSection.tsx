@@ -4,7 +4,6 @@ import { useToast } from "@/hooks/use-toast";
 import { FileText, Lightbulb, User, Key, DoorOpen, Bug, Database } from "lucide-react";
 import { 
   fetchFloorplanReportData, 
-  fetchMaintenanceSummary,
   fetchLightingReport,
   fetchOccupantReport,
   fetchKeyReport,
@@ -24,11 +23,7 @@ export function ReportsSection() {
       
       switch (type) {
         case 'floorplan':
-          const [floorplanData, maintenanceData] = await Promise.all([
-            fetchFloorplanReportData(),
-            fetchMaintenanceSummary()
-          ]);
-          reportData = generateFullReport(floorplanData, maintenanceData);
+          reportData = await fetchFloorplanReportData();
           break;
         case 'lighting':
           reportData = await fetchLightingReport();

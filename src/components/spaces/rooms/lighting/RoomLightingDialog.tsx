@@ -52,10 +52,11 @@ export function RoomLightingDialog({
     setIsSubmitting(true);
     try {
       const { error } = await supabase
-        .from('room_lighting_config')
+        .from('lighting_fixtures')
         .upsert({
           ...values,
-          room_id: roomId
+          space_id: roomId,
+          space_type: 'room'
         });
 
       if (error) throw error;
