@@ -4732,13 +4732,19 @@ export type Database = {
           building_id: string | null
           building_name: string | null
           bulb_count: number | null
+          connected_fixtures: string[] | null
           created_at: string | null
           electrical_issues: Json | null
           emergency_circuit: boolean | null
+          emergency_protocols: Json | null
+          energy_usage_data: Json | null
           floor_id: string | null
           floor_name: string | null
           id: string | null
+          inspection_history: Json[] | null
+          maintenance_history: Json[] | null
           maintenance_notes: string | null
+          manufacturer_details: Json | null
           name: string | null
           position: string | null
           room_number: string | null
@@ -4752,6 +4758,7 @@ export type Database = {
             | null
           type: Database["public"]["Enums"]["light_fixture_type_enum"] | null
           updated_at: string | null
+          warranty_info: Json | null
           zone_id: string | null
         }
         Relationships: [
