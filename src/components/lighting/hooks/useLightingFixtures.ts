@@ -8,12 +8,19 @@ export const useLightingFixtures = () => {
   const { data: fixtures, refetch, isLoading } = useQuery({
     queryKey: ['lighting_fixtures'],
     queryFn: async () => {
+      console.log("Fetching lighting fixtures...");
+      
       const { data, error } = await supabase
         .from('lighting_fixture_details')
         .select('*')
         .order('name');
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching fixtures:', error);
+        throw error;
+      }
+      
+      console.log("Raw fixtures data:", data);
       
       return data.map(fixture => ({
         ...fixture,
@@ -97,6 +104,7 @@ export const useLightingFixtures = () => {
 
   const handleDelete = async (id: string) => {
     try {
+      console.log("Deleting fixture:", id);
       const { error } = await supabase
         .from('lighting_fixtures')
         .delete()
@@ -107,12 +115,14 @@ export const useLightingFixtures = () => {
       toast.success("Lighting fixture deleted successfully");
       refetch();
     } catch (error: any) {
+      console.error('Error deleting fixture:', error);
       toast.error(error.message || "Failed to delete lighting fixture");
     }
   };
 
   const handleBulkDelete = async (selectedFixtures: string[]) => {
     try {
+      console.log("Bulk deleting fixtures:", selectedFixtures);
       const { error } = await supabase
         .from('lighting_fixtures')
         .delete()
@@ -123,6 +133,7 @@ export const useLightingFixtures = () => {
       toast.success(`${selectedFixtures.length} fixtures deleted successfully`);
       return true;
     } catch (error: any) {
+      console.error('Error bulk deleting fixtures:', error);
       toast.error(error.message || "Failed to delete fixtures");
       return false;
     }
@@ -130,6 +141,7 @@ export const useLightingFixtures = () => {
 
   const handleBulkStatusUpdate = async (selectedFixtures: string[], status: LightingFixture['status']) => {
     try {
+      console.log("Updating status for fixtures:", selectedFixtures, "to:", status);
       const { error } = await supabase
         .from('lighting_fixtures')
         .update({ status })
@@ -140,6 +152,7 @@ export const useLightingFixtures = () => {
       toast.success(`Status updated for ${selectedFixtures.length} fixtures`);
       return true;
     } catch (error: any) {
+      console.error('Error updating fixtures:', error);
       toast.error(error.message || "Failed to update fixtures");
       return false;
     }
