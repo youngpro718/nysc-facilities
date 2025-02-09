@@ -3,15 +3,15 @@ export interface LightingFixture {
   name: string;
   type: "standard" | "emergency" | "motion_sensor";
   status: "functional" | "maintenance_needed" | "non_functional" | "pending_maintenance" | "scheduled_replacement";
-  zone_name?: string;
-  building_name: string;
-  floor_name: string;
-  floor_id: string;
-  maintenance_notes?: string;
+  zone_name?: string | null;
+  building_name: string | null;
+  floor_name: string | null;
+  floor_id: string | null;
+  maintenance_notes?: string | null;
   emergency_circuit: boolean;
   backup_power_source?: string | null;
   emergency_duration_minutes?: number | null;
-  technology: "LED" | "Fluorescent" | "Bulb";
+  technology: "LED" | "Fluorescent" | "Bulb" | null;
   energy_usage_data?: {
     daily_usage: any[];
     efficiency_rating: string | null;
@@ -22,12 +22,12 @@ export interface LightingFixture {
     backup_system: boolean;
     evacuation_route: boolean;
   } | null;
-  connected_fixtures?: string[];
+  connected_fixtures?: string[] | null;
   inspection_history?: {
     date: string;
     status: string;
     notes?: string;
-  }[];
+  }[] | null;
   warranty_info?: {
     start_date: string | null;
     end_date: string | null;
@@ -39,33 +39,35 @@ export interface LightingFixture {
     model: string | null;
     serial_number: string | null;
     support_contact: string | null;
-  };
+  } | null;
   spatial_assignment?: {
     space_id: string;
     space_type: 'room' | 'hallway';
     position: string;
     sequence_number: number;
-  };
+  } | null;
   electrical_issues: {
     short_circuit: boolean;
     wiring_issues: boolean;
     voltage_problems: boolean;
   };
   ballast_issue: boolean;
-  ballast_check_notes?: string;
+  ballast_check_notes?: string | null;
   maintenance_history?: {
     date: string;
     type: string;
     notes?: string;
-  }[];
+  }[] | null;
   bulb_count: number;
-  space_id?: string;
-  space_type?: 'room' | 'hallway';
-  position?: string;
-  sequence_number?: number;
-  zone_id?: string;
-  space_name?: string;
-  room_number?: string;
+  space_id?: string | null;
+  space_type?: 'room' | 'hallway' | null;
+  position?: string | null;
+  sequence_number?: number | null;
+  zone_id?: string | null;
+  space_name?: string | null;
+  room_number?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
 export interface RoomLightingConfig {

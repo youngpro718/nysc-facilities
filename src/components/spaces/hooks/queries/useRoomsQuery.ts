@@ -39,8 +39,21 @@ export function useRoomsQuery() {
             previous_values,
             new_values,
             created_at
+          ),
+          lighting_fixture:lighting_fixture_details (
+            id,
+            type,
+            status,
+            technology,
+            electrical_issues,
+            ballast_issue,
+            maintenance_notes,
+            position,
+            sequence_number
           )
         `)
+        .eq('lighting_fixture.space_type', 'room')
+        .eq('lighting_fixture.space_id', 'id')
         .order('created_at', { foreignTable: 'issues', ascending: false });
 
       if (roomsError) {
@@ -88,7 +101,10 @@ export function useRoomsQuery() {
 
       // Transform the room data to match the Room type
       const transformedRooms: Room[] = roomsData.map(room => {
-        const lightingFixture = fixturesByRoomId[room.id];
+        // Get the first fixture if there are multiple
+        const lightingFixture = Array.isArray(room.lighting_fixture) 
+          ? room.lighting_fixture[0] 
+          : room.lighting_fixture;
 
         return {
           ...room,
@@ -97,7 +113,13 @@ export function useRoomsQuery() {
             type: lightingFixture.type,
             status: lightingFixture.status,
             technology: lightingFixture.technology,
-            electrical_issues: lightingFixture.electrical_issues,
+            electrical_issues: typeof lightingFixture.electrical_issues === 'string' 
+              ? JSON.parse(lightingFixture.electrical_issues)
+              : lightingFixture.electrical_issues || {
+                  short_circuit: false,
+                  wiring_issues: false,
+                  voltage_problems: false
+                },
             ballast_issue: lightingFixture.ballast_issue,
             maintenance_notes: lightingFixture.maintenance_notes
           } : null,

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,7 +43,57 @@ export function RoomLightingConfig({ roomId }: RoomLightingConfigProps) {
         throw error;
       }
 
-      return fixtureData as unknown as LightingFixture[];
+      return (fixtureData || []).map(fixture => ({
+        ...fixture,
+        electrical_issues: typeof fixture.electrical_issues === 'string'
+          ? JSON.parse(fixture.electrical_issues)
+          : fixture.electrical_issues || {
+              short_circuit: false,
+              wiring_issues: false,
+              voltage_problems: false
+            },
+        energy_usage_data: typeof fixture.energy_usage_data === 'string'
+          ? JSON.parse(fixture.energy_usage_data)
+          : fixture.energy_usage_data || {
+              daily_usage: [],
+              efficiency_rating: null,
+              last_reading: null
+            },
+        emergency_protocols: typeof fixture.emergency_protocols === 'string'
+          ? JSON.parse(fixture.emergency_protocols)
+          : fixture.emergency_protocols || {
+              emergency_contact: null,
+              backup_system: false,
+              evacuation_route: false
+            },
+        warranty_info: typeof fixture.warranty_info === 'string'
+          ? JSON.parse(fixture.warranty_info)
+          : fixture.warranty_info || {
+              start_date: null,
+              end_date: null,
+              provider: null,
+              terms: null
+            },
+        manufacturer_details: typeof fixture.manufacturer_details === 'string'
+          ? JSON.parse(fixture.manufacturer_details)
+          : fixture.manufacturer_details || {
+              name: null,
+              model: null,
+              serial_number: null,
+              support_contact: null
+            },
+        inspection_history: typeof fixture.inspection_history === 'string'
+          ? JSON.parse(fixture.inspection_history)
+          : Array.isArray(fixture.inspection_history)
+            ? fixture.inspection_history
+            : [],
+        maintenance_history: typeof fixture.maintenance_history === 'string'
+          ? JSON.parse(fixture.maintenance_history)
+          : Array.isArray(fixture.maintenance_history)
+            ? fixture.maintenance_history
+            : [],
+        connected_fixtures: fixture.connected_fixtures || []
+      })) as LightingFixture[];
     }
   });
 
@@ -80,11 +129,7 @@ export function RoomLightingConfig({ roomId }: RoomLightingConfigProps) {
     bulb_count: fixture.bulb_count,
     status: fixture.status,
     maintenance_notes: fixture.maintenance_notes,
-    electrical_issues: fixture.electrical_issues || {
-      short_circuit: false,
-      wiring_issues: false,
-      voltage_problems: false
-    },
+    electrical_issues: fixture.electrical_issues,
     ballast_issue: fixture.ballast_issue,
     ballast_check_notes: fixture.ballast_check_notes,
     emergency_circuit: fixture.emergency_circuit,
