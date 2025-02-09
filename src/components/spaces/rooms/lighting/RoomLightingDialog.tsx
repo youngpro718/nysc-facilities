@@ -44,17 +44,34 @@ export function RoomLightingDialog({
       ballast_issue: false,
       emergency_circuit: false,
       maintenance_notes: "",
-      ballast_check_notes: ""
+      ballast_check_notes: "",
+      position: "ceiling" // Set a default position
     }
   });
 
   const onSubmit = async (values: RoomLightingConfig) => {
     setIsSubmitting(true);
     try {
+      const fixtureData = {
+        name: values.name,
+        type: values.type,
+        technology: values.technology,
+        bulb_count: values.bulb_count,
+        status: values.status,
+        electrical_issues: values.electrical_issues,
+        ballast_issue: values.ballast_issue,
+        emergency_circuit: values.emergency_circuit,
+        maintenance_notes: values.maintenance_notes,
+        ballast_check_notes: values.ballast_check_notes,
+        position: values.position as "ceiling" | "wall" | "floor" | "desk" | "recessed",
+        id: values.id // Include if it exists (for updates)
+      };
+
       const { error } = await supabase
         .from('lighting_fixtures')
         .upsert({
-          ...values,
+          ...fixtureData,
+          id: values.id, // For updates
           space_id: roomId,
           space_type: 'room'
         });
