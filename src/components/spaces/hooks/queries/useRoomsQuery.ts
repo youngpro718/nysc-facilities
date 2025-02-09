@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Room, StorageType, RoomType } from "../../rooms/types/RoomTypes";
@@ -55,12 +56,11 @@ export function useRoomsQuery() {
 
       if (!roomsData) return [];
 
-      // Then fetch lighting fixtures for all rooms
+      // Then fetch lighting fixtures data separately
       const { data: fixturesData, error: fixturesError } = await supabase
         .from('lighting_fixture_details')
         .select('*')
-        .eq('space_type', 'room')
-        .in('space_id', roomsData.map(room => room.id));
+        .eq('space_type', 'room');
 
       if (fixturesError) {
         console.error('Error fetching lighting fixtures:', fixturesError);
@@ -73,7 +73,9 @@ export function useRoomsQuery() {
 
       // Create a map of room id to fixture for easier lookup
       const fixturesByRoomId = (fixturesData || []).reduce((acc, fixture) => {
-        acc[fixture.space_id] = fixture;
+        if (fixture.space_id) {
+          acc[fixture.space_id] = fixture;
+        }
         return acc;
       }, {} as Record<string, any>);
 
