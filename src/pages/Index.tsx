@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -16,11 +17,8 @@ const Index = () => {
             id,
             rooms (
               id,
-              lighting: room_lighting (
-                id,
-                fixture: lighting_fixtures (
-                  status
-                )
+              lighting_fixtures (
+                status
               )
             )
           )
@@ -120,8 +118,8 @@ const Index = () => {
                 (floor.rooms?.reduce(
                   (roomAcc, room) =>
                     roomAcc +
-                    (room.lighting?.filter(
-                      (l) => l.fixture?.status === "functional"
+                    (room.lighting_fixtures?.filter(
+                      (l) => l.status === "functional"
                     ).length || 0),
                   0
                 ) || 0),
@@ -133,7 +131,7 @@ const Index = () => {
               (acc, floor) =>
                 acc +
                 (floor.rooms?.reduce(
-                  (roomAcc, room) => roomAcc + (room.lighting?.length || 0),
+                  (roomAcc, room) => roomAcc + (room.lighting_fixtures?.length || 0),
                   0
                 ) || 0),
               0
