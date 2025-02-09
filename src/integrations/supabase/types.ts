@@ -4732,32 +4732,100 @@ export type Database = {
           building_id: string | null
           building_name: string | null
           bulb_count: number | null
-          connected_fixtures: string[] | null
+          created_at: string | null
           electrical_issues: Json | null
           emergency_circuit: boolean | null
-          emergency_protocols: Json | null
-          energy_usage_data: Json | null
           floor_id: string | null
           floor_name: string | null
           id: string | null
-          inspection_history: Json[] | null
-          maintenance_history: Json[] | null
           maintenance_notes: string | null
-          manufacturer_details: Json | null
           name: string | null
           position: string | null
           room_number: string | null
           sequence_number: number | null
           space_id: string | null
+          space_name: string | null
           space_type: string | null
           status: Database["public"]["Enums"]["light_status_enum"] | null
           technology:
             | Database["public"]["Enums"]["lighting_technology_enum"]
             | null
           type: Database["public"]["Enums"]["light_fixture_type_enum"] | null
-          warranty_info: Json | null
+          updated_at: string | null
+          zone_id: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_hallway_space"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "hallways"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_room_space"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "room_function_history"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_room_space"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "room_lighting_stats"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "fk_room_space"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "room_lighting_status"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "fk_room_space"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "room_lighting_view"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "fk_room_space"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "room_occupancy_stats"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "fk_room_space"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_room_space"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "storage_room_inventory"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "lighting_fixtures_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "lighting_zones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lighting_fixtures_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "room_lighting_view"
+            referencedColumns: ["zone_id"]
+          },
+        ]
       }
       lighting_fixture_stats: {
         Row: {
