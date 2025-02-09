@@ -45,7 +45,7 @@ export function RoomLightingDialog({
       emergency_circuit: false,
       maintenance_notes: "",
       ballast_check_notes: "",
-      position: "ceiling" // Set a default position
+      position: "ceiling"
     }
   });
 
@@ -63,8 +63,10 @@ export function RoomLightingDialog({
         emergency_circuit: values.emergency_circuit,
         maintenance_notes: values.maintenance_notes,
         ballast_check_notes: values.ballast_check_notes,
-        position: values.position as "ceiling" | "wall" | "floor" | "desk" | "recessed",
-        id: values.id // Include if it exists (for updates)
+        position: values.position,
+        id: values.id, // Include if it exists (for updates)
+        space_id: roomId,
+        space_type: 'room' as const
       };
 
       const { error } = await supabase

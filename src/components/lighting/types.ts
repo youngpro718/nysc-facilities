@@ -1,3 +1,4 @@
+
 export interface LightingFixture {
   id: string;
   name: string;
@@ -61,7 +62,7 @@ export interface LightingFixture {
   bulb_count: number;
   space_id?: string | null;
   space_type?: 'room' | 'hallway' | null;
-  position?: string | null;
+  position?: 'ceiling' | 'wall' | 'floor' | 'desk' | 'recessed' | null;
   sequence_number?: number | null;
   zone_id?: string | null;
   space_name?: string | null;
@@ -88,7 +89,7 @@ export interface RoomLightingConfig {
   ballast_issue: boolean;
   ballast_check_notes?: string;
   emergency_circuit: boolean;
-  position?: string;
+  position?: 'ceiling' | 'wall' | 'floor' | 'desk' | 'recessed';
   sequence_number?: number;
 }
 
