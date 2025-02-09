@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Room, StorageType, RoomType } from "../../rooms/types/RoomTypes";
@@ -40,19 +39,9 @@ export function useRoomsQuery() {
             previous_values,
             new_values,
             created_at
-          ),
-          lighting_fixture:lighting_fixture_details!space_id (
-            id,
-            type,
-            status,
-            technology,
-            electrical_issues,
-            ballast_issue,
-            maintenance_notes,
-            position,
-            sequence_number
           )
-        `);
+        `)
+        .order('created_at', { foreignTable: 'issues', ascending: false });
 
       if (roomsError) {
         console.error('Error fetching rooms:', roomsError);
@@ -66,12 +55,40 @@ export function useRoomsQuery() {
 
       if (!roomsData) return [];
 
+      // Then fetch lighting fixtures for all rooms
+      const { data: fixturesData, error: fixturesError } = await supabase
+        .from('lighting_fixture_details')
+        .select('*')
+        .eq('space_type', 'room')
+        .in('space_id', roomsData.map(room => room.id));
+
+      if (fixturesError) {
+        console.error('Error fetching lighting fixtures:', fixturesError);
+        toast({
+          title: "Error",
+          description: "Failed to fetch lighting fixtures. Please try again.",
+          variant: "destructive",
+        });
+      }
+
+      // Create a map of room id to fixture for easier lookup
+      const fixturesByRoomId = (fixturesData || []).reduce((acc, fixture) => {
+        acc[fixture.space_id] = fixture;
+        return acc;
+      }, {} as Record<string, any>);
+
+      // Add debug logging for room 723
+      const room723 = roomsData.find(room => room.room_number === '723');
+      if (room723) {
+        console.log("Room 723 data:", room723);
+        console.log("Room 723 lighting fixture:", fixturesByRoomId[room723.id]);
+      } else {
+        console.log("Room 723 not found");
+      }
+
       // Transform the room data to match the Room type
       const transformedRooms: Room[] = roomsData.map(room => {
-        // Get the first fixture if there are multiple
-        const lightingFixture = Array.isArray(room.lighting_fixture) 
-          ? room.lighting_fixture[0] 
-          : room.lighting_fixture;
+        const lightingFixture = fixturesByRoomId[room.id];
 
         return {
           ...room,
@@ -80,13 +97,7 @@ export function useRoomsQuery() {
             type: lightingFixture.type,
             status: lightingFixture.status,
             technology: lightingFixture.technology,
-            electrical_issues: typeof lightingFixture.electrical_issues === 'string' 
-              ? JSON.parse(lightingFixture.electrical_issues)
-              : lightingFixture.electrical_issues || {
-                  short_circuit: false,
-                  wiring_issues: false,
-                  voltage_problems: false
-                },
+            electrical_issues: lightingFixture.electrical_issues,
             ballast_issue: lightingFixture.ballast_issue,
             maintenance_notes: lightingFixture.maintenance_notes
           } : null,
