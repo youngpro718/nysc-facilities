@@ -4746,7 +4746,7 @@ export type Database = {
           maintenance_notes: string | null
           manufacturer_details: Json | null
           name: string | null
-          position: string | null
+          position: Database["public"]["Enums"]["lighting_position_enum"] | null
           room_number: string | null
           sequence_number: number | null
           space_id: string | null
