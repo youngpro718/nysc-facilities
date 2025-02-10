@@ -70,7 +70,33 @@ export function RoomLightingConfig({ roomId }: RoomLightingConfigProps) {
           serial_number: null,
           support_contact: null,
           ...JSON.parse(JSON.stringify(fixture.manufacturer_details))
-        } : null
+        } : null,
+        inspection_history: fixture.inspection_history ? 
+          (Array.isArray(fixture.inspection_history) ? 
+            fixture.inspection_history.map((entry: any) => ({
+              date: entry.date || '',
+              status: entry.status || '',
+              notes: entry.notes
+            }))
+            : []
+          ) : [],
+        maintenance_history: fixture.maintenance_history ?
+          (Array.isArray(fixture.maintenance_history) ?
+            fixture.maintenance_history.map((entry: any) => ({
+              date: entry.date || '',
+              type: entry.type || '',
+              notes: entry.notes
+            }))
+            : []
+          ) : [],
+        connected_fixtures: Array.isArray(fixture.connected_fixtures) ? 
+          fixture.connected_fixtures : [],
+        electrical_issues: {
+          short_circuit: false,
+          wiring_issues: false,
+          voltage_problems: false,
+          ...fixture.electrical_issues
+        }
       })) as LightingFixture[];
     }
   });
