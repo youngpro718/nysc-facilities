@@ -2,7 +2,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Building, Issue, Activity } from "@/components/dashboard/BuildingsGrid";
+import { Issue, Activity } from "@/components/dashboard/BuildingsGrid";
+import { Building } from "@/utils/dashboardUtils";
 
 interface DashboardData {
   buildings: Building[];
@@ -88,7 +89,15 @@ export const useDashboardData = (): DashboardData => {
         .order("created_at", { ascending: false })
         .limit(50);
       if (error) throw error;
-      return data as Activity[];
+      
+      // Transform the data to match the Activity interface
+      return (data || []).map(activity => ({
+        id: crypto.randomUUID(), // Generate an ID since it's required by the interface
+        action: activity.action || "",
+        performed_by: activity.performed_by || "",
+        created_at: activity.created_at || "",
+        metadata: activity.metadata as { building_id: string; [key: string]: any } || {}
+      })) as Activity[];
     },
   });
 
