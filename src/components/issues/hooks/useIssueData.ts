@@ -29,7 +29,7 @@ export const useIssueData = (
           `)
           .order(sort.field, { ascending: sort.direction === 'asc' });
 
-        // Use eq operator for enum comparison
+        // For enum type, use eq instead of ilike
         if (filters.type && filters.type !== 'all_types') {
           query = query.eq('type', filters.type);
         }
