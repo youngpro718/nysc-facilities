@@ -3,7 +3,7 @@ import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { Thermometer, Droplet, Zap, Wrench } from "lucide-react";
+import { Thermometer, Droplet, Zap, Building2, CleaningBucket, Door, AlertTriangle, Construction, Flag, ScrollText } from "lucide-react";
 import type { FormData } from "../../types/IssueTypes";
 
 interface TypeSelectionProps {
@@ -30,8 +30,32 @@ const issueTypes = [
     description: "Electrical or power issues"
   },
   {
+    type: "BUILDING_SYSTEMS" as const,
+    icon: <Building2 className="h-12 w-12" />,
+    label: "Building Systems",
+    description: "General building system issues"
+  },
+  {
+    type: "CLEANING_REQUEST" as const,
+    icon: <CleaningBucket className="h-12 w-12" />,
+    label: "Cleaning Request",
+    description: "Cleaning or maintenance needs"
+  },
+  {
+    type: "DOOR" as const,
+    icon: <Door className="h-12 w-12" />,
+    label: "Door Issue",
+    description: "Door repairs or maintenance"
+  },
+  {
+    type: "EMERGENCY" as const,
+    icon: <AlertTriangle className="h-12 w-12" />,
+    label: "Emergency",
+    description: "Urgent safety or security issues"
+  },
+  {
     type: "GENERAL_REQUESTS" as const,
-    icon: <Wrench className="h-12 w-12" />,
+    icon: <ScrollText className="h-12 w-12" />,
     label: "General Request",
     description: "Other maintenance or facility issues"
   }
