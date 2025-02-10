@@ -4,13 +4,47 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { UseFormReturn } from "react-hook-form";
 import { FormData } from "../types/IssueTypes";
-import { typeOptions } from "../filters/filterOptions";
 
 interface IssueTypeFormProps {
   form: UseFormReturn<FormData>;
 }
 
+const issueCategories = [
+  { value: "LIGHTING", label: "Lighting" },
+  { value: "GENERAL_REQUESTS", label: "General Requests" },
+  { value: "PLUMBING_NEEDS", label: "Plumbing" },
+  { value: "ELECTRICAL_NEEDS", label: "Electrical" },
+  { value: "CLIMATE_CONTROL", label: "Climate Control" }
+];
+
+const problemsByCategory: Record<string, Array<{ value: string, label: string }>> = {
+  LIGHTING: [
+    { value: "LIGHTING", label: "Light Out" },
+    { value: "LIGHTING", label: "Flickering Light" },
+    { value: "LIGHTING", label: "Emergency Light Issue" },
+    { value: "LIGHTING", label: "Motion Sensor Problem" }
+  ],
+  GENERAL_REQUESTS: [
+    { value: "GENERAL_REQUESTS", label: "General Maintenance" },
+    { value: "GENERAL_REQUESTS", label: "Cleaning Request" }
+  ],
+  PLUMBING_NEEDS: [
+    { value: "PLUMBING_NEEDS", label: "Water Leak" },
+    { value: "PLUMBING_NEEDS", label: "Clogged Drain" }
+  ],
+  ELECTRICAL_NEEDS: [
+    { value: "ELECTRICAL_NEEDS", label: "Power Outage" },
+    { value: "ELECTRICAL_NEEDS", label: "Faulty Outlet" }
+  ],
+  CLIMATE_CONTROL: [
+    { value: "CLIMATE_CONTROL", label: "Temperature Issue" },
+    { value: "CLIMATE_CONTROL", label: "Ventilation Problem" }
+  ]
+};
+
 export function IssueTypeForm({ form }: IssueTypeFormProps) {
+  const selectedCategory = form.watch("type");
+
   return (
     <div className="space-y-6">
       <FormField
@@ -18,22 +52,22 @@ export function IssueTypeForm({ form }: IssueTypeFormProps) {
         name="type"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-base font-medium">Issue Type</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
+            <FormLabel className="text-base font-medium">Issue Category</FormLabel>
+            <Select onValueChange={field.onChange} value={field.value}>
               <FormControl>
                 <SelectTrigger className="h-12 text-base bg-background/50 border-white/10">
-                  <SelectValue placeholder="Select type" />
+                  <SelectValue placeholder="Select issue category" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <ScrollArea className="h-[400px]">
-                  {typeOptions.filter(option => option.value !== "all_types").map((option) => (
+                <ScrollArea className="h-[300px]">
+                  {issueCategories.map((category) => (
                     <SelectItem 
-                      key={option.value} 
-                      value={option.value}
+                      key={category.value} 
+                      value={category.value}
                       className="text-base"
                     >
-                      {option.label}
+                      {category.label}
                     </SelectItem>
                   ))}
                 </ScrollArea>
@@ -43,6 +77,42 @@ export function IssueTypeForm({ form }: IssueTypeFormProps) {
           </FormItem>
         )}
       />
+
+      {selectedCategory && (
+        <FormField
+          control={form.control}
+          name="template_fields.problem"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-base font-medium">Problem Type</FormLabel>
+              <Select 
+                onValueChange={field.onChange} 
+                value={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger className="h-12 text-base bg-background/50 border-white/10">
+                    <SelectValue placeholder="Select specific problem" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <ScrollArea className="h-[300px]">
+                    {problemsByCategory[selectedCategory]?.map((problem) => (
+                      <SelectItem 
+                        key={problem.label} 
+                        value={problem.label}
+                        className="text-base"
+                      >
+                        {problem.label}
+                      </SelectItem>
+                    ))}
+                  </ScrollArea>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      )}
       
       <FormField
         control={form.control}
