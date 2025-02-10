@@ -1,16 +1,24 @@
 
 export type IssueType = 
-  | "HVAC" 
-  | "Leak" 
-  | "Electrical" 
-  | "Plaster" 
-  | "Cleaning" 
-  | "Other" 
-  | "Lighting_Ballast" 
-  | "Lighting_Replacement" 
-  | "Lighting_Emergency" 
-  | "Lighting_Sensor"
-  | "Lighting_Control";
+  | "ACCESS_REQUEST"
+  | "BUILDING_SYSTEMS"
+  | "CEILING"
+  | "CLEANING_REQUEST"
+  | "CLIMATE_CONTROL"
+  | "DOOR"
+  | "ELECTRICAL_NEEDS"
+  | "EMERGENCY"
+  | "EXTERIOR_FACADE"
+  | "FLAGPOLE_FLAG"
+  | "FLOORING"
+  | "GENERAL_REQUESTS"
+  | "LEAK"
+  | "LIGHTING"
+  | "LOCK"
+  | "PLUMBING_NEEDS"
+  | "RESTROOM_REPAIR"
+  | "SIGNAGE"
+  | "WINDOW";
 
 export type FormData = {
   title: string;
@@ -19,19 +27,13 @@ export type FormData = {
   priority: string;
   assigned_to: "DCAS" | "OCA" | "Self" | "Outside_Vendor";
   type: IssueType;
+  subcategory?: string;
+  template_fields?: Record<string, any>;
   building_id?: string;
   floor_id?: string;
   room_id?: string;
   photos?: string[];
   fixture_id?: string;
-  // Extended fields for context-aware forms
-  temperature?: number;
-  occupancy_status?: "occupied" | "vacant";
-  maintenance_history?: string;
-  safety_assessment?: string;
-  damage_assessment?: string;
-  area_size?: string;
-  urgency_reason?: string;
 };
 
 export type Step = "type-selection" | "details" | "location" | "type" | "photos";
@@ -49,6 +51,8 @@ export type Issue = {
   floor_id: string | null;
   photos: string[] | null;
   type: IssueType;
+  subcategory?: string;
+  template_fields?: Record<string, any>;
   sla_hours: number;
   due_date: string | null;
   status_history: StatusHistory[] | null;

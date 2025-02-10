@@ -1,16 +1,24 @@
-
 export const typeOptions = [
   { value: "all_types", label: "All types" },
-  { value: "HVAC", label: "HVAC" },
-  { value: "Leak", label: "Leak" },
-  { value: "Electrical", label: "Electrical" },
-  { value: "Plaster", label: "Plaster" },
-  { value: "Cleaning", label: "Cleaning" },
-  { value: "Lighting_Ballast", label: "Lighting Ballast" },
-  { value: "Lighting_Replacement", label: "Lighting Replacement" },
-  { value: "Lighting_Emergency", label: "Emergency Lighting" },
-  { value: "Lighting_Sensor", label: "Lighting Sensor" },
-  { value: "Other", label: "Other" }
+  { value: "ACCESS_REQUEST", label: "Access Request" },
+  { value: "BUILDING_SYSTEMS", label: "Building Systems" },
+  { value: "CEILING", label: "Ceiling" },
+  { value: "CLEANING_REQUEST", label: "Cleaning Request" },
+  { value: "CLIMATE_CONTROL", label: "Climate Control" },
+  { value: "DOOR", label: "Door" },
+  { value: "ELECTRICAL_NEEDS", label: "Electrical Needs" },
+  { value: "EMERGENCY", label: "Emergency" },
+  { value: "EXTERIOR_FACADE", label: "Exterior/Facade" },
+  { value: "FLAGPOLE_FLAG", label: "Flagpole/Flag" },
+  { value: "FLOORING", label: "Flooring" },
+  { value: "GENERAL_REQUESTS", label: "General Requests" },
+  { value: "LEAK", label: "Leak" },
+  { value: "LIGHTING", label: "Lighting" },
+  { value: "LOCK", label: "Lock" },
+  { value: "PLUMBING_NEEDS", label: "Plumbing Needs" },
+  { value: "RESTROOM_REPAIR", label: "Restroom Repair" },
+  { value: "SIGNAGE", label: "Signage" },
+  { value: "WINDOW", label: "Window" }
 ];
 
 export const statusOptions = [

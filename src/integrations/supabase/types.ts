@@ -1440,6 +1440,66 @@ export type Database = {
           },
         ]
       }
+      issue_priority_rules: {
+        Row: {
+          conditions: Json
+          created_at: string | null
+          id: string
+          priority: string
+          subcategory: string | null
+          type: Database["public"]["Enums"]["issue_type_enum"]
+          updated_at: string | null
+        }
+        Insert: {
+          conditions: Json
+          created_at?: string | null
+          id?: string
+          priority: string
+          subcategory?: string | null
+          type: Database["public"]["Enums"]["issue_type_enum"]
+          updated_at?: string | null
+        }
+        Update: {
+          conditions?: Json
+          created_at?: string | null
+          id?: string
+          priority?: string
+          subcategory?: string | null
+          type?: Database["public"]["Enums"]["issue_type_enum"]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      issue_routing_rules: {
+        Row: {
+          assigned_to: Database["public"]["Enums"]["party_enum"]
+          conditions: Json
+          created_at: string | null
+          id: string
+          subcategory: string | null
+          type: Database["public"]["Enums"]["issue_type_enum"]
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to: Database["public"]["Enums"]["party_enum"]
+          conditions: Json
+          created_at?: string | null
+          id?: string
+          subcategory?: string | null
+          type: Database["public"]["Enums"]["issue_type_enum"]
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to?: Database["public"]["Enums"]["party_enum"]
+          conditions?: Json
+          created_at?: string | null
+          id?: string
+          subcategory?: string | null
+          type?: Database["public"]["Enums"]["issue_type_enum"]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       issue_templates: {
         Row: {
           created_at: string | null
@@ -1463,6 +1523,42 @@ export type Database = {
           fields?: Json
           id?: string
           name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      issue_type_templates: {
+        Row: {
+          created_at: string | null
+          default_assigned_to: Database["public"]["Enums"]["party_enum"] | null
+          default_priority: string | null
+          id: string
+          optional_fields: Json | null
+          required_fields: Json | null
+          subcategory: string | null
+          type: Database["public"]["Enums"]["issue_type_enum"]
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          default_assigned_to?: Database["public"]["Enums"]["party_enum"] | null
+          default_priority?: string | null
+          id?: string
+          optional_fields?: Json | null
+          required_fields?: Json | null
+          subcategory?: string | null
+          type: Database["public"]["Enums"]["issue_type_enum"]
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          default_assigned_to?: Database["public"]["Enums"]["party_enum"] | null
+          default_priority?: string | null
+          id?: string
+          optional_fields?: Json | null
+          required_fields?: Json | null
+          subcategory?: string | null
+          type?: Database["public"]["Enums"]["issue_type_enum"]
           updated_at?: string | null
         }
         Relationships: []
@@ -1496,6 +1592,8 @@ export type Database = {
           sla_hours: number | null
           status: Database["public"]["Enums"]["issue_status_enum"] | null
           status_history: Json[] | null
+          subcategory: string | null
+          template_fields: Json | null
           title: string
           type: Database["public"]["Enums"]["issue_type_enum"]
           updated_at: string | null
@@ -1528,6 +1626,8 @@ export type Database = {
           sla_hours?: number | null
           status?: Database["public"]["Enums"]["issue_status_enum"] | null
           status_history?: Json[] | null
+          subcategory?: string | null
+          template_fields?: Json | null
           title: string
           type: Database["public"]["Enums"]["issue_type_enum"]
           updated_at?: string | null
@@ -1560,6 +1660,8 @@ export type Database = {
           sla_hours?: number | null
           status?: Database["public"]["Enums"]["issue_status_enum"] | null
           status_history?: Json[] | null
+          subcategory?: string | null
+          template_fields?: Json | null
           title?: string
           type?: Database["public"]["Enums"]["issue_type_enum"]
           updated_at?: string | null
@@ -4417,6 +4519,25 @@ export type Database = {
         | "Lighting_Emergency"
         | "Lighting_Sensor"
         | "Lighting_Control"
+        | "ACCESS_REQUEST"
+        | "BUILDING_SYSTEMS"
+        | "CEILING"
+        | "CLEANING_REQUEST"
+        | "CLIMATE_CONTROL"
+        | "DOOR"
+        | "ELECTRICAL_NEEDS"
+        | "EMERGENCY"
+        | "EXTERIOR_FACADE"
+        | "FLAGPOLE_FLAG"
+        | "FLOORING"
+        | "GENERAL_REQUESTS"
+        | "LEAK"
+        | "LIGHTING"
+        | "LOCK"
+        | "PLUMBING_NEEDS"
+        | "RESTROOM_REPAIR"
+        | "SIGNAGE"
+        | "WINDOW"
       key_status_enum: "available" | "assigned" | "lost" | "decommissioned"
       key_type_enum: "physical_key" | "elevator_pass" | "room_key"
       light_fixture_type_enum: "standard" | "emergency" | "motion_sensor"

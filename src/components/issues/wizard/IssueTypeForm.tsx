@@ -1,9 +1,10 @@
 
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { UseFormReturn } from "react-hook-form";
 import { FormData } from "../types/IssueTypes";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { typeOptions } from "../filters/filterOptions";
 
 interface IssueTypeFormProps {
   form: UseFormReturn<FormData>;
@@ -25,13 +26,16 @@ export function IssueTypeForm({ form }: IssueTypeFormProps) {
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <ScrollArea className="h-[200px]">
-                  <SelectItem value="HVAC" className="text-base">HVAC</SelectItem>
-                  <SelectItem value="Leak" className="text-base">Leak</SelectItem>
-                  <SelectItem value="Electrical" className="text-base">Electrical</SelectItem>
-                  <SelectItem value="Plaster" className="text-base">Plaster</SelectItem>
-                  <SelectItem value="Cleaning" className="text-base">Cleaning</SelectItem>
-                  <SelectItem value="Other" className="text-base">Other</SelectItem>
+                <ScrollArea className="h-[400px]">
+                  {typeOptions.filter(option => option.value !== "all_types").map((option) => (
+                    <SelectItem 
+                      key={option.value} 
+                      value={option.value}
+                      className="text-base"
+                    >
+                      {option.label}
+                    </SelectItem>
+                  ))}
                 </ScrollArea>
               </SelectContent>
             </Select>
