@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SparklesCore } from "@/components/ui/sparkles";
 import { Input } from "@/components/ui/input";
@@ -82,11 +81,14 @@ const Auth = () => {
         />
       </div>
 
-      <div className="absolute inset-0 flex items-center justify-center">
-        <EvervaultCard text={isSignUp ? "Sign Up" : "Sign In"} className="w-full max-w-xl" />
-      </div>
-      
-      <Card className="relative z-20 w-full max-w-md p-8 bg-white/10 backdrop-blur-lg rounded-lg shadow-xl border border-white/20">
+      <Card className="relative z-20 w-full max-w-md p-8 bg-white/10 backdrop-blur-lg rounded-lg shadow-xl border border-white/20 group/card">
+        <div
+          className="absolute inset-0 -z-10"
+          style={{ margin: '-1px' }}
+        >
+          <EvervaultCard text={isSignUp ? "Sign Up" : "Sign In"} />
+        </div>
+        
         <div className="flex flex-col items-center gap-6 mb-8">
           <img 
             src="/lovable-uploads/ca12c24b-cc46-4318-b46d-8af88c0deae9.png" 
