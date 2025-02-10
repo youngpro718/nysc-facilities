@@ -17,9 +17,7 @@ const Index = () => {
             id,
             rooms (
               id,
-              lighting_fixture_details (
-                status
-              )
+              room_lighting_status (*)
             )
           )
         `);
@@ -117,10 +115,7 @@ const Index = () => {
                 acc +
                 (floor.rooms?.reduce(
                   (roomAcc, room) =>
-                    roomAcc +
-                    (room.lighting_fixture_details?.filter(
-                      fixture => fixture.status === "functional"
-                    ).length || 0),
+                    roomAcc + (room.room_lighting_status?.[0]?.working_fixtures || 0),
                   0
                 ) || 0),
               0
@@ -132,7 +127,7 @@ const Index = () => {
                 acc +
                 (floor.rooms?.reduce(
                   (roomAcc, room) =>
-                    roomAcc + (room.lighting_fixture_details?.length || 0),
+                    roomAcc + (room.room_lighting_status?.[0]?.total_fixtures || 0),
                   0
                 ) || 0),
               0
