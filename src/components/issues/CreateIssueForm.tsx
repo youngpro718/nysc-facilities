@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { IssueTypeForm } from "./wizard/IssueTypeForm";
 import { IssuePhotoForm } from "./wizard/IssuePhotoForm";
 import { usePhotoUpload } from "./hooks/usePhotoUpload";
 import { ScrollArea } from "../ui/scroll-area";
+import { toast } from "@/hooks/use-toast";
 
 interface CreateIssueFormProps {
   onSubmit: (data: FormData) => Promise<void>;
@@ -36,7 +38,11 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
 
   const handleFormSubmit = async (data: FormData) => {
     if (selectedType && selectedPhotos.length < selectedType.requiredPhotos) {
-      toast.error(`Please upload at least ${selectedType.requiredPhotos} photo${selectedType.requiredPhotos > 1 ? 's' : ''}`);
+      toast({
+        title: "Error",
+        description: `Please upload at least ${selectedType.requiredPhotos} photo${selectedType.requiredPhotos > 1 ? 's' : ''}`,
+        variant: "destructive"
+      });
       return;
     }
     await onSubmit({ ...data, photos: selectedPhotos });
