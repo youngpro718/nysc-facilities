@@ -13,8 +13,15 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 
 const EXPORTABLE_TABLES = [
-  'buildings', 'floors', 'rooms', 'occupants', 'keys',
-  'key_assignments', 'lighting_fixtures', 'lighting_zones', 'issues'
+  'buildings',
+  'floors',
+  'rooms',
+  'occupants',
+  'keys',
+  'key_assignments',
+  'lighting_fixtures',
+  'lighting_zones',
+  'issues'
 ] as const;
 
 type ExportableTable = typeof EXPORTABLE_TABLES[number];
@@ -25,7 +32,7 @@ export function DatabaseSection() {
   const [isImporting, setIsImporting] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [backupVersions, setBackupVersions] = useState<BackupVersion[]>([]);
-  const [selectedTables, setSelectedTables] = useState<string[]>([]);
+  const [selectedTables, setSelectedTables] = useState<ExportableTable[]>([]);
 
   const loadBackupHistory = async () => {
     try {
@@ -67,9 +74,9 @@ export function DatabaseSection() {
       // Record backup version
       await createBackupVersion({
         name: fileName,
-        tables: exportTables as string[],
+        tables: exportTables,
         size_bytes: 0, // Would need actual file size calculation
-        status: 'completed'
+        description: null
       });
       
       toast({
