@@ -1538,6 +1538,7 @@ export type Database = {
           fixture_id: string | null
           floor_id: string | null
           id: string
+          issue_type_new: Database["public"]["Enums"]["issue_type_enum"] | null
           labels: string[] | null
           last_activity_at: string | null
           lighting_details: Json | null
@@ -1572,6 +1573,7 @@ export type Database = {
           fixture_id?: string | null
           floor_id?: string | null
           id?: string
+          issue_type_new?: Database["public"]["Enums"]["issue_type_enum"] | null
           labels?: string[] | null
           last_activity_at?: string | null
           lighting_details?: Json | null
@@ -1606,6 +1608,7 @@ export type Database = {
           fixture_id?: string | null
           floor_id?: string | null
           id?: string
+          issue_type_new?: Database["public"]["Enums"]["issue_type_enum"] | null
           labels?: string[] | null
           last_activity_at?: string | null
           lighting_details?: Json | null
