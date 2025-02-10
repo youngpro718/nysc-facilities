@@ -9,6 +9,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface LightingFixture {
   id: string;
@@ -25,11 +27,32 @@ interface LightingFixture {
 }
 
 interface LightingStatusIndicatorProps {
-  fixture?: LightingFixture | null;
+  roomId?: string;
 }
 
-export function LightingStatusIndicator({ fixture }: LightingStatusIndicatorProps) {
-  if (!fixture) {
+export function LightingStatusIndicator({ roomId }: LightingStatusIndicatorProps) {
+  const { data: roomLighting } = useQuery({
+    queryKey: ['room-lighting-status', roomId],
+    queryFn: async () => {
+      if (!roomId) return null;
+      
+      const { data, error } = await supabase
+        .from('room_lighting_status')
+        .select('*')
+        .eq('room_id', roomId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching room lighting status:', error);
+        return null;
+      }
+
+      return data;
+    },
+    enabled: !!roomId
+  });
+
+  if (!roomId || !roomLighting) {
     return (
       <TooltipProvider>
         <Tooltip>
@@ -47,53 +70,37 @@ export function LightingStatusIndicator({ fixture }: LightingStatusIndicatorProp
     );
   }
 
-  const hasElectricalIssues = fixture.electrical_issues && (
-    fixture.electrical_issues.short_circuit ||
-    fixture.electrical_issues.wiring_issues ||
-    fixture.electrical_issues.voltage_problems
-  );
-
   const getStatusColor = () => {
-    if (hasElectricalIssues || fixture.status === 'non_functional') {
+    if (roomLighting.non_working_fixtures > 0) {
       return "text-red-500";
     }
-    if (fixture.status === 'maintenance_needed' || fixture.status === 'scheduled_replacement') {
-      return "text-yellow-500";
+    if (roomLighting.working_fixtures === roomLighting.total_fixtures) {
+      return "text-green-500";
     }
-    return "text-green-500";
+    return "text-yellow-500";
   };
 
   const getStatusText = () => {
-    if (hasElectricalIssues) return "Electrical Issues";
-    if (fixture.ballast_issue) return "Balance Issues";
-    switch (fixture.status) {
-      case 'functional': return "Working";
-      case 'maintenance_needed': return "Needs Maintenance";
-      case 'non_functional': return "Not Working";
-      case 'pending_maintenance': return "Maintenance Pending";
-      case 'scheduled_replacement': return "Replacement Needed";
-      default: return "Unknown";
-    }
+    if (roomLighting.total_fixtures === 0) return "No Fixtures";
+    if (roomLighting.non_working_fixtures === roomLighting.total_fixtures) return "Not Working";
+    if (roomLighting.working_fixtures === roomLighting.total_fixtures) return "All Working";
+    return `${roomLighting.working_fixtures}/${roomLighting.total_fixtures} Working`;
   };
 
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger>
-          <Badge variant="outline" className={cn("gap-2", hasElectricalIssues && "border-red-200")}>
+          <Badge variant="outline" className={cn("gap-2", roomLighting.non_working_fixtures > 0 && "border-red-200")}>
             <Lightbulb className={cn("h-4 w-4", getStatusColor())} />
             <span>{getStatusText()}</span>
           </Badge>
         </TooltipTrigger>
         <TooltipContent>
           <div className="space-y-2">
-            <p>Status: {getStatusText()}</p>
-            {fixture.technology && <p>Type: {fixture.technology}</p>}
-            {fixture.maintenance_notes && (
-              <p className="text-sm text-muted-foreground">
-                Note: {fixture.maintenance_notes}
-              </p>
-            )}
+            <p>Working Fixtures: {roomLighting.working_fixtures}</p>
+            <p>Non-working Fixtures: {roomLighting.non_working_fixtures}</p>
+            <p>Total Fixtures: {roomLighting.total_fixtures}</p>
           </div>
         </TooltipContent>
       </Tooltip>
