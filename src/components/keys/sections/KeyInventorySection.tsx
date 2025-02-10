@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,11 +12,12 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Package, Plus, History, Trash2 } from "lucide-react";
+import { Package, Plus, History, Trash2, AlertCircle } from "lucide-react";
 import { KeyStockAdjustment } from "../inventory/KeyStockAdjustment";
 import { CreateKeyDialog } from "../CreateKeyDialog";
 import { KeyData } from "../types/KeyTypes";
 import { toast } from "sonner";
+import { KeyFilters, SortOption } from "../KeyFilters";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,11 +32,13 @@ import {
 export function KeyInventorySection() {
   const [keyToDelete, setKeyToDelete] = useState<KeyData | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [filters, setFilters] = useState<KeyFilters>({});
+  const [sort, setSort] = useState<SortOption>({ field: 'name', direction: 'asc' });
 
   const { data: keys, isLoading, refetch } = useQuery({
-    queryKey: ["keys-inventory"],
+    queryKey: ["keys-inventory", filters, sort],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("keys")
         .select(`
           id,
@@ -44,8 +48,27 @@ export function KeyInventorySection() {
           total_quantity,
           available_quantity,
           is_passkey
-        `)
-        .order('name');
+        `);
+
+      // Apply filters
+      if (filters.type && filters.type !== 'all_types') {
+        query = query.eq('type', filters.type);
+      }
+      if (filters.status && filters.status !== 'all_statuses') {
+        query = query.eq('status', filters.status);
+      }
+      if (filters.passkey) {
+        if (filters.passkey === 'passkey_only') {
+          query = query.eq('is_passkey', true);
+        } else if (filters.passkey === 'non_passkey') {
+          query = query.eq('is_passkey', false);
+        }
+      }
+
+      // Apply sorting
+      query = query.order(sort.field, { ascending: sort.direction === 'asc' });
+
+      const { data, error } = await query;
 
       if (error) throw error;
       return data as KeyData[];
@@ -91,6 +114,11 @@ export function KeyInventorySection() {
         </Button>
       </div>
 
+      <KeyFilters
+        onFilterChange={setFilters}
+        onSortChange={setSort}
+      />
+
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -113,13 +141,23 @@ export function KeyInventorySection() {
                     {key.is_passkey && (
                       <Badge variant="secondary">Passkey</Badge>
                     )}
+                    {key.available_quantity === 0 && (
+                      <Badge variant="destructive" className="ml-2">
+                        <AlertCircle className="h-3 w-3 mr-1" />
+                        Out of Stock
+                      </Badge>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline">{key.type}</Badge>
                 </TableCell>
                 <TableCell>{key.total_quantity}</TableCell>
-                <TableCell>{key.available_quantity}</TableCell>
+                <TableCell>
+                  <span className={key.available_quantity === 0 ? "text-destructive font-medium" : ""}>
+                    {key.available_quantity}
+                  </span>
+                </TableCell>
                 <TableCell>
                   <Badge 
                     variant={

@@ -5,6 +5,7 @@ import { Filter, ArrowUpDown } from "lucide-react";
 export interface KeyFilters {
   type?: "physical_key" | "elevator_pass" | "all_types";
   status?: "available" | "assigned" | "lost" | "decommissioned" | "all_statuses";
+  passkey?: "all" | "passkey_only" | "non_passkey";
   building_id?: string | "all_buildings";
 }
 
@@ -48,6 +49,19 @@ export const KeyFilters = ({ onFilterChange, onSortChange }: KeyFiltersProps) =>
             <SelectItem value="assigned">Assigned</SelectItem>
             <SelectItem value="lost">Lost</SelectItem>
             <SelectItem value="decommissioned">Decommissioned</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select
+          onValueChange={(value) => onFilterChange({ passkey: value as KeyFilters['passkey'] })}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filter by passkey" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All keys</SelectItem>
+            <SelectItem value="passkey_only">Passkeys only</SelectItem>
+            <SelectItem value="non_passkey">Non-passkeys</SelectItem>
           </SelectContent>
         </Select>
       </div>
