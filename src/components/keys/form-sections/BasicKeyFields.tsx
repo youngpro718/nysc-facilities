@@ -1,3 +1,4 @@
+
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -10,6 +11,19 @@ interface BasicKeyFieldsProps {
 }
 
 export function BasicKeyFields({ form }: BasicKeyFieldsProps) {
+  // Subscribe to type changes to handle passkey logic
+  const keyType = form.watch("type");
+
+  // Handle passkey toggle
+  const handlePasskeyChange = (checked: boolean) => {
+    form.setValue("isPasskey", checked);
+    
+    // If enabling passkey, ensure we have at least 2 spare keys
+    if (checked && form.getValues("spareKeys") < 2) {
+      form.setValue("spareKeys", 2);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <FormField
@@ -105,13 +119,15 @@ export function BasicKeyFields({ form }: BasicKeyFieldsProps) {
             <FormControl>
               <Input 
                 type="number" 
-                min={0}
+                min={form.getValues("isPasskey") ? 2 : 0}
                 {...field}
                 onChange={e => field.onChange(parseInt(e.target.value) || 0)}
               />
             </FormControl>
             <FormDescription>
-              Number of additional spare keys to create
+              {form.getValues("isPasskey") 
+                ? "Passkeys require at least 2 spare keys"
+                : "Number of additional spare keys to create"}
             </FormDescription>
             <FormMessage />
           </FormItem>
@@ -132,7 +148,7 @@ export function BasicKeyFields({ form }: BasicKeyFieldsProps) {
             <FormControl>
               <Switch
                 checked={field.value}
-                onCheckedChange={field.onChange}
+                onCheckedChange={handlePasskeyChange}
               />
             </FormControl>
           </FormItem>

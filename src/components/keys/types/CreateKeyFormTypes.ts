@@ -13,7 +13,25 @@ export const keyFormSchema = z.object({
   roomId: z.string().optional(),
   keyScope: z.enum(["door", "room"]).default("door"),
   occupantId: z.string().optional(),
-  spareKeys: z.number().min(0, "Spare keys cannot be negative").default(0),
+  spareKeys: z.number()
+    .min(0, "Spare keys cannot be negative")
+    .default(0)
+    .refine(
+      (val) => true,
+      (val) => ({
+        message: "Passkeys require at least 2 spare keys",
+        path: ["spareKeys"]
+      })
+    ),
+}).refine((data) => {
+  // If it's a passkey, ensure there are at least 2 spare keys
+  if (data.isPasskey && data.spareKeys < 2) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Passkeys require at least 2 spare keys",
+  path: ["spareKeys"]
 });
 
 export interface CreateKeyFormProps {
