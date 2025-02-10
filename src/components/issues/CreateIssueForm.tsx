@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Form } from "@/components/ui/form";
 import { issueTypes } from "./wizard/IssueTypeSelection";
 import { FormData } from "./types/IssueTypes";
 import { IssueLocationForm } from "./wizard/IssueLocationForm";
@@ -52,78 +53,80 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
     <div className="grid grid-cols-2 gap-6 p-6">
       <Card className="p-6">
         <ScrollArea className="h-[calc(100vh-12rem)]">
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
-            <div className="space-y-4">
-              <IssueTypeForm form={form} />
-              
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
               <div className="space-y-4">
-                <Label>Details</Label>
-                <Input 
-                  placeholder="Title" 
-                  {...form.register("title")}
-                  className="h-12 text-base"
+                <IssueTypeForm form={form} />
+                
+                <div className="space-y-4">
+                  <Label>Details</Label>
+                  <Input 
+                    placeholder="Title" 
+                    {...form.register("title")}
+                    className="h-12 text-base"
+                  />
+                  <Textarea 
+                    placeholder="Description" 
+                    {...form.register("description")}
+                    className="min-h-[120px] text-base"
+                  />
+                </div>
+
+                <IssueLocationForm
+                  form={form}
+                  selectedBuilding={selectedBuilding}
+                  selectedFloor={selectedFloor}
+                  setSelectedBuilding={setSelectedBuilding}
+                  setSelectedFloor={setSelectedFloor}
                 />
-                <Textarea 
-                  placeholder="Description" 
-                  {...form.register("description")}
-                  className="min-h-[120px] text-base"
+
+                {selectedType?.contextFields.includes("temperature") && (
+                  <div className="space-y-2">
+                    <Label>Temperature (°F)</Label>
+                    <Input 
+                      type="number" 
+                      {...form.register("temperature")}
+                      className="h-12 text-base"
+                    />
+                  </div>
+                )}
+
+                {selectedType?.contextFields.includes("damage_assessment") && (
+                  <div className="space-y-2">
+                    <Label>Damage Assessment</Label>
+                    <Textarea 
+                      {...form.register("damage_assessment")}
+                      placeholder="Describe the extent of damage"
+                      className="min-h-[100px] text-base"
+                    />
+                  </div>
+                )}
+
+                {selectedType?.contextFields.includes("area_size") && (
+                  <div className="space-y-2">
+                    <Label>Area Size</Label>
+                    <Input 
+                      {...form.register("area_size")}
+                      placeholder="Approximate size of affected area"
+                      className="h-12 text-base"
+                    />
+                  </div>
+                )}
+
+                <IssuePhotoForm
+                  selectedPhotos={selectedPhotos}
+                  uploading={uploading}
+                  onPhotoUpload={handlePhotoUpload}
                 />
               </div>
 
-              <IssueLocationForm
-                form={form}
-                selectedBuilding={selectedBuilding}
-                selectedFloor={selectedFloor}
-                setSelectedBuilding={setSelectedBuilding}
-                setSelectedFloor={setSelectedFloor}
-              />
-
-              {selectedType?.contextFields.includes("temperature") && (
-                <div className="space-y-2">
-                  <Label>Temperature (°F)</Label>
-                  <Input 
-                    type="number" 
-                    {...form.register("temperature")}
-                    className="h-12 text-base"
-                  />
-                </div>
-              )}
-
-              {selectedType?.contextFields.includes("damage_assessment") && (
-                <div className="space-y-2">
-                  <Label>Damage Assessment</Label>
-                  <Textarea 
-                    {...form.register("damage_assessment")}
-                    placeholder="Describe the extent of damage"
-                    className="min-h-[100px] text-base"
-                  />
-                </div>
-              )}
-
-              {selectedType?.contextFields.includes("area_size") && (
-                <div className="space-y-2">
-                  <Label>Area Size</Label>
-                  <Input 
-                    {...form.register("area_size")}
-                    placeholder="Approximate size of affected area"
-                    className="h-12 text-base"
-                  />
-                </div>
-              )}
-
-              <IssuePhotoForm
-                selectedPhotos={selectedPhotos}
-                uploading={uploading}
-                onPhotoUpload={handlePhotoUpload}
-              />
-            </div>
-
-            <div className="flex justify-end pt-6">
-              <Button type="submit" disabled={uploading}>
-                Create Issue
-              </Button>
-            </div>
-          </form>
+              <div className="flex justify-end pt-6">
+                <Button type="submit" disabled={uploading}>
+                  Create Issue
+                </Button>
+              </div>
+            </form>
+          </Form>
         </ScrollArea>
       </Card>
 
