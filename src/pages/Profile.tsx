@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Download, Upload, User, Database, FileText, Camera } from "lucide-react";
+import { Download, Upload, User, Database, FileText, Camera, Shield } from "lucide-react";
 import { useState, useEffect } from "react";
 import * as XLSX from 'xlsx';
 import { TablesInsert } from "@/integrations/supabase/types";
@@ -11,6 +11,7 @@ import { ReportsSection } from "@/components/profile/ReportsSection";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PersonalInfoForm } from "@/components/profile/PersonalInfoForm";
 import { NotificationPreferences } from "@/components/profile/NotificationPreferences";
+import { SecuritySection } from "@/components/profile/SecuritySection";
 
 const EXPORTABLE_TABLES = [
   'buildings', 'floors', 'rooms', 'occupants', 'keys',
@@ -192,10 +193,14 @@ export default function Profile() {
   return (
     <div className="container mx-auto py-10 px-4 max-w-6xl">
       <Tabs defaultValue="profile" className="w-full space-y-8">
-        <TabsList className="grid w-full grid-cols-1 md:grid-cols-3 gap-4 bg-background p-1">
+        <TabsList className="grid w-full grid-cols-1 md:grid-cols-4 gap-4 bg-background p-1">
           <TabsTrigger value="profile" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <User className="h-4 w-4" />
             Profile
+          </TabsTrigger>
+          <TabsTrigger value="security" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <Shield className="h-4 w-4" />
+            Security
           </TabsTrigger>
           <TabsTrigger value="database" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <Database className="h-4 w-4" />
@@ -243,16 +248,18 @@ export default function Profile() {
               </div>
 
               <div className="space-y-6">
-                <h3 className="text-lg font-semibold">Personal Information</h3>
                 <PersonalInfoForm />
               </div>
               
               <div className="space-y-6">
-                <h3 className="text-lg font-semibold">Notification Preferences</h3>
                 <NotificationPreferences />
               </div>
             </div>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="security">
+          <SecuritySection />
         </TabsContent>
 
         <TabsContent value="database">

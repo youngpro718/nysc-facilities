@@ -2817,43 +2817,73 @@ export type Database = {
       }
       profiles: {
         Row: {
+          accessibility_preferences: Json | null
           avatar_url: string | null
+          bio: string | null
           created_at: string | null
           department: string | null
+          emergency_contact: Json | null
+          first_name: string | null
           id: string
           job_title_validated: boolean | null
+          language: string | null
           last_login: string | null
+          last_login_at: string | null
+          last_name: string | null
           notification_preferences: Json | null
           phone: string | null
+          security_settings: Json | null
+          system_preferences: Json | null
           theme: string | null
+          time_zone: string | null
           title: string | null
           updated_at: string | null
           username: string | null
         }
         Insert: {
+          accessibility_preferences?: Json | null
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string | null
           department?: string | null
+          emergency_contact?: Json | null
+          first_name?: string | null
           id: string
           job_title_validated?: boolean | null
+          language?: string | null
           last_login?: string | null
+          last_login_at?: string | null
+          last_name?: string | null
           notification_preferences?: Json | null
           phone?: string | null
+          security_settings?: Json | null
+          system_preferences?: Json | null
           theme?: string | null
+          time_zone?: string | null
           title?: string | null
           updated_at?: string | null
           username?: string | null
         }
         Update: {
+          accessibility_preferences?: Json | null
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string | null
           department?: string | null
+          emergency_contact?: Json | null
+          first_name?: string | null
           id?: string
           job_title_validated?: boolean | null
+          language?: string | null
           last_login?: string | null
+          last_login_at?: string | null
+          last_name?: string | null
           notification_preferences?: Json | null
           phone?: string | null
+          security_settings?: Json | null
+          system_preferences?: Json | null
           theme?: string | null
+          time_zone?: string | null
           title?: string | null
           updated_at?: string | null
           username?: string | null
@@ -3342,6 +3372,36 @@ export type Database = {
           key?: string
           updated_at?: string | null
           value?: Json
+        }
+        Relationships: []
+      }
+      user_sessions: {
+        Row: {
+          created_at: string | null
+          device_info: Json | null
+          id: string
+          ip_address: string | null
+          last_active_at: string | null
+          location: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          device_info?: Json | null
+          id?: string
+          ip_address?: string | null
+          last_active_at?: string | null
+          location?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          device_info?: Json | null
+          id?: string
+          ip_address?: string | null
+          last_active_at?: string | null
+          location?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
