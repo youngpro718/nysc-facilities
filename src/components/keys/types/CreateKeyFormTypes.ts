@@ -15,20 +15,8 @@ export const keyFormSchema = z.object({
   occupantId: z.string().optional(),
   spareKeys: z.number()
     .min(0, "Spare keys cannot be negative")
-    .default(0)
-    .refine(
-      (val) => true,
-      (val) => ({
-        message: "Passkeys require at least 2 spare keys",
-        path: ["spareKeys"]
-      })
-    ),
+    .default(0),
 }).refine((data) => {
-  // If it's a passkey, ensure there are at least 2 spare keys
-  if (data.isPasskey && data.spareKeys < 2) {
-    return false;
-  }
-
   // For non-passkeys, require floor and door/room based on keyScope
   if (!data.isPasskey) {
     if (!data.floorId) return false;

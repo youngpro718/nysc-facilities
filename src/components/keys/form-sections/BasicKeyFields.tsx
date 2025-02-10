@@ -17,11 +17,6 @@ export function BasicKeyFields({ form }: BasicKeyFieldsProps) {
   // Handle passkey toggle
   const handlePasskeyChange = (checked: boolean) => {
     form.setValue("isPasskey", checked);
-    
-    // If enabling passkey, ensure we have at least 2 spare keys
-    if (checked && form.getValues("spareKeys") < 2) {
-      form.setValue("spareKeys", 2);
-    }
   };
 
   return (
@@ -119,15 +114,13 @@ export function BasicKeyFields({ form }: BasicKeyFieldsProps) {
             <FormControl>
               <Input 
                 type="number" 
-                min={form.getValues("isPasskey") ? 2 : 0}
+                min={0}
                 {...field}
                 onChange={e => field.onChange(parseInt(e.target.value) || 0)}
               />
             </FormControl>
             <FormDescription>
-              {form.getValues("isPasskey") 
-                ? "Passkeys require at least 2 spare keys"
-                : "Number of additional spare keys to create"}
+              Number of additional spare keys to create
             </FormDescription>
             <FormMessage />
           </FormItem>
