@@ -2,16 +2,11 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Form } from "@/components/ui/form";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
-import { IssueTypeSelection } from "./wizard/IssueTypeSelection";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { CreateIssueForm } from "./CreateIssueForm";
+import { IssueTypeSelection, issueTypes } from "./wizard/IssueTypeSelection";
 import { IssueDetailsForm } from "./wizard/IssueDetailsForm";
 import { IssueLocationForm } from "./wizard/IssueLocationForm";
 import { IssuePhotoForm } from "./wizard/IssuePhotoForm";
@@ -23,6 +18,7 @@ import { usePhotoUpload } from "./hooks/usePhotoUpload";
 
 export function CreateIssueDialog({ onIssueCreated }: { onIssueCreated: () => void }) {
   const [open, setOpen] = useState(false);
+  const isMobile = useIsMobile();
   const [selectedBuilding, setSelectedBuilding] = useState<string | null>(null);
   const [selectedFloor, setSelectedFloor] = useState<string | null>(null);
   const { uploading, selectedPhotos, setSelectedPhotos, handlePhotoUpload } = usePhotoUpload();
@@ -87,11 +83,12 @@ export function CreateIssueDialog({ onIssueCreated }: { onIssueCreated: () => vo
           Add Issue
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto max-w-2xl">
+      <DialogContent className={isMobile ? "max-h-[90vh] overflow-y-auto" : "max-w-5xl"}>
         <DialogHeader>
           <DialogTitle>Create New Issue</DialogTitle>
         </DialogHeader>
-        <Form {...form}>
+        
+        {isMobile ? (
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {renderStep()}
             
@@ -111,7 +108,9 @@ export function CreateIssueDialog({ onIssueCreated }: { onIssueCreated: () => vo
               </Button>
             </div>
           </form>
-        </Form>
+        ) : (
+          <CreateIssueForm onSubmit={onSubmit} />
+        )}
       </DialogContent>
     </Dialog>
   );

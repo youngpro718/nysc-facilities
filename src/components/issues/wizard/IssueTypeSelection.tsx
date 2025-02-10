@@ -8,6 +8,8 @@ interface IssueTypeIcon {
   label: string;
   defaultTitle: string;
   defaultDescription: string;
+  contextFields: string[];
+  requiredPhotos: number;
 }
 
 const issueTypes: IssueTypeIcon[] = [
@@ -17,6 +19,8 @@ const issueTypes: IssueTypeIcon[] = [
     label: "HVAC Issue",
     defaultTitle: "HVAC Problem",
     defaultDescription: "Temperature or ventilation issue",
+    contextFields: ["temperature", "occupancy_status", "maintenance_history"],
+    requiredPhotos: 1
   },
   {
     type: "Leak",
@@ -24,6 +28,8 @@ const issueTypes: IssueTypeIcon[] = [
     label: "Water Leak",
     defaultTitle: "Water Leak",
     defaultDescription: "Water leak or plumbing issue",
+    contextFields: ["damage_assessment", "urgency_reason"],
+    requiredPhotos: 2
   },
   {
     type: "Electrical",
@@ -31,6 +37,8 @@ const issueTypes: IssueTypeIcon[] = [
     label: "Electrical",
     defaultTitle: "Electrical Problem",
     defaultDescription: "Electrical or lighting issue",
+    contextFields: ["safety_assessment", "maintenance_history"],
+    requiredPhotos: 1
   },
   {
     type: "Plaster",
@@ -38,6 +46,8 @@ const issueTypes: IssueTypeIcon[] = [
     label: "Plaster",
     defaultTitle: "Plaster Repair",
     defaultDescription: "Wall or ceiling damage",
+    contextFields: ["area_size", "damage_assessment"],
+    requiredPhotos: 2
   },
   {
     type: "Cleaning",
@@ -45,6 +55,8 @@ const issueTypes: IssueTypeIcon[] = [
     label: "Cleaning",
     defaultTitle: "Cleaning Required",
     defaultDescription: "Area needs cleaning or maintenance",
+    contextFields: ["area_size", "urgency_reason"],
+    requiredPhotos: 1
   },
   {
     type: "Other",
@@ -52,6 +64,8 @@ const issueTypes: IssueTypeIcon[] = [
     label: "Other",
     defaultTitle: "Other Issue",
     defaultDescription: "Other maintenance or facility issue",
+    contextFields: [],
+    requiredPhotos: 1
   },
 ];
 

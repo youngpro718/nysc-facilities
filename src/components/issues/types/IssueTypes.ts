@@ -24,6 +24,14 @@ export type FormData = {
   room_id?: string;
   photos?: string[];
   fixture_id?: string;
+  // Extended fields for context-aware forms
+  temperature?: number;
+  occupancy_status?: "occupied" | "vacant";
+  maintenance_history?: string;
+  safety_assessment?: string;
+  damage_assessment?: string;
+  area_size?: string;
+  urgency_reason?: string;
 };
 
 export type Step = "type-selection" | "details" | "location" | "type" | "photos";
