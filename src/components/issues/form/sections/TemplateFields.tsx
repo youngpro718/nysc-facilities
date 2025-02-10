@@ -2,14 +2,14 @@
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { UseFormReturn } from "react-hook-form";
-import { FormData } from "../../types/IssueTypes";
+import { FormData, IssueType } from "../../types/IssueTypes";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface TemplateFieldsProps {
   form: UseFormReturn<FormData>;
-  selectedType?: string;
+  selectedType?: IssueType;
 }
 
 interface TemplateField {
