@@ -44,6 +44,17 @@ const personalInfoSchema = z.object({
 
 type PersonalInfoValues = z.infer<typeof personalInfoSchema>;
 
+// Type guard for emergency contact
+function isValidEmergencyContact(contact: unknown): contact is { name?: string; phone?: string; relationship?: string } {
+  if (!contact || typeof contact !== 'object') return false;
+  const c = contact as Record<string, unknown>;
+  return (
+    (!('name' in c) || typeof c.name === 'string') &&
+    (!('phone' in c) || typeof c.phone === 'string') &&
+    (!('relationship' in c) || typeof c.relationship === 'string')
+  );
+}
+
 const timeZones = [
   "UTC",
   "America/New_York",
@@ -96,16 +107,20 @@ export function PersonalInfoForm() {
           .single();
 
         if (profile && mounted) {
-          // Ensure emergency_contact is properly typed
-          const emergencyContact = profile.emergency_contact ? {
-            name: String(profile.emergency_contact?.name || ""),
-            phone: String(profile.emergency_contact?.phone || ""),
-            relationship: String(profile.emergency_contact?.relationship || ""),
-          } : {
+          // Parse emergency contact data safely using the type guard
+          let emergencyContact = {
             name: "",
             phone: "",
             relationship: "",
           };
+
+          if (profile.emergency_contact && isValidEmergencyContact(profile.emergency_contact)) {
+            emergencyContact = {
+              name: profile.emergency_contact.name || "",
+              phone: profile.emergency_contact.phone || "",
+              relationship: profile.emergency_contact.relationship || "",
+            };
+          }
 
           form.reset({
             first_name: profile.first_name || "",
