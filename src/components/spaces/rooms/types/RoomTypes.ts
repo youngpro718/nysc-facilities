@@ -1,3 +1,4 @@
+
 export interface RoomConnection {
   id: string;
   direction: "north" | "south" | "east" | "west" | "adjacent";
@@ -18,17 +19,25 @@ export type StorageType = "file_storage" | "equipment_storage" | "supply_storage
   "evidence_storage" | "record_storage" | "general_storage";
 
 export type IssueType = 
-  | "HVAC" 
-  | "Leak" 
-  | "Electrical" 
-  | "Plaster" 
-  | "Cleaning" 
-  | "Other" 
-  | "Lighting_Ballast" 
-  | "Lighting_Replacement" 
-  | "Lighting_Emergency" 
-  | "Lighting_Sensor"
-  | "Lighting_Control";
+  | "ACCESS_REQUEST"
+  | "BUILDING_SYSTEMS"
+  | "CEILING"
+  | "CLEANING_REQUEST"
+  | "CLIMATE_CONTROL"
+  | "DOOR"
+  | "ELECTRICAL_NEEDS"
+  | "EMERGENCY"
+  | "EXTERIOR_FACADE"
+  | "FLAGPOLE_FLAG"
+  | "FLOORING"
+  | "GENERAL_REQUESTS"
+  | "LEAK"
+  | "LIGHTING"
+  | "LOCK"
+  | "PLUMBING_NEEDS"
+  | "RESTROOM_REPAIR"
+  | "SIGNAGE"
+  | "WINDOW";
 
 export interface RoomIssue {
   id: string;

@@ -1,5 +1,5 @@
 
-import { Thermometer, Droplet, Zap, Construction, Spray, WrenchIcon } from "lucide-react";
+import { Thermometer, Droplet, Zap, Construction, Wrench, CleaningIcon } from "lucide-react";
 import { FormData, IssueType } from "../types/IssueTypes";
 
 interface IssueTypeIcon {
@@ -51,7 +51,7 @@ const issueTypes: IssueTypeIcon[] = [
   },
   {
     type: "CLEANING_REQUEST",
-    icon: <Spray className="h-12 w-12" />,
+    icon: <CleaningIcon className="h-12 w-12" />,
     label: "Cleaning",
     defaultTitle: "Cleaning Required",
     defaultDescription: "Area needs cleaning or maintenance",
@@ -60,7 +60,7 @@ const issueTypes: IssueTypeIcon[] = [
   },
   {
     type: "GENERAL_REQUESTS",
-    icon: <WrenchIcon className="h-12 w-12" />,
+    icon: <Wrench className="h-12 w-12" />,
     label: "General Request",
     defaultTitle: "General Maintenance Request",
     defaultDescription: "Other maintenance or facility issue",
