@@ -1497,10 +1497,15 @@ export type Database = {
           created_at: string | null
           default_assigned_to: Database["public"]["Enums"]["party_enum"] | null
           default_priority: string | null
+          icon_name: string | null
           id: string
+          max_photos: number | null
+          min_photos: number | null
           optional_fields: Json | null
+          photos_required: boolean | null
           required_fields: Json | null
           subcategory: string | null
+          template_order: number | null
           type: Database["public"]["Enums"]["issue_type_enum"]
           updated_at: string | null
         }
@@ -1508,10 +1513,15 @@ export type Database = {
           created_at?: string | null
           default_assigned_to?: Database["public"]["Enums"]["party_enum"] | null
           default_priority?: string | null
+          icon_name?: string | null
           id?: string
+          max_photos?: number | null
+          min_photos?: number | null
           optional_fields?: Json | null
+          photos_required?: boolean | null
           required_fields?: Json | null
           subcategory?: string | null
+          template_order?: number | null
           type: Database["public"]["Enums"]["issue_type_enum"]
           updated_at?: string | null
         }
@@ -1519,10 +1529,15 @@ export type Database = {
           created_at?: string | null
           default_assigned_to?: Database["public"]["Enums"]["party_enum"] | null
           default_priority?: string | null
+          icon_name?: string | null
           id?: string
+          max_photos?: number | null
+          min_photos?: number | null
           optional_fields?: Json | null
+          photos_required?: boolean | null
           required_fields?: Json | null
           subcategory?: string | null
+          template_order?: number | null
           type?: Database["public"]["Enums"]["issue_type_enum"]
           updated_at?: string | null
         }
