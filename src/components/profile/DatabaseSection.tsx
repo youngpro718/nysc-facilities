@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Database, History } from "lucide-react";
 import { useState } from "react";
-import { BackupVersion, ExportableTable, fetchBackupVersions } from "./backupUtils";
+import { BackupVersion, ExportableTable, fetchBackupVersions, restoreBackup } from "./backupUtils";
 import { exportDatabase } from "./utils/databaseExport";
 import { importDatabase } from "./utils/databaseImport";
 import { BackupHistoryDialog } from "./components/BackupHistoryDialog";
@@ -87,6 +87,23 @@ export function DatabaseSection() {
     }
   };
 
+  const handleRestoreBackup = async (backup: BackupVersion) => {
+    try {
+      await restoreBackup(backup.id, backup.tables);
+      toast({
+        title: "Restore Started",
+        description: "Backup restoration has been initiated.",
+      });
+    } catch (error) {
+      console.error('Restore error:', error);
+      toast({
+        title: "Restore Failed",
+        description: "There was an error starting the backup restoration.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <Card className="p-6">
       <div className="space-y-6">
@@ -126,6 +143,7 @@ export function DatabaseSection() {
             <li>Large databases may take a few moments to process</li>
             <li>Make sure to keep a backup of your data before importing new records</li>
             <li>The import process will validate data before making any changes</li>
+            <li>Backups can be encrypted and compressed for additional security and storage optimization</li>
           </ul>
         </div>
 
@@ -133,6 +151,7 @@ export function DatabaseSection() {
           open={showHistory}
           onOpenChange={setShowHistory}
           backupVersions={backupVersions}
+          onRestore={handleRestoreBackup}
         />
       </div>
     </Card>

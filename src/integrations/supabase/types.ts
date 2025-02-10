@@ -90,41 +90,144 @@ export type Database = {
         }
         Relationships: []
       }
-      backup_versions: {
+      backup_restorations: {
         Row: {
+          backup_version_id: string | null
+          completed_at: string | null
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          restored_by: string | null
+          restored_tables: string[] | null
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          backup_version_id?: string | null
+          completed_at?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          restored_by?: string | null
+          restored_tables?: string[] | null
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          backup_version_id?: string | null
+          completed_at?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          restored_by?: string | null
+          restored_tables?: string[] | null
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "backup_restorations_backup_version_id_fkey"
+            columns: ["backup_version_id"]
+            isOneToOne: false
+            referencedRelation: "backup_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      backup_retention_policies: {
+        Row: {
+          compress_backups: boolean | null
           created_at: string | null
           created_by: string | null
           description: string | null
+          encrypt_backups: boolean | null
+          id: string
+          is_active: boolean | null
+          max_backups: number
+          retention_days: number
+          updated_at: string | null
+        }
+        Insert: {
+          compress_backups?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          encrypt_backups?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          max_backups?: number
+          retention_days?: number
+          updated_at?: string | null
+        }
+        Update: {
+          compress_backups?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          encrypt_backups?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          max_backups?: number
+          retention_days?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      backup_versions: {
+        Row: {
+          compressed: boolean | null
+          compression_ratio: number | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          encrypted: boolean | null
           id: string
           metadata: Json | null
           name: string
+          retention_policy_id: string | null
           size_bytes: number | null
           status: string | null
           tables: string[]
         }
         Insert: {
+          compressed?: boolean | null
+          compression_ratio?: number | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
+          encrypted?: boolean | null
           id?: string
           metadata?: Json | null
           name: string
+          retention_policy_id?: string | null
           size_bytes?: number | null
           status?: string | null
           tables: string[]
         }
         Update: {
+          compressed?: boolean | null
+          compression_ratio?: number | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
+          encrypted?: boolean | null
           id?: string
           metadata?: Json | null
           name?: string
+          retention_policy_id?: string | null
           size_bytes?: number | null
           status?: string | null
           tables?: string[]
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "backup_versions_retention_policy_id_fkey"
+            columns: ["retention_policy_id"]
+            isOneToOne: false
+            referencedRelation: "backup_retention_policies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       buildings: {
         Row: {
