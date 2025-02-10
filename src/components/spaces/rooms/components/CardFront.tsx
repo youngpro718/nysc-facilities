@@ -55,9 +55,7 @@ export function CardFront({ room, onDelete }: CardFrontProps) {
             )}
             <p className="text-sm text-muted-foreground">Type: {room.room_type}</p>
             <div className="flex items-center gap-2">
-              <LightingStatusIndicator 
-                fixture={room.lighting_fixture} 
-              />
+              <LightingStatusIndicator roomId={room.id} />
             </div>
             {room.phone_number && (
               <p className="text-sm text-muted-foreground flex items-center gap-2">

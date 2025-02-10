@@ -42,7 +42,36 @@ export function RoomLightingConfig({ roomId }: RoomLightingConfigProps) {
         throw error;
       }
 
-      return (fixtureData || []) as LightingFixture[];
+      // Transform the data to match LightingFixture type
+      return (fixtureData || []).map(fixture => ({
+        ...fixture,
+        energy_usage_data: fixture.energy_usage_data ? {
+          daily_usage: [],
+          efficiency_rating: null,
+          last_reading: null,
+          ...JSON.parse(JSON.stringify(fixture.energy_usage_data))
+        } : null,
+        emergency_protocols: fixture.emergency_protocols ? {
+          emergency_contact: null,
+          backup_system: false,
+          evacuation_route: false,
+          ...JSON.parse(JSON.stringify(fixture.emergency_protocols))
+        } : null,
+        warranty_info: fixture.warranty_info ? {
+          start_date: null,
+          end_date: null,
+          provider: null,
+          terms: null,
+          ...JSON.parse(JSON.stringify(fixture.warranty_info))
+        } : null,
+        manufacturer_details: fixture.manufacturer_details ? {
+          name: null,
+          model: null,
+          serial_number: null,
+          support_contact: null,
+          ...JSON.parse(JSON.stringify(fixture.manufacturer_details))
+        } : null
+      })) as LightingFixture[];
     }
   });
 

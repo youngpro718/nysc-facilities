@@ -12,20 +12,6 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-interface LightingFixture {
-  id: string;
-  status: "functional" | "maintenance_needed" | "non_functional" | "pending_maintenance" | "scheduled_replacement";
-  type: "standard" | "emergency" | "motion_sensor";
-  technology?: "LED" | "Fluorescent" | "Bulb" | null;
-  electrical_issues?: {
-    short_circuit: boolean;
-    wiring_issues: boolean;
-    voltage_problems: boolean;
-  };
-  ballast_issue?: boolean;
-  maintenance_notes?: string;
-}
-
 interface LightingStatusIndicatorProps {
   roomId?: string;
 }
@@ -40,7 +26,7 @@ export function LightingStatusIndicator({ roomId }: LightingStatusIndicatorProps
         .from('room_lighting_status')
         .select('*')
         .eq('room_id', roomId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching room lighting status:', error);
