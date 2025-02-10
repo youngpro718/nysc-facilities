@@ -6,6 +6,7 @@ import { UseFormReturn } from "react-hook-form";
 import { FormData } from "../types/IssueTypes";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { TemplateFields } from "../form/sections/TemplateFields";
 
 interface IssueTypeFormProps {
   form: UseFormReturn<FormData>;
@@ -59,7 +60,6 @@ export function IssueTypeForm({ form }: IssueTypeFormProps) {
         return;
       }
 
-      // Transform the data to match our IssueTemplate interface
       const transformedData = data.map(template => ({
         ...template,
         required_fields: typeof template.required_fields === 'string' 
@@ -84,7 +84,6 @@ export function IssueTypeForm({ form }: IssueTypeFormProps) {
     }
   }, [selectedCategory]);
 
-  // Update default values when template is selected
   useEffect(() => {
     const selectedSubcategory = form.watch("template_fields.problem");
     const template = templates.find(t => t.subcategory === selectedSubcategory);
@@ -210,6 +209,8 @@ export function IssueTypeForm({ form }: IssueTypeFormProps) {
           </FormItem>
         )}
       />
+
+      <TemplateFields form={form} selectedType={selectedCategory} />
     </div>
   );
 }
