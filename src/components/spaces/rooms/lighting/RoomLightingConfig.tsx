@@ -95,7 +95,9 @@ export function RoomLightingConfig({ roomId }: RoomLightingConfigProps) {
           short_circuit: false,
           wiring_issues: false,
           voltage_problems: false,
-          ...fixture.electrical_issues
+          ...(typeof fixture.electrical_issues === 'object' && fixture.electrical_issues !== null 
+            ? fixture.electrical_issues 
+            : {})
         }
       })) as LightingFixture[];
     }
