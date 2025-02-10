@@ -3,7 +3,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { UseFormReturn } from "react-hook-form";
-import { FormData } from "../types/IssueTypes";
+import { FormData, IssueType } from "../types/IssueTypes";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TemplateFields } from "../form/sections/TemplateFields";
@@ -14,7 +14,7 @@ interface IssueTypeFormProps {
 }
 
 interface IssueTemplate {
-  type: string;
+  type: IssueType;  // Updated to use IssueType instead of string
   subcategory: string;
   required_fields: Record<string, any>;
   optional_fields: Record<string, any>;
@@ -54,6 +54,8 @@ export function IssueTypeForm({ form }: IssueTypeFormProps) {
 
       const transformedData = data.map(template => ({
         ...template,
+        // Ensure the type is cast to IssueType
+        type: template.type as IssueType,
         required_fields: typeof template.required_fields === 'string' 
           ? JSON.parse(template.required_fields)
           : template.required_fields,
