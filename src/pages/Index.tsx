@@ -13,9 +13,9 @@ const Index = () => {
         .from("buildings")
         .select(`
           *,
-          floors!inner (
+          floors (
             id,
-            rooms!inner (
+            rooms (
               id,
               room_number,
               name
@@ -42,9 +42,9 @@ const Index = () => {
       // Map lighting data to buildings
       return data.map(building => ({
         ...building,
-        floors: building.floors.map(floor => ({
+        floors: building.floors?.map(floor => ({
           ...floor,
-          rooms: floor.rooms.map(room => ({
+          rooms: floor.rooms?.map(room => ({
             ...room,
             room_lighting_status: [
               lightingData?.find(status => status.room_id === room.id) || {
@@ -54,7 +54,7 @@ const Index = () => {
               }
             ]
           }))
-        }))
+        })) || []
       }));
     },
   });
