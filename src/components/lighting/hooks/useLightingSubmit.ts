@@ -30,6 +30,14 @@ export const useLightingSubmit = (onFixtureCreated: () => void, onZoneCreated: (
 
       if (fixtureError) throw fixtureError;
 
+      // Get the next sequence number for this space
+      const { data: sequenceData, error: sequenceError } = await supabase
+        .rpc('get_next_lighting_sequence', {
+          p_space_id: data.space_id
+        });
+
+      if (sequenceError) throw sequenceError;
+
       // Then create the spatial assignment
       const { error: assignmentError } = await supabase
         .from('spatial_assignments')
@@ -37,7 +45,8 @@ export const useLightingSubmit = (onFixtureCreated: () => void, onZoneCreated: (
           fixture_id: fixture.id,
           space_id: data.space_id,
           space_type: data.space_type,
-          position: data.position
+          position: data.position,
+          sequence_number: sequenceData
         });
 
       if (assignmentError) throw assignmentError;
