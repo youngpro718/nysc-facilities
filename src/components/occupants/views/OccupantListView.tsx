@@ -1,9 +1,11 @@
 
+import { useState } from "react";
 import { LoadingState } from "../LoadingState";
 import { ErrorState } from "../ErrorState";
 import { OccupantHeader } from "../OccupantHeader";
 import { OccupantFilters } from "../OccupantFilters";
-import { OccupantTable } from "../OccupantTable";
+import { OccupantContent } from "../OccupantContent";
+import { OccupantViewToggle } from "../OccupantViewToggle";
 import { CreateOccupantDialog } from "../CreateOccupantDialog";
 import { EditOccupantDialog } from "../dialogs/EditOccupantDialog";
 import { AssignKeysDialog } from "../AssignKeysDialog";
@@ -12,6 +14,8 @@ import { useOccupantList } from "../hooks/useOccupantList";
 import { useOccupantDialogs } from "../hooks/useOccupantDialogs";
 
 export function OccupantListView() {
+  const [view, setView] = useState<"grid" | "list">("list");
+  
   const {
     occupants,
     isLoading,
@@ -48,13 +52,16 @@ export function OccupantListView() {
 
   return (
     <div className="space-y-6">
-      <OccupantHeader
-        selectedOccupants={selectedOccupants}
-        onBulkStatusUpdate={handleBulkStatusUpdate}
-        onAssignKeys={() => setIsAssignKeysDialogOpen(true)}
-        onAssignRooms={() => setIsAssignRoomsDialogOpen(true)}
-        onCreateOccupant={() => setIsCreateDialogOpen(true)}
-      />
+      <div className="flex items-center justify-between">
+        <OccupantHeader
+          selectedOccupants={selectedOccupants}
+          onBulkStatusUpdate={handleBulkStatusUpdate}
+          onAssignKeys={() => setIsAssignKeysDialogOpen(true)}
+          onAssignRooms={() => setIsAssignRoomsDialogOpen(true)}
+          onCreateOccupant={() => setIsCreateDialogOpen(true)}
+        />
+        <OccupantViewToggle view={view} onViewChange={setView} />
+      </div>
 
       <OccupantFilters
         searchQuery={searchQuery}
@@ -70,7 +77,8 @@ export function OccupantListView() {
       ) : isError ? (
         <ErrorState error={error as Error} onRetry={refetch} />
       ) : (
-        <OccupantTable
+        <OccupantContent
+          view={view}
           occupants={occupants}
           expandedRows={expandedRows}
           selectedOccupants={selectedOccupants}
