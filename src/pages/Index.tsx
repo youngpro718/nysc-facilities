@@ -17,7 +17,11 @@ const Index = () => {
             id,
             rooms (
               id,
-              room_lighting_status (*)
+              room_lighting_status (
+                working_fixtures,
+                non_working_fixtures,
+                total_fixtures
+              )
             )
           )
         `);
