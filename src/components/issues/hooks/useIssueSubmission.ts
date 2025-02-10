@@ -27,6 +27,7 @@ export const useIssueSubmission = ({
 }: UseIssueSubmissionProps) => {
   const onSubmit = async (data: FormData) => {
     try {
+      // Cast data.type to IssueType to ensure type safety
       const issueData = {
         ...data,
         photos: selectedPhotos,

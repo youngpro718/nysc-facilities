@@ -29,8 +29,9 @@ export const useIssueData = (
           `)
           .order(sort.field, { ascending: sort.direction === 'asc' });
 
+        // Use eq operator for enum comparison
         if (filters.type && filters.type !== 'all_types') {
-          query = query.eq('type', filters.type);  // Changed from using LIKE to eq for enum comparison
+          query = query.eq('type', filters.type);
         }
         if (filters.status && filters.status !== 'all_statuses') {
           query = query.eq('status', filters.status);
