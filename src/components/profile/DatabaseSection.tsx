@@ -1,14 +1,14 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Database, Download, History, Upload } from "lucide-react";
 import { useState } from "react";
 import * as XLSX from 'xlsx';
 import { TablesInsert } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
-import { BackupVersion, createBackupVersion, fetchBackupVersions } from "./backupUtils";
+import { BackupVersion, createBackupVersion, fetchBackupVersions, ExportableTable } from "./backupUtils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 
@@ -23,8 +23,6 @@ const EXPORTABLE_TABLES = [
   'lighting_zones',
   'issues'
 ] as const;
-
-type ExportableTable = typeof EXPORTABLE_TABLES[number];
 
 export function DatabaseSection() {
   const { toast } = useToast();
@@ -53,7 +51,7 @@ export function DatabaseSection() {
       setIsExporting(true);
       
       const workbook = XLSX.utils.book_new();
-      const exportTables = selectedTables.length > 0 ? selectedTables : EXPORTABLE_TABLES;
+      const exportTables = selectedTables.length > 0 ? selectedTables : [...EXPORTABLE_TABLES];
       
       for (const table of exportTables) {
         const { data, error } = await supabase
@@ -183,7 +181,7 @@ export function DatabaseSection() {
                     multiple
                     className="w-full p-2 rounded-md border"
                     onChange={(e) => {
-                      const options = Array.from(e.target.selectedOptions, option => option.value);
+                      const options = Array.from(e.target.selectedOptions, option => option.value as ExportableTable);
                       setSelectedTables(options);
                     }}
                   >

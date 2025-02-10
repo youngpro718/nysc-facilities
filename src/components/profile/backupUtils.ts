@@ -1,12 +1,15 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
+export type ExportableTable = 'buildings' | 'floors' | 'rooms' | 'occupants' | 'keys' | 
+  'key_assignments' | 'lighting_fixtures' | 'lighting_zones' | 'issues';
+
 export interface BackupVersion {
   id: string;
   name: string;
   description: string | null;
   size_bytes: number;
-  tables: string[];
+  tables: ExportableTable[];
   created_at: string;
   status: string;
   metadata: any;
