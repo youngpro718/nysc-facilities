@@ -10,6 +10,7 @@ import { AssignmentFields } from "./AssignmentFields";
 import { IssueLocationForm } from "../wizard/IssueLocationForm";
 import { IssuePhotoForm } from "../wizard/IssuePhotoForm";
 import { IssueTypeForm } from "../wizard/IssueTypeForm";
+import { AdvancedFields } from "./sections/AdvancedFields";
 import { Button } from "@/components/ui/button";
 import { usePhotoUpload } from "../hooks/usePhotoUpload";
 import { useState } from "react";
@@ -56,12 +57,13 @@ export function DetailedIssueForm({ onSubmit, initialData }: DetailedIssueFormPr
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
             <Tabs defaultValue="basic" className="w-full">
-              <TabsList className="grid w-full grid-cols-6">
+              <TabsList className="grid w-full grid-cols-7">
                 <TabsTrigger value="basic">Basic Info</TabsTrigger>
                 <TabsTrigger value="type">Type & Category</TabsTrigger>
                 <TabsTrigger value="location">Location</TabsTrigger>
                 <TabsTrigger value="timeline">Timeline</TabsTrigger>
                 <TabsTrigger value="assignment">Assignment</TabsTrigger>
+                <TabsTrigger value="advanced">Advanced</TabsTrigger>
                 <TabsTrigger value="photos">Photos</TabsTrigger>
               </TabsList>
 
@@ -99,6 +101,12 @@ export function DetailedIssueForm({ onSubmit, initialData }: DetailedIssueFormPr
                 <TabsContent value="assignment">
                   <ScrollArea className="h-[500px] pr-4">
                     <AssignmentFields form={form} />
+                  </ScrollArea>
+                </TabsContent>
+
+                <TabsContent value="advanced">
+                  <ScrollArea className="h-[500px] pr-4">
+                    <AdvancedFields form={form} />
                   </ScrollArea>
                 </TabsContent>
 

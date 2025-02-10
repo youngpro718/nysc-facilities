@@ -34,7 +34,19 @@ export type FormData = {
   room_id?: string;
   photos?: string[];
   fixture_id?: string;
-  due_date?: string;  // Added this field
+  due_date?: string;
+  area_affected?: string;
+  additional_stakeholders?: string[];
+  related_issues?: string[];
+  maintenance_priority?: "low" | "medium" | "high";
+  inspection_schedule?: string;
+  resolution_notes?: string;
+  cost_estimate?: number;
+  labels?: string[];
+  draft?: boolean;
+  custom_fields?: Record<string, any>;
+  maintenance_history?: MaintenanceRecord[];
+  references?: Reference[];
 };
 
 export type Step = "type-selection" | "details" | "location" | "type" | "photos";
@@ -62,10 +74,36 @@ export type Issue = {
   floorName?: string;
   roomName?: string;
   fixture_id?: string;
+  area_affected?: string;
+  additional_stakeholders?: string[];
+  related_issues?: string[];
+  maintenance_priority?: "low" | "medium" | "high";
+  inspection_schedule?: string;
+  resolution_notes?: string;
+  cost_estimate?: number;
+  labels?: string[];
+  custom_fields?: Record<string, any>;
+  maintenance_history?: MaintenanceRecord[];
+  references?: Reference[];
 };
 
 export type StatusHistory = {
   status: string;
   changed_at: string;
   previous_status: string;
+};
+
+export type MaintenanceRecord = {
+  date: string;
+  type: string;
+  description: string;
+  performed_by: string;
+  cost?: number;
+};
+
+export type Reference = {
+  type: "document" | "link" | "image";
+  url: string;
+  title: string;
+  description?: string;
 };
