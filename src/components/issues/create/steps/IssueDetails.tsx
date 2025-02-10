@@ -20,20 +20,20 @@ export function IssueDetails({ form }: IssueDetailsProps) {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <FormField
         control={form.control}
         name="title"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Title</FormLabel>
+            <FormLabel className="text-lg font-medium">Title</FormLabel>
             <FormDescription>
               Provide a clear, concise title that describes the issue
             </FormDescription>
             <FormControl>
               <Input 
                 {...field} 
-                className="h-12" 
+                className="h-12 text-base bg-background/50 border-white/10" 
                 placeholder="e.g., Broken Light Fixture in Room 203"
               />
             </FormControl>
@@ -47,15 +47,15 @@ export function IssueDetails({ form }: IssueDetailsProps) {
         name="description"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Description</FormLabel>
+            <FormLabel className="text-lg font-medium">Description</FormLabel>
             <FormDescription>
-              Provide detailed information about the issue
+              Provide detailed information about the issue, including any relevant context
             </FormDescription>
             <FormControl>
-              <div className="min-h-[200px] rounded-md border">
+              <div className="min-h-[300px] rounded-md border border-white/10 bg-background/50 overflow-hidden">
                 <EditorContent 
                   editor={editor} 
-                  className="prose prose-invert max-w-none p-4"
+                  className="prose prose-invert max-w-none p-4 min-h-[300px]"
                 />
               </div>
             </FormControl>

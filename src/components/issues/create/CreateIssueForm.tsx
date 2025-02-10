@@ -12,15 +12,20 @@ import { IssueDetails } from "./steps/IssueDetails";
 import { LocationSelection } from "./steps/LocationSelection";
 import { PhotoUpload } from "./steps/PhotoUpload";
 import { ReviewSubmit } from "./steps/ReviewSubmit";
-import { useIssueForm } from "../hooks/useIssueForm";
 import type { FormData } from "../types/IssueTypes";
+import { useState } from "react";
 
 interface CreateIssueFormProps {
   onSubmit: (data: FormData) => Promise<void>;
   initialType?: FormData["type"];
 }
 
+type Step = "type" | "details" | "location" | "photos" | "review";
+
 export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps) {
+  const [currentStep, setCurrentStep] = useState<Step>("type");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const form = useForm<FormData>({
     defaultValues: {
       status: "open",
@@ -30,16 +35,22 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
     }
   });
 
-  const { 
-    isSubmitting,
-    handleSubmit,
-    currentStep,
-    setCurrentStep,
-    handlePrevious,
-    handleNext
-  } = useIssueForm(form, onSubmit);
+  const handleSubmit = async (data: FormData) => {
+    try {
+      setIsSubmitting(true);
+      await onSubmit(data);
+      toast.success("Issue created successfully");
+      form.reset();
+      setCurrentStep("type");
+    } catch (error) {
+      toast.error("Failed to create issue");
+      console.error("Submit error:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-  const steps = [
+  const steps: Array<{ id: Step; label: string }> = [
     { id: "type", label: "Type & Priority" },
     { id: "details", label: "Details" },
     { id: "location", label: "Location" },
@@ -47,21 +58,35 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
     { id: "review", label: "Review" }
   ];
 
+  const currentStepIndex = steps.findIndex(step => step.id === currentStep);
+
+  const handleNext = () => {
+    if (currentStepIndex < steps.length - 1) {
+      setCurrentStep(steps[currentStepIndex + 1].id);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentStepIndex > 0) {
+      setCurrentStep(steps[currentStepIndex - 1].id);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <Card className="bg-card/30 backdrop-blur-xl border-white/10 shadow-2xl">
         <div className="p-4 sm:p-6">
           <Form {...form}>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <Tabs value={currentStep} onValueChange={setCurrentStep} className="w-full">
-                <TabsList className="w-full justify-between bg-background/50 p-1 rounded-lg backdrop-blur-sm">
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+              <Tabs value={currentStep} onValueChange={(value) => setCurrentStep(value as Step)} className="w-full">
+                <TabsList className="w-full grid grid-cols-5 gap-2 bg-background/50 p-1 rounded-lg backdrop-blur-sm">
                   {steps.map((step) => (
                     <TabsTrigger
                       key={step.id}
                       value={step.id}
                       className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground
-                        transition-all duration-200 text-sm py-2
-                        data-[state=active]:shadow-lg disabled:opacity-50"
+                        transition-all duration-200 text-sm py-2 px-4
+                        data-[state=active]:shadow-lg disabled:opacity-50 relative"
                       disabled={isSubmitting}
                     >
                       {step.label}
@@ -69,7 +94,7 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
                   ))}
                 </TabsList>
 
-                <div className="mt-6">
+                <div className="mt-8">
                   <TabsContent value="type" className="m-0">
                     <ScrollArea className="h-[500px] pr-4">
                       <TypeSelection form={form} />
@@ -117,7 +142,7 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
                   <Button 
                     type="submit" 
                     disabled={isSubmitting} 
-                    className="w-32"
+                    className="w-32 bg-primary hover:bg-primary/90"
                   >
                     {isSubmitting ? (
                       <>
@@ -132,8 +157,8 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
                   <Button
                     type="button"
                     onClick={handleNext}
-                    disabled={currentStep === "review" || isSubmitting}
-                    className="w-32"
+                    disabled={isSubmitting}
+                    className="w-32 bg-primary hover:bg-primary/90"
                   >
                     Next
                   </Button>

@@ -6,6 +6,7 @@ import { Plus } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { IssueWizard } from "./create/IssueWizard";
 import { CreateIssueForm } from "./create/CreateIssueForm";
+import { supabase } from "@/integrations/supabase/client";
 import type { FormData } from "./types/IssueTypes";
 
 interface CreateIssueDialogProps {
@@ -39,14 +40,14 @@ export function CreateIssueDialog({ onIssueCreated }: CreateIssueDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
           <Plus className="mr-2 h-4 w-4" />
           Add Issue
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-5xl">
         <DialogHeader>
-          <DialogTitle>Create New Issue</DialogTitle>
+          <DialogTitle className="text-2xl font-semibold">Create New Issue</DialogTitle>
         </DialogHeader>
         <CreateIssueForm onSubmit={handleSubmit} />
       </DialogContent>

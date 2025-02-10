@@ -3,7 +3,7 @@ import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { Thermometer, Droplet, Zap, Construction, Brush, Wrench } from "lucide-react";
+import { Thermometer, Droplet, Zap, Wrench } from "lucide-react";
 import type { FormData } from "../../types/IssueTypes";
 
 interface TypeSelectionProps {
@@ -39,19 +39,21 @@ const issueTypes = [
 
 export function TypeSelection({ form }: TypeSelectionProps) {
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4">
+    <div className="space-y-8">
+      <div className="grid grid-cols-2 gap-6">
         {issueTypes.map((type) => (
           <Card
             key={type.type}
-            className="p-6 cursor-pointer hover:border-primary transition-colors"
+            className={`p-6 cursor-pointer hover:border-primary transition-colors ${
+              form.watch("type") === type.type ? "border-2 border-primary bg-primary/5" : "border border-white/10"
+            }`}
             onClick={() => form.setValue("type", type.type)}
           >
             <div className="flex flex-col items-center space-y-4">
               <div className="text-primary">{type.icon}</div>
               <div className="text-center">
-                <h3 className="font-medium">{type.label}</h3>
-                <p className="text-sm text-muted-foreground">{type.description}</p>
+                <h3 className="font-medium text-lg">{type.label}</h3>
+                <p className="text-sm text-muted-foreground mt-1">{type.description}</p>
               </div>
             </div>
           </Card>
@@ -63,17 +65,17 @@ export function TypeSelection({ form }: TypeSelectionProps) {
         name="priority"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Priority Level</FormLabel>
+            <FormLabel className="text-lg font-medium">Priority Level</FormLabel>
             <Select onValueChange={field.onChange} value={field.value}>
               <FormControl>
-                <SelectTrigger>
+                <SelectTrigger className="h-12 text-base bg-background/50 border-white/10">
                   <SelectValue placeholder="Select priority" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="low">Low Priority</SelectItem>
-                <SelectItem value="medium">Medium Priority</SelectItem>
-                <SelectItem value="high">High Priority</SelectItem>
+                <SelectItem value="low" className="text-base">Low Priority</SelectItem>
+                <SelectItem value="medium" className="text-base">Medium Priority</SelectItem>
+                <SelectItem value="high" className="text-base">High Priority</SelectItem>
               </SelectContent>
             </Select>
             <FormMessage />
