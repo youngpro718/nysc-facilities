@@ -31,7 +31,7 @@ export function TemplateFields({ form, selectedType }: TemplateFieldsProps) {
         .from('issue_type_templates')
         .select('*')
         .eq('type', selectedType)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching template:', error);
@@ -52,6 +52,9 @@ export function TemplateFields({ form, selectedType }: TemplateFieldsProps) {
         }));
 
         setTemplateFields([...requiredFields, ...optionalFields]);
+      } else {
+        // If no template is found, clear the fields
+        setTemplateFields([]);
       }
     }
 
