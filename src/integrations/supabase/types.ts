@@ -90,6 +90,42 @@ export type Database = {
         }
         Relationships: []
       }
+      backup_versions: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          metadata: Json | null
+          name: string
+          size_bytes: number | null
+          status: string | null
+          tables: string[]
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          name: string
+          size_bytes?: number | null
+          status?: string | null
+          tables: string[]
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          name?: string
+          size_bytes?: number | null
+          status?: string | null
+          tables?: string[]
+        }
+        Relationships: []
+      }
       buildings: {
         Row: {
           address: string
@@ -2890,6 +2926,39 @@ export type Database = {
         }
         Relationships: []
       }
+      report_templates: {
+        Row: {
+          config: Json
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          is_public: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          config?: Json
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          config?: Json
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       room_history: {
         Row: {
           change_type: string
@@ -3095,6 +3164,59 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      scheduled_reports: {
+        Row: {
+          config: Json
+          created_at: string | null
+          created_by: string | null
+          id: string
+          last_run_at: string | null
+          name: string
+          next_run_at: string | null
+          recipients: Json | null
+          schedule: string
+          status: string | null
+          template_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          config?: Json
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          last_run_at?: string | null
+          name: string
+          next_run_at?: string | null
+          recipients?: Json | null
+          schedule: string
+          status?: string | null
+          template_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          config?: Json
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          last_run_at?: string | null
+          name?: string
+          next_run_at?: string | null
+          recipients?: Json | null
+          schedule?: string
+          status?: string | null
+          template_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_reports_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "report_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       security_logs: {
         Row: {

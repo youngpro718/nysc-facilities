@@ -1,11 +1,16 @@
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Database, Download, Upload } from "lucide-react";
+import { Database, Download, History, Upload } from "lucide-react";
 import { useState } from "react";
 import * as XLSX from 'xlsx';
 import { TablesInsert } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
+import { BackupVersion, createBackupVersion, fetchBackupVersions } from "./backupUtils";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { format } from "date-fns";
 
 const EXPORTABLE_TABLES = [
   'buildings', 'floors', 'rooms', 'occupants', 'keys',
@@ -18,14 +23,32 @@ export function DatabaseSection() {
   const { toast } = useToast();
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [backupVersions, setBackupVersions] = useState<BackupVersion[]>([]);
+  const [selectedTables, setSelectedTables] = useState<string[]>([]);
+
+  const loadBackupHistory = async () => {
+    try {
+      const versions = await fetchBackupVersions();
+      setBackupVersions(versions);
+    } catch (error) {
+      console.error('Error loading backup history:', error);
+      toast({
+        title: "Error Loading History",
+        description: "Could not load backup history.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleExportDatabase = async () => {
     try {
       setIsExporting(true);
       
       const workbook = XLSX.utils.book_new();
+      const exportTables = selectedTables.length > 0 ? selectedTables : EXPORTABLE_TABLES;
       
-      for (const table of EXPORTABLE_TABLES) {
+      for (const table of exportTables) {
         const { data, error } = await supabase
           .from(table)
           .select('*');
@@ -38,7 +61,16 @@ export function DatabaseSection() {
       }
       
       // Generate Excel file
-      XLSX.writeFile(workbook, 'database_export.xlsx');
+      const fileName = `database_export_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+
+      // Record backup version
+      await createBackupVersion({
+        name: fileName,
+        tables: exportTables as string[],
+        size_bytes: 0, // Would need actual file size calculation
+        status: 'completed'
+      });
       
       toast({
         title: "Export Successful",
@@ -111,9 +143,21 @@ export function DatabaseSection() {
   return (
     <Card className="p-6">
       <div className="space-y-6">
-        <div className="flex items-center gap-2">
-          <Database className="h-5 w-5 text-primary" />
-          <h2 className="text-2xl font-bold">Database Management</h2>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Database className="h-5 w-5 text-primary" />
+            <h2 className="text-2xl font-bold">Database Management</h2>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setShowHistory(true);
+              loadBackupHistory();
+            }}
+          >
+            <History className="mr-2 h-4 w-4" />
+            Backup History
+          </Button>
         </div>
         
         <div className="grid gap-6 md:grid-cols-2">
@@ -125,8 +169,27 @@ export function DatabaseSection() {
               <div className="space-y-2">
                 <h3 className="text-lg font-semibold">Export Database</h3>
                 <p className="text-sm text-muted-foreground">
-                  Download a complete backup of the database as an Excel file. This includes all tables and their relationships.
+                  Download a complete backup of the database as an Excel file. Select specific tables or export all.
                 </p>
+                <div className="space-y-2">
+                  <select
+                    multiple
+                    className="w-full p-2 rounded-md border"
+                    onChange={(e) => {
+                      const options = Array.from(e.target.selectedOptions, option => option.value);
+                      setSelectedTables(options);
+                    }}
+                  >
+                    {EXPORTABLE_TABLES.map(table => (
+                      <option key={table} value={table}>
+                        {table}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-muted-foreground">
+                    Hold Ctrl/Cmd to select multiple tables. If none selected, all tables will be exported.
+                  </p>
+                </div>
                 <Button
                   onClick={handleExportDatabase}
                   disabled={isExporting}
@@ -200,6 +263,39 @@ export function DatabaseSection() {
             <li>The import process will validate data before making any changes</li>
           </ul>
         </div>
+
+        <Dialog open={showHistory} onOpenChange={setShowHistory}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>Backup History</DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="h-[400px] rounded-md border p-4">
+              <div className="space-y-4">
+                {backupVersions.map((backup) => (
+                  <div
+                    key={backup.id}
+                    className="flex items-center justify-between p-4 rounded-lg border"
+                  >
+                    <div>
+                      <h4 className="font-medium">{backup.name}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Created: {format(new Date(backup.created_at), 'PPp')}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Tables: {backup.tables.join(', ')}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm">
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
       </div>
     </Card>
   );
