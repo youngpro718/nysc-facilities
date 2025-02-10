@@ -9,7 +9,8 @@ export const useLightingSubmit = (onFixtureCreated: () => void, onZoneCreated: (
 
   const onSubmitFixture = async (data: LightingFixtureFormData) => {
     try {
-      const { error } = await supabase
+      // First create the fixture
+      const { data: fixture, error: fixtureError } = await supabase
         .from('lighting_fixtures')
         .insert({
           name: data.name,
@@ -22,13 +23,24 @@ export const useLightingSubmit = (onFixtureCreated: () => void, onZoneCreated: (
           emergency_circuit: data.emergency_circuit,
           maintenance_notes: data.maintenance_notes,
           ballast_check_notes: data.ballast_check_notes,
+          zone_id: data.zone_id || null
+        })
+        .select()
+        .single();
+
+      if (fixtureError) throw fixtureError;
+
+      // Then create the spatial assignment
+      const { error: assignmentError } = await supabase
+        .from('spatial_assignments')
+        .insert({
+          fixture_id: fixture.id,
           space_id: data.space_id,
           space_type: data.space_type,
-          zone_id: data.zone_id || null,
           position: data.position
         });
 
-      if (error) throw error;
+      if (assignmentError) throw assignmentError;
 
       toast.success("Lighting fixture saved successfully");
       onFixtureCreated();
