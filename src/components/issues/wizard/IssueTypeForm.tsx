@@ -4,46 +4,84 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { UseFormReturn } from "react-hook-form";
 import { FormData } from "../types/IssueTypes";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface IssueTypeFormProps {
   form: UseFormReturn<FormData>;
 }
 
+interface IssueTemplate {
+  type: string;
+  subcategory: string;
+  required_fields: Record<string, boolean>;
+  optional_fields: Record<string, boolean>;
+  default_priority: string;
+  default_assigned_to: string;
+}
+
 const issueCategories = [
-  { value: "LIGHTING", label: "Lighting" },
-  { value: "GENERAL_REQUESTS", label: "General Requests" },
-  { value: "PLUMBING_NEEDS", label: "Plumbing" },
+  { value: "ACCESS_REQUEST", label: "Access Request" },
+  { value: "BUILDING_SYSTEMS", label: "Building Systems" },
+  { value: "CEILING", label: "Ceiling" },
+  { value: "CLEANING_REQUEST", label: "Cleaning Request" },
+  { value: "CLIMATE_CONTROL", label: "Climate Control" },
+  { value: "DOOR", label: "Door" },
   { value: "ELECTRICAL_NEEDS", label: "Electrical" },
-  { value: "CLIMATE_CONTROL", label: "Climate Control" }
+  { value: "EMERGENCY", label: "Emergency" },
+  { value: "EXTERIOR_FACADE", label: "Exterior/Facade" },
+  { value: "FLAGPOLE_FLAG", label: "Flagpole/Flag" },
+  { value: "FLOORING", label: "Flooring" },
+  { value: "GENERAL_REQUESTS", label: "General Requests" },
+  { value: "LEAK", label: "Leak" },
+  { value: "LIGHTING", label: "Lighting" },
+  { value: "LOCK", label: "Lock" },
+  { value: "PLUMBING_NEEDS", label: "Plumbing" },
+  { value: "RESTROOM_REPAIR", label: "Restroom Repair" },
+  { value: "SIGNAGE", label: "Signage" },
+  { value: "WINDOW", label: "Window" }
 ];
 
-const problemsByCategory: Record<string, Array<{ value: string, label: string }>> = {
-  LIGHTING: [
-    { value: "LIGHTING", label: "Light Out" },
-    { value: "LIGHTING", label: "Flickering Light" },
-    { value: "LIGHTING", label: "Emergency Light Issue" },
-    { value: "LIGHTING", label: "Motion Sensor Problem" }
-  ],
-  GENERAL_REQUESTS: [
-    { value: "GENERAL_REQUESTS", label: "General Maintenance" },
-    { value: "GENERAL_REQUESTS", label: "Cleaning Request" }
-  ],
-  PLUMBING_NEEDS: [
-    { value: "PLUMBING_NEEDS", label: "Water Leak" },
-    { value: "PLUMBING_NEEDS", label: "Clogged Drain" }
-  ],
-  ELECTRICAL_NEEDS: [
-    { value: "ELECTRICAL_NEEDS", label: "Power Outage" },
-    { value: "ELECTRICAL_NEEDS", label: "Faulty Outlet" }
-  ],
-  CLIMATE_CONTROL: [
-    { value: "CLIMATE_CONTROL", label: "Temperature Issue" },
-    { value: "CLIMATE_CONTROL", label: "Ventilation Problem" }
-  ]
-};
-
 export function IssueTypeForm({ form }: IssueTypeFormProps) {
+  const [subcategories, setSubcategories] = useState<{ value: string, label: string }[]>([]);
+  const [templates, setTemplates] = useState<IssueTemplate[]>([]);
   const selectedCategory = form.watch("type");
+
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      const { data, error } = await supabase
+        .from('issue_type_templates')
+        .select('*')
+        .eq('type', selectedCategory);
+
+      if (error) {
+        console.error('Error fetching templates:', error);
+        return;
+      }
+
+      setTemplates(data);
+      const subcats = data.map(template => ({
+        value: template.subcategory,
+        label: template.subcategory
+      }));
+      setSubcategories(subcats);
+    };
+
+    if (selectedCategory) {
+      fetchTemplates();
+    }
+  }, [selectedCategory]);
+
+  // Update default values when template is selected
+  useEffect(() => {
+    const selectedSubcategory = form.watch("template_fields.problem");
+    const template = templates.find(t => t.subcategory === selectedSubcategory);
+    
+    if (template) {
+      form.setValue("priority", template.default_priority);
+      form.setValue("assigned_to", template.default_assigned_to);
+    }
+  }, [form.watch("template_fields.problem"), templates]);
 
   return (
     <div className="space-y-6">
@@ -78,7 +116,7 @@ export function IssueTypeForm({ form }: IssueTypeFormProps) {
         )}
       />
 
-      {selectedCategory && (
+      {selectedCategory && subcategories.length > 0 && (
         <FormField
           control={form.control}
           name="template_fields.problem"
@@ -96,13 +134,13 @@ export function IssueTypeForm({ form }: IssueTypeFormProps) {
                 </FormControl>
                 <SelectContent>
                   <ScrollArea className="h-[300px]">
-                    {problemsByCategory[selectedCategory]?.map((problem) => (
+                    {subcategories.map((subcategory) => (
                       <SelectItem 
-                        key={problem.label} 
-                        value={problem.label}
+                        key={subcategory.value} 
+                        value={subcategory.value}
                         className="text-base"
                       >
-                        {problem.label}
+                        {subcategory.label}
                       </SelectItem>
                     ))}
                   </ScrollArea>
@@ -120,7 +158,7 @@ export function IssueTypeForm({ form }: IssueTypeFormProps) {
         render={({ field }) => (
           <FormItem>
             <FormLabel className="text-base font-medium">Priority Level</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
+            <Select onValueChange={field.onChange} value={field.value}>
               <FormControl>
                 <SelectTrigger className="h-12 text-base bg-background/50 border-white/10">
                   <SelectValue placeholder="Select priority" />
@@ -143,7 +181,7 @@ export function IssueTypeForm({ form }: IssueTypeFormProps) {
         render={({ field }) => (
           <FormItem>
             <FormLabel className="text-base font-medium">Assign To</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
+            <Select onValueChange={field.onChange} value={field.value}>
               <FormControl>
                 <SelectTrigger className="h-12 text-base bg-background/50 border-white/10">
                   <SelectValue placeholder="Select assignee" />
