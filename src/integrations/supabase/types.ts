@@ -4337,6 +4337,20 @@ export type Database = {
             }
             Returns: Json
           }
+      cleanup_old_backups: {
+        Args: {
+          policy_id: string
+        }
+        Returns: undefined
+      }
+      complete_backup_restoration: {
+        Args: {
+          restoration_id: string
+          success: boolean
+          error_msg?: string
+        }
+        Returns: undefined
+      }
       get_next_lighting_sequence: {
         Args: {
           p_space_id: string
