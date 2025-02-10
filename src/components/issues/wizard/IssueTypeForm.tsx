@@ -7,6 +7,7 @@ import { FormData } from "../types/IssueTypes";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TemplateFields } from "../form/sections/TemplateFields";
+import { Thermometer, Droplet, Zap, Construction, Brush, Wrench, LucideIcon } from "lucide-react";
 
 interface IssueTypeFormProps {
   form: UseFormReturn<FormData>;
@@ -15,37 +16,28 @@ interface IssueTypeFormProps {
 interface IssueTemplate {
   type: string;
   subcategory: string;
-  required_fields: Record<string, boolean>;
-  optional_fields: Record<string, boolean>;
+  required_fields: Record<string, any>;
+  optional_fields: Record<string, any>;
   default_priority: string;
   default_assigned_to: "DCAS" | "OCA" | "Self" | "Outside_Vendor";
+  icon_name: string;
+  photos_required: boolean;
+  min_photos: number;
+  max_photos: number;
 }
 
-const issueCategories = [
-  { value: "ACCESS_REQUEST", label: "Access Request" },
-  { value: "BUILDING_SYSTEMS", label: "Building Systems" },
-  { value: "CEILING", label: "Ceiling" },
-  { value: "CLEANING_REQUEST", label: "Cleaning Request" },
-  { value: "CLIMATE_CONTROL", label: "Climate Control" },
-  { value: "DOOR", label: "Door" },
-  { value: "ELECTRICAL_NEEDS", label: "Electrical" },
-  { value: "EMERGENCY", label: "Emergency" },
-  { value: "EXTERIOR_FACADE", label: "Exterior/Facade" },
-  { value: "FLAGPOLE_FLAG", label: "Flagpole/Flag" },
-  { value: "FLOORING", label: "Flooring" },
-  { value: "GENERAL_REQUESTS", label: "General Requests" },
-  { value: "LEAK", label: "Leak" },
-  { value: "LIGHTING", label: "Lighting" },
-  { value: "LOCK", label: "Lock" },
-  { value: "PLUMBING_NEEDS", label: "Plumbing" },
-  { value: "RESTROOM_REPAIR", label: "Restroom Repair" },
-  { value: "SIGNAGE", label: "Signage" },
-  { value: "WINDOW", label: "Window" }
-];
+const iconMap: Record<string, LucideIcon> = {
+  thermometer: Thermometer,
+  droplet: Droplet,
+  zap: Zap,
+  construction: Construction,
+  brush: Brush,
+  wrench: Wrench,
+};
 
 export function IssueTypeForm({ form }: IssueTypeFormProps) {
-  const [subcategories, setSubcategories] = useState<{ value: string, label: string }[]>([]);
   const [templates, setTemplates] = useState<IssueTemplate[]>([]);
+  const [subcategories, setSubcategories] = useState<{ value: string, label: string }[]>([]);
   const selectedCategory = form.watch("type");
 
   useEffect(() => {
@@ -53,7 +45,7 @@ export function IssueTypeForm({ form }: IssueTypeFormProps) {
       const { data, error } = await supabase
         .from('issue_type_templates')
         .select('*')
-        .eq('type', selectedCategory);
+        .order('template_order', { ascending: true });
 
       if (error) {
         console.error('Error fetching templates:', error);
@@ -72,17 +64,21 @@ export function IssueTypeForm({ form }: IssueTypeFormProps) {
       }));
 
       setTemplates(transformedData);
-      const subcats = transformedData.map(template => ({
+    };
+
+    fetchTemplates();
+  }, []);
+
+  useEffect(() => {
+    if (selectedCategory && templates.length > 0) {
+      const categoryTemplates = templates.filter(t => t.type === selectedCategory);
+      const subcats = categoryTemplates.map(template => ({
         value: template.subcategory,
         label: template.subcategory
       }));
       setSubcategories(subcats);
-    };
-
-    if (selectedCategory) {
-      fetchTemplates();
     }
-  }, [selectedCategory]);
+  }, [selectedCategory, templates]);
 
   useEffect(() => {
     const selectedSubcategory = form.watch("template_fields.problem");
@@ -96,65 +92,52 @@ export function IssueTypeForm({ form }: IssueTypeFormProps) {
 
   return (
     <div className="space-y-6">
-      <FormField
-        control={form.control}
-        name="type"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel className="text-base font-medium">Issue Category</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value}>
-              <FormControl>
-                <SelectTrigger className="h-12 text-base bg-background/50 border-white/10">
-                  <SelectValue placeholder="Select issue category" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                <ScrollArea className="h-[300px]">
-                  {issueCategories.map((category) => (
-                    <SelectItem 
-                      key={category.value} 
-                      value={category.value}
-                      className="text-base"
-                    >
-                      {category.label}
-                    </SelectItem>
-                  ))}
-                </ScrollArea>
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+      <div className="grid grid-cols-2 gap-4">
+        {templates.map((template) => {
+          const Icon = iconMap[template.icon_name];
+          return (
+            <button
+              key={`${template.type}-${template.subcategory}`}
+              type="button"
+              onClick={() => {
+                form.setValue("type", template.type);
+                form.setValue("template_fields.problem", template.subcategory);
+              }}
+              className={`flex flex-col items-center justify-center p-6 space-y-3 rounded-lg border-2 
+                ${form.watch("type") === template.type ? 
+                  "border-primary bg-primary/10" : 
+                  "border-muted hover:border-primary transition-colors"}`}
+            >
+              {Icon && (
+                <div className="text-primary">
+                  <Icon className="h-12 w-12" />
+                </div>
+              )}
+              <span className="text-sm font-medium text-center">
+                {template.subcategory}
+              </span>
+            </button>
+          );
+        })}
+      </div>
 
       {selectedCategory && subcategories.length > 0 && (
         <FormField
           control={form.control}
-          name="template_fields.problem"
+          name="priority"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-base font-medium">Problem Type</FormLabel>
-              <Select 
-                onValueChange={field.onChange} 
-                value={field.value}
-              >
+              <FormLabel className="text-base font-medium">Priority Level</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger className="h-12 text-base bg-background/50 border-white/10">
-                    <SelectValue placeholder="Select specific problem" />
+                    <SelectValue placeholder="Select priority" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <ScrollArea className="h-[300px]">
-                    {subcategories.map((subcategory) => (
-                      <SelectItem 
-                        key={subcategory.value} 
-                        value={subcategory.value}
-                        className="text-base"
-                      >
-                        {subcategory.label}
-                      </SelectItem>
-                    ))}
-                  </ScrollArea>
+                  <SelectItem value="low" className="text-base">Low Priority</SelectItem>
+                  <SelectItem value="medium" className="text-base">Medium Priority</SelectItem>
+                  <SelectItem value="high" className="text-base">High Priority</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -162,53 +145,6 @@ export function IssueTypeForm({ form }: IssueTypeFormProps) {
           )}
         />
       )}
-      
-      <FormField
-        control={form.control}
-        name="priority"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel className="text-base font-medium">Priority Level</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value}>
-              <FormControl>
-                <SelectTrigger className="h-12 text-base bg-background/50 border-white/10">
-                  <SelectValue placeholder="Select priority" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                <SelectItem value="low" className="text-base">Low Priority</SelectItem>
-                <SelectItem value="medium" className="text-base">Medium Priority</SelectItem>
-                <SelectItem value="high" className="text-base">High Priority</SelectItem>
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={form.control}
-        name="assigned_to"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel className="text-base font-medium">Assign To</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value}>
-              <FormControl>
-                <SelectTrigger className="h-12 text-base bg-background/50 border-white/10">
-                  <SelectValue placeholder="Select assignee" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                <SelectItem value="DCAS" className="text-base">DCAS</SelectItem>
-                <SelectItem value="OCA" className="text-base">OCA</SelectItem>
-                <SelectItem value="Self" className="text-base">Self</SelectItem>
-                <SelectItem value="Outside_Vendor" className="text-base">Outside Vendor</SelectItem>
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
 
       <TemplateFields form={form} selectedType={selectedCategory} />
     </div>
