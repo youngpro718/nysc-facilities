@@ -102,8 +102,8 @@ const Index = () => {
   };
 
   const buildingImages = [
-    "/lovable-uploads/aed346ca-c3c6-4e0c-b236-528b0e54e20c.png",
     "/lovable-uploads/83d441a4-13af-461a-800b-3b483c153ed4.png",
+    "/lovable-uploads/aed346ca-c3c6-4e0c-b236-528b0e54e20c.png",
   ];
 
   if (buildingsLoading) {
