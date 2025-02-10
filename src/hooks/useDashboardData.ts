@@ -2,8 +2,17 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Building, Issue, Activity } from "@/components/dashboard/BuildingsGrid";
 
-export const useDashboardData = () => {
+interface DashboardData {
+  buildings: Building[];
+  buildingsLoading: boolean;
+  issues: Issue[];
+  activities: Activity[];
+  handleMarkAsSeen: (issueId: string) => void;
+}
+
+export const useDashboardData = (): DashboardData => {
   const { data: buildings, isLoading: buildingsLoading } = useQuery({
     queryKey: ["buildings"],
     queryFn: async () => {
@@ -66,7 +75,7 @@ export const useDashboardData = () => {
         .eq("seen", false)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data;
+      return data as Issue[];
     },
   });
 
@@ -79,7 +88,7 @@ export const useDashboardData = () => {
         .order("created_at", { ascending: false })
         .limit(50);
       if (error) throw error;
-      return data;
+      return data as Activity[];
     },
   });
 
@@ -100,10 +109,10 @@ export const useDashboardData = () => {
   };
 
   return {
-    buildings,
+    buildings: buildings || [],
     buildingsLoading,
-    issues,
-    activities,
+    issues: issues || [],
+    activities: activities || [],
     handleMarkAsSeen,
   };
 };

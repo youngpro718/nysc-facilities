@@ -2,19 +2,41 @@
 import { BuildingCard } from "./BuildingCard";
 import { BuildingCardSkeleton } from "./BuildingCardSkeleton";
 import { calculateBuildingStats } from "@/utils/dashboardUtils";
+import { Building } from "@/utils/dashboardUtils";
+
+export interface Issue {
+  id: string;
+  title: string;
+  description: string;
+  building_id: string;
+  photos?: string[];
+  created_at: string;
+  seen: boolean;
+}
+
+export interface Activity {
+  id: string;
+  action: string;
+  performed_by?: string;
+  created_at: string;
+  metadata?: {
+    building_id: string;
+    [key: string]: any;
+  };
+}
+
+interface BuildingsGridProps {
+  buildings: Building[];
+  isLoading: boolean;
+  issues: Issue[];
+  activities: Activity[];
+  onMarkAsSeen: (id: string) => void;
+}
 
 const buildingImages = [
   "/lovable-uploads/aed346ca-c3c6-4e0c-b236-528b0e54e20c.png",
   "/lovable-uploads/83d441a4-13af-461a-800b-3b483c153ed4.png",
 ];
-
-interface BuildingsGridProps {
-  buildings: any[];
-  isLoading: boolean;
-  issues: any[];
-  activities: any[];
-  onMarkAsSeen: (id: string) => void;
-}
 
 export function BuildingsGrid({
   buildings,
@@ -47,8 +69,7 @@ export function BuildingsGrid({
         const buildingActivities =
           activities?.filter((activity) => {
             if (activity.metadata && typeof activity.metadata === "object") {
-              const metadata = activity.metadata as Record<string, any>;
-              return metadata.building_id === building.id;
+              return activity.metadata.building_id === building.id;
             }
             return false;
           }) || [];

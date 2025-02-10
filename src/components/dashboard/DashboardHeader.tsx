@@ -1,4 +1,5 @@
 
+// This component doesn't need props as it's static
 export function DashboardHeader() {
   return (
     <div className="space-y-1">
