@@ -12,7 +12,7 @@ export interface BackupVersion {
   metadata: any;
 }
 
-export async function createBackupVersion(backup: Partial<BackupVersion>) {
+export async function createBackupVersion(backup: Pick<BackupVersion, 'name' | 'tables' | 'size_bytes' | 'description'>) {
   const { data, error } = await supabase
     .from('backup_versions')
     .insert([backup])

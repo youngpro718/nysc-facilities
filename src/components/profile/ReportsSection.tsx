@@ -1,9 +1,8 @@
-
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, Lightbulb, User, Key, DoorOpen, Bug, Database, Clock, Template } from "lucide-react";
+import { FileText, Lightbulb, User, Key, DoorOpen, Bug, Database, Clock, BookTemplate } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
 import { 
@@ -189,7 +188,7 @@ export function ReportsSection() {
               loadTemplates();
             }}
           >
-            <Template className="mr-2 h-4 w-4" />
+            <BookTemplate className="mr-2 h-4 w-4" />
             Templates
           </Button>
           <Button

@@ -39,10 +39,10 @@ export async function fetchScheduledReports() {
     .order('next_run_at', { ascending: true });
 
   if (error) throw error;
-  return data;
+  return data as ScheduledReport[];
 }
 
-export async function createReportTemplate(template: Partial<ReportTemplate>) {
+export async function createReportTemplate(template: Pick<ReportTemplate, 'name' | 'description' | 'config' | 'is_public'>) {
   const { data, error } = await supabase
     .from('report_templates')
     .insert([template])
@@ -53,7 +53,7 @@ export async function createReportTemplate(template: Partial<ReportTemplate>) {
   return data;
 }
 
-export async function scheduleReport(report: Partial<ScheduledReport>) {
+export async function scheduleReport(report: Pick<ScheduledReport, 'name' | 'schedule' | 'template_id' | 'recipients' | 'config'>) {
   const { data, error } = await supabase
     .from('scheduled_reports')
     .insert([report])
