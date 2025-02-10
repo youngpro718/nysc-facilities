@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronDown, ChevronUp, Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Pencil, Trash2, Key, DoorOpen } from "lucide-react";
 import { OccupantDetails } from "./OccupantDetails";
 import { OccupantQueryResponse } from "./types/occupantTypes";
 
@@ -48,12 +48,11 @@ export function OccupantTable({
               />
             </TableHead>
             <TableHead className="w-[50px]"></TableHead>
-            <TableHead className="min-w-[200px]">Name</TableHead>
-            <TableHead className="min-w-[150px]">Department</TableHead>
-            <TableHead className="min-w-[150px]">Title</TableHead>
-            <TableHead className="min-w-[100px]">Status</TableHead>
-            <TableHead className="min-w-[100px]">Rooms</TableHead>
-            <TableHead className="min-w-[100px]">Keys</TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead>Department</TableHead>
+            <TableHead>Title</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="text-center">Access</TableHead>
             <TableHead className="w-[100px] text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -70,7 +69,7 @@ export function OccupantTable({
                 <TableCell>
                   <Button 
                     variant="ghost" 
-                    size="icon" 
+                    size="icon"
                     className="h-8 w-8 p-0"
                     onClick={() => onToggleRow(occupant.id)}
                   >
@@ -91,8 +90,18 @@ export function OccupantTable({
                     {occupant.status}
                   </Badge>
                 </TableCell>
-                <TableCell>{occupant.room_count || 0}</TableCell>
-                <TableCell>{occupant.key_count || 0}</TableCell>
+                <TableCell>
+                  <div className="flex justify-center gap-4">
+                    <div className="flex items-center gap-1">
+                      <Key className="h-4 w-4" />
+                      <span>{occupant.key_count || 0}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <DoorOpen className="h-4 w-4" />
+                      <span>{occupant.room_count || 0}</span>
+                    </div>
+                  </div>
+                </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
                     <Button
@@ -114,8 +123,10 @@ export function OccupantTable({
               </TableRow>
               {expandedRows.has(occupant.id) && (
                 <TableRow>
-                  <TableCell colSpan={9}>
-                    <OccupantDetails occupant={occupant} />
+                  <TableCell colSpan={8} className="p-0">
+                    <div className="p-4">
+                      <OccupantDetails occupant={occupant} />
+                    </div>
                   </TableCell>
                 </TableRow>
               )}
@@ -123,7 +134,7 @@ export function OccupantTable({
           ))}
           {(!occupants || occupants.length === 0) && (
             <TableRow>
-              <TableCell colSpan={9} className="h-24 text-center">
+              <TableCell colSpan={8} className="h-24 text-center">
                 No occupants found
               </TableCell>
             </TableRow>

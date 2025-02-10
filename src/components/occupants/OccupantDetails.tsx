@@ -1,15 +1,12 @@
 
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Mail, Phone, Briefcase, UserCircle, Building2, Key, DoorOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { ContactSection } from "./details/ContactSection";
-import { EmploymentSection } from "./details/EmploymentSection";
-import { LocationSection } from "./details/LocationSection";
-import { KeyAssignmentSection } from "./details/KeyAssignmentSection";
+import { Badge } from "@/components/ui/badge";
 import { useKeyAssignments } from "./hooks/useKeyAssignments";
-import { CollapsibleSection } from "./details/CollapsibleSection";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Separator } from "@/components/ui/separator";
+import { Card } from "@/components/ui/card";
 
 interface OccupantDetailsProps {
   occupant: {
@@ -35,10 +32,15 @@ interface OccupantDetailsProps {
 export function OccupantDetails({ occupant }: OccupantDetailsProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { keyAssignments, isLoading, handleReturnKey } = useKeyAssignments(occupant.id);
+  const { keyAssignments, isLoading } = useKeyAssignments(occupant.id);
+
+  const totalDoorAccess = keyAssignments?.reduce((count, assignment) => {
+    if (assignment.keys?.is_passkey) return count + 5;
+    return count + (assignment.keys?.key_door_locations?.length || 1);
+  }, 0) || 0;
 
   return (
-    <div className="space-y-4">
+    <Card className="bg-background/50 p-4 space-y-6">
       {isMobile && (
         <Button
           variant="ghost"
@@ -51,43 +53,113 @@ export function OccupantDetails({ occupant }: OccupantDetailsProps) {
         </Button>
       )}
 
-      <div className="space-y-6 bg-muted/50 rounded-lg p-3 sm:p-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
-          <CollapsibleSection title="Contact Information">
-            <ContactSection 
-              email={occupant.email} 
-              phone={occupant.phone} 
-            />
-          </CollapsibleSection>
-
-          <CollapsibleSection title="Employment Details">
-            <EmploymentSection 
-              department={occupant.department}
-              title={occupant.title}
-              status={occupant.status}
-            />
-          </CollapsibleSection>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Contact Information */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-medium text-muted-foreground">Contact Information</h3>
+          <div className="space-y-2">
+            {occupant.email && (
+              <div className="flex items-center gap-2 text-sm">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <a href={`mailto:${occupant.email}`} className="hover:text-primary">
+                  {occupant.email}
+                </a>
+              </div>
+            )}
+            {occupant.phone && (
+              <div className="flex items-center gap-2 text-sm">
+                <Phone className="h-4 w-4 text-muted-foreground" />
+                <a href={`tel:${occupant.phone}`} className="hover:text-primary">
+                  {occupant.phone}
+                </a>
+              </div>
+            )}
+          </div>
         </div>
 
-        <Separator />
-
-        <CollapsibleSection title="Location">
-          <LocationSection 
-            building={occupant.rooms?.floors?.buildings}
-            roomNumber={occupant.rooms?.room_number}
-          />
-        </CollapsibleSection>
-
-        <Separator />
-
-        <CollapsibleSection title="Access Information" defaultOpen={true}>
-          <KeyAssignmentSection 
-            keyAssignments={keyAssignments}
-            isLoading={isLoading}
-            onReturnKey={handleReturnKey}
-          />
-        </CollapsibleSection>
+        {/* Employment Details */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-medium text-muted-foreground">Employment Details</h3>
+          <div className="space-y-2">
+            {occupant.department && (
+              <div className="flex items-center gap-2 text-sm">
+                <Briefcase className="h-4 w-4 text-muted-foreground" />
+                <span>{occupant.department}</span>
+              </div>
+            )}
+            {occupant.title && (
+              <div className="flex items-center gap-2 text-sm">
+                <UserCircle className="h-4 w-4 text-muted-foreground" />
+                <span>{occupant.title}</span>
+              </div>
+            )}
+            {occupant.status && (
+              <div className="flex items-center gap-2">
+                <Badge variant={occupant.status === 'active' ? 'default' : 'secondary'}>
+                  {occupant.status}
+                </Badge>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
+
+      <Separator />
+
+      {/* Location */}
+      {occupant.rooms?.floors?.buildings && (
+        <div className="space-y-4">
+          <h3 className="text-sm font-medium text-muted-foreground">Location</h3>
+          <div className="flex items-center gap-2 text-sm">
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+            <span>
+              {occupant.rooms.floors.buildings.name} - Room {occupant.rooms.room_number}
+            </span>
+          </div>
+        </div>
+      )}
+
+      <Separator />
+
+      {/* Access Information */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-medium text-muted-foreground">Access Information</h3>
+        <div className="flex flex-wrap gap-4">
+          <div className="flex items-center gap-2">
+            <Key className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm">{keyAssignments?.length || 0} Keys Assigned</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <DoorOpen className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm">{totalDoorAccess} Door Access</span>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="animate-pulse space-y-4">
+            <div className="h-12 bg-muted rounded"></div>
+            <div className="h-12 bg-muted rounded"></div>
+          </div>
+        ) : keyAssignments && keyAssignments.length > 0 ? (
+          <div className="grid gap-2">
+            {keyAssignments.map((assignment) => (
+              <div 
+                key={assignment.id}
+                className="flex items-center justify-between p-2 bg-muted rounded-lg text-sm"
+              >
+                <span>{assignment.keys.name}</span>
+                {assignment.keys.is_passkey && (
+                  <Badge variant="secondary">Passkey</Badge>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-4 text-sm text-muted-foreground">
+            No keys currently assigned
+          </div>
+        )}
+      </div>
+    </Card>
   );
 }
