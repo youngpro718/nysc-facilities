@@ -1,3 +1,4 @@
+
 import { Building2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -29,8 +30,6 @@ export const BuildingCard = ({
   buildingActivities,
   onMarkAsSeen,
 }: BuildingCardProps) => {
-  const scheduledTasks = buildingIssues.length;
-
   return (
     <Card className="group overflow-hidden">
       <AspectRatio ratio={16 / 9}>
@@ -66,7 +65,7 @@ export const BuildingCard = ({
         <BuildingStats
           floorCount={floorCount}
           roomCount={roomCount}
-          scheduledTasks={scheduledTasks}
+          issues={buildingIssues.length}
           workingFixtures={workingFixtures}
           totalFixtures={totalFixtures}
         />

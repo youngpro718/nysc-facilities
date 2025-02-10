@@ -1,9 +1,10 @@
-import { Building2, ClipboardList, LightbulbIcon, Layers, DoorClosed, Gauge } from "lucide-react";
+
+import { Building2, AlertCircle, LightbulbIcon, Layers, DoorClosed, Gauge } from "lucide-react";
 
 interface BuildingStatsProps {
   floorCount: number;
   roomCount: number;
-  scheduledTasks: number;
+  issues: number;
   workingFixtures: number;
   totalFixtures: number;
 }
@@ -11,7 +12,7 @@ interface BuildingStatsProps {
 export const BuildingStats = ({
   floorCount,
   roomCount,
-  scheduledTasks,
+  issues,
   workingFixtures,
   totalFixtures,
 }: BuildingStatsProps) => (
@@ -39,20 +40,20 @@ export const BuildingStats = ({
 
     <div className="space-y-1.5 rounded-lg border bg-card p-3 transition-all duration-200 hover:bg-accent hover:shadow-lg">
       <div className="flex items-center gap-1.5 text-muted-foreground">
-        <ClipboardList className="h-3.5 w-3.5 text-yellow-500" />
-        <span className="text-xs font-medium">Scheduled Tasks</span>
+        <AlertCircle className="h-3.5 w-3.5 text-yellow-500" />
+        <span className="text-xs font-medium">Active Issues</span>
       </div>
       <div className="flex items-center justify-between">
         <div className="flex items-baseline gap-1">
-          <span className="text-xl font-bold">{scheduledTasks}</span>
-          <span className="text-xs text-muted-foreground">Active</span>
+          <span className="text-xl font-bold">{issues}</span>
+          <span className="text-xs text-muted-foreground">Total</span>
         </div>
         <Gauge className="h-7 w-7 text-muted-foreground/20" />
       </div>
       <div className="mt-1 text-xs text-muted-foreground">
-        {scheduledTasks > 0 ? 
-          `${scheduledTasks} task${scheduledTasks === 1 ? '' : 's'} require attention` : 
-          'No pending tasks'}
+        {issues > 0 ? 
+          `${issues} issue${issues === 1 ? '' : 's'} need attention` : 
+          'No active issues'}
       </div>
     </div>
 
