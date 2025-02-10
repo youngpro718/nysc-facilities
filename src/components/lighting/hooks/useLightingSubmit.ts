@@ -3,12 +3,16 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { LightingFixtureFormData, LightingZoneFormData } from "../schemas/lightingSchema";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const useLightingSubmit = (onFixtureCreated: () => void, onZoneCreated: () => void) => {
   const [open, setOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   const onSubmitFixture = async (data: LightingFixtureFormData) => {
     try {
+      console.log("Creating new lighting fixture:", data);
+      
       // First create the fixture
       const { data: fixture, error: fixtureError } = await supabase
         .from('lighting_fixtures')
@@ -51,11 +55,17 @@ export const useLightingSubmit = (onFixtureCreated: () => void, onZoneCreated: (
 
       if (assignmentError) throw assignmentError;
 
+      // Invalidate all relevant queries to refresh the UI
+      queryClient.invalidateQueries({ queryKey: ['lighting_fixtures'] });
+      queryClient.invalidateQueries({ queryKey: ['lighting-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['room-lighting'] });
+
       toast.success("Lighting fixture saved successfully");
       onFixtureCreated();
       setOpen(false);
       return true;
     } catch (error: any) {
+      console.error('Error saving lighting fixture:', error);
       toast.error(error.message || "Failed to save lighting fixture");
       return false;
     }
@@ -63,6 +73,8 @@ export const useLightingSubmit = (onFixtureCreated: () => void, onZoneCreated: (
 
   const onSubmitZone = async (data: LightingZoneFormData) => {
     try {
+      console.log("Creating new lighting zone:", data);
+      
       const { error } = await supabase
         .from('lighting_zones')
         .insert({
@@ -73,11 +85,15 @@ export const useLightingSubmit = (onFixtureCreated: () => void, onZoneCreated: (
 
       if (error) throw error;
 
+      // Invalidate zones query
+      queryClient.invalidateQueries({ queryKey: ['lighting_zones'] });
+
       toast.success("Lighting zone created successfully");
       onZoneCreated();
       setOpen(false);
       return true;
     } catch (error: any) {
+      console.error('Error creating lighting zone:', error);
       toast.error(error.message || "Failed to create lighting zone");
       return false;
     }
