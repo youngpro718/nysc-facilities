@@ -4331,6 +4331,13 @@ export type Database = {
         }
         Returns: number
       }
+      match_issue_type: {
+        Args: {
+          issue_type: Database["public"]["Enums"]["issue_type_enum"]
+          search_term: string
+        }
+        Returns: boolean
+      }
       safely_delete_key: {
         Args: {
           key_id_to_delete: string
