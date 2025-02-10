@@ -7,7 +7,7 @@ export const keyFormSchema = z.object({
   type: z.enum(["physical_key", "elevator_pass", "room_key"]),
   isPasskey: z.boolean(),
   quantity: z.number().min(1, "Quantity must be at least 1"),
-  buildingId: z.string().optional(),
+  buildingId: z.string().min(1, "Building is required"),
   floorId: z.string().optional(),
   doorId: z.string().optional(),
   roomId: z.string().optional(),
@@ -28,10 +28,17 @@ export const keyFormSchema = z.object({
   if (data.isPasskey && data.spareKeys < 2) {
     return false;
   }
+
+  // For non-passkeys, require floor and door/room based on keyScope
+  if (!data.isPasskey) {
+    if (!data.floorId) return false;
+    if (data.keyScope === "door" && !data.doorId) return false;
+    if (data.keyScope === "room" && !data.roomId) return false;
+  }
   return true;
 }, {
-  message: "Passkeys require at least 2 spare keys",
-  path: ["spareKeys"]
+  message: "Please fill in all required location fields",
+  path: ["floorId"]
 });
 
 export interface CreateKeyFormProps {

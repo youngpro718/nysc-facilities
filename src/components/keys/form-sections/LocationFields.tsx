@@ -1,4 +1,5 @@
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+
+import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UseFormReturn } from "react-hook-form";
 import { KeyFormData } from "../types/KeyTypes";
@@ -41,6 +42,7 @@ interface Room {
 
 export function LocationFields({ form }: LocationFieldsProps) {
   const keyScope = form.watch("keyScope");
+  const isPasskey = form.watch("isPasskey");
 
   const { data: buildings, isLoading: isLoadingBuildings } = useQuery({
     queryKey: ["buildings"],
@@ -72,7 +74,7 @@ export function LocationFields({ form }: LocationFieldsProps) {
       if (error) throw error;
       return data as Floor[];
     },
-    enabled: !!form.watch("buildingId"),
+    enabled: !!form.watch("buildingId") && !isPasskey,
   });
 
   const { data: doors, isLoading: isLoadingDoors } = useQuery({
@@ -91,7 +93,7 @@ export function LocationFields({ form }: LocationFieldsProps) {
       if (error) throw error;
       return data as Door[];
     },
-    enabled: !!form.watch("floorId") && keyScope === "door",
+    enabled: !!form.watch("floorId") && keyScope === "door" && !isPasskey,
   });
 
   const { data: rooms, isLoading: isLoadingRooms } = useQuery({
@@ -110,14 +112,16 @@ export function LocationFields({ form }: LocationFieldsProps) {
       if (error) throw error;
       return data as Room[];
     },
-    enabled: !!form.watch("floorId") && keyScope === "room",
+    enabled: !!form.watch("floorId") && keyScope === "room" && !isPasskey,
   });
 
   const handleBuildingChange = (value: string) => {
     form.setValue("buildingId", value);
-    form.setValue("floorId", undefined);
-    form.setValue("doorId", undefined);
-    form.setValue("roomId", undefined);
+    if (!isPasskey) {
+      form.setValue("floorId", undefined);
+      form.setValue("doorId", undefined);
+      form.setValue("roomId", undefined);
+    }
   };
 
   const handleFloorChange = (value: string) => {
@@ -152,100 +156,109 @@ export function LocationFields({ form }: LocationFieldsProps) {
                 ))}
               </SelectContent>
             </Select>
+            <FormDescription>
+              {isPasskey 
+                ? "This passkey will work on all appropriate doors in the selected building"
+                : "Select the building where this key will be used"}
+            </FormDescription>
             <FormMessage />
           </FormItem>
         )}
       />
 
-      <FormField
-        control={form.control}
-        name="floorId"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Floor</FormLabel>
-            <Select
-              onValueChange={handleFloorChange}
-              value={field.value}
-              disabled={!form.watch("buildingId") || isLoadingFloors}
-            >
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder={!form.watch("buildingId") ? "Select building first" : "Select floor"} />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {floors?.map((floor) => (
-                  <SelectItem key={floor.id} value={floor.id}>
-                    {floor.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+      {!isPasskey && (
+        <>
+          <FormField
+            control={form.control}
+            name="floorId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Floor</FormLabel>
+                <Select
+                  onValueChange={handleFloorChange}
+                  value={field.value}
+                  disabled={!form.watch("buildingId") || isLoadingFloors}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder={!form.watch("buildingId") ? "Select building first" : "Select floor"} />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {floors?.map((floor) => (
+                      <SelectItem key={floor.id} value={floor.id}>
+                        {floor.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-      {keyScope === "door" && (
-        <FormField
-          control={form.control}
-          name="doorId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Door</FormLabel>
-              <Select
-                onValueChange={field.onChange}
-                value={field.value}
-                disabled={!form.watch("floorId") || isLoadingDoors}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder={!form.watch("floorId") ? "Select floor first" : "Select door"} />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {doors?.map((door) => (
-                    <SelectItem key={door.id} value={door.id}>
-                      {door.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
+          {keyScope === "door" && (
+            <FormField
+              control={form.control}
+              name="doorId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Door</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    disabled={!form.watch("floorId") || isLoadingDoors}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={!form.watch("floorId") ? "Select floor first" : "Select door"} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {doors?.map((door) => (
+                        <SelectItem key={door.id} value={door.id}>
+                          {door.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           )}
-        />
-      )}
 
-      {keyScope === "room" && (
-        <FormField
-          control={form.control}
-          name="roomId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Room</FormLabel>
-              <Select
-                onValueChange={field.onChange}
-                value={field.value}
-                disabled={!form.watch("floorId") || isLoadingRooms}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder={!form.watch("floorId") ? "Select floor first" : "Select room"} />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {rooms?.map((room) => (
-                    <SelectItem key={room.id} value={room.id}>
-                      {room.name} ({room.room_number})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
+          {keyScope === "room" && (
+            <FormField
+              control={form.control}
+              name="roomId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Room</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    disabled={!form.watch("floorId") || isLoadingRooms}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={!form.watch("floorId") ? "Select floor first" : "Select room"} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {rooms?.map((room) => (
+                        <SelectItem key={room.id} value={room.id}>
+                          {room.name} ({room.room_number})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           )}
-        />
+        </>
       )}
     </div>
   );
