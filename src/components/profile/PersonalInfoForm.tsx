@@ -96,6 +96,12 @@ export function PersonalInfoForm() {
           .single();
 
         if (profile && mounted) {
+          const emergencyContact = profile.emergency_contact || {
+            name: "",
+            phone: "",
+            relationship: "",
+          };
+
           form.reset({
             first_name: profile.first_name || "",
             last_name: profile.last_name || "",
@@ -106,11 +112,7 @@ export function PersonalInfoForm() {
             bio: profile.bio || "",
             time_zone: profile.time_zone || "UTC",
             language: profile.language || "en",
-            emergency_contact: profile.emergency_contact || {
-              name: "",
-              phone: "",
-              relationship: "",
-            },
+            emergency_contact: emergencyContact,
           });
         }
       } catch (error) {
