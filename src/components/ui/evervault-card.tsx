@@ -1,6 +1,6 @@
 
 "use client";
-import { useMotionValue } from "framer-motion";
+import { useMotionValue, useSpring } from "framer-motion";
 import React, { useState, useEffect } from "react";
 import { useMotionTemplate, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -12,8 +12,15 @@ export const EvervaultCard = ({
   text?: string;
   className?: string;
 }) => {
-  let mouseX = useMotionValue(0);
-  let mouseY = useMotionValue(0);
+  // Use springs for smoother mouse tracking
+  let mouseX = useSpring(useMotionValue(0), {
+    stiffness: 500,
+    damping: 50
+  });
+  let mouseY = useSpring(useMotionValue(0), {
+    stiffness: 500,
+    damping: 50
+  });
 
   const [randomString, setRandomString] = useState("");
 
@@ -22,14 +29,29 @@ export const EvervaultCard = ({
     setRandomString(str);
   }, []);
 
+  // Debounce mouse move updates
   function onMouseMove({ currentTarget, clientX, clientY }: any) {
     let { left, top } = currentTarget.getBoundingClientRect();
     mouseX.set(clientX - left);
     mouseY.set(clientY - top);
+  }
 
+  // Add throttled random string updates
+  const updateRandomString = React.useCallback(() => {
     const str = generateRandomString(1500);
     setRandomString(str);
-  }
+  }, []);
+
+  // Use RAF for smoother updates
+  useEffect(() => {
+    let frame: number;
+    const updateString = () => {
+      updateRandomString();
+      frame = requestAnimationFrame(updateString);
+    };
+    frame = requestAnimationFrame(updateString);
+    return () => cancelAnimationFrame(frame);
+  }, [updateRandomString]);
 
   return (
     <div
@@ -59,11 +81,11 @@ export function CardPattern({ mouseX, mouseY, randomString }: any) {
   return (
     <div className="pointer-events-none">
       <motion.div
-        className="absolute inset-0 bg-gradient-to-r from-green-500 to-blue-700 opacity-0 group-hover/card:opacity-100 transition duration-500"
+        className="absolute inset-0 bg-gradient-to-r from-green-500 to-blue-700 opacity-0 group-hover/card:opacity-100 transition-all duration-500 ease-out"
         style={style}
       />
       <motion.div
-        className="absolute inset-0 opacity-0 mix-blend-overlay group-hover/card:opacity-100"
+        className="absolute inset-0 opacity-0 mix-blend-overlay group-hover/card:opacity-100 transition-opacity duration-500"
         style={style}
       >
         <p className="absolute inset-x-0 text-xs h-full break-words whitespace-pre-wrap text-white font-mono font-bold transition duration-500">
