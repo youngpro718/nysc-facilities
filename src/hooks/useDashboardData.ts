@@ -47,9 +47,13 @@ export const useDashboardData = (): DashboardData => {
 
       if (lightingError) throw lightingError;
 
-      // Map lighting data to buildings
+      // Map lighting data to buildings and normalize status values
       return data.map(building => ({
         ...building,
+        // Map database status to interface status
+        status: building.status === "under_maintenance" ? "maintenance" :
+                building.status === "inactive" ? "active" : 
+                building.status as "active" | "maintenance",
         floors: building.floors?.map(floor => ({
           ...floor,
           rooms: floor.rooms?.map(room => ({
