@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -27,7 +26,7 @@ export function CreateIssueDialog({ onIssueCreated }: { onIssueCreated: () => vo
     defaultValues: {
       status: "open",
       priority: "medium",
-      type: "HVAC",
+      type: "GENERAL_REQUESTS",
       assigned_to: "Self"
     }
   });

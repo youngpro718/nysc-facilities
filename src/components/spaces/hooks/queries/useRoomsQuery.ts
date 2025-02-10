@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Room, StorageType, RoomType } from "../../rooms/types/RoomTypes";
 import { useToast } from "@/hooks/use-toast";
+import { IssueType } from "@/components/issues/types/IssueTypes";
 
 export function useRoomsQuery() {
   const { toast } = useToast();
@@ -12,7 +13,6 @@ export function useRoomsQuery() {
     queryFn: async () => {
       console.log("Fetching rooms with connections, history, and lighting...");
       
-      // First fetch rooms
       const { data: roomsData, error: roomsError } = await supabase
         .from('rooms')
         .select(`
@@ -55,7 +55,6 @@ export function useRoomsQuery() {
 
       if (!roomsData) return [];
 
-      // Then fetch lighting fixtures data separately
       const { data: fixturesData, error: fixturesError } = await supabase
         .from('lighting_fixture_details')
         .select('*')
@@ -70,7 +69,6 @@ export function useRoomsQuery() {
         });
       }
 
-      // Create a map of room id to fixture for easier lookup
       const fixturesByRoomId = (fixturesData || []).reduce((acc, fixture) => {
         if (fixture.space_id) {
           acc[fixture.space_id] = fixture;
@@ -78,7 +76,6 @@ export function useRoomsQuery() {
         return acc;
       }, {} as Record<string, any>);
 
-      // Transform the room data to match the Room type
       const transformedRooms: Room[] = roomsData.map(room => {
         const lightingFixture = fixturesByRoomId[room.id];
 
@@ -121,7 +118,10 @@ export function useRoomsQuery() {
             name: room.parent_room.name
           } : undefined,
           space_connections: [],
-          issues: room.issues || [],
+          issues: (room.issues || []).map(issue => ({
+            ...issue,
+            type: issue.type as IssueType
+          })),
           room_history: room.room_history || []
         };
       });

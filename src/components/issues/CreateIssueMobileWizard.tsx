@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -30,7 +29,7 @@ export function CreateIssueMobileWizard({ onIssueCreated }: { onIssueCreated: ()
     defaultValues: {
       status: "open",
       priority: "medium",
-      type: "HVAC",
+      type: "GENERAL_REQUESTS",
       assigned_to: "Self"
     }
   });

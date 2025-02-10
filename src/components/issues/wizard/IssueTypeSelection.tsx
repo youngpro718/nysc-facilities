@@ -1,9 +1,9 @@
 
-import { Thermometer, Droplet, Zap, Paintbrush, Trash2, WrenchIcon } from "lucide-react";
-import { FormData } from "../types/IssueTypes";
+import { Thermometer, Droplet, Zap, Construction, Spray, WrenchIcon } from "lucide-react";
+import { FormData, IssueType } from "../types/IssueTypes";
 
 interface IssueTypeIcon {
-  type: FormData["type"];
+  type: IssueType;
   icon: React.ReactNode;
   label: string;
   defaultTitle: string;
@@ -14,16 +14,16 @@ interface IssueTypeIcon {
 
 const issueTypes: IssueTypeIcon[] = [
   {
-    type: "HVAC",
+    type: "CLIMATE_CONTROL",
     icon: <Thermometer className="h-12 w-12" />,
-    label: "HVAC Issue",
-    defaultTitle: "HVAC Problem",
+    label: "Climate Control",
+    defaultTitle: "Climate Control Issue",
     defaultDescription: "Temperature or ventilation issue",
-    contextFields: ["temperature", "occupancy_status", "maintenance_history"],
+    contextFields: ["area_affected", "current_condition"],
     requiredPhotos: 1
   },
   {
-    type: "Leak",
+    type: "LEAK",
     icon: <Droplet className="h-12 w-12" />,
     label: "Water Leak",
     defaultTitle: "Water Leak",
@@ -32,26 +32,26 @@ const issueTypes: IssueTypeIcon[] = [
     requiredPhotos: 2
   },
   {
-    type: "Electrical",
+    type: "ELECTRICAL_NEEDS",
     icon: <Zap className="h-12 w-12" />,
     label: "Electrical",
-    defaultTitle: "Electrical Problem",
-    defaultDescription: "Electrical or lighting issue",
+    defaultTitle: "Electrical Issue",
+    defaultDescription: "Electrical or power issue",
     contextFields: ["safety_assessment", "maintenance_history"],
     requiredPhotos: 1
   },
   {
-    type: "Plaster",
-    icon: <Paintbrush className="h-12 w-12" />,
-    label: "Plaster",
-    defaultTitle: "Plaster Repair",
-    defaultDescription: "Wall or ceiling damage",
+    type: "CEILING",
+    icon: <Construction className="h-12 w-12" />,
+    label: "Ceiling",
+    defaultTitle: "Ceiling Repair",
+    defaultDescription: "Ceiling damage or issue",
     contextFields: ["area_size", "damage_assessment"],
     requiredPhotos: 2
   },
   {
-    type: "Cleaning",
-    icon: <Trash2 className="h-12 w-12" />,
+    type: "CLEANING_REQUEST",
+    icon: <Spray className="h-12 w-12" />,
     label: "Cleaning",
     defaultTitle: "Cleaning Required",
     defaultDescription: "Area needs cleaning or maintenance",
@@ -59,10 +59,10 @@ const issueTypes: IssueTypeIcon[] = [
     requiredPhotos: 1
   },
   {
-    type: "Other",
+    type: "GENERAL_REQUESTS",
     icon: <WrenchIcon className="h-12 w-12" />,
-    label: "Other",
-    defaultTitle: "Other Issue",
+    label: "General Request",
+    defaultTitle: "General Maintenance Request",
     defaultDescription: "Other maintenance or facility issue",
     contextFields: [],
     requiredPhotos: 1

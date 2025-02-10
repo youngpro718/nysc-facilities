@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Card } from "@/components/ui/card";
@@ -33,7 +32,7 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
     defaultValues: {
       status: "open",
       priority: "medium",
-      type: initialType || "HVAC",
+      type: "GENERAL_REQUESTS",
       assigned_to: "Self"
     }
   });

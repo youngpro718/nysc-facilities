@@ -31,10 +31,14 @@ export function IssueReviewTab({ formData, photos }: IssueReviewTabProps) {
             </div>
           </div>
 
-          {formData.temperature && (
+          {formData.template_fields && Object.keys(formData.template_fields).length > 0 && (
             <div>
               <h3 className="text-lg font-semibold mb-2">Additional Details</h3>
-              <p><span className="font-medium">Temperature:</span> {formData.temperature}°F</p>
+              {Object.entries(formData.template_fields).map(([key, value]) => (
+                <p key={key}>
+                  <span className="font-medium">{key}:</span> {value}
+                </p>
+              ))}
             </div>
           )}
         </Card>
