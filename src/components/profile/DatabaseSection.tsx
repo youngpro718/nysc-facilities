@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -6,6 +5,7 @@ import { Database, Download, Upload } from "lucide-react";
 import { useState } from "react";
 import * as XLSX from 'xlsx';
 import { TablesInsert } from "@/integrations/supabase/types";
+import { supabase } from "@/integrations/supabase/client";
 
 const EXPORTABLE_TABLES = [
   'buildings', 'floors', 'rooms', 'occupants', 'keys',

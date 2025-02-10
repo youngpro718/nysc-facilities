@@ -39,7 +39,7 @@ const personalInfoSchema = z.object({
     name: z.string().optional(),
     phone: z.string().optional(),
     relationship: z.string().optional(),
-  }).optional(),
+  }),
 });
 
 type PersonalInfoValues = z.infer<typeof personalInfoSchema>;
@@ -96,7 +96,12 @@ export function PersonalInfoForm() {
           .single();
 
         if (profile && mounted) {
-          const emergencyContact = profile.emergency_contact || {
+          // Ensure emergency_contact is properly typed
+          const emergencyContact = profile.emergency_contact ? {
+            name: String(profile.emergency_contact?.name || ""),
+            phone: String(profile.emergency_contact?.phone || ""),
+            relationship: String(profile.emergency_contact?.relationship || ""),
+          } : {
             name: "",
             phone: "",
             relationship: "",
