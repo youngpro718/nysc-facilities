@@ -3,11 +3,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Form } from "@/components/ui/form";
-import { issueTypes } from "./wizard/IssueTypeSelection";
 import { FormData } from "./types/IssueTypes";
 import { IssueLocationForm } from "./wizard/IssueLocationForm";
 import { IssueTypeForm } from "./wizard/IssueTypeForm";
@@ -15,6 +11,11 @@ import { IssuePhotoForm } from "./wizard/IssuePhotoForm";
 import { usePhotoUpload } from "./hooks/usePhotoUpload";
 import { ScrollArea } from "../ui/scroll-area";
 import { toast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { IssueDetailsForm } from "./wizard/IssueDetailsForm";
+import { IssueReviewTab } from "./tabs/IssueReviewTab";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface CreateIssueFormProps {
   onSubmit: (data: FormData) => Promise<void>;
@@ -25,6 +26,7 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
   const [selectedBuilding, setSelectedBuilding] = useState<string | null>(null);
   const [selectedFloor, setSelectedFloor] = useState<string | null>(null);
   const { uploading, selectedPhotos, setSelectedPhotos, handlePhotoUpload } = usePhotoUpload();
+  const [activeTab, setActiveTab] = useState("type");
 
   const form = useForm<FormData>({
     defaultValues: {
@@ -35,139 +37,132 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
     }
   });
 
-  const selectedType = issueTypes.find(t => t.type === form.watch("type"));
-
   const handleFormSubmit = async (data: FormData) => {
-    if (selectedType && selectedPhotos.length < selectedType.requiredPhotos) {
-      toast({
-        title: "Error",
-        description: `Please upload at least ${selectedType.requiredPhotos} photo${selectedType.requiredPhotos > 1 ? 's' : ''}`,
-        variant: "destructive"
-      });
-      return;
-    }
     await onSubmit({ ...data, photos: selectedPhotos });
   };
 
+  const tabs = [
+    { id: "type", label: "Type & Priority" },
+    { id: "location", label: "Location" },
+    { id: "details", label: "Details" },
+    { id: "photos", label: "Photos" },
+    { id: "review", label: "Review" }
+  ];
+
+  const currentTabIndex = tabs.findIndex(tab => tab.id === activeTab);
+
+  const handleNext = () => {
+    const nextTab = tabs[currentTabIndex + 1];
+    if (nextTab) {
+      setActiveTab(nextTab.id);
+    }
+  };
+
+  const handlePrevious = () => {
+    const prevTab = tabs[currentTabIndex - 1];
+    if (prevTab) {
+      setActiveTab(prevTab.id);
+    }
+  };
+
   return (
-    <div className="grid grid-cols-2 gap-6 p-6">
-      <Card className="p-6">
-        <ScrollArea className="h-[calc(100vh-12rem)]">
+    <div className="max-w-5xl mx-auto p-6">
+      <Card className="bg-white shadow-lg border-0">
+        <div className="p-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
-              <div className="space-y-4">
-                <IssueTypeForm form={form} />
-                
-                <div className="space-y-4">
-                  <Label>Details</Label>
-                  <Input 
-                    placeholder="Title" 
-                    {...form.register("title")}
-                    className="h-12 text-base"
-                  />
-                  <Textarea 
-                    placeholder="Description" 
-                    {...form.register("description")}
-                    className="min-h-[120px] text-base"
-                  />
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="w-full justify-between bg-muted/50 p-1">
+                  {tabs.map((tab) => (
+                    <TabsTrigger
+                      key={tab.id}
+                      value={tab.id}
+                      className={cn(
+                        "flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground",
+                        "transition-all duration-200"
+                      )}
+                    >
+                      {tab.label}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+
+                <div className="mt-6">
+                  <TabsContent value="type" className="m-0">
+                    <ScrollArea className="h-[600px] pr-4">
+                      <IssueTypeForm form={form} />
+                    </ScrollArea>
+                  </TabsContent>
+
+                  <TabsContent value="location" className="m-0">
+                    <ScrollArea className="h-[600px] pr-4">
+                      <IssueLocationForm
+                        form={form}
+                        selectedBuilding={selectedBuilding}
+                        selectedFloor={selectedFloor}
+                        setSelectedBuilding={setSelectedBuilding}
+                        setSelectedFloor={setSelectedFloor}
+                      />
+                    </ScrollArea>
+                  </TabsContent>
+
+                  <TabsContent value="details" className="m-0">
+                    <ScrollArea className="h-[600px] pr-4">
+                      <IssueDetailsForm form={form} />
+                    </ScrollArea>
+                  </TabsContent>
+
+                  <TabsContent value="photos" className="m-0">
+                    <ScrollArea className="h-[600px] pr-4">
+                      <IssuePhotoForm
+                        selectedPhotos={selectedPhotos}
+                        uploading={uploading}
+                        onPhotoUpload={handlePhotoUpload}
+                      />
+                    </ScrollArea>
+                  </TabsContent>
+
+                  <TabsContent value="review" className="m-0">
+                    <ScrollArea className="h-[600px] pr-4">
+                      <IssueReviewTab
+                        formData={form.getValues()}
+                        photos={selectedPhotos}
+                      />
+                    </ScrollArea>
+                  </TabsContent>
                 </div>
+              </Tabs>
 
-                <IssueLocationForm
-                  form={form}
-                  selectedBuilding={selectedBuilding}
-                  selectedFloor={selectedFloor}
-                  setSelectedBuilding={setSelectedBuilding}
-                  setSelectedFloor={setSelectedFloor}
-                />
-
-                {selectedType?.contextFields.includes("temperature") && (
-                  <div className="space-y-2">
-                    <Label>Temperature (°F)</Label>
-                    <Input 
-                      type="number" 
-                      {...form.register("temperature")}
-                      className="h-12 text-base"
-                    />
-                  </div>
-                )}
-
-                {selectedType?.contextFields.includes("damage_assessment") && (
-                  <div className="space-y-2">
-                    <Label>Damage Assessment</Label>
-                    <Textarea 
-                      {...form.register("damage_assessment")}
-                      placeholder="Describe the extent of damage"
-                      className="min-h-[100px] text-base"
-                    />
-                  </div>
-                )}
-
-                {selectedType?.contextFields.includes("area_size") && (
-                  <div className="space-y-2">
-                    <Label>Area Size</Label>
-                    <Input 
-                      {...form.register("area_size")}
-                      placeholder="Approximate size of affected area"
-                      className="h-12 text-base"
-                    />
-                  </div>
-                )}
-
-                <IssuePhotoForm
-                  selectedPhotos={selectedPhotos}
-                  uploading={uploading}
-                  onPhotoUpload={handlePhotoUpload}
-                />
-              </div>
-
-              <div className="flex justify-end pt-6">
-                <Button type="submit" disabled={uploading}>
-                  Create Issue
+              <div className="flex justify-between pt-6 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handlePrevious}
+                  disabled={currentTabIndex === 0}
+                  className="w-32"
+                >
+                  <ChevronLeft className="w-4 h-4 mr-2" />
+                  Previous
                 </Button>
+                
+                {activeTab === "review" ? (
+                  <Button type="submit" disabled={uploading} className="w-32">
+                    Submit
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    onClick={handleNext}
+                    disabled={currentTabIndex === tabs.length - 1}
+                    className="w-32"
+                  >
+                    Next
+                    <ChevronRight className="w-4 h-4 ml-2" />
+                  </Button>
+                )}
               </div>
             </form>
           </Form>
-        </ScrollArea>
-      </Card>
-
-      <Card className="p-6">
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Issue Preview</h3>
-          {selectedPhotos.length > 0 ? (
-            <div className="grid grid-cols-2 gap-4">
-              {selectedPhotos.map((photo) => (
-                <img
-                  key={photo}
-                  src={photo}
-                  alt="Issue preview"
-                  className="rounded-md object-cover aspect-video w-full"
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="aspect-video bg-muted rounded-md flex items-center justify-center text-muted-foreground">
-              No photos uploaded
-            </div>
-          )}
-          
-          <div className="space-y-2">
-            <h4 className="font-medium">Title</h4>
-            <p className="text-muted-foreground">{form.watch("title") || "No title"}</p>
-          </div>
-
-          <div className="space-y-2">
-            <h4 className="font-medium">Description</h4>
-            <p className="text-muted-foreground">{form.watch("description") || "No description"}</p>
-          </div>
-
-          {selectedType && (
-            <div className="space-y-2">
-              <h4 className="font-medium">Required Photos</h4>
-              <p className="text-muted-foreground">
-                {selectedPhotos.length} of {selectedType.requiredPhotos} photos uploaded
-              </p>
-            </div>
-          )}
         </div>
       </Card>
     </div>
