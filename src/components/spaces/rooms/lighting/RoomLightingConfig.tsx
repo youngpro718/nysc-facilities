@@ -61,7 +61,8 @@ export function RoomLightingConfig({ roomId }: RoomLightingConfigProps) {
         emergency_circuit: fixture.emergency_circuit,
         ballast_issue: fixture.ballast_issue,
         maintenance_notes: fixture.maintenance_notes,
-        ballast_check_notes: fixture.ballast_check_notes,
+        // Safely handle potentially missing ballast_check_notes
+        ballast_check_notes: fixture.ballast_check_notes || null,
         electrical_issues: fixture.electrical_issues || {
           short_circuit: false,
           wiring_issues: false,
@@ -138,7 +139,7 @@ export function RoomLightingConfig({ roomId }: RoomLightingConfigProps) {
       voltage_problems: false
     },
     ballast_issue: fixture.ballast_issue,
-    ballast_check_notes: fixture.ballast_check_notes,
+    ballast_check_notes: fixture.ballast_check_notes || undefined,
     emergency_circuit: fixture.emergency_circuit,
     position: fixture.position,
     sequence_number: fixture.sequence_number
