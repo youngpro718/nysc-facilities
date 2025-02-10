@@ -1,3 +1,4 @@
+
 "use client";
 import { useMotionValue } from "framer-motion";
 import React, { useState, useEffect } from "react";
@@ -39,7 +40,7 @@ export const EvervaultCard = ({
     >
       <div
         onMouseMove={onMouseMove}
-        className="group/card w-full relative overflow-hidden bg-transparent flex items-center justify-center h-full"
+        className="group/card w-full h-full relative overflow-hidden bg-transparent flex items-center justify-center"
       >
         <CardPattern
           mouseX={mouseX}
@@ -57,14 +58,13 @@ export const EvervaultCard = ({
 };
 
 export function CardPattern({ mouseX, mouseY, randomString }: any) {
-  let maskImage = useMotionTemplate`radial-gradient(350px at ${mouseX}px ${mouseY}px, white, transparent)`;
+  let maskImage = useMotionTemplate`radial-gradient(500px at ${mouseX}px ${mouseY}px, white, transparent)`;
   let style = { maskImage, WebkitMaskImage: maskImage };
 
   return (
     <div className="pointer-events-none">
-      <div className="absolute inset-0 [mask-image:linear-gradient(white,transparent)] group-hover/card:opacity-50"></div>
       <motion.div
-        className="absolute inset-0 bg-gradient-to-r from-green-500 to-blue-700 opacity-0 group-hover/card:opacity-100 backdrop-blur-xl transition duration-500"
+        className="absolute inset-0 bg-gradient-to-r from-green-500 to-blue-700 opacity-0 group-hover/card:opacity-100 transition duration-500"
         style={style}
       />
       <motion.div
