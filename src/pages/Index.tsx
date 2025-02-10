@@ -102,7 +102,7 @@ const Index = () => {
   };
 
   const buildingImages = [
-    "/lovable-uploads/dd39eed6-def6-420f-97c1-790e968fc8d8.png",
+    "/lovable-uploads/ca12c24b-cc46-4318-b46d-8af88c0deae9.png",
     "/lovable-uploads/52abee84-9ecc-4ce9-a008-e151553ba782.png",
   ];
 
