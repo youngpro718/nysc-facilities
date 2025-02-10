@@ -13,20 +13,49 @@ const Index = () => {
         .from("buildings")
         .select(`
           *,
-          floors (
+          floors!inner (
             id,
-            rooms (
+            rooms!inner (
               id,
-              room_lighting_status (
-                working_fixtures,
-                non_working_fixtures,
-                total_fixtures
-              )
+              room_number,
+              name
             )
           )
         `);
+
       if (error) throw error;
-      return data;
+
+      // Fetch lighting status for all rooms
+      const roomIds = data?.flatMap(building => 
+        building.floors?.flatMap(floor => 
+          floor.rooms?.map(room => room.id)
+        )
+      ).filter(Boolean) || [];
+
+      const { data: lightingData, error: lightingError } = await supabase
+        .from("room_lighting_status")
+        .select("*")
+        .in("room_id", roomIds);
+
+      if (lightingError) throw lightingError;
+
+      // Map lighting data to buildings
+      return data.map(building => ({
+        ...building,
+        floors: building.floors.map(floor => ({
+          ...floor,
+          rooms: floor.rooms.map(room => ({
+            ...room,
+            room_lighting_status: [
+              lightingData?.find(status => status.room_id === room.id) || {
+                working_fixtures: 0,
+                non_working_fixtures: 0,
+                total_fixtures: 0
+              }
+            ]
+          }))
+        }))
+      }));
     },
   });
 
