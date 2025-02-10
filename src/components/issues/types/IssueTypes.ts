@@ -34,6 +34,7 @@ export type FormData = {
   room_id?: string;
   photos?: string[];
   fixture_id?: string;
+  due_date?: string;  // Added this field
 };
 
 export type Step = "type-selection" | "details" | "location" | "type" | "photos";
