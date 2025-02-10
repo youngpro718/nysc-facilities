@@ -33,6 +33,7 @@ export function LightingStatusIndicator({ roomId }: LightingStatusIndicatorProps
         return null;
       }
 
+      console.log("Room lighting status:", data);
       return data;
     },
     enabled: !!roomId

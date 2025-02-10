@@ -31,6 +31,8 @@ export function RoomLightingConfig({ roomId }: RoomLightingConfigProps) {
   const { data: fixtures, isLoading, refetch } = useQuery({
     queryKey: ['room-lighting', roomId],
     queryFn: async () => {
+      console.log("Fetching lighting fixtures for room:", roomId);
+      
       const { data: fixtureData, error } = await supabase
         .from('lighting_fixture_details')
         .select('*')
@@ -38,13 +40,33 @@ export function RoomLightingConfig({ roomId }: RoomLightingConfigProps) {
         .eq('space_type', 'room');
 
       if (error) {
+        console.error('Error fetching lighting fixtures:', error);
         toast.error('Failed to load lighting configuration');
         throw error;
       }
 
+      console.log("Fixture data:", fixtureData);
+
       // Transform the data to match LightingFixture type
       return (fixtureData || []).map(fixture => ({
-        ...fixture,
+        id: fixture.id,
+        name: fixture.name,
+        type: fixture.type,
+        status: fixture.status,
+        zone_id: fixture.zone_id,
+        technology: fixture.technology || "LED",
+        position: fixture.position,
+        sequence_number: fixture.sequence_number,
+        bulb_count: fixture.bulb_count,
+        emergency_circuit: fixture.emergency_circuit,
+        ballast_issue: fixture.ballast_issue,
+        maintenance_notes: fixture.maintenance_notes,
+        ballast_check_notes: fixture.ballast_check_notes,
+        electrical_issues: fixture.electrical_issues || {
+          short_circuit: false,
+          wiring_issues: false,
+          voltage_problems: false
+        },
         energy_usage_data: fixture.energy_usage_data ? {
           daily_usage: [],
           efficiency_rating: null,
@@ -71,34 +93,9 @@ export function RoomLightingConfig({ roomId }: RoomLightingConfigProps) {
           support_contact: null,
           ...JSON.parse(JSON.stringify(fixture.manufacturer_details))
         } : null,
-        inspection_history: fixture.inspection_history ? 
-          (Array.isArray(fixture.inspection_history) ? 
-            fixture.inspection_history.map((entry: any) => ({
-              date: entry.date || '',
-              status: entry.status || '',
-              notes: entry.notes
-            }))
-            : []
-          ) : [],
-        maintenance_history: fixture.maintenance_history ?
-          (Array.isArray(fixture.maintenance_history) ?
-            fixture.maintenance_history.map((entry: any) => ({
-              date: entry.date || '',
-              type: entry.type || '',
-              notes: entry.notes
-            }))
-            : []
-          ) : [],
-        connected_fixtures: Array.isArray(fixture.connected_fixtures) ? 
-          fixture.connected_fixtures : [],
-        electrical_issues: {
-          short_circuit: false,
-          wiring_issues: false,
-          voltage_problems: false,
-          ...(typeof fixture.electrical_issues === 'object' && fixture.electrical_issues !== null 
-            ? fixture.electrical_issues 
-            : {})
-        }
+        inspection_history: fixture.inspection_history || [],
+        maintenance_history: fixture.maintenance_history || [],
+        connected_fixtures: fixture.connected_fixtures || []
       })) as LightingFixture[];
     }
   });
@@ -147,11 +144,19 @@ export function RoomLightingConfig({ roomId }: RoomLightingConfigProps) {
     sequence_number: fixture.sequence_number
   });
 
+  const workingFixtures = fixtures?.filter(f => f.status === 'functional').length || 0;
+  const totalFixtures = fixtures?.length || 0;
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <span>Lighting Configuration</span>
+          <div className="flex items-center gap-2">
+            <span>Lighting Configuration</span>
+            <Badge variant="outline" className="text-xs">
+              {workingFixtures}/{totalFixtures} Working
+            </Badge>
+          </div>
           <div className="flex items-center gap-2">
             {fixtures && fixtures.length > 0 && (
               <Button 
@@ -173,6 +178,24 @@ export function RoomLightingConfig({ roomId }: RoomLightingConfigProps) {
       <CardContent>
         {fixtures && fixtures.length > 0 ? (
           <div className="space-y-6">
+            {/* Progress bar for working fixtures */}
+            <div className="space-y-2">
+              <div className="h-2 rounded-full bg-secondary">
+                <div
+                  className="h-full rounded-full bg-green-500 transition-all duration-500"
+                  style={{
+                    width: `${totalFixtures ? (workingFixtures / totalFixtures) * 100 : 0}%`,
+                  }}
+                />
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Total Fixtures: {totalFixtures}</span>
+                <span className="font-medium text-green-500">
+                  {Math.round((workingFixtures / totalFixtures) * 100) || 0}% Operational
+                </span>
+              </div>
+            </div>
+
             {Object.entries(groupedFixtures).map(([position, positionFixtures]) => (
               <div key={position} className="space-y-4">
                 <h3 className="font-medium capitalize">{position} Fixtures</h3>
