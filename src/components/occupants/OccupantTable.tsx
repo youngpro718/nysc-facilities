@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   Table,
@@ -12,15 +13,16 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronDown, ChevronUp, Pencil, Trash2 } from "lucide-react";
 import { OccupantDetails } from "./OccupantDetails";
+import { OccupantQueryResponse } from "./types/occupantTypes";
 
 interface OccupantTableProps {
-  occupants: any[];
+  occupants: OccupantQueryResponse[];
   expandedRows: Set<string>;
   selectedOccupants: string[];
   onToggleRow: (id: string) => void;
   onToggleSelect: (id: string) => void;
   onSelectAll: () => void;
-  onEdit: (occupant: any) => void;
+  onEdit: (occupant: OccupantQueryResponse) => void;
   onDelete: (id: string) => void;
 }
 

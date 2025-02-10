@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { OccupantStatus } from "../schemas/occupantSchema";
+import { OccupantQueryResponse, SupabaseError } from "../types/occupantTypes";
 
 export function useOccupantList() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -12,7 +13,10 @@ export function useOccupantList() {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [selectedOccupants, setSelectedOccupants] = useState<string[]>([]);
 
-  const { data: occupants, isLoading, isError, error, refetch } = useQuery({
+  const { data: occupants, isLoading, isError, error, refetch } = useQuery<
+    OccupantQueryResponse[],
+    SupabaseError
+  >({
     queryKey: ['occupants', searchQuery, departmentFilter, statusFilter],
     queryFn: async () => {
       let query = supabase
@@ -88,8 +92,9 @@ export function useOccupantList() {
       toast.success(`Successfully updated ${selectedOccupants.length} occupants`);
       setSelectedOccupants([]);
       refetch();
-    } catch (error: any) {
-      toast.error(error.message || "Error updating occupants");
+    } catch (error) {
+      const err = error as SupabaseError;
+      toast.error(err.message || "Error updating occupants");
     }
   };
 
@@ -104,8 +109,9 @@ export function useOccupantList() {
 
       toast.success("Occupant deleted successfully!");
       refetch();
-    } catch (error: any) {
-      toast.error(error.message || "Error deleting occupant");
+    } catch (error) {
+      const err = error as SupabaseError;
+      toast.error(err.message || "Error deleting occupant");
     }
   };
 
