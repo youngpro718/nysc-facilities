@@ -12,35 +12,41 @@ interface IssueDetailsFormProps {
 
 export function IssueDetailsForm({ form }: IssueDetailsFormProps) {
   return (
-    <ScrollArea className="h-[calc(100vh-12rem)] px-4">
-      <div className="space-y-4 pr-4">
-        <FormField
-          control={form.control}
-          name="title"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-base">Title</FormLabel>
-              <FormControl>
-                <Input {...field} className="h-12 text-base" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-base">Description</FormLabel>
-              <FormControl>
-                <Textarea {...field} className="min-h-[120px] text-base leading-relaxed" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </div>
-    </ScrollArea>
+    <div className="space-y-6">
+      <FormField
+        control={form.control}
+        name="title"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel className="text-base font-medium">Title</FormLabel>
+            <FormControl>
+              <Input 
+                {...field} 
+                className="h-12 text-base bg-background/50 border-white/10" 
+                placeholder="Enter issue title"
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="description"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel className="text-base font-medium">Description</FormLabel>
+            <FormControl>
+              <Textarea 
+                {...field} 
+                className="min-h-[120px] text-base leading-relaxed bg-background/50 border-white/10" 
+                placeholder="Describe the issue in detail"
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </div>
   );
 }

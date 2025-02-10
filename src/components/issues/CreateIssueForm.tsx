@@ -10,11 +10,11 @@ import { IssueTypeForm } from "./wizard/IssueTypeForm";
 import { IssuePhotoForm } from "./wizard/IssuePhotoForm";
 import { usePhotoUpload } from "./hooks/usePhotoUpload";
 import { ScrollArea } from "../ui/scroll-area";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IssueDetailsForm } from "./wizard/IssueDetailsForm";
 import { IssueReviewTab } from "./tabs/IssueReviewTab";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CreateIssueFormProps {
@@ -27,6 +27,7 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
   const [selectedFloor, setSelectedFloor] = useState<string | null>(null);
   const { uploading, selectedPhotos, setSelectedPhotos, handlePhotoUpload } = usePhotoUpload();
   const [activeTab, setActiveTab] = useState("type");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormData>({
     defaultValues: {
@@ -38,7 +39,21 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
   });
 
   const handleFormSubmit = async (data: FormData) => {
-    await onSubmit({ ...data, photos: selectedPhotos });
+    try {
+      setIsSubmitting(true);
+      await onSubmit({ ...data, photos: selectedPhotos });
+      toast.success("Issue created successfully");
+      form.reset();
+      setSelectedPhotos([]);
+      setSelectedBuilding(null);
+      setSelectedFloor(null);
+      setActiveTab("type");
+    } catch (error) {
+      toast.error("Failed to create issue");
+      console.error("Submit error:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const tabs = [
@@ -66,21 +81,24 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
   };
 
   return (
-    <div className="max-w-5xl mx-auto p-6">
-      <Card className="bg-white shadow-lg border-0">
-        <div className="p-6">
+    <div className="max-w-4xl mx-auto p-4 sm:p-6">
+      <Card className="bg-card/30 backdrop-blur-xl border-white/10 shadow-2xl">
+        <div className="p-4 sm:p-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="w-full justify-between bg-muted/50 p-1">
+                <TabsList className="w-full justify-between bg-background/50 p-1 rounded-lg backdrop-blur-sm">
                   {tabs.map((tab) => (
                     <TabsTrigger
                       key={tab.id}
                       value={tab.id}
                       className={cn(
                         "flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground",
-                        "transition-all duration-200"
+                        "transition-all duration-200 text-sm py-2",
+                        "data-[state=active]:shadow-lg",
+                        "disabled:opacity-50"
                       )}
+                      disabled={isSubmitting}
                     >
                       {tab.label}
                     </TabsTrigger>
@@ -89,13 +107,13 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
 
                 <div className="mt-6">
                   <TabsContent value="type" className="m-0">
-                    <ScrollArea className="h-[600px] pr-4">
+                    <ScrollArea className="h-[500px] pr-4">
                       <IssueTypeForm form={form} />
                     </ScrollArea>
                   </TabsContent>
 
                   <TabsContent value="location" className="m-0">
-                    <ScrollArea className="h-[600px] pr-4">
+                    <ScrollArea className="h-[500px] pr-4">
                       <IssueLocationForm
                         form={form}
                         selectedBuilding={selectedBuilding}
@@ -107,13 +125,13 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
                   </TabsContent>
 
                   <TabsContent value="details" className="m-0">
-                    <ScrollArea className="h-[600px] pr-4">
+                    <ScrollArea className="h-[500px] pr-4">
                       <IssueDetailsForm form={form} />
                     </ScrollArea>
                   </TabsContent>
 
                   <TabsContent value="photos" className="m-0">
-                    <ScrollArea className="h-[600px] pr-4">
+                    <ScrollArea className="h-[500px] pr-4">
                       <IssuePhotoForm
                         selectedPhotos={selectedPhotos}
                         uploading={uploading}
@@ -123,7 +141,7 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
                   </TabsContent>
 
                   <TabsContent value="review" className="m-0">
-                    <ScrollArea className="h-[600px] pr-4">
+                    <ScrollArea className="h-[500px] pr-4">
                       <IssueReviewTab
                         formData={form.getValues()}
                         photos={selectedPhotos}
@@ -133,12 +151,12 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
                 </div>
               </Tabs>
 
-              <div className="flex justify-between pt-6 border-t">
+              <div className="flex justify-between pt-6 border-t border-white/10">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={handlePrevious}
-                  disabled={currentTabIndex === 0}
+                  disabled={currentTabIndex === 0 || isSubmitting}
                   className="w-32"
                 >
                   <ChevronLeft className="w-4 h-4 mr-2" />
@@ -146,14 +164,25 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
                 </Button>
                 
                 {activeTab === "review" ? (
-                  <Button type="submit" disabled={uploading} className="w-32">
-                    Submit
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmitting || uploading} 
+                    className="w-32"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Submitting
+                      </>
+                    ) : (
+                      "Submit"
+                    )}
                   </Button>
                 ) : (
                   <Button
                     type="button"
                     onClick={handleNext}
-                    disabled={currentTabIndex === tabs.length - 1}
+                    disabled={currentTabIndex === tabs.length - 1 || isSubmitting}
                     className="w-32"
                   >
                     Next
