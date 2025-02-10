@@ -17,7 +17,7 @@ interface IssueTemplate {
   required_fields: Record<string, boolean>;
   optional_fields: Record<string, boolean>;
   default_priority: string;
-  default_assigned_to: string;
+  default_assigned_to: "DCAS" | "OCA" | "Self" | "Outside_Vendor";
 }
 
 const issueCategories = [
@@ -59,8 +59,20 @@ export function IssueTypeForm({ form }: IssueTypeFormProps) {
         return;
       }
 
-      setTemplates(data);
-      const subcats = data.map(template => ({
+      // Transform the data to match our IssueTemplate interface
+      const transformedData = data.map(template => ({
+        ...template,
+        required_fields: typeof template.required_fields === 'string' 
+          ? JSON.parse(template.required_fields)
+          : template.required_fields,
+        optional_fields: typeof template.optional_fields === 'string'
+          ? JSON.parse(template.optional_fields)
+          : template.optional_fields,
+        default_assigned_to: template.default_assigned_to as "DCAS" | "OCA" | "Self" | "Outside_Vendor"
+      }));
+
+      setTemplates(transformedData);
+      const subcats = transformedData.map(template => ({
         value: template.subcategory,
         label: template.subcategory
       }));
@@ -81,7 +93,7 @@ export function IssueTypeForm({ form }: IssueTypeFormProps) {
       form.setValue("priority", template.default_priority);
       form.setValue("assigned_to", template.default_assigned_to);
     }
-  }, [form.watch("template_fields.problem"), templates]);
+  }, [form.watch("template_fields.problem"), templates, form]);
 
   return (
     <div className="space-y-6">
