@@ -29,6 +29,25 @@ import {
   FixturePosition
 } from "./types/IssueTypes";
 
+// Type guard functions
+function isValidFixtureType(value: string | null): value is FixtureType {
+  return value === 'standard' || value === 'emergency' || value === 'motion_sensor';
+}
+
+function isValidFixtureStatus(value: string | null): value is FixtureStatus {
+  return value === 'functional' || value === 'maintenance_needed' || 
+         value === 'non_functional' || value === 'pending_maintenance' || 
+         value === 'scheduled_replacement';
+}
+
+function isValidIssueStatus(value: string | null): value is IssueStatus {
+  return value === 'open' || value === 'in_progress' || value === 'resolved';
+}
+
+function isValidIssuePriority(value: string | null): value is IssuePriority {
+  return value === 'high' || value === 'medium' || value === 'low';
+}
+
 async function fetchIssues() {
   let query = supabase
     .from('issues')
@@ -59,11 +78,11 @@ async function fetchIssues() {
       const fixtureStatus = params.get('fixtureStatus');
       const electricalIssue = params.get('electricalIssue');
 
-      if (lightingType && lightingType !== 'all_lighting_types') {
+      if (lightingType && lightingType !== 'all_lighting_types' && isValidFixtureType(lightingType)) {
         query = query.eq('lighting_fixtures.type', lightingType);
       }
 
-      if (fixtureStatus && fixtureStatus !== 'all_fixture_statuses') {
+      if (fixtureStatus && fixtureStatus !== 'all_fixture_statuses' && isValidFixtureStatus(fixtureStatus)) {
         query = query.eq('lighting_fixtures.status', fixtureStatus);
       }
 
@@ -73,12 +92,12 @@ async function fetchIssues() {
     }
 
     const status = params.get('status');
-    if (status && status !== 'all_statuses') {
+    if (status && status !== 'all_statuses' && isValidIssueStatus(status)) {
       query = query.eq('status', status);
     }
 
     const priority = params.get('priority');
-    if (priority && priority !== 'all_priorities') {
+    if (priority && priority !== 'all_priorities' && isValidIssuePriority(priority)) {
       query = query.eq('priority', priority);
     }
 
