@@ -100,11 +100,16 @@ export function PersonalInfoForm() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user || !mounted) return;
 
-        const { data: profile } = await supabase
+        const { data: profile, error } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
           .single();
+
+        if (error) {
+          console.error('Error loading profile:', error);
+          return;
+        }
 
         if (profile && mounted) {
           // Parse emergency contact data safely using the type guard
@@ -137,6 +142,11 @@ export function PersonalInfoForm() {
         }
       } catch (error) {
         console.error('Error loading profile:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load profile information.",
+          variant: "destructive",
+        });
       }
     }
 
@@ -144,19 +154,23 @@ export function PersonalInfoForm() {
     return () => {
       mounted = false;
     };
-  }, [form]);
+  }, [form, toast]);
 
   async function onSubmit(data: PersonalInfoValues) {
     if (isLoading) return;
 
     try {
       setIsLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("No user found");
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        throw new Error(userError?.message || "No user found");
+      }
 
       const { error } = await supabase
         .from('profiles')
-        .update({
+        .upsert({
+          id: user.id,
           first_name: data.first_name,
           last_name: data.last_name,
           username: data.username,
@@ -167,8 +181,8 @@ export function PersonalInfoForm() {
           time_zone: data.time_zone,
           language: data.language,
           emergency_contact: data.emergency_contact,
-        })
-        .eq('id', user.id);
+          updated_at: new Date().toISOString(),
+        });
 
       if (error) throw error;
 
