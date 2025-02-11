@@ -48,6 +48,12 @@ export function CreateIssueMobileWizard({ onIssueCreated }: { onIssueCreated: ()
     setStep
   });
 
+  const handlePhotoRemove = (index: number) => {
+    const newPhotos = [...selectedPhotos];
+    newPhotos.splice(index, 1);
+    setSelectedPhotos(newPhotos);
+  };
+
   const renderStepContent = () => {
     switch (step) {
       case "type":
@@ -70,6 +76,7 @@ export function CreateIssueMobileWizard({ onIssueCreated }: { onIssueCreated: ()
             selectedPhotos={selectedPhotos}
             uploading={uploading}
             onPhotoUpload={handlePhotoUpload}
+            onPhotoRemove={handlePhotoRemove}
           />
         );
       case "review":

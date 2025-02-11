@@ -33,7 +33,7 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
     defaultValues: {
       status: "open",
       priority: "medium",
-      type: "GENERAL_REQUESTS",
+      type: initialType || "GENERAL_REQUESTS",
       assigned_to: "Self"
     }
   });
@@ -48,12 +48,17 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
       setSelectedBuilding(null);
       setSelectedFloor(null);
       setActiveTab("type");
-    } catch (error) {
-      toast.error("Failed to create issue");
-      console.error("Submit error:", error);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to create issue");
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handlePhotoRemove = (index: number) => {
+    const newPhotos = [...selectedPhotos];
+    newPhotos.splice(index, 1);
+    setSelectedPhotos(newPhotos);
   };
 
   const tabs = [
@@ -136,6 +141,7 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
                         selectedPhotos={selectedPhotos}
                         uploading={uploading}
                         onPhotoUpload={handlePhotoUpload}
+                        onPhotoRemove={handlePhotoRemove}
                       />
                     </ScrollArea>
                   </TabsContent>

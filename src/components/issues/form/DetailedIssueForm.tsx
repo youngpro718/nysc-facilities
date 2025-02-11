@@ -43,12 +43,18 @@ export function DetailedIssueForm({ onSubmit, initialData }: DetailedIssueFormPr
       setIsSubmitting(true);
       await onSubmit({ ...data, photos: selectedPhotos });
       toast.success("Issue saved successfully");
-    } catch (error) {
-      toast.error("Failed to save issue");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to save issue");
       console.error("Submit error:", error);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handlePhotoRemove = (index: number) => {
+    const newPhotos = [...selectedPhotos];
+    newPhotos.splice(index, 1);
+    setSelectedPhotos(newPhotos);
   };
 
   return (
@@ -116,6 +122,7 @@ export function DetailedIssueForm({ onSubmit, initialData }: DetailedIssueFormPr
                       selectedPhotos={selectedPhotos}
                       uploading={uploading}
                       onPhotoUpload={handlePhotoUpload}
+                      onPhotoRemove={handlePhotoRemove}
                     />
                   </ScrollArea>
                 </TabsContent>
