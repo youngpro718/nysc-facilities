@@ -1,20 +1,51 @@
-
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CreateIssueDialog } from "@/components/issues/CreateIssueDialog";
+import { CreateIssueForm } from "@/components/issues/CreateIssueForm";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { CreateIssueMobileWizard } from "@/components/issues/CreateIssueMobileWizard";
 import { IssuesList } from "@/components/issues/IssuesList";
 import { LightingManagement } from "@/components/lighting/LightingManagement";
 import { IssueStatsBanner } from "@/components/issues/stats/IssueStatsBanner";
 import { QuickFilters } from "@/components/issues/filters/QuickFilters";
+import { useState } from "react";
+import { FormData } from "@/components/issues/types/IssueTypes";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const Issues = () => {
   const isMobile = useIsMobile();
+  const [showIssueForm, setShowIssueForm] = useState(false);
   
   const handleIssueCreated = async () => {
     // Refresh data or update UI as needed
+    setShowIssueForm(false);
+  };
+
+  const handleIssueSubmit = async (data: FormData) => {
+    try {
+      const { error } = await supabase
+        .from('issues')
+        .insert([{
+          title: data.title,
+          description: data.description,
+          type: data.type,
+          priority: data.priority,
+          status: data.status,
+          assigned_to: data.assigned_to,
+          building_id: data.building_id,
+          floor_id: data.floor_id,
+          room_id: data.room_id,
+          photos: data.photos
+        }]);
+
+      if (error) throw error;
+      
+      handleIssueCreated();
+      toast.success("Issue created successfully");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to create issue");
+    }
   };
 
   return (
@@ -35,7 +66,10 @@ const Issues = () => {
             {isMobile ? (
               <CreateIssueMobileWizard onIssueCreated={handleIssueCreated} />
             ) : (
-              <CreateIssueDialog onIssueCreated={handleIssueCreated} />
+              <Button onClick={() => setShowIssueForm(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Issue
+              </Button>
             )}
           </div>
 
@@ -43,9 +77,13 @@ const Issues = () => {
             <IssueStatsBanner />
             <QuickFilters />
             
-            <div className="overflow-y-auto -mx-4 sm:mx-0 px-4 sm:px-0">
-              <IssuesList />
-            </div>
+            {showIssueForm && !isMobile ? (
+              <CreateIssueForm onSubmit={handleIssueSubmit} />
+            ) : (
+              <div className="overflow-y-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+                <IssuesList />
+              </div>
+            )}
           </div>
         </TabsContent>
 
