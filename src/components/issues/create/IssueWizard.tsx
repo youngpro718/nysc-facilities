@@ -12,6 +12,7 @@ import { PhotoUpload } from "./steps/PhotoUpload";
 import { ReviewSubmit } from "./steps/ReviewSubmit";
 import type { FormData } from "../types/IssueTypes";
 import { useIssueForm } from "../hooks/useIssueForm";
+import { usePhotoUpload } from "../hooks/usePhotoUpload";
 
 interface IssueWizardProps {
   onSubmit: (data: FormData) => Promise<void>;
@@ -19,6 +20,10 @@ interface IssueWizardProps {
 
 export function IssueWizard({ onSubmit }: IssueWizardProps) {
   const [open, setOpen] = useState(false);
+  const [selectedBuilding, setSelectedBuilding] = useState<string | null>(null);
+  const [selectedFloor, setSelectedFloor] = useState<string | null>(null);
+  const { uploading, selectedPhotos, setSelectedPhotos, handlePhotoUpload } = usePhotoUpload();
+  
   const form = useForm<FormData>({
     defaultValues: {
       status: "open",
@@ -46,11 +51,25 @@ export function IssueWizard({ onSubmit }: IssueWizardProps) {
       case "details":
         return <IssueDetails form={form} />;
       case "location":
-        return <LocationSelection form={form} />;
+        return (
+          <LocationSelection 
+            form={form} 
+            selectedBuilding={selectedBuilding}
+            selectedFloor={selectedFloor}
+            setSelectedBuilding={setSelectedBuilding}
+            setSelectedFloor={setSelectedFloor}
+          />
+        );
       case "photos":
-        return <PhotoUpload />;
+        return (
+          <PhotoUpload 
+            selectedPhotos={selectedPhotos}
+            uploading={uploading}
+            onPhotoUpload={handlePhotoUpload}
+          />
+        );
       case "review":
-        return <ReviewSubmit form={form} />;
+        return <ReviewSubmit form={form} photos={selectedPhotos} />;
       default:
         return null;
     }
