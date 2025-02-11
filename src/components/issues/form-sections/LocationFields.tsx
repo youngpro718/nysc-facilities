@@ -8,11 +8,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Building, Floor, Room } from "../types/locationTypes";
 
 interface LocationFieldsProps {
-  form: UseFormReturn<FormData>;
+  form: UseFormReturn<FormData, any, undefined>;
 }
 
 export function LocationFields({ form }: LocationFieldsProps) {
-  const { data: buildings } = useQuery({
+  const { data: buildings } = useQuery<Building[]>({
     queryKey: ['buildings'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -25,7 +25,7 @@ export function LocationFields({ form }: LocationFieldsProps) {
     }
   });
 
-  const { data: floors } = useQuery({
+  const { data: floors } = useQuery<Floor[]>({
     queryKey: ['floors', form.watch('building_id')],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -40,7 +40,7 @@ export function LocationFields({ form }: LocationFieldsProps) {
     enabled: !!form.watch('building_id'),
   });
 
-  const { data: rooms } = useQuery({
+  const { data: rooms } = useQuery<Room[]>({
     queryKey: ['rooms', form.watch('floor_id')],
     queryFn: async () => {
       const { data, error } = await supabase
