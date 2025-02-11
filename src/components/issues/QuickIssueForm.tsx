@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -22,7 +21,7 @@ const PROBLEM_TYPES: Record<IssueType, string[]> = {
   'Power': ['Circuit Breaker', 'Outlet Not Working', 'Light Fixture', 'Emergency Power'],
   'Plumbing': ['Leak', 'Clog', 'No Water', 'Water Pressure'],
   'HVAC': ['No Heat', 'No Cooling', 'Strange Noise', 'Thermostat Issue'],
-  'Door': ['Won\'t Lock', 'Won\'t Close', 'Handle Broken', 'Card Reader'],
+  'Door': ["Won't Lock", "Won't Close", 'Handle Broken', 'Card Reader'],
   'Cleaning': ['Regular Service', 'Spill', 'Deep Clean Required', 'Waste Removal'],
   'Pest Control': ['Rodents', 'Insects', 'Prevention', 'Inspection'],
   'Other': ['General Maintenance', 'Inspection', 'Consultation']
