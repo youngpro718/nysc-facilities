@@ -1,29 +1,32 @@
 
-import { Form } from "@/components/ui/form";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Form } from "@/components/ui/form";
+import { FormData } from "../types/IssueTypes";
+import { LocationSelection } from "./steps/LocationSelection";
+import { IssueTypeForm } from "./steps/IssueTypeForm";
+import { PhotoUpload } from "./steps/PhotoUpload";
+import { IssueDetailsForm } from "./steps/IssueDetailsForm";
+import { ReviewSubmit } from "./steps/ReviewSubmit";
+import { usePhotoUpload } from "../hooks/usePhotoUpload";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
-import { TypeSelection } from "./steps/TypeSelection";
-import { IssueDetails } from "./steps/IssueDetails";
-import { LocationSelection } from "./steps/LocationSelection";
-import { PhotoUpload } from "./steps/PhotoUpload";
-import { ReviewSubmit } from "./steps/ReviewSubmit";
-import type { FormData } from "../types/IssueTypes";
-import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface CreateIssueFormProps {
   onSubmit: (data: FormData) => Promise<void>;
   initialType?: FormData["type"];
 }
 
-type Step = "type" | "details" | "location" | "photos" | "review";
-
 export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps) {
-  const [currentStep, setCurrentStep] = useState<Step>("type");
+  const [selectedBuilding, setSelectedBuilding] = useState<string | null>(null);
+  const [selectedFloor, setSelectedFloor] = useState<string | null>(null);
+  const { uploading, selectedPhotos, setSelectedPhotos, handlePhotoUpload } = usePhotoUpload();
+  const [activeTab, setActiveTab] = useState("location");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormData>({
@@ -35,13 +38,16 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
     }
   });
 
-  const handleSubmit = async (data: FormData) => {
+  const handleFormSubmit = async (data: FormData) => {
     try {
       setIsSubmitting(true);
-      await onSubmit(data);
+      await onSubmit({ ...data, photos: selectedPhotos });
       toast.success("Issue created successfully");
       form.reset();
-      setCurrentStep("type");
+      setSelectedPhotos([]);
+      setSelectedBuilding(null);
+      setSelectedFloor(null);
+      setActiveTab("location");
     } catch (error) {
       toast.error("Failed to create issue");
       console.error("Submit error:", error);
@@ -50,25 +56,42 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
     }
   };
 
-  const steps: Array<{ id: Step; label: string }> = [
-    { id: "type", label: "Type & Priority" },
-    { id: "details", label: "Details" },
+  const tabs = [
     { id: "location", label: "Location" },
+    { id: "type", label: "Issue Type" },
+    { id: "details", label: "Details" },
     { id: "photos", label: "Photos" },
     { id: "review", label: "Review" }
   ];
 
-  const currentStepIndex = steps.findIndex(step => step.id === currentStep);
+  const currentTabIndex = tabs.findIndex(tab => tab.id === activeTab);
 
   const handleNext = () => {
-    if (currentStepIndex < steps.length - 1) {
-      setCurrentStep(steps[currentStepIndex + 1].id);
+    const nextTab = tabs[currentTabIndex + 1];
+    if (nextTab) {
+      setActiveTab(nextTab.id);
     }
   };
 
   const handlePrevious = () => {
-    if (currentStepIndex > 0) {
-      setCurrentStep(steps[currentStepIndex - 1].id);
+    const prevTab = tabs[currentTabIndex - 1];
+    if (prevTab) {
+      setActiveTab(prevTab.id);
+    }
+  };
+
+  const canProceed = () => {
+    switch (activeTab) {
+      case "location":
+        return form.watch("building_id") && form.watch("floor_id") && form.watch("room_id");
+      case "type":
+        return form.watch("type") && form.watch("priority");
+      case "details":
+        return form.watch("title") && form.watch("description");
+      case "photos":
+        return true; // Photos are optional
+      default:
+        return true;
     }
   };
 
@@ -77,51 +100,64 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
       <Card className="bg-card/30 backdrop-blur-xl border-white/10 shadow-2xl">
         <div className="p-4 sm:p-6">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-              <Tabs value={currentStep} onValueChange={(value) => setCurrentStep(value as Step)} className="w-full">
-                <TabsList className="w-full grid grid-cols-5 gap-2 bg-background/50 p-1 rounded-lg backdrop-blur-sm">
-                  {steps.map((step) => (
+            <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="w-full grid grid-cols-5 gap-2">
+                  {tabs.map((tab) => (
                     <TabsTrigger
-                      key={step.id}
-                      value={step.id}
-                      className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground
-                        transition-all duration-200 text-sm py-2 px-4
-                        data-[state=active]:shadow-lg disabled:opacity-50 relative"
+                      key={tab.id}
+                      value={tab.id}
+                      className={cn(
+                        "flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground",
+                        "transition-all duration-200 text-sm py-2",
+                        "data-[state=active]:shadow-lg",
+                        "disabled:opacity-50"
+                      )}
                       disabled={isSubmitting}
                     >
-                      {step.label}
+                      {tab.label}
                     </TabsTrigger>
                   ))}
                 </TabsList>
 
-                <div className="mt-8">
-                  <TabsContent value="type" className="m-0">
+                <div className="mt-6">
+                  <TabsContent value="location">
                     <ScrollArea className="h-[500px] pr-4">
-                      <TypeSelection form={form} />
+                      <LocationSelection 
+                        form={form}
+                        selectedBuilding={selectedBuilding}
+                        selectedFloor={selectedFloor}
+                        setSelectedBuilding={setSelectedBuilding}
+                        setSelectedFloor={setSelectedFloor}
+                      />
                     </ScrollArea>
                   </TabsContent>
 
-                  <TabsContent value="details" className="m-0">
+                  <TabsContent value="type">
                     <ScrollArea className="h-[500px] pr-4">
-                      <IssueDetails form={form} />
+                      <IssueTypeForm form={form} />
                     </ScrollArea>
                   </TabsContent>
 
-                  <TabsContent value="location" className="m-0">
+                  <TabsContent value="details">
                     <ScrollArea className="h-[500px] pr-4">
-                      <LocationSelection form={form} />
+                      <IssueDetailsForm form={form} />
                     </ScrollArea>
                   </TabsContent>
 
-                  <TabsContent value="photos" className="m-0">
+                  <TabsContent value="photos">
                     <ScrollArea className="h-[500px] pr-4">
-                      <PhotoUpload />
+                      <PhotoUpload
+                        selectedPhotos={selectedPhotos}
+                        uploading={uploading}
+                        onPhotoUpload={handlePhotoUpload}
+                      />
                     </ScrollArea>
                   </TabsContent>
 
-                  <TabsContent value="review" className="m-0">
+                  <TabsContent value="review">
                     <ScrollArea className="h-[500px] pr-4">
-                      <ReviewSubmit form={form} />
+                      <ReviewSubmit form={form} photos={selectedPhotos} />
                     </ScrollArea>
                   </TabsContent>
                 </div>
@@ -132,17 +168,18 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
                   type="button"
                   variant="outline"
                   onClick={handlePrevious}
-                  disabled={currentStep === "type" || isSubmitting}
+                  disabled={currentTabIndex === 0 || isSubmitting}
                   className="w-32"
                 >
+                  <ChevronLeft className="w-4 h-4 mr-2" />
                   Previous
                 </Button>
-
-                {currentStep === "review" ? (
+                
+                {activeTab === "review" ? (
                   <Button 
                     type="submit" 
-                    disabled={isSubmitting} 
-                    className="w-32 bg-primary hover:bg-primary/90"
+                    disabled={isSubmitting || uploading} 
+                    className="w-32"
                   >
                     {isSubmitting ? (
                       <>
@@ -157,10 +194,11 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
                   <Button
                     type="button"
                     onClick={handleNext}
-                    disabled={isSubmitting}
-                    className="w-32 bg-primary hover:bg-primary/90"
+                    disabled={!canProceed() || isSubmitting}
+                    className="w-32"
                   >
                     Next
+                    <ChevronRight className="w-4 h-4 ml-2" />
                   </Button>
                 )}
               </div>

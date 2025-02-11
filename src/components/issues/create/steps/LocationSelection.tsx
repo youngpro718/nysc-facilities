@@ -8,66 +8,82 @@ import type { FormData } from "../../types/IssueTypes";
 
 interface LocationSelectionProps {
   form: UseFormReturn<FormData>;
+  selectedBuilding: string | null;
+  selectedFloor: string | null;
+  setSelectedBuilding: (building: string | null) => void;
+  setSelectedFloor: (floor: string | null) => void;
 }
 
-export function LocationSelection({ form }: LocationSelectionProps) {
+export function LocationSelection({ 
+  form, 
+  selectedBuilding, 
+  selectedFloor,
+  setSelectedBuilding,
+  setSelectedFloor 
+}: LocationSelectionProps) {
   const { data: buildings } = useQuery({
-    queryKey: ["buildings"],
+    queryKey: ['buildings'],
     queryFn: async () => {
-      const { data, error } = await supabase.from("buildings").select("*");
+      const { data, error } = await supabase
+        .from('buildings')
+        .select('*')
+        .eq('status', 'active')
+        .order('name');
       if (error) throw error;
       return data;
-    },
+    }
   });
-
-  const buildingId = form.watch("building_id");
 
   const { data: floors } = useQuery({
-    queryKey: ["floors", buildingId],
-    enabled: !!buildingId,
+    queryKey: ['floors', selectedBuilding],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("floors")
-        .select("*")
-        .eq("building_id", buildingId);
+        .from('floors')
+        .select('*')
+        .eq('building_id', selectedBuilding)
+        .eq('status', 'active')
+        .order('floor_number');
       if (error) throw error;
       return data;
     },
+    enabled: !!selectedBuilding,
   });
 
-  const floorId = form.watch("floor_id");
-
   const { data: rooms } = useQuery({
-    queryKey: ["rooms", floorId],
-    enabled: !!floorId,
+    queryKey: ['rooms', selectedFloor],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("rooms")
-        .select("*")
-        .eq("floor_id", floorId);
+        .from('rooms')
+        .select('*')
+        .eq('floor_id', selectedFloor)
+        .eq('status', 'active')
+        .order('room_number');
       if (error) throw error;
       return data;
     },
+    enabled: !!selectedFloor,
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-8">
       <FormField
         control={form.control}
         name="building_id"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Building</FormLabel>
-            <Select
-              onValueChange={value => {
+            <FormLabel className="text-base font-medium">Building</FormLabel>
+            <Select 
+              onValueChange={(value) => {
                 field.onChange(value);
-                form.setValue("floor_id", undefined);
-                form.setValue("room_id", undefined);
-              }}
+                setSelectedBuilding(value);
+                setSelectedFloor(null);
+                form.setValue('floor_id', undefined);
+                form.setValue('room_id', undefined);
+              }} 
               value={field.value}
             >
               <FormControl>
-                <SelectTrigger>
+                <SelectTrigger className="h-12 text-base">
                   <SelectValue placeholder="Select building" />
                 </SelectTrigger>
               </FormControl>
@@ -89,24 +105,25 @@ export function LocationSelection({ form }: LocationSelectionProps) {
         name="floor_id"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Floor</FormLabel>
-            <Select
-              onValueChange={value => {
+            <FormLabel className="text-base font-medium">Floor</FormLabel>
+            <Select 
+              onValueChange={(value) => {
                 field.onChange(value);
-                form.setValue("room_id", undefined);
-              }}
+                setSelectedFloor(value);
+                form.setValue('room_id', undefined);
+              }} 
               value={field.value}
-              disabled={!buildingId}
+              disabled={!selectedBuilding}
             >
               <FormControl>
-                <SelectTrigger>
+                <SelectTrigger className="h-12 text-base">
                   <SelectValue placeholder="Select floor" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
                 {floors?.map((floor) => (
                   <SelectItem key={floor.id} value={floor.id}>
-                    {floor.name}
+                    Floor {floor.floor_number} - {floor.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -121,21 +138,21 @@ export function LocationSelection({ form }: LocationSelectionProps) {
         name="room_id"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Room</FormLabel>
-            <Select
-              onValueChange={field.onChange}
+            <FormLabel className="text-base font-medium">Room</FormLabel>
+            <Select 
+              onValueChange={field.onChange} 
               value={field.value}
-              disabled={!floorId}
+              disabled={!selectedFloor}
             >
               <FormControl>
-                <SelectTrigger>
+                <SelectTrigger className="h-12 text-base">
                   <SelectValue placeholder="Select room" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
                 {rooms?.map((room) => (
                   <SelectItem key={room.id} value={room.id}>
-                    {room.name}
+                    Room {room.room_number} - {room.name}
                   </SelectItem>
                 ))}
               </SelectContent>
