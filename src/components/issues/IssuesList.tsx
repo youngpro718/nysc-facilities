@@ -31,6 +31,7 @@ import {
   LightingFixture 
 } from "./types/IssueTypes";
 
+// Define database response types separately from application types
 type DbLightingFixture = {
   name: string;
   type: string;
@@ -39,7 +40,7 @@ type DbLightingFixture = {
   electrical_issues: Record<string, boolean>;
 };
 
-type DbIssue = {
+type DbIssueResponse = {
   id: string;
   title: string;
   description: string;
@@ -74,7 +75,7 @@ type DbIssue = {
 export const IssuesList = () => {
   const queryClient = useQueryClient();
 
-  const { data: issues, isLoading } = useQuery({
+  const { data: issues, isLoading } = useQuery<Issue[], Error>({
     queryKey: ['issues'],
     queryFn: async () => {
       let query = supabase
@@ -143,8 +144,10 @@ export const IssuesList = () => {
 
       const { data, error } = await query;
       if (error) throw error;
-      
-      return ((data || []) as unknown as DbIssue[]).map((dbIssue): Issue => ({
+
+      // Transform database response to application type
+      const transformedData = (data || []) as DbIssueResponse[];
+      return transformedData.map((dbIssue): Issue => ({
         ...dbIssue,
         status: dbIssue.status as IssueStatus,
         priority: dbIssue.priority as IssuePriority,
