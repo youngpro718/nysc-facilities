@@ -142,9 +142,9 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
 
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
-      <Card className="bg-card/30 backdrop-blur-xl border-white/10 shadow-2xl">
-        <div className="p-4 sm:p-6">
-          <div className="mb-8">
+      <Card className="bg-background/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-xl overflow-hidden">
+        <div className="p-6 sm:p-8">
+          <div className="mb-10">
             <Stepper
               steps={steps}
               currentStep={activeTab}
@@ -159,71 +159,85 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
           </div>
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-8">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <div className="mt-6">
+                <div className="mt-8">
                   <TabsContent value="type" className="m-0">
-                    <ScrollArea className="h-[500px] pr-4">
-                      <IssueTypeForm form={form} />
+                    <ScrollArea className="h-[500px] pr-6">
+                      <div className="bg-card/50 p-6 rounded-lg border border-white/5">
+                        <IssueTypeForm form={form} />
+                      </div>
                     </ScrollArea>
                   </TabsContent>
 
                   <TabsContent value="location" className="m-0">
-                    <ScrollArea className="h-[500px] pr-4">
-                      <IssueLocationForm
-                        form={form}
-                        selectedBuilding={selectedBuilding}
-                        selectedFloor={selectedFloor}
-                        setSelectedBuilding={setSelectedBuilding}
-                        setSelectedFloor={setSelectedFloor}
-                      />
+                    <ScrollArea className="h-[500px] pr-6">
+                      <div className="bg-card/50 p-6 rounded-lg border border-white/5">
+                        <IssueLocationForm
+                          form={form}
+                          selectedBuilding={selectedBuilding}
+                          selectedFloor={selectedFloor}
+                          setSelectedBuilding={setSelectedBuilding}
+                          setSelectedFloor={setSelectedFloor}
+                        />
+                      </div>
                     </ScrollArea>
                   </TabsContent>
 
                   <TabsContent value="details" className="m-0">
-                    <ScrollArea className="h-[500px] pr-4">
-                      <IssueDetailsForm form={form} />
+                    <ScrollArea className="h-[500px] pr-6">
+                      <div className="bg-card/50 p-6 rounded-lg border border-white/5">
+                        <IssueDetailsForm form={form} />
+                      </div>
                     </ScrollArea>
                   </TabsContent>
 
                   <TabsContent value="photos" className="m-0">
-                    <ScrollArea className="h-[500px] pr-4">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div>
-                            <IssuePhotoForm
-                              selectedPhotos={selectedPhotos}
-                              uploading={uploading}
-                              onPhotoUpload={handlePhotoUpload}
-                              onPhotoRemove={handlePhotoRemove}
-                            />
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Drag and drop photos or click to upload</p>
-                        </TooltipContent>
-                      </Tooltip>
+                    <ScrollArea className="h-[500px] pr-6">
+                      <div className="bg-card/50 p-6 rounded-lg border border-white/5">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <IssuePhotoForm
+                                selectedPhotos={selectedPhotos}
+                                uploading={uploading}
+                                onPhotoUpload={handlePhotoUpload}
+                                onPhotoRemove={handlePhotoRemove}
+                              />
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Drag and drop photos or click to upload</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                     </ScrollArea>
                   </TabsContent>
 
                   <TabsContent value="review" className="m-0">
-                    <ScrollArea className="h-[500px] pr-4">
-                      <IssueReviewTab
-                        formData={form.getValues()}
-                        photos={selectedPhotos}
-                      />
+                    <ScrollArea className="h-[500px] pr-6">
+                      <div className="bg-card/50 p-6 rounded-lg border border-white/5">
+                        <IssueReviewTab
+                          formData={form.getValues()}
+                          photos={selectedPhotos}
+                        />
+                      </div>
                     </ScrollArea>
                   </TabsContent>
                 </div>
               </Tabs>
 
-              <div className="flex justify-between pt-6 border-t border-white/10">
+              <div className="flex justify-between pt-6 mt-6 border-t border-white/10">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={handlePrevious}
                   disabled={currentTabIndex === 0 || isSubmitting}
-                  className="w-32"
+                  className={cn(
+                    "w-32 h-11 transition-all duration-200",
+                    "hover:bg-white/5 hover:border-white/20",
+                    "disabled:opacity-50"
+                  )}
                 >
                   <ChevronLeft className="w-4 h-4 mr-2" />
                   Previous
@@ -233,7 +247,11 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
                   <Button 
                     type="submit" 
                     disabled={isSubmitting || uploading} 
-                    className="w-32"
+                    className={cn(
+                      "w-32 h-11 bg-primary",
+                      "hover:bg-primary/90 transition-all duration-200",
+                      "disabled:opacity-50"
+                    )}
                   >
                     {isSubmitting ? (
                       <>
@@ -249,7 +267,11 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
                     type="button"
                     onClick={handleNext}
                     disabled={!canProceedToNextStep() || isSubmitting}
-                    className="w-32"
+                    className={cn(
+                      "w-32 h-11 bg-primary",
+                      "hover:bg-primary/90 transition-all duration-200",
+                      "disabled:opacity-50"
+                    )}
                   >
                     Next
                     <ChevronRight className="w-4 h-4 ml-2" />
@@ -262,7 +284,7 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
       </Card>
 
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-background/95 backdrop-blur-xl border-white/10">
           <AlertDialogHeader>
             <AlertDialogTitle>Remove Photo</AlertDialogTitle>
             <AlertDialogDescription>
@@ -270,8 +292,11 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmPhotoRemoval}>
+            <AlertDialogCancel className="hover:bg-white/5 hover:border-white/20">Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmPhotoRemoval}
+              className="bg-destructive hover:bg-destructive/90"
+            >
               Remove
             </AlertDialogAction>
           </AlertDialogFooter>
