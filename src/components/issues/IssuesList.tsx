@@ -28,22 +28,73 @@ export const IssuesList = () => {
   const { data: issues, isLoading } = useQuery({
     queryKey: ['issues'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('issues')
         .select(`
           *,
           buildings(name),
           floors(name),
           rooms(name),
-          lighting_fixtures!inner(
+          lighting_fixtures(
             name,
             type,
             status,
-            position
+            position,
+            electrical_issues
           )
-        `)
-        .order('created_at', { ascending: false });
+        `);
 
+      // Apply filters based on URL params or state
+      if (window.location.search) {
+        const params = new URLSearchParams(window.location.search);
+        
+        // Type filter
+        const type = params.get('type');
+        if (type && type !== 'all_types') {
+          query = query.eq('type', type);
+        }
+
+        // Lighting-specific filters
+        if (type === 'LIGHTING') {
+          const lightingType = params.get('lightingType');
+          const fixtureStatus = params.get('fixtureStatus');
+          const electricalIssue = params.get('electricalIssue');
+
+          if (lightingType && lightingType !== 'all_lighting_types') {
+            query = query.eq('lighting_fixtures.type', lightingType);
+          }
+
+          if (fixtureStatus && fixtureStatus !== 'all_fixture_statuses') {
+            query = query.eq('lighting_fixtures.status', fixtureStatus);
+          }
+
+          if (electricalIssue && electricalIssue !== 'all_electrical_issues') {
+            query = query.contains('lighting_fixtures.electrical_issues', { [electricalIssue]: true });
+          }
+        }
+
+        // Status filter
+        const status = params.get('status');
+        if (status && status !== 'all_statuses') {
+          query = query.eq('status', status);
+        }
+
+        // Priority filter
+        const priority = params.get('priority');
+        if (priority && priority !== 'all_priorities') {
+          query = query.eq('priority', priority);
+        }
+
+        // Assignment filter
+        const assignedTo = params.get('assigned_to');
+        if (assignedTo && assignedTo !== 'all_assignments') {
+          query = query.eq('assigned_to', assignedTo);
+        }
+      }
+
+      query = query.order('created_at', { ascending: false });
+
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     }
@@ -163,6 +214,7 @@ export const IssuesList = () => {
         <TableBody>
           {issues?.map((issue) => {
             const typeInfo = getTypeInfo(issue.type);
+            const lightingDetails = issue.lighting_fixtures?.[0];
             
             return (
               <TableRow key={issue.id}>
@@ -184,20 +236,23 @@ export const IssuesList = () => {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  {issue.type === 'LIGHTING' ? (
+                  {issue.type === 'LIGHTING' && lightingDetails ? (
                     <div className="flex flex-col">
                       <span>
                         {[
                           issue.buildings?.name,
                           issue.floors?.name,
-                          issue.lighting_fixtures?.name
+                          lightingDetails.name
                         ].filter(Boolean).join(' > ')}
                       </span>
-                      {issue.lighting_details && (
-                        <span className="text-xs text-muted-foreground">
-                          {issue.lighting_fixtures?.type} - {issue.lighting_fixtures?.position}
-                        </span>
-                      )}
+                      <span className="text-xs text-muted-foreground">
+                        {lightingDetails.type} - {lightingDetails.position}
+                        {lightingDetails.electrical_issues && Object.keys(lightingDetails.electrical_issues).some(key => lightingDetails.electrical_issues[key]) && (
+                          <Badge variant="destructive" className="ml-2">
+                            Electrical Issues
+                          </Badge>
+                        )}
+                      </span>
                     </div>
                   ) : (
                     <span>
