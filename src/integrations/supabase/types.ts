@@ -1395,15 +1395,7 @@ export type Database = {
           mentions?: string[] | null
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "issue_comments_issue_id_fkey"
-            columns: ["issue_id"]
-            isOneToOne: false
-            referencedRelation: "issues"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       issue_priority_rules: {
         Row: {
@@ -1412,7 +1404,6 @@ export type Database = {
           id: string
           priority: string
           subcategory: string | null
-          type: Database["public"]["Enums"]["issue_type_enum"]
           updated_at: string | null
         }
         Insert: {
@@ -1421,7 +1412,6 @@ export type Database = {
           id?: string
           priority: string
           subcategory?: string | null
-          type: Database["public"]["Enums"]["issue_type_enum"]
           updated_at?: string | null
         }
         Update: {
@@ -1430,37 +1420,30 @@ export type Database = {
           id?: string
           priority?: string
           subcategory?: string | null
-          type?: Database["public"]["Enums"]["issue_type_enum"]
           updated_at?: string | null
         }
         Relationships: []
       }
       issue_routing_rules: {
         Row: {
-          assigned_to: Database["public"]["Enums"]["party_enum"]
           conditions: Json
           created_at: string | null
           id: string
           subcategory: string | null
-          type: Database["public"]["Enums"]["issue_type_enum"]
           updated_at: string | null
         }
         Insert: {
-          assigned_to: Database["public"]["Enums"]["party_enum"]
           conditions: Json
           created_at?: string | null
           id?: string
           subcategory?: string | null
-          type: Database["public"]["Enums"]["issue_type_enum"]
           updated_at?: string | null
         }
         Update: {
-          assigned_to?: Database["public"]["Enums"]["party_enum"]
           conditions?: Json
           created_at?: string | null
           id?: string
           subcategory?: string | null
-          type?: Database["public"]["Enums"]["issue_type_enum"]
           updated_at?: string | null
         }
         Relationships: []
@@ -1495,7 +1478,6 @@ export type Database = {
       issue_type_templates: {
         Row: {
           created_at: string | null
-          default_assigned_to: Database["public"]["Enums"]["party_enum"] | null
           default_priority: string | null
           icon_name: string | null
           id: string
@@ -1506,12 +1488,10 @@ export type Database = {
           required_fields: Json | null
           subcategory: string | null
           template_order: number | null
-          type: Database["public"]["Enums"]["issue_type_enum"]
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
-          default_assigned_to?: Database["public"]["Enums"]["party_enum"] | null
           default_priority?: string | null
           icon_name?: string | null
           id?: string
@@ -1522,12 +1502,10 @@ export type Database = {
           required_fields?: Json | null
           subcategory?: string | null
           template_order?: number | null
-          type: Database["public"]["Enums"]["issue_type_enum"]
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
-          default_assigned_to?: Database["public"]["Enums"]["party_enum"] | null
           default_priority?: string | null
           icon_name?: string | null
           id?: string
@@ -1538,115 +1516,51 @@ export type Database = {
           required_fields?: Json | null
           subcategory?: string | null
           template_order?: number | null
-          type?: Database["public"]["Enums"]["issue_type_enum"]
           updated_at?: string | null
         }
         Relationships: []
       }
       issues: {
         Row: {
-          assigned_to: Database["public"]["Enums"]["party_enum"]
           building_id: string | null
           created_at: string | null
           description: string | null
-          due_date: string | null
-          fixture_id: string | null
           floor_id: string | null
           id: string
-          issue_type_new: Database["public"]["Enums"]["issue_type_enum"] | null
-          labels: string[] | null
-          last_activity_at: string | null
-          lighting_details: Json | null
-          lighting_inspection_due_date: string | null
-          lighting_maintenance_history: Json[] | null
-          lighting_maintenance_priority: string | null
-          lighting_previous_states: Json[] | null
-          mentions: string[] | null
           photos: string[] | null
-          priority: string | null
-          related_issues: string[] | null
-          resolution_notes: string | null
-          resolution_time: unknown | null
-          resolved_at: string | null
+          priority: Database["public"]["Enums"]["issue_priority_enum"] | null
           room_id: string | null
           seen: boolean | null
-          sla_hours: number | null
           status: Database["public"]["Enums"]["issue_status_enum"] | null
-          status_history: Json[] | null
-          subcategory: string | null
-          template_fields: Json | null
           title: string
-          type: Database["public"]["Enums"]["issue_type_enum"]
           updated_at: string | null
         }
         Insert: {
-          assigned_to: Database["public"]["Enums"]["party_enum"]
           building_id?: string | null
           created_at?: string | null
           description?: string | null
-          due_date?: string | null
-          fixture_id?: string | null
           floor_id?: string | null
           id?: string
-          issue_type_new?: Database["public"]["Enums"]["issue_type_enum"] | null
-          labels?: string[] | null
-          last_activity_at?: string | null
-          lighting_details?: Json | null
-          lighting_inspection_due_date?: string | null
-          lighting_maintenance_history?: Json[] | null
-          lighting_maintenance_priority?: string | null
-          lighting_previous_states?: Json[] | null
-          mentions?: string[] | null
           photos?: string[] | null
-          priority?: string | null
-          related_issues?: string[] | null
-          resolution_notes?: string | null
-          resolution_time?: unknown | null
-          resolved_at?: string | null
+          priority?: Database["public"]["Enums"]["issue_priority_enum"] | null
           room_id?: string | null
           seen?: boolean | null
-          sla_hours?: number | null
           status?: Database["public"]["Enums"]["issue_status_enum"] | null
-          status_history?: Json[] | null
-          subcategory?: string | null
-          template_fields?: Json | null
           title: string
-          type: Database["public"]["Enums"]["issue_type_enum"]
           updated_at?: string | null
         }
         Update: {
-          assigned_to?: Database["public"]["Enums"]["party_enum"]
           building_id?: string | null
           created_at?: string | null
           description?: string | null
-          due_date?: string | null
-          fixture_id?: string | null
           floor_id?: string | null
           id?: string
-          issue_type_new?: Database["public"]["Enums"]["issue_type_enum"] | null
-          labels?: string[] | null
-          last_activity_at?: string | null
-          lighting_details?: Json | null
-          lighting_inspection_due_date?: string | null
-          lighting_maintenance_history?: Json[] | null
-          lighting_maintenance_priority?: string | null
-          lighting_previous_states?: Json[] | null
-          mentions?: string[] | null
           photos?: string[] | null
-          priority?: string | null
-          related_issues?: string[] | null
-          resolution_notes?: string | null
-          resolution_time?: unknown | null
-          resolved_at?: string | null
+          priority?: Database["public"]["Enums"]["issue_priority_enum"] | null
           room_id?: string | null
           seen?: boolean | null
-          sla_hours?: number | null
           status?: Database["public"]["Enums"]["issue_status_enum"] | null
-          status_history?: Json[] | null
-          subcategory?: string | null
-          template_fields?: Json | null
           title?: string
-          type?: Database["public"]["Enums"]["issue_type_enum"]
           updated_at?: string | null
         }
         Relationships: [
@@ -1663,34 +1577,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "lighting_assignments"
             referencedColumns: ["building_id"]
-          },
-          {
-            foreignKeyName: "issues_fixture_id_fkey"
-            columns: ["fixture_id"]
-            isOneToOne: false
-            referencedRelation: "emergency_lighting_status"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "issues_fixture_id_fkey"
-            columns: ["fixture_id"]
-            isOneToOne: false
-            referencedRelation: "lighting_assignments"
-            referencedColumns: ["fixture_id"]
-          },
-          {
-            foreignKeyName: "issues_fixture_id_fkey"
-            columns: ["fixture_id"]
-            isOneToOne: false
-            referencedRelation: "lighting_fixture_details"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "issues_fixture_id_fkey"
-            columns: ["fixture_id"]
-            isOneToOne: false
-            referencedRelation: "lighting_fixtures"
-            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "issues_floor_id_fkey"
@@ -4323,24 +4209,6 @@ export type Database = {
             }
             Returns: Json
           }
-      cast_to_issue_status: {
-        Args: {
-          status_str: string
-        }
-        Returns: Database["public"]["Enums"]["issue_status_enum"]
-      }
-      cast_to_issue_type: {
-        Args: {
-          type_str: string
-        }
-        Returns: Database["public"]["Enums"]["issue_type_enum"]
-      }
-      cast_to_party_enum: {
-        Args: {
-          party_str: string
-        }
-        Returns: Database["public"]["Enums"]["party_enum"]
-      }
       cleanup_old_backups: {
         Args: {
           policy_id: string
@@ -4366,13 +4234,6 @@ export type Database = {
           key_id: string
         }
         Returns: number
-      }
-      match_issue_type: {
-        Args: {
-          issue_type: Database["public"]["Enums"]["issue_type_enum"]
-          search_term: string
-        }
-        Returns: boolean
       }
       safely_delete_key: {
         Args: {
@@ -4415,38 +4276,8 @@ export type Database = {
       hallway_section_enum: "left_wing" | "right_wing" | "connector"
       hallway_traffic_flow_enum: "one_way" | "two_way" | "restricted"
       hallway_type_enum: "public_main" | "private"
+      issue_priority_enum: "low" | "medium" | "high"
       issue_status_enum: "open" | "in_progress" | "resolved"
-      issue_type_enum:
-        | "HVAC"
-        | "Leak"
-        | "Electrical"
-        | "Plaster"
-        | "Cleaning"
-        | "Other"
-        | "Lighting_Ballast"
-        | "Lighting_Replacement"
-        | "Lighting_Emergency"
-        | "Lighting_Sensor"
-        | "Lighting_Control"
-        | "ACCESS_REQUEST"
-        | "BUILDING_SYSTEMS"
-        | "CEILING"
-        | "CLEANING_REQUEST"
-        | "CLIMATE_CONTROL"
-        | "DOOR"
-        | "ELECTRICAL_NEEDS"
-        | "EMERGENCY"
-        | "EXTERIOR_FACADE"
-        | "FLAGPOLE_FLAG"
-        | "FLOORING"
-        | "GENERAL_REQUESTS"
-        | "LEAK"
-        | "LIGHTING"
-        | "LOCK"
-        | "PLUMBING_NEEDS"
-        | "RESTROOM_REPAIR"
-        | "SIGNAGE"
-        | "WINDOW"
       key_status_enum: "available" | "assigned" | "lost" | "decommissioned"
       key_type_enum: "physical_key" | "elevator_pass" | "room_key"
       light_fixture_type_enum: "standard" | "emergency" | "motion_sensor"
@@ -4494,7 +4325,6 @@ export type Database = {
         | "retirement"
         | "other"
       occupant_status_enum: "active" | "inactive" | "on_leave" | "terminated"
-      party_enum: "DCAS" | "OCA" | "Self" | "Outside_Vendor"
       return_reason_enum: "normal_return" | "lost" | "damaged" | "other"
       room_type_enum:
         | "courtroom"
