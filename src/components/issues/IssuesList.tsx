@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -29,6 +28,26 @@ import {
   FixturePosition
 } from "./types/IssueTypes";
 
+// Define base types for database response
+type DatabaseIssue = {
+  id: string;
+  title: string;
+  type: string;
+  status: string;
+  priority: string;
+  created_at: string;
+  buildings?: { name: string } | null;
+  floors?: { name: string } | null;
+  rooms?: { name: string } | null;
+  lighting_fixtures?: {
+    name: string;
+    type: string;
+    status: string;
+    position: string;
+    electrical_issues: Record<string, boolean>;
+  } | null;
+};
+
 // Type guard functions
 function isValidFixtureType(value: string | null): value is FixtureType {
   return value === 'standard' || value === 'emergency' || value === 'motion_sensor';
@@ -48,7 +67,7 @@ function isValidIssuePriority(value: string | null): value is IssuePriority {
   return value === 'high' || value === 'medium' || value === 'low';
 }
 
-async function fetchIssues() {
+async function fetchIssues(): Promise<DatabaseIssue[]> {
   let query = supabase
     .from('issues')
     .select(`
@@ -111,7 +130,22 @@ async function fetchIssues() {
 
   const { data, error } = await query;
   if (error) throw error;
-  return data || [];
+  return (data || []) as DatabaseIssue[];
+}
+
+function transformIssue(dbIssue: DatabaseIssue): Issue {
+  return {
+    ...dbIssue,
+    status: dbIssue.status as IssueStatus,
+    priority: dbIssue.priority as IssuePriority,
+    lighting_fixtures: dbIssue.lighting_fixtures ? [{
+      name: dbIssue.lighting_fixtures.name,
+      type: dbIssue.lighting_fixtures.type as FixtureType,
+      status: dbIssue.lighting_fixtures.status as FixtureStatus,
+      position: dbIssue.lighting_fixtures.position as FixturePosition,
+      electrical_issues: dbIssue.lighting_fixtures.electrical_issues
+    }] : []
+  };
 }
 
 export const IssuesList = () => {
@@ -121,18 +155,7 @@ export const IssuesList = () => {
     queryKey: ['issues'],
     queryFn: async () => {
       const data = await fetchIssues();
-      return data.map((item: any): Issue => ({
-        ...item,
-        status: item.status as IssueStatus,
-        priority: item.priority as IssuePriority,
-        lighting_fixtures: item.lighting_fixtures ? [{
-          name: item.lighting_fixtures.name,
-          type: item.lighting_fixtures.type as FixtureType,
-          status: item.lighting_fixtures.status as FixtureStatus,
-          position: item.lighting_fixtures.position as FixturePosition,
-          electrical_issues: item.lighting_fixtures.electrical_issues
-        }] : []
-      }));
+      return data.map(transformIssue);
     }
   });
 
