@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -29,7 +30,6 @@ import {
   ElectricalIssues,
   LightingFixture 
 } from "./types/IssueTypes";
-import { SupabaseClient } from "@supabase/supabase-js";
 
 type DbLightingFixture = {
   name: string;
@@ -107,11 +107,13 @@ export const IssuesList = () => {
           const electricalIssue = params.get('electricalIssue');
 
           if (lightingType && lightingType !== 'all_lighting_types') {
-            query = query.eq('lighting_fixtures.type', lightingType);
+            const validType = lightingType as FixtureType;
+            query = query.eq('lighting_fixtures.type', validType);
           }
 
           if (fixtureStatus && fixtureStatus !== 'all_fixture_statuses') {
-            query = query.eq('lighting_fixtures.status', fixtureStatus);
+            const validStatus = fixtureStatus as FixtureStatus;
+            query = query.eq('lighting_fixtures.status', validStatus);
           }
 
           if (electricalIssue && electricalIssue !== 'all_electrical_issues') {
@@ -121,12 +123,14 @@ export const IssuesList = () => {
 
         const status = params.get('status');
         if (status && status !== 'all_statuses') {
-          query = query.eq('status', status);
+          const validStatus = status as IssueStatus;
+          query = query.eq('status', validStatus);
         }
 
         const priority = params.get('priority');
         if (priority && priority !== 'all_priorities') {
-          query = query.eq('priority', priority);
+          const validPriority = priority as IssuePriority;
+          query = query.eq('priority', validPriority);
         }
 
         const assignedTo = params.get('assigned_to');
@@ -140,7 +144,7 @@ export const IssuesList = () => {
       const { data, error } = await query;
       if (error) throw error;
       
-      return (data as DbIssue[]).map((dbIssue): Issue => ({
+      return ((data || []) as unknown as DbIssue[]).map((dbIssue): Issue => ({
         ...dbIssue,
         status: dbIssue.status as IssueStatus,
         priority: dbIssue.priority as IssuePriority,
