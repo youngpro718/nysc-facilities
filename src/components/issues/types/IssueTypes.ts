@@ -57,9 +57,7 @@ export type Issue = {
   sla_hours?: number;
 };
 
-export type FormData = Omit<Issue, 'id' | 'created_at' | 'status_history' | 'seen' | 'buildingName' | 'floorName' | 'roomName' | 'sla_hours'>;
-
-export type Step = "type-selection" | "details" | "location" | "type" | "photos";
+export type Step = "type" | "details" | "location" | "photos" | "review";
 
 export type MaintenanceRecord = {
   date: string;
@@ -80,4 +78,24 @@ export type StatusHistoryRecord = {
   status: "open" | "in_progress" | "resolved";
   changed_at: string;
   previous_status: "open" | "in_progress" | "resolved";
+};
+
+export type IssueTemplate = {
+  type: IssueType;
+  subcategory: string;
+  title_format: string;
+  problem_types: string[];
+  required_fields: Record<string, {
+    type: string;
+    label: string;
+    options?: string[];
+  }>;
+  optional_fields: Record<string, {
+    type: string;
+    label: string;
+    options?: string[];
+  }>;
+  default_priority: string;
+  icon_name: string;
+  template_order: number;
 };

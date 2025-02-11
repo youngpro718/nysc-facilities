@@ -3,6 +3,7 @@ import { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { toast } from "sonner";
 import type { FormData } from "../types/IssueTypes";
+import { useIssueTemplate } from "./useIssueTemplate";
 
 type Step = "type" | "details" | "location" | "photos" | "review";
 
@@ -12,6 +13,7 @@ export function useIssueForm(
 ) {
   const [currentStep, setCurrentStep] = useState<Step>("type");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { templates, generateTitle } = useIssueTemplate(form.watch("type"));
 
   const handleSubmit = async (data: FormData) => {
     try {
@@ -25,6 +27,18 @@ export function useIssueForm(
       console.error("Submit error:", error);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const updateTitleFromTemplate = (
+    type: string,
+    problemType: string,
+    location: string
+  ) => {
+    const template = templates?.find(t => t.type === type);
+    if (template) {
+      const title = generateTitle(template, problemType, location);
+      form.setValue("title", title);
     }
   };
 
@@ -50,6 +64,7 @@ export function useIssueForm(
     isSubmitting,
     handleSubmit: form.handleSubmit(handleSubmit),
     handleNext,
-    handlePrevious
+    handlePrevious,
+    updateTitleFromTemplate
   };
 }

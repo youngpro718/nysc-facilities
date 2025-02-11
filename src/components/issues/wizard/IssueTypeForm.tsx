@@ -1,154 +1,109 @@
 
+import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { UseFormReturn } from "react-hook-form";
-import { FormData, IssueType } from "../types/IssueTypes";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { TemplateFields } from "../form/sections/TemplateFields";
-import { Thermometer, Droplet, Zap, Construction, Brush, Wrench, LucideIcon } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { useIssueTemplate } from "../hooks/useIssueTemplate";
+import type { FormData } from "../types/IssueTypes";
+import { LucideIcon } from "lucide-react";
+import * as icons from "lucide-react";
 
 interface IssueTypeFormProps {
   form: UseFormReturn<FormData>;
 }
 
-interface IssueTemplate {
-  type: IssueType;  // Updated to use IssueType instead of string
-  subcategory: string;
-  required_fields: Record<string, any>;
-  optional_fields: Record<string, any>;
-  default_priority: string;
-  default_assigned_to: "DCAS" | "OCA" | "Self" | "Outside_Vendor";
-  icon_name: string;
-  photos_required: boolean;
-  min_photos: number;
-  max_photos: number;
-}
-
-const iconMap: Record<string, LucideIcon> = {
-  thermometer: Thermometer,
-  droplet: Droplet,
-  zap: Zap,
-  construction: Construction,
-  brush: Brush,
-  wrench: Wrench,
-};
-
 export function IssueTypeForm({ form }: IssueTypeFormProps) {
-  const [templates, setTemplates] = useState<IssueTemplate[]>([]);
-  const [subcategories, setSubcategories] = useState<{ value: string, label: string }[]>([]);
-  const selectedCategory = form.watch("type");
-
-  useEffect(() => {
-    const fetchTemplates = async () => {
-      const { data, error } = await supabase
-        .from('issue_type_templates')
-        .select('*')
-        .order('template_order', { ascending: true });
-
-      if (error) {
-        console.error('Error fetching templates:', error);
-        return;
-      }
-
-      const transformedData = data.map(template => ({
-        ...template,
-        // Ensure the type is cast to IssueType
-        type: template.type as IssueType,
-        required_fields: typeof template.required_fields === 'string' 
-          ? JSON.parse(template.required_fields)
-          : template.required_fields,
-        optional_fields: typeof template.optional_fields === 'string'
-          ? JSON.parse(template.optional_fields)
-          : template.optional_fields,
-        default_assigned_to: template.default_assigned_to as "DCAS" | "OCA" | "Self" | "Outside_Vendor"
-      }));
-
-      setTemplates(transformedData);
-    };
-
-    fetchTemplates();
-  }, []);
-
-  useEffect(() => {
-    if (selectedCategory && templates.length > 0) {
-      const categoryTemplates = templates.filter(t => t.type === selectedCategory);
-      const subcats = categoryTemplates.map(template => ({
-        value: template.subcategory,
-        label: template.subcategory
-      }));
-      setSubcategories(subcats);
-    }
-  }, [selectedCategory, templates]);
-
-  useEffect(() => {
-    const selectedSubcategory = form.watch("template_fields.problem");
-    const template = templates.find(t => t.subcategory === selectedSubcategory);
-    
-    if (template) {
-      form.setValue("priority", template.default_priority);
-      form.setValue("assigned_to", template.default_assigned_to);
-    }
-  }, [form.watch("template_fields.problem"), templates, form]);
+  const { templates, isLoading } = useIssueTemplate();
+  const selectedType = form.watch("type");
+  const selectedTemplate = templates?.find(t => t.type === selectedType);
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4">
-        {templates.map((template) => {
-          const Icon = iconMap[template.icon_name];
+      <div className="grid grid-cols-2 gap-6">
+        {templates?.map((template) => {
+          // Dynamically get icon from lucide-react
+          const IconComponent = icons[template.icon_name as keyof typeof icons] as LucideIcon;
+
           return (
-            <button
-              key={`${template.type}-${template.subcategory}`}
-              type="button"
+            <Card
+              key={template.type}
+              className={`p-6 cursor-pointer hover:border-primary transition-colors ${
+                form.watch("type") === template.type ? 
+                  "border-2 border-primary bg-primary/5" : 
+                  "border border-white/10"
+              }`}
               onClick={() => {
                 form.setValue("type", template.type);
-                form.setValue("template_fields.problem", template.subcategory);
+                form.setValue("priority", template.default_priority);
               }}
-              className={`flex flex-col items-center justify-center p-6 space-y-3 rounded-lg border-2 
-                ${form.watch("type") === template.type ? 
-                  "border-primary bg-primary/10" : 
-                  "border-muted hover:border-primary transition-colors"}`}
             >
-              {Icon && (
+              <div className="flex flex-col items-center space-y-4">
                 <div className="text-primary">
-                  <Icon className="h-12 w-12" />
+                  {IconComponent && <IconComponent className="h-12 w-12" />}
                 </div>
-              )}
-              <span className="text-sm font-medium text-center">
-                {template.subcategory}
-              </span>
-            </button>
+                <div className="text-center">
+                  <h3 className="font-medium text-lg">{template.subcategory}</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Select for {template.subcategory.toLowerCase()} related issues
+                  </p>
+                </div>
+              </div>
+            </Card>
           );
         })}
       </div>
 
-      {selectedCategory && subcategories.length > 0 && (
-        <FormField
-          control={form.control}
-          name="priority"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-base font-medium">Priority Level</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger className="h-12 text-base bg-background/50 border-white/10">
-                    <SelectValue placeholder="Select priority" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="low" className="text-base">Low Priority</SelectItem>
-                  <SelectItem value="medium" className="text-base">Medium Priority</SelectItem>
-                  <SelectItem value="high" className="text-base">High Priority</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      )}
+      {selectedTemplate && (
+        <>
+          <FormField
+            control={form.control}
+            name="template_fields.problem_type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-base font-medium">Problem Type</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger className="h-12 text-base bg-background/50 border-white/10">
+                      <SelectValue placeholder="Select the specific problem" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {selectedTemplate.problem_types.map((type) => (
+                      <SelectItem key={type} value={type} className="text-base">
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-      <TemplateFields form={form} selectedType={selectedCategory} />
+          <FormField
+            control={form.control}
+            name="priority"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-base font-medium">Priority Level</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger className="h-12 text-base bg-background/50 border-white/10">
+                      <SelectValue placeholder="Select priority" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="low" className="text-base">Low Priority</SelectItem>
+                    <SelectItem value="medium" className="text-base">Medium Priority</SelectItem>
+                    <SelectItem value="high" className="text-base">High Priority</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </>
+      )}
     </div>
   );
 }
