@@ -12,4 +12,9 @@ export type Issue = {
   created_at: string;
   updated_at: string;
   seen: boolean;
+  assignee_id?: string;
+  last_status_change?: string;
+  last_updated_by?: string;
+  tags?: string[];
+  due_date?: string;
 };

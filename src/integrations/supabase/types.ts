@@ -1522,48 +1522,70 @@ export type Database = {
       }
       issues: {
         Row: {
+          assignee_id: string | null
           building_id: string | null
           created_at: string | null
           description: string | null
+          due_date: string | null
           floor_id: string | null
           id: string
+          last_status_change: string | null
+          last_updated_by: string | null
           photos: string[] | null
           priority: Database["public"]["Enums"]["issue_priority_enum"] | null
           room_id: string | null
           seen: boolean | null
           status: Database["public"]["Enums"]["issue_status_enum"] | null
+          tags: string[] | null
           title: string
           updated_at: string | null
         }
         Insert: {
+          assignee_id?: string | null
           building_id?: string | null
           created_at?: string | null
           description?: string | null
+          due_date?: string | null
           floor_id?: string | null
           id?: string
+          last_status_change?: string | null
+          last_updated_by?: string | null
           photos?: string[] | null
           priority?: Database["public"]["Enums"]["issue_priority_enum"] | null
           room_id?: string | null
           seen?: boolean | null
           status?: Database["public"]["Enums"]["issue_status_enum"] | null
+          tags?: string[] | null
           title: string
           updated_at?: string | null
         }
         Update: {
+          assignee_id?: string | null
           building_id?: string | null
           created_at?: string | null
           description?: string | null
+          due_date?: string | null
           floor_id?: string | null
           id?: string
+          last_status_change?: string | null
+          last_updated_by?: string | null
           photos?: string[] | null
           priority?: Database["public"]["Enums"]["issue_priority_enum"] | null
           room_id?: string | null
           seen?: boolean | null
           status?: Database["public"]["Enums"]["issue_status_enum"] | null
+          tags?: string[] | null
           title?: string
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "issues_assignee_id_fkey"
+            columns: ["assignee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "issues_building_id_fkey"
             columns: ["building_id"]
@@ -1590,6 +1612,13 @@ export type Database = {
             columns: ["floor_id"]
             isOneToOne: false
             referencedRelation: "floors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "issues_last_updated_by_fkey"
+            columns: ["last_updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {

@@ -1,5 +1,5 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { type Issue } from "./types/IssueTypes";
 import { 
@@ -11,10 +11,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { Loader2 } from "lucide-react";
+import { Loader2, MoreVertical, Edit, Trash2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 export const IssuesList = () => {
+  const queryClient = useQueryClient();
+
   const { data: issues, isLoading } = useQuery({
     queryKey: ['issues'],
     queryFn: async () => {
@@ -32,6 +42,54 @@ export const IssuesList = () => {
       return data;
     }
   });
+
+  const updateIssueMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: Issue['status'] }) => {
+      const { error } = await supabase
+        .from('issues')
+        .update({ status })
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['issues'] });
+      toast.success("Issue status updated successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to update issue status");
+      console.error("Error updating issue:", error);
+    }
+  });
+
+  const deleteIssueMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('issues')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['issues'] });
+      toast.success("Issue deleted successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to delete issue");
+      console.error("Error deleting issue:", error);
+    }
+  });
+
+  const handleStatusChange = (id: string, newStatus: Issue['status']) => {
+    updateIssueMutation.mutate({ id, status: newStatus });
+  };
+
+  const handleDelete = (id: string) => {
+    if (window.confirm("Are you sure you want to delete this issue?")) {
+      deleteIssueMutation.mutate(id);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -77,6 +135,7 @@ export const IssuesList = () => {
             <TableHead>Priority</TableHead>
             <TableHead>Location</TableHead>
             <TableHead>Created</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -102,6 +161,44 @@ export const IssuesList = () => {
               </TableCell>
               <TableCell>
                 {format(new Date(issue.created_at), 'MMM d, yyyy')}
+              </TableCell>
+              <TableCell className="text-right">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {issue.status !== 'in_progress' && (
+                      <DropdownMenuItem
+                        onClick={() => handleStatusChange(issue.id, 'in_progress')}
+                      >
+                        Mark In Progress
+                      </DropdownMenuItem>
+                    )}
+                    {issue.status !== 'resolved' && (
+                      <DropdownMenuItem
+                        onClick={() => handleStatusChange(issue.id, 'resolved')}
+                      >
+                        Mark Resolved
+                      </DropdownMenuItem>
+                    )}
+                    {issue.status !== 'open' && (
+                      <DropdownMenuItem
+                        onClick={() => handleStatusChange(issue.id, 'open')}
+                      >
+                        Reopen Issue
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem
+                      onClick={() => handleDelete(issue.id)}
+                      className="text-red-600"
+                    >
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </TableCell>
             </TableRow>
           ))}
