@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Card } from "@/components/ui/card";
@@ -45,6 +44,7 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
   const [activeTab, setActiveTab] = useState("type");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [photoIndexToRemove, setPhotoIndexToRemove] = useState<number | null>(null);
 
   const form = useForm<FormData>({
     defaultValues: {
@@ -74,15 +74,19 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
   };
 
   const handlePhotoRemove = (index: number) => {
+    setPhotoIndexToRemove(index);
     setShowConfirmDialog(true);
-    const handleConfirm = () => {
+  };
+
+  const confirmPhotoRemoval = () => {
+    if (photoIndexToRemove !== null) {
       const newPhotos = [...selectedPhotos];
-      newPhotos.splice(index, 1);
+      newPhotos.splice(photoIndexToRemove, 1);
       setSelectedPhotos(newPhotos);
       toast.success("Photo removed successfully");
       setShowConfirmDialog(false);
-    };
-    return handleConfirm;
+      setPhotoIndexToRemove(null);
+    }
   };
 
   const tabs = [
@@ -260,7 +264,7 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handlePhotoRemove}>
+            <AlertDialogAction onClick={confirmPhotoRemoval}>
               Remove
             </AlertDialogAction>
           </AlertDialogFooter>
