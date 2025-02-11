@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -20,59 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-
-// Simplified base types
-type IssueStatus = 'open' | 'in_progress' | 'resolved';
-type IssuePriority = 'low' | 'medium' | 'high';
-type FixtureType = 'standard' | 'emergency' | 'motion_sensor';
-type FixtureStatus = 'functional' | 'maintenance_needed' | 'non_functional' | 'pending_maintenance' | 'scheduled_replacement';
-type FixturePosition = 'ceiling' | 'wall' | 'floor' | 'desk' | 'recessed';
-
-// Flat type definitions
-interface ElectricalIssues {
-  short_circuit?: boolean;
-  wiring_issues?: boolean;
-  voltage_problems?: boolean;
-  ballast_issue?: boolean;
-}
-
-interface LightingFixture {
-  name: string;
-  type: FixtureType;
-  status: FixtureStatus;
-  position: FixturePosition;
-  electrical_issues?: ElectricalIssues;
-}
-
-interface RelatedEntity {
-  name: string;
-}
-
-interface DatabaseIssue {
-  id: string;
-  title: string;
-  description: string;
-  status: IssueStatus;
-  priority: IssuePriority;
-  building_id?: string;
-  floor_id?: string;
-  room_id?: string;
-  fixture_id?: string;
-  photos: string[];
-  created_at: string;
-  updated_at: string;
-  seen: boolean;
-  assignee_id?: string;
-  last_status_change?: string;
-  last_updated_by?: string;
-  tags?: string[];
-  due_date?: string;
-  type: string;
-  buildings: RelatedEntity | null;
-  floors: RelatedEntity | null;
-  rooms: RelatedEntity | null;
-  lighting_fixtures: LightingFixture[];
-}
+import { Issue, IssueStatus, IssuePriority, FixtureType, FixtureStatus } from "./types/IssueTypes";
 
 export const IssuesList = () => {
   const queryClient = useQueryClient();
@@ -143,13 +90,7 @@ export const IssuesList = () => {
       const { data, error } = await query;
       if (error) throw error;
       
-      return (data ?? []).map((item): DatabaseIssue => ({
-        ...item,
-        lighting_fixtures: Array.isArray(item.lighting_fixtures) ? item.lighting_fixtures : [],
-        buildings: item.buildings || null,
-        floors: item.floors || null,
-        rooms: item.rooms || null
-      }));
+      return (data ?? []) as Issue[];
     }
   });
 
