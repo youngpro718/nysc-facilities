@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -103,10 +104,10 @@ export const IssuesList = () => {
         lighting_fixtures: Array.isArray(item.lighting_fixtures) 
           ? item.lighting_fixtures.map(fixture => ({
               name: fixture.name,
-              type: fixture.type as FixtureType,
-              status: fixture.status as FixtureStatus,
-              position: fixture.position as FixturePosition,
-              electrical_issues: fixture.electrical_issues as ElectricalIssues
+              type: fixture.type,
+              status: fixture.status,
+              position: fixture.position,
+              electrical_issues: fixture.electrical_issues
             }))
           : []
       }));
