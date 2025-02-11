@@ -69,7 +69,7 @@ type DbIssueResponse = {
   rooms?: {
     name: string;
   } | null;
-  lighting_fixtures?: DbLightingFixture[] | null;
+  lighting_fixtures?: DbLightingFixture | null;
 };
 
 export const IssuesList = () => {
@@ -146,18 +146,18 @@ export const IssuesList = () => {
       if (error) throw error;
 
       // Transform database response to application type
-      const transformedData = (data || []) as DbIssueResponse[];
-      return transformedData.map((dbIssue): Issue => ({
+      const rawData = (data || []) as unknown as any[];
+      return rawData.map((dbIssue): Issue => ({
         ...dbIssue,
         status: dbIssue.status as IssueStatus,
         priority: dbIssue.priority as IssuePriority,
-        lighting_fixtures: dbIssue.lighting_fixtures?.map(fixture => ({
-          name: fixture.name,
-          type: fixture.type as FixtureType,
-          status: fixture.status as FixtureStatus,
-          position: fixture.position as FixturePosition,
-          electrical_issues: fixture.electrical_issues
-        })) || []
+        lighting_fixtures: dbIssue.lighting_fixtures ? [{
+          name: dbIssue.lighting_fixtures.name,
+          type: dbIssue.lighting_fixtures.type as FixtureType,
+          status: dbIssue.lighting_fixtures.status as FixtureStatus,
+          position: dbIssue.lighting_fixtures.position as FixturePosition,
+          electrical_issues: dbIssue.lighting_fixtures.electrical_issues
+        }] : []
       }));
     }
   });
