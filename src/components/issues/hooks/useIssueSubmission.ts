@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { FormData } from "../types/IssueTypes";
+import { FormData, Step } from "../types/IssueTypes";
 import { toast } from "sonner";
 import { UseFormReset } from "react-hook-form";
 
@@ -12,7 +12,7 @@ interface UseIssueSubmissionProps {
   setSelectedPhotos: (photos: string[]) => void;
   setSelectedBuilding: (building: string | null) => void;
   setSelectedFloor: (floor: string | null) => void;
-  setStep: (step: "type-selection" | "details" | "location" | "type" | "photos") => void;
+  setStep: (step: Step) => void;
 }
 
 export const useIssueSubmission = ({
@@ -47,7 +47,7 @@ export const useIssueSubmission = ({
       setSelectedPhotos([]);
       setSelectedBuilding(null);
       setSelectedFloor(null);
-      setStep("type-selection");
+      setStep("type");
     } catch (error: any) {
       toast.error(error.message || "Failed to create issue");
     }
