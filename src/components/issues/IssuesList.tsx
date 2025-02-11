@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -39,8 +38,36 @@ type SupabaseLightingFixture = {
   electrical_issues: ElectricalIssues;
 };
 
-type SupabaseIssue = Omit<Issue, 'lighting_fixtures'> & {
-  lighting_fixtures: SupabaseLightingFixture[] | null;
+type SupabaseIssue = {
+  id: string;
+  title: string;
+  description: string;
+  status: IssueStatus;
+  priority: IssuePriority;
+  building_id?: string;
+  floor_id?: string;
+  room_id?: string;
+  fixture_id?: string;
+  photos: string[];
+  created_at: string;
+  updated_at: string;
+  seen: boolean;
+  assignee_id?: string;
+  last_status_change?: string;
+  last_updated_by?: string;
+  tags?: string[];
+  due_date?: string;
+  type: string;
+  buildings?: {
+    name: string;
+  };
+  floors?: {
+    name: string;
+  };
+  rooms?: {
+    name: string;
+  };
+  lighting_fixtures?: SupabaseLightingFixture[] | null;
 };
 
 export const IssuesList = () => {
@@ -112,7 +139,7 @@ export const IssuesList = () => {
       const { data, error } = await query;
       if (error) throw error;
       
-      const processedData = (data ?? []).map((item: SupabaseIssue) => ({
+      return (data ?? []).map((item: SupabaseIssue) => ({
         ...item,
         lighting_fixtures: item.lighting_fixtures?.map(fixture => ({
           name: fixture.name,
@@ -121,9 +148,7 @@ export const IssuesList = () => {
           position: fixture.position,
           electrical_issues: fixture.electrical_issues
         })) ?? []
-      })) as Issue[];
-
-      return processedData;
+      }));
     }
   });
 
