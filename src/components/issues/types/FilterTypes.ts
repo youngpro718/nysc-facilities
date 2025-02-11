@@ -1,6 +1,6 @@
 
 export type IssueFilters = {
-  type?: "HVAC" | "Leak" | "Electrical" | "Plaster" | "Cleaning" | "Other" | "all_types";
+  type?: string;
   status?: "open" | "in_progress" | "resolved" | "all_statuses";
   priority?: string;
   assigned_to?: "DCAS" | "OCA" | "Self" | "Outside_Vendor" | "all_assignments";
@@ -8,6 +8,10 @@ export type IssueFilters = {
   sortBy?: string;
   order?: 'asc' | 'desc';
   assignedToMe?: boolean;
+  // New lighting-specific filters
+  lightingType?: string;
+  fixtureStatus?: string;
+  electricalIssue?: string;
 };
 
 // Alias IssueFilters as IssueFiltersType for consistency

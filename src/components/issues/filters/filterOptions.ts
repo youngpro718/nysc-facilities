@@ -1,3 +1,4 @@
+
 export const typeOptions = [
   { value: "all_types", label: "All types" },
   { value: "ACCESS_REQUEST", label: "Access Request" },
@@ -56,4 +57,29 @@ export const groupingOptions = [
   { value: "none", label: "No grouping" },
   { value: "building", label: "By Building" },
   { value: "floor", label: "By Floor" }
+];
+
+// New lighting-specific filter options
+export const lightingTypeOptions = [
+  { value: "all_lighting_types", label: "All lighting types" },
+  { value: "standard", label: "Standard" },
+  { value: "emergency", label: "Emergency" },
+  { value: "motion_sensor", label: "Motion Sensor" }
+];
+
+export const fixtureStatusOptions = [
+  { value: "all_fixture_statuses", label: "All fixture statuses" },
+  { value: "functional", label: "Functional" },
+  { value: "maintenance_needed", label: "Needs Maintenance" },
+  { value: "non_functional", label: "Non-functional" },
+  { value: "pending_maintenance", label: "Pending Maintenance" },
+  { value: "scheduled_replacement", label: "Scheduled for Replacement" }
+];
+
+export const electricalIssueOptions = [
+  { value: "all_electrical_issues", label: "All electrical issues" },
+  { value: "short_circuit", label: "Short Circuit" },
+  { value: "wiring_issues", label: "Wiring Issues" },
+  { value: "voltage_problems", label: "Voltage Problems" },
+  { value: "ballast_issue", label: "Ballast Issue" }
 ];
