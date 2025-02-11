@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { type Issue } from "./types/IssueTypes";
@@ -61,11 +60,11 @@ export const IssuesList = () => {
           const electricalIssue = params.get('electricalIssue');
 
           if (lightingType && lightingType !== 'all_lighting_types') {
-            query = query.eq('lighting_fixtures.type', lightingType);
+            query = query.eq('lighting_fixtures.type', lightingType as Issue['lighting_fixtures'][0]['type']);
           }
 
           if (fixtureStatus && fixtureStatus !== 'all_fixture_statuses') {
-            query = query.eq('lighting_fixtures.status', fixtureStatus);
+            query = query.eq('lighting_fixtures.status', fixtureStatus as Issue['lighting_fixtures'][0]['status']);
           }
 
           if (electricalIssue && electricalIssue !== 'all_electrical_issues') {
@@ -76,13 +75,13 @@ export const IssuesList = () => {
         // Status filter
         const status = params.get('status');
         if (status && status !== 'all_statuses') {
-          query = query.eq('status', status);
+          query = query.eq('status', status as Issue['status']);
         }
 
         // Priority filter
         const priority = params.get('priority');
         if (priority && priority !== 'all_priorities') {
-          query = query.eq('priority', priority);
+          query = query.eq('priority', priority as Issue['priority']);
         }
 
         // Assignment filter
@@ -96,7 +95,7 @@ export const IssuesList = () => {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data;
+      return data as Issue[];
     }
   });
 

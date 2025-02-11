@@ -17,7 +17,28 @@ export type Issue = {
   last_updated_by?: string;
   tags?: string[];
   due_date?: string;
-  type: string; // Making type required to match database schema
+  type: string;
+  buildings?: {
+    name: string;
+  };
+  floors?: {
+    name: string;
+  };
+  rooms?: {
+    name: string;
+  };
+  lighting_fixtures?: Array<{
+    name: string;
+    type: 'standard' | 'emergency' | 'motion_sensor';
+    status: 'functional' | 'maintenance_needed' | 'non_functional' | 'pending_maintenance' | 'scheduled_replacement';
+    position: string;
+    electrical_issues?: {
+      short_circuit?: boolean;
+      wiring_issues?: boolean;
+      voltage_problems?: boolean;
+      ballast_issue?: boolean;
+    };
+  }>;
 };
 
 // Adding IssueType as an alias for compatibility
