@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -30,15 +31,15 @@ import {
   LightingFixture 
 } from "./types/IssueTypes";
 
-type SupabaseLightingFixture = {
+interface DatabaseLightingFixture {
   name: string;
   type: FixtureType;
   status: FixtureStatus;
   position: FixturePosition;
   electrical_issues: ElectricalIssues;
-};
+}
 
-type SupabaseIssue = {
+interface DatabaseIssue {
   id: string;
   title: string;
   description: string;
@@ -60,20 +61,20 @@ type SupabaseIssue = {
   type: string;
   buildings?: {
     name: string;
-  };
+  } | null;
   floors?: {
     name: string;
-  };
+  } | null;
   rooms?: {
     name: string;
-  };
-  lighting_fixtures?: SupabaseLightingFixture[] | null;
-};
+  } | null;
+  lighting_fixtures?: DatabaseLightingFixture[] | null;
+}
 
 export const IssuesList = () => {
   const queryClient = useQueryClient();
 
-  const { data: issues, isLoading } = useQuery({
+  const { data: issues, isLoading } = useQuery<Issue[]>({
     queryKey: ['issues'],
     queryFn: async () => {
       let query = supabase
@@ -139,16 +140,21 @@ export const IssuesList = () => {
       const { data, error } = await query;
       if (error) throw error;
       
-      return (data ?? []).map((item: SupabaseIssue) => ({
-        ...item,
-        lighting_fixtures: item.lighting_fixtures?.map(fixture => ({
-          name: fixture.name,
-          type: fixture.type,
-          status: fixture.status,
-          position: fixture.position,
-          electrical_issues: fixture.electrical_issues
-        })) ?? []
-      }));
+      const processedData = (data || []).map((rawIssue) => {
+        const issue = rawIssue as DatabaseIssue;
+        return {
+          ...issue,
+          lighting_fixtures: issue.lighting_fixtures?.map(fixture => ({
+            name: fixture.name,
+            type: fixture.type,
+            status: fixture.status,
+            position: fixture.position,
+            electrical_issues: fixture.electrical_issues
+          })) || []
+        } as Issue;
+      });
+
+      return processedData;
     }
   });
 
