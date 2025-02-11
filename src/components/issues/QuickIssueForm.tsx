@@ -15,14 +15,17 @@ import { usePhotoUpload } from "./hooks/usePhotoUpload";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 
+type IssuePriority = 'low' | 'medium' | 'high';
+type IssueType = 'Power' | 'Plumbing' | 'HVAC' | 'Door' | 'Cleaning' | 'Pest Control' | 'Other';
+
 interface FormData {
   title: string;
   description: string;
-  priority: 'low' | 'medium' | 'high' | 'urgent';
+  priority: IssuePriority;
   building_id?: string;
   floor_id?: string;
   room_id?: string;
-  issue_type: 'Power' | 'Plumbing' | 'HVAC' | 'Door' | 'Cleaning' | 'Pest Control' | 'Other';
+  issue_type: IssueType;
   problem_type?: string;
 }
 
@@ -38,8 +41,8 @@ const ISSUE_TYPES = [
 
 export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
   const [isManualTitle, setIsManualTitle] = useState(false);
-  const [selectedIssueType, setSelectedIssueType] = useState<string | null>(null);
-  const { uploading, selectedPhotos, handlePhotoUpload } = usePhotoUpload();
+  const [selectedIssueType, setSelectedIssueType] = useState<IssueType | null>(null);
+  const { uploading, selectedPhotos, handlePhotoUpload, setSelectedPhotos } = usePhotoUpload();
   const queryClient = useQueryClient();
 
   const form = useForm<FormData>({
@@ -99,7 +102,7 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
     mutationFn: async (data: FormData) => {
       const { error } = await supabase
         .from('issues')
-        .insert([{
+        .insert({
           title: data.title,
           description: data.description,
           type: data.issue_type,
@@ -110,7 +113,7 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
           room_id: data.room_id,
           photos: selectedPhotos,
           seen: false
-        }]);
+        });
       
       if (error) throw error;
     },
@@ -141,6 +144,10 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
       data.title = generateTitle(data);
     }
     createIssueMutation.mutate(data);
+  };
+
+  const handlePhotoRemove = (index: number) => {
+    setSelectedPhotos(prev => prev.filter((_, i) => i !== index));
   };
 
   // Watch for issue type changes to suggest priority
@@ -238,7 +245,6 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
                   <SelectItem value="low">Low</SelectItem>
                   <SelectItem value="medium">Medium</SelectItem>
                   <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="urgent">Urgent</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -344,10 +350,11 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
             selectedPhotos={selectedPhotos}
             uploading={uploading}
             onPhotoUpload={handlePhotoUpload}
+            onPhotoRemove={handlePhotoRemove}
           />
           
           {selectedIssueType && !selectedPhotos.length && (
-            <Alert variant="warning">
+            <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
                 Adding photos helps maintenance staff better understand and resolve the issue.
