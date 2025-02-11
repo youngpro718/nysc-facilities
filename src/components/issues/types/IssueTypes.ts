@@ -18,3 +18,6 @@ export type Issue = {
   tags?: string[];
   due_date?: string;
 };
+
+// Adding IssueType as an alias for compatibility
+export type IssueType = Issue;
