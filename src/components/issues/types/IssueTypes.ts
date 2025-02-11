@@ -51,48 +51,6 @@ export type FormData = {
 
 export type Step = "type-selection" | "details" | "location" | "type" | "photos";
 
-export type Issue = {
-  id: string;
-  title: string;
-  description: string;
-  status: "open" | "in_progress" | "resolved";
-  priority: string;
-  created_at: string;
-  assigned_to: "DCAS" | "OCA" | "Self" | "Outside_Vendor";
-  room_id: string | null;
-  building_id: string | null;
-  floor_id: string | null;
-  photos: string[] | null;
-  type: IssueType;
-  subcategory?: string;
-  template_fields?: Record<string, any>;
-  sla_hours: number;
-  due_date: string | null;
-  status_history: StatusHistory[] | null;
-  seen: boolean;
-  buildingName?: string;
-  floorName?: string;
-  roomName?: string;
-  fixture_id?: string;
-  area_affected?: string;
-  additional_stakeholders?: string[];
-  related_issues?: string[];
-  maintenance_priority?: "low" | "medium" | "high";
-  inspection_schedule?: string;
-  resolution_notes?: string;
-  cost_estimate?: number;
-  labels?: string[];
-  custom_fields?: Record<string, any>;
-  maintenance_history?: MaintenanceRecord[];
-  references?: Reference[];
-};
-
-export type StatusHistory = {
-  status: string;
-  changed_at: string;
-  previous_status: string;
-};
-
 export type MaintenanceRecord = {
   date: string;
   type: string;

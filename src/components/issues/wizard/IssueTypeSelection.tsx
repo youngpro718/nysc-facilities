@@ -2,75 +2,53 @@
 import { Thermometer, Droplet, Zap, Construction, Wrench, Brush } from "lucide-react";
 import { FormData, IssueType } from "../types/IssueTypes";
 
-interface IssueTypeIcon {
-  type: IssueType;
-  icon: React.ReactNode;
-  label: string;
-  defaultTitle: string;
-  defaultDescription: string;
-  contextFields: string[];
-  requiredPhotos: number;
-}
-
-const issueTypes: IssueTypeIcon[] = [
+export const issueTypes = [
   {
-    type: "CLIMATE_CONTROL",
+    type: "CLIMATE_CONTROL" as IssueType,
     icon: <Thermometer className="h-12 w-12" />,
     label: "Climate Control",
     defaultTitle: "Climate Control Issue",
-    defaultDescription: "Temperature or ventilation issue",
-    contextFields: ["area_affected", "current_condition"],
-    requiredPhotos: 1
+    defaultDescription: "Temperature or ventilation issue"
   },
   {
-    type: "LEAK",
+    type: "LEAK" as IssueType,
     icon: <Droplet className="h-12 w-12" />,
     label: "Water Leak",
     defaultTitle: "Water Leak",
-    defaultDescription: "Water leak or plumbing issue",
-    contextFields: ["damage_assessment", "urgency_reason"],
-    requiredPhotos: 2
+    defaultDescription: "Water leak or plumbing issue"
   },
   {
-    type: "ELECTRICAL_NEEDS",
+    type: "ELECTRICAL_NEEDS" as IssueType,
     icon: <Zap className="h-12 w-12" />,
     label: "Electrical",
     defaultTitle: "Electrical Issue",
-    defaultDescription: "Electrical or power issue",
-    contextFields: ["safety_assessment", "maintenance_history"],
-    requiredPhotos: 1
+    defaultDescription: "Electrical or power issue"
   },
   {
-    type: "CEILING",
+    type: "CEILING" as IssueType,
     icon: <Construction className="h-12 w-12" />,
     label: "Ceiling",
-    defaultTitle: "Ceiling Repair",
-    defaultDescription: "Ceiling damage or issue",
-    contextFields: ["area_size", "damage_assessment"],
-    requiredPhotos: 2
+    defaultTitle: "Ceiling Issue",
+    defaultDescription: "Ceiling damage or repair needed"
   },
   {
-    type: "CLEANING_REQUEST",
+    type: "CLEANING_REQUEST" as IssueType,
     icon: <Brush className="h-12 w-12" />,
     label: "Cleaning",
-    defaultTitle: "Cleaning Required",
-    defaultDescription: "Area needs cleaning or maintenance",
-    contextFields: ["area_size", "urgency_reason"],
-    requiredPhotos: 1
+    defaultTitle: "Cleaning Request",
+    defaultDescription: "Area needs cleaning"
   },
   {
-    type: "GENERAL_REQUESTS",
+    type: "GENERAL_REQUESTS" as IssueType,
     icon: <Wrench className="h-12 w-12" />,
-    label: "General Request",
-    defaultTitle: "General Maintenance Request",
-    defaultDescription: "Other maintenance or facility issue",
-    contextFields: [],
-    requiredPhotos: 1
-  },
+    label: "General",
+    defaultTitle: "General Maintenance",
+    defaultDescription: "General maintenance or repair needed"
+  }
 ];
 
 interface IssueTypeSelectionProps {
-  onTypeSelect: (type: IssueTypeIcon) => void;
+  onTypeSelect: (type: typeof issueTypes[number]) => void;
 }
 
 export function IssueTypeSelection({ onTypeSelect }: IssueTypeSelectionProps) {
@@ -93,5 +71,3 @@ export function IssueTypeSelection({ onTypeSelect }: IssueTypeSelectionProps) {
     </div>
   );
 }
-
-export { issueTypes };

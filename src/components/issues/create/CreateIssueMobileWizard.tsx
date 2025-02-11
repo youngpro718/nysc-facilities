@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -11,15 +10,15 @@ import {
 } from "@/components/ui/sheet";
 import { Form } from "@/components/ui/form";
 import { Plus, ArrowLeft, ArrowRight } from "lucide-react";
-import { IssueTypeSelection, issueTypes } from "./wizard/IssueTypeSelection";
-import { IssueDetailsForm } from "./wizard/IssueDetailsForm";
+import { IssueTypeSelection, issueTypes } from "../wizard/IssueTypeSelection";
+import { IssueDetailsForm } from "../wizard/IssueDetailsForm";
 import { IssueLocationForm } from "./wizard/IssueLocationForm";
-import { IssueTypeForm } from "./wizard/IssueTypeForm";
+import { IssueTypeForm } from "../wizard/IssueTypeForm";
 import { IssuePhotoForm } from "./wizard/IssuePhotoForm";
-import { FormData, Step } from "./types/IssueTypes";
-import { usePhotoUpload } from "./hooks/usePhotoUpload";
-import { useIssueFormSteps } from "./hooks/useIssueFormSteps";
-import { useIssueSubmission } from "./hooks/useIssueSubmission";
+import { FormData, Step } from "../types/IssueTypes";
+import { usePhotoUpload } from "../hooks/usePhotoUpload";
+import { useIssueFormSteps } from "../hooks/useIssueFormSteps";
+import { useIssueSubmission } from "../hooks/useIssueSubmission";
 
 export function CreateIssueMobileWizard({ onIssueCreated }: { onIssueCreated: () => void }) {
   const [open, setOpen] = useState(false);
