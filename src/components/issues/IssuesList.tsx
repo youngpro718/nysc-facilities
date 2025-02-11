@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -31,15 +30,15 @@ import {
   LightingFixture 
 } from "./types/IssueTypes";
 
-interface DatabaseLightingFixture {
+type DatabaseLightingFixture = {
   name: string;
   type: FixtureType;
   status: FixtureStatus;
   position: FixturePosition;
   electrical_issues: ElectricalIssues;
-}
+};
 
-interface DatabaseIssue {
+type DatabaseIssue = {
   id: string;
   title: string;
   description: string;
@@ -69,14 +68,14 @@ interface DatabaseIssue {
     name: string;
   } | null;
   lighting_fixtures?: DatabaseLightingFixture[] | null;
-}
+};
 
 export const IssuesList = () => {
   const queryClient = useQueryClient();
 
-  const { data: issues, isLoading } = useQuery<Issue[]>({
+  const { data: issues, isLoading } = useQuery({
     queryKey: ['issues'],
-    queryFn: async () => {
+    queryFn: async (): Promise<Issue[]> => {
       let query = supabase
         .from('issues')
         .select(`
@@ -140,21 +139,21 @@ export const IssuesList = () => {
       const { data, error } = await query;
       if (error) throw error;
       
-      const processedData = (data || []).map((rawIssue) => {
-        const issue = rawIssue as unknown as DatabaseIssue;
+      return (data || []).map((rawIssue) => {
+        const typedIssue = rawIssue as unknown as DatabaseIssue;
+        const fixtures = typedIssue.lighting_fixtures || [];
+        
         return {
-          ...issue,
-          lighting_fixtures: issue.lighting_fixtures?.map(fixture => ({
+          ...typedIssue,
+          lighting_fixtures: fixtures.map(fixture => ({
             name: fixture.name,
             type: fixture.type,
             status: fixture.status,
             position: fixture.position,
             electrical_issues: fixture.electrical_issues
-          })) || []
-        } as Issue;
+          }))
+        };
       });
-
-      return processedData;
     }
   });
 
