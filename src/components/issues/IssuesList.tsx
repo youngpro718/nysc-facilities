@@ -1,54 +1,37 @@
 
-import { IssueFilters } from "./IssueFilters";
-import { IssueGrid } from "./views/IssueGrid";
-import { IssueTable } from "./views/IssueTable";
-import { IssueKanban } from "./views/IssueKanban";
-import { IssueTimeline } from "./views/IssueTimeline";
-import { useIssueData } from "./hooks/useIssueData";
-import { useIssueFilters } from "./hooks/useIssueFilters";
-import { useIssueActions } from "./hooks/useIssueActions";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { type Issue } from "./types/IssueTypes";
-import { Loader2, LayoutGrid, Table as TableIcon, Kanban, History, Filter } from "lucide-react";
-import { ViewMode } from "./types/FilterTypes";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { Card } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { 
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
+import { Loader2 } from "lucide-react";
 
 export const IssuesList = () => {
-  const { toast } = useToast();
-  const {
-    filters,
-    setFilters,
-    sort,
-    setSort,
-    grouping,
-    setGrouping,
-    viewMode,
-    setViewMode
-  } = useIssueFilters();
+  const { data: issues, isLoading } = useQuery({
+    queryKey: ['issues'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('issues')
+        .select(`
+          *,
+          buildings(name),
+          floors(name),
+          rooms(name)
+        `)
+        .order('created_at', { ascending: false });
 
-  const { data: issues, isLoading, refetch } = useIssueData(filters, sort, grouping);
-  
-  const {
-    handleDeleteIssue,
-    handleMarkAsSeen,
-    handleUpdate
-  } = useIssueActions(refetch);
-
-  const getViewIcon = (mode: ViewMode) => {
-    switch (mode) {
-      case 'cards':
-        return <LayoutGrid className="h-4 w-4" />;
-      case 'table':
-        return <TableIcon className="h-4 w-4" />;
-      case 'kanban':
-        return <Kanban className="h-4 w-4" />;
-      case 'timeline':
-        return <History className="h-4 w-4" />;
+      if (error) throw error;
+      return data;
     }
-  };
+  });
 
   if (isLoading) {
     return (
@@ -58,126 +41,72 @@ export const IssuesList = () => {
     );
   }
 
-  const handleViewModeChange = (value: ViewMode) => {
-    setViewMode(value);
-    toast({
-      title: "View changed",
-      description: `Switched to ${value} view`,
-      duration: 2000,
-    });
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'low':
+        return 'bg-green-100 text-green-800 border-green-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
   };
 
-  const renderView = (groupIssues: Issue[]) => {
-    switch (viewMode) {
-      case 'cards':
-        return (
-          <div className="animate-in fade-in-50 duration-300">
-            <IssueGrid
-              issues={groupIssues}
-              onDelete={handleDeleteIssue}
-              onUpdate={handleUpdate}
-              onMarkAsSeen={handleMarkAsSeen}
-            />
-          </div>
-        );
-      case 'table':
-        return (
-          <div className="animate-in fade-in-50 duration-300">
-            <IssueTable issues={groupIssues} />
-          </div>
-        );
-      case 'kanban':
-        return (
-          <div className="animate-in fade-in-50 duration-300">
-            <IssueKanban 
-              issues={groupIssues}
-              onDelete={handleDeleteIssue}
-              onUpdate={handleUpdate}
-              onMarkAsSeen={handleMarkAsSeen}
-            />
-          </div>
-        );
-      case 'timeline':
-        return (
-          <div className="animate-in fade-in-50 duration-300">
-            <IssueTimeline issues={groupIssues} />
-          </div>
-        );
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'open':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'in_progress':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'resolved':
+        return 'bg-green-100 text-green-800 border-green-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in-50">
-      <Card className="sticky top-0 z-10 bg-background/95 backdrop-blur-lg shadow-sm">
-        <div className="p-4 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0">
-              {(['cards', 'table', 'kanban', 'timeline'] as ViewMode[]).map((mode) => (
-                <Button
-                  key={mode}
-                  variant={viewMode === mode ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleViewModeChange(mode)}
-                  className={cn(
-                    "flex items-center gap-2 whitespace-nowrap transition-all duration-200",
-                    viewMode === mode && "shadow-lg scale-105"
-                  )}
-                >
-                  {getViewIcon(mode)}
-                  <span className="hidden sm:inline capitalize">{mode}</span>
-                </Button>
-              ))}
-            </div>
-            <Button variant="outline" size="sm" className="flex items-center gap-2">
-              <Filter className="h-4 w-4" />
-              <span>Filters</span>
-            </Button>
-          </div>
-
-          <Separator className="my-4" />
-
-          <IssueFilters 
-            onFilterChange={setFilters}
-            onSortChange={setSort}
-            onGroupingChange={setGrouping}
-            viewMode={viewMode}
-          />
-        </div>
-      </Card>
-
-      <div className="space-y-8">
-        {issues && Object.entries(issues.grouped).map(([groupName, groupIssues]) => (
-          <div key={groupName} className="space-y-4 animate-in fade-in-50">
-            <Card className="sticky top-[130px] z-[5] bg-background/95 backdrop-blur-lg shadow-sm">
-              <div className="p-4 flex items-center justify-between">
-                <h2 className="text-xl font-semibold">
-                  {groupName}
-                </h2>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground px-4 py-1 rounded-full bg-muted">
-                    {groupIssues.length} {groupIssues.length === 1 ? 'issue' : 'issues'}
-                  </span>
-                </div>
-              </div>
-            </Card>
-            
-            {renderView(groupIssues)}
-          </div>
-        ))}
-
-        {(!issues || Object.values(issues.grouped).flat().length === 0) && (
-          <div className="text-center py-12 text-muted-foreground animate-in fade-in-50">
-            <Card className="max-w-md mx-auto p-8">
-              <div className="space-y-4">
-                <p className="text-lg font-medium">No issues found</p>
-                <p className="text-sm text-muted-foreground">
-                  Try adjusting your filters or create a new issue
-                </p>
-              </div>
-            </Card>
-          </div>
-        )}
-      </div>
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Title</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Priority</TableHead>
+            <TableHead>Location</TableHead>
+            <TableHead>Created</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {issues?.map((issue) => (
+            <TableRow key={issue.id}>
+              <TableCell>{issue.title}</TableCell>
+              <TableCell>
+                <Badge className={getStatusColor(issue.status)} variant="secondary">
+                  {issue.status.replace('_', ' ')}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <Badge className={getPriorityColor(issue.priority)} variant="secondary">
+                  {issue.priority}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                {[
+                  issue.buildings?.name,
+                  issue.floors?.name,
+                  issue.rooms?.name
+                ].filter(Boolean).join(' > ')}
+              </TableCell>
+              <TableCell>
+                {format(new Date(issue.created_at), 'MMM d, yyyy')}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 };
