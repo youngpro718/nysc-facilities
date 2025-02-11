@@ -48,7 +48,7 @@ export type Issue = {
   draft?: boolean;
   custom_fields?: Record<string, any>;
   maintenance_history?: MaintenanceRecord[];
-  references?: Reference[];
+  issue_references?: Reference[];  // Changed from references to issue_references to match DB schema
   status_history?: StatusHistoryRecord[];
   seen?: boolean;
   buildingName?: string;
