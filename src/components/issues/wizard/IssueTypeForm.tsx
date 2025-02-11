@@ -12,6 +12,28 @@ interface IssueTypeFormProps {
   form: UseFormReturn<FormData>;
 }
 
+const VALID_ISSUE_TYPES: IssueType[] = [
+  "ACCESS_REQUEST",
+  "BUILDING_SYSTEMS",
+  "CEILING",
+  "CLEANING_REQUEST",
+  "CLIMATE_CONTROL",
+  "DOOR",
+  "ELECTRICAL_NEEDS",
+  "EMERGENCY",
+  "EXTERIOR_FACADE",
+  "FLAGPOLE_FLAG",
+  "FLOORING",
+  "GENERAL_REQUESTS",
+  "LEAK",
+  "LIGHTING",
+  "LOCK",
+  "PLUMBING_NEEDS",
+  "RESTROOM_REPAIR",
+  "SIGNAGE",
+  "WINDOW"
+];
+
 export function IssueTypeForm({ form }: IssueTypeFormProps) {
   const { data: templates } = useQuery({
     queryKey: ['issue-templates'],
@@ -37,7 +59,7 @@ export function IssueTypeForm({ form }: IssueTypeFormProps) {
             )}
             onClick={() => {
               // Ensure the template.type is a valid IssueType before setting it
-              if (template.type && Object.values(IssueType).includes(template.type as IssueType)) {
+              if (template.type && VALID_ISSUE_TYPES.includes(template.type as IssueType)) {
                 form.setValue("type", template.type as IssueType);
                 form.setValue("priority", template.default_priority || "medium");
               }
