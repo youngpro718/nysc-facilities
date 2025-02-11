@@ -1,6 +1,6 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { type Issue } from "./types/IssueTypes";
 import { 
   Table,
   TableBody,
@@ -34,12 +34,15 @@ type LightingFixture = {
   };
 };
 
+type IssueStatus = 'open' | 'in_progress' | 'resolved';
+type IssuePriority = 'low' | 'medium' | 'high';
+
 type IssueResponse = {
   id: string;
   title: string;
   description: string;
-  status: Issue['status'];
-  priority: Issue['priority'];
+  status: IssueStatus;
+  priority: IssuePriority;
   building_id?: string;
   floor_id?: string;
   room_id?: string;
@@ -116,12 +119,12 @@ export const IssuesList = () => {
 
         const status = params.get('status');
         if (status && status !== 'all_statuses') {
-          query = query.eq('status', status as Issue['status']);
+          query = query.eq('status', status as IssueStatus);
         }
 
         const priority = params.get('priority');
         if (priority && priority !== 'all_priorities') {
-          query = query.eq('priority', priority as Issue['priority']);
+          query = query.eq('priority', priority as IssuePriority);
         }
 
         const assignedTo = params.get('assigned_to');
@@ -134,12 +137,17 @@ export const IssuesList = () => {
 
       const { data, error } = await query;
       if (error) throw error;
-      return (data || []) as IssueResponse[];
+      
+      // Ensure the response is properly typed
+      return (data ?? []).map(item => ({
+        ...item,
+        lighting_fixtures: Array.isArray(item.lighting_fixtures) ? item.lighting_fixtures : []
+      })) as IssueResponse[];
     }
   });
 
   const updateIssueMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: Issue['status'] }) => {
+    mutationFn: async ({ id, status }: { id: string; status: IssueStatus }) => {
       const { error } = await supabase
         .from('issues')
         .update({ status })
@@ -176,7 +184,7 @@ export const IssuesList = () => {
     }
   });
 
-  const handleStatusChange = (id: string, newStatus: Issue['status']) => {
+  const handleStatusChange = (id: string, newStatus: IssueStatus) => {
     updateIssueMutation.mutate({ id, status: newStatus });
   };
 
@@ -194,7 +202,7 @@ export const IssuesList = () => {
     );
   }
 
-  const getPriorityColor = (priority: Issue['priority']) => {
+  const getPriorityColor = (priority: IssuePriority) => {
     switch (priority) {
       case 'high':
         return 'bg-red-100 text-red-800 border-red-200';
@@ -207,7 +215,7 @@ export const IssuesList = () => {
     }
   };
 
-  const getStatusColor = (status: Issue['status']) => {
+  const getStatusColor = (status: IssueStatus) => {
     switch (status) {
       case 'open':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
