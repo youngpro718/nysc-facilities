@@ -1,78 +1,28 @@
-import { useState, useEffect } from "react";
+
+import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { FormLabel } from "@/components/ui/form";
 import { toast } from "sonner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 import { IssuePhotoForm } from "./wizard/IssuePhotoForm";
 import { usePhotoUpload } from "./hooks/usePhotoUpload";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle, Mic, MicOff } from "lucide-react";
-
-type IssuePriority = 'low' | 'medium' | 'high';
-type IssueType = 'Power' | 'Plumbing' | 'HVAC' | 'Door' | 'Cleaning' | 'Pest Control' | 'Other';
-
-const PROBLEM_TYPES: Record<IssueType, string[]> = {
-  'Power': ['Circuit Breaker', 'Outlet Not Working', 'Light Fixture', 'Emergency Power'],
-  'Plumbing': ['Leak', 'Clog', 'No Water', 'Water Pressure'],
-  'HVAC': ['No Heat', 'No Cooling', 'Strange Noise', 'Thermostat Issue'],
-  'Door': ["Won't Lock", "Won't Close", 'Handle Broken', 'Card Reader'],
-  'Cleaning': ['Regular Service', 'Spill', 'Deep Clean Required', 'Waste Removal'],
-  'Pest Control': ['Rodents', 'Insects', 'Prevention', 'Inspection'],
-  'Other': ['General Maintenance', 'Inspection', 'Consultation']
-};
-
-interface FormData {
-  title: string;
-  description: string;
-  priority: IssuePriority;
-  building_id?: string;
-  floor_id?: string;
-  room_id?: string;
-  issue_type: IssueType;
-  problem_type?: string;
-}
-
-// Define database types
-interface Building {
-  id: string;
-  name: string;
-  status: string;
-}
-
-interface Floor {
-  id: string;
-  name: string;
-  floor_number: number;
-  status: string;
-}
-
-interface Room {
-  id: string;
-  name: string;
-  room_number: string;
-  status: string;
-}
-
-const ISSUE_TYPES = [
-  'Power',
-  'Plumbing',
-  'HVAC',
-  'Door',
-  'Cleaning',
-  'Pest Control',
-  'Other'
-] as const;
+import { FormData } from "./types/formTypes";
+import { IssueType } from "./constants/issueTypes";
+import { IssueTypeField } from "./form-sections/IssueTypeField";
+import { ProblemTypeField } from "./form-sections/ProblemTypeField";
+import { DescriptionField } from "./form-sections/DescriptionField";
+import { LocationFields } from "./form-sections/LocationFields";
 
 export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
   const [isManualTitle, setIsManualTitle] = useState(false);
   const [selectedIssueType, setSelectedIssueType] = useState<IssueType | null>(null);
-  const [isRecording, setIsRecording] = useState(false);
   const { uploading, selectedPhotos, handlePhotoUpload, setSelectedPhotos } = usePhotoUpload();
   const queryClient = useQueryClient();
 
@@ -81,57 +31,6 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
       priority: 'medium',
       description: '',
     }
-  });
-
-  // Create fetch functions outside of useQuery
-  const fetchBuildings = async () => {
-    const { data, error } = await supabase
-      .from('buildings')
-      .select('*')
-      .eq('status', 'active')
-      .order('name');
-    if (error) throw error;
-    return data as Building[];
-  };
-
-  const fetchFloors = async (buildingId: string) => {
-    const { data, error } = await supabase
-      .from('floors')
-      .select('*')
-      .eq('building_id', buildingId)
-      .eq('status', 'active')
-      .order('floor_number');
-    if (error) throw error;
-    return data as Floor[];
-  };
-
-  const fetchRooms = async (floorId: string) => {
-    const { data, error } = await supabase
-      .from('rooms')
-      .select('*')
-      .eq('floor_id', floorId)
-      .eq('status', 'active')
-      .order('room_number');
-    if (error) throw error;
-    return data as Room[];
-  };
-
-  // Use the fetch functions in queries
-  const { data: buildings } = useQuery({
-    queryKey: ['buildings'],
-    queryFn: fetchBuildings
-  });
-
-  const { data: floors } = useQuery({
-    queryKey: ['floors', form.watch('building_id')],
-    queryFn: () => fetchFloors(form.watch('building_id') || ''),
-    enabled: !!form.watch('building_id'),
-  });
-
-  const { data: rooms } = useQuery({
-    queryKey: ['rooms', form.watch('floor_id')],
-    queryFn: () => fetchRooms(form.watch('floor_id') || ''),
-    enabled: !!form.watch('floor_id'),
   });
 
   const createIssueMutation = useMutation({
@@ -196,48 +95,6 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
     }
   }
 
-  const handleDictation = () => {
-    if (!('webkitSpeechRecognition' in window)) {
-      toast.error("Speech recognition is not supported in your browser");
-      return;
-    }
-
-    const recognition = new (window as any).webkitSpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-
-    recognition.onstart = () => {
-      setIsRecording(true);
-    };
-
-    recognition.onresult = (event: any) => {
-      const transcript = Array.from(event.results)
-        .map((result: any) => result[0])
-        .map((result: any) => result.transcript)
-        .join('');
-
-      form.setValue('description', 
-        (form.getValues('description') + ' ' + transcript).trim()
-      );
-    };
-
-    recognition.onerror = (event: any) => {
-      console.error('Speech recognition error', event.error);
-      setIsRecording(false);
-      toast.error("Failed to record audio");
-    };
-
-    recognition.onend = () => {
-      setIsRecording(false);
-    };
-
-    if (isRecording) {
-      recognition.stop();
-    } else {
-      recognition.start();
-    }
-  };
-
   const handleCancel = () => {
     const hasData = Object.values(form.getValues()).some(value => 
       value !== '' && value !== undefined && value !== 'medium'
@@ -256,57 +113,8 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="issue_type"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Issue Type</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select issue type" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {ISSUE_TYPES.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {form.watch('issue_type') && (
-          <FormField
-            control={form.control}
-            name="problem_type"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Problem Type</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select problem type" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {PROBLEM_TYPES[form.watch('issue_type')]?.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
+        <IssueTypeField form={form} />
+        <ProblemTypeField form={form} />
 
         <div className="flex items-center space-x-2">
           <Switch
@@ -320,165 +128,14 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
         </div>
 
         {isManualTitle && (
-          <FormField
-            control={form.control}
-            name="title"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Title</FormLabel>
-                <FormControl>
-                  <Input {...field} placeholder="Issue title" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="form-group">
+            <FormLabel>Title</FormLabel>
+            <Input {...form.register('title')} placeholder="Issue title" />
+          </div>
         )}
 
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <div className="relative">
-                <FormControl>
-                  <Textarea {...field} placeholder="Describe the issue" />
-                </FormControl>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="absolute right-2 top-2"
-                  onClick={handleDictation}
-                >
-                  {isRecording ? (
-                    <MicOff className="h-4 w-4 text-destructive animate-pulse" />
-                  ) : (
-                    <Mic className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="priority"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Priority</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select priority" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="building_id"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Building</FormLabel>
-              <Select 
-                onValueChange={(value) => {
-                  field.onChange(value);
-                  form.setValue('floor_id', undefined);
-                  form.setValue('room_id', undefined);
-                }} 
-                value={field.value}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select building" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {buildings?.map((building) => (
-                    <SelectItem key={building.id} value={building.id}>
-                      {building.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="floor_id"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Floor</FormLabel>
-              <Select 
-                onValueChange={(value) => {
-                  field.onChange(value);
-                  form.setValue('room_id', undefined);
-                }} 
-                value={field.value}
-                disabled={!form.watch('building_id')}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select floor" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {floors?.map((floor) => (
-                    <SelectItem key={floor.id} value={floor.id}>
-                      Floor {floor.floor_number} - {floor.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="room_id"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Room</FormLabel>
-              <Select 
-                onValueChange={field.onChange} 
-                value={field.value}
-                disabled={!form.watch('floor_id')}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select room" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {rooms?.map((room) => (
-                    <SelectItem key={room.id} value={room.id}>
-                      Room {room.room_number} - {room.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <DescriptionField form={form} />
+        <LocationFields form={form} />
 
         <div className="space-y-4">
           <IssuePhotoForm
