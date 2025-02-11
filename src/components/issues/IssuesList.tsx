@@ -32,10 +32,14 @@ import {
 type DatabaseIssue = {
   id: string;
   title: string;
+  description: string;
   type: string;
   status: string;
   priority: string;
   created_at: string;
+  updated_at: string;
+  photos: string[];
+  seen: boolean;
   buildings?: { name: string } | null;
   floors?: { name: string } | null;
   rooms?: { name: string } | null;
@@ -67,11 +71,20 @@ function isValidIssuePriority(value: string | null): value is IssuePriority {
   return value === 'high' || value === 'medium' || value === 'low';
 }
 
-async function fetchIssues(): Promise<DatabaseIssue[]> {
-  let query = supabase
+async function fetchIssues() {
+  const { data, error } = await supabase
     .from('issues')
     .select(`
-      *,
+      id,
+      title,
+      description,
+      type,
+      status,
+      priority,
+      created_at,
+      updated_at,
+      photos,
+      seen,
       buildings(name),
       floors(name),
       rooms(name),
@@ -82,62 +95,28 @@ async function fetchIssues(): Promise<DatabaseIssue[]> {
         position,
         electrical_issues
       )
-    `);
+    `)
+    .order('created_at', { ascending: false });
 
-  if (window.location.search) {
-    const params = new URLSearchParams(window.location.search);
-    
-    const type = params.get('type');
-    if (type && type !== 'all_types') {
-      query = query.eq('type', type);
-    }
-
-    if (type === 'LIGHTING') {
-      const lightingType = params.get('lightingType');
-      const fixtureStatus = params.get('fixtureStatus');
-      const electricalIssue = params.get('electricalIssue');
-
-      if (lightingType && lightingType !== 'all_lighting_types' && isValidFixtureType(lightingType)) {
-        query = query.eq('lighting_fixtures.type', lightingType);
-      }
-
-      if (fixtureStatus && fixtureStatus !== 'all_fixture_statuses' && isValidFixtureStatus(fixtureStatus)) {
-        query = query.eq('lighting_fixtures.status', fixtureStatus);
-      }
-
-      if (electricalIssue && electricalIssue !== 'all_electrical_issues') {
-        query = query.contains('lighting_fixtures.electrical_issues', { [electricalIssue]: true });
-      }
-    }
-
-    const status = params.get('status');
-    if (status && status !== 'all_statuses' && isValidIssueStatus(status)) {
-      query = query.eq('status', status);
-    }
-
-    const priority = params.get('priority');
-    if (priority && priority !== 'all_priorities' && isValidIssuePriority(priority)) {
-      query = query.eq('priority', priority);
-    }
-
-    const assignedTo = params.get('assigned_to');
-    if (assignedTo && assignedTo !== 'all_assignments') {
-      query = query.eq('assigned_to', assignedTo);
-    }
-  }
-
-  query = query.order('created_at', { ascending: false });
-
-  const { data, error } = await query;
   if (error) throw error;
   return (data || []) as DatabaseIssue[];
 }
 
 function transformIssue(dbIssue: DatabaseIssue): Issue {
   return {
-    ...dbIssue,
+    id: dbIssue.id,
+    title: dbIssue.title,
+    description: dbIssue.description,
+    type: dbIssue.type,
     status: dbIssue.status as IssueStatus,
     priority: dbIssue.priority as IssuePriority,
+    created_at: dbIssue.created_at,
+    updated_at: dbIssue.updated_at,
+    photos: dbIssue.photos || [],
+    seen: dbIssue.seen,
+    buildings: dbIssue.buildings,
+    floors: dbIssue.floors,
+    rooms: dbIssue.rooms,
     lighting_fixtures: dbIssue.lighting_fixtures ? [{
       name: dbIssue.lighting_fixtures.name,
       type: dbIssue.lighting_fixtures.type as FixtureType,
@@ -262,6 +241,7 @@ export const IssuesList = () => {
         <TableHeader>
           <TableRow>
             <TableHead>Title</TableHead>
+            <TableHead>Description</TableHead>
             <TableHead>Type</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Priority</TableHead>
@@ -278,6 +258,7 @@ export const IssuesList = () => {
             return (
               <TableRow key={issue.id}>
                 <TableCell>{issue.title}</TableCell>
+                <TableCell>{issue.description}</TableCell>
                 <TableCell>
                   <Badge className={`flex items-center ${typeInfo.color}`} variant="secondary">
                     {typeInfo.icon}
