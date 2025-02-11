@@ -73,6 +73,11 @@ export type FormData = {
   photos?: string[];
   fixture_id?: string;
   maintenance_priority?: "low" | "medium" | "high";
+  area_affected?: string;
+  resolution_notes?: string;
+  cost_estimate?: number;
+  due_date?: string;
+  custom_fields?: Record<string, any>;
 };
 
 export type MaintenanceRecord = {

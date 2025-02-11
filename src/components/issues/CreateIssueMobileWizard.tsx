@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import {
 } from "@/components/ui/sheet";
 import { Form } from "@/components/ui/form";
 import { Plus, ArrowLeft, ArrowRight } from "lucide-react";
-import { IssueTypeSelection, issueTypes } from "./wizard/IssueTypeSelection";
+import { IssueTypeSelection } from "./wizard/IssueTypeSelection";
 import { IssueDetailsForm } from "./wizard/IssueDetailsForm";
 import { IssueLocationForm } from "./wizard/IssueLocationForm";
 import { IssueTypeForm } from "./wizard/IssueTypeForm";
@@ -49,8 +50,8 @@ export function CreateIssueMobileWizard({ onIssueCreated }: { onIssueCreated: ()
 
   const renderStepContent = () => {
     switch (step) {
-      case "type-selection":
-        return <IssueTypeSelection onTypeSelect={handleTypeSelect} />;
+      case "type":
+        return <IssueTypeForm form={form} />;
       case "details":
         return <IssueDetailsForm form={form} />;
       case "location":
@@ -63,8 +64,6 @@ export function CreateIssueMobileWizard({ onIssueCreated }: { onIssueCreated: ()
             setSelectedFloor={setSelectedFloor}
           />
         );
-      case "type":
-        return <IssueTypeForm form={form} />;
       case "photos":
         return (
           <IssuePhotoForm
@@ -73,6 +72,8 @@ export function CreateIssueMobileWizard({ onIssueCreated }: { onIssueCreated: ()
             onPhotoUpload={handlePhotoUpload}
           />
         );
+      case "review":
+        return <IssueTypeSelection onTypeSelect={handleTypeSelect} />;
     }
   };
 
@@ -96,7 +97,7 @@ export function CreateIssueMobileWizard({ onIssueCreated }: { onIssueCreated: ()
                 type="button"
                 variant="outline"
                 onClick={handleBack}
-                disabled={step === "type-selection"}
+                disabled={step === "type"}
                 className="h-12 px-6"
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
