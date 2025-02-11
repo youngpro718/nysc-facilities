@@ -73,49 +73,54 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
     }
   });
 
-  // Fetch buildings with explicit typing
-  const { data: buildings } = useQuery<Building[]>({
+  // Create fetch functions outside of useQuery
+  const fetchBuildings = async () => {
+    const { data, error } = await supabase
+      .from('buildings')
+      .select('*')
+      .eq('status', 'active')
+      .order('name');
+    if (error) throw error;
+    return data as Building[];
+  };
+
+  const fetchFloors = async (buildingId: string) => {
+    const { data, error } = await supabase
+      .from('floors')
+      .select('*')
+      .eq('building_id', buildingId)
+      .eq('status', 'active')
+      .order('floor_number');
+    if (error) throw error;
+    return data as Floor[];
+  };
+
+  const fetchRooms = async (floorId: string) => {
+    const { data, error } = await supabase
+      .from('rooms')
+      .select('*')
+      .eq('floor_id', floorId)
+      .eq('status', 'active')
+      .order('room_number');
+    if (error) throw error;
+    return data as Room[];
+  };
+
+  // Use the fetch functions in queries
+  const { data: buildings } = useQuery({
     queryKey: ['buildings'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('buildings')
-        .select('*')
-        .eq('status', 'active')
-        .order('name');
-      if (error) throw error;
-      return data;
-    }
+    queryFn: fetchBuildings
   });
 
-  // Fetch floors with explicit typing
-  const { data: floors } = useQuery<Floor[]>({
+  const { data: floors } = useQuery({
     queryKey: ['floors', form.watch('building_id')],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('floors')
-        .select('*')
-        .eq('building_id', form.watch('building_id'))
-        .eq('status', 'active')
-        .order('floor_number');
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchFloors(form.watch('building_id') || ''),
     enabled: !!form.watch('building_id'),
   });
 
-  // Fetch rooms for selected floor
   const { data: rooms } = useQuery({
     queryKey: ['rooms', form.watch('floor_id')],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('rooms')
-        .select('*')
-        .eq('floor_id', form.watch('floor_id'))
-        .eq('status', 'active')
-        .order('room_number');
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchRooms(form.watch('floor_id') || ''),
     enabled: !!form.watch('floor_id'),
   });
 
