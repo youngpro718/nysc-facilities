@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Card } from "@/components/ui/card";
@@ -38,6 +39,7 @@ interface CreateIssueFormProps {
 }
 
 export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps) {
+  // Core state management
   const [selectedBuilding, setSelectedBuilding] = useState<string | null>(null);
   const [selectedFloor, setSelectedFloor] = useState<string | null>(null);
   const { uploading, selectedPhotos, setSelectedPhotos, handlePhotoUpload } = usePhotoUpload();
@@ -46,6 +48,7 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [photoIndexToRemove, setPhotoIndexToRemove] = useState<number | null>(null);
 
+  // Form initialization with default values based on schema
   const form = useForm<FormData>({
     defaultValues: {
       status: "open",
@@ -53,9 +56,10 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
       type: initialType || "GENERAL_REQUESTS",
       assigned_to: "Self"
     },
-    mode: "onChange" // Enable real-time validation
+    mode: "onChange"
   });
 
+  // Form submission handler
   const handleFormSubmit = async (data: FormData) => {
     try {
       setIsSubmitting(true);
@@ -73,6 +77,7 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
     }
   };
 
+  // Photo removal handlers
   const handlePhotoRemove = (index: number) => {
     setPhotoIndexToRemove(index);
     setShowConfirmDialog(true);
@@ -89,7 +94,8 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
     }
   };
 
-  const tabs = [
+  // Form steps configuration
+  const steps = [
     { id: "type", label: "Type & Priority" },
     { id: "location", label: "Location" },
     { id: "details", label: "Details" },
@@ -97,37 +103,38 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
     { id: "review", label: "Review" }
   ];
 
-  const currentTabIndex = tabs.findIndex(tab => tab.id === activeTab);
+  const currentTabIndex = steps.findIndex(tab => tab.id === activeTab);
 
+  // Step validation based on schema requirements
   const canProceedToNextStep = () => {
     switch (activeTab) {
       case "type":
-        return form.watch("type") && form.watch("priority");
+        return !!form.watch("type") && !!form.watch("priority");
       case "location":
-        return selectedBuilding && selectedFloor;
+        return !!selectedBuilding && !!selectedFloor;
       case "details":
-        return form.watch("title") && form.watch("description");
+        return !!form.watch("title") && !!form.watch("description");
       case "photos":
-        return true; // Photos are optional
+        return true; // Photos are optional per schema
       default:
         return true;
     }
   };
 
+  // Navigation handlers
   const handleNext = () => {
     if (!canProceedToNextStep()) {
-      toast.error("Please fill in all required fields before proceeding");
+      toast.error("Please complete all required fields before proceeding");
       return;
     }
-
-    const nextTab = tabs[currentTabIndex + 1];
+    const nextTab = steps[currentTabIndex + 1];
     if (nextTab) {
       setActiveTab(nextTab.id);
     }
   };
 
   const handlePrevious = () => {
-    const prevTab = tabs[currentTabIndex - 1];
+    const prevTab = steps[currentTabIndex - 1];
     if (prevTab) {
       setActiveTab(prevTab.id);
     }
@@ -139,7 +146,7 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
         <div className="p-4 sm:p-6">
           <div className="mb-8">
             <Stepper
-              steps={tabs}
+              steps={steps}
               currentStep={activeTab}
               onStepClick={(stepId) => {
                 if (canProceedToNextStep()) {
