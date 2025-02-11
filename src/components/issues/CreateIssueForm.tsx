@@ -31,6 +31,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
+  TooltipProvider,
 } from "@/components/ui/tooltip";
 
 interface CreateIssueFormProps {
@@ -195,21 +196,23 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
                   <TabsContent value="photos" className="m-0">
                     <ScrollArea className="h-[500px] pr-6">
                       <div className="bg-card/50 p-6 rounded-lg border border-white/5">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div>
-                              <IssuePhotoForm
-                                selectedPhotos={selectedPhotos}
-                                uploading={uploading}
-                                onPhotoUpload={handlePhotoUpload}
-                                onPhotoRemove={handlePhotoRemove}
-                              />
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Drag and drop photos or click to upload</p>
-                          </TooltipContent>
-                        </Tooltip>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div>
+                                <IssuePhotoForm
+                                  selectedPhotos={selectedPhotos}
+                                  uploading={uploading}
+                                  onPhotoUpload={handlePhotoUpload}
+                                  onPhotoRemove={handlePhotoRemove}
+                                />
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Drag and drop photos or click to upload</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </div>
                     </ScrollArea>
                   </TabsContent>
