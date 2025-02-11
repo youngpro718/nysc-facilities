@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -21,6 +20,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 
+type IssueStatus = 'open' | 'in_progress' | 'resolved';
+type IssuePriority = 'low' | 'medium' | 'high';
+
 type LightingFixture = {
   name: string;
   type: 'standard' | 'emergency' | 'motion_sensor';
@@ -34,10 +36,7 @@ type LightingFixture = {
   };
 };
 
-type IssueStatus = 'open' | 'in_progress' | 'resolved';
-type IssuePriority = 'low' | 'medium' | 'high';
-
-type IssueResponse = {
+type DatabaseIssue = {
   id: string;
   title: string;
   description: string;
@@ -59,14 +58,14 @@ type IssueResponse = {
   type: string;
   buildings?: {
     name: string;
-  };
+  } | null;
   floors?: {
     name: string;
-  };
+  } | null;
   rooms?: {
     name: string;
-  };
-  lighting_fixtures?: LightingFixture[];
+  } | null;
+  lighting_fixtures: LightingFixture[];
 };
 
 export const IssuesList = () => {
@@ -138,11 +137,13 @@ export const IssuesList = () => {
       const { data, error } = await query;
       if (error) throw error;
       
-      // Ensure the response is properly typed
-      return (data ?? []).map(item => ({
+      return (data ?? []).map((item): DatabaseIssue => ({
         ...item,
-        lighting_fixtures: Array.isArray(item.lighting_fixtures) ? item.lighting_fixtures : []
-      })) as IssueResponse[];
+        lighting_fixtures: Array.isArray(item.lighting_fixtures) ? item.lighting_fixtures : [],
+        buildings: item.buildings || null,
+        floors: item.floors || null,
+        rooms: item.rooms || null
+      }));
     }
   });
 
