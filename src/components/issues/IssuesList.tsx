@@ -21,14 +21,49 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 
-type IssueResponse = Omit<Issue, 'lighting_fixtures'> & {
-  lighting_fixtures: Array<{
+type LightingFixture = {
+  name: string;
+  type: 'standard' | 'emergency' | 'motion_sensor';
+  status: 'functional' | 'maintenance_needed' | 'non_functional' | 'pending_maintenance' | 'scheduled_replacement';
+  position: 'ceiling' | 'wall' | 'floor' | 'desk' | 'recessed';
+  electrical_issues?: {
+    short_circuit?: boolean;
+    wiring_issues?: boolean;
+    voltage_problems?: boolean;
+    ballast_issue?: boolean;
+  };
+};
+
+type IssueResponse = {
+  id: string;
+  title: string;
+  description: string;
+  status: Issue['status'];
+  priority: Issue['priority'];
+  building_id?: string;
+  floor_id?: string;
+  room_id?: string;
+  fixture_id?: string;
+  photos: string[];
+  created_at: string;
+  updated_at: string;
+  seen: boolean;
+  assignee_id?: string;
+  last_status_change?: string;
+  last_updated_by?: string;
+  tags?: string[];
+  due_date?: string;
+  type: string;
+  buildings?: {
     name: string;
-    type: Issue['lighting_fixtures'][0]['type'];
-    status: Issue['lighting_fixtures'][0]['status'];
-    position: Issue['lighting_fixtures'][0]['position'];
-    electrical_issues: Issue['lighting_fixtures'][0]['electrical_issues'];
-  }>;
+  };
+  floors?: {
+    name: string;
+  };
+  rooms?: {
+    name: string;
+  };
+  lighting_fixtures?: LightingFixture[];
 };
 
 export const IssuesList = () => {
@@ -67,11 +102,11 @@ export const IssuesList = () => {
           const electricalIssue = params.get('electricalIssue');
 
           if (lightingType && lightingType !== 'all_lighting_types') {
-            query = query.eq('lighting_fixtures.type', lightingType as Issue['lighting_fixtures'][0]['type']);
+            query = query.eq('lighting_fixtures.type', lightingType as LightingFixture['type']);
           }
 
           if (fixtureStatus && fixtureStatus !== 'all_fixture_statuses') {
-            query = query.eq('lighting_fixtures.status', fixtureStatus as Issue['lighting_fixtures'][0]['status']);
+            query = query.eq('lighting_fixtures.status', fixtureStatus as LightingFixture['status']);
           }
 
           if (electricalIssue && electricalIssue !== 'all_electrical_issues') {
@@ -99,7 +134,7 @@ export const IssuesList = () => {
 
       const { data, error } = await query;
       if (error) throw error;
-      return (data || []) as unknown as Issue[];
+      return (data || []) as IssueResponse[];
     }
   });
 
@@ -159,7 +194,7 @@ export const IssuesList = () => {
     );
   }
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityColor = (priority: Issue['priority']) => {
     switch (priority) {
       case 'high':
         return 'bg-red-100 text-red-800 border-red-200';
@@ -172,7 +207,7 @@ export const IssuesList = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: Issue['status']) => {
     switch (status) {
       case 'open':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
