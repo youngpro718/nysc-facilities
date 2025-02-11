@@ -17,7 +17,7 @@ export type Issue = {
   last_updated_by?: string;
   tags?: string[];
   due_date?: string;
-  type?: string; // Adding type field to match database schema
+  type: string; // Making type required to match database schema
 };
 
 // Adding IssueType as an alias for compatibility
