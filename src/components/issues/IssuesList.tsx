@@ -141,7 +141,7 @@ export const IssuesList = () => {
       if (error) throw error;
       
       const processedData = (data || []).map((rawIssue) => {
-        const issue = rawIssue as DatabaseIssue;
+        const issue = rawIssue as unknown as DatabaseIssue;
         return {
           ...issue,
           lighting_fixtures: issue.lighting_fixtures?.map(fixture => ({
