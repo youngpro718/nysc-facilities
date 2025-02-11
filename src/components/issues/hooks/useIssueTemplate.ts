@@ -19,7 +19,13 @@ export function useIssueTemplate(type?: IssueType) {
       const { data, error } = await query;
       
       if (error) throw error;
-      return data as IssueTemplate[];
+      
+      // Transform the data to match our IssueTemplate type
+      return (data as any[]).map(template => ({
+        ...template,
+        problem_types: template.problem_types || [],
+        title_format: template.title_format || '[Problem Type] - [Location]'
+      })) as IssueTemplate[];
     }
   });
 

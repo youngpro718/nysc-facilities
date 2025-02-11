@@ -2,10 +2,8 @@
 import { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { toast } from "sonner";
-import type { FormData } from "../types/IssueTypes";
+import type { FormData, Step } from "../types/IssueTypes";
 import { useIssueTemplate } from "./useIssueTemplate";
-
-type Step = "type" | "details" | "location" | "photos" | "review";
 
 export function useIssueForm(
   form: UseFormReturn<FormData>,

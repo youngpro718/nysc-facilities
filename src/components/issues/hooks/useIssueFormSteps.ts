@@ -1,12 +1,11 @@
 
 import { useState } from "react";
-import { Step } from "../types/IssueTypes";
-import { issueTypes } from "../wizard/IssueTypeSelection";
 import { UseFormSetValue } from "react-hook-form";
-import { FormData } from "../types/IssueTypes";
+import { Step, FormData } from "../types/IssueTypes";
+import { issueTypes } from "../wizard/IssueTypeSelection";
 
 export const useIssueFormSteps = (setValue: UseFormSetValue<FormData>) => {
-  const [step, setStep] = useState<Step>("type-selection");
+  const [step, setStep] = useState<Step>("type");
 
   const handleTypeSelect = (type: typeof issueTypes[number]) => {
     setValue("type", type.type);
@@ -17,17 +16,17 @@ export const useIssueFormSteps = (setValue: UseFormSetValue<FormData>) => {
 
   const handleNext = () => {
     switch (step) {
-      case "type-selection":
+      case "type":
         setStep("details");
         break;
       case "details":
         setStep("location");
         break;
       case "location":
-        setStep("type");
-        break;
-      case "type":
         setStep("photos");
+        break;
+      case "photos":
+        setStep("review");
         break;
     }
   };
@@ -35,16 +34,16 @@ export const useIssueFormSteps = (setValue: UseFormSetValue<FormData>) => {
   const handleBack = () => {
     switch (step) {
       case "details":
-        setStep("type-selection");
+        setStep("type");
         break;
       case "location":
         setStep("details");
         break;
-      case "type":
+      case "photos":
         setStep("location");
         break;
-      case "photos":
-        setStep("type");
+      case "review":
+        setStep("photos");
         break;
     }
   };

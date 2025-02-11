@@ -48,7 +48,7 @@ export type Issue = {
   draft?: boolean;
   custom_fields?: Record<string, any>;
   maintenance_history?: MaintenanceRecord[];
-  issue_references?: Reference[];  // Changed from references to issue_references to match DB schema
+  issue_references?: Reference[];
   status_history?: StatusHistoryRecord[];
   seen?: boolean;
   buildingName?: string;
@@ -58,6 +58,22 @@ export type Issue = {
 };
 
 export type Step = "type" | "details" | "location" | "photos" | "review";
+
+export type FormData = {
+  title: string;
+  description: string;
+  type: IssueType;
+  priority: string;
+  status: "open" | "in_progress" | "resolved";
+  assigned_to: "DCAS" | "OCA" | "Self" | "Outside_Vendor";
+  building_id?: string;
+  floor_id?: string;
+  room_id?: string;
+  template_fields?: Record<string, any>;
+  photos?: string[];
+  fixture_id?: string;
+  maintenance_priority?: "low" | "medium" | "high";
+};
 
 export type MaintenanceRecord = {
   date: string;
@@ -81,6 +97,7 @@ export type StatusHistoryRecord = {
 };
 
 export type IssueTemplate = {
+  id: string;
   type: IssueType;
   subcategory: string;
   title_format: string;
@@ -98,4 +115,6 @@ export type IssueTemplate = {
   default_priority: string;
   icon_name: string;
   template_order: number;
+  created_at: string;
+  updated_at: string;
 };
