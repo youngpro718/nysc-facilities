@@ -3,7 +3,7 @@ import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import type { FormData } from "../types/IssueTypes";
+import type { FormData, IssueType } from "../types/IssueTypes";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -36,8 +36,11 @@ export function IssueTypeForm({ form }: IssueTypeFormProps) {
               form.watch("type") === template.type && "border-2 border-primary bg-primary/5"
             )}
             onClick={() => {
-              form.setValue("type", template.type);
-              form.setValue("priority", template.default_priority || "medium");
+              // Ensure the template.type is a valid IssueType before setting it
+              if (template.type && Object.values(IssueType).includes(template.type as IssueType)) {
+                form.setValue("type", template.type as IssueType);
+                form.setValue("priority", template.default_priority || "medium");
+              }
             }}
           >
             <div className="text-center">
