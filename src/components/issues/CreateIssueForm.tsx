@@ -11,11 +11,27 @@ import { IssuePhotoForm } from "./wizard/IssuePhotoForm";
 import { usePhotoUpload } from "./hooks/usePhotoUpload";
 import { ScrollArea } from "../ui/scroll-area";
 import { toast } from "sonner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { IssueDetailsForm } from "./wizard/IssueDetailsForm";
 import { IssueReviewTab } from "./tabs/IssueReviewTab";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Stepper } from "./wizard/Stepper";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface CreateIssueFormProps {
   onSubmit: (data: FormData) => Promise<void>;
@@ -28,6 +44,7 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
   const { uploading, selectedPhotos, setSelectedPhotos, handlePhotoUpload } = usePhotoUpload();
   const [activeTab, setActiveTab] = useState("type");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   const form = useForm<FormData>({
     defaultValues: {
@@ -35,7 +52,8 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
       priority: "medium",
       type: initialType || "GENERAL_REQUESTS",
       assigned_to: "Self"
-    }
+    },
+    mode: "onChange" // Enable real-time validation
   });
 
   const handleFormSubmit = async (data: FormData) => {
@@ -56,9 +74,15 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
   };
 
   const handlePhotoRemove = (index: number) => {
-    const newPhotos = [...selectedPhotos];
-    newPhotos.splice(index, 1);
-    setSelectedPhotos(newPhotos);
+    setShowConfirmDialog(true);
+    const handleConfirm = () => {
+      const newPhotos = [...selectedPhotos];
+      newPhotos.splice(index, 1);
+      setSelectedPhotos(newPhotos);
+      toast.success("Photo removed successfully");
+      setShowConfirmDialog(false);
+    };
+    return handleConfirm;
   };
 
   const tabs = [
@@ -71,7 +95,27 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
 
   const currentTabIndex = tabs.findIndex(tab => tab.id === activeTab);
 
+  const canProceedToNextStep = () => {
+    switch (activeTab) {
+      case "type":
+        return form.watch("type") && form.watch("priority");
+      case "location":
+        return selectedBuilding && selectedFloor;
+      case "details":
+        return form.watch("title") && form.watch("description");
+      case "photos":
+        return true; // Photos are optional
+      default:
+        return true;
+    }
+  };
+
   const handleNext = () => {
+    if (!canProceedToNextStep()) {
+      toast.error("Please fill in all required fields before proceeding");
+      return;
+    }
+
     const nextTab = tabs[currentTabIndex + 1];
     if (nextTab) {
       setActiveTab(nextTab.id);
@@ -89,27 +133,23 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <Card className="bg-card/30 backdrop-blur-xl border-white/10 shadow-2xl">
         <div className="p-4 sm:p-6">
+          <div className="mb-8">
+            <Stepper
+              steps={tabs}
+              currentStep={activeTab}
+              onStepClick={(stepId) => {
+                if (canProceedToNextStep()) {
+                  setActiveTab(stepId);
+                } else {
+                  toast.error("Please complete the current step first");
+                }
+              }}
+            />
+          </div>
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="w-full justify-between bg-background/50 p-1 rounded-lg backdrop-blur-sm">
-                  {tabs.map((tab) => (
-                    <TabsTrigger
-                      key={tab.id}
-                      value={tab.id}
-                      className={cn(
-                        "flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground",
-                        "transition-all duration-200 text-sm py-2",
-                        "data-[state=active]:shadow-lg",
-                        "disabled:opacity-50"
-                      )}
-                      disabled={isSubmitting}
-                    >
-                      {tab.label}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-
                 <div className="mt-6">
                   <TabsContent value="type" className="m-0">
                     <ScrollArea className="h-[500px] pr-4">
@@ -137,12 +177,21 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
 
                   <TabsContent value="photos" className="m-0">
                     <ScrollArea className="h-[500px] pr-4">
-                      <IssuePhotoForm
-                        selectedPhotos={selectedPhotos}
-                        uploading={uploading}
-                        onPhotoUpload={handlePhotoUpload}
-                        onPhotoRemove={handlePhotoRemove}
-                      />
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <IssuePhotoForm
+                              selectedPhotos={selectedPhotos}
+                              uploading={uploading}
+                              onPhotoUpload={handlePhotoUpload}
+                              onPhotoRemove={handlePhotoRemove}
+                            />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Drag and drop photos or click to upload</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </ScrollArea>
                   </TabsContent>
 
@@ -188,7 +237,7 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
                   <Button
                     type="button"
                     onClick={handleNext}
-                    disabled={currentTabIndex === tabs.length - 1 || isSubmitting}
+                    disabled={!canProceedToNextStep() || isSubmitting}
                     className="w-32"
                   >
                     Next
@@ -200,6 +249,23 @@ export function CreateIssueForm({ onSubmit, initialType }: CreateIssueFormProps)
           </Form>
         </div>
       </Card>
+
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Photo</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove this photo? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handlePhotoRemove}>
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
