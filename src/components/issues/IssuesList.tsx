@@ -26,59 +26,8 @@ import {
   IssuePriority, 
   FixtureType, 
   FixtureStatus,
-  FixturePosition,
-  ElectricalIssues,
-  LightingFixture 
+  FixturePosition
 } from "./types/IssueTypes";
-
-type SupabaseQueryResult = Awaited<ReturnType<typeof fetchIssues>>;
-
-// Basic DB types without circular references
-interface DbBuildingInfo {
-  name: string;
-}
-
-interface DbFloorInfo {
-  name: string;
-}
-
-interface DbRoomInfo {
-  name: string;
-}
-
-interface DbLightingFixture {
-  name: string;
-  type: string;
-  status: string;
-  position: string;
-  electrical_issues: Record<string, boolean>;
-}
-
-interface DbIssue {
-  id: string;
-  title: string;
-  description: string;
-  status: string;
-  priority: string;
-  building_id?: string;
-  floor_id?: string;
-  room_id?: string;
-  fixture_id?: string;
-  photos: string[];
-  created_at: string;
-  updated_at: string;
-  seen: boolean;
-  assignee_id?: string;
-  last_status_change?: string;
-  last_updated_by?: string;
-  tags?: string[];
-  due_date?: string;
-  type: string;
-  buildings?: DbBuildingInfo | null;
-  floors?: DbFloorInfo | null;
-  rooms?: DbRoomInfo | null;
-  lighting_fixtures?: DbLightingFixture | null;
-}
 
 async function fetchIssues() {
   let query = supabase
@@ -111,11 +60,11 @@ async function fetchIssues() {
       const electricalIssue = params.get('electricalIssue');
 
       if (lightingType && lightingType !== 'all_lighting_types') {
-        query = query.eq('lighting_fixtures.type', lightingType as FixtureType);
+        query = query.eq('lighting_fixtures.type', lightingType);
       }
 
       if (fixtureStatus && fixtureStatus !== 'all_fixture_statuses') {
-        query = query.eq('lighting_fixtures.status', fixtureStatus as FixtureStatus);
+        query = query.eq('lighting_fixtures.status', fixtureStatus);
       }
 
       if (electricalIssue && electricalIssue !== 'all_electrical_issues') {
@@ -125,12 +74,12 @@ async function fetchIssues() {
 
     const status = params.get('status');
     if (status && status !== 'all_statuses') {
-      query = query.eq('status', status as IssueStatus);
+      query = query.eq('status', status);
     }
 
     const priority = params.get('priority');
     if (priority && priority !== 'all_priorities') {
-      query = query.eq('priority', priority as IssuePriority);
+      query = query.eq('priority', priority);
     }
 
     const assignedTo = params.get('assigned_to');
@@ -143,23 +92,7 @@ async function fetchIssues() {
 
   const { data, error } = await query;
   if (error) throw error;
-
-  return data as DbIssue[];
-}
-
-function transformDbIssueToIssue(dbIssue: DbIssue): Issue {
-  return {
-    ...dbIssue,
-    status: dbIssue.status as IssueStatus,
-    priority: dbIssue.priority as IssuePriority,
-    lighting_fixtures: dbIssue.lighting_fixtures ? [{
-      name: dbIssue.lighting_fixtures.name,
-      type: dbIssue.lighting_fixtures.type as FixtureType,
-      status: dbIssue.lighting_fixtures.status as FixtureStatus,
-      position: dbIssue.lighting_fixtures.position as FixturePosition,
-      electrical_issues: dbIssue.lighting_fixtures.electrical_issues
-    }] : []
-  };
+  return data || [];
 }
 
 export const IssuesList = () => {
@@ -169,7 +102,18 @@ export const IssuesList = () => {
     queryKey: ['issues'],
     queryFn: async () => {
       const data = await fetchIssues();
-      return data.map(transformDbIssueToIssue);
+      return data.map((item: any): Issue => ({
+        ...item,
+        status: item.status as IssueStatus,
+        priority: item.priority as IssuePriority,
+        lighting_fixtures: item.lighting_fixtures ? [{
+          name: item.lighting_fixtures.name,
+          type: item.lighting_fixtures.type as FixtureType,
+          status: item.lighting_fixtures.status as FixtureStatus,
+          position: item.lighting_fixtures.position as FixturePosition,
+          electrical_issues: item.lighting_fixtures.electrical_issues
+        }] : []
+      }));
     }
   });
 
