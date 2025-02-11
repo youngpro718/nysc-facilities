@@ -18,32 +18,13 @@ export type RoomType = "courtroom" | "judges_chambers" | "jury_room" | "conferen
 export type StorageType = "file_storage" | "equipment_storage" | "supply_storage" | 
   "evidence_storage" | "record_storage" | "general_storage";
 
-export type IssueType = 
-  | "ACCESS_REQUEST"
-  | "BUILDING_SYSTEMS"
-  | "CEILING"
-  | "CLEANING_REQUEST"
-  | "CLIMATE_CONTROL"
-  | "DOOR"
-  | "ELECTRICAL_NEEDS"
-  | "EMERGENCY"
-  | "EXTERIOR_FACADE"
-  | "FLAGPOLE_FLAG"
-  | "FLOORING"
-  | "GENERAL_REQUESTS"
-  | "LEAK"
-  | "LIGHTING"
-  | "LOCK"
-  | "PLUMBING_NEEDS"
-  | "RESTROOM_REPAIR"
-  | "SIGNAGE"
-  | "WINDOW";
+export type IssueType = string;
 
 export interface RoomIssue {
   id: string;
   title: string;
   status: "open" | "in_progress" | "resolved";
-  type: IssueType;
+  type: string;
   priority: string;
   created_at: string;
 }
