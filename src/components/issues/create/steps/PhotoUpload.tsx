@@ -3,11 +3,14 @@ import { FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Camera, Loader2 } from "lucide-react";
 import { IssuePhotoGrid } from "../../card/IssuePhotoGrid";
-import { usePhotoUpload } from "../../hooks/usePhotoUpload";
 
-export function PhotoUpload() {
-  const { uploading, selectedPhotos, handlePhotoUpload } = usePhotoUpload();
+interface PhotoUploadProps {
+  selectedPhotos: string[];
+  uploading: boolean;
+  onPhotoUpload: (event: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
+}
 
+export function PhotoUpload({ selectedPhotos, uploading, onPhotoUpload }: PhotoUploadProps) {
   return (
     <div className="space-y-6">
       <div>
@@ -31,7 +34,7 @@ export function PhotoUpload() {
                 type="file"
                 accept="image/*"
                 multiple
-                onChange={handlePhotoUpload}
+                onChange={onPhotoUpload}
                 disabled={uploading}
                 className="hidden"
               />
