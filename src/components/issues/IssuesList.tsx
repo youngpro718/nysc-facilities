@@ -27,8 +27,21 @@ import {
   FixtureType, 
   FixtureStatus,
   FixturePosition,
-  ElectricalIssues 
+  ElectricalIssues,
+  LightingFixture 
 } from "./types/IssueTypes";
+
+type SupabaseLightingFixture = {
+  name: string;
+  type: FixtureType;
+  status: FixtureStatus;
+  position: FixturePosition;
+  electrical_issues: ElectricalIssues;
+};
+
+type SupabaseIssue = Omit<Issue, 'lighting_fixtures'> & {
+  lighting_fixtures: SupabaseLightingFixture[] | null;
+};
 
 export const IssuesList = () => {
   const queryClient = useQueryClient();
@@ -99,20 +112,18 @@ export const IssuesList = () => {
       const { data, error } = await query;
       if (error) throw error;
       
-      const processedData = (data ?? []).map(item => ({
+      const processedData = (data ?? []).map((item: SupabaseIssue) => ({
         ...item,
-        lighting_fixtures: Array.isArray(item.lighting_fixtures) 
-          ? item.lighting_fixtures.map(fixture => ({
-              name: fixture.name,
-              type: fixture.type,
-              status: fixture.status,
-              position: fixture.position,
-              electrical_issues: fixture.electrical_issues
-            }))
-          : []
-      }));
+        lighting_fixtures: item.lighting_fixtures?.map(fixture => ({
+          name: fixture.name,
+          type: fixture.type,
+          status: fixture.status,
+          position: fixture.position,
+          electrical_issues: fixture.electrical_issues
+        })) ?? []
+      })) as Issue[];
 
-      return processedData as unknown as Issue[];
+      return processedData;
     }
   });
 
