@@ -2,9 +2,9 @@
 import { FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { IssuePhotoGrid } from "../card/IssuePhotoGrid";
 import { Button } from "@/components/ui/button";
-import { Camera, Loader2 } from "lucide-react";
+import { Camera, Loader2, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface IssuePhotoFormProps {
   selectedPhotos: string[];
@@ -16,7 +16,7 @@ export function IssuePhotoForm({ selectedPhotos, uploading, onPhotoUpload }: Iss
   return (
     <div className="space-y-6">
       <FormItem>
-        <FormLabel className="text-base font-medium">Add Photos</FormLabel>
+        <FormLabel className="text-base">Add Photos</FormLabel>
         <FormControl>
           <div className="space-y-4">
             <div className="flex items-center justify-center w-full">
@@ -45,7 +45,38 @@ export function IssuePhotoForm({ selectedPhotos, uploading, onPhotoUpload }: Iss
                 </div>
               </label>
             </div>
-            <IssuePhotoGrid photos={selectedPhotos} />
+
+            {selectedPhotos.length > 0 && (
+              <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+                <div className="grid grid-cols-3 gap-4">
+                  {selectedPhotos.map((photo, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={photo}
+                        alt={`Photo ${index + 1}`}
+                        className="w-full h-24 object-cover rounded-lg"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className={cn(
+                          "absolute -top-2 -right-2 h-6 w-6",
+                          "opacity-0 group-hover:opacity-100 transition-opacity"
+                        )}
+                        onClick={() => {
+                          const newPhotos = [...selectedPhotos];
+                          newPhotos.splice(index, 1);
+                          // TODO: Add setSelectedPhotos from props
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
           </div>
         </FormControl>
         <FormMessage />
