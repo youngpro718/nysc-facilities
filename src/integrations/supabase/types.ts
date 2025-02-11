@@ -1527,10 +1527,12 @@ export type Database = {
           created_at: string | null
           description: string | null
           due_date: string | null
+          fixture_id: string | null
           floor_id: string | null
           id: string
           last_status_change: string | null
           last_updated_by: string | null
+          lighting_details: Json | null
           photos: string[] | null
           priority: Database["public"]["Enums"]["issue_priority_enum"] | null
           room_id: string | null
@@ -1547,10 +1549,12 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           due_date?: string | null
+          fixture_id?: string | null
           floor_id?: string | null
           id?: string
           last_status_change?: string | null
           last_updated_by?: string | null
+          lighting_details?: Json | null
           photos?: string[] | null
           priority?: Database["public"]["Enums"]["issue_priority_enum"] | null
           room_id?: string | null
@@ -1567,10 +1571,12 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           due_date?: string | null
+          fixture_id?: string | null
           floor_id?: string | null
           id?: string
           last_status_change?: string | null
           last_updated_by?: string | null
+          lighting_details?: Json | null
           photos?: string[] | null
           priority?: Database["public"]["Enums"]["issue_priority_enum"] | null
           room_id?: string | null
@@ -1602,6 +1608,34 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "lighting_assignments"
             referencedColumns: ["building_id"]
+          },
+          {
+            foreignKeyName: "issues_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "emergency_lighting_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "issues_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "lighting_assignments"
+            referencedColumns: ["fixture_id"]
+          },
+          {
+            foreignKeyName: "issues_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "lighting_fixture_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "issues_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "lighting_fixtures"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "issues_floor_id_fkey"
