@@ -20,13 +20,15 @@ export type IssueType =
   | "SIGNAGE"
   | "WINDOW";
 
-export type FormData = {
+export type Issue = {
+  id: string;
   title: string;
   description: string;
   status: "open" | "in_progress" | "resolved";
   priority: string;
   assigned_to: "DCAS" | "OCA" | "Self" | "Outside_Vendor";
   type: IssueType;
+  created_at: string;
   subcategory?: string;
   template_fields?: Record<string, any>;
   building_id?: string;
@@ -47,7 +49,15 @@ export type FormData = {
   custom_fields?: Record<string, any>;
   maintenance_history?: MaintenanceRecord[];
   references?: Reference[];
+  status_history?: StatusHistoryRecord[];
+  seen?: boolean;
+  buildingName?: string;
+  floorName?: string;
+  roomName?: string;
+  sla_hours?: number;
 };
+
+export type FormData = Omit<Issue, 'id' | 'created_at' | 'status_history' | 'seen' | 'buildingName' | 'floorName' | 'roomName' | 'sla_hours'>;
 
 export type Step = "type-selection" | "details" | "location" | "type" | "photos";
 
@@ -64,4 +74,10 @@ export type Reference = {
   url: string;
   title: string;
   description?: string;
+};
+
+export type StatusHistoryRecord = {
+  status: "open" | "in_progress" | "resolved";
+  changed_at: string;
+  previous_status: "open" | "in_progress" | "resolved";
 };
