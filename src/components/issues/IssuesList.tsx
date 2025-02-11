@@ -21,6 +21,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 
+type IssueResponse = Omit<Issue, 'lighting_fixtures'> & {
+  lighting_fixtures: Array<{
+    name: string;
+    type: Issue['lighting_fixtures'][0]['type'];
+    status: Issue['lighting_fixtures'][0]['status'];
+    position: Issue['lighting_fixtures'][0]['position'];
+    electrical_issues: Issue['lighting_fixtures'][0]['electrical_issues'];
+  }>;
+};
+
 export const IssuesList = () => {
   const queryClient = useQueryClient();
 
@@ -43,17 +53,14 @@ export const IssuesList = () => {
           )
         `);
 
-      // Apply filters based on URL params or state
       if (window.location.search) {
         const params = new URLSearchParams(window.location.search);
         
-        // Type filter
         const type = params.get('type');
         if (type && type !== 'all_types') {
           query = query.eq('type', type);
         }
 
-        // Lighting-specific filters
         if (type === 'LIGHTING') {
           const lightingType = params.get('lightingType');
           const fixtureStatus = params.get('fixtureStatus');
@@ -72,19 +79,16 @@ export const IssuesList = () => {
           }
         }
 
-        // Status filter
         const status = params.get('status');
         if (status && status !== 'all_statuses') {
           query = query.eq('status', status as Issue['status']);
         }
 
-        // Priority filter
         const priority = params.get('priority');
         if (priority && priority !== 'all_priorities') {
           query = query.eq('priority', priority as Issue['priority']);
         }
 
-        // Assignment filter
         const assignedTo = params.get('assigned_to');
         if (assignedTo && assignedTo !== 'all_assignments') {
           query = query.eq('assigned_to', assignedTo);
@@ -95,7 +99,7 @@ export const IssuesList = () => {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as Issue[];
+      return (data || []) as unknown as Issue[];
     }
   });
 

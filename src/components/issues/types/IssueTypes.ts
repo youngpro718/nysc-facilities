@@ -8,6 +8,7 @@ export type Issue = {
   building_id?: string;
   floor_id?: string;
   room_id?: string;
+  fixture_id?: string;
   photos: string[];
   created_at: string;
   updated_at: string;
@@ -27,18 +28,18 @@ export type Issue = {
   rooms?: {
     name: string;
   };
-  lighting_fixtures?: Array<{
+  lighting_fixtures?: {
     name: string;
     type: 'standard' | 'emergency' | 'motion_sensor';
     status: 'functional' | 'maintenance_needed' | 'non_functional' | 'pending_maintenance' | 'scheduled_replacement';
-    position: string;
+    position: 'ceiling' | 'wall' | 'floor' | 'desk' | 'recessed';
     electrical_issues?: {
       short_circuit?: boolean;
       wiring_issues?: boolean;
       voltage_problems?: boolean;
       ballast_issue?: boolean;
     };
-  }>;
+  }[];
 };
 
 // Adding IssueType as an alias for compatibility
