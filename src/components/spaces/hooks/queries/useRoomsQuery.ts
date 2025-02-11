@@ -119,8 +119,12 @@ export function useRoomsQuery() {
           } : undefined,
           space_connections: [],
           issues: (room.issues || []).map(issue => ({
-            ...issue,
-            type: issue.type as IssueType
+            id: issue.id,
+            title: issue.title,
+            status: issue.status,
+            type: issue.type,
+            priority: issue.priority,
+            created_at: issue.created_at
           })),
           room_history: room.room_history || []
         };
