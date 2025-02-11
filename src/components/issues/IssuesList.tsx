@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -20,23 +21,34 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 
+// Simplified base types
 type IssueStatus = 'open' | 'in_progress' | 'resolved';
 type IssuePriority = 'low' | 'medium' | 'high';
+type FixtureType = 'standard' | 'emergency' | 'motion_sensor';
+type FixtureStatus = 'functional' | 'maintenance_needed' | 'non_functional' | 'pending_maintenance' | 'scheduled_replacement';
+type FixturePosition = 'ceiling' | 'wall' | 'floor' | 'desk' | 'recessed';
 
-type LightingFixture = {
+// Flat type definitions
+interface ElectricalIssues {
+  short_circuit?: boolean;
+  wiring_issues?: boolean;
+  voltage_problems?: boolean;
+  ballast_issue?: boolean;
+}
+
+interface LightingFixture {
   name: string;
-  type: 'standard' | 'emergency' | 'motion_sensor';
-  status: 'functional' | 'maintenance_needed' | 'non_functional' | 'pending_maintenance' | 'scheduled_replacement';
-  position: 'ceiling' | 'wall' | 'floor' | 'desk' | 'recessed';
-  electrical_issues?: {
-    short_circuit?: boolean;
-    wiring_issues?: boolean;
-    voltage_problems?: boolean;
-    ballast_issue?: boolean;
-  };
-};
+  type: FixtureType;
+  status: FixtureStatus;
+  position: FixturePosition;
+  electrical_issues?: ElectricalIssues;
+}
 
-type DatabaseIssue = {
+interface RelatedEntity {
+  name: string;
+}
+
+interface DatabaseIssue {
   id: string;
   title: string;
   description: string;
@@ -56,17 +68,11 @@ type DatabaseIssue = {
   tags?: string[];
   due_date?: string;
   type: string;
-  buildings?: {
-    name: string;
-  } | null;
-  floors?: {
-    name: string;
-  } | null;
-  rooms?: {
-    name: string;
-  } | null;
+  buildings: RelatedEntity | null;
+  floors: RelatedEntity | null;
+  rooms: RelatedEntity | null;
   lighting_fixtures: LightingFixture[];
-};
+}
 
 export const IssuesList = () => {
   const queryClient = useQueryClient();
@@ -104,11 +110,11 @@ export const IssuesList = () => {
           const electricalIssue = params.get('electricalIssue');
 
           if (lightingType && lightingType !== 'all_lighting_types') {
-            query = query.eq('lighting_fixtures.type', lightingType as LightingFixture['type']);
+            query = query.eq('lighting_fixtures.type', lightingType as FixtureType);
           }
 
           if (fixtureStatus && fixtureStatus !== 'all_fixture_statuses') {
-            query = query.eq('lighting_fixtures.status', fixtureStatus as LightingFixture['status']);
+            query = query.eq('lighting_fixtures.status', fixtureStatus as FixtureStatus);
           }
 
           if (electricalIssue && electricalIssue !== 'all_electrical_issues') {
