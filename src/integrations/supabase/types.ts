@@ -4323,6 +4323,24 @@ export type Database = {
             }
             Returns: Json
           }
+      cast_to_issue_status: {
+        Args: {
+          status_str: string
+        }
+        Returns: Database["public"]["Enums"]["issue_status_enum"]
+      }
+      cast_to_issue_type: {
+        Args: {
+          type_str: string
+        }
+        Returns: Database["public"]["Enums"]["issue_type_enum"]
+      }
+      cast_to_party_enum: {
+        Args: {
+          party_str: string
+        }
+        Returns: Database["public"]["Enums"]["party_enum"]
+      }
       cleanup_old_backups: {
         Args: {
           policy_id: string
