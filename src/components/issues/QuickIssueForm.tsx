@@ -29,6 +29,27 @@ interface FormData {
   problem_type?: string;
 }
 
+// Define database types
+interface Building {
+  id: string;
+  name: string;
+  status: string;
+}
+
+interface Floor {
+  id: string;
+  name: string;
+  floor_number: number;
+  status: string;
+}
+
+interface Room {
+  id: string;
+  name: string;
+  room_number: string;
+  status: string;
+}
+
 const ISSUE_TYPES = [
   'Power',
   'Plumbing',
@@ -52,8 +73,8 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
     }
   });
 
-  // Fetch buildings
-  const { data: buildings } = useQuery({
+  // Fetch buildings with explicit typing
+  const { data: buildings } = useQuery<Building[]>({
     queryKey: ['buildings'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -66,8 +87,8 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
     }
   });
 
-  // Fetch floors for selected building
-  const { data: floors } = useQuery({
+  // Fetch floors with explicit typing
+  const { data: floors } = useQuery<Floor[]>({
     queryKey: ['floors', form.watch('building_id')],
     queryFn: async () => {
       const { data, error } = await supabase
