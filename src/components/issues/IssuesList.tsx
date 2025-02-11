@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -20,7 +19,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { Issue, IssueStatus, IssuePriority, FixtureType, FixtureStatus } from "./types/IssueTypes";
+import { 
+  Issue, 
+  IssueStatus, 
+  IssuePriority, 
+  FixtureType, 
+  FixtureStatus,
+  FixturePosition,
+  ElectricalIssues 
+} from "./types/IssueTypes";
 
 export const IssuesList = () => {
   const queryClient = useQueryClient();
@@ -91,7 +98,7 @@ export const IssuesList = () => {
       const { data, error } = await query;
       if (error) throw error;
       
-      return (data ?? []).map(item => ({
+      const processedData = (data ?? []).map(item => ({
         ...item,
         lighting_fixtures: Array.isArray(item.lighting_fixtures) 
           ? item.lighting_fixtures.map(fixture => ({
@@ -102,7 +109,9 @@ export const IssuesList = () => {
               electrical_issues: fixture.electrical_issues as ElectricalIssues
             }))
           : []
-      })) as Issue[];
+      }));
+
+      return processedData as unknown as Issue[];
     }
   });
 
