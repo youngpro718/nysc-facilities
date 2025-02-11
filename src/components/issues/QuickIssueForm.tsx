@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,10 +12,20 @@ import { toast } from "sonner";
 import { IssuePhotoForm } from "./wizard/IssuePhotoForm";
 import { usePhotoUpload } from "./hooks/usePhotoUpload";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Mic, MicOff } from "lucide-react";
 
 type IssuePriority = 'low' | 'medium' | 'high';
 type IssueType = 'Power' | 'Plumbing' | 'HVAC' | 'Door' | 'Cleaning' | 'Pest Control' | 'Other';
+
+const PROBLEM_TYPES: Record<IssueType, string[]> = {
+  'Power': ['Circuit Breaker', 'Outlet Not Working', 'Light Fixture', 'Emergency Power'],
+  'Plumbing': ['Leak', 'Clog', 'No Water', 'Water Pressure'],
+  'HVAC': ['No Heat', 'No Cooling', 'Strange Noise', 'Thermostat Issue'],
+  'Door': ['Won't Lock', 'Won't Close', 'Handle Broken', 'Card Reader'],
+  'Cleaning': ['Regular Service', 'Spill', 'Deep Clean Required', 'Waste Removal'],
+  'Pest Control': ['Rodents', 'Insects', 'Prevention', 'Inspection'],
+  'Other': ['General Maintenance', 'Inspection', 'Consultation']
+};
 
 interface FormData {
   title: string;
@@ -63,6 +72,7 @@ const ISSUE_TYPES = [
 export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
   const [isManualTitle, setIsManualTitle] = useState(false);
   const [selectedIssueType, setSelectedIssueType] = useState<IssueType | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
   const { uploading, selectedPhotos, handlePhotoUpload, setSelectedPhotos } = usePhotoUpload();
   const queryClient = useQueryClient();
 
@@ -186,6 +196,63 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
     }
   }
 
+  const handleDictation = () => {
+    if (!('webkitSpeechRecognition' in window)) {
+      toast.error("Speech recognition is not supported in your browser");
+      return;
+    }
+
+    const recognition = new (window as any).webkitSpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    recognition.onstart = () => {
+      setIsRecording(true);
+    };
+
+    recognition.onresult = (event: any) => {
+      const transcript = Array.from(event.results)
+        .map((result: any) => result[0])
+        .map((result: any) => result.transcript)
+        .join('');
+
+      form.setValue('description', 
+        (form.getValues('description') + ' ' + transcript).trim()
+      );
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error', event.error);
+      setIsRecording(false);
+      toast.error("Failed to record audio");
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+    };
+
+    if (isRecording) {
+      recognition.stop();
+    } else {
+      recognition.start();
+    }
+  };
+
+  const handleCancel = () => {
+    const hasData = Object.values(form.getValues()).some(value => 
+      value !== '' && value !== undefined && value !== 'medium'
+    );
+
+    if (hasData) {
+      if (window.confirm('Are you sure you want to cancel? All entered data will be lost.')) {
+        form.reset();
+        onSuccess?.();
+      }
+    } else {
+      onSuccess?.();
+    }
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -213,6 +280,33 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
             </FormItem>
           )}
         />
+
+        {form.watch('issue_type') && (
+          <FormField
+            control={form.control}
+            name="problem_type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Problem Type</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select problem type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {PROBLEM_TYPES[form.watch('issue_type')]?.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <div className="flex items-center space-x-2">
           <Switch
@@ -247,9 +341,24 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea {...field} placeholder="Describe the issue" />
-              </FormControl>
+              <div className="relative">
+                <FormControl>
+                  <Textarea {...field} placeholder="Describe the issue" />
+                </FormControl>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="absolute right-2 top-2"
+                  onClick={handleDictation}
+                >
+                  {isRecording ? (
+                    <MicOff className="h-4 w-4 text-destructive animate-pulse" />
+                  ) : (
+                    <Mic className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
               <FormMessage />
             </FormItem>
           )}
@@ -389,13 +498,23 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
           )}
         </div>
 
-        <Button 
-          type="submit" 
-          disabled={uploading || createIssueMutation.isPending}
-          className="w-full"
-        >
-          Submit Issue
-        </Button>
+        <div className="flex space-x-4">
+          <Button 
+            type="button" 
+            variant="destructive"
+            onClick={handleCancel}
+            className="flex-1"
+          >
+            Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            disabled={uploading || createIssueMutation.isPending}
+            className="flex-1"
+          >
+            Submit Issue
+          </Button>
+        </div>
       </form>
     </Form>
   );
