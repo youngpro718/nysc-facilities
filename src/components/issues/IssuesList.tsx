@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -31,16 +30,16 @@ import {
   LightingFixture 
 } from "./types/IssueTypes";
 
-// Define database response types separately from application types
-type DbLightingFixture = {
+// Simplified database response types
+interface DbLightingFixture {
   name: string;
   type: string;
   status: string;
   position: string;
   electrical_issues: Record<string, boolean>;
-};
+}
 
-type DbIssueResponse = {
+interface DbIssueResponse {
   id: string;
   title: string;
   description: string;
@@ -70,12 +69,12 @@ type DbIssueResponse = {
     name: string;
   } | null;
   lighting_fixtures?: DbLightingFixture | null;
-};
+}
 
 export const IssuesList = () => {
   const queryClient = useQueryClient();
 
-  const { data: issues, isLoading } = useQuery<Issue[], Error>({
+  const { data: issues, isLoading } = useQuery({
     queryKey: ['issues'],
     queryFn: async () => {
       let query = supabase
@@ -108,13 +107,11 @@ export const IssuesList = () => {
           const electricalIssue = params.get('electricalIssue');
 
           if (lightingType && lightingType !== 'all_lighting_types') {
-            const validType = lightingType as FixtureType;
-            query = query.eq('lighting_fixtures.type', validType);
+            query = query.eq('lighting_fixtures.type', lightingType as FixtureType);
           }
 
           if (fixtureStatus && fixtureStatus !== 'all_fixture_statuses') {
-            const validStatus = fixtureStatus as FixtureStatus;
-            query = query.eq('lighting_fixtures.status', validStatus);
+            query = query.eq('lighting_fixtures.status', fixtureStatus as FixtureStatus);
           }
 
           if (electricalIssue && electricalIssue !== 'all_electrical_issues') {
@@ -124,14 +121,12 @@ export const IssuesList = () => {
 
         const status = params.get('status');
         if (status && status !== 'all_statuses') {
-          const validStatus = status as IssueStatus;
-          query = query.eq('status', validStatus);
+          query = query.eq('status', status as IssueStatus);
         }
 
         const priority = params.get('priority');
         if (priority && priority !== 'all_priorities') {
-          const validPriority = priority as IssuePriority;
-          query = query.eq('priority', validPriority);
+          query = query.eq('priority', priority as IssuePriority);
         }
 
         const assignedTo = params.get('assigned_to');
@@ -145,9 +140,9 @@ export const IssuesList = () => {
       const { data, error } = await query;
       if (error) throw error;
 
-      // Transform database response to application type
-      const rawData = (data || []) as unknown as any[];
-      return rawData.map((dbIssue): Issue => ({
+      const dbIssues = (data || []) as DbIssueResponse[];
+      
+      return dbIssues.map((dbIssue): Issue => ({
         ...dbIssue,
         status: dbIssue.status as IssueStatus,
         priority: dbIssue.priority as IssuePriority,
