@@ -5,12 +5,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { EditSpaceFormData } from "../../schemas/editSpaceSchema";
 import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface SecurityTabProps {
   form: UseFormReturn<EditSpaceFormData>;
 }
 
 export function SecurityTab({ form }: SecurityTabProps) {
+  const isHighSecurity = form.watch("securityLevel") === "high_security";
+
   return (
     <div>
       <div>
@@ -35,14 +38,26 @@ export function SecurityTab({ form }: SecurityTabProps) {
                 </FormControl>
                 <SelectContent>
                   <SelectItem value="standard">Standard</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="restricted">Restricted</SelectItem>
+                  <SelectItem value="restricted">Restricted Area</SelectItem>
+                  <SelectItem value="high_security">High Security</SelectItem>
                 </SelectContent>
               </Select>
+              <FormDescription>
+                High Security for judges' chambers and robing rooms. Restricted for private areas.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
+
+        {isHighSecurity && (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              High security doors require monthly inspections and strict access control.
+            </AlertDescription>
+          </Alert>
+        )}
 
         <FormField
           control={form.control}

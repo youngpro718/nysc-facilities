@@ -294,10 +294,17 @@ export type Database = {
       doors: {
         Row: {
           access_log: Json[] | null
+          closer_status:
+            | Database["public"]["Enums"]["door_closer_status_enum"]
+            | null
+          component_issues: Json | null
           created_at: string | null
           emergency_protocol: Json | null
           floor_id: string
+          hardware_status: Json | null
           id: string
+          inspection_checklist: Json | null
+          last_hardware_check: string | null
           last_maintenance_date: string | null
           maintenance_history: Json[] | null
           maintenance_schedule: Json[] | null
@@ -310,13 +317,21 @@ export type Database = {
           status_history: Json[] | null
           type: Database["public"]["Enums"]["door_type_enum"]
           updated_at: string | null
+          wind_pressure_issues: boolean | null
         }
         Insert: {
           access_log?: Json[] | null
+          closer_status?:
+            | Database["public"]["Enums"]["door_closer_status_enum"]
+            | null
+          component_issues?: Json | null
           created_at?: string | null
           emergency_protocol?: Json | null
           floor_id: string
+          hardware_status?: Json | null
           id?: string
+          inspection_checklist?: Json | null
+          last_hardware_check?: string | null
           last_maintenance_date?: string | null
           maintenance_history?: Json[] | null
           maintenance_schedule?: Json[] | null
@@ -329,13 +344,21 @@ export type Database = {
           status_history?: Json[] | null
           type: Database["public"]["Enums"]["door_type_enum"]
           updated_at?: string | null
+          wind_pressure_issues?: boolean | null
         }
         Update: {
           access_log?: Json[] | null
+          closer_status?:
+            | Database["public"]["Enums"]["door_closer_status_enum"]
+            | null
+          component_issues?: Json | null
           created_at?: string | null
           emergency_protocol?: Json | null
           floor_id?: string
+          hardware_status?: Json | null
           id?: string
+          inspection_checklist?: Json | null
+          last_hardware_check?: string | null
           last_maintenance_date?: string | null
           maintenance_history?: Json[] | null
           maintenance_schedule?: Json[] | null
@@ -348,6 +371,7 @@ export type Database = {
           status_history?: Json[] | null
           type?: Database["public"]["Enums"]["door_type_enum"]
           updated_at?: string | null
+          wind_pressure_issues?: boolean | null
         }
         Relationships: [
           {
@@ -4515,6 +4539,14 @@ export type Database = {
         | "Human Resources"
         | "Finance"
       direction_enum: "north" | "south" | "east" | "west" | "adjacent"
+      door_closer_status_enum:
+        | "functioning"
+        | "needs_adjustment"
+        | "not_working"
+      door_hardware_status_enum:
+        | "functional"
+        | "needs_repair"
+        | "needs_replacement"
       door_type_enum: "standard" | "emergency" | "secure" | "maintenance"
       emergency_route_enum: "primary" | "secondary" | "not_designated"
       floor_plan_mode_enum: "edit" | "view"
@@ -4599,6 +4631,7 @@ export type Database = {
         | "break_room"
         | "it_room"
         | "utility_room"
+      security_level_enum: "standard" | "restricted" | "high_security"
       status_enum: "active" | "inactive" | "under_maintenance"
       zone_type_enum: "general" | "emergency" | "restricted"
     }

@@ -75,10 +75,45 @@ const hallwaySchema = baseSpaceSchema.extend({
 const doorSchema = baseSpaceSchema.extend({
   type: z.literal("door"),
   doorType: z.enum(["standard", "emergency", "secure", "maintenance"]),
-  securityLevel: z.enum(["standard", "high", "restricted"]).default("standard"),
+  securityLevel: z.enum(["standard", "restricted", "high_security"]).default("standard"),
   passkeyEnabled: z.boolean().default(false),
   nextMaintenanceDate: z.string().optional(),
   maintenanceNotes: z.string().optional(),
+  closerStatus: z.enum(["functioning", "needs_adjustment", "not_working"]).default("functioning"),
+  windPressureIssues: z.boolean().default(false),
+  lastHardwareCheck: z.string().optional(),
+  hardwareStatus: z.object({
+    hinges: z.enum(["functional", "needs_repair", "needs_replacement"]),
+    doorknob: z.enum(["functional", "needs_repair", "needs_replacement"]),
+    lock: z.enum(["functional", "needs_repair", "needs_replacement"]),
+    frame: z.enum(["functional", "needs_repair", "needs_replacement"])
+  }).default({
+    hinges: "functional",
+    doorknob: "functional",
+    lock: "functional",
+    frame: "functional"
+  }),
+  componentIssues: z.object({
+    closer: z.array(z.string()),
+    hinges: z.array(z.string()),
+    doorknob: z.array(z.string()),
+    lock: z.array(z.string()),
+    frame: z.array(z.string())
+  }).default({
+    closer: [],
+    hinges: [],
+    doorknob: [],
+    lock: [],
+    frame: []
+  }),
+  inspectionChecklist: z.object({
+    closer_tension: z.string().nullable(),
+    hinge_alignment: z.string().nullable(),
+    lock_mechanism: z.string().nullable(),
+    weather_stripping: z.string().nullable(),
+    frame_alignment: z.string().nullable(),
+    last_checked: z.string().nullable()
+  }).nullable().optional(),
   statusHistory: z.array(z.object({
     status: z.string(),
     changed_at: z.string(),
