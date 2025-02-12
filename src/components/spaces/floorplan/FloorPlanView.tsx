@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DrawingMode } from "./types/floorPlanTypes";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { PropertiesPanel } from "./components/PropertiesPanel";
 
 export function FloorPlanView() {
   const [selectedFloorId, setSelectedFloorId] = useState<string | null>(null);
@@ -50,6 +51,11 @@ export function FloorPlanView() {
 
   const handleObjectSelect = (obj: any) => {
     setSelectedObject(obj);
+  };
+
+  const handleEditObject = (obj: any) => {
+    // TODO: Implement edit functionality
+    console.log('Edit object:', obj);
   };
 
   return (
@@ -109,29 +115,10 @@ export function FloorPlanView() {
           drawingMode={drawingMode}
         />
         
-        <Card className="p-4">
-          <h3 className="font-medium mb-2">Properties</h3>
-          {selectedObject ? (
-            <div className="space-y-2">
-              <p className="text-sm">
-                <span className="font-medium">Name:</span> {selectedObject.rooms?.name}
-              </p>
-              <p className="text-sm">
-                <span className="font-medium">Room Number:</span> {selectedObject.rooms?.room_number}
-              </p>
-              <p className="text-sm">
-                <span className="font-medium">Type:</span> {selectedObject.rooms?.room_type}
-              </p>
-              <p className="text-sm">
-                <span className="font-medium">Status:</span> {selectedObject.rooms?.status}
-              </p>
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              Select an object to view and edit its properties
-            </p>
-          )}
-        </Card>
+        <PropertiesPanel 
+          selectedObject={selectedObject}
+          onEdit={handleEditObject}
+        />
       </div>
     </div>
   );
