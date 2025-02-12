@@ -1,6 +1,7 @@
 
 import { useCallback, useEffect } from 'react';
 import { 
+  ReactFlow,
   Background, 
   Controls, 
   MiniMap,
@@ -11,10 +12,10 @@ import {
   Edge,
   Node,
   addEdge,
-  ReactFlow,
-  Panel
-} from '@reactflow/core';
-import '@reactflow/core/dist/style.css';
+  Panel,
+  PanelPosition
+} from 'reactflow';
+import 'reactflow/dist/style.css';
 import { Card } from "@/components/ui/card";
 import { DrawingMode, FloorPlanNode, FloorPlanEdge } from "./types/floorPlanTypes";
 import { useFloorPlanData } from "./hooks/useFloorPlanData";
@@ -35,7 +36,7 @@ const nodeTypes: NodeTypes = {
 };
 
 const panelStyle = {
-  position: 'absolute',
+  position: 'absolute' as const,
   left: 10,
   top: 10,
   zIndex: 100,
