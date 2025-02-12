@@ -144,8 +144,33 @@ export const IssuesList = () => {
   const { data: issues, isLoading } = useQuery({
     queryKey: ['issues'],
     queryFn: async () => {
-      const data = await fetchIssues();
-      return data.map(transformIssue);
+      let query = supabase
+        .from('issues')
+        .select(`
+          id,
+          title,
+          description,
+          type,
+          status,
+          priority,
+          created_at,
+          updated_at,
+          photos,
+          seen,
+          buildings(name),
+          floors(name),
+          rooms(name),
+          lighting_fixtures(
+            name,
+            type,
+            status,
+            position,
+            electrical_issues
+          )
+        `)
+        .order('created_at', { ascending: false });
+      
+      return transformIssueData(await query);
     }
   });
 
@@ -406,3 +431,4 @@ export const IssuesList = () => {
     </>
   );
 };
+
