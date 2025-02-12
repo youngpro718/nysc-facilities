@@ -66,9 +66,10 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
             continue;
           }
 
+          const isDoor = nodeType === 'door';
           const isHallway = nodeType === 'hallway';
           const isRoom = nodeType === 'room';
-          const table = isHallway ? 'hallways' : isRoom ? 'rooms' : 'floor_plan_objects';
+          const table = isDoor ? 'doors' : isHallway ? 'hallways' : isRoom ? 'rooms' : 'floor_plan_objects';
 
           console.log(`Updating ${table} node ${nodeId} (type: ${nodeType}):`, updatePayload);
 
@@ -99,7 +100,7 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
 
           if (updateError) {
             console.error(`Error updating ${table}:`, updateError);
-            toast.error(`Failed to update ${isHallway ? 'hallway' : 'room'} ${nodeId}`);
+            toast.error(`Failed to update ${isHallway ? 'hallway' : (isDoor ? 'door' : 'room')} ${nodeId}`);
             pendingUpdates.current.set(nodeId, updateData);
           } else {
             console.log(`Successfully updated ${table} ${nodeId}`);
