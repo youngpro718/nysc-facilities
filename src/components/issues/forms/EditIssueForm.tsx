@@ -22,6 +22,8 @@ import { StatusAndPriorityFields } from "../form-sections/StatusAndPriorityField
 import { AssigneeField } from "../form-sections/AssigneeField";
 import { ResolutionFields } from "../form-sections/ResolutionFields";
 import { FormData } from "../types/formTypes";
+import { usePhotoUpload } from "../hooks/usePhotoUpload";
+import { IssuePhotoForm } from "../wizard/IssuePhotoForm";
 
 const editIssueSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -41,6 +43,7 @@ interface EditIssueFormProps {
 
 export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
   const queryClient = useQueryClient();
+  const { uploading, selectedPhotos, handlePhotoUpload, setSelectedPhotos } = usePhotoUpload();
 
   const form = useForm<FormData>({
     resolver: zodResolver(editIssueSchema),
@@ -63,6 +66,7 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
     mutationFn: async (values: FormData) => {
       const updateData = {
         ...values,
+        photos: selectedPhotos,
         resolution_date: isResolved ? new Date().toISOString() : null,
       };
 
@@ -95,6 +99,10 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
     updateIssueMutation.mutate(values);
   };
 
+  const handlePhotoRemove = (index: number) => {
+    setSelectedPhotos(prev => prev.filter((_, i) => i !== index));
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -120,6 +128,13 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
         />
 
         {isResolved && <ResolutionFields form={form} />}
+
+        <IssuePhotoForm
+          selectedPhotos={selectedPhotos}
+          uploading={uploading}
+          onPhotoUpload={handlePhotoUpload}
+          onPhotoRemove={handlePhotoRemove}
+        />
 
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={onClose} type="button">
