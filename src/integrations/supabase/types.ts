@@ -681,6 +681,7 @@ export type Database = {
           metadata: Json | null
           object_id: string
           object_type: string
+          position: Json | null
           position_x: number
           position_y: number
           rotation: number | null
@@ -697,6 +698,7 @@ export type Database = {
           metadata?: Json | null
           object_id: string
           object_type: string
+          position?: Json | null
           position_x: number
           position_y: number
           rotation?: number | null
@@ -713,6 +715,7 @@ export type Database = {
           metadata?: Json | null
           object_id?: string
           object_type?: string
+          position?: Json | null
           position_x?: number
           position_y?: number
           rotation?: number | null

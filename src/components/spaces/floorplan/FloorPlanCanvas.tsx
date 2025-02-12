@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { 
   ReactFlow,
@@ -15,7 +14,8 @@ import {
   ReactFlowProvider,
   Node,
   NodeResizer,
-  NodeResizeControl
+  NodeResizeControl,
+  OnNodesChange
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Card } from "@/components/ui/card";
@@ -24,6 +24,7 @@ import { useFloorPlanData } from "./hooks/useFloorPlanData";
 import { RoomNode } from './nodes/RoomNode';
 import { DoorNode } from './nodes/DoorNode';
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface FloorPlanCanvasProps {
   floorId: string | null;
@@ -118,8 +119,7 @@ export function FloorPlanCanvas({
 
       const position = obj.position && 
         typeof obj.position.x === 'number' && 
-        typeof obj.position.y === 'number' && 
-        (obj.position.x !== 0 || obj.position.y !== 0) ? 
+        typeof obj.position.y === 'number' ? 
         obj.position : defaultPosition;
 
       const node = {
@@ -135,12 +135,12 @@ export function FloorPlanCanvas({
           label: obj.data?.label || 'Unnamed Room',
           type: obj.data?.type || 'room',
           size: obj.data?.size || {
-            width: 150,
-            height: 100
+            width: obj.type === 'door' ? 60 : 150,
+            height: obj.type === 'door' ? 20 : 100
           },
           style: obj.data?.style || {
-            backgroundColor: '#e2e8f0',
-            border: '1px solid #cbd5e1'
+            backgroundColor: obj.type === 'door' ? '#94a3b8' : '#e2e8f0',
+            border: obj.type === 'door' ? '2px solid #475569' : '1px solid #cbd5e1'
           },
           properties: obj.data?.properties || {
             room_number: '',
@@ -157,6 +157,34 @@ export function FloorPlanCanvas({
     setEdges(graphEdges || []);
     initialized.current = true;
   }, [objects, graphEdges, setNodes, setEdges]);
+
+  const handleNodesChange: OnNodesChange = useCallback(
+    async (changes) => {
+      onNodesChange(changes);
+      
+      // Save position changes to the database
+      for (const change of changes) {
+        if (change.type === 'position' && change.position && change.id) {
+          try {
+            const { error } = await supabase
+              .from('floor_plan_objects')
+              .update({ 
+                position: change.position
+              })
+              .eq('id', change.id);
+
+            if (error) {
+              console.error('Error saving position:', error);
+              toast.error('Failed to save position');
+            }
+          } catch (err) {
+            console.error('Error in position update:', err);
+          }
+        }
+      }
+    },
+    [onNodesChange]
+  );
 
   const onConnect = useCallback(
     (params: Connection | Edge) => {
@@ -199,7 +227,7 @@ export function FloorPlanCanvas({
           <FlowComponent
             nodes={nodes}
             edges={edges}
-            onNodesChange={onNodesChange}
+            onNodesChange={handleNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             onNodeClick={onNodeClick}
