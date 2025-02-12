@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { 
   ReactFlow,
@@ -116,7 +117,6 @@ export function FloorPlanCanvas({
   }, [drawingMode, setMode]);
 
   useEffect(() => {
-    // Reset initialized ref when floor changes
     if (floorId) {
       initialized.current = false;
     }
@@ -181,6 +181,33 @@ export function FloorPlanCanvas({
     }
   }, [onObjectSelect]);
 
+  const createRoom = useCallback((startPos: Position, dimensions: Size) => {
+    const newNode: Node = {
+      id: `room-${crypto.randomUUID()}`,
+      type: 'room',
+      position: { x: startPos.x, y: startPos.y },
+      data: {
+        label: 'New Room',
+        type: 'room',
+        size: dimensions,
+        style: {
+          backgroundColor: '#e2e8f0',
+          border: '1px solid #cbd5e1'
+        },
+        properties: {
+          room_number: '',
+          room_type: 'default',
+          status: 'active'
+        }
+      },
+      dragHandle: '.drag-handle'
+    };
+
+    setNodes(nodes => [...nodes, newNode]);
+    toast.success('Room created successfully');
+    return newNode;
+  }, [setNodes]);
+
   const onPaneClick = useCallback((event: React.MouseEvent) => {
     const bounds = (event.target as HTMLElement).getBoundingClientRect();
     const position = {
@@ -192,12 +219,17 @@ export function FloorPlanCanvas({
       startDrawing(position);
     } else if (drawingState.operation === 'drawing') {
       const result = completeDrawing();
-      if (result) {
-        // TODO: Handle drawing completion based on mode
-        console.log('Drawing completed:', result);
+      if (result && result.startPosition && result.dimensions) {
+        if (drawingMode === 'draw') {
+          const newRoom = createRoom(result.startPosition, result.dimensions);
+          if (onObjectSelect) {
+            onObjectSelect(newRoom.data);
+          }
+        }
+        // Additional modes (door, hallway) will be handled here
       }
     }
-  }, [drawingState, drawingMode, startDrawing, completeDrawing]);
+  }, [drawingState, drawingMode, startDrawing, completeDrawing, createRoom, onObjectSelect]);
 
   const onPaneMouseMove = useCallback((event: React.MouseEvent) => {
     if (drawingState.operation === 'start' || drawingState.operation === 'drawing') {
