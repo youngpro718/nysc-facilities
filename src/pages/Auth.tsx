@@ -15,6 +15,7 @@ import { EvervaultCard } from "@/components/ui/evervault-card";
 const ALLOWED_DOMAINS = ["state.gov", "nyc.gov", "gmail.com"]; // Temporarily allow gmail.com for development
 
 const Auth = () => {
+  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -68,11 +69,54 @@ const Auth = () => {
         description: "Your account will need to be approved by an administrator."
       });
       
-      // Redirect to login page after successful signup
-      navigate("/login");
+      // Switch to login view after successful signup
+      setIsLogin(true);
     } catch (error: any) {
       console.error("Auth error:", error);
       toast.error(error.message || "Signup failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      // First, sign out to clear any invalid session
+      await supabase.auth.signOut();
+      
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+      
+      // Check if user is approved
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_approved')
+        .eq('id', (await supabase.auth.getUser()).data.user?.id)
+        .single();
+
+      if (!profile?.is_approved) {
+        await supabase.auth.signOut();
+        throw new Error("Your account is pending approval");
+      }
+
+      navigate("/", { replace: true });
+      toast.success("Welcome back!", {
+        description: "You've successfully signed in."
+      });
+    } catch (error: any) {
+      console.error("Auth error:", error);
+      toast.error(error.message || "Authentication failed");
     } finally {
       setLoading(false);
     }
@@ -94,11 +138,8 @@ const Auth = () => {
       </div>
 
       <Card className="relative z-20 w-full max-w-md p-8 bg-white/10 backdrop-blur-lg rounded-lg shadow-xl border border-white/20 group/card">
-        <div
-          className="absolute inset-0 -z-10"
-          style={{ margin: '-1px' }}
-        >
-          <EvervaultCard text="Sign Up" />
+        <div className="absolute inset-0 -z-10" style={{ margin: '-1px' }}>
+          <EvervaultCard text={isLogin ? "Sign In" : "Sign Up"} />
         </div>
         
         <div className="flex flex-col items-center gap-6 mb-8">
@@ -111,14 +152,16 @@ const Auth = () => {
             <h1 className="text-3xl font-bold text-white mb-2">
               NYSC Facilities Hub
             </h1>
-            <p className="text-white/80">Create your account</p>
-            <p className="text-sm text-white/60 mt-2">
-              Only government email addresses are allowed
-            </p>
+            <p className="text-white/80">{isLogin ? "Welcome back" : "Create your account"}</p>
+            {!isLogin && (
+              <p className="text-sm text-white/60 mt-2">
+                Only government email addresses are allowed
+              </p>
+            )}
           </div>
         </div>
 
-        <form className="space-y-6" onSubmit={handleSignup}>
+        <form className="space-y-6" onSubmit={isLogin ? handleLogin : handleSignup}>
           <div className="space-y-2">
             <Label htmlFor="email" className="text-white">
               Email
@@ -150,10 +193,23 @@ const Auth = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 className="bg-white/10 border-white/20 text-white pl-10 placeholder:text-white/50"
                 placeholder="Enter your password"
-                autoComplete="new-password"
+                autoComplete={isLogin ? "current-password" : "new-password"}
               />
             </div>
           </div>
+
+          {isLogin && (
+            <div className="flex items-center justify-end">
+              <Button
+                type="button"
+                variant="link"
+                className="text-white hover:text-white/80"
+                onClick={() => toast.info("Please contact your administrator to reset your password")}
+              >
+                Forgot password?
+              </Button>
+            </div>
+          )}
 
           <div className="space-y-4">
             <Button
@@ -163,18 +219,21 @@ const Auth = () => {
             >
               {loading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : null}
-              Create Account
+              ) : isLogin ? "Sign In" : "Create Account"}
             </Button>
 
             <Button
               type="button"
               variant="ghost"
               className="w-full text-white hover:bg-white/10 transition-colors"
-              onClick={() => navigate("/login")}
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setEmail("");
+                setPassword("");
+              }}
               disabled={loading}
             >
-              Already have an account? Sign in
+              {isLogin ? "Need an account? Create one" : "Already have an account? Sign in"}
             </Button>
           </div>
         </form>

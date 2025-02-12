@@ -4,7 +4,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Layout from "@/components/layout/Layout";
 import Index from "@/pages/Index";
 import Auth from "@/pages/Auth";
-import Login from "@/pages/Login";
 import NotFound from "@/pages/NotFound";
 import Spaces from "@/pages/Spaces";
 import Issues from "@/pages/Issues";
@@ -27,7 +26,6 @@ function App() {
             <Route element={<Layout />}>
               <Route index element={<Index />} />
               <Route path="auth" element={<Auth />} />
-              <Route path="login" element={<Login />} />
               <Route path="spaces" element={<Spaces />} />
               <Route path="issues" element={<Issues />} />
               <Route path="occupants" element={<Occupants />} />
