@@ -11,9 +11,12 @@ import { IssuePhotos } from "../card/IssuePhotos";
 import { IssueBadges } from "../card/IssueBadges";
 import { IssueMetadata } from "../card/IssueMetadata";
 import { IssueComments } from "../card/IssueComments";
-import { Loader2, MessageSquare, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2, MessageSquare, Clock, CheckCircle2, AlertCircle, Pencil } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { EditIssueForm } from "../forms/EditIssueForm";
+import { useState } from "react";
 
 interface IssueDetailsProps {
   issueId: string | null;
@@ -34,6 +37,7 @@ interface TimelineEvent {
 
 export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
   const queryClient = useQueryClient();
+  const [isEditing, setIsEditing] = useState(false);
   
   const { data: issue, isLoading: issueLoading } = useQuery({
     queryKey: ['issues', issueId],
@@ -111,6 +115,19 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
 
   if (!issue || issueLoading) return null;
 
+  if (isEditing) {
+    return (
+      <Dialog open={!!issueId} onOpenChange={() => onClose()}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">Edit Issue</DialogTitle>
+          </DialogHeader>
+          <EditIssueForm issue={issue} onClose={() => setIsEditing(false)} />
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   const isOverdue = issue.due_date ? new Date(issue.due_date) < new Date() : false;
   const timeRemaining = issue.due_date 
     ? `Due in ${Math.ceil((new Date(issue.due_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days`
@@ -169,7 +186,17 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
       <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold flex items-center justify-between">
-            <span>{issue.title}</span>
+            <div className="flex items-center gap-2">
+              <span>{issue.title}</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsEditing(true)}
+                className="h-8 w-8"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            </div>
             <IssueStatusBadge status={issue.status} />
           </DialogTitle>
         </DialogHeader>
