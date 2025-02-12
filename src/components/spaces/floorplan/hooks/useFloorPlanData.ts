@@ -97,30 +97,52 @@ export function useFloorPlanData(floorId: string | null) {
       
       console.log('Fetching floor plan objects for floor:', floorId);
       
-      const { data, error } = await supabase
-        .from('floor_plan_objects_view')
-        .select(`
-          id,
-          object_type,
-          name,
-          room_number,
-          type,
-          status,
-          position,
-          size,
-          parent_room_id,
-          connection_data,
-          floor_id
-        `)
-        .eq('floor_id', floorId);
+      // Fetch rooms
+      const { data: rooms = [], error: roomsError } = await supabase
+        .from('rooms')
+        .select('*, room_type as type')
+        .eq('floor_id', floorId)
+        .eq('status', 'active');
 
-      if (error) {
-        console.error('Error fetching floor plan objects:', error);
-        throw error;
-      }
+      if (roomsError) throw roomsError;
 
-      console.log('Fetched floor plan objects:', data);
-      return data || [];
+      const roomObjects = rooms.map(room => ({
+        ...room,
+        object_type: 'room'
+      }));
+
+      // Fetch hallways
+      const { data: hallways = [], error: hallwaysError } = await supabase
+        .from('hallways')
+        .select('*')
+        .eq('floor_id', floorId)
+        .eq('status', 'active');
+
+      if (hallwaysError) throw hallwaysError;
+
+      const hallwayObjects = hallways.map(hallway => ({
+        ...hallway,
+        object_type: 'hallway'
+      }));
+
+      // Fetch doors
+      const { data: doors = [], error: doorsError } = await supabase
+        .from('doors')
+        .select('*')
+        .eq('floor_id', floorId)
+        .eq('status', 'active');
+
+      if (doorsError) throw doorsError;
+
+      const doorObjects = doors.map(door => ({
+        ...door,
+        object_type: 'door'
+      }));
+
+      // Combine all objects
+      const allObjects = [...roomObjects, ...hallwayObjects, ...doorObjects];
+      console.log('Fetched floor plan objects:', allObjects);
+      return allObjects;
     },
     enabled: !!floorId
   });
