@@ -1004,6 +1004,7 @@ export type Database = {
           next_maintenance_date: string | null
           notes: string | null
           position: Json | null
+          properties: Json | null
           section: Database["public"]["Enums"]["hallway_section_enum"] | null
           security_level: string | null
           size: Json | null
@@ -1045,6 +1046,7 @@ export type Database = {
           next_maintenance_date?: string | null
           notes?: string | null
           position?: Json | null
+          properties?: Json | null
           section?: Database["public"]["Enums"]["hallway_section_enum"] | null
           security_level?: string | null
           size?: Json | null
@@ -1086,6 +1088,7 @@ export type Database = {
           next_maintenance_date?: string | null
           notes?: string | null
           position?: Json | null
+          properties?: Json | null
           section?: Database["public"]["Enums"]["hallway_section_enum"] | null
           security_level?: string | null
           size?: Json | null
