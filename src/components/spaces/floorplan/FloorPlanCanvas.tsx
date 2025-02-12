@@ -56,7 +56,8 @@ function FlowComponent({
   onNodeClick,
   nodeTypes
 }: any) {
-  const defaultViewport = useMemo(() => ({ x: 0, y: 0, zoom: 1 }), []);
+  // Initialize viewport with more space to see nodes
+  const defaultViewport = useMemo(() => ({ x: 50, y: 50, zoom: 0.8 }), []);
 
   return (
     <ReactFlow
@@ -102,21 +103,25 @@ export function FloorPlanCanvas({
   useEffect(() => {
     if (!objects) return;
 
+    console.log('Transforming floor plan objects:', objects); // Debug log
+
     const reactFlowNodes = objects.map((obj, index) => {
-      // Generate a grid-based position if none exists
+      // Calculate grid-based position with more spacing
       const defaultPosition = {
-        x: (index % 3) * 200 + 50, // 3 rooms per row, 200px apart
-        y: Math.floor(index / 3) * 150 + 50 // New row every 3 rooms, 150px apart
+        x: (index % 3) * 250 + 100, // Increased horizontal spacing
+        y: Math.floor(index / 3) * 200 + 100 // Increased vertical spacing
       };
 
+      // Check if position exists and has valid coordinates
       const position = obj.position && 
         typeof obj.position.x === 'number' && 
-        typeof obj.position.y === 'number' ? 
+        typeof obj.position.y === 'number' && 
+        (obj.position.x !== 0 || obj.position.y !== 0) ? // Only use if not at origin
         obj.position : defaultPosition;
 
-      console.log(`Node ${obj.id} position:`, position); // Debug log
+      console.log(`Node ${obj.id} final position:`, position); // Debug log
 
-      return {
+      const node: Node = {
         id: obj.id,
         type: obj.type,
         position: position,
@@ -139,6 +144,8 @@ export function FloorPlanCanvas({
           }
         }
       };
+
+      return node;
     });
 
     console.log('Setting nodes:', reactFlowNodes); // Debug log
