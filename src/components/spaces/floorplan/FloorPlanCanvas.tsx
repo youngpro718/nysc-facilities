@@ -3,9 +3,9 @@ import {
   useNodesState, 
   useEdgesState, 
   Connection, 
-  Edge, 
+  Edge,
   Node,
-  addEdge
+  addEdge,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Card } from "@/components/ui/card";
@@ -13,20 +13,19 @@ import { ReactFlowProvider } from 'reactflow';
 import { FloorPlanFlow } from './components/FloorPlanFlow';
 import { useFloorPlanData } from "./hooks/useFloorPlanData";
 import { useFloorPlanNodes } from "./hooks/useFloorPlanNodes";
-import { RoomNode } from './nodes/RoomNode';
-import { DoorNode } from './nodes/DoorNode';
-import { HallwayNode } from './nodes/HallwayNode';
+import { RoomNode } from './components/nodes/RoomNode';
+import { HallwayNode } from './components/nodes/HallwayNode';
 import { toast } from "sonner";
+import { FloorPlanNode, FloorPlanObjectData } from './types/floorPlanTypes';
 
 interface FloorPlanCanvasProps {
   floorId: string | null;
   zoom?: number;
-  onObjectSelect?: (object: any | null) => void;
+  onObjectSelect?: (object: FloorPlanObjectData & { id: string }) => void;
 }
 
 const nodeTypes = {
   room: RoomNode,
-  door: DoorNode,
   hallway: HallwayNode,
 };
 
@@ -36,7 +35,7 @@ export function FloorPlanCanvas({
   onObjectSelect 
 }: FloorPlanCanvasProps) {
   const { objects, edges: graphEdges, isLoading } = useFloorPlanData(floorId);
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<FloorPlanObjectData>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const initialized = useRef(false);
   const { handleNodesChange } = useFloorPlanNodes(onNodesChange);
@@ -71,8 +70,8 @@ export function FloorPlanCanvas({
         !isNaN(obj.data.size.width) && 
         !isNaN(obj.data.size.height) ? 
         obj.data.size : {
-          width: obj.type === 'door' ? 60 : 150,
-          height: obj.type === 'door' ? 20 : 100
+          width: obj.type === 'hallway' ? 300 : 150,
+          height: obj.type === 'hallway' ? 50 : 100
         };
 
       const node = {
@@ -87,139 +86,57 @@ export function FloorPlanCanvas({
         extent: obj.has_children ? undefined : 'parent' as const,
         data: {
           ...obj.data,
-          label: obj.data?.label || 'Unnamed Room',
-          type: obj.data?.type || 'room',
+          label: obj.data?.label || 'Unnamed',
+          type: obj.data?.type || obj.type,
           size: size,
           isParent: obj.has_children || false,
           style: {
             ...obj.data?.style,
-            backgroundColor: obj.type === 'door' ? '#94a3b8' : 
-              obj.has_children ? '#f1f5f9' : '#e2e8f0',
-            border: obj.type === 'door' ? '2px solid #475569' : 
-              obj.has_children ? '2px solid #64748b' : '1px solid #cbd5e1',
-            padding: obj.has_children ? '20px' : '0',
-            zIndex: obj.has_children ? 0 : 1
-          },
-          properties: obj.data?.properties || {
-            room_number: '',
-            room_type: 'default',
-            status: 'active'
+            backgroundColor: obj.type === 'hallway' ? '#f1f5f9' : '#e2e8f0',
+            border: obj.has_children ? '2px solid #64748b' : '1px solid #cbd5e1',
           }
         }
-      };
-
-      console.log(`Created node ${obj.id}:`, {
-        position: node.position,
-        size: node.data.size,
-        type: node.type
-      });
+      } as FloorPlanNode;
 
       return node;
     });
 
-    // Apply automatic layout for nodes without valid positions
-    const nodesWithoutPosition = reactFlowNodes.filter(
-      node => !node.position || (node.position.x === 0 && node.position.y === 0)
-    );
-
-    if (nodesWithoutPosition.length > 0) {
-      console.log(`Applying automatic layout for ${nodesWithoutPosition.length} nodes`);
-      
-      nodesWithoutPosition.forEach((node, index) => {
-        const padding = 50;
-        const maxRoomsPerRow = 4;
-        const size = node.data.size;
-        
-        node.position = {
-          x: (index % maxRoomsPerRow) * (size.width + padding) + 100,
-          y: Math.floor(index / maxRoomsPerRow) * (size.height + padding) + 100
-        };
-
-        console.log(`Auto-positioned node ${node.id}:`, node.position);
-      });
-    }
-
-    console.log('Final node positions:', reactFlowNodes.map(n => ({ 
-      id: n.id, 
-      position: n.position,
-      size: n.data.size,
-      type: n.type
-    })));
-    
+    console.log('Setting nodes:', reactFlowNodes);
     setNodes(reactFlowNodes);
-    setEdges(graphEdges || []);
+    setEdges(graphEdges);
     initialized.current = true;
   }, [objects, graphEdges, setNodes, setEdges]);
 
-  const onConnect = useCallback(
-    (params: Connection | Edge) => {
-      setEdges((eds) => addEdge(params, eds));
-      toast.success('Connection created successfully');
-    },
-    [setEdges],
-  );
-
-  const onNodeClick = useCallback((event: React.MouseEvent, node: Node<any>) => {
-    if (onObjectSelect) {
-      onObjectSelect({
-        ...node.data,
-        id: node.id,
-        type: node.type,
-        position: node.position,
-        size: node.data?.size,
-        rotation: node.data?.rotation || 0
-      });
-    }
-  }, [onObjectSelect]);
-
-  const handleNodesChangeWrapper = useCallback(
-    (changes: any[]) => {
-      onNodesChange(changes);
-      handleNodesChange(changes);
-    },
-    [onNodesChange, handleNodesChange]
-  );
-
-  const handleNodeDragStop = useCallback((event: any, node: Node<any>, nodes: Node<any>[]) => {
-    console.log('Node dragged:', node.id, node.position);
-  }, []);
-
-  if (!floorId) {
-    return (
-      <Card className="p-4">
-        <div className="h-[600px] w-full flex items-center justify-center bg-gray-50">
-          Select a floor to view the floor plan
-        </div>
-      </Card>
-    );
-  }
+  const onConnect = useCallback((params: Connection) => {
+    setEdges((eds) => addEdge(params, eds));
+  }, [setEdges]);
 
   if (isLoading) {
     return (
-      <Card className="p-4">
-        <div className="h-[600px] w-full flex items-center justify-center bg-gray-50">
-          Loading floor plan...
-        </div>
+      <Card className="w-full h-full flex items-center justify-center">
+        Loading floor plan...
       </Card>
     );
   }
 
   return (
-    <Card className="p-4">
-      <div style={{ width: '100%', height: '600px', position: 'relative' }}>
-        <ReactFlowProvider>
-          <FloorPlanFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={handleNodesChangeWrapper}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onNodeClick={onNodeClick}
-            onNodeDragStop={handleNodeDragStop}
-            nodeTypes={nodeTypes}
-          />
-        </ReactFlowProvider>
-      </div>
-    </Card>
+    <ReactFlowProvider>
+      <Card className="w-full h-full">
+        <FloorPlanFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={handleNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          nodeTypes={nodeTypes}
+          fitView
+          defaultZoom={zoom}
+          onNodeClick={(_, node) => {
+            onObjectSelect?.(node.data);
+            toast.success(`Selected ${node.data.label}`);
+          }}
+        />
+      </Card>
+    </ReactFlowProvider>
   );
 }
