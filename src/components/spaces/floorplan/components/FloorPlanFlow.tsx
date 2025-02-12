@@ -14,7 +14,8 @@ import ReactFlow, {
   OnEdgesChange,
   OnConnect,
   MiniMap,
-  Panel
+  Panel,
+  Viewport
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { panelStyle } from '../styles/flowStyles';
@@ -35,6 +36,13 @@ interface FloorPlanFlowProps {
   onNodeDragStop: NodeDragHandler;
   onNodeClick: any;
   nodeTypes?: NodeTypes;
+  defaultZoom?: number;
+  defaultViewport?: Viewport;
+  panOnDrag?: boolean;
+  zoomOnScroll?: boolean;
+  zoomOnPinch?: boolean;
+  snapToGrid?: boolean;
+  snapGrid?: [number, number];
 }
 
 export function FloorPlanFlow({
@@ -45,9 +53,16 @@ export function FloorPlanFlow({
   onConnect,
   onNodeDragStop,
   onNodeClick,
-  nodeTypes: customNodeTypes = nodeTypes
+  nodeTypes: customNodeTypes = nodeTypes,
+  defaultZoom = 1,
+  defaultViewport,
+  panOnDrag = true,
+  zoomOnScroll = true,
+  zoomOnPinch = true,
+  snapToGrid = true,
+  snapGrid = [15, 15]
 }: FloorPlanFlowProps) {
-  const defaultViewport = { x: 0, y: 0, zoom: 1 };
+  const initialViewport = defaultViewport || { x: 0, y: 0, zoom: defaultZoom };
 
   return (
     <ReactFlow
@@ -59,27 +74,16 @@ export function FloorPlanFlow({
       onNodeDragStop={onNodeDragStop}
       onNodeClick={onNodeClick}
       nodeTypes={customNodeTypes}
-      defaultViewport={defaultViewport}
+      defaultViewport={initialViewport}
+      fitView
       minZoom={0.1}
       maxZoom={4}
-      fitView
-      fitViewOptions={{ 
-        padding: 0.3,
-        duration: 800,
-        includeHiddenNodes: false,
-        minZoom: 0.1,
-        maxZoom: 2
-      }}
-      snapGrid={[10, 10]}
-      snapToGrid
-      selectNodesOnDrag={false}
-      panOnDrag={[1, 2]}
-      zoomOnScroll={true}
-      zoomOnPinch={true}
-      preventScrolling={true}
-      nodesDraggable={true}
-      nodesConnectable={true}
-      elementsSelectable={true}
+      attributionPosition="bottom-left"
+      panOnDrag={panOnDrag}
+      zoomOnScroll={zoomOnScroll}
+      zoomOnPinch={zoomOnPinch}
+      snapToGrid={snapToGrid}
+      snapGrid={snapGrid}
     >
       <Panel position="top-left">
         <div style={panelStyle} className="text-gray-700">

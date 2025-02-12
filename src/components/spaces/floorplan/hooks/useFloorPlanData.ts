@@ -2,34 +2,86 @@ import { useEffect, useState } from 'react';
 import { Edge } from 'reactflow';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
-import { Position, Size, FloorPlanObject, RoomData, HallwayData } from '../types/floorPlanTypes';
+import { Position, Size, FloorPlanObjectType } from '../types/floorPlanTypes';
+
+interface FloorPlanObject {
+  id: string;
+  type: FloorPlanObjectType;
+  position?: Position;
+  parent_room_id?: string;
+  has_children?: boolean;
+  data?: {
+    label?: string;
+    type?: FloorPlanObjectType;
+    size?: Size;
+    style?: Record<string, any>;
+    properties?: Record<string, any>;
+  };
+}
+
+interface RoomData {
+  id: string;
+  name: string;
+  position: Position;
+  size: Size;
+  parent_room_id: string | null;
+  status: 'active' | 'inactive' | 'under_maintenance';
+  current_function: string;
+}
+
+interface HallwayData {
+  id: string;
+  name: string;
+  position: Position;
+  size: Size;
+  status: 'active' | 'inactive' | 'under_maintenance';
+}
+
+interface RawRoomData {
+  id: string;
+  name: string;
+  position: Json;
+  size: Json;
+  parent_room_id: string | null;
+  status: 'active' | 'inactive' | 'under_maintenance';
+  current_function: string;
+}
+
+interface RawHallwayData {
+  id: string;
+  name: string;
+  position: Json;
+  size: Json;
+  status: 'active' | 'inactive' | 'under_maintenance';
+}
 
 function parseJsonPosition(position: Json): Position {
-  if (typeof position === 'object' && position !== null && 'x' in position && 'y' in position) {
-    return {
-      x: Number(position.x),
-      y: Number(position.y)
-    };
+  if (typeof position === 'object' && position !== null) {
+    const x = (position as any).x;
+    const y = (position as any).y;
+    if (typeof x === 'number' && typeof y === 'number') {
+      return { x, y };
+    }
   }
-  console.warn('Invalid position data:', position);
   return { x: 0, y: 0 };
 }
 
 function parseJsonSize(size: Json): Size {
-  if (typeof size === 'object' && size !== null && 'width' in size && 'height' in size) {
-    return {
-      width: Number(size.width),
-      height: Number(size.height)
-    };
+  if (typeof size === 'object' && size !== null) {
+    const width = (size as any).width;
+    const height = (size as any).height;
+    if (typeof width === 'number' && typeof height === 'number') {
+      return { width, height };
+    }
   }
-  console.warn('Invalid size data:', size);
-  return { width: 100, height: 50 };
+  return { width: 150, height: 100 };
 }
 
 export function useFloorPlanData(floorId: string | null) {
   const [objects, setObjects] = useState<FloorPlanObject[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     if (!floorId) {
@@ -39,38 +91,39 @@ export function useFloorPlanData(floorId: string | null) {
       return;
     }
 
-    const loadData = async () => {
+    async function fetchData() {
       try {
-        const [roomsResult, hallwaysResult, edgesResult] = await Promise.all([
-          supabase
-            .from('rooms')
-            .select('*')
-            .eq('floor_id', floorId),
-          supabase
-            .from('hallways')
-            .select('*')
-            .eq('floor_id', floorId),
-          supabase
-            .from('floor_plan_edges')
-            .select('*')
-            .eq('floor_id', floorId)
-        ]);
+        setIsLoading(true);
+        setError(null);
 
-        if (roomsResult.error) throw roomsResult.error;
-        if (hallwaysResult.error) throw hallwaysResult.error;
-        if (edgesResult.error) throw edgesResult.error;
+        // Fetch rooms
+        const { data: roomsData, error: roomsError } = await supabase
+          .from('rooms')
+          .select('*')
+          .eq('floor_id', floorId);
 
-        const rooms = roomsResult.data.map((room): FloorPlanObject => ({
+        if (roomsError) throw roomsError;
+
+        // Fetch hallways
+        const { data: hallwaysData, error: hallwaysError } = await supabase
+          .from('hallways')
+          .select('*')
+          .eq('floor_id', floorId);
+
+        if (hallwaysError) throw hallwaysError;
+
+        // Process rooms
+        const rooms = (roomsData as RawRoomData[]).map(room => ({
           id: room.id,
-          type: 'room',
+          type: 'room' as FloorPlanObjectType,
           position: parseJsonPosition(room.position),
           parent_room_id: room.parent_room_id,
-          has_children: room.has_children,
+          has_children: false, // Will be updated after processing all rooms
           data: {
             label: room.name,
-            type: 'room',
+            type: 'room' as FloorPlanObjectType,
             size: parseJsonSize(room.size),
-            style: room.style || {},
+            style: {},
             properties: {
               status: room.status,
               current_function: room.current_function
@@ -78,42 +131,43 @@ export function useFloorPlanData(floorId: string | null) {
           }
         }));
 
-        const hallways = hallwaysResult.data.map((hallway): FloorPlanObject => ({
+        // Update has_children flag
+        rooms.forEach(room => {
+          if (room.parent_room_id) {
+            const parentRoom = rooms.find(r => r.id === room.parent_room_id);
+            if (parentRoom) {
+              parentRoom.has_children = true;
+            }
+          }
+        });
+
+        // Process hallways
+        const hallways = (hallwaysData as RawHallwayData[]).map(hallway => ({
           id: hallway.id,
-          type: 'hallway',
+          type: 'hallway' as FloorPlanObjectType,
           position: parseJsonPosition(hallway.position),
           data: {
             label: hallway.name,
-            type: 'hallway',
+            type: 'hallway' as FloorPlanObjectType,
             size: parseJsonSize(hallway.size),
-            style: hallway.style || {},
+            style: {},
             properties: {
-              status: hallway.status,
-              accessibility: hallway.accessibility
+              status: hallway.status
             }
           }
         }));
 
-        const edges = edgesResult.data.map((edge): Edge => ({
-          id: edge.id,
-          source: edge.source_id,
-          target: edge.target_id,
-          type: edge.type || 'default',
-          animated: edge.animated || false,
-          style: edge.style || {}
-        }));
-
         setObjects([...rooms, ...hallways]);
-        setEdges(edges);
-      } catch (error) {
-        console.error('Error loading floor plan data:', error);
-      } finally {
+        setIsLoading(false);
+      } catch (err) {
+        console.error('Error fetching floor plan data:', err);
+        setError(err as Error);
         setIsLoading(false);
       }
-    };
+    }
 
-    loadData();
+    fetchData();
   }, [floorId]);
 
-  return { objects, edges, isLoading };
+  return { objects, edges, isLoading, error };
 }
