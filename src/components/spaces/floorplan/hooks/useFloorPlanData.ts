@@ -72,12 +72,11 @@ export function useFloorPlanData(floorId: string | null) {
 
   // Transform all objects into floor plan nodes
   const objects = spaceData?.objects.map((obj, index) => {
-    // Get position data before transformation
-    const positionData = obj.position || null;
-    const parsedPosition = parsePosition(positionData);
-
-    // Transform the object into a node
+    // Transform the object into a node first
     const node = transformSpaceToNode(obj, index);
+
+    // Try to parse the position from the database
+    const parsedPosition = parsePosition(obj.position);
 
     if (!parsedPosition) {
       console.log(`Using auto-layout for node ${node.id} due to invalid position`);
