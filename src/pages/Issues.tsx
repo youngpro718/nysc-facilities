@@ -1,13 +1,11 @@
 
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { QuickIssueForm } from "@/components/issues/QuickIssueForm";
 import { useState } from "react";
 import { IssuesList } from "@/components/issues/IssuesList";
-import { TypeFilters } from "@/components/issues/filters/TypeFilters";
-import { SortAndGroupFilters } from "@/components/issues/filters/SortAndGroupFilters";
 import { IssueFilters } from "@/components/issues/IssueFilters";
 import { useIssueFilters } from "@/components/issues/hooks/useIssueFilters";
+import { CreateIssueForm } from "@/components/issues/CreateIssueForm";
 
 const Issues = () => {
   const [showIssueForm, setShowIssueForm] = useState(false);
@@ -33,7 +31,7 @@ const Issues = () => {
 
       <div className="space-y-6">
         {showIssueForm ? (
-          <QuickIssueForm onSuccess={() => setShowIssueForm(false)} />
+          <CreateIssueForm onClose={() => setShowIssueForm(false)} />
         ) : (
           <div className="space-y-6">
             <IssueFilters
