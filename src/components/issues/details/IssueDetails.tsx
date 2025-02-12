@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Issue } from "../types/IssueTypes";
+import { Issue, LightingFixture } from "../types/IssueTypes";
 import { IssueStatusBadge } from "../card/IssueStatusBadge";
 import { IssuePhotos } from "../card/IssuePhotos";
 import { IssueBadges } from "../card/IssueBadges";
@@ -41,7 +41,14 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
         .single();
 
       if (error) throw error;
-      return data as Issue;
+
+      // Transform the lighting_fixtures to ensure it's always an array
+      const transformedData = {
+        ...data,
+        lighting_fixtures: data.lighting_fixtures ? [data.lighting_fixtures] : []
+      } as Issue;
+
+      return transformedData;
     },
     enabled: !!issueId
   });
