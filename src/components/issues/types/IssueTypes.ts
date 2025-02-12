@@ -1,4 +1,3 @@
-
 export type IssueStatus = 'open' | 'in_progress' | 'resolved';
 export type IssuePriority = 'low' | 'medium' | 'high';
 export type FixtureType = 'standard' | 'emergency' | 'motion_sensor';
@@ -68,6 +67,16 @@ export interface Issue {
   resolution_date?: string;
 }
 
+export interface Comment {
+  id: string;
+  issue_id: string;
+  content: string;
+  author_id: string;
+  created_at: string;
+  updated_at: string;
+  attachments: string[];
+  mentions: string[];
+}
+
 // Adding IssueType as an alias for compatibility
 export type IssueType = Issue;
-

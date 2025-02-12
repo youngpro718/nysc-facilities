@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +10,7 @@ import { IssueStatusBadge } from "../card/IssueStatusBadge";
 import { IssuePhotos } from "../card/IssuePhotos";
 import { IssueBadges } from "../card/IssueBadges";
 import { IssueMetadata } from "../card/IssueMetadata";
+import { IssueComments } from "../card/IssueComments";
 
 interface IssueDetailsProps {
   issueId: string | null;
@@ -136,10 +136,7 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
               </TabsContent>
 
               <TabsContent value="comments">
-                <div className="space-y-4">
-                  {/* TODO: Implement comments section */}
-                  <p className="text-muted-foreground">No comments yet.</p>
-                </div>
+                <IssueComments issueId={issue.id} />
               </TabsContent>
             </Tabs>
           </div>
