@@ -1,6 +1,6 @@
 
 import { useCallback, useEffect } from 'react';
-import ReactFlow, { 
+import { 
   Background, 
   Controls, 
   MiniMap,
@@ -10,9 +10,11 @@ import ReactFlow, {
   Connection,
   Edge,
   Node,
-  addEdge
-} from 'reactflow';
-import 'reactflow/dist/style.css';
+  addEdge,
+  ReactFlow,
+  Panel
+} from '@reactflow/core';
+import '@reactflow/core/dist/style.css';
 import { Card } from "@/components/ui/card";
 import { DrawingMode, FloorPlanNode, FloorPlanEdge } from "./types/floorPlanTypes";
 import { useFloorPlanData } from "./hooks/useFloorPlanData";
@@ -30,6 +32,17 @@ interface FloorPlanCanvasProps {
 const nodeTypes: NodeTypes = {
   room: RoomNode,
   door: DoorNode,
+};
+
+const panelStyle = {
+  position: 'absolute',
+  left: 10,
+  top: 10,
+  zIndex: 100,
+  backgroundColor: 'white',
+  padding: '8px',
+  borderRadius: '4px',
+  boxShadow: '0 0 10px rgba(0,0,0,0.1)'
 };
 
 export function FloorPlanCanvas({ 
@@ -52,7 +65,9 @@ export function FloorPlanCanvas({
         type: obj.type,
         position: obj.position,
         data: obj.data,
-        zIndex: obj.zIndex || 0
+        zIndex: obj.zIndex || 0,
+        draggable: true,
+        selectable: true
       }));
       setNodes(reactFlowNodes);
     }
@@ -87,11 +102,9 @@ export function FloorPlanCanvas({
     );
   }
 
-  console.log('Floor Plan Objects:', objects); // Debug log
-
   return (
     <Card className="p-4">
-      <div style={{ width: '100%', height: '600px' }}>
+      <div style={{ width: '100%', height: '600px', position: 'relative' }}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -101,9 +114,16 @@ export function FloorPlanCanvas({
           onNodeClick={onNodeClick}
           nodeTypes={nodeTypes}
           defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+          minZoom={0.1}
+          maxZoom={4}
           fitView
-          attributionPosition="bottom-left"
+          fitViewOptions={{ padding: 0.2 }}
         >
+          <Panel position="top-left">
+            <div style={panelStyle}>
+              Rooms: {nodes.length}
+            </div>
+          </Panel>
           <Controls />
           <MiniMap />
           <Background gap={20} size={1} />
