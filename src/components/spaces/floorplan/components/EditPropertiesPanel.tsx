@@ -15,7 +15,7 @@ import {
 import { toast } from "sonner";
 import { FloorPlanObjectData } from "../types/floorPlanTypes";
 import { useForm } from "react-hook-form";
-import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Slider } from "@/components/ui/slider";
 import { Building2, Move, RotateCw, Link2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -65,15 +65,30 @@ export function EditPropertiesPanel({ selectedObject, onClose, onUpdate }: EditP
           height: Number(data.height)
         },
         rotation: Number(data.rotation),
+        label: data.label,
+        properties: {
+          room_number: data.room_number,
+          room_type: data.room_type,
+          status: data.status
+        },
         data: {
-          ...selectedObject,
           label: data.label,
+          type: selectedObject.type,
           properties: {
-            ...selectedObject.properties,
             room_number: data.room_number,
             room_type: data.room_type,
             status: data.status
-          }
+          },
+          size: {
+            width: Number(data.width),
+            height: Number(data.height)
+          },
+          style: selectedObject.style,
+          position: {
+            x: Number(data.positionX),
+            y: Number(data.positionY)
+          },
+          rotation: Number(data.rotation)
         }
       };
 
