@@ -47,7 +47,6 @@ const panelStyle = {
   boxShadow: '0 0 10px rgba(0,0,0,0.1)'
 };
 
-// Separate flow component to handle resize observer properly
 function FlowComponent({ 
   nodes, 
   edges, 
@@ -103,30 +102,46 @@ export function FloorPlanCanvas({
   useEffect(() => {
     if (!objects) return;
 
-    const reactFlowNodes = objects.map((obj) => ({
-      id: obj.id,
-      type: obj.type,
-      position: obj.position || { x: 0, y: 0 },
-      data: {
-        ...obj.data,
-        label: obj.data?.label || 'Unnamed Room',
-        type: obj.data?.type || 'room',
-        size: obj.data?.size || {
-          width: 150,
-          height: 100
-        },
-        style: obj.data?.style || {
-          backgroundColor: '#e2e8f0',
-          border: '1px solid #cbd5e1'
-        },
-        properties: obj.data?.properties || {
-          room_number: '',
-          room_type: 'default',
-          status: 'active'
-        }
-      }
-    }));
+    const reactFlowNodes = objects.map((obj, index) => {
+      // Generate a grid-based position if none exists
+      const defaultPosition = {
+        x: (index % 3) * 200 + 50, // 3 rooms per row, 200px apart
+        y: Math.floor(index / 3) * 150 + 50 // New row every 3 rooms, 150px apart
+      };
 
+      const position = obj.position && 
+        typeof obj.position.x === 'number' && 
+        typeof obj.position.y === 'number' ? 
+        obj.position : defaultPosition;
+
+      console.log(`Node ${obj.id} position:`, position); // Debug log
+
+      return {
+        id: obj.id,
+        type: obj.type,
+        position: position,
+        data: {
+          ...obj.data,
+          label: obj.data?.label || 'Unnamed Room',
+          type: obj.data?.type || 'room',
+          size: obj.data?.size || {
+            width: 150,
+            height: 100
+          },
+          style: obj.data?.style || {
+            backgroundColor: '#e2e8f0',
+            border: '1px solid #cbd5e1'
+          },
+          properties: obj.data?.properties || {
+            room_number: '',
+            room_type: 'default',
+            status: 'active'
+          }
+        }
+      };
+    });
+
+    console.log('Setting nodes:', reactFlowNodes); // Debug log
     setNodes(reactFlowNodes);
   }, [objects, setNodes]);
 
