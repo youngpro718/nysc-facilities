@@ -11,9 +11,6 @@ import { Card } from "@/components/ui/card";
 import { Mail, Lock, Loader2 } from "lucide-react";
 import { EvervaultCard } from "@/components/ui/evervault-card";
 
-// Add your email for development
-const ALLOWED_DOMAINS = ["state.gov", "nyc.gov", "gmail.com"]; // Temporarily allow gmail.com for development
-
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
@@ -30,22 +27,10 @@ const Auth = () => {
     });
   }, [navigate]);
 
-  const validateEmail = (email: string) => {
-    const domain = email.split('@')[1];
-    return ALLOWED_DOMAINS.includes(domain);
-  };
-
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       toast.error("Please fill in all fields");
-      return;
-    }
-
-    if (!validateEmail(email)) {
-      toast.error("Only government email addresses are allowed", {
-        description: `Please use an email from: ${ALLOWED_DOMAINS.join(", ")}`
-      });
       return;
     }
 
@@ -55,19 +40,11 @@ const Auth = () => {
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            is_approved: false, // Requires admin approval
-          }
-        },
       });
 
       if (error) throw error;
       
-      toast.success("Check your email for the confirmation link!", {
-        description: "Your account will need to be approved by an administrator."
-      });
+      toast.success("Check your email for the confirmation link!");
       
       // Switch to login view after successful signup
       setIsLogin(true);
@@ -88,8 +65,6 @@ const Auth = () => {
 
     try {
       setLoading(true);
-      // First, sign out to clear any invalid session
-      await supabase.auth.signOut();
       
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -97,18 +72,6 @@ const Auth = () => {
       });
 
       if (error) throw error;
-      
-      // Check if user is approved
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('is_approved')
-        .eq('id', (await supabase.auth.getUser()).data.user?.id)
-        .single();
-
-      if (!profile?.is_approved) {
-        await supabase.auth.signOut();
-        throw new Error("Your account is pending approval");
-      }
 
       navigate("/", { replace: true });
       toast.success("Welcome back!", {
@@ -153,11 +116,6 @@ const Auth = () => {
               NYSC Facilities Hub
             </h1>
             <p className="text-white/80">{isLogin ? "Welcome back" : "Create your account"}</p>
-            {!isLogin && (
-              <p className="text-sm text-white/60 mt-2">
-                Only government email addresses are allowed
-              </p>
-            )}
           </div>
         </div>
 
