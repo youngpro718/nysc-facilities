@@ -9,9 +9,17 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DrawingMode } from "./types/floorPlanTypes";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { useParams } from "react-router-dom";
 
-export function FloorPlanView() {
-  const [selectedFloorId, setSelectedFloorId] = useState<string | null>(null);
+interface FloorPlanViewProps {
+  selectedFloor?: string;
+}
+
+export function FloorPlanView({ selectedFloor }: FloorPlanViewProps) {
+  // If selectedFloor prop is not provided, try to get it from the current route
+  const params = useParams();
+  const effectiveFloorId = selectedFloor || params.floorId || null;
+  
   const [zoom, setZoom] = useState(1);
   const [selectedObject, setSelectedObject] = useState<any>(null);
   const [drawingMode, setDrawingMode] = useState<DrawingMode>("view");
@@ -36,6 +44,8 @@ export function FloorPlanView() {
     }
   });
 
+  console.log('FloorPlanView rendering with floorId:', effectiveFloorId);
+
   const handleZoomIn = () => {
     setZoom(prev => Math.min(prev + 0.1, 2));
   };
@@ -56,7 +66,7 @@ export function FloorPlanView() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Select value={selectedFloorId || ""} onValueChange={setSelectedFloorId}>
+          <Select value={effectiveFloorId || ""} onValueChange={(value) => console.log('Floor selected:', value)}>
             <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Select a floor" />
             </SelectTrigger>
@@ -103,7 +113,7 @@ export function FloorPlanView() {
       
       <div className="grid gap-4 md:grid-cols-[1fr_300px]">
         <FloorPlanCanvas 
-          floorId={selectedFloorId} 
+          floorId={effectiveFloorId} 
           zoom={zoom}
           onObjectSelect={handleObjectSelect}
           drawingMode={drawingMode}
