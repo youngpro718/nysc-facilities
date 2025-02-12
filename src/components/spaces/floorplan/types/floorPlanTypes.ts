@@ -3,6 +3,8 @@ import { Json } from "@/integrations/supabase/types";
 
 export type LayerType = 'rooms' | 'doors' | 'grid' | 'hallways' | 'annotations';
 
+export type SpaceType = 'room' | 'door' | 'hallway' | 'annotation';
+
 export interface Position {
   x: number;
   y: number;
