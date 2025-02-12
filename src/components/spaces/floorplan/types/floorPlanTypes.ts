@@ -21,7 +21,6 @@ export interface FloorPlanObjectData {
   properties: Record<string, any>;
 }
 
-// Instead of extending Node and Edge directly, we define our own interfaces
 export interface FloorPlanNode {
   id: string;
   type: string;
@@ -64,6 +63,18 @@ export interface FloorPlanLayer {
 
 export type DrawingMode = 'view' | 'draw' | 'door' | 'hallway';
 
+export type DrawingOperation = 'none' | 'start' | 'drawing' | 'preview';
+
+export interface DrawingState {
+  mode: DrawingMode;
+  operation: DrawingOperation;
+  startPosition: Position | null;
+  currentPosition: Position | null;
+  snapPoints: Position[];
+  isValid: boolean;
+  previewDimensions: Size | null;
+}
+
 export const ROOM_COLORS: Record<string, string> = {
   office: '#e2e8f0',
   courtroom: '#dbeafe',
@@ -71,3 +82,6 @@ export const ROOM_COLORS: Record<string, string> = {
   conference: '#fef3c7',
   default: '#e2e8f0'
 };
+
+export const GRID_SIZE = 20;
+export const MIN_ROOM_SIZE = { width: 100, height: 100 };

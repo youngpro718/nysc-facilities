@@ -19,6 +19,7 @@ import 'reactflow/dist/style.css';
 import { Card } from "@/components/ui/card";
 import { DrawingMode, FloorPlanNode, FloorPlanEdge } from "./types/floorPlanTypes";
 import { useFloorPlanData } from "./hooks/useFloorPlanData";
+import { useDrawingState } from "./hooks/useDrawingState";
 import { RoomNode } from './nodes/RoomNode';
 import { DoorNode } from './nodes/DoorNode';
 import { toast } from "sonner";
@@ -53,7 +54,10 @@ function FlowComponent({
   onEdgesChange, 
   onConnect,
   onNodeClick,
-  nodeTypes
+  onPaneClick,
+  onPaneMouseMove,
+  nodeTypes,
+  drawingState
 }: any) {
   const defaultViewport = useMemo(() => ({ x: 50, y: 50, zoom: 0.8 }), []);
 
@@ -65,6 +69,8 @@ function FlowComponent({
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
       onNodeClick={onNodeClick}
+      onPaneClick={onPaneClick}
+      onPaneMouseMove={onPaneMouseMove}
       nodeTypes={nodeTypes}
       defaultViewport={defaultViewport}
       minZoom={0.1}
@@ -78,7 +84,11 @@ function FlowComponent({
     >
       <Panel position="top-left">
         <div style={panelStyle} className="text-gray-700">
-          Rooms: {nodes.length}
+          {drawingState.operation !== 'none' ? (
+            <>Drawing: {drawingState.mode} - {drawingState.operation}</>
+          ) : (
+            <>Rooms: {nodes.length}</>
+          )}
         </div>
       </Panel>
       <Controls />
@@ -98,6 +108,11 @@ export function FloorPlanCanvas({
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const initialized = useRef(false);
+  const { drawingState, startDrawing, updateDrawing, completeDrawing, cancelDrawing, setMode } = useDrawingState(drawingMode);
+
+  useEffect(() => {
+    setMode(drawingMode);
+  }, [drawingMode, setMode]);
 
   useEffect(() => {
     // Reset initialized ref when floor changes
@@ -115,7 +130,6 @@ export function FloorPlanCanvas({
         y: Math.floor(index / 3) * 200 + 100
       };
 
-      // Only use stored position if it's valid and not at origin
       const position = obj.position && 
         typeof obj.position.x === 'number' && 
         typeof obj.position.y === 'number' && 
@@ -166,6 +180,46 @@ export function FloorPlanCanvas({
     }
   }, [onObjectSelect]);
 
+  const onPaneClick = useCallback((event: React.MouseEvent) => {
+    const bounds = (event.target as HTMLElement).getBoundingClientRect();
+    const position = {
+      x: event.clientX - bounds.left,
+      y: event.clientY - bounds.top
+    };
+
+    if (drawingState.operation === 'none' && drawingMode !== 'view') {
+      startDrawing(position);
+    } else if (drawingState.operation === 'drawing') {
+      const result = completeDrawing();
+      if (result) {
+        // TODO: Handle drawing completion based on mode
+        console.log('Drawing completed:', result);
+      }
+    }
+  }, [drawingState, drawingMode, startDrawing, completeDrawing]);
+
+  const onPaneMouseMove = useCallback((event: React.MouseEvent) => {
+    if (drawingState.operation === 'start' || drawingState.operation === 'drawing') {
+      const bounds = (event.target as HTMLElement).getBoundingClientRect();
+      const position = {
+        x: event.clientX - bounds.left,
+        y: event.clientY - bounds.top
+      };
+      updateDrawing(position);
+    }
+  }, [drawingState.operation, updateDrawing]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && drawingState.operation !== 'none') {
+        cancelDrawing();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [drawingState.operation, cancelDrawing]);
+
   if (!floorId) {
     return (
       <Card className="p-4">
@@ -197,7 +251,10 @@ export function FloorPlanCanvas({
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             onNodeClick={onNodeClick}
+            onPaneClick={onPaneClick}
+            onPaneMouseMove={onPaneMouseMove}
             nodeTypes={nodeTypes}
+            drawingState={drawingState}
           />
         </ReactFlowProvider>
       </div>
