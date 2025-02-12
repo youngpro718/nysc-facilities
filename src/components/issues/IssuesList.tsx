@@ -31,7 +31,8 @@ import {
   IssueStatus, 
   IssuePriority, 
   FixtureType, 
-  FixtureStatus, 
+  FixtureStatus,
+  FixturePosition,
   LightingFixture 
 } from "./types/IssueTypes";
 import { ResolutionForm } from "./forms/ResolutionForm";
@@ -76,6 +77,11 @@ function isValidFixtureStatus(value: string | null): value is FixtureStatus {
          value === 'scheduled_replacement';
 }
 
+function isValidFixturePosition(value: string | null): value is FixturePosition {
+  return value === 'ceiling' || value === 'wall' || value === 'floor' || 
+         value === 'desk' || value === 'recessed';
+}
+
 function isValidIssueStatus(value: string | null): value is IssueStatus {
   return value === 'open' || value === 'in_progress' || value === 'resolved';
 }
@@ -87,7 +93,9 @@ function isValidIssuePriority(value: string | null): value is IssuePriority {
 function transformFixture(fixtureData: DatabaseIssue['lighting_fixtures']): LightingFixture | null {
   if (!fixtureData) return null;
 
-  if (!isValidFixtureType(fixtureData.type) || !isValidFixtureStatus(fixtureData.status)) {
+  if (!isValidFixtureType(fixtureData.type) || 
+      !isValidFixtureStatus(fixtureData.status) ||
+      !isValidFixturePosition(fixtureData.position)) {
     return null;
   }
 
