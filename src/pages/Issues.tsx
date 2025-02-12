@@ -31,7 +31,7 @@ const Issues = () => {
 
       <div className="space-y-6">
         {showIssueForm ? (
-          <CreateIssueForm onClose={() => setShowIssueForm(false)} />
+          <CreateIssueForm onSuccess={() => setShowIssueForm(false)} />
         ) : (
           <div className="space-y-6">
             <IssueFilters
