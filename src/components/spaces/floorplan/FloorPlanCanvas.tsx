@@ -45,7 +45,8 @@ export function FloorPlanCanvas({
 
   // Update nodes when objects change
   useEffect(() => {
-    if (objects) {
+    if (objects && objects.length > 0) {
+      console.log('Setting nodes:', objects);
       const reactFlowNodes = objects.map(obj => ({
         id: obj.id,
         type: obj.type,
@@ -86,7 +87,7 @@ export function FloorPlanCanvas({
     );
   }
 
-  console.log('Floor Plan Objects:', objects); // Add this for debugging
+  console.log('Floor Plan Objects:', objects); // Debug log
 
   return (
     <Card className="p-4">
@@ -99,6 +100,7 @@ export function FloorPlanCanvas({
           onConnect={onConnect}
           onNodeClick={onNodeClick}
           nodeTypes={nodeTypes}
+          defaultViewport={{ x: 0, y: 0, zoom: 1 }}
           fitView
           attributionPosition="bottom-left"
         >
