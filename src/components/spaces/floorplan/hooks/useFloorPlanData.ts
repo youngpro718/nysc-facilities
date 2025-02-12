@@ -4,7 +4,7 @@ import { transformLayer } from "../utils/layerTransforms";
 import { transformSpaceToNode } from "../utils/nodeTransforms";
 import { createEdgesFromConnections } from "../utils/edgeTransforms";
 import { fetchFloorPlanLayers, fetchFloorPlanObjects } from "../queries/floorPlanQueries";
-import { FloorPlanLayerDB, Position } from "../types/floorPlanTypes";
+import { FloorPlanLayerDB, Position, FloorPlanObject } from "../types/floorPlanTypes";
 
 // Validate position data
 function isValidPosition(pos: any): pos is Position {
@@ -71,7 +71,7 @@ export function useFloorPlanData(floorId: string | null) {
   });
 
   // Transform all objects into floor plan nodes
-  const objects = spaceData?.objects.map((obj, index) => {
+  const objects = spaceData?.objects.map((obj: FloorPlanObject, index) => {
     // Transform the object into a node first
     const node = transformSpaceToNode(obj, index);
 

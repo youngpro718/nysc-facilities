@@ -64,6 +64,19 @@ export interface FloorPlanLayer {
   data: Record<string, any>;
 }
 
+export type FloorPlanObjectType = 'room' | 'door' | 'hallway';
+
+export interface FloorPlanObject {
+  id: string;
+  type: FloorPlanObjectType;
+  position: Position;
+  size: Size;
+  properties: Record<string, any>;
+  style: Record<string, any>;
+  label?: string;
+  floor_id: string;
+}
+
 export const ROOM_COLORS: Record<string, string> = {
   office: '#e2e8f0',
   courtroom: '#dbeafe',

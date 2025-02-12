@@ -520,7 +520,7 @@ export type Database = {
           rotation: number | null
           size: Json | null
           style: Json | null
-          type: string
+          type: Database["public"]["Enums"]["floor_plan_object_type"]
           updated_at: string | null
           z_index: number | null
         }
@@ -536,7 +536,7 @@ export type Database = {
           rotation?: number | null
           size?: Json | null
           style?: Json | null
-          type: string
+          type: Database["public"]["Enums"]["floor_plan_object_type"]
           updated_at?: string | null
           z_index?: number | null
         }
@@ -552,7 +552,7 @@ export type Database = {
           rotation?: number | null
           size?: Json | null
           style?: Json | null
-          type?: string
+          type?: Database["public"]["Enums"]["floor_plan_object_type"]
           updated_at?: string | null
           z_index?: number | null
         }
@@ -4567,6 +4567,7 @@ export type Database = {
       door_type_enum: "standard" | "emergency" | "secure" | "maintenance"
       emergency_route_enum: "primary" | "secondary" | "not_designated"
       floor_plan_mode_enum: "edit" | "view"
+      floor_plan_object_type: "room" | "door" | "hallway"
       hallway_accessibility_enum:
         | "fully_accessible"
         | "limited_access"
