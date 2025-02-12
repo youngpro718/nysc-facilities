@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Canvas, Rect } from "fabric";
 import { Card } from "@/components/ui/card";
@@ -24,161 +25,179 @@ export function FloorPlanCanvas({ floorId, zoom = 1, drawingMode, onObjectSelect
 
   const { data: floorPlanObjects, isLoading, error } = useFloorPlanData(floorId);
 
-  // Cleanup function to properly dispose of canvas
   const cleanupCanvas = useCallback(() => {
+    console.log('Cleaning up canvas...', fabricRef.current ? 'Canvas exists' : 'No canvas');
     if (fabricRef.current) {
-      fabricRef.current.dispose();
+      try {
+        // Remove all event listeners
+        fabricRef.current.off();
+        // Clear all objects
+        fabricRef.current.clear();
+        // Dispose the canvas
+        fabricRef.current.dispose();
+        console.log('Canvas cleaned up successfully');
+      } catch (err) {
+        console.error('Error cleaning up canvas:', err);
+      }
       fabricRef.current = null;
     }
     setIsInitialized(false);
   }, []);
 
-  // Initialize canvas when component mounts or floorId changes
+  // Initialize canvas
   useEffect(() => {
-    if (!canvasRef.current) return;
-
-    console.log('Initializing canvas for floor:', floorId);
+    console.log('Initializing canvas effect triggered');
     
-    // Clean up existing canvas
-    cleanupCanvas();
-
-    const canvas = new Canvas(canvasRef.current, {
-      width: 800,
-      height: 600,
-      backgroundColor: '#f9fafb',
-      selection: drawingMode === 'view'
-    });
-
-    // Selection events
-    canvas.on('selection:created', (e) => {
-      const selected = e.selected?.[0] as any;
-      if (selected?.customData) {
-        onObjectSelect?.(selected.customData);
+    const initCanvas = () => {
+      console.log('Starting canvas initialization...');
+      if (!canvasRef.current) {
+        console.log('Canvas ref not ready');
+        return;
       }
-    });
+      
+      if (fabricRef.current) {
+        console.log('Canvas already exists, cleaning up first');
+        cleanupCanvas();
+      }
 
-    canvas.on('selection:cleared', () => {
-      onObjectSelect?.(null);
-    });
+      console.log('Creating new canvas instance');
+      const canvas = new Canvas(canvasRef.current, {
+        width: 800,
+        height: 600,
+        backgroundColor: '#f9fafb',
+        preserveObjectStacking: true,
+        selection: true
+      });
 
-    // Mouse events for drawing
-    canvas.on('mouse:down', async (e) => {
-      if (!e.pointer || !floorId) return;
+      // Selection events
+      canvas.on('selection:created', (e) => {
+        console.log('Selection created:', e.selected?.[0]);
+        const group = e.selected?.[0] as any;
+        if (group?.customData) {
+          onObjectSelect?.(group.customData);
+        }
+      });
 
-      if (drawingMode === 'draw') {
-        setIsDrawing(true);
+      canvas.on('selection:cleared', () => {
+        console.log('Selection cleared');
+        onObjectSelect?.(null);
+      });
+
+      // Mouse events
+      canvas.on('mouse:down', async (e) => {
+        if (!e.pointer) return;
+        console.log('Mouse down event:', drawingMode);
+
+        if (drawingMode === 'draw') {
+          setIsDrawing(true);
+          const pointer = canvas.getPointer(e.e);
+          setStartPoint({ x: pointer.x, y: pointer.y });
+
+          const rect = new Rect({
+            left: pointer.x,
+            top: pointer.y,
+            width: 0,
+            height: 0,
+            fill: 'rgba(226, 232, 240, 0.5)',
+            stroke: '#94a3b8',
+            strokeWidth: 2,
+            selectable: false
+          });
+
+          canvas.add(rect);
+          setActiveRect(rect);
+        } else if (drawingMode === 'door' && floorId) {
+          const pointer = canvas.getPointer(e.e);
+          console.log('Creating door at:', pointer);
+          const door = createDoor(pointer.x, pointer.y);
+          canvas.add(door);
+          
+          try {
+            const doorId = crypto.randomUUID();
+            
+            const { data, error } = await supabase
+              .from('floor_plan_objects')
+              .insert({
+                floor_id: floorId,
+                object_id: doorId,
+                object_type: 'door',
+                connection_type: 'door',
+                position_x: Math.round(pointer.x),
+                position_y: Math.round(pointer.y),
+                width: 40,
+                height: 10,
+                properties: { name: 'New Door' },
+                metadata: {},
+                connected_to: []
+              })
+              .select()
+              .single();
+
+            if (error) throw error;
+            
+            (door as any).customData = data;
+            canvas.renderAll();
+            toast.success('Door placed successfully');
+          } catch (error) {
+            console.error('Error saving door:', error);
+            canvas.remove(door);
+            toast.error('Failed to place door');
+          }
+        }
+      });
+
+      canvas.on('mouse:move', (e) => {
+        if (!isDrawing || !startPoint || !activeRect || !e.pointer) return;
+
         const pointer = canvas.getPointer(e.e);
-        setStartPoint({ x: pointer.x, y: pointer.y });
+        const width = Math.abs(pointer.x - startPoint.x);
+        const height = Math.abs(pointer.y - startPoint.y);
 
-        const rect = new Rect({
-          left: pointer.x,
-          top: pointer.y,
-          width: 0,
-          height: 0,
-          fill: 'rgba(226, 232, 240, 0.5)',
-          stroke: '#94a3b8',
-          strokeWidth: 2,
-          selectable: false
+        const gridSize = 20;
+        const snappedWidth = Math.round(width / gridSize) * gridSize;
+        const snappedHeight = Math.round(height / gridSize) * gridSize;
+
+        activeRect.set({
+          width: snappedWidth,
+          height: snappedHeight
         });
 
-        canvas.add(rect);
-        setActiveRect(rect);
         canvas.renderAll();
-      } else if (drawingMode === 'door') {
-        const pointer = canvas.getPointer(e.e);
-        console.log('Adding door at:', pointer);
-        const door = createDoor(pointer.x, pointer.y);
-        canvas.add(door);
+      });
+
+      canvas.on('mouse:up', () => {
+        if (!isDrawing || !activeRect) return;
+        console.log('Mouse up event - finishing drawing');
+
+        setIsDrawing(false);
+        setStartPoint(null);
         
-        try {
-          const { data: doorData, error: doorError } = await supabase
-            .from('doors')
-            .insert({
-              floor_id: floorId,
-              name: 'New Door',
-              type: 'standard',
-              status: 'active'
-            })
-            .select()
-            .single();
+        activeRect.set({
+          selectable: true,
+          hasControls: true
+        });
 
-          if (doorError) throw doorError;
-
-          const { data: floorPlanData, error: floorPlanError } = await supabase
-            .from('floor_plan_objects')
-            .insert({
-              floor_id: floorId,
-              object_id: doorData.id,
-              object_type: 'door',
-              position_x: Math.round(pointer.x),
-              position_y: Math.round(pointer.y),
-              width: 40,
-              height: 10,
-              properties: { name: doorData.name },
-              metadata: { type: doorData.type }
-            })
-            .select()
-            .single();
-
-          if (floorPlanError) throw floorPlanError;
-          
-          (door as any).customData = floorPlanData;
-          canvas.renderAll();
-          toast.success('Door added successfully');
-        } catch (error: any) {
-          console.error('Error saving door:', error);
-          canvas.remove(door);
-          toast.error('Failed to add door');
-        }
-      }
-    });
-
-    canvas.on('mouse:move', (e) => {
-      if (!isDrawing || !startPoint || !activeRect || !e.pointer) return;
-
-      const pointer = canvas.getPointer(e.e);
-      const width = Math.abs(pointer.x - startPoint.x);
-      const height = Math.abs(pointer.y - startPoint.y);
-
-      // Snap to grid
-      const gridSize = 20;
-      const snappedWidth = Math.round(width / gridSize) * gridSize;
-      const snappedHeight = Math.round(height / gridSize) * gridSize;
-
-      activeRect.set({
-        width: snappedWidth,
-        height: snappedHeight
+        setActiveRect(null);
+        canvas.renderAll();
       });
 
-      canvas.renderAll();
-    });
+      fabricRef.current = canvas;
+      console.log('Canvas initialized successfully');
+      setIsInitialized(true);
+    };
 
-    canvas.on('mouse:up', () => {
-      if (!isDrawing || !activeRect) return;
-
-      setIsDrawing(false);
-      setStartPoint(null);
-      
-      activeRect.set({
-        selectable: true,
-        hasControls: true
-      });
-
-      setActiveRect(null);
-      canvas.renderAll();
-    });
-
-    fabricRef.current = canvas;
-    setIsInitialized(true);
+    initCanvas();
 
     return () => {
+      console.log('Canvas component unmounting');
       cleanupCanvas();
     };
-  }, [floorId, drawingMode, onObjectSelect, cleanupCanvas]);
+  }, []); // Empty dependency array as we only want to initialize once
 
-  // Update zoom level
+  // Update zoom
   useEffect(() => {
     if (!fabricRef.current || !isInitialized) return;
+    console.log('Updating zoom:', zoom);
     
     const canvas = fabricRef.current;
     const center = canvas.getCenter();
@@ -186,19 +205,23 @@ export function FloorPlanCanvas({ floorId, zoom = 1, drawingMode, onObjectSelect
     canvas.renderAll();
   }, [zoom, isInitialized]);
 
-  // Add objects to canvas when data is loaded
+  // Add objects to canvas
   useEffect(() => {
-    if (!fabricRef.current || !floorPlanObjects || !isInitialized) return;
+    if (!fabricRef.current || !floorPlanObjects || !isInitialized) {
+      console.log('Skipping objects update:', {
+        hasCanvas: !!fabricRef.current,
+        hasObjects: !!floorPlanObjects,
+        isInitialized
+      });
+      return;
+    }
     
+    console.log('Updating canvas objects:', floorPlanObjects.length);
     const canvas = fabricRef.current;
+    canvas.clear();
     
-    // Clear existing objects
-    canvas.getObjects().forEach(obj => canvas.remove(obj));
-    
-    // Create grid
     createGrid(canvas, 20);
 
-    // Add floor plan objects
     floorPlanObjects.forEach(obj => {
       const group = createRoomGroup(obj);
       if (group) {
@@ -207,7 +230,6 @@ export function FloorPlanCanvas({ floorId, zoom = 1, drawingMode, onObjectSelect
       }
     });
 
-    // Update viewport
     const center = canvas.getCenter();
     canvas.setViewportTransform([zoom, 0, 0, zoom, center.left, center.top]);
     canvas.renderAll();
@@ -216,6 +238,7 @@ export function FloorPlanCanvas({ floorId, zoom = 1, drawingMode, onObjectSelect
   // Update selection mode based on drawing mode
   useEffect(() => {
     if (!fabricRef.current) return;
+    console.log('Updating drawing mode:', drawingMode);
     
     const canvas = fabricRef.current;
     canvas.selection = drawingMode === 'view';

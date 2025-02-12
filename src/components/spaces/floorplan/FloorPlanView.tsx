@@ -9,17 +9,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DrawingMode } from "./types/floorPlanTypes";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { useParams, useNavigate } from "react-router-dom";
 
-interface FloorPlanViewProps {
-  selectedFloor?: string;
-}
-
-export function FloorPlanView({ selectedFloor }: FloorPlanViewProps) {
-  const params = useParams();
-  const navigate = useNavigate();
-  const [currentFloorId, setCurrentFloorId] = useState<string | null>(selectedFloor || params.floorId || null);
-  
+export function FloorPlanView() {
+  const [selectedFloorId, setSelectedFloorId] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [selectedObject, setSelectedObject] = useState<any>(null);
   const [drawingMode, setDrawingMode] = useState<DrawingMode>("view");
@@ -44,8 +36,6 @@ export function FloorPlanView({ selectedFloor }: FloorPlanViewProps) {
     }
   });
 
-  console.log('FloorPlanView rendering with floorId:', currentFloorId);
-
   const handleZoomIn = () => {
     setZoom(prev => Math.min(prev + 0.1, 2));
   };
@@ -62,17 +52,11 @@ export function FloorPlanView({ selectedFloor }: FloorPlanViewProps) {
     setSelectedObject(obj);
   };
 
-  const handleFloorChange = (value: string) => {
-    console.log('Floor selected:', value);
-    setCurrentFloorId(value);
-    navigate(`/spaces/floor/${value}`);
-  };
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Select value={currentFloorId || ""} onValueChange={handleFloorChange}>
+          <Select value={selectedFloorId || ""} onValueChange={setSelectedFloorId}>
             <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Select a floor" />
             </SelectTrigger>
@@ -119,7 +103,7 @@ export function FloorPlanView({ selectedFloor }: FloorPlanViewProps) {
       
       <div className="grid gap-4 md:grid-cols-[1fr_300px]">
         <FloorPlanCanvas 
-          floorId={currentFloorId} 
+          floorId={selectedFloorId} 
           zoom={zoom}
           onObjectSelect={handleObjectSelect}
           drawingMode={drawingMode}
