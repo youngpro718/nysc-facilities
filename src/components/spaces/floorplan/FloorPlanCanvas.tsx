@@ -12,11 +12,12 @@ import {
   Edge,
   addEdge,
   Panel,
-  ReactFlowProvider
+  ReactFlowProvider,
+  Node
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Card } from "@/components/ui/card";
-import { Position, Size } from "./types/floorPlanTypes";
+import { FloorPlanNode } from "./types/floorPlanTypes";
 import { useFloorPlanData } from "./hooks/useFloorPlanData";
 import { RoomNode } from './nodes/RoomNode';
 import { DoorNode } from './nodes/DoorNode';
@@ -158,7 +159,7 @@ export function FloorPlanCanvas({
     [setEdges],
   );
 
-  const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+  const onNodeClick = useCallback((event: React.MouseEvent, node: Node<any>) => {
     if (onObjectSelect) {
       onObjectSelect(node.data);
     }
