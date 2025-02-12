@@ -37,7 +37,7 @@ export function AssigneeField({ form }: AssigneeFieldProps) {
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              <SelectItem value="">Unassigned</SelectItem>
+              <SelectItem value="unassigned">Unassigned</SelectItem>
               {profiles?.map((profile) => (
                 <SelectItem key={profile.id} value={profile.id}>
                   {profile.first_name} {profile.last_name}
