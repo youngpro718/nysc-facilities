@@ -18,40 +18,24 @@ function transformLayer(raw: FloorPlanLayerDB): FloorPlanLayer {
 }
 
 function transformRoomToNode(room: any, index: number): FloorPlanNode {
-  console.log('Transforming room:', room); // Debug log
-  
-  // Generate a grid-based position if none exists, using the index
-  const defaultPosition = {
-    x: (index % 3) * 200 + 50, // 3 rooms per row, 200px apart
-    y: Math.floor(index / 3) * 150 + 50 // New row every 3 rooms, 150px apart
-  };
-
-  const roomPosition = room.position ? 
-    (typeof room.position === 'string' ? JSON.parse(room.position) : room.position) :
-    defaultPosition;
-
-  // Default size if none provided
-  const defaultSize = {
-    width: 150,
-    height: 100
-  };
-
-  const roomSize = room.size ?
-    (typeof room.size === 'string' ? JSON.parse(room.size) : room.size) :
-    defaultSize;
-
-  const backgroundColor = ROOM_COLORS[room.room_type] || ROOM_COLORS.default;
+  console.log('Transforming room:', room);
 
   return {
     id: room.id,
     type: 'room',
-    position: roomPosition,
+    position: {
+      x: (index % 3) * 250,
+      y: Math.floor(index / 3) * 200
+    },
     data: {
       label: room.name,
       type: 'room',
-      size: roomSize,
+      size: {
+        width: 150,
+        height: 100
+      },
       style: {
-        backgroundColor,
+        backgroundColor: ROOM_COLORS[room.room_type] || ROOM_COLORS.default,
         border: '1px solid #cbd5e1'
       },
       properties: {
@@ -89,7 +73,7 @@ export function useFloorPlanData(floorId: string | null) {
     queryFn: async () => {
       if (!floorId) return [];
       
-      console.log('Fetching rooms for floor:', floorId); // Debug log
+      console.log('Fetching rooms for floor:', floorId);
       
       const { data, error } = await supabase
         .from('rooms')
@@ -105,11 +89,11 @@ export function useFloorPlanData(floorId: string | null) {
         .eq('floor_id', floorId);
         
       if (error) {
-        console.error('Error fetching rooms:', error); // Debug log
+        console.error('Error fetching rooms:', error);
         throw error;
       }
       
-      console.log('Fetched rooms:', data); // Debug log
+      console.log('Fetched rooms:', data);
       return data || [];
     },
     enabled: !!floorId
@@ -117,7 +101,7 @@ export function useFloorPlanData(floorId: string | null) {
 
   // Transform rooms into floor plan objects
   const objects = rooms?.map((room, index) => transformRoomToNode(room, index)) || [];
-  console.log('Transformed objects:', objects); // Debug log
+  console.log('Transformed objects:', objects);
 
   return {
     layers,
