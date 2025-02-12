@@ -509,6 +509,10 @@ export type Database = {
       }
       floor_plan_objects: {
         Row: {
+          connected_to: string[] | null
+          connection_type:
+            | Database["public"]["Enums"]["connection_type_enum"]
+            | null
           created_at: string | null
           floor_id: string
           height: number
@@ -516,8 +520,10 @@ export type Database = {
           metadata: Json | null
           object_id: string
           object_type: string
+          path_points: Json | null
           position_x: number
           position_y: number
+          properties: Json | null
           rotation: number | null
           scale_x: number | null
           scale_y: number | null
@@ -525,6 +531,10 @@ export type Database = {
           width: number
         }
         Insert: {
+          connected_to?: string[] | null
+          connection_type?:
+            | Database["public"]["Enums"]["connection_type_enum"]
+            | null
           created_at?: string | null
           floor_id: string
           height: number
@@ -532,8 +542,10 @@ export type Database = {
           metadata?: Json | null
           object_id: string
           object_type: string
+          path_points?: Json | null
           position_x: number
           position_y: number
+          properties?: Json | null
           rotation?: number | null
           scale_x?: number | null
           scale_y?: number | null
@@ -541,6 +553,10 @@ export type Database = {
           width: number
         }
         Update: {
+          connected_to?: string[] | null
+          connection_type?:
+            | Database["public"]["Enums"]["connection_type_enum"]
+            | null
           created_at?: string | null
           floor_id?: string
           height?: number
@@ -548,8 +564,10 @@ export type Database = {
           metadata?: Json | null
           object_id?: string
           object_type?: string
+          path_points?: Json | null
           position_x?: number
           position_y?: number
+          properties?: Json | null
           rotation?: number | null
           scale_x?: number | null
           scale_y?: number | null
