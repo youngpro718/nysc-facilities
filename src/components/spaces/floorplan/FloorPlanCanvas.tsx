@@ -122,6 +122,7 @@ export function FloorPlanCanvas({
         id: obj.id,
         type: obj.type,
         position: position,
+        draggable: true, // Enable dragging
         data: {
           ...obj.data,
           label: obj.data?.label || 'Unnamed Room',
@@ -139,8 +140,7 @@ export function FloorPlanCanvas({
             room_type: 'default',
             status: 'active'
           }
-        },
-        dragHandle: '.drag-handle'
+        }
       };
 
       return node;
