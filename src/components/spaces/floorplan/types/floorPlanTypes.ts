@@ -1,6 +1,4 @@
 
-import { Json } from "@/integrations/supabase/types";
-
 export type LayerType = 'rooms' | 'doors' | 'grid' | 'hallways' | 'annotations';
 
 export interface Position {
@@ -37,28 +35,6 @@ export interface FloorPlanEdge {
     type: string;
     style?: Record<string, any>;
   };
-}
-
-export interface FloorPlanLayerDB {
-  id: string;
-  floor_id: string;
-  type: LayerType;
-  name: string;
-  order_index: number;
-  visible: boolean;
-  data: Json;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface FloorPlanLayer {
-  id: string;
-  floor_id: string;
-  type: LayerType;
-  name: string;
-  order_index: number;
-  visible: boolean;
-  data: Record<string, any>;
 }
 
 export type DrawingMode = 'view' | 'draw' | 'door' | 'hallway';
