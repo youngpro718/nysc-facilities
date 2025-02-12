@@ -1,17 +1,20 @@
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Issue, IssueStatus, IssuePriority, ResolutionType } from "../types/IssueTypes";
+import { Issue } from "../types/IssueTypes";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { BasicIssueFields } from "../form-sections/BasicIssueFields";
+import { StatusAndPriorityFields } from "../form-sections/StatusAndPriorityFields";
+import { AssigneeField } from "../form-sections/AssigneeField";
+import { ResolutionFields } from "../form-sections/ResolutionFields";
+import { FormData } from "../types/formTypes";
 
 const editIssueSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -24,8 +27,6 @@ const editIssueSchema = z.object({
   assignee_id: z.string().optional(),
 });
 
-type EditIssueFormValues = z.infer<typeof editIssueSchema>;
-
 interface EditIssueFormProps {
   issue: Issue;
   onClose: () => void;
@@ -34,19 +35,7 @@ interface EditIssueFormProps {
 export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
   const queryClient = useQueryClient();
 
-  const { data: profiles } = useQuery({
-    queryKey: ['profiles'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name');
-      
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const form = useForm<EditIssueFormValues>({
+  const form = useForm<FormData>({
     resolver: zodResolver(editIssueSchema),
     defaultValues: {
       title: issue.title,
@@ -64,7 +53,7 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
   const isResolved = watchStatus === "resolved";
 
   const updateIssueMutation = useMutation({
-    mutationFn: async (values: EditIssueFormValues) => {
+    mutationFn: async (values: FormData) => {
       const updateData = {
         ...values,
         resolution_date: isResolved ? new Date().toISOString() : null,
@@ -88,7 +77,7 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
     },
   });
 
-  const onSubmit = (values: EditIssueFormValues) => {
+  const onSubmit = (values: FormData) => {
     if (isResolved && !values.resolution_type) {
       form.setError("resolution_type", {
         type: "manual",
@@ -102,107 +91,12 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="title"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Title</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea {...field} className="min-h-[100px]" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
+        <BasicIssueFields form={form} />
+        
         <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="assignee_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Assignee</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select assignee" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="">Unassigned</SelectItem>
-                    {profiles?.map((profile) => (
-                      <SelectItem key={profile.id} value={profile.id}>
-                        {profile.first_name} {profile.last_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="priority"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Priority</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select priority" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <AssigneeField form={form} />
+          <StatusAndPriorityFields form={form} />
         </div>
-
-        <FormField
-          control={form.control}
-          name="status"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Status</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="open">Open</SelectItem>
-                  <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="resolved">Resolved</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
         <FormField
           control={form.control}
@@ -218,49 +112,7 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
           )}
         />
 
-        {isResolved && (
-          <>
-            <FormField
-              control={form.control}
-              name="resolution_type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Resolution Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select resolution type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="fixed">Fixed</SelectItem>
-                      <SelectItem value="replaced">Replaced</SelectItem>
-                      <SelectItem value="maintenance_performed">Maintenance Performed</SelectItem>
-                      <SelectItem value="no_action_needed">No Action Needed</SelectItem>
-                      <SelectItem value="deferred">Deferred</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="resolution_notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Resolution Notes</FormLabel>
-                  <FormControl>
-                    <Textarea {...field} placeholder="Provide details about the resolution..." />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </>
-        )}
+        {isResolved && <ResolutionFields form={form} />}
 
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={onClose} type="button">
