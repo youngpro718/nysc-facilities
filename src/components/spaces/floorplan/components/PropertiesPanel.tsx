@@ -2,7 +2,7 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Building2, Edit2, Hash, LayoutDashboard, Users } from "lucide-react";
+import { Building2, Edit2, Hash, LayoutDashboard, Users, ArrowLeft, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface PropertiesPanelProps {
@@ -31,6 +31,17 @@ export function PropertiesPanel({ selectedObject, onEdit }: PropertiesPanelProps
         return 'bg-yellow-100 text-yellow-800';
       default:
         return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getDirectionIcon = (direction: string) => {
+    switch (direction) {
+      case 'left_of_hallway':
+        return <ArrowLeft className="h-4 w-4 text-muted-foreground" />;
+      case 'right_of_hallway':
+        return <ArrowRight className="h-4 w-4 text-muted-foreground" />;
+      default:
+        return null;
     }
   };
 
@@ -66,6 +77,21 @@ export function PropertiesPanel({ selectedObject, onEdit }: PropertiesPanelProps
             <span className="font-medium">Type:</span>
             <span className="capitalize">{selectedObject.type}</span>
           </div>
+
+          {selectedObject.properties?.direction && (
+            <div className="flex items-center gap-2 text-sm">
+              {getDirectionIcon(selectedObject.properties.direction)}
+              <span className="font-medium">Position:</span>
+              <span className="capitalize">
+                {selectedObject.properties.direction.replace(/_/g, ' ')}
+              </span>
+              {selectedObject.properties.hallway_position && (
+                <span className="text-muted-foreground">
+                  (Position: {Math.round(selectedObject.properties.hallway_position * 100)}%)
+                </span>
+              )}
+            </div>
+          )}
 
           <div className="flex items-center gap-2 text-sm">
             <span className="font-medium">Status:</span>

@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { FloorPlanLayer, FloorPlanNode, FloorPlanEdge, FloorPlanLayerDB, ROOM_COLORS } from "../types/floorPlanTypes";
@@ -42,6 +41,24 @@ function transformSpaceToNode(space: any, index: number): FloorPlanNode {
   // Get background color based on type and status
   const backgroundColor = getSpaceColor(space);
 
+  // Adjust position based on hallway connections
+  if (space.connections?.length > 0) {
+    const hallwayConnection = space.connections.find((conn: any) => 
+      conn.direction === 'left_of_hallway' || conn.direction === 'right_of_hallway'
+    );
+
+    if (hallwayConnection) {
+      const basePosition = spacePosition;
+      const offset = hallwayConnection.offset_distance || 50;
+      const alongHallway = (hallwayConnection.hallway_position || 0.5) * 1000;
+
+      spacePosition = {
+        x: basePosition.x + (hallwayConnection.direction === 'left_of_hallway' ? -offset : offset),
+        y: basePosition.y + alongHallway
+      };
+    }
+  }
+
   return {
     id: space.id,
     type: space.object_type,
@@ -80,21 +97,28 @@ function getSpaceColor(space: any): string {
 }
 
 function createEdgesFromConnections(connections: any[]): FloorPlanEdge[] {
-  return connections.map(conn => ({
-    id: conn.id,
-    source: conn.from_space_id,
-    target: conn.to_space_id,
-    data: {
-      type: conn.connection_type,
-      style: {
-        stroke: conn.status === 'active' ? '#64748b' : '#94a3b8',
-        strokeWidth: 2,
-        strokeDasharray: conn.status === 'active' ? '' : '5,5'
-      }
-    },
-    type: 'smoothstep',
-    animated: conn.connection_type === 'door'
-  }));
+  return connections.map(conn => {
+    const isHallwayConnection = conn.direction === 'left_of_hallway' || conn.direction === 'right_of_hallway';
+    
+    return {
+      id: conn.id,
+      source: conn.from_space_id,
+      target: conn.to_space_id,
+      data: {
+        type: conn.connection_type,
+        direction: conn.direction,
+        hallwayPosition: conn.hallway_position,
+        offsetDistance: conn.offset_distance,
+        style: {
+          stroke: conn.status === 'active' ? '#64748b' : '#94a3b8',
+          strokeWidth: isHallwayConnection ? 3 : 2,
+          strokeDasharray: conn.status === 'active' ? '' : '5,5'
+        }
+      },
+      type: isHallwayConnection ? 'straight' : 'smoothstep',
+      animated: conn.connection_type === 'door'
+    };
+  });
 }
 
 export function useFloorPlanData(floorId: string | null) {
