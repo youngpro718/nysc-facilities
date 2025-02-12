@@ -55,49 +55,43 @@ export function EditPropertiesPanel({ selectedObject, onClose, onUpdate }: EditP
 
   const onSubmit = async (data: FormValues) => {
     try {
+      console.log('Updating object with data:', data);
+      
+      const positionData = {
+        x: Number(data.positionX),
+        y: Number(data.positionY)
+      };
+
+      const sizeData = {
+        width: Number(data.width),
+        height: Number(data.height)
+      };
+
       const updateData = {
-        position: {
-          x: Number(data.positionX),
-          y: Number(data.positionY)
-        },
-        size: {
-          width: Number(data.width),
-          height: Number(data.height)
-        },
+        position: positionData,
+        size: sizeData,
         rotation: Number(data.rotation),
         label: data.label,
+        type: selectedObject.type,
         properties: {
           room_number: data.room_number,
           room_type: data.room_type,
           status: data.status
         },
-        data: {
-          label: data.label,
-          type: selectedObject.type,
-          properties: {
-            room_number: data.room_number,
-            room_type: data.room_type,
-            status: data.status
-          },
-          size: {
-            width: Number(data.width),
-            height: Number(data.height)
-          },
-          style: selectedObject.style,
-          position: {
-            x: Number(data.positionX),
-            y: Number(data.positionY)
-          },
-          rotation: Number(data.rotation)
-        }
+        style: selectedObject.style
       };
+
+      console.log('Sending update data:', updateData);
 
       const { error } = await supabase
         .from('floor_plan_objects')
         .update(updateData)
         .eq('id', selectedObject.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
       toast.success('Properties updated successfully');
       onUpdate();
@@ -128,6 +122,7 @@ export function EditPropertiesPanel({ selectedObject, onClose, onUpdate }: EditP
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -143,6 +138,7 @@ export function EditPropertiesPanel({ selectedObject, onClose, onUpdate }: EditP
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -169,6 +165,7 @@ export function EditPropertiesPanel({ selectedObject, onClose, onUpdate }: EditP
                           </SelectGroup>
                         </SelectContent>
                       </Select>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -193,6 +190,7 @@ export function EditPropertiesPanel({ selectedObject, onClose, onUpdate }: EditP
                     <FormControl>
                       <Input type="number" {...field} />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -206,6 +204,7 @@ export function EditPropertiesPanel({ selectedObject, onClose, onUpdate }: EditP
                     <FormControl>
                       <Input type="number" {...field} />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -225,6 +224,7 @@ export function EditPropertiesPanel({ selectedObject, onClose, onUpdate }: EditP
                         min={selectedObject.type === 'door' ? 40 : 100}
                       />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -242,6 +242,7 @@ export function EditPropertiesPanel({ selectedObject, onClose, onUpdate }: EditP
                         min={selectedObject.type === 'door' ? 15 : 100}
                       />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -270,6 +271,7 @@ export function EditPropertiesPanel({ selectedObject, onClose, onUpdate }: EditP
                       onValueChange={(vals) => field.onChange(vals[0])}
                     />
                   </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -297,6 +299,7 @@ export function EditPropertiesPanel({ selectedObject, onClose, onUpdate }: EditP
                       <SelectItem value="maintenance">Maintenance</SelectItem>
                     </SelectContent>
                   </Select>
+                  <FormMessage />
                 </FormItem>
               )}
             />
