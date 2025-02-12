@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -102,6 +103,14 @@ export function CreateOccupantDialog({
     }
   };
 
+  const content = (
+    <CreateOccupantForm
+      onSubmit={handleCreate}
+      isSubmitting={isSubmitting}
+      onCancel={() => onOpenChange(false)}
+    />
+  );
+
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
@@ -110,10 +119,7 @@ export function CreateOccupantDialog({
             <DrawerTitle>Add New Occupant</DrawerTitle>
           </DrawerHeader>
           <div className="px-4 pb-8">
-            <CreateOccupantForm
-              onSubmit={handleCreate}
-              isSubmitting={isSubmitting}
-            />
+            {content}
           </div>
         </DrawerContent>
       </Drawer>
@@ -126,10 +132,7 @@ export function CreateOccupantDialog({
         <DialogHeader>
           <DialogTitle>Add New Occupant</DialogTitle>
         </DialogHeader>
-        <CreateOccupantForm
-          onSubmit={handleCreate}
-          isSubmitting={isSubmitting}
-        />
+        {content}
       </DialogContent>
     </Dialog>
   );

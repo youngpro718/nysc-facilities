@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -67,12 +68,11 @@ export function EditOccupantDialog({
   } : undefined;
 
   const content = (
-    <div className="space-y-6">
-      <OccupantForm 
-        initialData={initialData} 
-        onSubmit={handleUpdate}
-      />
-    </div>
+    <OccupantForm 
+      initialData={initialData} 
+      onSubmit={handleUpdate}
+      onCancel={() => onOpenChange(false)}
+    />
   );
 
   if (isMobile) {
@@ -82,7 +82,7 @@ export function EditOccupantDialog({
           <DrawerHeader className="text-left">
             <DrawerTitle>Edit Occupant</DrawerTitle>
           </DrawerHeader>
-          <div className="px-4 pb-8 overflow-y-auto">
+          <div className="px-4 pb-8">
             {content}
           </div>
         </DrawerContent>
