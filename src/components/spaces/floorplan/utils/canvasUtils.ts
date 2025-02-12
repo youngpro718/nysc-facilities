@@ -1,4 +1,3 @@
-
 import { Canvas, Line as FabricLine, Group as FabricGroup, Text as FabricText, Rect as FabricRect } from "fabric";
 import { FloorPlanObject, ROOM_COLORS } from "../types/floorPlanTypes";
 
@@ -69,6 +68,42 @@ export function createRoomGroup(obj: FloorPlanObject) {
 
   (group as any).customData = { id: obj.id, roomData: obj.rooms };
   console.log('Created final room group at position:', obj.position_x, obj.position_y);
+
+  return group;
+}
+
+export function createDoor(x: number, y: number) {
+  const doorWidth = 40;
+  const doorHeight = 10;
+  
+  const door = new FabricRect({
+    left: x - doorWidth / 2,
+    top: y - doorHeight / 2,
+    width: doorWidth,
+    height: doorHeight,
+    fill: '#94a3b8',
+    stroke: '#475569',
+    strokeWidth: 2,
+    selectable: true,
+    hasControls: true
+  });
+
+  const text = new FabricText('Door', {
+    left: x,
+    top: y + doorHeight,
+    fontSize: 12,
+    fill: '#475569',
+    originX: 'center',
+    originY: 'top',
+    selectable: false
+  });
+
+  const group = new FabricGroup([door, text], {
+    left: x,
+    top: y,
+    selectable: true,
+    hasControls: true
+  });
 
   return group;
 }

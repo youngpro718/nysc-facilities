@@ -1,10 +1,11 @@
-
 import { useEffect, useRef, useState } from "react";
 import { Canvas, Rect } from "fabric";
 import { Card } from "@/components/ui/card";
 import { FloorPlanObject, DrawingMode } from "./types/floorPlanTypes";
-import { createGrid, createRoomGroup } from "./utils/canvasUtils";
+import { createGrid, createRoomGroup, createDoor } from "./utils/canvasUtils";
 import { useFloorPlanData } from "./hooks/useFloorPlanData";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface FloorPlanCanvasProps {
   floorId: string | null;
@@ -46,26 +47,59 @@ export function FloorPlanCanvas({ floorId, zoom = 1, drawingMode, onObjectSelect
       onObjectSelect?.(null);
     });
 
-    canvas.on('mouse:down', (e) => {
-      if (drawingMode !== 'draw' || !e.pointer) return;
-      
-      setIsDrawing(true);
-      const pointer = canvas.getPointer(e.e);
-      setStartPoint({ x: pointer.x, y: pointer.y });
+    canvas.on('mouse:down', async (e) => {
+      if (!e.pointer) return;
 
-      const rect = new Rect({
-        left: pointer.x,
-        top: pointer.y,
-        width: 0,
-        height: 0,
-        fill: 'rgba(226, 232, 240, 0.5)',
-        stroke: '#94a3b8',
-        strokeWidth: 2,
-        selectable: false
-      });
+      if (drawingMode === 'draw') {
+        setIsDrawing(true);
+        const pointer = canvas.getPointer(e.e);
+        setStartPoint({ x: pointer.x, y: pointer.y });
 
-      canvas.add(rect);
-      setActiveRect(rect);
+        const rect = new Rect({
+          left: pointer.x,
+          top: pointer.y,
+          width: 0,
+          height: 0,
+          fill: 'rgba(226, 232, 240, 0.5)',
+          stroke: '#94a3b8',
+          strokeWidth: 2,
+          selectable: false
+        });
+
+        canvas.add(rect);
+        setActiveRect(rect);
+      } else if (drawingMode === 'door' && floorId) {
+        const pointer = canvas.getPointer(e.e);
+        const door = createDoor(pointer.x, pointer.y);
+        canvas.add(door);
+        
+        try {
+          const { data, error } = await supabase
+            .from('floor_plan_objects')
+            .insert({
+              floor_id: floorId,
+              object_type: 'door',
+              connection_type: 'door',
+              position_x: Math.round(pointer.x),
+              position_y: Math.round(pointer.y),
+              width: 40,
+              height: 10,
+              properties: { name: 'New Door' }
+            })
+            .select()
+            .single();
+
+          if (error) throw error;
+          
+          (door as any).customData = data;
+          canvas.renderAll();
+          toast.success('Door placed successfully');
+        } catch (error) {
+          console.error('Error saving door:', error);
+          canvas.remove(door);
+          toast.error('Failed to place door');
+        }
+      }
     });
 
     canvas.on('mouse:move', (e) => {
@@ -119,7 +153,7 @@ export function FloorPlanCanvas({ floorId, zoom = 1, drawingMode, onObjectSelect
         setIsInitialized(false);
       }
     };
-  }, [onObjectSelect, drawingMode]);
+  }, [onObjectSelect, drawingMode, floorId]);
 
   // Update zoom
   useEffect(() => {
