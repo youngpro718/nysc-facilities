@@ -112,6 +112,8 @@ export function FloorPlanCanvas({
   useEffect(() => {
     if (!objects || initialized.current) return;
 
+    console.log('Initializing nodes with objects:', objects);
+
     const reactFlowNodes = objects.map((obj, index) => {
       const defaultPosition = {
         x: (index % 3) * 250 + 100,
@@ -122,6 +124,8 @@ export function FloorPlanCanvas({
         typeof obj.position.x === 'number' && 
         typeof obj.position.y === 'number' ? 
         obj.position : defaultPosition;
+
+      console.log(`Node ${obj.id} position:`, position);
 
       const node = {
         id: obj.id,
@@ -167,24 +171,31 @@ export function FloorPlanCanvas({
       for (const change of changes) {
         if (change.type === 'position' && change.position && change.id) {
           try {
+            console.log('Saving position for node:', change.id, change.position);
+            
             const positionData = {
               x: change.position.x,
               y: change.position.y
             };
 
-            const { error } = await supabase
+            const { data, error } = await supabase
               .from('floor_plan_objects')
               .update({ 
                 position: positionData
               })
-              .eq('id', change.id);
+              .eq('id', change.id)
+              .select();
 
             if (error) {
               console.error('Error saving position:', error);
               toast.error('Failed to save position');
+            } else {
+              console.log('Position saved successfully:', data);
+              toast.success('Position updated');
             }
           } catch (err) {
             console.error('Error in position update:', err);
+            toast.error('Failed to save position');
           }
         }
       }
