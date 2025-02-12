@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { FloorPlanLayer, FloorPlanNode, FloorPlanEdge, FloorPlanLayerDB } from "../types/floorPlanTypes";
+import { FloorPlanLayer, FloorPlanNode, FloorPlanEdge, FloorPlanLayerDB, ROOM_COLORS } from "../types/floorPlanTypes";
 
 function transformLayer(raw: FloorPlanLayerDB): FloorPlanLayer {
   const parsedData = typeof raw.data === 'string' ? JSON.parse(raw.data) : raw.data;
@@ -18,28 +18,40 @@ function transformLayer(raw: FloorPlanLayerDB): FloorPlanLayer {
 }
 
 function transformRoomToNode(room: any): FloorPlanNode {
+  console.log('Transforming room:', room); // Debug log
+  
   // Generate a position if none exists
-  const position = room.position || {
-    x: Math.random() * 500, // Random initial position for testing
-    y: Math.random() * 500
+  const defaultPosition = {
+    x: Math.random() * 800,
+    y: Math.random() * 600
   };
 
+  const roomPosition = room.position ? 
+    (typeof room.position === 'string' ? JSON.parse(room.position) : room.position) :
+    defaultPosition;
+
   // Default size if none provided
-  const size = room.size || {
+  const defaultSize = {
     width: 150,
     height: 100
   };
 
+  const roomSize = room.size ?
+    (typeof room.size === 'string' ? JSON.parse(room.size) : room.size) :
+    defaultSize;
+
+  const backgroundColor = ROOM_COLORS[room.room_type] || ROOM_COLORS.default;
+
   return {
     id: room.id,
     type: 'room',
-    position: position,
+    position: roomPosition,
     data: {
       label: room.name,
       type: 'room',
-      size: size,
+      size: roomSize,
       style: {
-        backgroundColor: '#e2e8f0',
+        backgroundColor,
         border: '1px solid #cbd5e1'
       },
       properties: {
@@ -77,6 +89,8 @@ export function useFloorPlanData(floorId: string | null) {
     queryFn: async () => {
       if (!floorId) return [];
       
+      console.log('Fetching rooms for floor:', floorId); // Debug log
+      
       const { data, error } = await supabase
         .from('rooms')
         .select(`
@@ -90,7 +104,12 @@ export function useFloorPlanData(floorId: string | null) {
         `)
         .eq('floor_id', floorId);
         
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching rooms:', error); // Debug log
+        throw error;
+      }
+      
+      console.log('Fetched rooms:', data); // Debug log
       return data || [];
     },
     enabled: !!floorId
@@ -98,6 +117,7 @@ export function useFloorPlanData(floorId: string | null) {
 
   // Transform rooms into floor plan objects
   const objects = rooms?.map(transformRoomToNode) || [];
+  console.log('Transformed objects:', objects); // Debug log
 
   return {
     layers,
