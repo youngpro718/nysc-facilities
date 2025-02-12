@@ -17,13 +17,13 @@ function transformLayer(raw: FloorPlanLayerDB): FloorPlanLayer {
   };
 }
 
-function transformRoomToNode(room: any): FloorPlanNode {
+function transformRoomToNode(room: any, index: number): FloorPlanNode {
   console.log('Transforming room:', room); // Debug log
   
-  // Generate a position if none exists
+  // Generate a grid-based position if none exists, using the index
   const defaultPosition = {
-    x: Math.random() * 800,
-    y: Math.random() * 600
+    x: (index % 3) * 200 + 50, // 3 rooms per row, 200px apart
+    y: Math.floor(index / 3) * 150 + 50 // New row every 3 rooms, 150px apart
   };
 
   const roomPosition = room.position ? 
@@ -116,7 +116,7 @@ export function useFloorPlanData(floorId: string | null) {
   });
 
   // Transform rooms into floor plan objects
-  const objects = rooms?.map(transformRoomToNode) || [];
+  const objects = rooms?.map((room, index) => transformRoomToNode(room, index)) || [];
   console.log('Transformed objects:', objects); // Debug log
 
   return {
