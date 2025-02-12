@@ -58,7 +58,7 @@ function transformRoomToNode(room: any, lightingStatus: any, index: number): Flo
 
 export function useFloorPlanData(floorId: string | null) {
   // Query for layers
-  const { data: layers, isLoading: isLoadingLayers } = useQuery({
+  const layersQuery = useQuery({
     queryKey: ['floorplan-layers', floorId],
     queryFn: async () => {
       if (!floorId) return [];
@@ -76,7 +76,7 @@ export function useFloorPlanData(floorId: string | null) {
   });
 
   // Query for lighting status
-  const { data: lightingStatus, isLoading: isLoadingLighting } = useQuery({
+  const lightingQuery = useQuery({
     queryKey: ['room-lighting-status', floorId],
     queryFn: async () => {
       if (!floorId) return [];
@@ -90,19 +90,16 @@ export function useFloorPlanData(floorId: string | null) {
         throw error;
       }
       
-      console.log('Room lighting status:', data);
       return data || [];
     },
     enabled: !!floorId
   });
 
   // Query for rooms
-  const { data: rooms, isLoading: isLoadingRooms } = useQuery({
+  const roomsQuery = useQuery({
     queryKey: ['rooms', floorId],
     queryFn: async () => {
       if (!floorId) return [];
-      
-      console.log('Fetching rooms for floor:', floorId);
       
       const { data, error } = await supabase
         .from('rooms')
@@ -122,19 +119,19 @@ export function useFloorPlanData(floorId: string | null) {
         throw error;
       }
       
-      console.log('Fetched rooms:', data);
       return data || [];
     },
     enabled: !!floorId
   });
 
   // Transform rooms into floor plan objects
-  const objects = rooms?.map((room, index) => transformRoomToNode(room, lightingStatus, index)) || [];
-  console.log('Transformed objects:', objects);
+  const objects = roomsQuery.data?.map((room, index) => 
+    transformRoomToNode(room, lightingQuery.data, index)
+  ) || [];
 
   return {
-    layers,
+    layers: layersQuery.data || [],
     objects,
-    isLoading: isLoadingLayers || isLoadingRooms || isLoadingLighting
+    isLoading: layersQuery.isLoading || roomsQuery.isLoading || lightingQuery.isLoading
   };
 }
