@@ -57,81 +57,79 @@ export function OccupantTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {occupants?.map((occupant) => (
-            <div key={occupant.id}>
-              <TableRow>
-                <TableCell>
-                  <Checkbox
-                    checked={selectedOccupants.includes(occupant.id)}
-                    onCheckedChange={() => onToggleSelect(occupant.id)}
-                  />
-                </TableCell>
-                <TableCell>
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    className="h-8 w-8 p-0"
-                    onClick={() => onToggleRow(occupant.id)}
-                  >
-                    {expandedRows.has(occupant.id) ? (
-                      <ChevronUp className="h-4 w-4" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4" />
-                    )}
-                  </Button>
-                </TableCell>
-                <TableCell className="font-medium">
-                  {occupant.first_name} {occupant.last_name}
-                </TableCell>
-                <TableCell>{occupant.department || "—"}</TableCell>
-                <TableCell>{occupant.title || "—"}</TableCell>
-                <TableCell>
-                  <Badge variant={occupant.status === 'active' ? 'default' : 'secondary'}>
-                    {occupant.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex justify-center gap-4">
-                    <div className="flex items-center gap-1">
-                      <Key className="h-4 w-4" />
-                      <span>{occupant.key_count || 0}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <DoorOpen className="h-4 w-4" />
-                      <span>{occupant.room_count || 0}</span>
-                    </div>
+          {occupants?.map((occupant) => [
+            <TableRow key={`${occupant.id}-main`}>
+              <TableCell>
+                <Checkbox
+                  checked={selectedOccupants.includes(occupant.id)}
+                  onCheckedChange={() => onToggleSelect(occupant.id)}
+                />
+              </TableCell>
+              <TableCell>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  className="h-8 w-8 p-0"
+                  onClick={() => onToggleRow(occupant.id)}
+                >
+                  {expandedRows.has(occupant.id) ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </TableCell>
+              <TableCell className="font-medium">
+                {occupant.first_name} {occupant.last_name}
+              </TableCell>
+              <TableCell>{occupant.department || "—"}</TableCell>
+              <TableCell>{occupant.title || "—"}</TableCell>
+              <TableCell>
+                <Badge variant={occupant.status === 'active' ? 'default' : 'secondary'}>
+                  {occupant.status}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <div className="flex justify-center gap-4">
+                  <div className="flex items-center gap-1">
+                    <Key className="h-4 w-4" />
+                    <span>{occupant.key_count || 0}</span>
                   </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onEdit(occupant)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onDelete(occupant.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                  <div className="flex items-center gap-1">
+                    <DoorOpen className="h-4 w-4" />
+                    <span>{occupant.room_count || 0}</span>
+                  </div>
+                </div>
+              </TableCell>
+              <TableCell className="text-right">
+                <div className="flex items-center justify-end gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onEdit(occupant)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onDelete(occupant.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>,
+            expandedRows.has(occupant.id) && (
+              <TableRow key={`${occupant.id}-details`}>
+                <TableCell colSpan={8} className="p-0">
+                  <div className="p-4">
+                    <OccupantDetails occupant={occupant} />
                   </div>
                 </TableCell>
               </TableRow>
-              {expandedRows.has(occupant.id) && (
-                <TableRow>
-                  <TableCell colSpan={8} className="p-0">
-                    <div className="p-4">
-                      <OccupantDetails occupant={occupant} />
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )}
-            </div>
-          ))}
+            )
+          ].filter(Boolean))}
           {(!occupants || occupants.length === 0) && (
             <TableRow>
               <TableCell colSpan={8} className="h-24 text-center">
