@@ -1,4 +1,3 @@
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -52,7 +51,12 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return '';
-      return date.toISOString().slice(0, 16);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
     } catch {
       return '';
     }
@@ -78,7 +82,6 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
 
   const updateIssueMutation = useMutation({
     mutationFn: async (values: FormData) => {
-      // Handle empty date string
       const formattedDueDate = values.due_date && values.due_date.trim() !== '' 
         ? new Date(values.due_date).toISOString()
         : null;
@@ -150,7 +153,7 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
                       {...field}
                       onChange={(e) => {
                         console.log('New date value:', e.target.value);
-                        field.onChange(e);
+                        field.onChange(e.target.value);
                       }}
                       value={field.value || ''}
                     />
