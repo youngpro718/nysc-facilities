@@ -86,7 +86,7 @@ function FlowComponent({
       <MiniMap />
       <Background gap={20} size={1} />
     </ReactFlow>
-  </div>;
+  );
 }
 
 export function FloorPlanCanvas({ 
