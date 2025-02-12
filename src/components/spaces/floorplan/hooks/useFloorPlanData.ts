@@ -100,9 +100,11 @@ export function useFloorPlanData(floorId: string | null) {
           room_type,
           status,
           position,
-          size
+          size,
+          floor_id
         `)
-        .eq('floor_id', floorId);
+        .eq('floor_id', floorId)
+        .eq('status', 'active');
         
       if (error) {
         console.error('Error fetching rooms:', error); // Debug log
