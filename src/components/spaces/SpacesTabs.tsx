@@ -4,6 +4,7 @@ import { Building2, DoorClosed, GitFork, LayoutPanelLeft } from "lucide-react";
 import RoomsList from "./RoomsList";
 import HallwaysList from "./HallwaysList";
 import DoorsList from "./DoorsList";
+import { FloorPlanView } from "./floorplan/FloorPlanView";
 
 export interface SpaceViewProps {
   selectedBuilding: string;
@@ -46,7 +47,7 @@ const SpacesTabs = ({ selectedBuilding, selectedFloor }: SpaceViewProps) => {
         </TabsContent>
 
         <TabsContent value="floorplan" className="mt-4">
-          <div>Floor plan view coming soon...</div>
+          <FloorPlanView />
         </TabsContent>
       </Tabs>
     </div>
