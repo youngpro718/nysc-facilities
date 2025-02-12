@@ -15,7 +15,7 @@ export interface Size {
 
 export interface FloorPlanObjectData {
   label?: string;
-  type: string;
+  type: FloorPlanObjectType;
   size: Size;
   style: Record<string, any>;
   properties: Record<string, any>;
@@ -25,7 +25,7 @@ export interface FloorPlanObjectData {
 
 export interface FloorPlanNode {
   id: string;
-  type: string;
+  type: FloorPlanObjectType;
   position: Position;
   data: FloorPlanObjectData;
   rotation?: number;
@@ -68,13 +68,19 @@ export type FloorPlanObjectType = 'room' | 'door' | 'hallway';
 
 export interface FloorPlanObject {
   id: string;
-  type: FloorPlanObjectType;
-  position: Position;
-  size: Size;
-  properties: Record<string, any>;
-  style: Record<string, any>;
-  label?: string;
   floor_id: string;
+  type: FloorPlanObjectType;
+  label?: string;
+  position: Json;
+  size: Json;
+  style: Json;
+  properties: Json;
+  rotation?: number;
+  z_index?: number;
+  data?: Json;
+  connection_data?: Json;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export const ROOM_COLORS: Record<string, string> = {

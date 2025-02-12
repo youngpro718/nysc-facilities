@@ -18,6 +18,7 @@ import { RoomNode } from './nodes/RoomNode';
 import { DoorNode } from './nodes/DoorNode';
 import { HallwayNode } from './nodes/HallwayNode';
 import { toast } from "sonner";
+import { FloorPlanNode, FloorPlanObjectType } from './types/floorPlanTypes';
 
 interface FloorPlanCanvasProps {
   floorId: string | null;
@@ -37,7 +38,7 @@ export function FloorPlanCanvas({
   onObjectSelect 
 }: FloorPlanCanvasProps) {
   const { objects, edges: graphEdges, isLoading } = useFloorPlanData(floorId);
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<FloorPlanNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const initialized = useRef(false);
   const { handleNodesChange } = useFloorPlanNodes(onNodesChange);
@@ -53,31 +54,22 @@ export function FloorPlanCanvas({
 
     console.log('Initializing nodes with objects:', objects);
 
-    const reactFlowNodes = objects.map((obj, index) => {
+    const reactFlowNodes = objects.map((obj: FloorPlanNode) => {
       const defaultPosition = {
-        x: (index % 3) * 250 + 100,
-        y: Math.floor(index / 3) * 200 + 100
+        x: Math.random() * 500,
+        y: Math.random() * 500
       };
-
-      const position = obj.position && 
-        typeof obj.position.x === 'number' && 
-        typeof obj.position.y === 'number' ? 
-        obj.position : defaultPosition;
-
-      console.log(`Node ${obj.id} position:`, position);
 
       return {
         id: obj.id,
-        type: obj.type,
-        position: position,
+        type: obj.type as FloorPlanObjectType,
+        position: obj.position || defaultPosition,
         draggable: true,
         selectable: true,
-        resizable: true,
-        rotatable: true,
         data: {
           ...obj.data,
-          label: obj.data?.label || 'Unnamed Room',
-          type: obj.data?.type || 'room',
+          label: obj.data?.label || 'Unnamed Space',
+          type: obj.data?.type || obj.type,
           size: obj.data?.size || {
             width: obj.type === 'door' ? 60 : 150,
             height: obj.type === 'door' ? 20 : 100
@@ -86,11 +78,7 @@ export function FloorPlanCanvas({
             backgroundColor: obj.type === 'door' ? '#94a3b8' : '#e2e8f0',
             border: obj.type === 'door' ? '2px solid #475569' : '1px solid #cbd5e1'
           },
-          properties: obj.data?.properties || {
-            room_number: '',
-            room_type: 'default',
-            status: 'active'
-          }
+          properties: obj.data?.properties || {}
         }
       };
     });
@@ -108,7 +96,7 @@ export function FloorPlanCanvas({
     [setEdges],
   );
 
-  const onNodeClick = useCallback((event: React.MouseEvent, node: Node<any>) => {
+  const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
     if (onObjectSelect) {
       onObjectSelect({
         ...node.data,

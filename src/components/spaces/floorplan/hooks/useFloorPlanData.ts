@@ -4,7 +4,7 @@ import { transformLayer } from "../utils/layerTransforms";
 import { transformSpaceToNode } from "../utils/nodeTransforms";
 import { createEdgesFromConnections } from "../utils/edgeTransforms";
 import { fetchFloorPlanLayers, fetchFloorPlanObjects } from "../queries/floorPlanQueries";
-import { FloorPlanLayerDB, Position, FloorPlanObject } from "../types/floorPlanTypes";
+import { FloorPlanLayerDB, Position, FloorPlanObject, FloorPlanNode } from "../types/floorPlanTypes";
 
 // Validate position data
 function isValidPosition(pos: any): pos is Position {
@@ -71,7 +71,7 @@ export function useFloorPlanData(floorId: string | null) {
   });
 
   // Transform all objects into floor plan nodes
-  const objects = spaceData?.objects.map((obj: FloorPlanObject, index) => {
+  const objects = spaceData?.objects.map((obj: FloorPlanObject, index): FloorPlanNode => {
     // Transform the object into a node first
     const node = transformSpaceToNode(obj, index);
 
@@ -97,24 +97,14 @@ export function useFloorPlanData(floorId: string | null) {
       const parentObj = objects.find(parent => parent.id === obj.data.properties.parent_room_id);
       if (parentObj) {
         // Adjust position relative to parent
-        const parentPos = parentObj.position;
         obj.position = {
-          x: parentPos.x + 50,
-          y: parentPos.y + 50
+          x: parentObj.position.x + 50,
+          y: parentObj.position.y + 50
         };
-        console.log(`Adjusted child node ${obj.id} position relative to parent ${parentObj.id}:`, obj.position);
       }
     }
     return obj;
   });
-
-  // Log final positions for debugging
-  console.log('Final node positions:', processedObjects.map(obj => ({
-    id: obj.id,
-    type: obj.type,
-    position: obj.position,
-    size: obj.data.size
-  })));
 
   return {
     layers,
