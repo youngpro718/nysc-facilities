@@ -24,6 +24,14 @@ function createDefaultPosition(index: number): Position {
   };
 }
 
+// Helper to get default style based on type
+function getDefaultStyle(type: string): Record<string, any> {
+  return {
+    backgroundColor: type === 'door' ? '#94a3b8' : '#e2e8f0',
+    border: type === 'door' ? '2px solid #475569' : '1px solid #cbd5e1'
+  };
+}
+
 export function useFloorPlanData(floorId: string | null) {
   // Query for layers
   const { data: layers, isLoading: isLoadingLayers } = useQuery({
@@ -90,6 +98,19 @@ export function useFloorPlanData(floorId: string | null) {
           };
         }
 
+        // Handle style
+        let parsedStyle: Record<string, any>;
+        try {
+          const styleData = typeof obj.style === 'string' ? JSON.parse(obj.style) : obj.style;
+          if (styleData && typeof styleData === 'object' && !Array.isArray(styleData)) {
+            parsedStyle = styleData;
+          } else {
+            parsedStyle = getDefaultStyle(obj.type);
+          }
+        } catch (e) {
+          parsedStyle = getDefaultStyle(obj.type);
+        }
+
         // Handle properties
         let parsedProperties = {};
         try {
@@ -106,10 +127,7 @@ export function useFloorPlanData(floorId: string | null) {
             label: obj.label || '',
             type: obj.type,
             size: parsedSize,
-            style: obj.style || {
-              backgroundColor: obj.type === 'door' ? '#94a3b8' : '#e2e8f0',
-              border: obj.type === 'door' ? '2px solid #475569' : '1px solid #cbd5e1'
-            },
+            style: parsedStyle,
             properties: parsedProperties,
             rotation: obj.rotation || 0
           },
