@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { FloorPlanLayer, FloorPlanNode, FloorPlanEdge, FloorPlanLayerDB, ROOM_COLORS } from "../types/floorPlanTypes";
@@ -23,7 +24,8 @@ function transformSpaceToNode(space: any, index: number): FloorPlanNode {
     y: Math.floor(index / 3) * 150 + 50 // New row every 3 spaces, 150px apart
   };
 
-  const spacePosition = space.position ? 
+  // Initialize position as a mutable variable using let
+  let spacePosition = space.position ? 
     (typeof space.position === 'string' ? JSON.parse(space.position) : space.position) :
     defaultPosition;
 
