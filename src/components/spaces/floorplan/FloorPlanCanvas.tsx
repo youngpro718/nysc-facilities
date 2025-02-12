@@ -61,16 +61,35 @@ export function FloorPlanCanvas({
   useEffect(() => {
     if (objects && objects.length > 0) {
       console.log('Setting nodes:', objects);
-      const reactFlowNodes = objects.map(obj => ({
+      
+      // Ensure each node has all required properties for ReactFlow
+      const reactFlowNodes = objects.map((obj, index) => ({
         id: obj.id,
-        type: obj.type,
-        position: obj.position,
-        data: obj.data,
-        zIndex: obj.zIndex || 0,
+        type: 'room', // Explicitly set type to 'room'
+        position: {
+          x: (index % 3) * 250, // Space rooms horizontally
+          y: Math.floor(index / 3) * 200 // Space rooms vertically
+        },
+        data: {
+          ...obj.data,
+          label: obj.data.label || 'Unnamed Room',
+          size: obj.data.size || { width: 150, height: 100 },
+          style: {
+            ...obj.data.style,
+            backgroundColor: obj.data.style?.backgroundColor || '#e2e8f0',
+            border: obj.data.style?.border || '1px solid #cbd5e1'
+          },
+          properties: obj.data.properties || {}
+        },
         draggable: true,
         selectable: true
       }));
+
+      console.log('Transformed ReactFlow nodes:', reactFlowNodes);
       setNodes(reactFlowNodes);
+    } else {
+      console.log('No objects to transform into nodes');
+      setNodes([]);
     }
   }, [objects, setNodes]);
 
