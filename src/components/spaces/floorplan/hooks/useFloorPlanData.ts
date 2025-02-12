@@ -1,12 +1,16 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { transformLayer } from "../utils/layerTransforms";
-import { transformSpaceToNode } from "../utils/nodeTransforms";
 import { createEdgesFromConnections } from "../utils/edgeTransforms";
 import { fetchFloorPlanLayers, fetchFloorPlanObjects } from "../queries/floorPlanQueries";
-import { FloorPlanLayerDB, Position, FloorPlanObject, FloorPlanNode } from "../types/floorPlanTypes";
+import { 
+  FloorPlanLayerDB, 
+  Position, 
+  FloorPlanObject, 
+  FloorPlanNode,
+  FloorPlanObjectData
+} from "../types/floorPlanTypes";
 
-// Validate position data
 function isValidPosition(pos: any): pos is Position {
   if (!pos || typeof pos !== 'object') return false;
   const x = Number(pos.x);
@@ -14,7 +18,6 @@ function isValidPosition(pos: any): pos is Position {
   return !isNaN(x) && !isNaN(y) && isFinite(x) && isFinite(y);
 }
 
-// Parse position with validation
 function parsePosition(positionData: any): Position | null {
   try {
     if (typeof positionData === 'string') {
@@ -33,10 +36,9 @@ function parsePosition(positionData: any): Position | null {
   }
 }
 
-// Calculate automatic layout position
 function calculateAutoPosition(index: number, size: { width: number; height: number }): Position {
   const PADDING = 50;
-  const MAX_WIDTH = 1200; // Maximum width for the layout
+  const MAX_WIDTH = 1200;
   const itemsPerRow = Math.floor(MAX_WIDTH / (size.width + PADDING));
   const row = Math.floor(index / itemsPerRow);
   const col = index % itemsPerRow;
@@ -47,8 +49,29 @@ function calculateAutoPosition(index: number, size: { width: number; height: num
   };
 }
 
+function transformObjectToNode(obj: FloorPlanObject, index: number): FloorPlanNode {
+  const nodeData: FloorPlanObjectData = {
+    label: obj.label || 'Unnamed Space',
+    type: obj.type,
+    size: typeof obj.size === 'string' ? JSON.parse(obj.size) : obj.size,
+    style: typeof obj.style === 'string' ? JSON.parse(obj.style) : obj.style,
+    properties: typeof obj.properties === 'string' ? JSON.parse(obj.properties) : obj.properties
+  };
+
+  const parsedPosition = parsePosition(obj.position);
+  const position = parsedPosition || calculateAutoPosition(index, nodeData.size);
+
+  return {
+    id: obj.id,
+    type: obj.type,
+    position,
+    data: nodeData,
+    draggable: true,
+    selectable: true
+  };
+}
+
 export function useFloorPlanData(floorId: string | null) {
-  // Query for layers
   const { data: layers, isLoading: isLoadingLayers } = useQuery({
     queryKey: ['floorplan-layers', floorId],
     queryFn: async () => {
@@ -59,7 +82,6 @@ export function useFloorPlanData(floorId: string | null) {
     enabled: !!floorId
   });
 
-  // Query for floor plan objects and connections
   const { data: spaceData, isLoading: isLoadingObjects } = useQuery({
     queryKey: ['floorplan-objects', floorId],
     queryFn: async () => {
@@ -70,45 +92,32 @@ export function useFloorPlanData(floorId: string | null) {
     enabled: !!floorId
   });
 
-  // Transform all objects into floor plan nodes
-  const objects = spaceData?.objects.map((obj: FloorPlanObject, index): FloorPlanNode => {
-    // Transform the object into a node first
-    const node = transformSpaceToNode(obj, index);
-
-    // Try to parse the position from the database
-    const parsedPosition = parsePosition(obj.position);
-
-    if (!parsedPosition) {
-      console.log(`Using auto-layout for node ${node.id} due to invalid position`);
-      node.position = calculateAutoPosition(index, node.data.size);
-    } else {
-      console.log(`Using stored position for node ${node.id}:`, parsedPosition);
-      node.position = parsedPosition;
-    }
-
-    return node;
-  }) || [];
+  const nodes = spaceData?.objects.map((obj, index) => 
+    transformObjectToNode(obj as FloorPlanObject, index)
+  ) || [];
 
   const edges = spaceData?.connections ? createEdgesFromConnections(spaceData.connections) : [];
   
-  // Process parent/child relationships
-  const processedObjects = objects.map(obj => {
-    if (obj.data.properties.parent_room_id) {
-      const parentObj = objects.find(parent => parent.id === obj.data.properties.parent_room_id);
-      if (parentObj) {
-        // Adjust position relative to parent
-        obj.position = {
-          x: parentObj.position.x + 50,
-          y: parentObj.position.y + 50
+  const processedNodes = nodes.map(node => {
+    const properties = node.data.properties as any;
+    if (properties?.parent_room_id) {
+      const parentNode = nodes.find(n => n.id === properties.parent_room_id);
+      if (parentNode) {
+        return {
+          ...node,
+          position: {
+            x: parentNode.position.x + 50,
+            y: parentNode.position.y + 50
+          }
         };
       }
     }
-    return obj;
+    return node;
   });
 
   return {
     layers,
-    objects: processedObjects,
+    objects: processedNodes,
     edges,
     isLoading: isLoadingLayers || isLoadingObjects
   };

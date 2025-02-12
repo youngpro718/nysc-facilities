@@ -1,5 +1,6 @@
 
 import { Json } from "@/integrations/supabase/types";
+import { Node } from "reactflow";
 
 export type LayerType = 'rooms' | 'doors' | 'grid' | 'hallways' | 'annotations';
 
@@ -19,18 +20,26 @@ export interface FloorPlanObjectData {
   size: Size;
   style: Record<string, any>;
   properties: Record<string, any>;
-  position?: Position;
-  rotation?: number;
 }
 
-export interface FloorPlanNode {
+export type FloorPlanObjectType = 'room' | 'door' | 'hallway';
+
+// Base object from database
+export interface FloorPlanObject {
   id: string;
+  floor_id: string;
   type: FloorPlanObjectType;
-  position: Position;
-  data: FloorPlanObjectData;
+  label?: string;
+  position: Json;
+  size: Json;
+  style: Json;
+  properties: Json;
   rotation?: number;
-  zIndex?: number;
+  z_index?: number;
 }
+
+// Node type for React Flow
+export type FloorPlanNode = Node<FloorPlanObjectData>;
 
 export interface FloorPlanEdge {
   id: string;
@@ -62,25 +71,6 @@ export interface FloorPlanLayer {
   order_index: number;
   visible: boolean;
   data: Record<string, any>;
-}
-
-export type FloorPlanObjectType = 'room' | 'door' | 'hallway';
-
-export interface FloorPlanObject {
-  id: string;
-  floor_id: string;
-  type: FloorPlanObjectType;
-  label?: string;
-  position: Json;
-  size: Json;
-  style: Json;
-  properties: Json;
-  rotation?: number;
-  z_index?: number;
-  data?: Json;
-  connection_data?: Json;
-  created_at?: string;
-  updated_at?: string;
 }
 
 export const ROOM_COLORS: Record<string, string> = {
