@@ -13,11 +13,18 @@ export function RoomNode({ data }: NodeProps<FloorPlanObjectData>) {
 
   return (
     <>
-      <Handle type="target" position={Position.Top} />
+      <Handle type="target" position={Position.Left} />
       <div style={style}>
-        {data.label}
+        <div className="text-sm font-medium">
+          {data.label}
+          {data.properties.room_number && (
+            <div className="text-xs text-gray-600">
+              Room {data.properties.room_number}
+            </div>
+          )}
+        </div>
       </div>
-      <Handle type="source" position={Position.Bottom} />
+      <Handle type="source" position={Position.Right} />
     </>
   );
 }
