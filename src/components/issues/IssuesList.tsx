@@ -170,7 +170,9 @@ export const IssuesList = () => {
         `)
         .order('created_at', { ascending: false });
       
-      return transformIssueData(await query);
+      const { data, error } = await query;
+      if (error) throw error;
+      return (data || []).map(transformIssue);
     }
   });
 
@@ -431,4 +433,3 @@ export const IssuesList = () => {
     </>
   );
 };
-
