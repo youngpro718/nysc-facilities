@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -35,6 +36,8 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
     defaultValues: {
       priority: 'medium',
       description: '',
+      due_date: '',
+      date_info: ''
     }
   });
 
@@ -52,7 +55,9 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
           floor_id: data.floor_id,
           room_id: data.room_id,
           photos: selectedPhotos,
-          seen: false
+          seen: false,
+          due_date: data.due_date || null,
+          date_info: data.date_info || null
         });
       
       if (error) throw error;
@@ -146,11 +151,16 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
           <FormField
             control={form.control}
             name="due_date"
-            render={({ field }) => (
+            render={({ field: { value, onChange, ...field } }) => (
               <FormItem>
                 <FormLabel>Due Date</FormLabel>
                 <FormControl>
-                  <Input type="datetime-local" {...field} />
+                  <Input 
+                    type="datetime-local" 
+                    {...field}
+                    value={value || ''}
+                    onChange={onChange}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
