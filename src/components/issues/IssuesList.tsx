@@ -57,11 +57,7 @@ type DatabaseIssue = {
     type: string;
     status: string;
     position: string;
-    electrical_issues: {
-      short_circuit: boolean;
-      wiring_issues: boolean;
-      voltage_problems: boolean;
-    } | null;
+    electrical_issues: any; // Handle JSON type from Supabase
   } | null;
 };
 
@@ -115,17 +111,36 @@ async function fetchIssues() {
   return (data || []) as DatabaseIssue[];
 }
 
+function parseElectricalIssues(data: any): { 
+  short_circuit: boolean; 
+  wiring_issues: boolean; 
+  voltage_problems: boolean; 
+} {
+  if (!data) {
+    return {
+      short_circuit: false,
+      wiring_issues: false,
+      voltage_problems: false
+    };
+  }
+
+  // Parse JSON if it's a string
+  const issues = typeof data === 'string' ? JSON.parse(data) : data;
+
+  return {
+    short_circuit: Boolean(issues.short_circuit),
+    wiring_issues: Boolean(issues.wiring_issues),
+    voltage_problems: Boolean(issues.voltage_problems)
+  };
+}
+
 function transformIssue(dbIssue: DatabaseIssue): Issue {
   const lightingFixture = dbIssue.lighting_fixtures ? {
     name: dbIssue.lighting_fixtures.name,
     type: dbIssue.lighting_fixtures.type as FixtureType,
     status: dbIssue.lighting_fixtures.status as FixtureStatus,
     position: dbIssue.lighting_fixtures.position as FixturePosition,
-    electrical_issues: dbIssue.lighting_fixtures.electrical_issues || {
-      short_circuit: false,
-      wiring_issues: false,
-      voltage_problems: false
-    }
+    electrical_issues: parseElectricalIssues(dbIssue.lighting_fixtures.electrical_issues)
   } : undefined;
 
   return {
@@ -181,7 +196,7 @@ export const IssuesList = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return (data || []).map((item: DatabaseIssue) => transformIssue(item));
+      return (data || []).map((item) => transformIssue(item as DatabaseIssue));
     }
   });
 
