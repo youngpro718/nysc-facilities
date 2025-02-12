@@ -17,7 +17,13 @@ import {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Card } from "@/components/ui/card";
-import { DrawingMode, FloorPlanNode, FloorPlanEdge } from "./types/floorPlanTypes";
+import { 
+  DrawingMode, 
+  FloorPlanNode, 
+  FloorPlanEdge,
+  Position,
+  Size 
+} from "./types/floorPlanTypes";
 import { useFloorPlanData } from "./hooks/useFloorPlanData";
 import { useDrawingState } from "./hooks/useDrawingState";
 import { RoomNode } from './nodes/RoomNode';
