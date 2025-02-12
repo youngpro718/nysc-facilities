@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { Loader2, MoreVertical, AlertTriangle } from "lucide-react";
+import { Loader2, MoreVertical } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -25,18 +25,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { 
-  Issue, 
-  IssueStatus, 
-  IssuePriority, 
-  FixtureType, 
-  FixtureStatus,
-  FixturePosition
-} from "./types/IssueTypes";
+import { Issue } from "./types/IssueTypes";
 import { ResolutionForm } from "./forms/ResolutionForm";
 import { useState } from "react";
 import { IssueDetails } from "./details/IssueDetails";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { IssueCard } from "./card/IssueCard";
+import { getTypeColor, getStatusColor, getPriorityColor } from "./utils/issueStyles";
 
 // Define base types for database response
 type DatabaseIssue = {
@@ -112,38 +107,7 @@ async function fetchIssues() {
   return (data || []) as DatabaseIssue[];
 }
 
-function parseElectricalIssues(data: any): { 
-  short_circuit: boolean; 
-  wiring_issues: boolean; 
-  voltage_problems: boolean; 
-} {
-  if (!data) {
-    return {
-      short_circuit: false,
-      wiring_issues: false,
-      voltage_problems: false
-    };
-  }
-
-  // Parse JSON if it's a string
-  const issues = typeof data === 'string' ? JSON.parse(data) : data;
-
-  return {
-    short_circuit: Boolean(issues.short_circuit),
-    wiring_issues: Boolean(issues.wiring_issues),
-    voltage_problems: Boolean(issues.voltage_problems)
-  };
-}
-
 function transformIssue(dbIssue: DatabaseIssue): Issue {
-  const lightingFixture = dbIssue.lighting_fixtures ? {
-    name: dbIssue.lighting_fixtures.name,
-    type: dbIssue.lighting_fixtures.type as FixtureType,
-    status: dbIssue.lighting_fixtures.status as FixtureStatus,
-    position: dbIssue.lighting_fixtures.position as FixturePosition,
-    electrical_issues: parseElectricalIssues(dbIssue.lighting_fixtures.electrical_issues)
-  } : undefined;
-
   return {
     id: dbIssue.id,
     title: dbIssue.title,
@@ -158,7 +122,7 @@ function transformIssue(dbIssue: DatabaseIssue): Issue {
     buildings: dbIssue.buildings,
     floors: dbIssue.floors,
     rooms: dbIssue.rooms,
-    lighting_fixtures: lightingFixture ? [lightingFixture] : []
+    lighting_fixtures: dbIssue.lighting_fixtures ? [dbIssue.lighting_fixtures] : []
   };
 }
 
@@ -167,6 +131,7 @@ export const IssuesList = () => {
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
   const [showResolutionForm, setShowResolutionForm] = useState(false);
   const isMobile = useIsMobile();
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
   const { data: issues, isLoading } = useQuery({
     queryKey: ['issues'],
@@ -269,285 +234,132 @@ export const IssuesList = () => {
     );
   }
 
-  const getPriorityColor = (priority: IssuePriority) => {
-    switch (priority) {
-      case 'high':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'low':
-        return 'bg-green-100 text-green-800 border-green-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
+  const renderCardView = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {issues?.map((issue) => (
+        <div key={issue.id} onClick={() => setSelectedIssueId(issue.id)}>
+          <IssueCard 
+            issue={issue}
+            onMarkAsSeen={() => {}}
+          />
+        </div>
+      ))}
+    </div>
+  );
 
-  const getStatusColor = (status: IssueStatus) => {
-    switch (status) {
-      case 'open':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'in_progress':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'resolved':
-        return 'bg-green-100 text-green-800 border-green-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  const getTypeInfo = (type: string) => {
-    switch (type) {
-      case 'LIGHTING':
-        return {
-          color: 'bg-purple-100 text-purple-800 border-purple-200',
-          icon: <AlertTriangle className="h-3 w-3 mr-1" />
-        };
-      default:
-        return {
-          color: 'bg-gray-100 text-gray-800 border-gray-200',
-          icon: null
-        };
-    }
-  };
+  const renderTableView = () => (
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Title</TableHead>
+            <TableHead>Description</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Priority</TableHead>
+            <TableHead>Location</TableHead>
+            <TableHead>Created</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {issues?.map((issue) => (
+            <TableRow 
+              key={issue.id}
+              className="cursor-pointer hover:bg-muted/50"
+              onClick={() => setSelectedIssueId(issue.id)}
+            >
+              <TableCell>{issue.title}</TableCell>
+              <TableCell>{issue.description}</TableCell>
+              <TableCell>
+                <Badge className={getTypeColor(issue.type)} variant="secondary">
+                  {issue.type}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <Badge className={getStatusColor(issue.status)} variant="secondary">
+                  {issue.status.replace('_', ' ')}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <Badge className={getPriorityColor(issue.priority)} variant="secondary">
+                  {issue.priority}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                {[
+                  issue.buildings?.name,
+                  issue.floors?.name,
+                  issue.rooms?.name
+                ].filter(Boolean).join(' > ')}
+              </TableCell>
+              <TableCell>
+                {format(new Date(issue.created_at), 'MMM d, yyyy')}
+              </TableCell>
+              <TableCell className="text-right">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {issue.status !== 'in_progress' && (
+                      <DropdownMenuItem
+                        onClick={() => handleStatusChange(issue.id, 'in_progress')}
+                      >
+                        Mark In Progress
+                      </DropdownMenuItem>
+                    )}
+                    {issue.status !== 'resolved' && (
+                      <DropdownMenuItem
+                        onClick={() => handleStatusChange(issue.id, 'resolved')}
+                      >
+                        Resolve Issue
+                      </DropdownMenuItem>
+                    )}
+                    {issue.status !== 'open' && (
+                      <DropdownMenuItem
+                        onClick={() => handleStatusChange(issue.id, 'open')}
+                      >
+                        Reopen Issue
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem
+                      onClick={() => handleDelete(issue.id)}
+                      className="text-red-600"
+                    >
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
 
   return (
     <>
-      {isMobile ? (
-        <div className="space-y-4">
-          {issues?.map((issue) => {
-            const typeInfo = getTypeInfo(issue.type);
-            const lightingDetails = issue.lighting_fixtures?.[0];
-            
-            return (
-              <div 
-                key={issue.id}
-                className="p-4 rounded-lg border bg-card hover:bg-muted/50 cursor-pointer"
-                onClick={() => setSelectedIssueId(issue.id)}
-              >
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-medium">{issue.title}</h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2">{issue.description}</p>
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        {issue.status !== 'in_progress' && (
-                          <DropdownMenuItem
-                            onClick={() => handleStatusChange(issue.id, 'in_progress')}
-                          >
-                            Mark In Progress
-                          </DropdownMenuItem>
-                        )}
-                        {issue.status !== 'resolved' && (
-                          <DropdownMenuItem
-                            onClick={() => handleStatusChange(issue.id, 'resolved')}
-                          >
-                            Resolve Issue
-                          </DropdownMenuItem>
-                        )}
-                        {issue.status !== 'open' && (
-                          <DropdownMenuItem
-                            onClick={() => handleStatusChange(issue.id, 'open')}
-                          >
-                            Reopen Issue
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem
-                          onClick={() => handleDelete(issue.id)}
-                          className="text-red-600"
-                        >
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+      <div className="flex justify-end mb-4">
+        <Button
+          variant={viewMode === 'cards' ? 'default' : 'outline'}
+          onClick={() => setViewMode('cards')}
+          className="mr-2"
+        >
+          Cards
+        </Button>
+        <Button
+          variant={viewMode === 'table' ? 'default' : 'outline'}
+          onClick={() => setViewMode('table')}
+        >
+          Table
+        </Button>
+      </div>
 
-                  <div className="flex flex-wrap gap-2">
-                    <Badge className={`flex items-center ${typeInfo.color}`} variant="secondary">
-                      {typeInfo.icon}
-                      {issue.type}
-                    </Badge>
-                    <Badge className={getStatusColor(issue.status)} variant="secondary">
-                      {issue.status.replace('_', ' ')}
-                    </Badge>
-                    <Badge className={getPriorityColor(issue.priority)} variant="secondary">
-                      {issue.priority}
-                    </Badge>
-                  </div>
-
-                  <div className="text-sm">
-                    {issue.type === 'LIGHTING' && lightingDetails ? (
-                      <div className="space-y-1">
-                        <div className="text-muted-foreground">
-                          {[
-                            issue.buildings?.name,
-                            issue.floors?.name,
-                            lightingDetails.name
-                          ].filter(Boolean).join(' > ')}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs">
-                            {lightingDetails.type} - {lightingDetails.position}
-                          </span>
-                          {lightingDetails.electrical_issues && 
-                           Object.keys(lightingDetails.electrical_issues).some(key => lightingDetails.electrical_issues[key]) && (
-                            <Badge variant="destructive" className="text-xs">
-                              Electrical Issues
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground">
-                        {[
-                          issue.buildings?.name,
-                          issue.floors?.name,
-                          issue.rooms?.name
-                        ].filter(Boolean).join(' > ')}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="text-xs text-muted-foreground">
-                    {format(new Date(issue.created_at), 'MMM d, yyyy')}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Priority</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {issues?.map((issue) => {
-                const typeInfo = getTypeInfo(issue.type);
-                const lightingDetails = issue.lighting_fixtures?.[0];
-                
-                return (
-                  <TableRow 
-                    key={issue.id}
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => setSelectedIssueId(issue.id)}
-                  >
-                    <TableCell>{issue.title}</TableCell>
-                    <TableCell>{issue.description}</TableCell>
-                    <TableCell>
-                      <Badge className={`flex items-center ${typeInfo.color}`} variant="secondary">
-                        {typeInfo.icon}
-                        {issue.type}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(issue.status)} variant="secondary">
-                        {issue.status.replace('_', ' ')}
-                        {issue.resolution_type && (
-                          <span className="ml-2 text-xs">
-                            ({issue.resolution_type.replace('_', ' ')})
-                          </span>
-                        )}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getPriorityColor(issue.priority)} variant="secondary">
-                        {issue.priority}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {issue.type === 'LIGHTING' && lightingDetails ? (
-                        <div className="flex flex-col">
-                          <span>
-                            {[
-                              issue.buildings?.name,
-                              issue.floors?.name,
-                              lightingDetails.name
-                            ].filter(Boolean).join(' > ')}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {lightingDetails.type} - {lightingDetails.position}
-                            {lightingDetails.electrical_issues && Object.keys(lightingDetails.electrical_issues).some(key => lightingDetails.electrical_issues[key]) && (
-                              <Badge variant="destructive" className="ml-2">
-                                Electrical Issues
-                              </Badge>
-                            )}
-                          </span>
-                        </div>
-                      ) : (
-                        <span>
-                          {[
-                            issue.buildings?.name,
-                            issue.floors?.name,
-                            issue.rooms?.name
-                          ].filter(Boolean).join(' > ')}
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(issue.created_at), 'MMM d, yyyy')}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {issue.status !== 'in_progress' && (
-                            <DropdownMenuItem
-                              onClick={() => handleStatusChange(issue.id, 'in_progress')}
-                            >
-                              Mark In Progress
-                            </DropdownMenuItem>
-                          )}
-                          {issue.status !== 'resolved' && (
-                            <DropdownMenuItem
-                              onClick={() => handleStatusChange(issue.id, 'resolved')}
-                            >
-                              Resolve Issue
-                            </DropdownMenuItem>
-                          )}
-                          {issue.status !== 'open' && (
-                            <DropdownMenuItem
-                              onClick={() => handleStatusChange(issue.id, 'open')}
-                            >
-                              Reopen Issue
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem
-                            onClick={() => handleDelete(issue.id)}
-                            className="text-red-600"
-                          >
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+      {viewMode === 'cards' ? renderCardView() : renderTableView()}
 
       <IssueDetails 
         issueId={selectedIssueId} 
