@@ -24,20 +24,6 @@ export interface FloorPlanObjectData {
 
 export type FloorPlanObjectType = 'room' | 'door' | 'hallway';
 
-// Base object from database
-export interface FloorPlanObject {
-  id: string;
-  floor_id: string;
-  type: FloorPlanObjectType;
-  label?: string;
-  position: Json;
-  size: Json;
-  style: Json;
-  properties: Json;
-  rotation?: number;
-  z_index?: number;
-}
-
 // Node type for React Flow
 export type FloorPlanNode = Node<FloorPlanObjectData>;
 
@@ -50,6 +36,43 @@ export interface FloorPlanEdge {
     style?: Record<string, any>;
   };
 }
+
+// Database types
+export interface RoomObject {
+  id: string;
+  name: string;
+  room_number: string;
+  type: string;
+  status: string;
+  floor_id: string;
+  position?: Json;
+  size?: Json;
+  object_type: 'room';
+}
+
+export interface DoorObject {
+  id: string;
+  name: string;
+  type: string;
+  status: string;
+  floor_id: string;
+  position?: Json;
+  size?: Json;
+  object_type: 'door';
+}
+
+export interface HallwayObject {
+  id: string;
+  name: string;
+  type: string;
+  status: string;
+  floor_id: string;
+  position?: Json;
+  size?: Json;
+  object_type: 'hallway';
+}
+
+export type FloorPlanObject = RoomObject | DoorObject | HallwayObject;
 
 export interface FloorPlanLayerDB {
   id: string;

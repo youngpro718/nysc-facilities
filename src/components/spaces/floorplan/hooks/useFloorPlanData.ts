@@ -6,9 +6,11 @@ import { fetchFloorPlanLayers, fetchFloorPlanObjects } from "../queries/floorPla
 import { 
   FloorPlanLayerDB, 
   Position, 
-  FloorPlanObject, 
+  FloorPlanObject,
   FloorPlanNode,
-  FloorPlanObjectData
+  FloorPlanObjectData,
+  FloorPlanObjectType,
+  Size
 } from "../types/floorPlanTypes";
 
 function isValidPosition(pos: any): pos is Position {
@@ -36,7 +38,7 @@ function parsePosition(positionData: any): Position | null {
   }
 }
 
-function calculateAutoPosition(index: number, size: { width: number; height: number }): Position {
+function calculateAutoPosition(index: number, size: Size): Position {
   const PADDING = 50;
   const MAX_WIDTH = 1200;
   const itemsPerRow = Math.floor(MAX_WIDTH / (size.width + PADDING));
@@ -49,21 +51,43 @@ function calculateAutoPosition(index: number, size: { width: number; height: num
   };
 }
 
+function getDefaultSize(type: FloorPlanObjectType): Size {
+  switch (type) {
+    case 'door':
+      return { width: 60, height: 20 };
+    case 'hallway':
+      return { width: 200, height: 50 };
+    case 'room':
+    default:
+      return { width: 150, height: 100 };
+  }
+}
+
 function transformObjectToNode(obj: FloorPlanObject, index: number): FloorPlanNode {
+  const type = obj.object_type as FloorPlanObjectType;
+  const defaultSize = getDefaultSize(type);
+
   const nodeData: FloorPlanObjectData = {
-    label: obj.label || 'Unnamed Space',
-    type: obj.type,
-    size: typeof obj.size === 'string' ? JSON.parse(obj.size) : obj.size,
-    style: typeof obj.style === 'string' ? JSON.parse(obj.style) : obj.style,
-    properties: typeof obj.properties === 'string' ? JSON.parse(obj.properties) : obj.properties
+    label: obj.name,
+    type: type,
+    size: defaultSize,
+    style: {
+      backgroundColor: type === 'door' ? '#94a3b8' : '#e2e8f0',
+      border: type === 'door' ? '2px solid #475569' : '1px solid #cbd5e1'
+    },
+    properties: {
+      type: obj.type,
+      status: obj.status,
+      room_number: 'room_number' in obj ? obj.room_number : undefined
+    }
   };
 
-  const parsedPosition = parsePosition(obj.position);
+  const parsedPosition = obj.position ? parsePosition(obj.position) : null;
   const position = parsedPosition || calculateAutoPosition(index, nodeData.size);
 
   return {
     id: obj.id,
-    type: obj.type,
+    type: type,
     position,
     data: nodeData,
     draggable: true,
@@ -99,7 +123,7 @@ export function useFloorPlanData(floorId: string | null) {
   const edges = spaceData?.connections ? createEdgesFromConnections(spaceData.connections) : [];
   
   const processedNodes = nodes.map(node => {
-    const properties = node.data.properties as any;
+    const properties = node.data.properties;
     if (properties?.parent_room_id) {
       const parentNode = nodes.find(n => n.id === properties.parent_room_id);
       if (parentNode) {
