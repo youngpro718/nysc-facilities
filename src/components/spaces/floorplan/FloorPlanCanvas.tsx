@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { 
   ReactFlow,
@@ -166,10 +167,15 @@ export function FloorPlanCanvas({
       for (const change of changes) {
         if (change.type === 'position' && change.position && change.id) {
           try {
+            const positionData = {
+              x: change.position.x,
+              y: change.position.y
+            };
+
             const { error } = await supabase
               .from('floor_plan_objects')
               .update({ 
-                position: change.position
+                position: positionData
               })
               .eq('id', change.id);
 
