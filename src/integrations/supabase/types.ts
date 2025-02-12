@@ -509,7 +509,9 @@ export type Database = {
       }
       floor_plan_objects: {
         Row: {
+          connection_data: Json | null
           created_at: string | null
+          data: Json | null
           floor_id: string
           id: string
           label: string | null
@@ -523,7 +525,9 @@ export type Database = {
           z_index: number | null
         }
         Insert: {
+          connection_data?: Json | null
           created_at?: string | null
+          data?: Json | null
           floor_id: string
           id?: string
           label?: string | null
@@ -537,7 +541,9 @@ export type Database = {
           z_index?: number | null
         }
         Update: {
+          connection_data?: Json | null
           created_at?: string | null
+          data?: Json | null
           floor_id?: string
           id?: string
           label?: string | null
