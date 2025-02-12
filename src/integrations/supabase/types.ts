@@ -4635,6 +4635,12 @@ export type Database = {
       }
     }
     Functions: {
+      add_admin_user: {
+        Args: {
+          email_to_promote: string
+        }
+        Returns: undefined
+      }
       approve_user: {
         Args: {
           user_id: string
