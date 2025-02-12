@@ -3,10 +3,11 @@ import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
 import { IssueStatusBadge } from "../../card/IssueStatusBadge";
+import { IssueStatus } from "../../types/IssueTypes";
 
 interface IssueDetailsHeaderProps {
   title: string;
-  status: string;
+  status: IssueStatus;
   onEdit: () => void;
 }
 
