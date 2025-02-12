@@ -1,6 +1,13 @@
 
 import { useCallback, useEffect, useRef } from 'react';
-import { useNodesState, useEdgesState, Connection, Edge, Node } from 'reactflow';
+import { 
+  useNodesState, 
+  useEdgesState, 
+  Connection, 
+  Edge, 
+  Node,
+  addEdge
+} from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Card } from "@/components/ui/card";
 import { ReactFlowProvider } from 'reactflow';
