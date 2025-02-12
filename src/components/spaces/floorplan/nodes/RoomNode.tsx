@@ -1,5 +1,5 @@
 
-import { Handle, Position, NodeProps } from 'reactflow';
+import { Handle, Position, NodeProps, NodeResizer } from 'reactflow';
 import { FloorPlanObjectData } from '../types/floorPlanTypes';
 
 export function RoomNode({ data }: NodeProps<FloorPlanObjectData>) {
@@ -16,6 +16,13 @@ export function RoomNode({ data }: NodeProps<FloorPlanObjectData>) {
 
   return (
     <>
+      <NodeResizer 
+        minWidth={100}
+        minHeight={100}
+        isVisible={true}
+        lineClassName="border-blue-400"
+        handleClassName="h-3 w-3 bg-white border-2 rounded border-blue-400"
+      />
       <Handle type="target" position={Position.Left} />
       <div style={style}>
         <div className="text-sm font-medium text-gray-800">

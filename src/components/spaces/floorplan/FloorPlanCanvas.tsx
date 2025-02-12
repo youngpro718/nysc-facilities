@@ -13,7 +13,9 @@ import {
   addEdge,
   Panel,
   ReactFlowProvider,
-  Node
+  Node,
+  NodeResizer,
+  NodeResizeControl
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Card } from "@/components/ui/card";
@@ -74,6 +76,8 @@ function FlowComponent({
         duration: 800,
         includeHiddenNodes: true
       }}
+      snapGrid={[20, 20]}
+      snapToGrid
     >
       <Panel position="top-left">
         <div style={panelStyle} className="text-gray-700">
@@ -122,7 +126,10 @@ export function FloorPlanCanvas({
         id: obj.id,
         type: obj.type,
         position: position,
-        draggable: true, // Enable dragging
+        draggable: true,
+        selectable: true,
+        resizable: true,
+        rotatable: true,
         data: {
           ...obj.data,
           label: obj.data?.label || 'Unnamed Room',
