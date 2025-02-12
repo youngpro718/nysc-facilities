@@ -25,13 +25,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { Issue } from "./types/IssueTypes";
+import { Issue, IssueStatus, IssuePriority } from "./types/IssueTypes";
 import { ResolutionForm } from "./forms/ResolutionForm";
 import { useState } from "react";
 import { IssueDetails } from "./details/IssueDetails";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { IssueCard } from "./card/IssueCard";
 import { getTypeColor, getStatusColor, getPriorityColor } from "./utils/issueStyles";
+import { FixtureType, FixtureStatus, LightingFixture } from "@/components/lighting/types";
 
 // Define base types for database response
 type DatabaseIssue = {
@@ -76,45 +77,31 @@ function isValidIssuePriority(value: string | null): value is IssuePriority {
   return value === 'high' || value === 'medium' || value === 'low';
 }
 
-async function fetchIssues() {
-  const { data, error } = await supabase
-    .from('issues')
-    .select(`
-      id,
-      title,
-      description,
-      type,
-      status,
-      priority,
-      created_at,
-      updated_at,
-      photos,
-      seen,
-      buildings(name),
-      floors(name),
-      rooms(name),
-      lighting_fixtures(
-        name,
-        type,
-        status,
-        position,
-        electrical_issues
-      )
-    `)
-    .order('created_at', { ascending: false });
+function transformFixture(fixtureData: DatabaseIssue['lighting_fixtures']): LightingFixture | null {
+  if (!fixtureData) return null;
 
-  if (error) throw error;
-  return (data || []) as DatabaseIssue[];
+  const type = isValidFixtureType(fixtureData.type) ? fixtureData.type : 'standard';
+  const status = isValidFixtureStatus(fixtureData.status) ? fixtureData.status : 'functional';
+
+  return {
+    name: fixtureData.name,
+    type,
+    status,
+    position: fixtureData.position as LightingFixture['position'],
+    electrical_issues: fixtureData.electrical_issues
+  };
 }
 
 function transformIssue(dbIssue: DatabaseIssue): Issue {
+  const fixture = dbIssue.lighting_fixtures ? transformFixture(dbIssue.lighting_fixtures) : null;
+  
   return {
     id: dbIssue.id,
     title: dbIssue.title,
     description: dbIssue.description,
     type: dbIssue.type,
-    status: dbIssue.status as IssueStatus,
-    priority: dbIssue.priority as IssuePriority,
+    status: isValidIssueStatus(dbIssue.status) ? dbIssue.status : 'open',
+    priority: isValidIssuePriority(dbIssue.priority) ? dbIssue.priority : 'medium',
     created_at: dbIssue.created_at,
     updated_at: dbIssue.updated_at,
     photos: dbIssue.photos || [],
@@ -122,7 +109,7 @@ function transformIssue(dbIssue: DatabaseIssue): Issue {
     buildings: dbIssue.buildings,
     floors: dbIssue.floors,
     rooms: dbIssue.rooms,
-    lighting_fixtures: dbIssue.lighting_fixtures ? [dbIssue.lighting_fixtures] : []
+    lighting_fixtures: fixture ? [fixture] : []
   };
 }
 
