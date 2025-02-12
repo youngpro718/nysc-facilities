@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from "react";
 import { Canvas, Rect } from "fabric";
 import { Card } from "@/components/ui/card";
@@ -74,17 +75,23 @@ export function FloorPlanCanvas({ floorId, zoom = 1, drawingMode, onObjectSelect
         canvas.add(door);
         
         try {
+          // Generate a UUID for the door object
+          const doorId = crypto.randomUUID();
+          
           const { data, error } = await supabase
             .from('floor_plan_objects')
             .insert({
               floor_id: floorId,
+              object_id: doorId,
               object_type: 'door',
               connection_type: 'door',
               position_x: Math.round(pointer.x),
               position_y: Math.round(pointer.y),
               width: 40,
               height: 10,
-              properties: { name: 'New Door' }
+              properties: { name: 'New Door' },
+              metadata: {},
+              connected_to: []
             })
             .select()
             .single();
