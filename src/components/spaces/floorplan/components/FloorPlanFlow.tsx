@@ -86,7 +86,7 @@ export function FloorPlanFlow({
         snapToGrid={snapToGrid}
         snapGrid={snapGrid}
       >
-        <Background gap={15} color="#333" variant="dots" />
+        <Background gap={15} color="#333" variant="lines" />
         <Controls className="bg-gray-800 border-gray-700" />
         <MiniMap className="bg-gray-800" />
         <Panel position="top-right" style={panelStyle}>
