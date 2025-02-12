@@ -1,5 +1,5 @@
 
-import { IssuePriority, IssueType } from "../constants/issueTypes";
+import { IssuePriority, IssueType, ResolutionType } from "../constants/issueTypes";
 
 export interface FormData {
   title: string;
@@ -10,4 +10,6 @@ export interface FormData {
   room_id?: string;
   issue_type: IssueType;
   problem_type?: string;
+  resolution_type?: ResolutionType;
+  resolution_notes?: string;
 }

@@ -4,6 +4,7 @@ export type IssuePriority = 'low' | 'medium' | 'high';
 export type FixtureType = 'standard' | 'emergency' | 'motion_sensor';
 export type FixtureStatus = 'functional' | 'maintenance_needed' | 'non_functional' | 'pending_maintenance' | 'scheduled_replacement';
 export type FixturePosition = 'ceiling' | 'wall' | 'floor' | 'desk' | 'recessed';
+export type ResolutionType = 'fixed' | 'replaced' | 'maintenance_performed' | 'no_action_needed' | 'deferred' | 'other';
 
 export interface ElectricalIssues {
   short_circuit?: boolean;
@@ -18,6 +19,17 @@ export interface LightingFixture {
   status: FixtureStatus;
   position: FixturePosition;
   electrical_issues?: ElectricalIssues;
+}
+
+export interface IssueHistory {
+  id: string;
+  action_type: string;
+  action_details: Record<string, any>;
+  performed_by: string;
+  performed_at: string;
+  previous_status?: IssueStatus;
+  new_status?: IssueStatus;
+  notes?: string;
 }
 
 export interface Issue {
@@ -50,7 +62,12 @@ export interface Issue {
     name: string;
   };
   lighting_fixtures?: LightingFixture[];
+  resolution_type?: ResolutionType;
+  resolution_notes?: string;
+  resolved_by?: string;
+  resolution_date?: string;
 }
 
 // Adding IssueType as an alias for compatibility
 export type IssueType = Issue;
+
