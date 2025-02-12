@@ -28,21 +28,23 @@ export function OccupantContent({
 }: OccupantContentProps) {
   if (view === "list") {
     return (
-      <OccupantTable
-        occupants={occupants}
-        expandedRows={expandedRows}
-        selectedOccupants={selectedOccupants}
-        onToggleRow={onToggleRow}
-        onToggleSelect={onToggleSelect}
-        onSelectAll={onSelectAll}
-        onEdit={onEdit}
-        onDelete={onDelete}
-      />
+      <div className="w-full overflow-hidden">
+        <OccupantTable
+          occupants={occupants}
+          expandedRows={expandedRows}
+          selectedOccupants={selectedOccupants}
+          onToggleRow={onToggleRow}
+          onToggleSelect={onToggleSelect}
+          onSelectAll={onSelectAll}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
+      </div>
     );
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {occupants.map((occupant) => (
         <OccupantCard
           key={occupant.id}
