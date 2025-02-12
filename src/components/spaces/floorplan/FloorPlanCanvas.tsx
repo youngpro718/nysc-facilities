@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useRef, useMemo } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { 
   useNodesState, 
   useEdgesState, 
   Connection, 
-  Edge,
+  Edge, 
   Node,
-  addEdge,
+  addEdge
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Card } from "@/components/ui/card";
@@ -17,12 +17,11 @@ import { RoomNode } from './nodes/RoomNode';
 import { DoorNode } from './nodes/DoorNode';
 import { HallwayNode } from './nodes/HallwayNode';
 import { toast } from "sonner";
-import { FloorPlanNode, FloorPlanObjectData, FloorPlanObjectType } from './types/floorPlanTypes';
 
 interface FloorPlanCanvasProps {
   floorId: string | null;
   zoom?: number;
-  onObjectSelect?: (object: FloorPlanObjectData & { id: string }) => void;
+  onObjectSelect?: (object: any | null) => void;
 }
 
 const nodeTypes = {
@@ -37,10 +36,10 @@ export function FloorPlanCanvas({
   onObjectSelect 
 }: FloorPlanCanvasProps) {
   const { objects, edges: graphEdges, isLoading } = useFloorPlanData(floorId);
-  const [nodes, setNodes, onNodesChange] = useNodesState<FloorPlanObjectData>([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const initialized = useRef(false);
-  const { handleNodesChange } = useFloorPlanNodes(onNodesChange);
+  const { handleNodesChange, registerNodeTypes } = useFloorPlanNodes(onNodesChange);
 
   useEffect(() => {
     if (floorId) {
@@ -76,26 +75,22 @@ export function FloorPlanCanvas({
           height: obj.type === 'door' ? 20 : 100
         };
 
-      const node: FloorPlanNode = {
+      const node = {
         id: obj.id,
         type: obj.type,
-        position: position || { x: 0, y: 0 },
+        position: position || { x: 0, y: 0 }, // Fallback position will be adjusted by layout
         draggable: true,
         selectable: true,
+        resizable: true,
+        rotatable: true,
         data: {
           ...obj.data,
           label: obj.data?.label || 'Unnamed Room',
-          type: obj.type as FloorPlanObjectType,
+          type: obj.data?.type || 'room',
           size: size,
-          isParent: obj.has_children || false,
-          style: {
-            ...obj.data?.style,
-            backgroundColor: obj.type === 'door' ? '#94a3b8' : 
-              obj.has_children ? '#f1f5f9' : '#e2e8f0',
-            border: obj.type === 'door' ? '2px solid #475569' : 
-              obj.has_children ? '2px solid #64748b' : '1px solid #cbd5e1',
-            padding: obj.has_children ? '20px' : '0',
-            zIndex: obj.has_children ? 0 : 1
+          style: obj.data?.style || {
+            backgroundColor: obj.type === 'door' ? '#94a3b8' : '#e2e8f0',
+            border: obj.type === 'door' ? '2px solid #475569' : '1px solid #cbd5e1'
           },
           properties: obj.data?.properties || {
             room_number: '',
@@ -136,6 +131,9 @@ export function FloorPlanCanvas({
       });
     }
 
+    // Register node types for position updates
+    registerNodeTypes(reactFlowNodes);
+
     console.log('Final node positions:', reactFlowNodes.map(n => ({ 
       id: n.id, 
       position: n.position,
@@ -146,7 +144,7 @@ export function FloorPlanCanvas({
     setNodes(reactFlowNodes);
     setEdges(graphEdges || []);
     initialized.current = true;
-  }, [objects, graphEdges, setNodes, setEdges]);
+  }, [objects, graphEdges, setNodes, setEdges, registerNodeTypes]);
 
   const onConnect = useCallback(
     (params: Connection | Edge) => {
@@ -156,26 +154,18 @@ export function FloorPlanCanvas({
     [setEdges],
   );
 
-  const onNodeClick = useCallback((event: React.MouseEvent, node: Node<FloorPlanObjectData>) => {
+  const onNodeClick = useCallback((event: React.MouseEvent, node: Node<any>) => {
     if (onObjectSelect) {
       onObjectSelect({
         ...node.data,
         id: node.id,
+        type: node.type,
+        position: node.position,
+        size: node.data?.size,
+        rotation: node.data?.rotation || 0
       });
     }
   }, [onObjectSelect]);
-
-  const handleNodesChangeWrapper = useCallback(
-    (changes: any[]) => {
-      onNodesChange(changes);
-      handleNodesChange(changes);
-    },
-    [onNodesChange, handleNodesChange]
-  );
-
-  const handleNodeDragStop = useCallback((event: any, node: Node<any>, nodes: Node<any>[]) => {
-    console.log('Node dragged:', node.id, node.position);
-  }, []);
 
   if (!floorId) {
     return (
@@ -199,18 +189,16 @@ export function FloorPlanCanvas({
 
   return (
     <Card className="p-4">
-      <div className="h-[600px] w-full bg-gray-50">
+      <div style={{ width: '100%', height: '600px', position: 'relative' }}>
         <ReactFlowProvider>
           <FloorPlanFlow
             nodes={nodes}
             edges={edges}
-            onNodesChange={handleNodesChangeWrapper}
+            onNodesChange={handleNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             onNodeClick={onNodeClick}
-            onNodeDragStop={handleNodeDragStop}
             nodeTypes={nodeTypes}
-            defaultZoom={zoom}
           />
         </ReactFlowProvider>
       </div>

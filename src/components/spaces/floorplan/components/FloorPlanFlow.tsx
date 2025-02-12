@@ -1,48 +1,14 @@
-import { useCallback } from 'react';
-import ReactFlow, {
-  Background,
-  Controls,
-  Connection,
-  Edge,
-  NodeChange,
-  EdgeChange,
-  Node,
-  NodeTypes,
-  EdgeTypes,
-  NodeDragHandler,
-  OnNodesChange,
-  OnEdgesChange,
-  OnConnect,
-  MiniMap,
-  Panel,
-  Viewport
-} from 'reactflow';
-import 'reactflow/dist/style.css';
+import { ReactFlow, Background, Controls, MiniMap, Panel, Node } from 'reactflow';
 import { panelStyle } from '../styles/flowStyles';
-import { RoomNode } from './nodes/RoomNode';
-import { HallwayNode } from './nodes/HallwayNode';
-
-const nodeTypes: NodeTypes = {
-  room: RoomNode,
-  hallway: HallwayNode
-};
 
 interface FloorPlanFlowProps {
   nodes: Node[];
-  edges: Edge[];
-  onNodesChange: OnNodesChange;
-  onEdgesChange: OnEdgesChange;
-  onConnect: OnConnect;
-  onNodeDragStop: NodeDragHandler;
+  edges: any[];
+  onNodesChange: any;
+  onEdgesChange: any;
+  onConnect: any;
   onNodeClick: any;
-  nodeTypes?: NodeTypes;
-  defaultZoom?: number;
-  defaultViewport?: Viewport;
-  panOnDrag?: boolean;
-  zoomOnScroll?: boolean;
-  zoomOnPinch?: boolean;
-  snapToGrid?: boolean;
-  snapGrid?: [number, number];
+  nodeTypes: any;
 }
 
 export function FloorPlanFlow({
@@ -51,50 +17,70 @@ export function FloorPlanFlow({
   onNodesChange,
   onEdgesChange,
   onConnect,
-  onNodeDragStop,
   onNodeClick,
-  nodeTypes: customNodeTypes = nodeTypes,
-  defaultZoom = 1,
-  defaultViewport,
-  panOnDrag = true,
-  zoomOnScroll = true,
-  zoomOnPinch = true,
-  snapToGrid = true,
-  snapGrid = [15, 15]
+  nodeTypes,
 }: FloorPlanFlowProps) {
-  const initialViewport = defaultViewport || { x: 0, y: 0, zoom: defaultZoom };
+  const defaultViewport = { x: 0, y: 0, zoom: 1 };
 
   return (
-    <div style={{ width: '100%', height: '100%', background: '#1a1a1a' }}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onNodeDragStop={onNodeDragStop}
-        onNodeClick={onNodeClick}
-        nodeTypes={customNodeTypes}
-        defaultViewport={initialViewport}
-        fitView
-        minZoom={0.1}
-        maxZoom={4}
-        attributionPosition="bottom-left"
-        panOnDrag={panOnDrag}
-        zoomOnScroll={zoomOnScroll}
-        zoomOnPinch={zoomOnPinch}
-        snapToGrid={snapToGrid}
-        snapGrid={snapGrid}
-      >
-        <Background gap={15} color="#333" variant="lines" />
-        <Controls className="bg-gray-800 border-gray-700" />
-        <MiniMap className="bg-gray-800" />
-        <Panel position="top-right" style={panelStyle}>
-          <div className="text-sm text-gray-400">
-            Zoom: {Math.round(defaultZoom * 100)}%
-          </div>
-        </Panel>
-      </ReactFlow>
-    </div>
+    <ReactFlow
+      nodes={nodes}
+      edges={edges}
+      onNodesChange={onNodesChange}
+      onEdgesChange={onEdgesChange}
+      onConnect={onConnect}
+      onNodeClick={onNodeClick}
+      nodeTypes={nodeTypes}
+      defaultViewport={defaultViewport}
+      minZoom={0.1}
+      maxZoom={4}
+      fitView
+      fitViewOptions={{ 
+        padding: 0.3,
+        duration: 800,
+        includeHiddenNodes: false,
+        minZoom: 0.1,
+        maxZoom: 2
+      }}
+      snapGrid={[10, 10]}
+      snapToGrid
+      selectNodesOnDrag={false}
+      panOnDrag={[1, 2]}
+      zoomOnScroll={true}
+      zoomOnPinch={true}
+      preventScrolling={true}
+      nodesDraggable={true}
+      nodesConnectable={true}
+      elementsSelectable={true}
+      onNodeDragStop={(event, node) => {
+        // This ensures the final position is saved after dragging stops
+        onNodesChange([{
+          id: node.id,
+          type: 'position',
+          position: node.position
+        }]);
+      }}
+    >
+      <Panel position="top-left">
+        <div style={panelStyle} className="text-gray-700">
+          Rooms: {nodes.length}
+        </div>
+      </Panel>
+      <Controls showInteractive={true} />
+      <MiniMap 
+        nodeColor={(node) => {
+          switch (node.type) {
+            case 'door':
+              return '#94a3b8';
+            case 'hallway':
+              return '#cbd5e1';
+            default:
+              return '#e2e8f0';
+          }
+        }}
+        maskColor="#ffffff50"
+      />
+      <Background gap={20} size={1} />
+    </ReactFlow>
   );
 }

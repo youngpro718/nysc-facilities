@@ -1,5 +1,5 @@
+
 import { Json } from "@/integrations/supabase/types";
-import { Node } from "reactflow";
 
 export type LayerType = 'rooms' | 'doors' | 'grid' | 'hallways' | 'annotations';
 
@@ -15,19 +15,22 @@ export interface Size {
 
 export interface FloorPlanObjectData {
   label?: string;
-  type: FloorPlanObjectType;
+  type: string;
   size: Size;
   style: Record<string, any>;
   properties: Record<string, any>;
   position?: Position;
   rotation?: number;
-  isParent?: boolean;
 }
 
-export type FloorPlanObjectType = 'room' | 'door' | 'hallway';
-
-// Node type for React Flow
-export type FloorPlanNode = Node<FloorPlanObjectData>;
+export interface FloorPlanNode {
+  id: string;
+  type: string;
+  position: Position;
+  data: FloorPlanObjectData;
+  rotation?: number;
+  zIndex?: number;
+}
 
 export interface FloorPlanEdge {
   id: string;
@@ -38,43 +41,6 @@ export interface FloorPlanEdge {
     style?: Record<string, any>;
   };
 }
-
-// Database types
-export interface RoomObject {
-  id: string;
-  name: string;
-  room_number: string;
-  type: string;
-  status: string;
-  floor_id: string;
-  position?: Json;
-  size?: Json;
-  object_type: 'room';
-}
-
-export interface DoorObject {
-  id: string;
-  name: string;
-  type: string;
-  status: string;
-  floor_id: string;
-  position?: Json;
-  size?: Json;
-  object_type: 'door';
-}
-
-export interface HallwayObject {
-  id: string;
-  name: string;
-  type: string;
-  status: string;
-  floor_id: string;
-  position?: Json;
-  size?: Json;
-  object_type: 'hallway';
-}
-
-export type FloorPlanObject = RoomObject | DoorObject | HallwayObject;
 
 export interface FloorPlanLayerDB {
   id: string;
