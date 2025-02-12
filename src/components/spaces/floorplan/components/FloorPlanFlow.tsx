@@ -1,15 +1,40 @@
-
-import { ReactFlow, Background, Controls, MiniMap, Panel, Node } from 'reactflow';
+import { useCallback } from 'react';
+import ReactFlow, {
+  Background,
+  Controls,
+  Connection,
+  Edge,
+  NodeChange,
+  EdgeChange,
+  Node,
+  NodeTypes,
+  EdgeTypes,
+  NodeDragHandler,
+  OnNodesChange,
+  OnEdgesChange,
+  OnConnect,
+  MiniMap,
+  Panel
+} from 'reactflow';
+import 'reactflow/dist/style.css';
 import { panelStyle } from '../styles/flowStyles';
+import { RoomNode } from './nodes/RoomNode';
+import { HallwayNode } from './nodes/HallwayNode';
+
+const nodeTypes: NodeTypes = {
+  room: RoomNode,
+  hallway: HallwayNode
+};
 
 interface FloorPlanFlowProps {
   nodes: Node[];
-  edges: any[];
-  onNodesChange: any;
-  onEdgesChange: any;
-  onConnect: any;
+  edges: Edge[];
+  onNodesChange: OnNodesChange;
+  onEdgesChange: OnEdgesChange;
+  onConnect: OnConnect;
+  onNodeDragStop: NodeDragHandler;
   onNodeClick: any;
-  nodeTypes: any;
+  nodeTypes?: NodeTypes;
 }
 
 export function FloorPlanFlow({
@@ -18,10 +43,11 @@ export function FloorPlanFlow({
   onNodesChange,
   onEdgesChange,
   onConnect,
+  onNodeDragStop,
   onNodeClick,
-  nodeTypes,
+  nodeTypes: customNodeTypes = nodeTypes
 }: FloorPlanFlowProps) {
-  const defaultViewport = { x: 50, y: 50, zoom: 0.8 };
+  const defaultViewport = { x: 0, y: 0, zoom: 1 };
 
   return (
     <ReactFlow
@@ -30,27 +56,50 @@ export function FloorPlanFlow({
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
+      onNodeDragStop={onNodeDragStop}
       onNodeClick={onNodeClick}
-      nodeTypes={nodeTypes}
+      nodeTypes={customNodeTypes}
       defaultViewport={defaultViewport}
       minZoom={0.1}
       maxZoom={4}
       fitView
       fitViewOptions={{ 
-        padding: 0.2,
+        padding: 0.3,
         duration: 800,
-        includeHiddenNodes: true
+        includeHiddenNodes: false,
+        minZoom: 0.1,
+        maxZoom: 2
       }}
-      snapGrid={[20, 20]}
+      snapGrid={[10, 10]}
       snapToGrid
+      selectNodesOnDrag={false}
+      panOnDrag={[1, 2]}
+      zoomOnScroll={true}
+      zoomOnPinch={true}
+      preventScrolling={true}
+      nodesDraggable={true}
+      nodesConnectable={true}
+      elementsSelectable={true}
     >
       <Panel position="top-left">
         <div style={panelStyle} className="text-gray-700">
           Rooms: {nodes.length}
         </div>
       </Panel>
-      <Controls />
-      <MiniMap />
+      <Controls showInteractive={true} />
+      <MiniMap 
+        nodeColor={(node) => {
+          switch (node.type) {
+            case 'door':
+              return '#94a3b8';
+            case 'hallway':
+              return '#cbd5e1';
+            default:
+              return '#e2e8f0';
+          }
+        }}
+        maskColor="#ffffff50"
+      />
       <Background gap={20} size={1} />
     </ReactFlow>
   );

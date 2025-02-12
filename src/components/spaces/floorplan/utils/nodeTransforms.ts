@@ -1,82 +1,68 @@
+import { FloorPlanNode, FloorPlanObjectData, Position, Size } from "../types/floorPlanTypes";
+import { Json } from "@/integrations/supabase/types";
 
-import { FloorPlanNode, ROOM_COLORS } from "../types/floorPlanTypes";
+const ROOM_COLORS = {
+  office: '#e2e8f0',
+  courtroom: '#dbeafe',
+  storage: '#f1f5f9',
+  default: '#f8fafc'
+} as const;
 
-export function getSpaceColor(space: any): string {
-  if (space.object_type === 'room') {
-    const baseColor = ROOM_COLORS[space.type] || ROOM_COLORS.default;
-    return space.status === 'active' ? baseColor : `${baseColor}80`;
-  } else if (space.object_type === 'hallway') {
-    return space.status === 'active' ? '#e5e7eb' : '#e5e7eb80';
-  } else {
-    return space.status === 'active' ? '#94a3b8' : '#94a3b880';
+function parseJsonField<T>(field: Json | null | undefined, defaultValue: T): T {
+  if (!field) return defaultValue;
+  try {
+    return typeof field === 'string' ? JSON.parse(field) : field as T;
+  } catch (error) {
+    console.warn('Error parsing JSON field:', error);
+    return defaultValue;
   }
 }
 
+export function getSpaceColor(type: string, status: string = 'active'): string {
+  const baseColor = ROOM_COLORS[type as keyof typeof ROOM_COLORS] || ROOM_COLORS.default;
+  return status === 'active' ? baseColor : `${baseColor}80`;
+}
+
 export function transformSpaceToNode(space: any, index: number): FloorPlanNode {
-  const defaultPosition = {
-    x: (index % 3) * 200 + 50,
-    y: Math.floor(index / 3) * 150 + 50
+  // Calculate default position with more spacing
+  const defaultPosition: Position = {
+    x: (index % 3) * 300 + 100,
+    y: Math.floor(index / 3) * 200 + 100
   };
 
-  let spacePosition = space.position ? 
-    (typeof space.position === 'string' ? JSON.parse(space.position) : space.position) :
-    defaultPosition;
+  // Calculate default size based on type
+  const defaultSize: Size = space.object_type === 'hallway' 
+    ? { width: 300, height: 50 }
+    : { width: 150, height: 100 };
 
-  // Ensure position has valid x and y coordinates
-  if (!spacePosition || typeof spacePosition.x !== 'number' || typeof spacePosition.y !== 'number') {
-    spacePosition = defaultPosition;
-  }
+  // Parse position and size
+  const position = parseJsonField<Position>(space.position, defaultPosition);
+  const size = parseJsonField<Size>(space.size, defaultSize);
+  const rotation = parseJsonField<number>(space.rotation, 0);
 
-  const defaultSize = space.object_type === 'hallway' ? 
-    { width: 300, height: 50 } :
-    space.object_type === 'door' ?
-    { width: 40, height: 10 } :
-    { width: 150, height: 100 };
-
-  const spaceSize = space.size ?
-    (typeof space.size === 'string' ? JSON.parse(space.size) : space.size) :
-    defaultSize;
-
-  const backgroundColor = getSpaceColor(space);
-
-  if (space.connections?.length > 0) {
-    const hallwayConnection = space.connections.find((conn: any) => 
-      conn.direction === 'left_of_hallway' || conn.direction === 'right_of_hallway'
-    );
-
-    if (hallwayConnection) {
-      const basePosition = spacePosition;
-      const offset = hallwayConnection.offset_distance || 50;
-      const alongHallway = (hallwayConnection.hallway_position || 0.5) * 1000;
-
-      spacePosition = {
-        x: basePosition.x + (hallwayConnection.direction === 'left_of_hallway' ? -offset : offset),
-        y: basePosition.y + alongHallway
-      };
-    }
-  }
+  // Create node data
+  const data: FloorPlanObjectData = {
+    label: space.name || space.current_function || 'Untitled',
+    type: space.object_type || 'room',
+    size,
+    style: {
+      backgroundColor: getSpaceColor(space.type || 'default', space.status),
+      opacity: space.status === 'active' ? 1 : 0.5
+    },
+    properties: {
+      room_number: space.room_number,
+      room_type: space.current_function,
+      status: space.status
+    },
+    rotation
+  };
 
   return {
     id: space.id,
-    type: space.object_type,
-    position: spacePosition,
-    data: {
-      label: space.name,
-      type: space.object_type,
-      size: spaceSize,
-      style: {
-        backgroundColor,
-        border: space.status === 'active' ? '1px solid #cbd5e1' : '2px dashed #ef4444',
-        opacity: space.status === 'active' ? 1 : 0.7
-      },
-      properties: {
-        room_number: space.room_number,
-        space_type: space.type,
-        status: space.status,
-        parent_room_id: space.parent_room_id,
-        connection_data: space.connection_data
-      }
-    },
-    zIndex: space.object_type === 'door' ? 2 : space.object_type === 'hallway' ? 1 : 0
+    type: space.object_type || 'room',
+    position,
+    data,
+    rotation,
+    zIndex: space.object_type === 'hallway' ? 0 : 1
   };
 }

@@ -1,5 +1,4 @@
-
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useMemo } from 'react';
 import { 
   useNodesState, 
   useEdgesState, 
@@ -53,38 +52,53 @@ export function FloorPlanCanvas({
 
     console.log('Initializing nodes with objects:', objects);
 
-    const reactFlowNodes = objects.map((obj, index) => {
-      const defaultPosition = {
-        x: (index % 3) * 250 + 100,
-        y: Math.floor(index / 3) * 200 + 100
-      };
-
+    const reactFlowNodes = objects.map((obj) => {
+      // Ensure we have valid position and size
       const position = obj.position && 
         typeof obj.position.x === 'number' && 
-        typeof obj.position.y === 'number' ? 
-        obj.position : defaultPosition;
+        typeof obj.position.y === 'number' &&
+        !isNaN(obj.position.x) && 
+        !isNaN(obj.position.y) ? 
+        obj.position : null;
 
-      console.log(`Node ${obj.id} position:`, position);
+      if (!position) {
+        console.warn(`Invalid or missing position for node ${obj.id}:`, obj.position);
+      }
 
-      return {
+      const size = obj.data?.size && 
+        typeof obj.data.size.width === 'number' && 
+        typeof obj.data.size.height === 'number' &&
+        !isNaN(obj.data.size.width) && 
+        !isNaN(obj.data.size.height) ? 
+        obj.data.size : {
+          width: obj.type === 'door' ? 60 : 150,
+          height: obj.type === 'door' ? 20 : 100
+        };
+
+      const node = {
         id: obj.id,
         type: obj.type,
-        position: position,
+        position: position || { x: 0, y: 0 },
         draggable: true,
         selectable: true,
         resizable: true,
         rotatable: true,
+        parentNode: obj.parent_room_id || undefined,
+        extent: obj.has_children ? undefined : 'parent' as const,
         data: {
           ...obj.data,
           label: obj.data?.label || 'Unnamed Room',
           type: obj.data?.type || 'room',
-          size: obj.data?.size || {
-            width: obj.type === 'door' ? 60 : 150,
-            height: obj.type === 'door' ? 20 : 100
-          },
-          style: obj.data?.style || {
-            backgroundColor: obj.type === 'door' ? '#94a3b8' : '#e2e8f0',
-            border: obj.type === 'door' ? '2px solid #475569' : '1px solid #cbd5e1'
+          size: size,
+          isParent: obj.has_children || false,
+          style: {
+            ...obj.data?.style,
+            backgroundColor: obj.type === 'door' ? '#94a3b8' : 
+              obj.has_children ? '#f1f5f9' : '#e2e8f0',
+            border: obj.type === 'door' ? '2px solid #475569' : 
+              obj.has_children ? '2px solid #64748b' : '1px solid #cbd5e1',
+            padding: obj.has_children ? '20px' : '0',
+            zIndex: obj.has_children ? 0 : 1
           },
           properties: obj.data?.properties || {
             room_number: '',
@@ -93,8 +107,45 @@ export function FloorPlanCanvas({
           }
         }
       };
+
+      console.log(`Created node ${obj.id}:`, {
+        position: node.position,
+        size: node.data.size,
+        type: node.type
+      });
+
+      return node;
     });
 
+    // Apply automatic layout for nodes without valid positions
+    const nodesWithoutPosition = reactFlowNodes.filter(
+      node => !node.position || (node.position.x === 0 && node.position.y === 0)
+    );
+
+    if (nodesWithoutPosition.length > 0) {
+      console.log(`Applying automatic layout for ${nodesWithoutPosition.length} nodes`);
+      
+      nodesWithoutPosition.forEach((node, index) => {
+        const padding = 50;
+        const maxRoomsPerRow = 4;
+        const size = node.data.size;
+        
+        node.position = {
+          x: (index % maxRoomsPerRow) * (size.width + padding) + 100,
+          y: Math.floor(index / maxRoomsPerRow) * (size.height + padding) + 100
+        };
+
+        console.log(`Auto-positioned node ${node.id}:`, node.position);
+      });
+    }
+
+    console.log('Final node positions:', reactFlowNodes.map(n => ({ 
+      id: n.id, 
+      position: n.position,
+      size: n.data.size,
+      type: n.type
+    })));
+    
     setNodes(reactFlowNodes);
     setEdges(graphEdges || []);
     initialized.current = true;
@@ -120,6 +171,18 @@ export function FloorPlanCanvas({
       });
     }
   }, [onObjectSelect]);
+
+  const handleNodesChangeWrapper = useCallback(
+    (changes: any[]) => {
+      onNodesChange(changes);
+      handleNodesChange(changes);
+    },
+    [onNodesChange, handleNodesChange]
+  );
+
+  const handleNodeDragStop = useCallback((event: any, node: Node<any>, nodes: Node<any>[]) => {
+    console.log('Node dragged:', node.id, node.position);
+  }, []);
 
   if (!floorId) {
     return (
@@ -148,10 +211,11 @@ export function FloorPlanCanvas({
           <FloorPlanFlow
             nodes={nodes}
             edges={edges}
-            onNodesChange={handleNodesChange}
+            onNodesChange={handleNodesChangeWrapper}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             onNodeClick={onNodeClick}
+            onNodeDragStop={handleNodeDragStop}
             nodeTypes={nodeTypes}
           />
         </ReactFlowProvider>
