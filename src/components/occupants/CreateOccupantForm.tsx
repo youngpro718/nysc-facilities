@@ -1,7 +1,9 @@
+
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { BasicInfoFields } from "./form-sections/BasicInfoFields";
 import { ContactFields } from "./form-sections/ContactFields";
 import { WorkInfoFields } from "./form-sections/WorkInfoFields";
@@ -13,12 +15,14 @@ import { occupantSchema, type OccupantFormData } from "./schemas/occupantSchema"
 interface CreateOccupantFormProps {
   initialData?: Partial<OccupantFormData>;
   onSubmit: (data: OccupantFormData) => Promise<void>;
+  onCancel: () => void;
   isSubmitting?: boolean;
 }
 
 export function CreateOccupantForm({
   initialData,
   onSubmit,
+  onCancel,
   isSubmitting = false,
 }: CreateOccupantFormProps) {
   const form = useForm<OccupantFormData>({
@@ -42,14 +46,21 @@ export function CreateOccupantForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <BasicInfoFields form={form} />
-        <ContactFields form={form} />
-        <WorkInfoFields form={form} />
-        <StatusAccessFields form={form} />
-        <RoomAssignmentField form={form} />
-        <KeyAssignmentField form={form} />
+        <ScrollArea className="h-[calc(100vh-12rem)] pr-4">
+          <div className="space-y-6">
+            <BasicInfoFields form={form} />
+            <ContactFields form={form} />
+            <WorkInfoFields form={form} />
+            <StatusAccessFields form={form} />
+            <RoomAssignmentField form={form} />
+            <KeyAssignmentField form={form} />
+          </div>
+        </ScrollArea>
 
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-end gap-2 pt-4">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? "Saving..." : initialData ? "Save Changes" : "Create Occupant"}
           </Button>

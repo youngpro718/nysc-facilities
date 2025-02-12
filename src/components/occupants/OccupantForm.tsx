@@ -1,7 +1,9 @@
+
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { occupantSchema, type OccupantFormData } from "./schemas/occupantSchema";
 import { PersonalInfoFields } from "./form-sections/PersonalInfoFields";
 import { WorkInfoFields } from "./form-sections/WorkInfoFields";
@@ -10,9 +12,10 @@ import { AssignmentFields } from "./form-sections/AssignmentFields";
 interface OccupantFormProps {
   initialData?: Partial<OccupantFormData>;
   onSubmit: (data: OccupantFormData) => void;
+  onCancel: () => void;
 }
 
-export function OccupantForm({ initialData, onSubmit }: OccupantFormProps) {
+export function OccupantForm({ initialData, onSubmit, onCancel }: OccupantFormProps) {
   const form = useForm<OccupantFormData>({
     resolver: zodResolver(occupantSchema),
     defaultValues: {
@@ -34,13 +37,18 @@ export function OccupantForm({ initialData, onSubmit }: OccupantFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="space-y-6">
-          <PersonalInfoFields form={form} />
-          <WorkInfoFields form={form} />
-          <AssignmentFields form={form} />
-        </div>
+        <ScrollArea className="h-[calc(100vh-12rem)] pr-4">
+          <div className="space-y-6">
+            <PersonalInfoFields form={form} />
+            <WorkInfoFields form={form} />
+            <AssignmentFields form={form} />
+          </div>
+        </ScrollArea>
 
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-end gap-2 pt-4">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
           <Button type="submit">Save Changes</Button>
         </div>
       </form>
