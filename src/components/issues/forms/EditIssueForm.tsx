@@ -24,7 +24,7 @@ import { ResolutionFields } from "../form-sections/ResolutionFields";
 import { FormData } from "../types/formTypes";
 import { usePhotoUpload } from "../hooks/usePhotoUpload";
 import { IssuePhotoForm } from "../wizard/IssuePhotoForm";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 
 const editIssueSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -47,14 +47,14 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
   const queryClient = useQueryClient();
   const { uploading, selectedPhotos, handlePhotoUpload, setSelectedPhotos } = usePhotoUpload();
 
-  // Format the initial due date properly
+  // Updated date formatting logic using date-fns
   const formatInitialDate = (dateString: string | null) => {
     if (!dateString) return '';
     try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return '';
-      return format(date, "yyyy-MM-dd'T'HH:mm");
-    } catch {
+      // Parse the ISO string and format it for datetime-local input
+      return format(parseISO(dateString), "yyyy-MM-dd'T'HH:mm");
+    } catch (error) {
+      console.error('Date parsing error:', error);
       return '';
     }
   };
@@ -79,9 +79,17 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
 
   const updateIssueMutation = useMutation({
     mutationFn: async (values: FormData) => {
-      const formattedDueDate = values.due_date && values.due_date.trim() !== '' 
-        ? new Date(values.due_date).toISOString()
-        : null;
+      let formattedDueDate = null;
+      
+      if (values.due_date && values.due_date.trim() !== '') {
+        try {
+          // Ensure we create a valid ISO string
+          formattedDueDate = new Date(values.due_date).toISOString();
+        } catch (error) {
+          console.error('Date formatting error:', error);
+          throw new Error('Invalid date format');
+        }
+      }
 
       console.log('Submitting with due date:', formattedDueDate);
 
