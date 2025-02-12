@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { 
   ReactFlow,
@@ -23,6 +22,7 @@ import { useDrawingState } from "./hooks/useDrawingState";
 import { RoomNode } from './nodes/RoomNode';
 import { DoorNode } from './nodes/DoorNode';
 import { toast } from "sonner";
+import { DrawingPreview } from './components/DrawingPreview';
 
 interface FloorPlanCanvasProps {
   floorId: string | null;
@@ -91,6 +91,7 @@ function FlowComponent({
           )}
         </div>
       </Panel>
+      <DrawingPreview drawingState={drawingState} />
       <Controls />
       <MiniMap />
       <Background gap={20} size={1} />
