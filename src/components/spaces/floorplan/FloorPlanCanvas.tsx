@@ -61,38 +61,30 @@ export function FloorPlanCanvas({
   useEffect(() => {
     if (!objects) return;
 
-    console.log('Setting nodes:', objects);
-    
-    const reactFlowNodes = objects.map((obj, index) => {
-      const node = {
-        id: obj.id || `node-${index}`,
-        type: 'room',
-        position: {
-          x: (index % 3) * 250,
-          y: Math.floor(index / 3) * 200
+    const reactFlowNodes = objects.map((obj) => ({
+      id: obj.id,
+      type: obj.type,
+      position: obj.position || { x: 0, y: 0 },
+      data: {
+        ...obj.data,
+        label: obj.data?.label || 'Unnamed Room',
+        type: obj.data?.type || 'room',
+        size: obj.data?.size || {
+          width: 150,
+          height: 100
         },
-        data: {
-          label: obj.data?.label || 'Unnamed Room',
-          type: 'room',
-          size: {
-            width: 150,
-            height: 100
-          },
-          style: {
-            backgroundColor: '#e2e8f0',
-            border: '1px solid #cbd5e1'
-          },
-          properties: {
-            room_number: obj.data?.properties?.room_number || '',
-            room_type: obj.data?.properties?.room_type || 'default',
-            status: obj.data?.properties?.status || 'active'
-          }
+        style: obj.data?.style || {
+          backgroundColor: '#e2e8f0',
+          border: '1px solid #cbd5e1'
+        },
+        properties: obj.data?.properties || {
+          room_number: '',
+          room_type: 'default',
+          status: 'active'
         }
-      };
-      return node;
-    });
+      }
+    }));
 
-    console.log('Transformed ReactFlow nodes:', reactFlowNodes);
     setNodes(reactFlowNodes);
   }, [objects, setNodes]);
 
