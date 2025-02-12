@@ -62,8 +62,11 @@ const hallwaySchema = baseSpaceSchema.extend({
 const doorSchema = baseSpaceSchema.extend({
   type: z.literal("door"),
   doorType: z.enum(["standard", "emergency", "secure", "maintenance"]),
-  securityLevel: z.enum(["standard", "high", "restricted"]).default("standard"),
+  securityLevel: z.enum(["standard", "restricted", "high_security"]).default("standard"),
   passkeyEnabled: z.boolean().default(false),
+  is_hallway_connection: z.boolean().default(false),
+  connected_hallway_id: z.string().uuid("Invalid hallway ID").nullable().optional(),
+  problematic_room_id: z.string().uuid("Invalid room ID").nullable().optional(),
 });
 
 export const createSpaceSchema = z.discriminatedUnion("type", [
