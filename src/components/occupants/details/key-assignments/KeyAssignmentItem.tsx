@@ -2,7 +2,7 @@
 import { format } from 'date-fns';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import type { KeyAssignment } from "../KeyAssignmentSection";
 
 interface KeyAssignmentItemProps {
