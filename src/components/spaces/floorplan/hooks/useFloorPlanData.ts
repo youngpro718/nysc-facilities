@@ -24,7 +24,7 @@ function transformSpaceToNode(space: any, index: number): FloorPlanNode {
     y: Math.floor(index / 3) * 150 + 50 // New row every 3 spaces, 150px apart
   };
 
-  // Initialize position as a mutable variable using let
+  // Initialize spacePosition with let to allow reassignment
   let spacePosition = space.position ? 
     (typeof space.position === 'string' ? JSON.parse(space.position) : space.position) :
     defaultPosition;
