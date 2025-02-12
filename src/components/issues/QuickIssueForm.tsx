@@ -3,10 +3,16 @@ import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Form } from "@/components/ui/form";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { FormLabel } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
@@ -18,7 +24,6 @@ import { IssueTypeField } from "./form-sections/IssueTypeField";
 import { ProblemTypeField } from "./form-sections/ProblemTypeField";
 import { DescriptionField } from "./form-sections/DescriptionField";
 import { LocationFields } from "./form-sections/LocationFields";
-import { FormField } from "@/components/ui/form";
 
 export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
   const [isManualTitle, setIsManualTitle] = useState(false);
