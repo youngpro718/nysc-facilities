@@ -36,7 +36,7 @@ export function FloorPlanCanvas({
   zoom = 1, 
   onObjectSelect 
 }: FloorPlanCanvasProps) {
-  const { objects, edges: graphEdges, isLoading, refetch } = useFloorPlanData(floorId);
+  const { objects, edges: graphEdges, isLoading } = useFloorPlanData(floorId);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const initialized = useRef(false);

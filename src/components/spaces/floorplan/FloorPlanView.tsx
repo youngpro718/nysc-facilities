@@ -50,11 +50,6 @@ export function FloorPlanView() {
     setSelectedObject(obj);
   };
 
-  const handleEditObject = (obj: any) => {
-    // TODO: Implement edit functionality
-    console.log('Edit object:', obj);
-  };
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -98,7 +93,10 @@ export function FloorPlanView() {
         
         <PropertiesPanel 
           selectedObject={selectedObject}
-          onEdit={handleEditObject}
+          onUpdate={() => {
+            // Refresh the floor plan when properties are updated
+            setSelectedObject(null);
+          }}
         />
       </div>
     </div>
