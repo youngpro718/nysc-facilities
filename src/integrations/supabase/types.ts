@@ -1005,6 +1005,7 @@ export type Database = {
           notes: string | null
           position: Json | null
           properties: Json | null
+          rotation: number | null
           section: Database["public"]["Enums"]["hallway_section_enum"] | null
           security_level: string | null
           size: Json | null
@@ -1047,6 +1048,7 @@ export type Database = {
           notes?: string | null
           position?: Json | null
           properties?: Json | null
+          rotation?: number | null
           section?: Database["public"]["Enums"]["hallway_section_enum"] | null
           security_level?: string | null
           size?: Json | null
@@ -1089,6 +1091,7 @@ export type Database = {
           notes?: string | null
           position?: Json | null
           properties?: Json | null
+          rotation?: number | null
           section?: Database["public"]["Enums"]["hallway_section_enum"] | null
           security_level?: string | null
           size?: Json | null

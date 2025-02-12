@@ -1,4 +1,3 @@
-
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { FloorPlanObjectData, Position } from "../types/floorPlanTypes";
+import { FloorPlanObjectData, Position, SpaceType } from "../types/floorPlanTypes";
 import { useForm } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Slider } from "@/components/ui/slider";
@@ -62,30 +61,46 @@ export function EditPropertiesPanel({ selectedObject, onClose, onUpdate }: EditP
       console.log('Selected object:', selectedObject);
       console.log('Form data:', data);
 
-      const updateData = {
-        label: data.label,
-        type: selectedObject.type,
-        position: JSON.stringify({
+      const isHallway = selectedObject.type === 'hallway';
+      const tableName = isHallway ? 'hallways' : 'floor_plan_objects';
+
+      const baseUpdateData = {
+        position: {
           x: Number(data.positionX),
           y: Number(data.positionY)
-        }),
-        size: JSON.stringify({
+        },
+        size: {
           width: Number(data.width),
           height: Number(data.height)
-        }),
-        rotation: Number(data.rotation),
-        properties: JSON.stringify({
+        },
+        rotation: Number(data.rotation)
+      };
+
+      const updateData = isHallway ? {
+        ...baseUpdateData,
+        name: data.label,
+        status: data.status,
+        properties: {
+          ...selectedObject.properties,
+          status: data.status
+        }
+      } : {
+        ...baseUpdateData,
+        label: data.label,
+        type: selectedObject.type as SpaceType,
+        properties: {
           room_number: data.room_number,
           room_type: data.room_type,
           status: data.status
-        }),
+        },
         style: selectedObject.style
       };
 
       console.log('Sending update data:', updateData);
+      console.log('Updating table:', tableName);
 
       const { data: result, error } = await supabase
-        .from('floor_plan_objects')
+        .from(tableName)
         .update(updateData)
         .eq('id', selectedObject.id)
         .select();
