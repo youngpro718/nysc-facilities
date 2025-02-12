@@ -33,4 +33,3 @@ export const ROOM_COLORS: Record<string, string> = {
   conference: '#fef3c7',
   default: '#e2e8f0'
 };
-

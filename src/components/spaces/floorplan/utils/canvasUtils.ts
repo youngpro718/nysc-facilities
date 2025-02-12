@@ -1,3 +1,4 @@
+
 import { Canvas, Line as FabricLine, Group as FabricGroup, Text as FabricText, Rect as FabricRect } from "fabric";
 import { FloorPlanObject, ROOM_COLORS } from "../types/floorPlanTypes";
 
