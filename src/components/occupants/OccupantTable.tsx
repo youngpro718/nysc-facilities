@@ -58,7 +58,7 @@ export function OccupantTable({
         </TableHeader>
         <TableBody>
           {occupants?.map((occupant) => (
-            <React.Fragment key={occupant.id}>
+            <div key={occupant.id}>
               <TableRow>
                 <TableCell>
                   <Checkbox
@@ -130,7 +130,7 @@ export function OccupantTable({
                   </TableCell>
                 </TableRow>
               )}
-            </React.Fragment>
+            </div>
           ))}
           {(!occupants || occupants.length === 0) && (
             <TableRow>
