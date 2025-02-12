@@ -4,7 +4,7 @@ import { FloorPlanCanvas } from "./FloorPlanCanvas";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ZoomIn, ZoomOut, RotateCcw, Move, Eye, PenLine, Door, Roads } from "lucide-react";
+import { ZoomIn, ZoomOut, RotateCcw, Move, Eye, PenLine, Building, ArrowRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DrawingMode } from "./types/floorPlanTypes";
@@ -77,10 +77,10 @@ export function FloorPlanView() {
               <PenLine className="h-4 w-4" />
             </ToggleGroupItem>
             <ToggleGroupItem value="door" aria-label="Add door">
-              <Door className="h-4 w-4" />
+              <Building className="h-4 w-4" />
             </ToggleGroupItem>
             <ToggleGroupItem value="hallway" aria-label="Add hallway">
-              <Roads className="h-4 w-4" />
+              <ArrowRight className="h-4 w-4" />
             </ToggleGroupItem>
           </ToggleGroup>
 
