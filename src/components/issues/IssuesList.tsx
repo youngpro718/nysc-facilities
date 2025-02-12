@@ -13,6 +13,12 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { Loader2, MoreVertical, AlertTriangle } from "lucide-react";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -27,6 +33,8 @@ import {
   FixtureStatus,
   FixturePosition
 } from "./types/IssueTypes";
+import { ResolutionForm } from "./forms/ResolutionForm";
+import { useState } from "react";
 
 // Define base types for database response
 type DatabaseIssue = {
@@ -129,6 +137,8 @@ function transformIssue(dbIssue: DatabaseIssue): Issue {
 
 export const IssuesList = () => {
   const queryClient = useQueryClient();
+  const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
+  const [showResolutionForm, setShowResolutionForm] = useState(false);
 
   const { data: issues, isLoading } = useQuery({
     queryKey: ['issues'],
@@ -177,13 +187,24 @@ export const IssuesList = () => {
   });
 
   const handleStatusChange = (id: string, newStatus: IssueStatus) => {
-    updateIssueMutation.mutate({ id, status: newStatus });
+    if (newStatus === 'resolved') {
+      setSelectedIssueId(id);
+      setShowResolutionForm(true);
+    } else {
+      updateIssueMutation.mutate({ id, status: newStatus });
+    }
   };
 
   const handleDelete = (id: string) => {
     if (window.confirm("Are you sure you want to delete this issue?")) {
       deleteIssueMutation.mutate(id);
     }
+  };
+
+  const handleResolutionSuccess = () => {
+    setShowResolutionForm(false);
+    setSelectedIssueId(null);
+    queryClient.invalidateQueries({ queryKey: ['issues'] });
   };
 
   if (isLoading) {
@@ -236,120 +257,142 @@ export const IssuesList = () => {
   };
 
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Title</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Priority</TableHead>
-            <TableHead>Location</TableHead>
-            <TableHead>Created</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {issues?.map((issue) => {
-            const typeInfo = getTypeInfo(issue.type);
-            const lightingDetails = issue.lighting_fixtures?.[0];
-            
-            return (
-              <TableRow key={issue.id}>
-                <TableCell>{issue.title}</TableCell>
-                <TableCell>{issue.description}</TableCell>
-                <TableCell>
-                  <Badge className={`flex items-center ${typeInfo.color}`} variant="secondary">
-                    {typeInfo.icon}
-                    {issue.type}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge className={getStatusColor(issue.status)} variant="secondary">
-                    {issue.status.replace('_', ' ')}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge className={getPriorityColor(issue.priority)} variant="secondary">
-                    {issue.priority}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {issue.type === 'LIGHTING' && lightingDetails ? (
-                    <div className="flex flex-col">
+    <>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Title</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Priority</TableHead>
+              <TableHead>Location</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {issues?.map((issue) => {
+              const typeInfo = getTypeInfo(issue.type);
+              const lightingDetails = issue.lighting_fixtures?.[0];
+              
+              return (
+                <TableRow key={issue.id}>
+                  <TableCell>{issue.title}</TableCell>
+                  <TableCell>{issue.description}</TableCell>
+                  <TableCell>
+                    <Badge className={`flex items-center ${typeInfo.color}`} variant="secondary">
+                      {typeInfo.icon}
+                      {issue.type}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={getStatusColor(issue.status)} variant="secondary">
+                      {issue.status.replace('_', ' ')}
+                      {issue.resolution_type && (
+                        <span className="ml-2 text-xs">
+                          ({issue.resolution_type.replace('_', ' ')})
+                        </span>
+                      )}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={getPriorityColor(issue.priority)} variant="secondary">
+                      {issue.priority}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {issue.type === 'LIGHTING' && lightingDetails ? (
+                      <div className="flex flex-col">
+                        <span>
+                          {[
+                            issue.buildings?.name,
+                            issue.floors?.name,
+                            lightingDetails.name
+                          ].filter(Boolean).join(' > ')}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {lightingDetails.type} - {lightingDetails.position}
+                          {lightingDetails.electrical_issues && Object.keys(lightingDetails.electrical_issues).some(key => lightingDetails.electrical_issues[key]) && (
+                            <Badge variant="destructive" className="ml-2">
+                              Electrical Issues
+                            </Badge>
+                          )}
+                        </span>
+                      </div>
+                    ) : (
                       <span>
                         {[
                           issue.buildings?.name,
                           issue.floors?.name,
-                          lightingDetails.name
+                          issue.rooms?.name
                         ].filter(Boolean).join(' > ')}
                       </span>
-                      <span className="text-xs text-muted-foreground">
-                        {lightingDetails.type} - {lightingDetails.position}
-                        {lightingDetails.electrical_issues && Object.keys(lightingDetails.electrical_issues).some(key => lightingDetails.electrical_issues[key]) && (
-                          <Badge variant="destructive" className="ml-2">
-                            Electrical Issues
-                          </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {format(new Date(issue.created_at), 'MMM d, yyyy')}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {issue.status !== 'in_progress' && (
+                          <DropdownMenuItem
+                            onClick={() => handleStatusChange(issue.id, 'in_progress')}
+                          >
+                            Mark In Progress
+                          </DropdownMenuItem>
                         )}
-                      </span>
-                    </div>
-                  ) : (
-                    <span>
-                      {[
-                        issue.buildings?.name,
-                        issue.floors?.name,
-                        issue.rooms?.name
-                      ].filter(Boolean).join(' > ')}
-                    </span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {format(new Date(issue.created_at), 'MMM d, yyyy')}
-                </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {issue.status !== 'in_progress' && (
+                        {issue.status !== 'resolved' && (
+                          <DropdownMenuItem
+                            onClick={() => handleStatusChange(issue.id, 'resolved')}
+                          >
+                            Resolve Issue
+                          </DropdownMenuItem>
+                        )}
+                        {issue.status !== 'open' && (
+                          <DropdownMenuItem
+                            onClick={() => handleStatusChange(issue.id, 'open')}
+                          >
+                            Reopen Issue
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem
-                          onClick={() => handleStatusChange(issue.id, 'in_progress')}
+                          onClick={() => handleDelete(issue.id)}
+                          className="text-red-600"
                         >
-                          Mark In Progress
+                          Delete
                         </DropdownMenuItem>
-                      )}
-                      {issue.status !== 'resolved' && (
-                        <DropdownMenuItem
-                          onClick={() => handleStatusChange(issue.id, 'resolved')}
-                        >
-                          Mark Resolved
-                        </DropdownMenuItem>
-                      )}
-                      {issue.status !== 'open' && (
-                        <DropdownMenuItem
-                          onClick={() => handleStatusChange(issue.id, 'open')}
-                        >
-                          Reopen Issue
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem
-                        onClick={() => handleDelete(issue.id)}
-                        className="text-red-600"
-                      >
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </div>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+
+      <Dialog open={showResolutionForm} onOpenChange={setShowResolutionForm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Resolve Issue</DialogTitle>
+          </DialogHeader>
+          {selectedIssueId && (
+            <ResolutionForm
+              issueId={selectedIssueId}
+              onSuccess={handleResolutionSuccess}
+              onCancel={() => setShowResolutionForm(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
