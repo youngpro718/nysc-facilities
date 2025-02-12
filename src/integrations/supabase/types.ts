@@ -3305,6 +3305,7 @@ export type Database = {
           previous_functions: Json[] | null
           room_number: string
           room_type: Database["public"]["Enums"]["room_type_enum"]
+          rotation: number | null
           size: Json | null
           status: Database["public"]["Enums"]["status_enum"] | null
           storage_capacity: number | null
@@ -3328,6 +3329,7 @@ export type Database = {
           previous_functions?: Json[] | null
           room_number: string
           room_type?: Database["public"]["Enums"]["room_type_enum"]
+          rotation?: number | null
           size?: Json | null
           status?: Database["public"]["Enums"]["status_enum"] | null
           storage_capacity?: number | null
@@ -3351,6 +3353,7 @@ export type Database = {
           previous_functions?: Json[] | null
           room_number?: string
           room_type?: Database["public"]["Enums"]["room_type_enum"]
+          rotation?: number | null
           size?: Json | null
           status?: Database["public"]["Enums"]["status_enum"] | null
           storage_capacity?: number | null

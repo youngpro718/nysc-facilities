@@ -1,3 +1,4 @@
+
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -62,7 +63,8 @@ export function EditPropertiesPanel({ selectedObject, onClose, onUpdate }: EditP
       console.log('Form data:', data);
 
       const isHallway = selectedObject.type === 'hallway';
-      const tableName = isHallway ? 'hallways' : 'floor_plan_objects';
+      const isRoom = selectedObject.type === 'room';
+      const tableName = isHallway ? 'hallways' : isRoom ? 'rooms' : 'floor_plan_objects';
 
       const baseUpdateData = {
         position: {
@@ -84,6 +86,12 @@ export function EditPropertiesPanel({ selectedObject, onClose, onUpdate }: EditP
           ...selectedObject.properties,
           status: data.status
         }
+      } : isRoom ? {
+        ...baseUpdateData,
+        name: data.label,
+        room_number: data.room_number,
+        room_type: data.room_type,
+        status: data.status
       } : {
         ...baseUpdateData,
         label: data.label,
