@@ -1,5 +1,6 @@
 
 import { IssueStatus, IssuePriority, ResolutionType } from "./IssueTypes";
+import { IssueType } from "../constants/issueTypes";
 
 export interface FormData {
   title: string;
@@ -10,4 +11,9 @@ export interface FormData {
   resolution_type?: ResolutionType;
   resolution_notes?: string;
   assignee_id?: string;
+  issue_type?: IssueType;
+  problem_type?: string;
+  building_id?: string;
+  floor_id?: string;
+  room_id?: string;
 }

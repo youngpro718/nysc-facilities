@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Building, Floor, Room } from "../types/locationTypes";
 
 interface LocationFieldsProps {
-  form: UseFormReturn<FormData, any, undefined>;
+  form: UseFormReturn<FormData>;
 }
 
 export function LocationFields({ form }: LocationFieldsProps) {
@@ -44,21 +44,24 @@ export function LocationFields({ form }: LocationFieldsProps) {
     return data as Room[];
   };
 
+  const buildingId = form.watch('building_id');
+  const floorId = form.watch('floor_id');
+
   const { data: buildings } = useQuery({
     queryKey: ['buildings'],
     queryFn: fetchBuildings
   });
 
   const { data: floors } = useQuery({
-    queryKey: ['floors', form.watch('building_id')],
-    queryFn: () => form.watch('building_id') ? fetchFloors(form.watch('building_id')) : Promise.resolve([]),
-    enabled: !!form.watch('building_id'),
+    queryKey: ['floors', buildingId],
+    queryFn: () => buildingId ? fetchFloors(buildingId) : Promise.resolve([]),
+    enabled: !!buildingId,
   });
 
   const { data: rooms } = useQuery({
-    queryKey: ['rooms', form.watch('floor_id')],
-    queryFn: () => form.watch('floor_id') ? fetchRooms(form.watch('floor_id')) : Promise.resolve([]),
-    enabled: !!form.watch('floor_id'),
+    queryKey: ['rooms', floorId],
+    queryFn: () => floorId ? fetchRooms(floorId) : Promise.resolve([]),
+    enabled: !!floorId,
   });
 
   return (
@@ -107,7 +110,7 @@ export function LocationFields({ form }: LocationFieldsProps) {
                 form.setValue('room_id', undefined);
               }} 
               value={field.value}
-              disabled={!form.watch('building_id')}
+              disabled={!buildingId}
             >
               <FormControl>
                 <SelectTrigger>
@@ -136,7 +139,7 @@ export function LocationFields({ form }: LocationFieldsProps) {
             <Select 
               onValueChange={field.onChange} 
               value={field.value}
-              disabled={!form.watch('floor_id')}
+              disabled={!floorId}
             >
               <FormControl>
                 <SelectTrigger>
