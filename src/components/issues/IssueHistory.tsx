@@ -1,12 +1,12 @@
 
 import { format } from "date-fns";
-import { IssueHistory } from "./types/IssueTypes";
+import type { IssueHistory as IssueHistoryType } from "./types/IssueTypes";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { History, User, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface IssueHistoryProps {
-  history: IssueHistory[];
+  history: IssueHistoryType[];
 }
 
 export function IssueHistory({ history }: IssueHistoryProps) {

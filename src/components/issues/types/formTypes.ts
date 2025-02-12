@@ -1,5 +1,6 @@
 
-import { IssuePriority, IssueType, ResolutionType } from "../constants/issueTypes";
+import { IssuePriority, IssueType } from "../constants/issueTypes";
+import { ResolutionType } from "./IssueTypes";
 
 export interface FormData {
   title: string;
