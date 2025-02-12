@@ -1,32 +1,56 @@
-
 import { Canvas, Line as FabricLine, Group as FabricGroup, Text as FabricText, Rect as FabricRect } from "fabric";
 import { FloorPlanObject, ROOM_COLORS } from "../types/floorPlanTypes";
 
 export function createGrid(canvas: Canvas, gridSize: number) {
   console.log('Creating grid with size:', gridSize);
+  
+  // Calculate the number of lines needed
+  const numHorizontalLines = Math.ceil(canvas.getHeight() / gridSize);
+  const numVerticalLines = Math.ceil(canvas.getWidth() / gridSize);
+
   const gridGroup = new FabricGroup([], {
     selectable: false,
-    evented: false
+    evented: false,
+    left: 0,
+    top: 0
   });
 
-  for (let i = 0; i < canvas.getWidth(); i += gridSize) {
-    const line = new FabricLine([i, 0, i, canvas.getHeight()], {
+  // Create vertical lines
+  for (let i = 0; i <= numVerticalLines; i++) {
+    const x = i * gridSize;
+    const line = new FabricLine([x, 0, x, canvas.getHeight()], {
       stroke: '#e5e7eb',
-      selectable: false
+      selectable: false,
+      strokeWidth: 1
     });
     gridGroup.add(line);
   }
   
-  for (let i = 0; i < canvas.getHeight(); i += gridSize) {
-    const line = new FabricLine([0, i, canvas.getWidth(), i], {
+  // Create horizontal lines
+  for (let i = 0; i <= numHorizontalLines; i++) {
+    const y = i * gridSize;
+    const line = new FabricLine([0, y, canvas.getWidth(), y], {
       stroke: '#e5e7eb',
-      selectable: false
+      selectable: false,
+      strokeWidth: 1
     });
     gridGroup.add(line);
   }
 
+  // Center the grid group on the canvas
+  const canvasCenter = canvas.getCenter();
+  gridGroup.set({
+    left: 0,
+    top: 0,
+    width: canvas.getWidth(),
+    height: canvas.getHeight(),
+    originX: 'left',
+    originY: 'top'
+  });
+
   canvas.add(gridGroup);
-  console.log('Grid created with dimensions:', canvas.getWidth(), 'x', canvas.getHeight());
+  canvas.renderAll();
+  console.log('Grid created and centered with dimensions:', canvas.getWidth(), 'x', canvas.getHeight());
   return gridGroup;
 }
 
