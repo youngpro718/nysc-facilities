@@ -7,7 +7,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Issue, IssueStatus, IssuePriority } from "../types/IssueTypes";
+import { Issue, IssueStatus, IssuePriority, ResolutionType } from "../types/IssueTypes";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -19,6 +19,8 @@ const editIssueSchema = z.object({
   status: z.enum(["open", "in_progress", "resolved"] as const),
   priority: z.enum(["low", "medium", "high"] as const),
   due_date: z.string().optional(),
+  resolution_type: z.enum(["fixed", "replaced", "maintenance_performed", "no_action_needed", "deferred", "other"] as const).optional(),
+  resolution_notes: z.string().optional(),
 });
 
 type EditIssueFormValues = z.infer<typeof editIssueSchema>;
@@ -39,14 +41,24 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
       status: issue.status,
       priority: issue.priority,
       due_date: issue.due_date,
+      resolution_type: issue.resolution_type,
+      resolution_notes: issue.resolution_notes,
     },
   });
 
+  const watchStatus = form.watch("status");
+  const isResolved = watchStatus === "resolved";
+
   const updateIssueMutation = useMutation({
     mutationFn: async (values: EditIssueFormValues) => {
+      const updateData = {
+        ...values,
+        resolution_date: isResolved ? new Date().toISOString() : null,
+      };
+
       const { error } = await supabase
         .from('issues')
-        .update(values)
+        .update(updateData)
         .eq('id', issue.id);
 
       if (error) throw error;
@@ -63,6 +75,13 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
   });
 
   const onSubmit = (values: EditIssueFormValues) => {
+    if (isResolved && !values.resolution_type) {
+      form.setError("resolution_type", {
+        type: "manual",
+        message: "Resolution type is required when marking as resolved",
+      });
+      return;
+    }
     updateIssueMutation.mutate(values);
   };
 
@@ -158,6 +177,50 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
             </FormItem>
           )}
         />
+
+        {isResolved && (
+          <>
+            <FormField
+              control={form.control}
+              name="resolution_type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Resolution Type</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select resolution type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="fixed">Fixed</SelectItem>
+                      <SelectItem value="replaced">Replaced</SelectItem>
+                      <SelectItem value="maintenance_performed">Maintenance Performed</SelectItem>
+                      <SelectItem value="no_action_needed">No Action Needed</SelectItem>
+                      <SelectItem value="deferred">Deferred</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="resolution_notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Resolution Notes</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} placeholder="Provide details about the resolution..." />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </>
+        )}
 
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={onClose} type="button">
