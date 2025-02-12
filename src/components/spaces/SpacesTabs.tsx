@@ -5,6 +5,7 @@ import RoomsList from "./RoomsList";
 import HallwaysList from "./HallwaysList";
 import DoorsList from "./DoorsList";
 import { FloorPlanView } from "./floorplan/FloorPlanView";
+import { Suspense } from "react";
 
 export interface SpaceViewProps {
   selectedBuilding: string;
@@ -47,7 +48,9 @@ const SpacesTabs = ({ selectedBuilding, selectedFloor }: SpaceViewProps) => {
         </TabsContent>
 
         <TabsContent value="floorplan" className="mt-4">
-          <FloorPlanView />
+          <Suspense fallback={<div>Loading floor plan...</div>}>
+            <FloorPlanView />
+          </Suspense>
         </TabsContent>
       </Tabs>
     </div>
