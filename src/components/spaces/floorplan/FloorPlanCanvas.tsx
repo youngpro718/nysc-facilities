@@ -59,38 +59,41 @@ export function FloorPlanCanvas({
 
   // Update nodes when objects change
   useEffect(() => {
-    if (objects && objects.length > 0) {
-      console.log('Setting nodes:', objects);
-      
-      // Ensure each node has all required properties for ReactFlow
-      const reactFlowNodes = objects.map((obj, index) => ({
-        id: obj.id,
-        type: 'room', // Explicitly set type to 'room'
+    if (!objects) return;
+
+    console.log('Setting nodes:', objects);
+    
+    const reactFlowNodes = objects.map((obj, index) => {
+      const node = {
+        id: obj.id || `node-${index}`,
+        type: 'room',
         position: {
-          x: (index % 3) * 250, // Space rooms horizontally
-          y: Math.floor(index / 3) * 200 // Space rooms vertically
+          x: (index % 3) * 250,
+          y: Math.floor(index / 3) * 200
         },
         data: {
-          ...obj.data,
-          label: obj.data.label || 'Unnamed Room',
-          size: obj.data.size || { width: 150, height: 100 },
-          style: {
-            ...obj.data.style,
-            backgroundColor: obj.data.style?.backgroundColor || '#e2e8f0',
-            border: obj.data.style?.border || '1px solid #cbd5e1'
+          label: obj.data?.label || 'Unnamed Room',
+          type: 'room',
+          size: {
+            width: 150,
+            height: 100
           },
-          properties: obj.data.properties || {}
-        },
-        draggable: true,
-        selectable: true
-      }));
+          style: {
+            backgroundColor: '#e2e8f0',
+            border: '1px solid #cbd5e1'
+          },
+          properties: {
+            room_number: obj.data?.properties?.room_number || '',
+            room_type: obj.data?.properties?.room_type || 'default',
+            status: obj.data?.properties?.status || 'active'
+          }
+        }
+      };
+      return node;
+    });
 
-      console.log('Transformed ReactFlow nodes:', reactFlowNodes);
-      setNodes(reactFlowNodes);
-    } else {
-      console.log('No objects to transform into nodes');
-      setNodes([]);
-    }
+    console.log('Transformed ReactFlow nodes:', reactFlowNodes);
+    setNodes(reactFlowNodes);
   }, [objects, setNodes]);
 
   const onConnect = useCallback(
@@ -99,7 +102,9 @@ export function FloorPlanCanvas({
   );
 
   const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
-    onObjectSelect?.(node.data);
+    if (onObjectSelect) {
+      onObjectSelect(node.data);
+    }
   }, [onObjectSelect]);
 
   if (!floorId) {
