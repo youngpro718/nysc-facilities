@@ -1,5 +1,5 @@
 
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import ReactFlow, { 
   Background, 
   Controls, 
@@ -43,6 +43,20 @@ export function FloorPlanCanvas({
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
+  // Update nodes when objects change
+  useEffect(() => {
+    if (objects) {
+      const reactFlowNodes = objects.map(obj => ({
+        id: obj.id,
+        type: obj.type,
+        position: obj.position,
+        data: obj.data,
+        zIndex: obj.zIndex || 0
+      }));
+      setNodes(reactFlowNodes);
+    }
+  }, [objects, setNodes]);
+
   const onConnect = useCallback(
     (params: Connection | Edge) => setEdges((eds) => addEdge(params, eds)),
     [setEdges],
@@ -71,6 +85,8 @@ export function FloorPlanCanvas({
       </Card>
     );
   }
+
+  console.log('Floor Plan Objects:', objects); // Add this for debugging
 
   return (
     <Card className="p-4">
