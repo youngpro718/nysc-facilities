@@ -17,8 +17,11 @@ function transformLayer(raw: FloorPlanLayerDB): FloorPlanLayer {
   };
 }
 
-function transformRoomToNode(room: any, index: number): FloorPlanNode {
+function transformRoomToNode(room: any, lightingStatus: any, index: number): FloorPlanNode {
   console.log('Transforming room:', room);
+
+  const lighting = lightingStatus?.find((status: any) => status.room_id === room.id);
+  const hasLightingIssues = lighting && lighting.non_working_fixtures > 0;
 
   return {
     id: room.id,
@@ -35,13 +38,18 @@ function transformRoomToNode(room: any, index: number): FloorPlanNode {
         height: 100
       },
       style: {
-        backgroundColor: ROOM_COLORS[room.room_type] || ROOM_COLORS.default,
-        border: '1px solid #cbd5e1'
+        backgroundColor: hasLightingIssues ? '#fee2e2' : ROOM_COLORS[room.room_type] || ROOM_COLORS.default,
+        border: hasLightingIssues ? '2px solid #ef4444' : '1px solid #cbd5e1'
       },
       properties: {
         room_number: room.room_number,
         room_type: room.room_type,
-        status: room.status
+        status: room.status,
+        lighting: lighting ? {
+          working_fixtures: lighting.working_fixtures,
+          non_working_fixtures: lighting.non_working_fixtures,
+          total_fixtures: lighting.total_fixtures
+        } : null
       }
     },
     zIndex: 0
@@ -63,6 +71,27 @@ export function useFloorPlanData(floorId: string | null) {
         
       if (error) throw error;
       return (data || []).map(layer => transformLayer(layer as FloorPlanLayerDB));
+    },
+    enabled: !!floorId
+  });
+
+  // Query for lighting status
+  const { data: lightingStatus, isLoading: isLoadingLighting } = useQuery({
+    queryKey: ['room-lighting-status', floorId],
+    queryFn: async () => {
+      if (!floorId) return [];
+      
+      const { data, error } = await supabase
+        .from('room_lighting_status')
+        .select('*');
+        
+      if (error) {
+        console.error('Error fetching lighting status:', error);
+        throw error;
+      }
+      
+      console.log('Room lighting status:', data);
+      return data || [];
     },
     enabled: !!floorId
   });
@@ -100,12 +129,12 @@ export function useFloorPlanData(floorId: string | null) {
   });
 
   // Transform rooms into floor plan objects
-  const objects = rooms?.map((room, index) => transformRoomToNode(room, index)) || [];
+  const objects = rooms?.map((room, index) => transformRoomToNode(room, lightingStatus, index)) || [];
   console.log('Transformed objects:', objects);
 
   return {
     layers,
     objects,
-    isLoading: isLoadingLayers || isLoadingRooms
+    isLoading: isLoadingLayers || isLoadingRooms || isLoadingLighting
   };
 }
