@@ -14,8 +14,8 @@ interface Size {
 }
 
 type NodeUpdate = {
-  position?: Record<string, number>;
-  size?: Record<string, number>;
+  position?: Position;
+  size?: Size;
 };
 
 export function useFloorPlanNodes(onNodesChange: (changes: NodeChange[]) => void) {
@@ -57,48 +57,47 @@ export function useFloorPlanNodes(onNodesChange: (changes: NodeChange[]) => void
           console.error('Error saving node update:', error);
         }
       }
-    }, 1000),
+    }, 500),
     []
   );
 
-  // Cleanup function
+  // Handle node changes
+  const handleNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      changes.forEach((change) => {
+        if (
+          (change.type === 'position' && change.position) ||
+          (change.type === 'dimensions' && change.dimensions)
+        ) {
+          const nodeId = change.id;
+          const currentUpdate = pendingUpdates.current.get(nodeId) || {};
+
+          if (change.type === 'position') {
+            currentUpdate.position = change.position;
+          } else if (change.type === 'dimensions') {
+            currentUpdate.size = {
+              width: change.dimensions.width,
+              height: change.dimensions.height,
+            };
+          }
+
+          pendingUpdates.current.set(nodeId, currentUpdate);
+          saveNodeUpdates();
+        }
+      });
+
+      // Pass changes to the original handler
+      onNodesChange(changes);
+    },
+    [onNodesChange, saveNodeUpdates]
+  );
+
+  // Clean up pending updates on unmount
   useEffect(() => {
     return () => {
       saveNodeUpdates.cancel();
     };
   }, [saveNodeUpdates]);
 
-  const handleNodesChange = useCallback(
-    (changes: NodeChange[]) => {
-      onNodesChange(changes);
-      changes.forEach((change) => {
-        if (change.type === 'position' && 'position' in change && 'id' in change) {
-          const update = pendingUpdates.current.get(change.id) || {};
-          update.position = {
-            x: change.position.x,
-            y: change.position.y
-          };
-          pendingUpdates.current.set(change.id, update);
-        }
-        else if (change.type === 'dimensions' && 'dimensions' in change && 'id' in change) {
-          const update = pendingUpdates.current.get(change.id) || {};
-          if (change.dimensions) {
-            update.size = {
-              width: change.dimensions.width,
-              height: change.dimensions.height
-            };
-          }
-          pendingUpdates.current.set(change.id, update);
-        }
-      });
-
-      // Trigger save
-      saveNodeUpdates();
-    },
-    [onNodesChange, saveNodeUpdates]
-  );
-
-  return {
-    handleNodesChange,
-  };
+  return { handleNodesChange };
 }

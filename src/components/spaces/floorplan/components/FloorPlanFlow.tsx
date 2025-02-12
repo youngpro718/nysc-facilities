@@ -65,46 +65,36 @@ export function FloorPlanFlow({
   const initialViewport = defaultViewport || { x: 0, y: 0, zoom: defaultZoom };
 
   return (
-    <ReactFlow
-      nodes={nodes}
-      edges={edges}
-      onNodesChange={onNodesChange}
-      onEdgesChange={onEdgesChange}
-      onConnect={onConnect}
-      onNodeDragStop={onNodeDragStop}
-      onNodeClick={onNodeClick}
-      nodeTypes={customNodeTypes}
-      defaultViewport={initialViewport}
-      fitView
-      minZoom={0.1}
-      maxZoom={4}
-      attributionPosition="bottom-left"
-      panOnDrag={panOnDrag}
-      zoomOnScroll={zoomOnScroll}
-      zoomOnPinch={zoomOnPinch}
-      snapToGrid={snapToGrid}
-      snapGrid={snapGrid}
-    >
-      <Panel position="top-left">
-        <div style={panelStyle} className="text-gray-700">
-          Rooms: {nodes.length}
-        </div>
-      </Panel>
-      <Controls showInteractive={true} />
-      <MiniMap 
-        nodeColor={(node) => {
-          switch (node.type) {
-            case 'door':
-              return '#94a3b8';
-            case 'hallway':
-              return '#cbd5e1';
-            default:
-              return '#e2e8f0';
-          }
-        }}
-        maskColor="#ffffff50"
-      />
-      <Background gap={20} size={1} />
-    </ReactFlow>
+    <div style={{ width: '100%', height: '100%', background: '#1a1a1a' }}>
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        onNodeDragStop={onNodeDragStop}
+        onNodeClick={onNodeClick}
+        nodeTypes={customNodeTypes}
+        defaultViewport={initialViewport}
+        fitView
+        minZoom={0.1}
+        maxZoom={4}
+        attributionPosition="bottom-left"
+        panOnDrag={panOnDrag}
+        zoomOnScroll={zoomOnScroll}
+        zoomOnPinch={zoomOnPinch}
+        snapToGrid={snapToGrid}
+        snapGrid={snapGrid}
+      >
+        <Background gap={15} color="#333" variant="dots" />
+        <Controls className="bg-gray-800 border-gray-700" />
+        <MiniMap className="bg-gray-800" />
+        <Panel position="top-right" style={panelStyle}>
+          <div className="text-sm text-gray-400">
+            Zoom: {Math.round(defaultZoom * 100)}%
+          </div>
+        </Panel>
+      </ReactFlow>
+    </div>
   );
 }
