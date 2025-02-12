@@ -1,22 +1,41 @@
 
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Building2, Edit2, Hash, LayoutDashboard, Users, ArrowLeft, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { EditPropertiesPanel } from "./EditPropertiesPanel";
 
 interface PropertiesPanelProps {
   selectedObject: any | null;
-  onEdit?: (object: any) => void;
+  onUpdate?: () => void;
 }
 
-export function PropertiesPanel({ selectedObject, onEdit }: PropertiesPanelProps) {
+export function PropertiesPanel({ selectedObject, onUpdate }: PropertiesPanelProps) {
+  const [isEditing, setIsEditing] = useState(false);
+
   if (!selectedObject) {
     return (
       <Card className="p-4">
         <p className="text-sm text-muted-foreground">
           Select an object to view and edit its properties
         </p>
+      </Card>
+    );
+  }
+
+  if (isEditing) {
+    return (
+      <Card className="p-4">
+        <EditPropertiesPanel
+          selectedObject={selectedObject}
+          onClose={() => setIsEditing(false)}
+          onUpdate={() => {
+            if (onUpdate) onUpdate();
+            setIsEditing(false);
+          }}
+        />
       </Card>
     );
   }
@@ -49,7 +68,7 @@ export function PropertiesPanel({ selectedObject, onEdit }: PropertiesPanelProps
     <Card className="p-4 space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="font-medium">Properties</h3>
-        <Button variant="outline" size="sm" onClick={() => onEdit?.(selectedObject)}>
+        <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
           <Edit2 className="h-4 w-4 mr-2" />
           Edit
         </Button>
@@ -104,18 +123,24 @@ export function PropertiesPanel({ selectedObject, onEdit }: PropertiesPanelProps
           </div>
         </div>
 
-        {/* Dimensions */}
+        {/* Position & Size */}
         <div className="space-y-2">
-          <h4 className="text-sm font-medium text-muted-foreground">Dimensions</h4>
+          <h4 className="text-sm font-medium text-muted-foreground">Position & Size</h4>
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div>
-              <span className="text-muted-foreground">Width:</span>{' '}
-              {selectedObject.data?.size?.width || selectedObject.size?.width}px
+              <span className="text-muted-foreground">Position:</span>{' '}
+              ({Math.round(selectedObject.position?.x || 0)}, {Math.round(selectedObject.position?.y || 0)})
             </div>
             <div>
-              <span className="text-muted-foreground">Height:</span>{' '}
-              {selectedObject.data?.size?.height || selectedObject.size?.height}px
+              <span className="text-muted-foreground">Size:</span>{' '}
+              {selectedObject.size?.width || 0}x{selectedObject.size?.height || 0}
             </div>
+            {selectedObject.rotation && (
+              <div>
+                <span className="text-muted-foreground">Rotation:</span>{' '}
+                {Math.round(selectedObject.rotation)}°
+              </div>
+            )}
           </div>
         </div>
 

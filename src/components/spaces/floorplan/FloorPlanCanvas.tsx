@@ -36,7 +36,7 @@ export function FloorPlanCanvas({
   zoom = 1, 
   onObjectSelect 
 }: FloorPlanCanvasProps) {
-  const { objects, edges: graphEdges, isLoading } = useFloorPlanData(floorId);
+  const { objects, edges: graphEdges, isLoading, refetch } = useFloorPlanData(floorId);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const initialized = useRef(false);
@@ -110,7 +110,14 @@ export function FloorPlanCanvas({
 
   const onNodeClick = useCallback((event: React.MouseEvent, node: Node<any>) => {
     if (onObjectSelect) {
-      onObjectSelect(node.data);
+      onObjectSelect({
+        ...node.data,
+        id: node.id,
+        type: node.type,
+        position: node.position,
+        size: node.data?.size,
+        rotation: node.data?.rotation || 0
+      });
     }
   }, [onObjectSelect]);
 

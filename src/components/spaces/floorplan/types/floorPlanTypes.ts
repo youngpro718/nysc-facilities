@@ -19,6 +19,8 @@ export interface FloorPlanObjectData {
   size: Size;
   style: Record<string, any>;
   properties: Record<string, any>;
+  position?: Position;
+  rotation?: number;
 }
 
 export interface FloorPlanNode {
@@ -26,6 +28,7 @@ export interface FloorPlanNode {
   type: string;
   position: Position;
   data: FloorPlanObjectData;
+  rotation?: number;
   zIndex?: number;
 }
 
