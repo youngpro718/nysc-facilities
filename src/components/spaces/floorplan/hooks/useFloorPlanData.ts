@@ -17,39 +17,47 @@ function transformLayer(raw: FloorPlanLayerDB): FloorPlanLayer {
   };
 }
 
-function transformRoomToNode(room: any, lightingStatus: any, index: number): FloorPlanNode {
-  console.log('Transforming room:', room);
+function transformRoomToNode(room: any, index: number): FloorPlanNode {
+  console.log('Transforming room:', room); // Debug log
+  
+  // Generate a grid-based position if none exists, using the index
+  const defaultPosition = {
+    x: (index % 3) * 200 + 50, // 3 rooms per row, 200px apart
+    y: Math.floor(index / 3) * 150 + 50 // New row every 3 rooms, 150px apart
+  };
 
-  const lighting = lightingStatus?.find((status: any) => status.room_id === room.id);
-  const hasLightingIssues = lighting && lighting.non_working_fixtures > 0;
+  const roomPosition = room.position ? 
+    (typeof room.position === 'string' ? JSON.parse(room.position) : room.position) :
+    defaultPosition;
+
+  // Default size if none provided
+  const defaultSize = {
+    width: 150,
+    height: 100
+  };
+
+  const roomSize = room.size ?
+    (typeof room.size === 'string' ? JSON.parse(room.size) : room.size) :
+    defaultSize;
+
+  const backgroundColor = ROOM_COLORS[room.room_type] || ROOM_COLORS.default;
 
   return {
     id: room.id,
     type: 'room',
-    position: {
-      x: (index % 3) * 250,
-      y: Math.floor(index / 3) * 200
-    },
+    position: roomPosition,
     data: {
       label: room.name,
       type: 'room',
-      size: {
-        width: 150,
-        height: 100
-      },
+      size: roomSize,
       style: {
-        backgroundColor: hasLightingIssues ? '#fee2e2' : ROOM_COLORS[room.room_type] || ROOM_COLORS.default,
-        border: hasLightingIssues ? '2px solid #ef4444' : '1px solid #cbd5e1'
+        backgroundColor,
+        border: '1px solid #cbd5e1'
       },
       properties: {
         room_number: room.room_number,
         room_type: room.room_type,
-        status: room.status,
-        lighting: lighting ? {
-          working_fixtures: lighting.working_fixtures,
-          non_working_fixtures: lighting.non_working_fixtures,
-          total_fixtures: lighting.total_fixtures
-        } : null
+        status: room.status
       }
     },
     zIndex: 0
@@ -58,7 +66,7 @@ function transformRoomToNode(room: any, lightingStatus: any, index: number): Flo
 
 export function useFloorPlanData(floorId: string | null) {
   // Query for layers
-  const layersQuery = useQuery({
+  const { data: layers, isLoading: isLoadingLayers } = useQuery({
     queryKey: ['floorplan-layers', floorId],
     queryFn: async () => {
       if (!floorId) return [];
@@ -75,31 +83,13 @@ export function useFloorPlanData(floorId: string | null) {
     enabled: !!floorId
   });
 
-  // Query for lighting status
-  const lightingQuery = useQuery({
-    queryKey: ['room-lighting-status', floorId],
-    queryFn: async () => {
-      if (!floorId) return [];
-      
-      const { data, error } = await supabase
-        .from('room_lighting_status')
-        .select('*');
-        
-      if (error) {
-        console.error('Error fetching lighting status:', error);
-        throw error;
-      }
-      
-      return data || [];
-    },
-    enabled: !!floorId
-  });
-
   // Query for rooms
-  const roomsQuery = useQuery({
+  const { data: rooms, isLoading: isLoadingRooms } = useQuery({
     queryKey: ['rooms', floorId],
     queryFn: async () => {
       if (!floorId) return [];
+      
+      console.log('Fetching rooms for floor:', floorId); // Debug log
       
       const { data, error } = await supabase
         .from('rooms')
@@ -115,23 +105,23 @@ export function useFloorPlanData(floorId: string | null) {
         .eq('floor_id', floorId);
         
       if (error) {
-        console.error('Error fetching rooms:', error);
+        console.error('Error fetching rooms:', error); // Debug log
         throw error;
       }
       
+      console.log('Fetched rooms:', data); // Debug log
       return data || [];
     },
     enabled: !!floorId
   });
 
   // Transform rooms into floor plan objects
-  const objects = roomsQuery.data?.map((room, index) => 
-    transformRoomToNode(room, lightingQuery.data, index)
-  ) || [];
+  const objects = rooms?.map((room, index) => transformRoomToNode(room, index)) || [];
+  console.log('Transformed objects:', objects); // Debug log
 
   return {
-    layers: layersQuery.data || [],
+    layers,
     objects,
-    isLoading: layersQuery.isLoading || roomsQuery.isLoading || lightingQuery.isLoading
+    isLoading: isLoadingLayers || isLoadingRooms
   };
 }

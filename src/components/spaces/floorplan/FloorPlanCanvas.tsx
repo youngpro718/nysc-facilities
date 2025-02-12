@@ -1,5 +1,5 @@
 
-import { useCallback, useEffect, useRef, useLayoutEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import { 
   ReactFlow,
   Background, 
@@ -13,7 +13,7 @@ import {
   Node,
   addEdge,
   Panel,
-  ReactFlowProvider
+  PanelPosition
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Card } from "@/components/ui/card";
@@ -46,62 +46,55 @@ const panelStyle = {
   boxShadow: '0 0 10px rgba(0,0,0,0.1)'
 };
 
-function FloorPlanCanvasInner({ 
+export function FloorPlanCanvas({ 
   floorId, 
   zoom = 1, 
   drawingMode, 
   onObjectSelect 
 }: FloorPlanCanvasProps) {
   const { objects, isLoading } = useFloorPlanData(floorId);
-  const flowWrapper = useRef<HTMLDivElement>(null);
-  const [isReady, setIsReady] = useState(false);
   
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
-  // Initialize container size
-  useLayoutEffect(() => {
-    if (flowWrapper.current) {
-      setIsReady(true);
-    }
-    return () => setIsReady(false);
-  }, []);
-
   // Update nodes when objects change
   useEffect(() => {
-    if (!objects || !isReady) return;
-    
-    const reactFlowNodes = objects.map((obj, index) => ({
-      id: obj.id || `node-${index}`,
-      type: 'room',
-      position: {
-        x: (index % 3) * 250,
-        y: Math.floor(index / 3) * 200
-      },
-      data: {
-        label: obj.data?.label || 'Unnamed Room',
-        type: 'room',
-        size: {
-          width: 150,
-          height: 100
-        },
-        style: {
-          backgroundColor: '#e2e8f0',
-          border: '1px solid #cbd5e1'
-        },
-        properties: {
-          room_number: obj.data?.properties?.room_number || '',
-          room_type: obj.data?.properties?.room_type || 'default',
-          status: obj.data?.properties?.status || 'active'
-        }
-      }
-    }));
+    if (!objects) return;
 
-    // Batch node updates
-    requestAnimationFrame(() => {
-      setNodes(reactFlowNodes);
+    console.log('Setting nodes:', objects);
+    
+    const reactFlowNodes = objects.map((obj, index) => {
+      const node = {
+        id: obj.id || `node-${index}`,
+        type: 'room',
+        position: {
+          x: (index % 3) * 250,
+          y: Math.floor(index / 3) * 200
+        },
+        data: {
+          label: obj.data?.label || 'Unnamed Room',
+          type: 'room',
+          size: {
+            width: 150,
+            height: 100
+          },
+          style: {
+            backgroundColor: '#e2e8f0',
+            border: '1px solid #cbd5e1'
+          },
+          properties: {
+            room_number: obj.data?.properties?.room_number || '',
+            room_type: obj.data?.properties?.room_type || 'default',
+            status: obj.data?.properties?.status || 'active'
+          }
+        }
+      };
+      return node;
     });
-  }, [objects, setNodes, isReady]);
+
+    console.log('Transformed ReactFlow nodes:', reactFlowNodes);
+    setNodes(reactFlowNodes);
+  }, [objects, setNodes]);
 
   const onConnect = useCallback(
     (params: Connection | Edge) => setEdges((eds) => addEdge(params, eds)),
@@ -116,63 +109,51 @@ function FloorPlanCanvasInner({
 
   if (!floorId) {
     return (
-      <div className="h-[600px] w-full flex items-center justify-center bg-gray-50">
-        Select a floor to view the floor plan
-      </div>
+      <Card className="p-4">
+        <div className="h-[600px] w-full flex items-center justify-center bg-gray-50">
+          Select a floor to view the floor plan
+        </div>
+      </Card>
     );
   }
 
-  if (isLoading || !isReady) {
+  if (isLoading) {
     return (
-      <div className="h-[600px] w-full flex items-center justify-center bg-gray-50">
-        Loading floor plan...
-      </div>
+      <Card className="p-4">
+        <div className="h-[600px] w-full flex items-center justify-center bg-gray-50">
+          Loading floor plan...
+        </div>
+      </Card>
     );
   }
 
-  return (
-    <div 
-      ref={flowWrapper} 
-      className="relative w-full h-[600px]"
-      style={{ overflow: 'hidden' }}
-    >
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onNodeClick={onNodeClick}
-        nodeTypes={nodeTypes}
-        defaultViewport={{ x: 0, y: 0, zoom: 1 }}
-        minZoom={0.1}
-        maxZoom={4}
-        fitView
-        fitViewOptions={{ 
-          padding: 0.2,
-          includeHiddenNodes: false,
-          duration: 200
-        }}
-      >
-        <Panel position="top-left">
-          <div style={panelStyle}>
-            Rooms: {nodes.length}
-          </div>
-        </Panel>
-        <Controls />
-        <MiniMap />
-        <Background gap={20} size={1} />
-      </ReactFlow>
-    </div>
-  );
-}
-
-export function FloorPlanCanvas(props: FloorPlanCanvasProps) {
   return (
     <Card className="p-4">
-      <ReactFlowProvider>
-        <FloorPlanCanvasInner {...props} />
-      </ReactFlowProvider>
+      <div style={{ width: '100%', height: '600px', position: 'relative' }}>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onNodeClick={onNodeClick}
+          nodeTypes={nodeTypes}
+          defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+          minZoom={0.1}
+          maxZoom={4}
+          fitView
+          fitViewOptions={{ padding: 0.2 }}
+        >
+          <Panel position="top-left">
+            <div style={panelStyle}>
+              Rooms: {nodes.length}
+            </div>
+          </Panel>
+          <Controls />
+          <MiniMap />
+          <Background gap={20} size={1} />
+        </ReactFlow>
+      </div>
     </Card>
   );
 }
