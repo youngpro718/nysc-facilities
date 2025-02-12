@@ -36,13 +36,16 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
     defaultValues: {
       priority: 'medium',
       description: '',
-      due_date: '',
+      due_date: undefined,
       date_info: ''
     }
   });
 
   const createIssueMutation = useMutation({
     mutationFn: async (data: FormData) => {
+      // Format the date to ISO string if it exists
+      const formattedDueDate = data.due_date ? new Date(data.due_date).toISOString() : null;
+      
       const { error } = await supabase
         .from('issues')
         .insert({
@@ -56,7 +59,7 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
           room_id: data.room_id,
           photos: selectedPhotos,
           seen: false,
-          due_date: data.due_date || null,
+          due_date: formattedDueDate,
           date_info: data.date_info || null
         });
       
@@ -151,15 +154,18 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
           <FormField
             control={form.control}
             name="due_date"
-            render={({ field: { value, onChange, ...field } }) => (
+            render={({ field: { value, onChange, ...fieldProps } }) => (
               <FormItem>
                 <FormLabel>Due Date</FormLabel>
                 <FormControl>
                   <Input 
-                    type="datetime-local" 
-                    {...field}
+                    type="datetime-local"
+                    {...fieldProps}
                     value={value || ''}
-                    onChange={onChange}
+                    onChange={(e) => {
+                      console.log('Date changed:', e.target.value);
+                      onChange(e.target.value);
+                    }}
                   />
                 </FormControl>
                 <FormMessage />
