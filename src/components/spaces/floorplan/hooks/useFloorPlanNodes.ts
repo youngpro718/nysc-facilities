@@ -1,7 +1,7 @@
 
 import { useCallback, useRef } from 'react';
 import { OnNodesChange, NodeChange, Node, NodePositionChange, NodeDimensionChange } from 'reactflow';
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "../utils/supabaseClient";
 import { toast } from "sonner";
 import debounce from 'lodash/debounce';
 
@@ -30,9 +30,10 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
       if (updates.size === 0) return;
 
       console.log('Processing updates for nodes:', Array.from(updates.entries()));
+      const currentPendingUpdates = new Map(pendingUpdates.current);
       pendingUpdates.current = new Map();
 
-      for (const [nodeId, updateData] of updates) {
+      for (const [nodeId, updateData] of currentPendingUpdates) {
         try {
           const nodeType = nodeTypes.current.get(nodeId);
           if (!nodeType) {
@@ -71,13 +72,33 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
 
           console.log(`Updating ${table} node ${nodeId} (type: ${nodeType}):`, updatePayload);
 
-          const { error } = await supabase
+          // First check if the node exists
+          const { data: existingNode, error: checkError } = await supabase
+            .from(table)
+            .select('id')
+            .eq('id', nodeId)
+            .maybeSingle();
+
+          if (checkError) {
+            console.error(`Error checking ${table}:`, checkError);
+            pendingUpdates.current.set(nodeId, updateData);
+            continue;
+          }
+
+          if (!existingNode) {
+            console.error(`Node ${nodeId} not found in ${table}`);
+            toast.error(`${nodeType} no longer exists in the database`);
+            continue;
+          }
+
+          // Proceed with update if node exists
+          const { error: updateError } = await supabase
             .from(table)
             .update(updatePayload)
             .eq('id', nodeId);
 
-          if (error) {
-            console.error(`Error updating ${table}:`, error);
+          if (updateError) {
+            console.error(`Error updating ${table}:`, updateError);
             toast.error(`Failed to update ${isHallway ? 'hallway' : 'room'} ${nodeId}`);
             pendingUpdates.current.set(nodeId, updateData);
           } else {
