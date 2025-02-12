@@ -22,6 +22,11 @@ export function transformSpaceToNode(space: any, index: number): FloorPlanNode {
     (typeof space.position === 'string' ? JSON.parse(space.position) : space.position) :
     defaultPosition;
 
+  // Ensure position has valid x and y coordinates
+  if (!spacePosition || typeof spacePosition.x !== 'number' || typeof spacePosition.y !== 'number') {
+    spacePosition = defaultPosition;
+  }
+
   const defaultSize = space.object_type === 'hallway' ? 
     { width: 300, height: 50 } :
     space.object_type === 'door' ?

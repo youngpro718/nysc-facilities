@@ -175,17 +175,16 @@ export function FloorPlanCanvas({
             console.log('Saving position for node:', change.id, change.position);
             
             const positionData = {
-              x: change.position.x,
-              y: change.position.y
+              x: Number(change.position.x),
+              y: Number(change.position.y)
             };
+
+            console.log('Saving positionData:', positionData);
 
             const { data, error } = await supabase
               .from('floor_plan_objects')
-              .update({ 
-                position: positionData
-              })
-              .eq('id', change.id)
-              .select();
+              .update({ position: positionData })
+              .eq('id', change.id);
 
             if (error) {
               console.error('Error saving position:', error);
