@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { 
   ReactFlow,
@@ -24,6 +23,7 @@ import { FloorPlanNode } from "./types/floorPlanTypes";
 import { useFloorPlanData } from "./hooks/useFloorPlanData";
 import { RoomNode } from './nodes/RoomNode';
 import { DoorNode } from './nodes/DoorNode';
+import { HallwayNode } from './nodes/HallwayNode';
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -36,6 +36,7 @@ interface FloorPlanCanvasProps {
 const nodeTypes: NodeTypes = {
   room: RoomNode,
   door: DoorNode,
+  hallway: HallwayNode,
 };
 
 const panelStyle = {
