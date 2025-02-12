@@ -26,6 +26,19 @@ export interface FloorPlanObject {
   properties: Record<string, any>;
 }
 
+// Add database types to match Supabase schema exactly
+export interface FloorPlanLayerDB {
+  id: string;
+  floor_id: string;
+  type: LayerType;
+  name: string;
+  order_index: number;
+  visible: boolean;
+  data: Json;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface FloorPlanLayer {
   id: string;
   floor_id: string;

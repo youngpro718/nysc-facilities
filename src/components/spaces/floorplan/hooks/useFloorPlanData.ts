@@ -1,12 +1,19 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { FloorPlanLayer, FloorPlanObject } from "../types/floorPlanTypes";
+import { FloorPlanLayer, FloorPlanObject, FloorPlanLayerDB } from "../types/floorPlanTypes";
 
-function transformLayer(raw: any): FloorPlanLayer {
+function transformLayer(raw: FloorPlanLayerDB): FloorPlanLayer {
+  const parsedData = typeof raw.data === 'string' ? JSON.parse(raw.data) : raw.data;
+  
   return {
-    ...raw,
-    data: typeof raw.data === 'string' ? JSON.parse(raw.data) : raw.data || {}
+    id: raw.id,
+    floor_id: raw.floor_id,
+    type: raw.type,
+    name: raw.name,
+    order_index: raw.order_index,
+    visible: raw.visible,
+    data: parsedData || {}
   };
 }
 
@@ -33,7 +40,7 @@ export function useFloorPlanData(floorId: string | null) {
         .order('order_index');
         
       if (error) throw error;
-      return (data || []).map(transformLayer);
+      return (data || []).map(layer => transformLayer(layer as FloorPlanLayerDB));
     },
     enabled: !!floorId
   });
