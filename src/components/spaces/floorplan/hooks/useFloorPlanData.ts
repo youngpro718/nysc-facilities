@@ -1,8 +1,28 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { transformLayer } from "../utils/layerTransforms";
-import { FloorPlanLayerDB, FloorPlanNode, FloorPlanEdge } from "../types/floorPlanTypes";
+import { FloorPlanLayerDB, FloorPlanNode, FloorPlanEdge, Position } from "../types/floorPlanTypes";
 import { supabase } from "@/integrations/supabase/client";
+
+// Type guard to check if an object is a valid Position
+function isValidPosition(position: any): position is Position {
+  return (
+    position &&
+    typeof position === 'object' &&
+    'x' in position &&
+    'y' in position &&
+    typeof position.x === 'number' &&
+    typeof position.y === 'number'
+  );
+}
+
+// Helper to create a default position based on index
+function createDefaultPosition(index: number): Position {
+  return {
+    x: (index % 3) * 250 + 100,
+    y: Math.floor(index / 3) * 200 + 100
+  };
+}
 
 export function useFloorPlanData(floorId: string | null) {
   // Query for layers
@@ -44,61 +64,53 @@ export function useFloorPlanData(floorId: string | null) {
 
       // Transform the objects to match our FloorPlanNode type
       const nodes: FloorPlanNode[] = (floorObjects || []).map((obj, index) => {
-        // Parse position and size from JSON strings if needed
-        let position = obj.position;
+        // Handle position
+        let parsedPosition: Position;
         try {
-          if (typeof position === 'string') {
-            position = JSON.parse(position);
+          const positionData = typeof obj.position === 'string' ? JSON.parse(obj.position) : obj.position;
+          parsedPosition = isValidPosition(positionData) ? positionData : createDefaultPosition(index);
+        } catch (e) {
+          parsedPosition = createDefaultPosition(index);
+        }
+
+        // Handle size
+        let parsedSize = { width: 150, height: 100 };
+        try {
+          const sizeData = typeof obj.size === 'string' ? JSON.parse(obj.size) : obj.size;
+          if (sizeData && typeof sizeData === 'object' && 'width' in sizeData && 'height' in sizeData) {
+            parsedSize = {
+              width: Number(sizeData.width) || (obj.type === 'door' ? 60 : 150),
+              height: Number(sizeData.height) || (obj.type === 'door' ? 20 : 100)
+            };
           }
         } catch (e) {
-          // If parsing fails, calculate grid position
-          position = {
-            x: (index % 3) * 250 + 100,
-            y: Math.floor(index / 3) * 200 + 100
+          parsedSize = {
+            width: obj.type === 'door' ? 60 : 150,
+            height: obj.type === 'door' ? 20 : 100
           };
         }
 
-        let size = obj.size;
+        // Handle properties
+        let parsedProperties = {};
         try {
-          if (typeof size === 'string') {
-            size = JSON.parse(size);
-          }
+          parsedProperties = typeof obj.properties === 'string' ? JSON.parse(obj.properties) : (obj.properties || {});
         } catch (e) {
-          size = { 
-            width: obj.type === 'door' ? 60 : 150, 
-            height: obj.type === 'door' ? 20 : 100 
-          };
-        }
-
-        // Parse properties from JSON string if needed
-        let properties = obj.properties;
-        try {
-          if (typeof properties === 'string') {
-            properties = JSON.parse(properties);
-          }
-        } catch (e) {
-          properties = {};
+          parsedProperties = {};
         }
 
         return {
           id: obj.id,
           type: obj.type,
-          position: position || { 
-            x: (index % 3) * 250 + 100,
-            y: Math.floor(index / 3) * 200 + 100
-          },
+          position: parsedPosition,
           data: {
             label: obj.label || '',
             type: obj.type,
-            size: size || { 
-              width: obj.type === 'door' ? 60 : 150,
-              height: obj.type === 'door' ? 20 : 100 
-            },
+            size: parsedSize,
             style: obj.style || {
               backgroundColor: obj.type === 'door' ? '#94a3b8' : '#e2e8f0',
               border: obj.type === 'door' ? '2px solid #475569' : '1px solid #cbd5e1'
             },
-            properties: properties || {},
+            properties: parsedProperties,
             rotation: obj.rotation || 0
           },
           rotation: obj.rotation || 0,
