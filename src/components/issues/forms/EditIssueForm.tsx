@@ -1,3 +1,4 @@
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -23,6 +24,7 @@ import { ResolutionFields } from "../form-sections/ResolutionFields";
 import { FormData } from "../types/formTypes";
 import { usePhotoUpload } from "../hooks/usePhotoUpload";
 import { IssuePhotoForm } from "../wizard/IssuePhotoForm";
+import { format } from "date-fns";
 
 const editIssueSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -51,12 +53,7 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return '';
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
-      return `${year}-${month}-${day}T${hours}:${minutes}`;
+      return format(date, "yyyy-MM-dd'T'HH:mm");
     } catch {
       return '';
     }
@@ -86,18 +83,16 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
         ? new Date(values.due_date).toISOString()
         : null;
 
-      const updateData = {
-        ...values,
-        due_date: formattedDueDate,
-        photos: selectedPhotos,
-        resolution_date: isResolved ? new Date().toISOString() : null,
-      };
-
       console.log('Submitting with due date:', formattedDueDate);
 
       const { error } = await supabase
         .from('issues')
-        .update(updateData)
+        .update({
+          ...values,
+          due_date: formattedDueDate,
+          photos: selectedPhotos,
+          resolution_date: isResolved ? new Date().toISOString() : null,
+        })
         .eq('id', issue.id);
 
       if (error) throw error;
