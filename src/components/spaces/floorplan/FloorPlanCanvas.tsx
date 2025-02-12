@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Canvas, Rect } from "fabric";
 import { Card } from "@/components/ui/card";
@@ -29,11 +28,20 @@ export function FloorPlanCanvas({ floorId, zoom = 1, drawingMode, onObjectSelect
     console.log('Cleaning up canvas...', fabricRef.current ? 'Canvas exists' : 'No canvas');
     if (fabricRef.current) {
       try {
-        // Remove all event listeners
+        // First remove all event listeners to prevent any callbacks during cleanup
         fabricRef.current.off();
-        // Clear all objects
+        
+        // Get all objects and remove them one by one
+        const objects = fabricRef.current.getObjects();
+        objects.forEach(obj => fabricRef.current?.remove(obj));
+        
+        // Clear the canvas
         fabricRef.current.clear();
-        // Dispose the canvas
+        
+        // Set background to null before disposal
+        fabricRef.current.backgroundImage = null;
+        
+        // Finally dispose the canvas
         fabricRef.current.dispose();
         console.log('Canvas cleaned up successfully');
       } catch (err) {
@@ -44,9 +52,9 @@ export function FloorPlanCanvas({ floorId, zoom = 1, drawingMode, onObjectSelect
     setIsInitialized(false);
   }, []);
 
-  // Initialize canvas
+  // Initialize canvas - now dependent on floorId
   useEffect(() => {
-    console.log('Initializing canvas effect triggered');
+    console.log('Initializing canvas effect triggered for floorId:', floorId);
     
     const initCanvas = () => {
       console.log('Starting canvas initialization...');
@@ -55,10 +63,8 @@ export function FloorPlanCanvas({ floorId, zoom = 1, drawingMode, onObjectSelect
         return;
       }
       
-      if (fabricRef.current) {
-        console.log('Canvas already exists, cleaning up first');
-        cleanupCanvas();
-      }
+      // Always clean up previous canvas instance
+      cleanupCanvas();
 
       console.log('Creating new canvas instance');
       const canvas = new Canvas(canvasRef.current, {
@@ -192,7 +198,7 @@ export function FloorPlanCanvas({ floorId, zoom = 1, drawingMode, onObjectSelect
       console.log('Canvas component unmounting');
       cleanupCanvas();
     };
-  }, []); // Empty dependency array as we only want to initialize once
+  }, [floorId, cleanupCanvas]); // Added floorId and cleanupCanvas to dependencies
 
   // Update zoom
   useEffect(() => {
@@ -218,7 +224,10 @@ export function FloorPlanCanvas({ floorId, zoom = 1, drawingMode, onObjectSelect
     
     console.log('Updating canvas objects:', floorPlanObjects.length);
     const canvas = fabricRef.current;
-    canvas.clear();
+    
+    // Remove existing objects but keep the canvas
+    const objects = canvas.getObjects();
+    objects.forEach(obj => canvas.remove(obj));
     
     createGrid(canvas, 20);
 
