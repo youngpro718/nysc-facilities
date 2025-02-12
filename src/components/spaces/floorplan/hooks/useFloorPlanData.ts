@@ -97,30 +97,38 @@ export function useFloorPlanData(floorId: string | null) {
       
       console.log('Fetching floor plan objects for floor:', floorId); // Debug log
       
-      const { data, error } = await supabase
-        .from('floor_plan_objects_view')
-        .select(`
-          id,
-          object_type,
-          name,
-          room_number,
-          type,
-          status,
-          position,
-          size,
-          parent_room_id,
-          connection_data,
-          floor_id
-        `)
-        .eq('floor_id', floorId);
-        
-      if (error) {
-        console.error('Error fetching floor plan objects:', error); // Debug log
-        throw error;
-      }
-      
-      console.log('Fetched floor plan objects:', data); // Debug log
-      return data || [];
+      // Fetch rooms
+      const { data: rooms, error: roomsError } = await supabase
+        .from('rooms')
+        .select('*, type:room_type')
+        .eq('floor_id', floorId)
+        .eq('status', 'active')
+        .then(res => res.data?.map(room => ({ ...room, object_type: 'room' })) || []);
+
+      if (roomsError) throw roomsError;
+
+      // Fetch hallways
+      const { data: hallways, error: hallwaysError } = await supabase
+        .from('hallways')
+        .select('*')
+        .eq('floor_id', floorId)
+        .eq('status', 'active')
+        .then(res => res.data?.map(hallway => ({ ...hallway, object_type: 'hallway' })) || []);
+
+      if (hallwaysError) throw hallwaysError;
+
+      // Fetch doors
+      const { data: doors, error: doorsError } = await supabase
+        .from('doors')
+        .select('*')
+        .eq('floor_id', floorId)
+        .eq('status', 'active')
+        .then(res => res.data?.map(door => ({ ...door, object_type: 'door' })) || []);
+
+      if (doorsError) throw doorsError;
+
+      // Combine all objects
+      return [...rooms, ...hallways, ...doors];
     },
     enabled: !!floorId
   });
