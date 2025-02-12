@@ -1,30 +1,30 @@
 
-export interface Room {
-  name: string;
-  room_number: string;
-  room_type: string;
-  status: string;
-}
+export type LayerType = 'rooms' | 'doors' | 'grid' | 'hallways' | 'annotations';
 
 export interface FloorPlanObject {
   id: string;
-  position_x: number;
-  position_y: number;
-  width: number;
-  height: number;
-  object_type: string;
-  object_id: string;
-  rooms?: Room | null;
-  created_at?: string;
-  floor_id?: string;
-  metadata?: Record<string, unknown>;
-  rotation?: number;
-  scale_x?: number;
-  scale_y?: number;
-  updated_at?: string;
+  layer_id: string;
+  floor_id: string;
+  label?: string;
+  type: string;
+  position: { x: number; y: number };
+  size: { width: number; height: number };
+  rotation: number;
+  style: Record<string, any>;
+  properties: Record<string, any>;
 }
 
-export type DrawingMode = "view" | "draw" | "door" | "hallway";
+export interface FloorPlanLayer {
+  id: string;
+  floor_id: string;
+  type: LayerType;
+  name: string;
+  order_index: number;
+  visible: boolean;
+  data: Record<string, any>;
+}
+
+export type DrawingMode = 'view' | 'draw' | 'door' | 'hallway';
 
 export const ROOM_COLORS: Record<string, string> = {
   office: '#e2e8f0',

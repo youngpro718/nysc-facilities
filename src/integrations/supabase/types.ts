@@ -509,107 +509,48 @@ export type Database = {
       }
       floor_plan_objects: {
         Row: {
-          connected_to: string[] | null
-          connection_type:
-            | Database["public"]["Enums"]["connection_type_enum"]
-            | null
           created_at: string | null
           floor_id: string
-          height: number
           id: string
-          metadata: Json | null
-          object_id: string
-          object_type: string
-          path_points: Json | null
-          position_x: number
-          position_y: number
+          label: string | null
+          layer_id: string
+          position: Json
           properties: Json | null
           rotation: number | null
-          scale_x: number | null
-          scale_y: number | null
+          size: Json
+          style: Json | null
+          type: string
           updated_at: string | null
-          width: number
         }
         Insert: {
-          connected_to?: string[] | null
-          connection_type?:
-            | Database["public"]["Enums"]["connection_type_enum"]
-            | null
           created_at?: string | null
           floor_id: string
-          height: number
           id?: string
-          metadata?: Json | null
-          object_id: string
-          object_type: string
-          path_points?: Json | null
-          position_x: number
-          position_y: number
+          label?: string | null
+          layer_id: string
+          position?: Json
           properties?: Json | null
           rotation?: number | null
-          scale_x?: number | null
-          scale_y?: number | null
+          size?: Json
+          style?: Json | null
+          type: string
           updated_at?: string | null
-          width: number
         }
         Update: {
-          connected_to?: string[] | null
-          connection_type?:
-            | Database["public"]["Enums"]["connection_type_enum"]
-            | null
           created_at?: string | null
           floor_id?: string
-          height?: number
           id?: string
-          metadata?: Json | null
-          object_id?: string
-          object_type?: string
-          path_points?: Json | null
-          position_x?: number
-          position_y?: number
+          label?: string | null
+          layer_id?: string
+          position?: Json
           properties?: Json | null
           rotation?: number | null
-          scale_x?: number | null
-          scale_y?: number | null
+          size?: Json
+          style?: Json | null
+          type?: string
           updated_at?: string | null
-          width?: number
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_floor_plan_objects_rooms"
-            columns: ["object_id"]
-            isOneToOne: false
-            referencedRelation: "room_issue_analytics"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "fk_floor_plan_objects_rooms"
-            columns: ["object_id"]
-            isOneToOne: false
-            referencedRelation: "room_lighting_status"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "fk_floor_plan_objects_rooms"
-            columns: ["object_id"]
-            isOneToOne: false
-            referencedRelation: "room_occupancy_stats"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "fk_floor_plan_objects_rooms"
-            columns: ["object_id"]
-            isOneToOne: false
-            referencedRelation: "rooms"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_floor_plan_objects_rooms"
-            columns: ["object_id"]
-            isOneToOne: false
-            referencedRelation: "storage_room_inventory"
-            referencedColumns: ["room_id"]
-          },
           {
             foreignKeyName: "floor_plan_objects_floor_id_fkey"
             columns: ["floor_id"]
@@ -622,6 +563,13 @@ export type Database = {
             columns: ["floor_id"]
             isOneToOne: false
             referencedRelation: "floors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floor_plan_objects_layer_id_fkey"
+            columns: ["layer_id"]
+            isOneToOne: false
+            referencedRelation: "floorplan_layers"
             referencedColumns: ["id"]
           },
         ]
@@ -671,42 +619,49 @@ export type Database = {
         Row: {
           created_at: string | null
           data: Json | null
-          floorplan_id: string | null
+          floor_id: string
           id: string
           name: string
           order_index: number
-          type: string
+          type: Database["public"]["Enums"]["layer_type_enum"]
           updated_at: string | null
           visible: boolean | null
         }
         Insert: {
           created_at?: string | null
           data?: Json | null
-          floorplan_id?: string | null
+          floor_id: string
           id?: string
           name: string
           order_index: number
-          type: string
+          type: Database["public"]["Enums"]["layer_type_enum"]
           updated_at?: string | null
           visible?: boolean | null
         }
         Update: {
           created_at?: string | null
           data?: Json | null
-          floorplan_id?: string | null
+          floor_id?: string
           id?: string
           name?: string
           order_index?: number
-          type?: string
+          type?: Database["public"]["Enums"]["layer_type_enum"]
           updated_at?: string | null
           visible?: boolean | null
         }
         Relationships: [
           {
-            foreignKeyName: "floorplan_layers_floorplan_id_fkey"
-            columns: ["floorplan_id"]
+            foreignKeyName: "floorplan_layers_floor_id_fkey"
+            columns: ["floor_id"]
             isOneToOne: false
-            referencedRelation: "floorplans"
+            referencedRelation: "floorplan_report_data"
+            referencedColumns: ["floor_id"]
+          },
+          {
+            foreignKeyName: "floorplan_layers_floor_id_fkey"
+            columns: ["floor_id"]
+            isOneToOne: false
+            referencedRelation: "floors"
             referencedColumns: ["id"]
           },
         ]
@@ -4587,6 +4542,7 @@ export type Database = {
       issue_status_enum: "open" | "in_progress" | "resolved"
       key_status_enum: "available" | "assigned" | "lost" | "decommissioned"
       key_type_enum: "physical_key" | "elevator_pass" | "room_key"
+      layer_type_enum: "rooms" | "doors" | "grid" | "hallways" | "annotations"
       light_fixture_type_enum: "standard" | "emergency" | "motion_sensor"
       light_position_enum:
         | "front"
