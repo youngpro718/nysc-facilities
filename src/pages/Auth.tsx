@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { SparklesCore } from "@/components/ui/sparkles";
 import { Input } from "@/components/ui/input";
@@ -12,7 +11,7 @@ import { Card } from "@/components/ui/card";
 import { Mail, Lock, Loader2 } from "lucide-react";
 import { EvervaultCard } from "@/components/ui/evervault-card";
 
-const ALLOWED_DOMAINS = ["state.gov", "nyc.gov"]; // Add any other government domains
+const ALLOWED_DOMAINS = ["state.gov", "nyc.gov", "gmail.com"]; // Temporarily allow gmail.com for development
 
 const Auth = () => {
   const [email, setEmail] = useState("");
