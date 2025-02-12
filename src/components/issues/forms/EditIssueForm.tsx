@@ -30,8 +30,8 @@ const editIssueSchema = z.object({
   description: z.string().min(1, "Description is required"),
   status: z.enum(["open", "in_progress", "resolved"] as const),
   priority: z.enum(["low", "medium", "high"] as const),
-  due_date: z.string().optional(),
-  date_info: z.string().optional(),
+  due_date: z.string().optional().nullable(),
+  date_info: z.string().optional().nullable(),
   resolution_type: z.enum(["fixed", "replaced", "maintenance_performed", "no_action_needed", "deferred", "other"] as const).optional(),
   resolution_notes: z.string().optional(),
   assignee_id: z.string().optional(),
@@ -46,6 +46,18 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
   const queryClient = useQueryClient();
   const { uploading, selectedPhotos, handlePhotoUpload, setSelectedPhotos } = usePhotoUpload();
 
+  // Format the initial due date properly
+  const formatInitialDate = (dateString: string | null) => {
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '';
+      return date.toISOString().slice(0, 16);
+    } catch {
+      return '';
+    }
+  };
+
   const form = useForm<FormData>({
     resolver: zodResolver(editIssueSchema),
     defaultValues: {
@@ -53,10 +65,10 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
       description: issue.description,
       status: issue.status,
       priority: issue.priority,
-      due_date: issue.due_date ? new Date(issue.due_date).toISOString().slice(0, 16) : undefined,
-      date_info: issue.date_info || undefined,
-      resolution_type: issue.resolution_type,
-      resolution_notes: issue.resolution_notes || undefined,
+      due_date: formatInitialDate(issue.due_date),
+      date_info: issue.date_info || '',
+      resolution_type: issue.resolution_type || undefined,
+      resolution_notes: issue.resolution_notes || '',
       assignee_id: issue.assignee_id || undefined,
     },
   });
@@ -66,11 +78,19 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
 
   const updateIssueMutation = useMutation({
     mutationFn: async (values: FormData) => {
+      // Handle empty date string
+      const formattedDueDate = values.due_date && values.due_date.trim() !== '' 
+        ? new Date(values.due_date).toISOString()
+        : null;
+
       const updateData = {
         ...values,
+        due_date: formattedDueDate,
         photos: selectedPhotos,
         resolution_date: isResolved ? new Date().toISOString() : null,
       };
+
+      console.log('Submitting with due date:', formattedDueDate);
 
       const { error } = await supabase
         .from('issues')
@@ -85,7 +105,8 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
       toast.success("Issue updated successfully");
       onClose();
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Update error:', error);
       toast.error("Failed to update issue");
     },
   });
@@ -126,7 +147,11 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
                   <FormControl>
                     <Input 
                       type="datetime-local" 
-                      {...field} 
+                      {...field}
+                      onChange={(e) => {
+                        console.log('New date value:', e.target.value);
+                        field.onChange(e);
+                      }}
                       value={field.value || ''}
                     />
                   </FormControl>
@@ -144,7 +169,7 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
                   <FormControl>
                     <Input 
                       placeholder="Why is this date being set? (e.g., scheduled painting, repairs)" 
-                      {...field} 
+                      {...field}
                       value={field.value || ''}
                     />
                   </FormControl>
