@@ -55,43 +55,43 @@ export function EditPropertiesPanel({ selectedObject, onClose, onUpdate }: EditP
 
   const onSubmit = async (data: FormValues) => {
     try {
-      console.log('Updating object with data:', data);
-      
-      const positionData = {
-        x: Number(data.positionX),
-        y: Number(data.positionY)
-      };
-
-      const sizeData = {
-        width: Number(data.width),
-        height: Number(data.height)
-      };
+      console.log('Selected object:', selectedObject);
+      console.log('Form data:', data);
 
       const updateData = {
-        position: positionData,
-        size: sizeData,
-        rotation: Number(data.rotation),
         label: data.label,
         type: selectedObject.type,
-        properties: {
+        position: JSON.stringify({
+          x: Number(data.positionX),
+          y: Number(data.positionY)
+        }),
+        size: JSON.stringify({
+          width: Number(data.width),
+          height: Number(data.height)
+        }),
+        rotation: Number(data.rotation),
+        properties: JSON.stringify({
           room_number: data.room_number,
           room_type: data.room_type,
           status: data.status
-        },
+        }),
         style: selectedObject.style
       };
 
       console.log('Sending update data:', updateData);
 
-      const { error } = await supabase
+      const { data: result, error } = await supabase
         .from('floor_plan_objects')
         .update(updateData)
-        .eq('id', selectedObject.id);
+        .eq('id', selectedObject.id)
+        .select();
 
       if (error) {
         console.error('Supabase error:', error);
         throw error;
       }
+
+      console.log('Update result:', result);
 
       toast.success('Properties updated successfully');
       onUpdate();
