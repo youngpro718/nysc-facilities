@@ -9,7 +9,8 @@ import ReactFlow, {
   useEdgesState,
   Connection,
   Edge,
-  Node
+  Node,
+  addEdge
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Card } from "@/components/ui/card";

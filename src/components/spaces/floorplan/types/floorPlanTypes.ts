@@ -1,6 +1,5 @@
 
 import { Json } from "@/integrations/supabase/types";
-import { Node, Edge } from 'reactflow';
 
 export type LayerType = 'rooms' | 'doors' | 'grid' | 'hallways' | 'annotations';
 
@@ -22,12 +21,20 @@ export interface FloorPlanObjectData {
   properties: Record<string, any>;
 }
 
-export interface FloorPlanNode extends Node {
+// Instead of extending Node and Edge directly, we define our own interfaces
+export interface FloorPlanNode {
+  id: string;
+  type: string;
+  position: Position;
   data: FloorPlanObjectData;
+  zIndex?: number;
 }
 
-export interface FloorPlanEdge extends Edge {
-  data: {
+export interface FloorPlanEdge {
+  id: string;
+  source: string;
+  target: string;
+  data?: {
     type: string;
     style?: Record<string, any>;
   };
