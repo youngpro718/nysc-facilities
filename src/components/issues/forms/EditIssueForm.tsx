@@ -1,4 +1,3 @@
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -12,6 +11,7 @@ import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 const editIssueSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -21,6 +21,7 @@ const editIssueSchema = z.object({
   due_date: z.string().optional(),
   resolution_type: z.enum(["fixed", "replaced", "maintenance_performed", "no_action_needed", "deferred", "other"] as const).optional(),
   resolution_notes: z.string().optional(),
+  assignee_id: z.string().optional(),
 });
 
 type EditIssueFormValues = z.infer<typeof editIssueSchema>;
@@ -33,6 +34,18 @@ interface EditIssueFormProps {
 export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
   const queryClient = useQueryClient();
 
+  const { data: profiles } = useQuery({
+    queryKey: ['profiles'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name');
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const form = useForm<EditIssueFormValues>({
     resolver: zodResolver(editIssueSchema),
     defaultValues: {
@@ -43,6 +56,7 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
       due_date: issue.due_date,
       resolution_type: issue.resolution_type,
       resolution_notes: issue.resolution_notes,
+      assignee_id: issue.assignee_id,
     },
   });
 
@@ -119,20 +133,23 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="status"
+            name="assignee_id"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Status</FormLabel>
+                <FormLabel>Assignee</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
+                      <SelectValue placeholder="Select assignee" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="open">Open</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="resolved">Resolved</SelectItem>
+                    <SelectItem value="">Unassigned</SelectItem>
+                    {profiles?.map((profile) => (
+                      <SelectItem key={profile.id} value={profile.id}>
+                        {profile.first_name} {profile.last_name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -163,6 +180,29 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
             )}
           />
         </div>
+
+        <FormField
+          control={form.control}
+          name="status"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Status</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="open">Open</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="resolved">Resolved</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}
