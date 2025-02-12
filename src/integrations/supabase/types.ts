@@ -511,14 +511,12 @@ export type Database = {
         Row: {
           created_at: string | null
           floor_id: string
-          handle_positions: Json | null
           id: string
           label: string | null
-          layer_id: string
-          position: Json
+          position: Json | null
           properties: Json | null
           rotation: number | null
-          size: Json
+          size: Json | null
           style: Json | null
           type: string
           updated_at: string | null
@@ -527,14 +525,12 @@ export type Database = {
         Insert: {
           created_at?: string | null
           floor_id: string
-          handle_positions?: Json | null
           id?: string
           label?: string | null
-          layer_id: string
-          position?: Json
+          position?: Json | null
           properties?: Json | null
           rotation?: number | null
-          size?: Json
+          size?: Json | null
           style?: Json | null
           type: string
           updated_at?: string | null
@@ -543,14 +539,12 @@ export type Database = {
         Update: {
           created_at?: string | null
           floor_id?: string
-          handle_positions?: Json | null
           id?: string
           label?: string | null
-          layer_id?: string
-          position?: Json
+          position?: Json | null
           properties?: Json | null
           rotation?: number | null
-          size?: Json
+          size?: Json | null
           style?: Json | null
           type?: string
           updated_at?: string | null
@@ -569,13 +563,6 @@ export type Database = {
             columns: ["floor_id"]
             isOneToOne: false
             referencedRelation: "floors"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floor_plan_objects_layer_id_fkey"
-            columns: ["layer_id"]
-            isOneToOne: false
-            referencedRelation: "floorplan_layers"
             referencedColumns: ["id"]
           },
         ]
