@@ -57,7 +57,11 @@ type DatabaseIssue = {
     type: string;
     status: string;
     position: string;
-    electrical_issues: Record<string, boolean>;
+    electrical_issues: {
+      short_circuit: boolean;
+      wiring_issues: boolean;
+      voltage_problems: boolean;
+    } | null;
   } | null;
 };
 
@@ -112,6 +116,18 @@ async function fetchIssues() {
 }
 
 function transformIssue(dbIssue: DatabaseIssue): Issue {
+  const lightingFixture = dbIssue.lighting_fixtures ? {
+    name: dbIssue.lighting_fixtures.name,
+    type: dbIssue.lighting_fixtures.type as FixtureType,
+    status: dbIssue.lighting_fixtures.status as FixtureStatus,
+    position: dbIssue.lighting_fixtures.position as FixturePosition,
+    electrical_issues: dbIssue.lighting_fixtures.electrical_issues || {
+      short_circuit: false,
+      wiring_issues: false,
+      voltage_problems: false
+    }
+  } : undefined;
+
   return {
     id: dbIssue.id,
     title: dbIssue.title,
@@ -126,13 +142,7 @@ function transformIssue(dbIssue: DatabaseIssue): Issue {
     buildings: dbIssue.buildings,
     floors: dbIssue.floors,
     rooms: dbIssue.rooms,
-    lighting_fixtures: dbIssue.lighting_fixtures ? [{
-      name: dbIssue.lighting_fixtures.name,
-      type: dbIssue.lighting_fixtures.type as FixtureType,
-      status: dbIssue.lighting_fixtures.status as FixtureStatus,
-      position: dbIssue.lighting_fixtures.position as FixturePosition,
-      electrical_issues: dbIssue.lighting_fixtures.electrical_issues
-    }] : []
+    lighting_fixtures: lightingFixture ? [lightingFixture] : []
   };
 }
 
@@ -144,7 +154,7 @@ export const IssuesList = () => {
   const { data: issues, isLoading } = useQuery({
     queryKey: ['issues'],
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await supabase
         .from('issues')
         .select(`
           id,
@@ -169,10 +179,9 @@ export const IssuesList = () => {
           )
         `)
         .order('created_at', { ascending: false });
-      
-      const { data, error } = await query;
+
       if (error) throw error;
-      return (data || []).map(transformIssue);
+      return (data || []).map((item: DatabaseIssue) => transformIssue(item));
     }
   });
 
