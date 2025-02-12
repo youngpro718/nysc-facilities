@@ -1,3 +1,4 @@
+
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Layout from "@/components/layout/Layout";
@@ -10,6 +11,8 @@ import Occupants from "@/pages/Occupants";
 import Keys from "@/pages/Keys";
 import Profile from "@/pages/Profile";
 import Lighting from "@/pages/Lighting";
+import { ThemeProvider } from "@/providers/ThemeProvider";
+import { Toaster } from "@/components/ui/sonner";
 
 // Create a client
 const queryClient = new QueryClient();
@@ -17,21 +20,24 @@ const queryClient = new QueryClient();
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Routes>
-          <Route element={<Layout />}>
-            <Route index element={<Index />} />
-            <Route path="auth" element={<Auth />} />
-            <Route path="spaces" element={<Spaces />} />
-            <Route path="issues" element={<Issues />} />
-            <Route path="occupants" element={<Occupants />} />
-            <Route path="keys" element={<Keys />} />
-            <Route path="lighting" element={<Lighting />} />
-            <Route path="profile" element={<Profile />} />
-            <Route path="*" element={<NotFound />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+      <ThemeProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route element={<Layout />}>
+              <Route index element={<Index />} />
+              <Route path="auth" element={<Auth />} />
+              <Route path="spaces" element={<Spaces />} />
+              <Route path="issues" element={<Issues />} />
+              <Route path="occupants" element={<Occupants />} />
+              <Route path="keys" element={<Keys />} />
+              <Route path="lighting" element={<Lighting />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="*" element={<NotFound />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+        <Toaster />
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

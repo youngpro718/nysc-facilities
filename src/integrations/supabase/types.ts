@@ -3108,8 +3108,10 @@ export type Database = {
           created_at: string | null
           department: string | null
           emergency_contact: Json | null
+          feature_flags: Json | null
           first_name: string | null
           id: string
+          interface_preferences: Json | null
           job_title_validated: boolean | null
           language: string | null
           last_login: string | null
@@ -3132,8 +3134,10 @@ export type Database = {
           created_at?: string | null
           department?: string | null
           emergency_contact?: Json | null
+          feature_flags?: Json | null
           first_name?: string | null
           id: string
+          interface_preferences?: Json | null
           job_title_validated?: boolean | null
           language?: string | null
           last_login?: string | null
@@ -3156,8 +3160,10 @@ export type Database = {
           created_at?: string | null
           department?: string | null
           emergency_contact?: Json | null
+          feature_flags?: Json | null
           first_name?: string | null
           id?: string
+          interface_preferences?: Json | null
           job_title_validated?: boolean | null
           language?: string | null
           last_login?: string | null
@@ -3742,6 +3748,30 @@ export type Database = {
           key: string
           updated_at?: string | null
           value: Json
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          key?: string
+          updated_at?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
+      system_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          key: string
+          updated_at: string | null
+          value: Json
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          key: string
+          updated_at?: string | null
+          value?: Json
         }
         Update: {
           created_at?: string | null
@@ -4617,6 +4647,8 @@ export type Database = {
         | "break_room"
         | "it_room"
         | "utility_room"
+        | "laboratory"
+        | "conference"
       security_level_enum: "standard" | "restricted" | "high_security"
       status_enum: "active" | "inactive" | "under_maintenance"
       zone_type_enum: "general" | "emergency" | "restricted"
