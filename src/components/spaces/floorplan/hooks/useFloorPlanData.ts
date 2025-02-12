@@ -39,12 +39,8 @@ function transformSpaceToNode(space: any, index: number): FloorPlanNode {
     (typeof space.size === 'string' ? JSON.parse(space.size) : space.size) :
     defaultSize;
 
-  // Get background color based on type
-  const backgroundColor = space.object_type === 'room' ? 
-    ROOM_COLORS[space.type] || ROOM_COLORS.default :
-    space.object_type === 'hallway' ?
-    '#e5e7eb' : // Light gray for hallways
-    '#94a3b8'; // Slate gray for doors
+  // Get background color based on type and status
+  const backgroundColor = getSpaceColor(space);
 
   return {
     id: space.id,
@@ -56,7 +52,8 @@ function transformSpaceToNode(space: any, index: number): FloorPlanNode {
       size: spaceSize,
       style: {
         backgroundColor,
-        border: '1px solid #cbd5e1'
+        border: space.status === 'active' ? '1px solid #cbd5e1' : '2px dashed #ef4444',
+        opacity: space.status === 'active' ? 1 : 0.7
       },
       properties: {
         room_number: space.room_number,
@@ -68,6 +65,36 @@ function transformSpaceToNode(space: any, index: number): FloorPlanNode {
     },
     zIndex: space.object_type === 'door' ? 2 : space.object_type === 'hallway' ? 1 : 0
   };
+}
+
+function getSpaceColor(space: any): string {
+  if (space.object_type === 'room') {
+    // Use room type colors with status variations
+    const baseColor = ROOM_COLORS[space.type] || ROOM_COLORS.default;
+    return space.status === 'active' ? baseColor : `${baseColor}80`; // Add transparency for inactive
+  } else if (space.object_type === 'hallway') {
+    return space.status === 'active' ? '#e5e7eb' : '#e5e7eb80';
+  } else {
+    return space.status === 'active' ? '#94a3b8' : '#94a3b880';
+  }
+}
+
+function createEdgesFromConnections(connections: any[]): FloorPlanEdge[] {
+  return connections.map(conn => ({
+    id: conn.id,
+    source: conn.from_space_id,
+    target: conn.to_space_id,
+    data: {
+      type: conn.connection_type,
+      style: {
+        stroke: conn.status === 'active' ? '#64748b' : '#94a3b8',
+        strokeWidth: 2,
+        strokeDasharray: conn.status === 'active' ? '' : '5,5'
+      }
+    },
+    type: 'smoothstep',
+    animated: conn.connection_type === 'door'
+  }));
 }
 
 export function useFloorPlanData(floorId: string | null) {
@@ -89,11 +116,11 @@ export function useFloorPlanData(floorId: string | null) {
     enabled: !!floorId
   });
 
-  // Query for floor plan objects
-  const { data: spaceObjects, isLoading: isLoadingObjects } = useQuery({
+  // Query for floor plan objects and connections
+  const { data: spaceData, isLoading: isLoadingObjects } = useQuery({
     queryKey: ['floorplan-objects', floorId],
     queryFn: async () => {
-      if (!floorId) return [];
+      if (!floorId) return { objects: [], connections: [] };
       
       console.log('Fetching floor plan objects for floor:', floorId);
       
@@ -157,17 +184,32 @@ export function useFloorPlanData(floorId: string | null) {
         object_type: 'door' as const
       }));
 
+      // Fetch space connections
+      const { data: connections, error: connectionsError } = await supabase
+        .from('space_connections')
+        .select('*')
+        .eq('status', 'active');
+
+      if (connectionsError) throw connectionsError;
+
       // Combine all objects
       const allObjects = [...roomObjects, ...hallwayObjects, ...doorObjects];
       console.log('Fetched floor plan objects:', allObjects);
-      return allObjects;
+      
+      return {
+        objects: allObjects,
+        connections: connections || []
+      };
     },
     enabled: !!floorId
   });
 
   // Transform all objects into floor plan nodes
-  const objects = spaceObjects?.map((obj, index) => transformSpaceToNode(obj, index)) || [];
+  const objects = spaceData?.objects.map((obj, index) => transformSpaceToNode(obj, index)) || [];
+  const edges = spaceData?.connections ? createEdgesFromConnections(spaceData.connections) : [];
+  
   console.log('Transformed objects:', objects);
+  console.log('Created edges:', edges);
 
   // Process parent/child relationships
   const processedObjects = objects.map(obj => {
@@ -187,6 +229,7 @@ export function useFloorPlanData(floorId: string | null) {
   return {
     layers,
     objects: processedObjects,
+    edges,
     isLoading: isLoadingLayers || isLoadingObjects
   };
 }
