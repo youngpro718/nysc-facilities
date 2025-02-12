@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Canvas, Rect } from "fabric";
 import { Card } from "@/components/ui/card";
@@ -92,26 +91,41 @@ export function FloorPlanCanvas({ floorId, zoom = 1, drawingMode, onObjectSelect
         canvas.add(door);
         
         try {
-          const { data, error } = await supabase
+          const { data: doorData, error: doorError } = await supabase
+            .from('doors')
+            .insert({
+              floor_id: floorId,
+              name: 'New Door',
+              type: 'standard',
+              status: 'active'
+            })
+            .select()
+            .single();
+
+          if (doorError) throw doorError;
+
+          const { data: floorPlanData, error: floorPlanError } = await supabase
             .from('floor_plan_objects')
             .insert({
               floor_id: floorId,
+              object_id: doorData.id,
               object_type: 'door',
               position_x: Math.round(pointer.x),
               position_y: Math.round(pointer.y),
               width: 40,
               height: 10,
-              properties: { name: 'New Door' }
+              properties: { name: doorData.name },
+              metadata: { type: doorData.type }
             })
             .select()
             .single();
 
-          if (error) throw error;
+          if (floorPlanError) throw floorPlanError;
           
-          (door as any).customData = data;
+          (door as any).customData = floorPlanData;
           canvas.renderAll();
           toast.success('Door added successfully');
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error saving door:', error);
           canvas.remove(door);
           toast.error('Failed to add door');
