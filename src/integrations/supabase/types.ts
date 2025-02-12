@@ -311,8 +311,10 @@ export type Database = {
           name: string
           next_maintenance_date: string | null
           passkey_enabled: boolean | null
+          position: Json | null
           security_config: Json | null
           security_level: string | null
+          size: Json | null
           status: Database["public"]["Enums"]["status_enum"]
           status_history: Json[] | null
           type: Database["public"]["Enums"]["door_type_enum"]
@@ -338,8 +340,10 @@ export type Database = {
           name: string
           next_maintenance_date?: string | null
           passkey_enabled?: boolean | null
+          position?: Json | null
           security_config?: Json | null
           security_level?: string | null
+          size?: Json | null
           status?: Database["public"]["Enums"]["status_enum"]
           status_history?: Json[] | null
           type: Database["public"]["Enums"]["door_type_enum"]
@@ -365,8 +369,10 @@ export type Database = {
           name?: string
           next_maintenance_date?: string | null
           passkey_enabled?: boolean | null
+          position?: Json | null
           security_config?: Json | null
           security_level?: string | null
+          size?: Json | null
           status?: Database["public"]["Enums"]["status_enum"]
           status_history?: Json[] | null
           type?: Database["public"]["Enums"]["door_type_enum"]
