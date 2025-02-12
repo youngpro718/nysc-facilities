@@ -1,3 +1,4 @@
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -52,11 +53,11 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
       description: issue.description,
       status: issue.status,
       priority: issue.priority,
-      due_date: issue.due_date,
-      date_info: issue.date_info,
+      due_date: issue.due_date ? new Date(issue.due_date).toISOString().slice(0, 16) : undefined,
+      date_info: issue.date_info || undefined,
       resolution_type: issue.resolution_type,
-      resolution_notes: issue.resolution_notes,
-      assignee_id: issue.assignee_id,
+      resolution_notes: issue.resolution_notes || undefined,
+      assignee_id: issue.assignee_id || undefined,
     },
   });
 
@@ -123,7 +124,11 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
                 <FormItem>
                   <FormLabel>Due Date</FormLabel>
                   <FormControl>
-                    <Input type="datetime-local" {...field} />
+                    <Input 
+                      type="datetime-local" 
+                      {...field} 
+                      value={field.value || ''}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -140,6 +145,7 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
                     <Input 
                       placeholder="Why is this date being set? (e.g., scheduled painting, repairs)" 
                       {...field} 
+                      value={field.value || ''}
                     />
                   </FormControl>
                   <FormMessage />
