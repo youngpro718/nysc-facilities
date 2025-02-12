@@ -35,6 +35,7 @@ import {
 } from "./types/IssueTypes";
 import { ResolutionForm } from "./forms/ResolutionForm";
 import { useState } from "react";
+import { IssueDetails } from "./details/IssueDetails";
 
 // Define base types for database response
 type DatabaseIssue = {
@@ -278,7 +279,11 @@ export const IssuesList = () => {
               const lightingDetails = issue.lighting_fixtures?.[0];
               
               return (
-                <TableRow key={issue.id}>
+                <TableRow 
+                  key={issue.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => setSelectedIssueId(issue.id)}
+                >
                   <TableCell>{issue.title}</TableCell>
                   <TableCell>{issue.description}</TableCell>
                   <TableCell>
@@ -378,6 +383,11 @@ export const IssuesList = () => {
           </TableBody>
         </Table>
       </div>
+
+      <IssueDetails 
+        issueId={selectedIssueId} 
+        onClose={() => setSelectedIssueId(null)} 
+      />
 
       <Dialog open={showResolutionForm} onOpenChange={setShowResolutionForm}>
         <DialogContent>
