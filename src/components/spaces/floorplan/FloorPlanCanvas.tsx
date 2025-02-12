@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Canvas, Rect } from "fabric";
 import { Card } from "@/components/ui/card";
 import { FloorPlanObject, DrawingMode } from "./types/floorPlanTypes";
@@ -25,11 +25,42 @@ export function FloorPlanCanvas({ floorId, zoom = 1, drawingMode, onObjectSelect
 
   const { data: floorPlanObjects, isLoading, error } = useFloorPlanData(floorId);
 
+  const cleanupCanvas = useCallback(() => {
+    console.log('Cleaning up canvas...', fabricRef.current ? 'Canvas exists' : 'No canvas');
+    if (fabricRef.current) {
+      try {
+        // Remove all event listeners
+        fabricRef.current.off();
+        // Clear all objects
+        fabricRef.current.clear();
+        // Dispose the canvas
+        fabricRef.current.dispose();
+        console.log('Canvas cleaned up successfully');
+      } catch (err) {
+        console.error('Error cleaning up canvas:', err);
+      }
+      fabricRef.current = null;
+    }
+    setIsInitialized(false);
+  }, []);
+
   // Initialize canvas
   useEffect(() => {
+    console.log('Initializing canvas effect triggered');
+    
     const initCanvas = () => {
-      if (!canvasRef.current || fabricRef.current) return;
+      console.log('Starting canvas initialization...');
+      if (!canvasRef.current) {
+        console.log('Canvas ref not ready');
+        return;
+      }
+      
+      if (fabricRef.current) {
+        console.log('Canvas already exists, cleaning up first');
+        cleanupCanvas();
+      }
 
+      console.log('Creating new canvas instance');
       const canvas = new Canvas(canvasRef.current, {
         width: 800,
         height: 600,
@@ -38,7 +69,9 @@ export function FloorPlanCanvas({ floorId, zoom = 1, drawingMode, onObjectSelect
         selection: true
       });
 
+      // Selection events
       canvas.on('selection:created', (e) => {
+        console.log('Selection created:', e.selected?.[0]);
         const group = e.selected?.[0] as any;
         if (group?.customData) {
           onObjectSelect?.(group.customData);
@@ -46,11 +79,14 @@ export function FloorPlanCanvas({ floorId, zoom = 1, drawingMode, onObjectSelect
       });
 
       canvas.on('selection:cleared', () => {
+        console.log('Selection cleared');
         onObjectSelect?.(null);
       });
 
+      // Mouse events
       canvas.on('mouse:down', async (e) => {
         if (!e.pointer) return;
+        console.log('Mouse down event:', drawingMode);
 
         if (drawingMode === 'draw') {
           setIsDrawing(true);
@@ -72,6 +108,7 @@ export function FloorPlanCanvas({ floorId, zoom = 1, drawingMode, onObjectSelect
           setActiveRect(rect);
         } else if (drawingMode === 'door' && floorId) {
           const pointer = canvas.getPointer(e.e);
+          console.log('Creating door at:', pointer);
           const door = createDoor(pointer.x, pointer.y);
           canvas.add(door);
           
@@ -130,6 +167,7 @@ export function FloorPlanCanvas({ floorId, zoom = 1, drawingMode, onObjectSelect
 
       canvas.on('mouse:up', () => {
         if (!isDrawing || !activeRect) return;
+        console.log('Mouse up event - finishing drawing');
 
         setIsDrawing(false);
         setStartPoint(null);
@@ -144,25 +182,22 @@ export function FloorPlanCanvas({ floorId, zoom = 1, drawingMode, onObjectSelect
       });
 
       fabricRef.current = canvas;
+      console.log('Canvas initialized successfully');
       setIsInitialized(true);
     };
 
-    // Initialize the canvas
     initCanvas();
 
-    // Cleanup function
     return () => {
-      if (fabricRef.current) {
-        fabricRef.current.dispose();
-        fabricRef.current = null;
-        setIsInitialized(false);
-      }
+      console.log('Canvas component unmounting');
+      cleanupCanvas();
     };
   }, []); // Empty dependency array as we only want to initialize once
 
   // Update zoom
   useEffect(() => {
     if (!fabricRef.current || !isInitialized) return;
+    console.log('Updating zoom:', zoom);
     
     const canvas = fabricRef.current;
     const center = canvas.getCenter();
@@ -172,8 +207,16 @@ export function FloorPlanCanvas({ floorId, zoom = 1, drawingMode, onObjectSelect
 
   // Add objects to canvas
   useEffect(() => {
-    if (!fabricRef.current || !floorPlanObjects || !isInitialized) return;
+    if (!fabricRef.current || !floorPlanObjects || !isInitialized) {
+      console.log('Skipping objects update:', {
+        hasCanvas: !!fabricRef.current,
+        hasObjects: !!floorPlanObjects,
+        isInitialized
+      });
+      return;
+    }
     
+    console.log('Updating canvas objects:', floorPlanObjects.length);
     const canvas = fabricRef.current;
     canvas.clear();
     
@@ -195,6 +238,7 @@ export function FloorPlanCanvas({ floorId, zoom = 1, drawingMode, onObjectSelect
   // Update selection mode based on drawing mode
   useEffect(() => {
     if (!fabricRef.current) return;
+    console.log('Updating drawing mode:', drawingMode);
     
     const canvas = fabricRef.current;
     canvas.selection = drawingMode === 'view';
@@ -209,7 +253,7 @@ export function FloorPlanCanvas({ floorId, zoom = 1, drawingMode, onObjectSelect
     return (
       <Card className="p-4">
         <div className="h-[600px] w-full flex items-center justify-center bg-gray-50 text-red-500">
-          Error loading floor plan
+          Error loading floor plan: {error.message}
         </div>
       </Card>
     );
