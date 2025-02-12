@@ -4,62 +4,53 @@ import { FloorPlanObject, ROOM_COLORS } from "../types/floorPlanTypes";
 export function createGrid(canvas: Canvas, gridSize: number) {
   console.log('Creating grid with size:', gridSize);
   
-  // Get canvas dimensions
-  const canvasWidth = canvas.width ?? 800;
-  const canvasHeight = canvas.height ?? 600;
-  
   // Calculate the number of lines needed
-  const numHorizontalLines = Math.ceil(canvasHeight / gridSize);
-  const numVerticalLines = Math.ceil(canvasWidth / gridSize);
+  const numHorizontalLines = Math.ceil(canvas.getHeight() / gridSize);
+  const numVerticalLines = Math.ceil(canvas.getWidth() / gridSize);
 
-  // Create grid lines
-  const lines: FabricLine[] = [];
+  const gridGroup = new FabricGroup([], {
+    selectable: false,
+    evented: false,
+    left: 0,
+    top: 0
+  });
 
   // Create vertical lines
   for (let i = 0; i <= numVerticalLines; i++) {
-    const x = (i * gridSize) - (canvasWidth / 2);
-    const line = new FabricLine(
-      [x, -canvasHeight/2, x, canvasHeight/2],
-      {
-        stroke: '#e5e7eb',
-        selectable: false,
-        strokeWidth: 1,
-        evented: false
-      }
-    );
-    lines.push(line);
+    const x = i * gridSize;
+    const line = new FabricLine([x, 0, x, canvas.getHeight()], {
+      stroke: '#e5e7eb',
+      selectable: false,
+      strokeWidth: 1
+    });
+    gridGroup.add(line);
   }
   
   // Create horizontal lines
   for (let i = 0; i <= numHorizontalLines; i++) {
-    const y = (i * gridSize) - (canvasHeight / 2);
-    const line = new FabricLine(
-      [-canvasWidth/2, y, canvasWidth/2, y],
-      {
-        stroke: '#e5e7eb',
-        selectable: false,
-        strokeWidth: 1,
-        evented: false
-      }
-    );
-    lines.push(line);
+    const y = i * gridSize;
+    const line = new FabricLine([0, y, canvas.getWidth(), y], {
+      stroke: '#e5e7eb',
+      selectable: false,
+      strokeWidth: 1
+    });
+    gridGroup.add(line);
   }
 
-  // Create and configure grid group
-  const gridGroup = new FabricGroup(lines, {
-    selectable: false,
-    evented: false,
-    left: canvasWidth / 2,
-    top: canvasHeight / 2,
-    originX: 'center',
-    originY: 'center'
+  // Center the grid group on the canvas
+  const canvasCenter = canvas.getCenter();
+  gridGroup.set({
+    left: 0,
+    top: 0,
+    width: canvas.getWidth(),
+    height: canvas.getHeight(),
+    originX: 'left',
+    originY: 'top'
   });
 
-  // Add the grid to canvas
   canvas.add(gridGroup);
   canvas.renderAll();
-  
-  console.log('Grid created with dimensions:', canvasWidth, 'x', canvasHeight);
+  console.log('Grid created and centered with dimensions:', canvas.getWidth(), 'x', canvas.getHeight());
   return gridGroup;
 }
 
