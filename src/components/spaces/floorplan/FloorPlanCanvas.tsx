@@ -1,5 +1,5 @@
 
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { 
   ReactFlow,
   Background, 
@@ -56,7 +56,6 @@ function FlowComponent({
   onNodeClick,
   nodeTypes
 }: any) {
-  // Initialize viewport with more space to see nodes
   const defaultViewport = useMemo(() => ({ x: 50, y: 50, zoom: 0.8 }), []);
 
   return (
@@ -74,7 +73,8 @@ function FlowComponent({
       fitView
       fitViewOptions={{ 
         padding: 0.2,
-        duration: 200 
+        duration: 800, // Increased duration for smoother transitions
+        includeHiddenNodes: true
       }}
     >
       <Panel position="top-left">
@@ -96,30 +96,32 @@ export function FloorPlanCanvas({
   onObjectSelect 
 }: FloorPlanCanvasProps) {
   const { objects, isLoading } = useFloorPlanData(floorId);
-  
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const initialized = useRef(false);
 
   useEffect(() => {
-    if (!objects) return;
+    // Reset initialized ref when floor changes
+    if (floorId) {
+      initialized.current = false;
+    }
+  }, [floorId]);
 
-    console.log('Transforming floor plan objects:', objects); // Debug log
+  useEffect(() => {
+    if (!objects || initialized.current) return;
 
     const reactFlowNodes = objects.map((obj, index) => {
-      // Calculate grid-based position with more spacing
       const defaultPosition = {
-        x: (index % 3) * 250 + 100, // Increased horizontal spacing
-        y: Math.floor(index / 3) * 200 + 100 // Increased vertical spacing
+        x: (index % 3) * 250 + 100,
+        y: Math.floor(index / 3) * 200 + 100
       };
 
-      // Check if position exists and has valid coordinates
+      // Only use stored position if it's valid and not at origin
       const position = obj.position && 
         typeof obj.position.x === 'number' && 
         typeof obj.position.y === 'number' && 
-        (obj.position.x !== 0 || obj.position.y !== 0) ? // Only use if not at origin
+        (obj.position.x !== 0 || obj.position.y !== 0) ? 
         obj.position : defaultPosition;
-
-      console.log(`Node ${obj.id} final position:`, position); // Debug log
 
       const node: Node = {
         id: obj.id,
@@ -142,14 +144,15 @@ export function FloorPlanCanvas({
             room_type: 'default',
             status: 'active'
           }
-        }
+        },
+        dragHandle: '.drag-handle'
       };
 
       return node;
     });
 
-    console.log('Setting nodes:', reactFlowNodes); // Debug log
     setNodes(reactFlowNodes);
+    initialized.current = true;
   }, [objects, setNodes]);
 
   const onConnect = useCallback(
