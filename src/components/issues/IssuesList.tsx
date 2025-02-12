@@ -36,6 +36,7 @@ import {
 import { ResolutionForm } from "./forms/ResolutionForm";
 import { useState } from "react";
 import { IssueDetails } from "./details/IssueDetails";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 // Define base types for database response
 type DatabaseIssue = {
@@ -165,6 +166,7 @@ export const IssuesList = () => {
   const queryClient = useQueryClient();
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
   const [showResolutionForm, setShowResolutionForm] = useState(false);
+  const isMobile = useIsMobile();
 
   const { data: issues, isLoading } = useQuery({
     queryKey: ['issues'],
@@ -310,87 +312,24 @@ export const IssuesList = () => {
 
   return (
     <>
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Priority</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {issues?.map((issue) => {
-              const typeInfo = getTypeInfo(issue.type);
-              const lightingDetails = issue.lighting_fixtures?.[0];
-              
-              return (
-                <TableRow 
-                  key={issue.id}
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => setSelectedIssueId(issue.id)}
-                >
-                  <TableCell>{issue.title}</TableCell>
-                  <TableCell>{issue.description}</TableCell>
-                  <TableCell>
-                    <Badge className={`flex items-center ${typeInfo.color}`} variant="secondary">
-                      {typeInfo.icon}
-                      {issue.type}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(issue.status)} variant="secondary">
-                      {issue.status.replace('_', ' ')}
-                      {issue.resolution_type && (
-                        <span className="ml-2 text-xs">
-                          ({issue.resolution_type.replace('_', ' ')})
-                        </span>
-                      )}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getPriorityColor(issue.priority)} variant="secondary">
-                      {issue.priority}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {issue.type === 'LIGHTING' && lightingDetails ? (
-                      <div className="flex flex-col">
-                        <span>
-                          {[
-                            issue.buildings?.name,
-                            issue.floors?.name,
-                            lightingDetails.name
-                          ].filter(Boolean).join(' > ')}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {lightingDetails.type} - {lightingDetails.position}
-                          {lightingDetails.electrical_issues && Object.keys(lightingDetails.electrical_issues).some(key => lightingDetails.electrical_issues[key]) && (
-                            <Badge variant="destructive" className="ml-2">
-                              Electrical Issues
-                            </Badge>
-                          )}
-                        </span>
-                      </div>
-                    ) : (
-                      <span>
-                        {[
-                          issue.buildings?.name,
-                          issue.floors?.name,
-                          issue.rooms?.name
-                        ].filter(Boolean).join(' > ')}
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {format(new Date(issue.created_at), 'MMM d, yyyy')}
-                  </TableCell>
-                  <TableCell className="text-right">
+      {isMobile ? (
+        <div className="space-y-4">
+          {issues?.map((issue) => {
+            const typeInfo = getTypeInfo(issue.type);
+            const lightingDetails = issue.lighting_fixtures?.[0];
+            
+            return (
+              <div 
+                key={issue.id}
+                className="p-4 rounded-lg border bg-card hover:bg-muted/50 cursor-pointer"
+                onClick={() => setSelectedIssueId(issue.id)}
+              >
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-medium">{issue.title}</h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2">{issue.description}</p>
+                    </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">
@@ -427,13 +366,188 @@ export const IssuesList = () => {
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <Badge className={`flex items-center ${typeInfo.color}`} variant="secondary">
+                      {typeInfo.icon}
+                      {issue.type}
+                    </Badge>
+                    <Badge className={getStatusColor(issue.status)} variant="secondary">
+                      {issue.status.replace('_', ' ')}
+                    </Badge>
+                    <Badge className={getPriorityColor(issue.priority)} variant="secondary">
+                      {issue.priority}
+                    </Badge>
+                  </div>
+
+                  <div className="text-sm">
+                    {issue.type === 'LIGHTING' && lightingDetails ? (
+                      <div className="space-y-1">
+                        <div className="text-muted-foreground">
+                          {[
+                            issue.buildings?.name,
+                            issue.floors?.name,
+                            lightingDetails.name
+                          ].filter(Boolean).join(' > ')}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs">
+                            {lightingDetails.type} - {lightingDetails.position}
+                          </span>
+                          {lightingDetails.electrical_issues && 
+                           Object.keys(lightingDetails.electrical_issues).some(key => lightingDetails.electrical_issues[key]) && (
+                            <Badge variant="destructive" className="text-xs">
+                              Electrical Issues
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">
+                        {[
+                          issue.buildings?.name,
+                          issue.floors?.name,
+                          issue.rooms?.name
+                        ].filter(Boolean).join(' > ')}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="text-xs text-muted-foreground">
+                    {format(new Date(issue.created_at), 'MMM d, yyyy')}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Title</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Priority</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Created</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {issues?.map((issue) => {
+                const typeInfo = getTypeInfo(issue.type);
+                const lightingDetails = issue.lighting_fixtures?.[0];
+                
+                return (
+                  <TableRow 
+                    key={issue.id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => setSelectedIssueId(issue.id)}
+                  >
+                    <TableCell>{issue.title}</TableCell>
+                    <TableCell>{issue.description}</TableCell>
+                    <TableCell>
+                      <Badge className={`flex items-center ${typeInfo.color}`} variant="secondary">
+                        {typeInfo.icon}
+                        {issue.type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(issue.status)} variant="secondary">
+                        {issue.status.replace('_', ' ')}
+                        {issue.resolution_type && (
+                          <span className="ml-2 text-xs">
+                            ({issue.resolution_type.replace('_', ' ')})
+                          </span>
+                        )}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getPriorityColor(issue.priority)} variant="secondary">
+                        {issue.priority}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {issue.type === 'LIGHTING' && lightingDetails ? (
+                        <div className="flex flex-col">
+                          <span>
+                            {[
+                              issue.buildings?.name,
+                              issue.floors?.name,
+                              lightingDetails.name
+                            ].filter(Boolean).join(' > ')}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {lightingDetails.type} - {lightingDetails.position}
+                            {lightingDetails.electrical_issues && Object.keys(lightingDetails.electrical_issues).some(key => lightingDetails.electrical_issues[key]) && (
+                              <Badge variant="destructive" className="ml-2">
+                                Electrical Issues
+                              </Badge>
+                            )}
+                          </span>
+                        </div>
+                      ) : (
+                        <span>
+                          {[
+                            issue.buildings?.name,
+                            issue.floors?.name,
+                            issue.rooms?.name
+                          ].filter(Boolean).join(' > ')}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(issue.created_at), 'MMM d, yyyy')}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {issue.status !== 'in_progress' && (
+                            <DropdownMenuItem
+                              onClick={() => handleStatusChange(issue.id, 'in_progress')}
+                            >
+                              Mark In Progress
+                            </DropdownMenuItem>
+                          )}
+                          {issue.status !== 'resolved' && (
+                            <DropdownMenuItem
+                              onClick={() => handleStatusChange(issue.id, 'resolved')}
+                            >
+                              Resolve Issue
+                            </DropdownMenuItem>
+                          )}
+                          {issue.status !== 'open' && (
+                            <DropdownMenuItem
+                              onClick={() => handleStatusChange(issue.id, 'open')}
+                            >
+                              Reopen Issue
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem
+                            onClick={() => handleDelete(issue.id)}
+                            className="text-red-600"
+                          >
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       <IssueDetails 
         issueId={selectedIssueId} 
