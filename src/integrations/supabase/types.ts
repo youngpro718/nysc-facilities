@@ -3287,9 +3287,11 @@ export type Database = {
           name: string
           parent_room_id: string | null
           phone_number: string | null
+          position: Json | null
           previous_functions: Json[] | null
           room_number: string
           room_type: Database["public"]["Enums"]["room_type_enum"]
+          size: Json | null
           status: Database["public"]["Enums"]["status_enum"] | null
           storage_capacity: number | null
           storage_notes: string | null
@@ -3308,9 +3310,11 @@ export type Database = {
           name: string
           parent_room_id?: string | null
           phone_number?: string | null
+          position?: Json | null
           previous_functions?: Json[] | null
           room_number: string
           room_type?: Database["public"]["Enums"]["room_type_enum"]
+          size?: Json | null
           status?: Database["public"]["Enums"]["status_enum"] | null
           storage_capacity?: number | null
           storage_notes?: string | null
@@ -3329,9 +3333,11 @@ export type Database = {
           name?: string
           parent_room_id?: string | null
           phone_number?: string | null
+          position?: Json | null
           previous_functions?: Json[] | null
           room_number?: string
           room_type?: Database["public"]["Enums"]["room_type_enum"]
+          size?: Json | null
           status?: Database["public"]["Enums"]["status_enum"] | null
           storage_capacity?: number | null
           storage_notes?: string | null
