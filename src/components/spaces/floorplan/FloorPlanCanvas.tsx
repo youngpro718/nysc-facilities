@@ -94,7 +94,7 @@ export function FloorPlanCanvas({
   drawingMode, 
   onObjectSelect 
 }: FloorPlanCanvasProps) {
-  const { objects, edges, isLoading } = useFloorPlanData(floorId);
+  const { objects, edges: graphEdges, isLoading } = useFloorPlanData(floorId);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const initialized = useRef(false);
@@ -151,8 +151,9 @@ export function FloorPlanCanvas({
     });
 
     setNodes(reactFlowNodes);
+    setEdges(graphEdges || []);
     initialized.current = true;
-  }, [objects, setNodes]);
+  }, [objects, graphEdges, setNodes, setEdges]);
 
   const onConnect = useCallback(
     (params: Connection | Edge) => setEdges((eds) => addEdge(params, eds)),
