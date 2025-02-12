@@ -1,3 +1,4 @@
+
 import { useCallback, useRef } from 'react';
 import { OnNodesChange, NodeChange, Node, NodePositionChange, NodeDimensionChange } from 'reactflow';
 import { supabase } from "@/integrations/supabase/client";
@@ -65,23 +66,22 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
           }
 
           const isHallway = nodeType === 'hallway';
-          const table = isHallway ? 'hallways' : 'rooms';
+          const isRoom = nodeType === 'room';
+          const table = isHallway ? 'hallways' : isRoom ? 'rooms' : 'floor_plan_objects';
 
           console.log(`Updating ${table} node ${nodeId} (type: ${nodeType}):`, updatePayload);
 
-          const { data: updatedNode, error: updateError } = await supabase
+          const { error } = await supabase
             .from(table)
             .update(updatePayload)
-            .eq('id', nodeId)
-            .select('id, position, size')
-            .single();
+            .eq('id', nodeId);
 
-          if (updateError) {
-            console.error(`Error updating ${table}:`, updateError);
+          if (error) {
+            console.error(`Error updating ${table}:`, error);
             toast.error(`Failed to update ${isHallway ? 'hallway' : 'room'} ${nodeId}`);
             pendingUpdates.current.set(nodeId, updateData);
           } else {
-            console.log(`Successfully updated ${table} ${nodeId}:`, updatedNode);
+            console.log(`Successfully updated ${table} ${nodeId}`);
           }
         } catch (err) {
           console.error(`Error updating node ${nodeId}:`, err);
