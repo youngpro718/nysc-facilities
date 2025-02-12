@@ -1,5 +1,5 @@
 
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { 
   ReactFlow,
   Background, 
@@ -13,7 +13,8 @@ import {
   Node,
   addEdge,
   Panel,
-  PanelPosition
+  PanelPosition,
+  ReactFlowProvider
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Card } from "@/components/ui/card";
@@ -46,6 +47,48 @@ const panelStyle = {
   boxShadow: '0 0 10px rgba(0,0,0,0.1)'
 };
 
+// Separate flow component to handle resize observer properly
+function FlowComponent({ 
+  nodes, 
+  edges, 
+  onNodesChange, 
+  onEdgesChange, 
+  onConnect,
+  onNodeClick,
+  nodeTypes
+}: any) {
+  const defaultViewport = useMemo(() => ({ x: 0, y: 0, zoom: 1 }), []);
+
+  return (
+    <ReactFlow
+      nodes={nodes}
+      edges={edges}
+      onNodesChange={onNodesChange}
+      onEdgesChange={onEdgesChange}
+      onConnect={onConnect}
+      onNodeClick={onNodeClick}
+      nodeTypes={nodeTypes}
+      defaultViewport={defaultViewport}
+      minZoom={0.1}
+      maxZoom={4}
+      fitView
+      fitViewOptions={{ 
+        padding: 0.2,
+        duration: 200 
+      }}
+    >
+      <Panel position="top-left">
+        <div style={panelStyle}>
+          Rooms: {nodes.length}
+        </div>
+      </Panel>
+      <Controls />
+      <MiniMap />
+      <Background gap={20} size={1} />
+    </ReactFlow>
+  </div>;
+}
+
 export function FloorPlanCanvas({ 
   floorId, 
   zoom = 1, 
@@ -57,7 +100,6 @@ export function FloorPlanCanvas({
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
-  // Update nodes when objects change
   useEffect(() => {
     if (!objects) return;
 
@@ -122,29 +164,17 @@ export function FloorPlanCanvas({
   return (
     <Card className="p-4">
       <div style={{ width: '100%', height: '600px', position: 'relative' }}>
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onNodeClick={onNodeClick}
-          nodeTypes={nodeTypes}
-          defaultViewport={{ x: 0, y: 0, zoom: 1 }}
-          minZoom={0.1}
-          maxZoom={4}
-          fitView
-          fitViewOptions={{ padding: 0.2 }}
-        >
-          <Panel position="top-left">
-            <div style={panelStyle}>
-              Rooms: {nodes.length}
-            </div>
-          </Panel>
-          <Controls />
-          <MiniMap />
-          <Background gap={20} size={1} />
-        </ReactFlow>
+        <ReactFlowProvider>
+          <FlowComponent
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onNodeClick={onNodeClick}
+            nodeTypes={nodeTypes}
+          />
+        </ReactFlowProvider>
       </div>
     </Card>
   );
