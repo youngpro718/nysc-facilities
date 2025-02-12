@@ -105,38 +105,40 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <BasicIssueFields form={form} />
-        
-        <div className="grid grid-cols-2 gap-4">
-          <AssigneeField form={form} />
-          <StatusAndPriorityFields form={form} />
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="space-y-6">
+          <BasicIssueFields form={form} />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <AssigneeField form={form} />
+            <StatusAndPriorityFields form={form} />
+          </div>
+
+          <FormField
+            control={form.control}
+            name="due_date"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Due Date</FormLabel>
+                <FormControl>
+                  <Input type="datetime-local" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {isResolved && <ResolutionFields form={form} />}
+
+          <IssuePhotoForm
+            selectedPhotos={selectedPhotos}
+            uploading={uploading}
+            onPhotoUpload={handlePhotoUpload}
+            onPhotoRemove={handlePhotoRemove}
+          />
         </div>
 
-        <FormField
-          control={form.control}
-          name="due_date"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Due Date</FormLabel>
-              <FormControl>
-                <Input type="datetime-local" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {isResolved && <ResolutionFields form={form} />}
-
-        <IssuePhotoForm
-          selectedPhotos={selectedPhotos}
-          uploading={uploading}
-          onPhotoUpload={handlePhotoUpload}
-          onPhotoRemove={handlePhotoRemove}
-        />
-
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-end gap-2 sticky bottom-0 py-4 bg-background border-t mt-6">
           <Button variant="outline" onClick={onClose} type="button">
             Cancel
           </Button>

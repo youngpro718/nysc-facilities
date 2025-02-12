@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -118,11 +119,15 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
   if (isEditing) {
     return (
       <Dialog open={!!issueId} onOpenChange={() => onClose()}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-3xl h-[90vh] flex flex-col overflow-hidden">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">Edit Issue</DialogTitle>
           </DialogHeader>
-          <EditIssueForm issue={issue} onClose={() => setIsEditing(false)} />
+          <ScrollArea className="flex-1 px-1">
+            <div className="pr-4">
+              <EditIssueForm issue={issue} onClose={() => setIsEditing(false)} />
+            </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     );
