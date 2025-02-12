@@ -3126,6 +3126,7 @@ export type Database = {
           first_name: string | null
           id: string
           interface_preferences: Json | null
+          is_approved: boolean | null
           job_title_validated: boolean | null
           language: string | null
           last_login: string | null
@@ -3152,6 +3153,7 @@ export type Database = {
           first_name?: string | null
           id: string
           interface_preferences?: Json | null
+          is_approved?: boolean | null
           job_title_validated?: boolean | null
           language?: string | null
           last_login?: string | null
@@ -3178,6 +3180,7 @@ export type Database = {
           first_name?: string | null
           id?: string
           interface_preferences?: Json | null
+          is_approved?: boolean | null
           job_title_validated?: boolean | null
           language?: string | null
           last_login?: string | null
@@ -3796,6 +3799,30 @@ export type Database = {
           key?: string
           updated_at?: string | null
           value?: Json
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -4535,11 +4562,23 @@ export type Database = {
         }
         Returns: number
       }
+      get_user_role: {
+        Args: {
+          user_id: string
+        }
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
       increment_key_quantity: {
         Args: {
           key_id: string
         }
         Returns: number
+      }
+      is_admin: {
+        Args: {
+          user_id: string
+        }
+        Returns: boolean
       }
       safely_delete_key: {
         Args: {
@@ -4669,6 +4708,7 @@ export type Database = {
         | "conference"
       security_level_enum: "standard" | "restricted" | "high_security"
       status_enum: "active" | "inactive" | "under_maintenance"
+      user_role: "admin" | "standard"
       zone_type_enum: "general" | "emergency" | "restricted"
     }
     CompositeTypes: {

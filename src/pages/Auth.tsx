@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { SparklesCore } from "@/components/ui/sparkles";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +12,8 @@ import { Card } from "@/components/ui/card";
 import { Mail, Lock, Loader2 } from "lucide-react";
 import { EvervaultCard } from "@/components/ui/evervault-card";
 
+const ALLOWED_DOMAINS = ["state.gov", "nyc.gov"]; // Add any other government domains
+
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,10 +22,32 @@ const Auth = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    // Check if user is already logged in
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        navigate("/", { replace: true });
+      }
+    });
+  }, [navigate]);
+
+  const validateEmail = (email: string) => {
+    const domain = email.split('@')[1];
+    return ALLOWED_DOMAINS.includes(domain);
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       toast.error("Please fill in all fields");
+      return;
+    }
+
+    // For signup, validate email domain
+    if (isSignUp && !validateEmail(email)) {
+      toast.error("Only government email addresses are allowed", {
+        description: `Please use an email from: ${ALLOWED_DOMAINS.join(", ")}`
+      });
       return;
     }
 
@@ -37,13 +62,16 @@ const Auth = () => {
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/`,
+            data: {
+              is_approved: false, // Requires admin approval
+            }
           },
         });
 
         if (error) throw error;
         
         toast.success("Check your email for the confirmation link!", {
-          description: "We've sent you an email to verify your account."
+          description: "Your account will need to be approved by an administrator."
         });
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -53,6 +81,18 @@ const Auth = () => {
 
         if (error) throw error;
         
+        // Check if user is approved
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_approved')
+          .eq('id', (await supabase.auth.getUser()).data.user?.id)
+          .single();
+
+        if (!profile?.is_approved) {
+          await supabase.auth.signOut();
+          throw new Error("Your account is pending approval");
+        }
+
         navigate("/", { replace: true });
         toast.success("Welcome back!", {
           description: "You've successfully signed in."
@@ -102,6 +142,11 @@ const Auth = () => {
             <p className="text-white/80">
               {isSignUp ? "Create your account" : "Welcome back"}
             </p>
+            {isSignUp && (
+              <p className="text-sm text-white/60 mt-2">
+                Only government email addresses are allowed
+              </p>
+            )}
           </div>
         </div>
 
@@ -162,7 +207,7 @@ const Auth = () => {
                 type="button"
                 variant="link"
                 className="text-white hover:text-white/80"
-                onClick={() => toast.info("Password reset not implemented yet")}
+                onClick={() => toast.info("Please contact your administrator to reset your password")}
               >
                 Forgot password?
               </Button>
@@ -179,27 +224,6 @@ const Auth = () => {
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : null}
               {isSignUp ? "Create Account" : "Sign In"}
-            </Button>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-white/20" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-courthouse px-2 text-white/60">Or continue with</span>
-              </div>
-            </div>
-
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full border-white/20 text-white hover:bg-white/10"
-              onClick={() => toast.info("Google sign-in not implemented yet")}
-            >
-              <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
-                <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
-              </svg>
-              Sign in with Google
             </Button>
 
             <Button
