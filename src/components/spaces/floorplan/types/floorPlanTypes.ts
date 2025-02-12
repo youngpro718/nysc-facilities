@@ -1,5 +1,17 @@
 
+import { Json } from "@/integrations/supabase/types";
+
 export type LayerType = 'rooms' | 'doors' | 'grid' | 'hallways' | 'annotations';
+
+export interface Position {
+  x: number;
+  y: number;
+}
+
+export interface Size {
+  width: number;
+  height: number;
+}
 
 export interface FloorPlanObject {
   id: string;
@@ -7,8 +19,8 @@ export interface FloorPlanObject {
   floor_id: string;
   label?: string;
   type: string;
-  position: { x: number; y: number };
-  size: { width: number; height: number };
+  position: Position;
+  size: Size;
   rotation: number;
   style: Record<string, any>;
   properties: Record<string, any>;

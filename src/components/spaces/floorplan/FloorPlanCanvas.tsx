@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas, Group } from "fabric";
 import { Card } from "@/components/ui/card";
@@ -19,7 +18,7 @@ export function FloorPlanCanvas({ floorId, zoom = 1, drawingMode, onObjectSelect
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasInstance = useRef<FabricCanvas | null>(null);
   const layerGroups = useRef<Record<LayerType, Group>>({} as any);
-  
+
   const [isDrawing, setIsDrawing] = useState(false);
   const [startPoint, setStartPoint] = useState<{ x: number; y: number } | null>(null);
 
@@ -215,7 +214,8 @@ export function FloorPlanCanvas({ floorId, zoom = 1, drawingMode, onObjectSelect
       
       const layerGroup = layerGroups.current[layer.type];
       if (layerGroup) {
-        layerGroup.addWithUpdate(fabricObject);
+        layerGroup.add(fabricObject);
+        canvas.renderAll();
       }
     });
 
