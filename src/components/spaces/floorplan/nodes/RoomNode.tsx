@@ -18,7 +18,7 @@ export function RoomNode({ data }: NodeProps<FloorPlanObjectData>) {
     <>
       <Handle type="target" position={Position.Left} />
       <div style={style}>
-        <div className="text-sm font-medium">
+        <div className="text-sm font-medium text-gray-800">
           {data.label || 'Unnamed Room'}
           {data.properties?.room_number && (
             <div className="text-xs text-gray-600">

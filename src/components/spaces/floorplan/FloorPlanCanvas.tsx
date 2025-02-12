@@ -13,7 +13,6 @@ import {
   Node,
   addEdge,
   Panel,
-  PanelPosition,
   ReactFlowProvider
 } from 'reactflow';
 import 'reactflow/dist/style.css';
@@ -73,12 +72,12 @@ function FlowComponent({
       fitView
       fitViewOptions={{ 
         padding: 0.2,
-        duration: 800, // Increased duration for smoother transitions
+        duration: 800,
         includeHiddenNodes: true
       }}
     >
       <Panel position="top-left">
-        <div style={panelStyle}>
+        <div style={panelStyle} className="text-gray-700">
           Rooms: {nodes.length}
         </div>
       </Panel>
@@ -95,7 +94,7 @@ export function FloorPlanCanvas({
   drawingMode, 
   onObjectSelect 
 }: FloorPlanCanvasProps) {
-  const { objects, isLoading } = useFloorPlanData(floorId);
+  const { objects, edges, isLoading } = useFloorPlanData(floorId);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const initialized = useRef(false);

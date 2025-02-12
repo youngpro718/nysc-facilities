@@ -15,7 +15,7 @@ export function DoorNode({ data }: NodeProps<FloorPlanObjectData>) {
     <>
       <Handle type="target" position={Position.Left} />
       <div style={style}>
-        <div className="text-xs font-medium truncate">
+        <div className="text-xs font-medium text-gray-800 truncate">
           {data.label}
         </div>
       </div>
