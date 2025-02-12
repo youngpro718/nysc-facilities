@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +12,8 @@ import { IssueBadges } from "../card/IssueBadges";
 import { IssueMetadata } from "../card/IssueMetadata";
 import { IssueComments } from "../card/IssueComments";
 import { Loader2, MessageSquare, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 interface IssueDetailsProps {
   issueId: string | null;
@@ -32,6 +33,8 @@ interface TimelineEvent {
 }
 
 export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
+  const queryClient = useQueryClient();
+  
   const { data: issue, isLoading: issueLoading } = useQuery({
     queryKey: ['issues', issueId],
     queryFn: async () => {
@@ -81,6 +84,30 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
     },
     enabled: !!issueId
   });
+
+  const markAsSeenMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('issues')
+        .update({ seen: true })
+        .eq('id', issueId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['issues', issueId] });
+      toast.success("Issue marked as seen");
+    },
+    onError: () => {
+      toast.error("Failed to mark issue as seen");
+    }
+  });
+
+  const handleMarkAsSeen = () => {
+    if (!issue.seen) {
+      markAsSeenMutation.mutate();
+    }
+  };
 
   if (!issue || issueLoading) return null;
 
@@ -164,7 +191,7 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
                     priority={issue.priority}
                     isOverdue={isOverdue}
                     seen={issue.seen}
-                    onMarkAsSeen={() => {}} // TODO: Implement mark as seen
+                    onMarkAsSeen={handleMarkAsSeen}
                   />
                   
                   <IssueMetadata
