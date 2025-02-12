@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -25,14 +26,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { Issue, IssueStatus, IssuePriority } from "./types/IssueTypes";
+import { 
+  Issue, 
+  IssueStatus, 
+  IssuePriority, 
+  FixtureType, 
+  FixtureStatus, 
+  LightingFixture 
+} from "./types/IssueTypes";
 import { ResolutionForm } from "./forms/ResolutionForm";
 import { useState } from "react";
 import { IssueDetails } from "./details/IssueDetails";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { IssueCard } from "./card/IssueCard";
 import { getTypeColor, getStatusColor, getPriorityColor } from "./utils/issueStyles";
-import { FixtureType, FixtureStatus, LightingFixture } from "@/components/lighting/types";
 
 // Define base types for database response
 type DatabaseIssue = {
@@ -80,15 +87,16 @@ function isValidIssuePriority(value: string | null): value is IssuePriority {
 function transformFixture(fixtureData: DatabaseIssue['lighting_fixtures']): LightingFixture | null {
   if (!fixtureData) return null;
 
-  const type = isValidFixtureType(fixtureData.type) ? fixtureData.type : 'standard';
-  const status = isValidFixtureStatus(fixtureData.status) ? fixtureData.status : 'functional';
+  if (!isValidFixtureType(fixtureData.type) || !isValidFixtureStatus(fixtureData.status)) {
+    return null;
+  }
 
   return {
     name: fixtureData.name,
-    type,
-    status,
-    position: fixtureData.position as LightingFixture['position'],
-    electrical_issues: fixtureData.electrical_issues
+    type: fixtureData.type,
+    status: fixtureData.status,
+    position: fixtureData.position,
+    electrical_issues: fixtureData.electrical_issues || {}
   };
 }
 
