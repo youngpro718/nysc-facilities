@@ -4,7 +4,48 @@ import { transformLayer } from "../utils/layerTransforms";
 import { transformSpaceToNode } from "../utils/nodeTransforms";
 import { createEdgesFromConnections } from "../utils/edgeTransforms";
 import { fetchFloorPlanLayers, fetchFloorPlanObjects } from "../queries/floorPlanQueries";
-import { FloorPlanLayerDB } from "../types/floorPlanTypes";
+import { FloorPlanLayerDB, Position } from "../types/floorPlanTypes";
+
+// Validate position data
+function isValidPosition(pos: any): pos is Position {
+  if (!pos || typeof pos !== 'object') return false;
+  const x = Number(pos.x);
+  const y = Number(pos.y);
+  return !isNaN(x) && !isNaN(y) && isFinite(x) && isFinite(y);
+}
+
+// Parse position with validation
+function parsePosition(positionData: any): Position | null {
+  try {
+    if (typeof positionData === 'string') {
+      positionData = JSON.parse(positionData);
+    }
+
+    if (isValidPosition(positionData)) {
+      return { x: Number(positionData.x), y: Number(positionData.y) };
+    }
+
+    console.warn('Invalid position data:', positionData);
+    return null;
+  } catch (error) {
+    console.warn('Error parsing position:', error);
+    return null;
+  }
+}
+
+// Calculate automatic layout position
+function calculateAutoPosition(index: number, size: { width: number; height: number }): Position {
+  const PADDING = 50;
+  const MAX_WIDTH = 1200; // Maximum width for the layout
+  const itemsPerRow = Math.floor(MAX_WIDTH / (size.width + PADDING));
+  const row = Math.floor(index / itemsPerRow);
+  const col = index % itemsPerRow;
+
+  return {
+    x: col * (size.width + PADDING) + PADDING,
+    y: row * (size.height + PADDING) + PADDING
+  };
+}
 
 export function useFloorPlanData(floorId: string | null) {
   // Query for layers
@@ -30,26 +71,47 @@ export function useFloorPlanData(floorId: string | null) {
   });
 
   // Transform all objects into floor plan nodes
-  const objects = spaceData?.objects.map((obj, index) => transformSpaceToNode(obj, index)) || [];
+  const objects = spaceData?.objects.map((obj, index) => {
+    const node = transformSpaceToNode(obj, index);
+    const parsedPosition = parsePosition(obj.position);
+
+    if (!parsedPosition) {
+      console.log(`Using auto-layout for node ${node.id} due to invalid position`);
+      node.position = calculateAutoPosition(index, node.data.size);
+    } else {
+      console.log(`Using stored position for node ${node.id}:`, parsedPosition);
+      node.position = parsedPosition;
+    }
+
+    return node;
+  }) || [];
+
   const edges = spaceData?.connections ? createEdgesFromConnections(spaceData.connections) : [];
   
-  console.log('Transformed objects:', objects);
-  console.log('Created edges:', edges);
-
   // Process parent/child relationships
   const processedObjects = objects.map(obj => {
     if (obj.data.properties.parent_room_id) {
       const parentObj = objects.find(parent => parent.id === obj.data.properties.parent_room_id);
       if (parentObj) {
         // Adjust position relative to parent
+        const parentPos = parentObj.position;
         obj.position = {
-          x: parentObj.position.x + 50,
-          y: parentObj.position.y + 50
+          x: parentPos.x + 50,
+          y: parentPos.y + 50
         };
+        console.log(`Adjusted child node ${obj.id} position relative to parent ${parentObj.id}:`, obj.position);
       }
     }
     return obj;
   });
+
+  // Log final positions for debugging
+  console.log('Final node positions:', processedObjects.map(obj => ({
+    id: obj.id,
+    type: obj.type,
+    position: obj.position,
+    size: obj.data.size
+  })));
 
   return {
     layers,
