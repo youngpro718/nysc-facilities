@@ -4,7 +4,7 @@ import { ChevronLeft, Mail, Phone, Briefcase, UserCircle, Building2, Key, DoorOp
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useKeyAssignments } from "./hooks/useKeyAssignments";
-import { useIsMobile } from "@/hooks/useIsMobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Separator } from "@/components/ui/separator";
 import { Card } from "@/components/ui/card";
 

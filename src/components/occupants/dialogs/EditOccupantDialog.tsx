@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { OccupantForm } from "../OccupantForm";
 import { toast } from "sonner";
-import { useIsMobile } from "@/hooks/useIsMobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Drawer,
   DrawerContent,

@@ -9,7 +9,7 @@ import {
 import { CreateOccupantForm } from "./CreateOccupantForm";
 import { toast } from "sonner";
 import type { OccupantFormData } from "./schemas/occupantSchema";
-import { useIsMobile } from "@/hooks/useIsMobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Drawer,
   DrawerContent,
