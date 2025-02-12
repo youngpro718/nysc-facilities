@@ -1,7 +1,8 @@
 
+import { useCallback, useEffect } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { FloorPlanLayer, FloorPlanObject, FloorPlanLayerDB } from "../types/floorPlanTypes";
+import { FloorPlanLayer, FloorPlanNode, FloorPlanEdge, FloorPlanLayerDB } from "../types/floorPlanTypes";
 
 function transformLayer(raw: FloorPlanLayerDB): FloorPlanLayer {
   const parsedData = typeof raw.data === 'string' ? JSON.parse(raw.data) : raw.data;
@@ -17,13 +18,19 @@ function transformLayer(raw: FloorPlanLayerDB): FloorPlanLayer {
   };
 }
 
-function transformObject(raw: any): FloorPlanObject {
+function transformToNode(obj: any): FloorPlanNode {
   return {
-    ...raw,
-    position: typeof raw.position === 'string' ? JSON.parse(raw.position) : raw.position,
-    size: typeof raw.size === 'string' ? JSON.parse(raw.size) : raw.size,
-    style: typeof raw.style === 'string' ? JSON.parse(raw.style) : raw.style || {},
-    properties: typeof raw.properties === 'string' ? JSON.parse(raw.properties) : raw.properties || {}
+    id: obj.id,
+    type: obj.type,
+    position: obj.position,
+    data: {
+      label: obj.label,
+      type: obj.type,
+      size: obj.size,
+      style: obj.style || {},
+      properties: obj.properties || {}
+    },
+    zIndex: obj.z_index || 0
   };
 }
 
@@ -56,7 +63,7 @@ export function useFloorPlanData(floorId: string | null) {
         .eq('floor_id', floorId);
         
       if (error) throw error;
-      return (data || []).map(transformObject);
+      return (data || []).map(transformToNode);
     },
     enabled: !!floorId
   });

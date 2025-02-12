@@ -511,6 +511,7 @@ export type Database = {
         Row: {
           created_at: string | null
           floor_id: string
+          handle_positions: Json | null
           id: string
           label: string | null
           layer_id: string
@@ -521,10 +522,12 @@ export type Database = {
           style: Json | null
           type: string
           updated_at: string | null
+          z_index: number | null
         }
         Insert: {
           created_at?: string | null
           floor_id: string
+          handle_positions?: Json | null
           id?: string
           label?: string | null
           layer_id: string
@@ -535,10 +538,12 @@ export type Database = {
           style?: Json | null
           type: string
           updated_at?: string | null
+          z_index?: number | null
         }
         Update: {
           created_at?: string | null
           floor_id?: string
+          handle_positions?: Json | null
           id?: string
           label?: string | null
           layer_id?: string
@@ -549,6 +554,7 @@ export type Database = {
           style?: Json | null
           type?: string
           updated_at?: string | null
+          z_index?: number | null
         }
         Relationships: [
           {
