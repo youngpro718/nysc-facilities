@@ -20,6 +20,8 @@ export interface FloorPlanObjectData {
   size: Size;
   style: Record<string, any>;
   properties: Record<string, any>;
+  position?: Position;
+  rotation?: number;
 }
 
 export type FloorPlanObjectType = 'room' | 'door' | 'hallway';

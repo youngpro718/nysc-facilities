@@ -4,9 +4,9 @@ import {
   useNodesState, 
   useEdgesState, 
   Connection, 
-  Edge, 
+  Edge,
   Node,
-  addEdge
+  addEdge,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Card } from "@/components/ui/card";
@@ -18,12 +18,12 @@ import { RoomNode } from './nodes/RoomNode';
 import { DoorNode } from './nodes/DoorNode';
 import { HallwayNode } from './nodes/HallwayNode';
 import { toast } from "sonner";
-import { FloorPlanNode, FloorPlanObjectType } from './types/floorPlanTypes';
+import { FloorPlanNode, FloorPlanObjectData } from './types/floorPlanTypes';
 
 interface FloorPlanCanvasProps {
   floorId: string | null;
   zoom?: number;
-  onObjectSelect?: (object: any | null) => void;
+  onObjectSelect?: (object: FloorPlanObjectData & { id: string }) => void;
 }
 
 const nodeTypes = {
@@ -38,7 +38,7 @@ export function FloorPlanCanvas({
   onObjectSelect 
 }: FloorPlanCanvasProps) {
   const { objects, edges: graphEdges, isLoading } = useFloorPlanData(floorId);
-  const [nodes, setNodes, onNodesChange] = useNodesState<FloorPlanNode>([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<FloorPlanObjectData>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const initialized = useRef(false);
   const { handleNodesChange } = useFloorPlanNodes(onNodesChange);
@@ -53,37 +53,7 @@ export function FloorPlanCanvas({
     if (!objects || initialized.current) return;
 
     console.log('Initializing nodes with objects:', objects);
-
-    const reactFlowNodes = objects.map((obj: FloorPlanNode) => {
-      const defaultPosition = {
-        x: Math.random() * 500,
-        y: Math.random() * 500
-      };
-
-      return {
-        id: obj.id,
-        type: obj.type as FloorPlanObjectType,
-        position: obj.position || defaultPosition,
-        draggable: true,
-        selectable: true,
-        data: {
-          ...obj.data,
-          label: obj.data?.label || 'Unnamed Space',
-          type: obj.data?.type || obj.type,
-          size: obj.data?.size || {
-            width: obj.type === 'door' ? 60 : 150,
-            height: obj.type === 'door' ? 20 : 100
-          },
-          style: obj.data?.style || {
-            backgroundColor: obj.type === 'door' ? '#94a3b8' : '#e2e8f0',
-            border: obj.type === 'door' ? '2px solid #475569' : '1px solid #cbd5e1'
-          },
-          properties: obj.data?.properties || {}
-        }
-      };
-    });
-
-    setNodes(reactFlowNodes);
+    setNodes(objects);
     setEdges(graphEdges || []);
     initialized.current = true;
   }, [objects, graphEdges, setNodes, setEdges]);
@@ -96,15 +66,11 @@ export function FloorPlanCanvas({
     [setEdges],
   );
 
-  const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+  const onNodeClick = useCallback((event: React.MouseEvent, node: Node<FloorPlanObjectData>) => {
     if (onObjectSelect) {
       onObjectSelect({
         ...node.data,
         id: node.id,
-        type: node.type,
-        position: node.position,
-        size: node.data?.size,
-        rotation: node.data?.rotation || 0
       });
     }
   }, [onObjectSelect]);

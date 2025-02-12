@@ -21,7 +21,11 @@ import { Building2, Move, RotateCw, Link2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface EditPropertiesPanelProps {
-  selectedObject: FloorPlanObjectData & { id: string };
+  selectedObject: FloorPlanObjectData & { 
+    id: string;
+    position?: Position;
+    rotation?: number;
+  };
   onClose: () => void;
   onUpdate: () => void;
 }
