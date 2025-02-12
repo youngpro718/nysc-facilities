@@ -4,14 +4,17 @@ import { FloorPlanCanvas } from "./FloorPlanCanvas";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ZoomIn, ZoomOut, RotateCcw, Move } from "lucide-react";
+import { ZoomIn, ZoomOut, RotateCcw, Move, Eye, PenLine, Door, Roads } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { DrawingMode } from "./types/floorPlanTypes";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 export function FloorPlanView() {
   const [selectedFloorId, setSelectedFloorId] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [selectedObject, setSelectedObject] = useState<any>(null);
+  const [drawingMode, setDrawingMode] = useState<DrawingMode>("view");
 
   const { data: floors, isLoading: isLoadingFloors } = useQuery({
     queryKey: ['floors'],
@@ -66,6 +69,21 @@ export function FloorPlanView() {
             </SelectContent>
           </Select>
 
+          <ToggleGroup type="single" value={drawingMode} onValueChange={(value: DrawingMode) => setDrawingMode(value)}>
+            <ToggleGroupItem value="view" aria-label="View mode">
+              <Eye className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="draw" aria-label="Draw room">
+              <PenLine className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="door" aria-label="Add door">
+              <Door className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="hallway" aria-label="Add hallway">
+              <Roads className="h-4 w-4" />
+            </ToggleGroupItem>
+          </ToggleGroup>
+
           <div className="space-x-2">
             <Button variant="outline" size="icon" onClick={handleZoomIn}>
               <ZoomIn className="h-4 w-4" />
@@ -88,6 +106,7 @@ export function FloorPlanView() {
           floorId={selectedFloorId} 
           zoom={zoom}
           onObjectSelect={handleObjectSelect}
+          drawingMode={drawingMode}
         />
         
         <Card className="p-4">

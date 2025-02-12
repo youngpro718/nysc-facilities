@@ -1,21 +1,25 @@
 
 import { useEffect, useRef, useState } from "react";
-import { Canvas } from "fabric";
+import { Canvas, Rect } from "fabric";
 import { Card } from "@/components/ui/card";
-import { FloorPlanObject } from "./types/floorPlanTypes";
+import { FloorPlanObject, DrawingMode } from "./types/floorPlanTypes";
 import { createGrid, createRoomGroup } from "./utils/canvasUtils";
 import { useFloorPlanData } from "./hooks/useFloorPlanData";
 
 interface FloorPlanCanvasProps {
   floorId: string | null;
   zoom?: number;
+  drawingMode: DrawingMode;
   onObjectSelect?: (object: FloorPlanObject | null) => void;
 }
 
-export function FloorPlanCanvas({ floorId, zoom = 1, onObjectSelect }: FloorPlanCanvasProps) {
+export function FloorPlanCanvas({ floorId, zoom = 1, drawingMode, onObjectSelect }: FloorPlanCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricRef = useRef<Canvas | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [startPoint, setStartPoint] = useState<{ x: number; y: number } | null>(null);
+  const [activeRect, setActiveRect] = useState<Rect | null>(null);
 
   const { data: floorPlanObjects, isLoading, error } = useFloorPlanData(floorId);
 
@@ -42,36 +46,80 @@ export function FloorPlanCanvas({ floorId, zoom = 1, onObjectSelect }: FloorPlan
       onObjectSelect?.(null);
     });
 
+    canvas.on('mouse:down', (e) => {
+      if (drawingMode !== 'draw' || !e.pointer) return;
+      
+      setIsDrawing(true);
+      const pointer = canvas.getPointer(e.e);
+      setStartPoint({ x: pointer.x, y: pointer.y });
+
+      const rect = new Rect({
+        left: pointer.x,
+        top: pointer.y,
+        width: 0,
+        height: 0,
+        fill: 'rgba(226, 232, 240, 0.5)',
+        stroke: '#94a3b8',
+        strokeWidth: 2,
+        selectable: false
+      });
+
+      canvas.add(rect);
+      setActiveRect(rect);
+    });
+
+    canvas.on('mouse:move', (e) => {
+      if (!isDrawing || !startPoint || !activeRect || !e.pointer) return;
+
+      const pointer = canvas.getPointer(e.e);
+      const width = Math.abs(pointer.x - startPoint.x);
+      const height = Math.abs(pointer.y - startPoint.y);
+
+      // Snap to grid
+      const gridSize = 20;
+      const snappedWidth = Math.round(width / gridSize) * gridSize;
+      const snappedHeight = Math.round(height / gridSize) * gridSize;
+
+      activeRect.set({
+        width: snappedWidth,
+        height: snappedHeight
+      });
+
+      canvas.renderAll();
+    });
+
+    canvas.on('mouse:up', () => {
+      if (!isDrawing || !activeRect) return;
+
+      setIsDrawing(false);
+      setStartPoint(null);
+      
+      // Finalize the room
+      activeRect.set({
+        selectable: true,
+        hasControls: true
+      });
+
+      setActiveRect(null);
+      canvas.renderAll();
+    });
+
     fabricRef.current = canvas;
     setIsInitialized(true);
 
-    // Return cleanup function
     return () => {
       if (fabricRef.current) {
-        // Remove event listeners first
         fabricRef.current.off();
-        
-        // Clear selection and objects
-        try {
-          fabricRef.current.discardActiveObject();
-          fabricRef.current.clear();
-          fabricRef.current.renderAll();
-        } catch (e) {
-          console.error('Error during canvas cleanup:', e);
-        }
-
-        // Dispose canvas last
         try {
           fabricRef.current.dispose();
         } catch (e) {
           console.error('Error disposing canvas:', e);
         }
-
         fabricRef.current = null;
         setIsInitialized(false);
       }
     };
-  }, [onObjectSelect]);
+  }, [onObjectSelect, drawingMode]);
 
   // Update zoom
   useEffect(() => {
@@ -117,6 +165,19 @@ export function FloorPlanCanvas({ floorId, zoom = 1, onObjectSelect }: FloorPlan
       console.error('Error adding objects to canvas:', error);
     }
   }, [floorPlanObjects, isInitialized, zoom]);
+
+  // Update selection mode based on drawing mode
+  useEffect(() => {
+    if (!fabricRef.current) return;
+    
+    const canvas = fabricRef.current;
+    canvas.selection = drawingMode === 'view';
+    canvas.getObjects().forEach((obj) => {
+      obj.selectable = drawingMode === 'view';
+      obj.hasControls = drawingMode === 'view';
+    });
+    canvas.renderAll();
+  }, [drawingMode]);
 
   if (error) {
     return (

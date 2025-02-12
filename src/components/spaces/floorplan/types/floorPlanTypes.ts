@@ -24,6 +24,8 @@ export interface FloorPlanObject {
   updated_at?: string;
 }
 
+export type DrawingMode = "view" | "draw" | "door" | "hallway";
+
 export const ROOM_COLORS: Record<string, string> = {
   office: '#e2e8f0',
   courtroom: '#dbeafe',
@@ -31,3 +33,4 @@ export const ROOM_COLORS: Record<string, string> = {
   conference: '#fef3c7',
   default: '#e2e8f0'
 };
+
