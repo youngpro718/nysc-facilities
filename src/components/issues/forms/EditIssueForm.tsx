@@ -1,4 +1,3 @@
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -31,6 +30,7 @@ const editIssueSchema = z.object({
   status: z.enum(["open", "in_progress", "resolved"] as const),
   priority: z.enum(["low", "medium", "high"] as const),
   due_date: z.string().optional(),
+  date_info: z.string().optional(),
   resolution_type: z.enum(["fixed", "replaced", "maintenance_performed", "no_action_needed", "deferred", "other"] as const).optional(),
   resolution_notes: z.string().optional(),
   assignee_id: z.string().optional(),
@@ -53,6 +53,7 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
       status: issue.status,
       priority: issue.priority,
       due_date: issue.due_date,
+      date_info: issue.date_info,
       resolution_type: issue.resolution_type,
       resolution_notes: issue.resolution_notes,
       assignee_id: issue.assignee_id,
@@ -114,19 +115,38 @@ export function EditIssueForm({ issue, onClose }: EditIssueFormProps) {
             <StatusAndPriorityFields form={form} />
           </div>
 
-          <FormField
-            control={form.control}
-            name="due_date"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Due Date</FormLabel>
-                <FormControl>
-                  <Input type="datetime-local" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="space-y-4">
+            <FormField
+              control={form.control}
+              name="due_date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Due Date</FormLabel>
+                  <FormControl>
+                    <Input type="datetime-local" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="date_info"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Date Information</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Why is this date being set? (e.g., scheduled painting, repairs)" 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
           {isResolved && <ResolutionFields form={form} />}
 

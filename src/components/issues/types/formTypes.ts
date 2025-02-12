@@ -8,6 +8,7 @@ export interface FormData {
   status: IssueStatus;
   priority: IssuePriority;
   due_date?: string;
+  date_info?: string;
   resolution_type?: ResolutionType;
   resolution_notes?: string;
   assignee_id?: string;

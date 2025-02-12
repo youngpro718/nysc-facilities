@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -19,6 +18,7 @@ import { IssueTypeField } from "./form-sections/IssueTypeField";
 import { ProblemTypeField } from "./form-sections/ProblemTypeField";
 import { DescriptionField } from "./form-sections/DescriptionField";
 import { LocationFields } from "./form-sections/LocationFields";
+import { FormField } from "@/components/ui/form";
 
 export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
   const [isManualTitle, setIsManualTitle] = useState(false);
@@ -138,6 +138,37 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
         <LocationFields form={form} />
 
         <div className="space-y-4">
+          <FormField
+            control={form.control}
+            name="due_date"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Due Date</FormLabel>
+                <FormControl>
+                  <Input type="datetime-local" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="date_info"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Date Information</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="Why is this date being set? (e.g., scheduled painting, repairs)" 
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           <IssuePhotoForm
             selectedPhotos={selectedPhotos}
             uploading={uploading}

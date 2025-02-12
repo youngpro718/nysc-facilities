@@ -1,3 +1,4 @@
+
 export type IssueStatus = 'open' | 'in_progress' | 'resolved';
 export type IssuePriority = 'low' | 'medium' | 'high';
 export type FixtureType = 'standard' | 'emergency' | 'motion_sensor';
@@ -50,6 +51,7 @@ export interface Issue {
   last_updated_by?: string;
   tags?: string[];
   due_date?: string;
+  date_info?: string;
   type: string;
   buildings?: {
     name: string;

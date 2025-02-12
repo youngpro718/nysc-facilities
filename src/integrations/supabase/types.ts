@@ -1610,6 +1610,7 @@ export type Database = {
           assignee_id: string | null
           building_id: string | null
           created_at: string | null
+          date_info: string | null
           description: string | null
           due_date: string | null
           fixture_id: string | null
@@ -1638,6 +1639,7 @@ export type Database = {
           assignee_id?: string | null
           building_id?: string | null
           created_at?: string | null
+          date_info?: string | null
           description?: string | null
           due_date?: string | null
           fixture_id?: string | null
@@ -1666,6 +1668,7 @@ export type Database = {
           assignee_id?: string | null
           building_id?: string | null
           created_at?: string | null
+          date_info?: string | null
           description?: string | null
           due_date?: string | null
           fixture_id?: string | null
