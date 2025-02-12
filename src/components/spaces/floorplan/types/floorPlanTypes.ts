@@ -61,20 +61,6 @@ export interface FloorPlanLayer {
   data: Record<string, any>;
 }
 
-export type DrawingMode = 'view' | 'draw' | 'door' | 'hallway';
-
-export type DrawingOperation = 'none' | 'start' | 'drawing' | 'preview';
-
-export interface DrawingState {
-  mode: DrawingMode;
-  operation: DrawingOperation;
-  startPosition: Position | null;
-  currentPosition: Position | null;
-  snapPoints: Position[];
-  isValid: boolean;
-  previewDimensions: Size | null;
-}
-
 export const ROOM_COLORS: Record<string, string> = {
   office: '#e2e8f0',
   courtroom: '#dbeafe',
