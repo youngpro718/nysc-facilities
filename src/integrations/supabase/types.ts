@@ -1007,8 +1007,10 @@ export type Database = {
           next_inspection_date: string | null
           next_maintenance_date: string | null
           notes: string | null
+          position: Json | null
           section: Database["public"]["Enums"]["hallway_section_enum"] | null
           security_level: string | null
+          size: Json | null
           status: Database["public"]["Enums"]["status_enum"] | null
           traffic_flow:
             | Database["public"]["Enums"]["hallway_traffic_flow_enum"]
@@ -1046,8 +1048,10 @@ export type Database = {
           next_inspection_date?: string | null
           next_maintenance_date?: string | null
           notes?: string | null
+          position?: Json | null
           section?: Database["public"]["Enums"]["hallway_section_enum"] | null
           security_level?: string | null
+          size?: Json | null
           status?: Database["public"]["Enums"]["status_enum"] | null
           traffic_flow?:
             | Database["public"]["Enums"]["hallway_traffic_flow_enum"]
@@ -1085,8 +1089,10 @@ export type Database = {
           next_inspection_date?: string | null
           next_maintenance_date?: string | null
           notes?: string | null
+          position?: Json | null
           section?: Database["public"]["Enums"]["hallway_section_enum"] | null
           security_level?: string | null
+          size?: Json | null
           status?: Database["public"]["Enums"]["status_enum"] | null
           traffic_flow?:
             | Database["public"]["Enums"]["hallway_traffic_flow_enum"]

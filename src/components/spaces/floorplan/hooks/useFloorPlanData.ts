@@ -17,50 +17,56 @@ function transformLayer(raw: FloorPlanLayerDB): FloorPlanLayer {
   };
 }
 
-function transformRoomToNode(room: any, index: number): FloorPlanNode {
-  console.log('Transforming room:', room); // Debug log
-  
+function transformSpaceToNode(space: any, index: number): FloorPlanNode {
   // Generate a grid-based position if none exists, using the index
   const defaultPosition = {
-    x: (index % 3) * 200 + 50, // 3 rooms per row, 200px apart
-    y: Math.floor(index / 3) * 150 + 50 // New row every 3 rooms, 150px apart
+    x: (index % 3) * 200 + 50, // 3 spaces per row, 200px apart
+    y: Math.floor(index / 3) * 150 + 50 // New row every 3 spaces, 150px apart
   };
 
-  const roomPosition = room.position ? 
-    (typeof room.position === 'string' ? JSON.parse(room.position) : room.position) :
+  const spacePosition = space.position ? 
+    (typeof space.position === 'string' ? JSON.parse(space.position) : space.position) :
     defaultPosition;
 
-  // Default size if none provided
-  const defaultSize = {
-    width: 150,
-    height: 100
-  };
+  // Default size based on object type
+  const defaultSize = space.object_type === 'hallway' ? 
+    { width: 300, height: 50 } :
+    space.object_type === 'door' ?
+    { width: 40, height: 10 } :
+    { width: 150, height: 100 };
 
-  const roomSize = room.size ?
-    (typeof room.size === 'string' ? JSON.parse(room.size) : room.size) :
+  const spaceSize = space.size ?
+    (typeof space.size === 'string' ? JSON.parse(space.size) : space.size) :
     defaultSize;
 
-  const backgroundColor = ROOM_COLORS[room.room_type] || ROOM_COLORS.default;
+  // Get background color based on type
+  const backgroundColor = space.object_type === 'room' ? 
+    ROOM_COLORS[space.type] || ROOM_COLORS.default :
+    space.object_type === 'hallway' ?
+    '#e5e7eb' : // Light gray for hallways
+    '#94a3b8'; // Slate gray for doors
 
   return {
-    id: room.id,
-    type: 'room',
-    position: roomPosition,
+    id: space.id,
+    type: space.object_type,
+    position: spacePosition,
     data: {
-      label: room.name,
-      type: 'room',
-      size: roomSize,
+      label: space.name,
+      type: space.object_type,
+      size: spaceSize,
       style: {
         backgroundColor,
         border: '1px solid #cbd5e1'
       },
       properties: {
-        room_number: room.room_number,
-        room_type: room.room_type,
-        status: room.status
+        room_number: space.room_number,
+        space_type: space.type,
+        status: space.status,
+        parent_room_id: space.parent_room_id,
+        connection_data: space.connection_data
       }
     },
-    zIndex: 0
+    zIndex: space.object_type === 'door' ? 2 : space.object_type === 'hallway' ? 1 : 0
   };
 }
 
@@ -83,47 +89,64 @@ export function useFloorPlanData(floorId: string | null) {
     enabled: !!floorId
   });
 
-  // Query for rooms
-  const { data: rooms, isLoading: isLoadingRooms } = useQuery({
-    queryKey: ['rooms', floorId],
+  // Query for floor plan objects (rooms, hallways, and doors)
+  const { data: spaceObjects, isLoading: isLoadingObjects } = useQuery({
+    queryKey: ['floorplan-objects', floorId],
     queryFn: async () => {
       if (!floorId) return [];
       
-      console.log('Fetching rooms for floor:', floorId); // Debug log
+      console.log('Fetching floor plan objects for floor:', floorId); // Debug log
       
       const { data, error } = await supabase
-        .from('rooms')
+        .from('floor_plan_objects_view')
         .select(`
           id,
+          object_type,
           name,
           room_number,
-          room_type,
+          type,
           status,
           position,
           size,
+          parent_room_id,
+          connection_data,
           floor_id
         `)
-        .eq('floor_id', floorId)
-        .eq('status', 'active');
+        .eq('floor_id', floorId);
         
       if (error) {
-        console.error('Error fetching rooms:', error); // Debug log
+        console.error('Error fetching floor plan objects:', error); // Debug log
         throw error;
       }
       
-      console.log('Fetched rooms:', data); // Debug log
+      console.log('Fetched floor plan objects:', data); // Debug log
       return data || [];
     },
     enabled: !!floorId
   });
 
-  // Transform rooms into floor plan objects
-  const objects = rooms?.map((room, index) => transformRoomToNode(room, index)) || [];
+  // Transform all objects into floor plan nodes
+  const objects = spaceObjects?.map((obj, index) => transformSpaceToNode(obj, index)) || [];
   console.log('Transformed objects:', objects); // Debug log
+
+  // Process parent/child relationships
+  const processedObjects = objects.map(obj => {
+    if (obj.data.properties.parent_room_id) {
+      const parentObj = objects.find(parent => parent.id === obj.data.properties.parent_room_id);
+      if (parentObj) {
+        // Adjust position relative to parent
+        obj.position = {
+          x: parentObj.position.x + 50,
+          y: parentObj.position.y + 50
+        };
+      }
+    }
+    return obj;
+  });
 
   return {
     layers,
-    objects,
-    isLoading: isLoadingLayers || isLoadingRooms
+    objects: processedObjects,
+    isLoading: isLoadingLayers || isLoadingObjects
   };
 }

@@ -4,8 +4,8 @@ import { FloorPlanObjectData } from '../types/floorPlanTypes';
 
 export function DoorNode({ data }: NodeProps<FloorPlanObjectData>) {
   const style = {
-    width: data.size.width,
-    height: data.size.height,
+    width: data.size?.width || 40,
+    height: data.size?.height || 10,
     backgroundColor: '#94a3b8',
     border: '2px solid #475569',
     ...data.style,
@@ -15,7 +15,9 @@ export function DoorNode({ data }: NodeProps<FloorPlanObjectData>) {
     <>
       <Handle type="target" position={Position.Left} />
       <div style={style}>
-        {data.label}
+        <div className="text-xs font-medium truncate">
+          {data.label}
+        </div>
       </div>
       <Handle type="source" position={Position.Right} />
     </>
