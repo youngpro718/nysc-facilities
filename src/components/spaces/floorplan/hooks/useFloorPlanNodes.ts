@@ -49,6 +49,11 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
             }
           }
 
+          const table = nodeType === 'door' ? 'doors' : 
+                       nodeType === 'hallway' ? 'hallways' : 
+                       nodeType === 'room' ? 'rooms' : 
+                       'floor_plan_objects';
+
           const updatePayload: Record<string, any> = {};
           
           if (updateData.position) {
@@ -66,41 +71,16 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
             continue;
           }
 
-          const isDoor = nodeType === 'door';
-          const isHallway = nodeType === 'hallway';
-          const isRoom = nodeType === 'room';
-          const table = isDoor ? 'doors' : isHallway ? 'hallways' : isRoom ? 'rooms' : 'floor_plan_objects';
+          console.log(`Updating ${table} node ${nodeId} with payload:`, updatePayload);
 
-          console.log(`Updating ${table} node ${nodeId} (type: ${nodeType}):`, updatePayload);
-
-          // First check if the node exists
-          const { data: existingNode, error: checkError } = await supabase
-            .from(table)
-            .select('id')
-            .eq('id', nodeId)
-            .maybeSingle();
-
-          if (checkError) {
-            console.error(`Error checking ${table}:`, checkError);
-            pendingUpdates.current.set(nodeId, updateData);
-            continue;
-          }
-
-          if (!existingNode) {
-            console.error(`Node ${nodeId} not found in ${table}`);
-            toast.error(`${nodeType} no longer exists in the database`);
-            continue;
-          }
-
-          // Proceed with update if node exists
-          const { error: updateError } = await supabase
+          const { error } = await supabase
             .from(table)
             .update(updatePayload)
             .eq('id', nodeId);
 
-          if (updateError) {
-            console.error(`Error updating ${table}:`, updateError);
-            toast.error(`Failed to update ${isHallway ? 'hallway' : (isDoor ? 'door' : 'room')} ${nodeId}`);
+          if (error) {
+            console.error(`Error updating ${table}:`, error);
+            toast.error(`Failed to update ${nodeType} position`);
             pendingUpdates.current.set(nodeId, updateData);
           } else {
             console.log(`Successfully updated ${table} ${nodeId}`);
@@ -135,36 +115,28 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
         const currentUpdate = pendingUpdates.current.get(nodeId) || {};
 
         if (change.type === 'position' && isPositionChange(change)) {
-          try {
-            const x = Number(change.position.x);
-            const y = Number(change.position.y);
-            
-            if (!isNaN(x) && !isNaN(y)) {
-              console.log(`Processing position change for node ${nodeId}:`, { x, y });
-              currentUpdate.position = { x, y };
-              updateNeeded = true;
-            } else {
-              console.warn('Invalid position values:', change.position);
-            }
-          } catch (err) {
-            console.warn('Error processing position data:', err);
+          const x = Math.round(change.position.x);
+          const y = Math.round(change.position.y);
+          
+          if (!isNaN(x) && !isNaN(y)) {
+            console.log(`Processing position change for node ${nodeId}:`, { x, y });
+            currentUpdate.position = { x, y };
+            updateNeeded = true;
+          } else {
+            console.warn('Invalid position values:', change.position);
           }
         }
 
         if (change.type === 'dimensions' && isDimensionChange(change)) {
-          try {
-            const width = Number(change.dimensions.width);
-            const height = Number(change.dimensions.height);
-            
-            if (!isNaN(width) && !isNaN(height)) {
-              console.log(`Processing dimension change for node ${nodeId}:`, { width, height });
-              currentUpdate.size = { width, height };
-              updateNeeded = true;
-            } else {
-              console.warn('Invalid dimension values:', change.dimensions);
-            }
-          } catch (err) {
-            console.warn('Error processing dimension data:', err);
+          const width = Math.round(change.dimensions.width);
+          const height = Math.round(change.dimensions.height);
+          
+          if (!isNaN(width) && !isNaN(height)) {
+            console.log(`Processing dimension change for node ${nodeId}:`, { width, height });
+            currentUpdate.size = { width, height };
+            updateNeeded = true;
+          } else {
+            console.warn('Invalid dimension values:', change.dimensions);
           }
         }
 
