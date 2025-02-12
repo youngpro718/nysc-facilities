@@ -4,12 +4,34 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { CreateSpaceFormData } from "../../schemas/createSpaceSchema";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CreateDoorFieldsProps {
   form: UseFormReturn<CreateSpaceFormData>;
 }
 
 export function CreateDoorFields({ form }: CreateDoorFieldsProps) {
+  const floorId = form.watch("floorId");
+  const isHallwayConnection = form.watch("is_hallway_connection");
+
+  const { data: rooms } = useQuery({
+    queryKey: ["rooms", floorId],
+    queryFn: async () => {
+      if (!floorId) return [];
+      
+      const { data, error } = await supabase
+        .from("rooms")
+        .select("id, name, room_number")
+        .eq("floor_id", floorId)
+        .order("room_number");
+        
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!floorId && !isHallwayConnection
+  });
+
   return (
     <div className="space-y-4">
       <FormField
@@ -94,6 +116,33 @@ export function CreateDoorFields({ form }: CreateDoorFieldsProps) {
           </FormItem>
         )}
       />
+
+      {!isHallwayConnection && (
+        <FormField
+          control={form.control}
+          name="problematic_room_id"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Problematic Room</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value || ""}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a room" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {rooms?.map((room) => (
+                    <SelectItem key={room.id} value={room.id}>
+                      {room.room_number} - {room.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      )}
     </div>
   );
 }
