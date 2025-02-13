@@ -14,6 +14,23 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+// Simplified type definitions to avoid deep nesting
+interface RoomData {
+  id: string;
+  assigned_at: string;
+  rooms: {
+    name: string | null;
+  } | null;
+}
+
+interface KeyData {
+  id: string;
+  assigned_at: string;
+  keys: {
+    name: string | null;
+  } | null;
+}
+
 interface UserAssignment {
   id: string;
   room_name?: string;
@@ -27,22 +44,8 @@ interface UserIssue {
   status: string;
   created_at: string;
   priority: string;
-  rooms?: { name: string };
-}
-
-interface RoomAssignment {
-  id: string;
-  assigned_at: string;
-  rooms: {
-    name: string | null;
-  } | null;
-}
-
-interface KeyAssignment {
-  id: string;
-  assigned_at: string;
-  keys: {
-    name: string | null;
+  rooms?: {
+    name: string;
   } | null;
 }
 
@@ -89,36 +92,26 @@ export default function AdminUsers() {
       // Fetch assigned rooms
       const { data: roomsData, error: roomsError } = await supabase
         .from('occupant_room_assignments')
-        .select(`
-          id,
-          assigned_at,
-          rooms (
-            name
-          )
-        `)
+        .select('id, assigned_at, rooms:rooms(name)')
         .eq('occupant_id', user.id);
 
       if (roomsError) {
         console.error('Error fetching rooms:', roomsError);
         setAssignedRooms([]);
       } else {
-        setAssignedRooms((roomsData as RoomAssignment[] || []).map(d => ({
-          id: d.id,
-          room_name: d.rooms?.name || undefined,
-          assigned_at: d.assigned_at
-        })));
+        const typedRoomsData = roomsData as RoomData[];
+        const processedRooms: UserAssignment[] = typedRoomsData.map(room => ({
+          id: room.id,
+          room_name: room.rooms?.name || undefined,
+          assigned_at: room.assigned_at
+        }));
+        setAssignedRooms(processedRooms);
       }
 
       // Fetch assigned keys
       const { data: keysData, error: keysError } = await supabase
         .from('key_assignments')
-        .select(`
-          id,
-          assigned_at,
-          keys (
-            name
-          )
-        `)
+        .select('id, assigned_at, keys:keys(name)')
         .eq('occupant_id', user.id)
         .is('returned_at', null);
 
@@ -126,26 +119,19 @@ export default function AdminUsers() {
         console.error('Error fetching keys:', keysError);
         setAssignedKeys([]);
       } else {
-        setAssignedKeys((keysData as KeyAssignment[] || []).map(d => ({
-          id: d.id,
-          key_name: d.keys?.name || undefined,
-          assigned_at: d.assigned_at
-        })));
+        const typedKeysData = keysData as KeyData[];
+        const processedKeys: UserAssignment[] = typedKeysData.map(key => ({
+          id: key.id,
+          key_name: key.keys?.name || undefined,
+          assigned_at: key.assigned_at
+        }));
+        setAssignedKeys(processedKeys);
       }
 
       // Fetch user's reported issues
       const { data: issuesData, error: issuesError } = await supabase
         .from('issues')
-        .select(`
-          id,
-          title,
-          status,
-          created_at,
-          priority,
-          rooms (
-            name
-          )
-        `)
+        .select('id, title, status, created_at, priority, rooms:rooms(name)')
         .eq('created_by', user.id)
         .order('created_at', { ascending: false });
 
