@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +9,7 @@ import { ReportedIssuesCard } from "@/components/dashboard/ReportedIssuesCard";
 import { AssignedRoomsCard } from "@/components/dashboard/AssignedRoomsCard";
 import { AssignedKeysCard } from "@/components/dashboard/AssignedKeysCard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import type { RoomData, KeyData, UserAssignment, UserIssue } from "@/types/dashboard";
 
 interface UserProfile {
@@ -27,6 +29,7 @@ export default function UserDashboard() {
   const [showReportIssue, setShowReportIssue] = useState(false);
   const [profile, setProfile] = useState<UserProfile>({});
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     checkUserRoleAndFetchData();
@@ -145,43 +148,47 @@ export default function UserDashboard() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-10 px-4">
+      <div className="container mx-auto py-6 px-4">
         <div className="text-center">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-10 px-4 max-w-6xl">
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16">
+    <div className="container mx-auto py-6 px-4 max-w-6xl">
+      <div className="mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Avatar className={isMobile ? "h-12 w-12" : "h-16 w-16"}>
               <AvatarImage src={profile.avatar_url} />
               <AvatarFallback>{getInitials()}</AvatarFallback>
             </Avatar>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">
+              <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold tracking-tight`}>
                 {profile.first_name ? `${profile.first_name} ${profile.last_name}` : 'My Dashboard'}
               </h1>
               {profile.title && (
-                <p className="text-muted-foreground text-lg">
+                <p className="text-muted-foreground text-sm sm:text-lg">
                   {profile.title}
                 </p>
               )}
             </div>
           </div>
-          <Button onClick={handleReportIssue}>
+          <Button 
+            onClick={handleReportIssue}
+            size={isMobile ? "sm" : "default"}
+            className="w-full sm:w-auto"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Report Issue
           </Button>
         </div>
-        <p className="text-muted-foreground border-t pt-4">
+        <p className="text-muted-foreground text-sm border-t mt-4 pt-4">
           View your assignments and reported issues
         </p>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <ReportedIssuesCard issues={userIssues} />
         <AssignedRoomsCard rooms={assignedRooms} />
         <AssignedKeysCard keys={assignedKeys} />
