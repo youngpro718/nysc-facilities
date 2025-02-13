@@ -4595,6 +4595,13 @@ export type Database = {
         }
         Returns: undefined
       }
+      create_assignment_batch: {
+        Args: {
+          creator_id: string
+          batch_metadata: Json
+        }
+        Returns: string
+      }
       get_next_lighting_sequence: {
         Args: {
           p_space_id: string

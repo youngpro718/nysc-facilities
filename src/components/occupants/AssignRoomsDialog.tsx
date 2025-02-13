@@ -148,8 +148,8 @@ export function AssignRoomsDialog({
       if (!user) throw new Error("Not authenticated");
 
       // Create a batch record using raw insert
-      const { data: batchData, error: batchError } = await supabase.rpc(
-        'create_assignment_batch',
+      const { data: { id: batchId }, error: batchError } = await supabase.rpc(
+        'create_assignment_batch' as never,
         {
           creator_id: user.id,
           batch_metadata: {
@@ -167,7 +167,7 @@ export function AssignRoomsDialog({
         assigned_at: new Date().toISOString(),
         start_date: startDate.toISOString(),
         end_date: endDate?.toISOString() || null,
-        batch_id: batchData.id,
+        batch_id: batchId,
         is_primary: true,
         approval_status: 'pending'
       }));
