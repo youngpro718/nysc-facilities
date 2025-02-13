@@ -143,18 +143,21 @@ export function AssignRoomsDialog({
     try {
       setIsAssigning(true);
 
-      // Create a batch record first
-      const { data: batchData, error: batchError } = await supabase
-        .from("room_assignment_batches")
-        .insert({
-          created_by: (await supabase.auth.getUser()).data.user?.id,
-          metadata: {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // Create a batch record using raw insert
+      const { data: batchData, error: batchError } = await supabase.rpc(
+        'create_assignment_batch',
+        {
+          creator_id: user.id,
+          batch_metadata: {
             occupant_count: selectedOccupants.length,
             room_id: selectedRoom
           }
-        })
-        .select()
-        .single();
+        }
+      );
 
       if (batchError) throw batchError;
 
