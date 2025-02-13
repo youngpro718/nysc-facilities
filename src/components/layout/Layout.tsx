@@ -54,23 +54,33 @@ const Layout = () => {
           };
 
           try {
-            // Try to update any existing session first
-            const { data: updateResult, error: updateError } = await supabase
+            // First try to find an existing session
+            const { data: existingSessions } = await supabase
               .from('user_sessions')
-              .upsert(
-                {
+              .select('id')
+              .eq('user_id', session.user.id)
+              .eq('device_info->name', deviceInfo.name)
+              .eq('device_info->platform', deviceInfo.platform)
+              .eq('device_info->language', deviceInfo.language)
+              .maybeSingle();
+
+            if (existingSessions?.id) {
+              // Update existing session
+              await supabase
+                .from('user_sessions')
+                .update({
+                  last_active_at: new Date().toISOString()
+                })
+                .eq('id', existingSessions.id);
+            } else {
+              // Create new session
+              await supabase
+                .from('user_sessions')
+                .insert({
                   user_id: session.user.id,
                   device_info: deviceInfo,
-                  last_active_at: new Date().toISOString(),
-                },
-                {
-                  onConflict: 'user_id,device_info',
-                  ignoreDuplicates: false
-                }
-              );
-
-            if (updateError) {
-              console.error("Error managing session:", updateError);
+                  last_active_at: new Date().toISOString()
+                });
             }
           } catch (error) {
             console.error("Session management error:", error);
@@ -118,19 +128,23 @@ const Layout = () => {
         };
 
         try {
-          await supabase
+          const { data: existingSession } = await supabase
             .from('user_sessions')
-            .upsert(
-              {
-                user_id: session.user.id,
-                device_info: deviceInfo,
-                last_active_at: new Date().toISOString(),
-              },
-              {
-                onConflict: 'user_id,device_info',
-                ignoreDuplicates: false
-              }
-            );
+            .select('id')
+            .eq('user_id', session.user.id)
+            .eq('device_info->name', deviceInfo.name)
+            .eq('device_info->platform', deviceInfo.platform)
+            .eq('device_info->language', deviceInfo.language)
+            .maybeSingle();
+
+          if (existingSession?.id) {
+            await supabase
+              .from('user_sessions')
+              .update({
+                last_active_at: new Date().toISOString()
+              })
+              .eq('id', existingSession.id);
+          }
         } catch (error) {
           console.error("Error updating session activity:", error);
         }
@@ -197,7 +211,9 @@ const Layout = () => {
           .from('user_sessions')
           .delete()
           .eq('user_id', session.user.id)
-          .eq('device_info', deviceInfo);
+          .eq('device_info->name', deviceInfo.name)
+          .eq('device_info->platform', deviceInfo.platform)
+          .eq('device_info->language', deviceInfo.language);
       }
 
       await supabase.auth.signOut();
