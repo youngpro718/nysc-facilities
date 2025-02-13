@@ -43,17 +43,21 @@ export default function AdminUsers() {
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (roleError) throw roleError;
-      
-      const userIsAdmin = roleData?.role === 'admin';
-      setIsAdmin(userIsAdmin);
+      if (roleError) {
+        console.error('Error fetching user role:', roleError);
+        // Continue with non-admin role if there's an error
+        setIsAdmin(false);
+      } else {
+        const userIsAdmin = roleData?.role === 'admin';
+        setIsAdmin(userIsAdmin);
 
-      if (userIsAdmin) {
-        // If admin, redirect to profile page where they can access admin features
-        navigate('/profile');
-        return;
+        if (userIsAdmin) {
+          // If admin, redirect to profile page where they can access admin features
+          navigate('/profile');
+          return;
+        }
       }
 
       // Fetch assigned rooms
@@ -68,7 +72,16 @@ export default function AdminUsers() {
         `)
         .eq('occupant_id', user.id);
 
-      if (roomsError) throw roomsError;
+      if (roomsError) {
+        console.error('Error fetching rooms:', roomsError);
+        setAssignedRooms([]);
+      } else {
+        setAssignedRooms(roomsData?.map((d: any) => ({
+          id: d.id,
+          room_name: d.rooms?.name,
+          assigned_at: d.assigned_at
+        })) || []);
+      }
 
       // Fetch assigned keys
       const { data: keysData, error: keysError } = await supabase
@@ -83,19 +96,16 @@ export default function AdminUsers() {
         .eq('occupant_id', user.id)
         .is('returned_at', null);
 
-      if (keysError) throw keysError;
-
-      setAssignedRooms(roomsData.map((d: any) => ({
-        id: d.id,
-        room_name: d.rooms?.name,
-        assigned_at: d.assigned_at
-      })));
-
-      setAssignedKeys(keysData.map((d: any) => ({
-        id: d.id,
-        key_name: d.keys?.name,
-        assigned_at: d.assigned_at
-      })));
+      if (keysError) {
+        console.error('Error fetching keys:', keysError);
+        setAssignedKeys([]);
+      } else {
+        setAssignedKeys(keysData?.map((d: any) => ({
+          id: d.id,
+          key_name: d.keys?.name,
+          assigned_at: d.assigned_at
+        })) || []);
+      }
 
     } catch (error) {
       console.error('Error fetching user data:', error);
