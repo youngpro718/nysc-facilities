@@ -42,8 +42,31 @@ const Layout = () => {
           if (!isAuthPage) {
             navigate('/auth');
           }
-        } else if (isAuthPage) {
-          navigate('/');
+        } else {
+          if (isAuthPage) {
+            navigate('/');
+          }
+
+          // Create or update session record
+          const deviceInfo = {
+            name: navigator.userAgent,
+            platform: navigator.platform,
+            language: navigator.language,
+          };
+
+          const { error: sessionError } = await supabase
+            .from('user_sessions')
+            .upsert({
+              user_id: session.user.id,
+              device_info: deviceInfo,
+              last_active_at: new Date().toISOString(),
+            }, {
+              onConflict: 'user_id,device_info->name'
+            });
+
+          if (sessionError) {
+            console.error("Error updating session:", sessionError);
+          }
         }
 
         // Check if user is admin
@@ -76,8 +99,31 @@ const Layout = () => {
       }
     });
 
+    // Update session activity periodically
+    const updateInterval = setInterval(async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const deviceInfo = {
+          name: navigator.userAgent,
+          platform: navigator.platform,
+          language: navigator.language,
+        };
+
+        await supabase
+          .from('user_sessions')
+          .upsert({
+            user_id: session.user.id,
+            device_info: deviceInfo,
+            last_active_at: new Date().toISOString(),
+          }, {
+            onConflict: 'user_id,device_info->name'
+          });
+      }
+    }, 5 * 60 * 1000); // Update every 5 minutes
+
     return () => {
       subscription.unsubscribe();
+      clearInterval(updateInterval);
     };
   }, [navigate, isAuthPage]);
 
@@ -100,7 +146,7 @@ const Layout = () => {
 
   const navigation = isAdmin ? adminNavigation : userNavigation;
 
-  const handleNavigationChange = (index: number | null) => {
+  const handleNavigationChange = async (index: number | null) => {
     if (index === null) return;
     
     if (isAdmin) {
@@ -122,6 +168,24 @@ const Layout = () => {
 
   const handleSignOut = async () => {
     try {
+      // Clean up session before signing out
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const deviceInfo = {
+          name: navigator.userAgent,
+          platform: navigator.platform,
+          language: navigator.language,
+        };
+
+        await supabase
+          .from('user_sessions')
+          .delete()
+          .match({
+            user_id: session.user.id,
+            'device_info->name': deviceInfo.name
+          });
+      }
+
       await supabase.auth.signOut();
       toast.success("Successfully signed out!");
       navigate('/auth');
