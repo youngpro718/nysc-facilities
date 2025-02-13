@@ -18,18 +18,12 @@ import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { createHash } from 'crypto';
 
 interface DeviceInfo {
   name: string;
   platform: string;
   language: string;
-}
-
-interface UserSession {
-  id: string;
-  user_id: string;
-  device_info: DeviceInfo;
-  last_active_at: string;
 }
 
 const Layout = () => {
@@ -40,22 +34,20 @@ const Layout = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  const getCurrentDeviceInfo = (): DeviceInfo => ({
-    name: navigator.userAgent,
-    platform: navigator.platform,
-    language: navigator.language,
-  });
+  const getDeviceHash = (info: DeviceInfo): string => {
+    return btoa(JSON.stringify(info));
+  };
 
-  const findExistingSession = async (userId: string, deviceInfo: DeviceInfo) => {
-    const { data } = await supabase
-      .from('user_sessions')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('device_info->name', deviceInfo.name)
-      .eq('device_info->platform', deviceInfo.platform)
-      .eq('device_info->language', deviceInfo.language)
-      .maybeSingle();
-    return data;
+  const getCurrentDeviceInfo = (): { info: DeviceInfo; hash: string } => {
+    const info = {
+      name: navigator.userAgent,
+      platform: navigator.platform,
+      language: navigator.language,
+    };
+    return {
+      info,
+      hash: getDeviceHash(info)
+    };
   };
 
   useEffect(() => {
@@ -78,10 +70,15 @@ const Layout = () => {
             navigate('/');
           }
 
-          const deviceInfo = getCurrentDeviceInfo();
+          const { info: deviceInfo, hash: deviceHash } = getCurrentDeviceInfo();
 
           try {
-            const existingSession = await findExistingSession(session.user.id, deviceInfo);
+            const { data: existingSession } = await supabase
+              .from('user_sessions')
+              .select('id')
+              .eq('user_id', session.user.id)
+              .eq('device_hash', deviceHash)
+              .maybeSingle();
 
             if (existingSession?.id) {
               await supabase
@@ -95,6 +92,7 @@ const Layout = () => {
                 .from('user_sessions')
                 .insert({
                   user_id: session.user.id,
+                  device_hash: deviceHash,
                   device_info: deviceInfo,
                   last_active_at: new Date().toISOString()
                 });
@@ -138,10 +136,15 @@ const Layout = () => {
     const updateInterval = setInterval(async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        const deviceInfo = getCurrentDeviceInfo();
+        const { info: deviceInfo, hash: deviceHash } = getCurrentDeviceInfo();
 
         try {
-          const existingSession = await findExistingSession(session.user.id, deviceInfo);
+          const { data: existingSession } = await supabase
+            .from('user_sessions')
+            .select('id')
+            .eq('user_id', session.user.id)
+            .eq('device_hash', deviceHash)
+            .maybeSingle();
 
           if (existingSession?.id) {
             await supabase
@@ -167,14 +170,14 @@ const Layout = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        const deviceInfo = getCurrentDeviceInfo();
+        const { hash: deviceHash } = getCurrentDeviceInfo();
 
         await supabase
           .from('user_sessions')
           .delete()
           .match({
             user_id: session.user.id,
-            device_info: deviceInfo
+            device_hash: deviceHash
           });
       }
 
