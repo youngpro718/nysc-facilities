@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -30,7 +29,7 @@ export function useRoomAssignment(selectedOccupants: string[]) {
   const [startDate, setStartDate] = useState<Date>(new Date());
   const [endDate, setEndDate] = useState<Date | undefined>();
 
-  const { data: availableRooms, isLoading: isLoadingRooms } = useQuery({
+  const { data: availableRooms, isLoading: isLoadingRooms, refetch: refetchRooms } = useQuery({
     queryKey: ["available-rooms"],
     queryFn: async () => {
       const { data: assignmentsData, error: assignmentsError } = await supabase
@@ -68,7 +67,7 @@ export function useRoomAssignment(selectedOccupants: string[]) {
     },
   });
 
-  const { data: currentOccupants } = useQuery({
+  const { data: currentOccupants, refetch: refetchOccupants } = useQuery({
     queryKey: ["room-occupants", selectedRoom],
     enabled: !!selectedRoom,
     queryFn: async () => {
@@ -87,6 +86,31 @@ export function useRoomAssignment(selectedOccupants: string[]) {
       return data?.map(d => d.occupants) as CurrentOccupant[];
     }
   });
+
+  useEffect(() => {
+    const roomsChannel = supabase
+      .channel('room-assignments')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'occupant_room_assignments'
+        },
+        () => {
+          console.log('Room assignment changed, refetching data...');
+          refetchRooms();
+          if (selectedRoom) {
+            refetchOccupants();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(roomsChannel);
+    };
+  }, [selectedRoom, refetchRooms, refetchOccupants]);
 
   const handleAssign = async (onSuccess: () => void) => {
     if (!selectedRoom) {
