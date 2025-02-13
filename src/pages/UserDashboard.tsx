@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Plus, Settings } from "lucide-react";
+import { Plus } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -154,10 +153,6 @@ export default function UserDashboard() {
     setShowReportIssue(true);
   };
 
-  const handleGoToSettings = () => {
-    navigate('/profile');
-  };
-
   if (isLoading) {
     return (
       <div className="container mx-auto py-10 px-4">
@@ -171,16 +166,10 @@ export default function UserDashboard() {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-3xl font-bold tracking-tight">My Dashboard</h1>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleGoToSettings}>
-              <Settings className="h-4 w-4 mr-2" />
-              Settings
-            </Button>
-            <Button onClick={handleReportIssue}>
-              <Plus className="h-4 w-4 mr-2" />
-              Report Issue
-            </Button>
-          </div>
+          <Button onClick={handleReportIssue}>
+            <Plus className="h-4 w-4 mr-2" />
+            Report Issue
+          </Button>
         </div>
         <p className="text-muted-foreground">
           View your assignments and reported issues
@@ -188,6 +177,42 @@ export default function UserDashboard() {
       </div>
 
       <div className="space-y-6">
+        <Card className="p-6">
+          <h2 className="text-2xl font-semibold mb-4">My Reported Issues</h2>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Title</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Priority</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Date Reported</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {userIssues.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center">
+                    No issues reported
+                  </TableCell>
+                </TableRow>
+              ) : (
+                userIssues.map((issue) => (
+                  <TableRow key={issue.id}>
+                    <TableCell>{issue.title}</TableCell>
+                    <TableCell className="capitalize">{issue.status}</TableCell>
+                    <TableCell className="capitalize">{issue.priority}</TableCell>
+                    <TableCell>{issue.rooms?.name || 'N/A'}</TableCell>
+                    <TableCell>
+                      {new Date(issue.created_at).toLocaleDateString()}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </Card>
+
         <Card className="p-6">
           <h2 className="text-2xl font-semibold mb-4">Assigned Rooms</h2>
           <Table>
@@ -240,42 +265,6 @@ export default function UserDashboard() {
                     <TableCell>{key.key_name}</TableCell>
                     <TableCell>
                       {new Date(key.assigned_at).toLocaleDateString()}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </Card>
-
-        <Card className="p-6">
-          <h2 className="text-2xl font-semibold mb-4">My Reported Issues</h2>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Priority</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Date Reported</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {userIssues.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center">
-                    No issues reported
-                  </TableCell>
-                </TableRow>
-              ) : (
-                userIssues.map((issue) => (
-                  <TableRow key={issue.id}>
-                    <TableCell>{issue.title}</TableCell>
-                    <TableCell className="capitalize">{issue.status}</TableCell>
-                    <TableCell className="capitalize">{issue.priority}</TableCell>
-                    <TableCell>{issue.rooms?.name || 'N/A'}</TableCell>
-                    <TableCell>
-                      {new Date(issue.created_at).toLocaleDateString()}
                     </TableCell>
                   </TableRow>
                 ))
