@@ -1,3 +1,4 @@
+
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   Building2,
@@ -18,6 +19,19 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+interface DeviceInfo {
+  name: string;
+  platform: string;
+  language: string;
+}
+
+interface UserSession {
+  id: string;
+  user_id: string;
+  device_info: DeviceInfo;
+  last_active_at: string;
+}
+
 const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -25,6 +39,24 @@ const Layout = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+
+  const getCurrentDeviceInfo = (): DeviceInfo => ({
+    name: navigator.userAgent,
+    platform: navigator.platform,
+    language: navigator.language,
+  });
+
+  const findExistingSession = async (userId: string, deviceInfo: DeviceInfo) => {
+    const { data } = await supabase
+      .from('user_sessions')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('device_info->name', deviceInfo.name)
+      .eq('device_info->platform', deviceInfo.platform)
+      .eq('device_info->language', deviceInfo.language)
+      .maybeSingle();
+    return data;
+  };
 
   useEffect(() => {
     const checkSession = async () => {
@@ -46,34 +78,19 @@ const Layout = () => {
             navigate('/');
           }
 
-          // Create or update session record
-          const deviceInfo = {
-            name: navigator.userAgent,
-            platform: navigator.platform,
-            language: navigator.language,
-          };
+          const deviceInfo = getCurrentDeviceInfo();
 
           try {
-            // First try to find an existing session
-            const { data: existingSessions } = await supabase
-              .from('user_sessions')
-              .select('id')
-              .eq('user_id', session.user.id)
-              .eq('device_info->name', deviceInfo.name)
-              .eq('device_info->platform', deviceInfo.platform)
-              .eq('device_info->language', deviceInfo.language)
-              .maybeSingle();
+            const existingSession = await findExistingSession(session.user.id, deviceInfo);
 
-            if (existingSessions?.id) {
-              // Update existing session
+            if (existingSession?.id) {
               await supabase
                 .from('user_sessions')
                 .update({
                   last_active_at: new Date().toISOString()
                 })
-                .eq('id', existingSessions.id);
+                .eq('id', existingSession.id);
             } else {
-              // Create new session
               await supabase
                 .from('user_sessions')
                 .insert({
@@ -121,21 +138,10 @@ const Layout = () => {
     const updateInterval = setInterval(async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        const deviceInfo = {
-          name: navigator.userAgent,
-          platform: navigator.platform,
-          language: navigator.language,
-        };
+        const deviceInfo = getCurrentDeviceInfo();
 
         try {
-          const { data: existingSession } = await supabase
-            .from('user_sessions')
-            .select('id')
-            .eq('user_id', session.user.id)
-            .eq('device_info->name', deviceInfo.name)
-            .eq('device_info->platform', deviceInfo.platform)
-            .eq('device_info->language', deviceInfo.language)
-            .maybeSingle();
+          const existingSession = await findExistingSession(session.user.id, deviceInfo);
 
           if (existingSession?.id) {
             await supabase
@@ -156,6 +162,30 @@ const Layout = () => {
       clearInterval(updateInterval);
     };
   }, [navigate, isAuthPage]);
+
+  const handleSignOut = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const deviceInfo = getCurrentDeviceInfo();
+
+        await supabase
+          .from('user_sessions')
+          .delete()
+          .match({
+            user_id: session.user.id,
+            device_info: deviceInfo
+          });
+      }
+
+      await supabase.auth.signOut();
+      toast.success("Successfully signed out!");
+      navigate('/auth');
+    } catch (error: any) {
+      console.error("Sign out error:", error);
+      toast.error(error.message || "Error signing out");
+    }
+  };
 
   const adminNavigation = [
     { title: "Dashboard", icon: LayoutDashboard },
@@ -193,35 +223,6 @@ const Layout = () => {
         navigate(route);
         setIsMobileMenuOpen(false);
       }
-    }
-  };
-
-  const handleSignOut = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        const deviceInfo = {
-          name: navigator.userAgent,
-          platform: navigator.platform,
-          language: navigator.language,
-        };
-
-        // Delete the current session
-        await supabase
-          .from('user_sessions')
-          .delete()
-          .eq('user_id', session.user.id)
-          .eq('device_info->name', deviceInfo.name)
-          .eq('device_info->platform', deviceInfo.platform)
-          .eq('device_info->language', deviceInfo.language);
-      }
-
-      await supabase.auth.signOut();
-      toast.success("Successfully signed out!");
-      navigate('/auth');
-    } catch (error: any) {
-      console.error("Sign out error:", error);
-      toast.error(error.message || "Error signing out");
     }
   };
 
