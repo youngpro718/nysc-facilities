@@ -93,6 +93,8 @@ const Layout = () => {
   ];
 
   const userNavigation = [
+    { title: "Dashboard", icon: LayoutDashboard },
+    { type: "separator" as const },
     { title: "Profile", icon: UserRound },
   ];
 
@@ -109,8 +111,12 @@ const Layout = () => {
         setIsMobileMenuOpen(false);
       }
     } else {
-      navigate('/profile');
-      setIsMobileMenuOpen(false);
+      const routes = ['/dashboard', null, '/profile'];
+      const route = routes[index];
+      if (route) {
+        navigate(route);
+        setIsMobileMenuOpen(false);
+      }
     }
   };
 
@@ -205,11 +211,14 @@ const Layout = () => {
           </div>
         </header>
       )}
-      <main className="mx-auto max-w-7xl px-4 py-8">
+      <main className={cn(
+        "mx-auto max-w-7xl px-4 py-8",
+        isAdmin && "bg-background"
+      )}>
         <Outlet />
       </main>
     </div>
   );
-}
+};
 
 export default Layout;

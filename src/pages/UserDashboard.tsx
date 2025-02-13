@@ -68,7 +68,7 @@ export default function UserDashboard() {
         setIsAdmin(userIsAdmin);
 
         if (userIsAdmin) {
-          navigate('/profile');
+          navigate('/');
           return;
         }
       }
