@@ -1,3 +1,4 @@
+
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   Building2,
@@ -18,11 +19,11 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-interface DeviceInfo {
+type DeviceInfo = {
   name: string;
   platform: string;
   language: string;
-}
+};
 
 interface UserSession {
   id: string;
@@ -52,15 +53,16 @@ const Layout = () => {
   };
 
   const findExistingSession = async (userId: string, deviceInfo: DeviceInfo) => {
-    const { data } = await supabase
+    const { data: sessions } = await supabase
       .from('user_sessions')
       .select('id')
-      .eq('user_id', userId)
       .eq('device_info->name', deviceInfo.name)
       .eq('device_info->platform', deviceInfo.platform)
       .eq('device_info->language', deviceInfo.language)
-      .maybeSingle();
-    return data;
+      .eq('user_id', userId)
+      .limit(1);
+    
+    return sessions?.[0];
   };
 
   useEffect(() => {
@@ -100,13 +102,15 @@ const Layout = () => {
               })
               .eq('id', existingSession.id);
           } else {
+            const sessionData = {
+              user_id: session.user.id,
+              device_info: deviceInfo as Record<string, string>,
+              last_active_at: new Date().toISOString()
+            };
+
             await supabase
               .from('user_sessions')
-              .insert({
-                user_id: session.user.id,
-                device_info: deviceInfo,
-                last_active_at: new Date().toISOString()
-              });
+              .insert(sessionData);
           }
 
           // Check if user is admin
@@ -176,13 +180,14 @@ const Layout = () => {
       if (session) {
         const deviceInfo = getCurrentDeviceInfo();
 
-        await supabase
-          .from('user_sessions')
-          .delete()
-          .match({
-            user_id: session.user.id,
-            device_info: deviceInfo
-          });
+        // Find and delete the session
+        const existingSession = await findExistingSession(session.user.id, deviceInfo);
+        if (existingSession?.id) {
+          await supabase
+            .from('user_sessions')
+            .delete()
+            .eq('id', existingSession.id);
+        }
       }
 
       await supabase.auth.signOut();
