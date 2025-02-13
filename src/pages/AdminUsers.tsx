@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -19,11 +21,21 @@ interface UserAssignment {
   assigned_at: string;
 }
 
+interface UserIssue {
+  id: string;
+  title: string;
+  status: string;
+  created_at: string;
+  priority: string;
+  rooms?: { name: string };
+}
+
 export default function AdminUsers() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [assignedRooms, setAssignedRooms] = useState<UserAssignment[]>([]);
   const [assignedKeys, setAssignedKeys] = useState<UserAssignment[]>([]);
+  const [userIssues, setUserIssues] = useState<UserIssue[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -47,14 +59,12 @@ export default function AdminUsers() {
 
       if (roleError) {
         console.error('Error fetching user role:', roleError);
-        // Continue with non-admin role if there's an error
         setIsAdmin(false);
       } else {
         const userIsAdmin = roleData?.role === 'admin';
         setIsAdmin(userIsAdmin);
 
         if (userIsAdmin) {
-          // If admin, redirect to profile page where they can access admin features
           navigate('/profile');
           return;
         }
@@ -107,11 +117,38 @@ export default function AdminUsers() {
         })) || []);
       }
 
+      // Fetch user's reported issues
+      const { data: issuesData, error: issuesError } = await supabase
+        .from('issues')
+        .select(`
+          id,
+          title,
+          status,
+          created_at,
+          priority,
+          rooms (
+            name
+          )
+        `)
+        .eq('created_by', user.id)
+        .order('created_at', { ascending: false });
+
+      if (issuesError) {
+        console.error('Error fetching issues:', issuesError);
+        setUserIssues([]);
+      } else {
+        setUserIssues(issuesData || []);
+      }
+
     } catch (error) {
       console.error('Error fetching user data:', error);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleReportIssue = () => {
+    navigate('/issues');
   };
 
   if (isLoading) {
@@ -124,11 +161,17 @@ export default function AdminUsers() {
 
   return (
     <div className="container mx-auto py-10 px-4 max-w-6xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">My Dashboard</h1>
-        <p className="text-muted-foreground mt-2">
-          View your assigned rooms and keys
-        </p>
+      <div className="mb-8 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">My Dashboard</h1>
+          <p className="text-muted-foreground mt-2">
+            View your assignments and reported issues
+          </p>
+        </div>
+        <Button onClick={handleReportIssue}>
+          <Plus className="h-4 w-4 mr-2" />
+          Report Issue
+        </Button>
       </div>
 
       <div className="space-y-6">
@@ -184,6 +227,42 @@ export default function AdminUsers() {
                     <TableCell>{key.key_name}</TableCell>
                     <TableCell>
                       {new Date(key.assigned_at).toLocaleDateString()}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </Card>
+
+        <Card className="p-6">
+          <h2 className="text-2xl font-semibold mb-4">My Reported Issues</h2>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Title</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Priority</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Date Reported</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {userIssues.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center">
+                    No issues reported
+                  </TableCell>
+                </TableRow>
+              ) : (
+                userIssues.map((issue) => (
+                  <TableRow key={issue.id}>
+                    <TableCell>{issue.title}</TableCell>
+                    <TableCell className="capitalize">{issue.status}</TableCell>
+                    <TableCell className="capitalize">{issue.priority}</TableCell>
+                    <TableCell>{issue.rooms?.name || 'N/A'}</TableCell>
+                    <TableCell>
+                      {new Date(issue.created_at).toLocaleDateString()}
                     </TableCell>
                   </TableRow>
                 ))

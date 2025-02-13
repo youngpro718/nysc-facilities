@@ -1,3 +1,4 @@
+
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   Building2,
@@ -24,6 +25,7 @@ const Layout = () => {
   const isAuthPage = location.pathname === '/auth';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -42,6 +44,17 @@ const Layout = () => {
           }
         } else if (isAuthPage) {
           navigate('/');
+        }
+
+        // Check if user is admin
+        if (session?.user) {
+          const { data: roleData } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+
+          setIsAdmin(roleData?.role === 'admin');
         }
       } catch (error) {
         console.error("Auth error:", error);
@@ -68,7 +81,7 @@ const Layout = () => {
     };
   }, [navigate, isAuthPage]);
 
-  const navigation = [
+  const adminNavigation = [
     { title: "Dashboard", icon: LayoutDashboard },
     { title: "Spaces", icon: Building2 },
     { title: "Occupants", icon: Users },
@@ -79,12 +92,24 @@ const Layout = () => {
     { title: "Profile", icon: UserRound },
   ];
 
+  const userNavigation = [
+    { title: "Profile", icon: UserRound },
+  ];
+
+  const navigation = isAdmin ? adminNavigation : userNavigation;
+
   const handleNavigationChange = (index: number | null) => {
     if (index === null) return;
-    const routes = ['/', '/spaces', '/occupants', null, '/keys', '/issues', null, '/profile'];
-    const route = routes[index];
-    if (route) {
-      navigate(route);
+    
+    if (isAdmin) {
+      const routes = ['/', '/spaces', '/occupants', null, '/keys', '/issues', null, '/profile'];
+      const route = routes[index];
+      if (route) {
+        navigate(route);
+        setIsMobileMenuOpen(false);
+      }
+    } else {
+      navigate('/profile');
       setIsMobileMenuOpen(false);
     }
   };
@@ -101,7 +126,7 @@ const Layout = () => {
   };
 
   if (isLoading) {
-    return null; // Or a loading spinner
+    return null;
   }
 
   return (
@@ -185,6 +210,6 @@ const Layout = () => {
       </main>
     </div>
   );
-};
+}
 
 export default Layout;
