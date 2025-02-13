@@ -1,4 +1,3 @@
-
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   Building2,
@@ -31,7 +30,6 @@ interface UserSession {
   device_info: DeviceInfo;
   last_active_at: string;
   created_at: string;
-  updated_at: string;
   ip_address?: string;
   location?: string;
 }
@@ -46,7 +44,7 @@ const Layout = () => {
 
   const getCurrentDeviceInfo = () => {
     const info = {
-      name: navigator.userAgent.split('/')[0], // Only take the first part to avoid syntax issues
+      name: navigator.userAgent.split('/')[0],
       platform: navigator.platform,
       language: navigator.language,
     };
@@ -96,8 +94,7 @@ const Layout = () => {
               .from('user_sessions')
               .update({
                 last_active_at: new Date().toISOString(),
-                device_info: deviceInfo,
-                updated_at: new Date().toISOString()
+                device_info: deviceInfo
               })
               .eq('id', existingSession.id);
           } else {
@@ -155,8 +152,7 @@ const Layout = () => {
             .from('user_sessions')
             .update({
               last_active_at: new Date().toISOString(),
-              device_info: deviceInfo,
-              updated_at: new Date().toISOString()
+              device_info: deviceInfo
             })
             .eq('id', existingSession.id);
         }
