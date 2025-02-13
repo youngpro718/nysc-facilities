@@ -7,7 +7,6 @@ import { IssueDialog } from "@/components/issues/IssueDialog";
 import { ReportedIssuesCard } from "@/components/dashboard/ReportedIssuesCard";
 import { AssignedRoomsCard } from "@/components/dashboard/AssignedRoomsCard";
 import { AssignedKeysCard } from "@/components/dashboard/AssignedKeysCard";
-import { DashboardStats } from "@/components/dashboard/DashboardStats";
 import type { RoomData, KeyData, UserAssignment, UserIssue } from "@/types/dashboard";
 
 export default function UserDashboard() {
@@ -115,23 +114,6 @@ export default function UserDashboard() {
     setShowReportIssue(true);
   };
 
-  const getIssueStats = () => {
-    const openIssues = userIssues.filter((issue) => issue.status === "open").length;
-    const inProgressIssues = userIssues.filter(
-      (issue) => issue.status === "in_progress"
-    ).length;
-    const resolvedIssues = userIssues.filter(
-      (issue) => issue.status === "resolved"
-    ).length;
-
-    return {
-      totalIssues: userIssues.length,
-      openIssues,
-      inProgressIssues,
-      resolvedIssues,
-    };
-  };
-
   if (isLoading) {
     return (
       <div className="container mx-auto py-10 px-4">
@@ -139,8 +121,6 @@ export default function UserDashboard() {
       </div>
     );
   }
-
-  const issueStats = getIssueStats();
 
   return (
     <div className="container mx-auto py-10 px-4 max-w-6xl">
@@ -152,10 +132,9 @@ export default function UserDashboard() {
             Report Issue
           </Button>
         </div>
-        <p className="text-muted-foreground mb-6">
+        <p className="text-muted-foreground">
           View your assignments and reported issues
         </p>
-        <DashboardStats {...issueStats} />
       </div>
 
       <div className="space-y-6">
