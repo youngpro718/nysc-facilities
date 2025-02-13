@@ -197,7 +197,7 @@ const Layout = () => {
     { title: "Keys", icon: Key },
     { title: "Issues", icon: AlertCircle },
     { type: "separator" as const },
-    { title: "Profile", icon: UserRound },
+    { title: "Admin Profile", icon: UserRound },
   ];
 
   const userNavigation = [
