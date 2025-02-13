@@ -54,18 +54,32 @@ const Layout = () => {
             language: navigator.language,
           };
 
-          const { error: sessionError } = await supabase
+          // First try to update existing session
+          const { error: updateError, data: updateData } = await supabase
             .from('user_sessions')
-            .upsert({
+            .update({ 
+              last_active_at: new Date().toISOString() 
+            })
+            .match({ 
               user_id: session.user.id,
-              device_info: deviceInfo,
-              last_active_at: new Date().toISOString(),
-            }, {
-              onConflict: 'user_id,device_info->name'
+              device_info: deviceInfo
             });
 
-          if (sessionError) {
-            console.error("Error updating session:", sessionError);
+          // If no existing session was updated, create a new one
+          if (!updateData || updateData.length === 0) {
+            const { error: insertError } = await supabase
+              .from('user_sessions')
+              .insert({
+                user_id: session.user.id,
+                device_info: deviceInfo,
+                last_active_at: new Date().toISOString(),
+              });
+
+            if (insertError) {
+              console.error("Error creating session:", insertError);
+            }
+          } else if (updateError) {
+            console.error("Error updating session:", updateError);
           }
         }
 
@@ -109,14 +123,15 @@ const Layout = () => {
           language: navigator.language,
         };
 
+        // Update existing session
         await supabase
           .from('user_sessions')
-          .upsert({
+          .update({ 
+            last_active_at: new Date().toISOString() 
+          })
+          .match({ 
             user_id: session.user.id,
-            device_info: deviceInfo,
-            last_active_at: new Date().toISOString(),
-          }, {
-            onConflict: 'user_id,device_info->name'
+            device_info: deviceInfo
           });
       }
     }, 5 * 60 * 1000); // Update every 5 minutes
@@ -182,7 +197,7 @@ const Layout = () => {
           .delete()
           .match({
             user_id: session.user.id,
-            'device_info->name': deviceInfo.name
+            device_info: deviceInfo
           });
       }
 
