@@ -39,12 +39,12 @@ export function SystemSettingsSection() {
 
       if (error) throw error;
       
-      if (data) {
-        // Type assertion to handle the JSON value
+      if (data?.value) {
+        // Explicitly type cast the value to SystemSettings and merge with defaults
         const settingsData = data.value as SystemSettings;
         setSettings({
-          ...defaultSettings,  // Fallback values
-          ...settingsData     // Override with stored values
+          ...defaultSettings,
+          ...settingsData
         });
       }
     } catch (error) {

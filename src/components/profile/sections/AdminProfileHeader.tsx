@@ -18,19 +18,21 @@ interface EmergencyContact {
   relationship?: string;
 }
 
+interface Profile {
+  first_name?: string;
+  last_name?: string;
+  avatar_url?: string;
+  title?: string;
+  department?: string;
+  last_login_at?: string;
+  bio?: string;
+  time_zone?: string;
+  language?: string;
+  emergency_contact?: EmergencyContact;
+}
+
 export function AdminProfileHeader() {
-  const [profile, setProfile] = useState<{
-    first_name?: string;
-    last_name?: string;
-    avatar_url?: string;
-    title?: string;
-    department?: string;
-    last_login_at?: string;
-    bio?: string;
-    time_zone?: string;
-    language?: string;
-    emergency_contact?: EmergencyContact;
-  } | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   
   const [stats, setStats] = useState<AdminStats>({
     activeUsers: 0,
@@ -56,7 +58,12 @@ export function AdminProfileHeader() {
         .single();
 
       if (profileData) {
-        setProfile(profileData);
+        // Cast the emergency_contact to the correct type
+        const typedProfileData: Profile = {
+          ...profileData,
+          emergency_contact: profileData.emergency_contact as EmergencyContact
+        };
+        setProfile(typedProfileData);
       }
 
       // Fetch quick stats
