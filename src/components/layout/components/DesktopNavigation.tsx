@@ -15,7 +15,7 @@ export const DesktopNavigation = ({
   onSignOut
 }: DesktopNavigationProps) => {
   return (
-    <nav className="hidden md:flex items-center gap-4 flex-1 justify-end">
+    <nav className="hidden md:flex items-center gap-4">
       <ExpandableTabs 
         tabs={navigation} 
         className="border-white/20 bg-transparent"
