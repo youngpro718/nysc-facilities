@@ -1,4 +1,3 @@
-
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   Building2,
@@ -28,11 +27,12 @@ interface DeviceInfo {
 interface UserSession {
   id: string;
   user_id: string;
-  device_hash: string;
   device_info: DeviceInfo;
   last_active_at: string;
   created_at: string;
   updated_at: string;
+  ip_address?: string;
+  location?: string;
 }
 
 const Layout = () => {
@@ -43,33 +43,22 @@ const Layout = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  const getDeviceHash = (info: DeviceInfo): string => {
-    const str = JSON.stringify({
-      name: info.name,
-      platform: info.platform,
-      language: info.language
-    });
-    return btoa(str).replace(/[^a-zA-Z0-9]/g, '');
-  };
-
-  const getCurrentDeviceInfo = () => {
-    const info: DeviceInfo = {
+  const getCurrentDeviceInfo = (): DeviceInfo => {
+    return {
       name: navigator.userAgent,
       platform: navigator.platform,
       language: navigator.language,
     };
-    return {
-      info,
-      hash: getDeviceHash(info)
-    };
   };
 
-  const findExistingSession = async (userId: string, deviceHash: string) => {
+  const findExistingSession = async (userId: string, deviceInfo: DeviceInfo) => {
     const { data } = await supabase
       .from('user_sessions')
       .select('id')
       .eq('user_id', userId)
-      .eq('device_hash', deviceHash)
+      .eq('device_info->name', deviceInfo.name)
+      .eq('device_info->platform', deviceInfo.platform)
+      .eq('device_info->language', deviceInfo.language)
       .maybeSingle();
     return data;
   };
@@ -97,10 +86,10 @@ const Layout = () => {
           return;
         }
 
-        const { info: deviceInfo, hash: deviceHash } = getCurrentDeviceInfo();
+        const deviceInfo = getCurrentDeviceInfo();
 
         try {
-          const existingSession = await findExistingSession(session.user.id, deviceHash);
+          const existingSession = await findExistingSession(session.user.id, deviceInfo);
 
           if (existingSession?.id) {
             await supabase
@@ -113,12 +102,11 @@ const Layout = () => {
           } else {
             await supabase
               .from('user_sessions')
-              .insert([{
+              .insert({
                 user_id: session.user.id,
-                device_hash: deviceHash,
                 device_info: deviceInfo,
                 last_active_at: new Date().toISOString()
-              }]);
+              });
           }
 
           // Check if user is admin
@@ -156,10 +144,10 @@ const Layout = () => {
     const updateInterval = setInterval(async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        const { hash: deviceHash } = getCurrentDeviceInfo();
+        const deviceInfo = getCurrentDeviceInfo();
 
         try {
-          const existingSession = await findExistingSession(session.user.id, deviceHash);
+          const existingSession = await findExistingSession(session.user.id, deviceInfo);
 
           if (existingSession?.id) {
             await supabase
@@ -186,14 +174,14 @@ const Layout = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        const { hash: deviceHash } = getCurrentDeviceInfo();
+        const deviceInfo = getCurrentDeviceInfo();
 
         await supabase
           .from('user_sessions')
           .delete()
           .match({
             user_id: session.user.id,
-            device_hash: deviceHash
+            device_info: deviceInfo
           });
       }
 
