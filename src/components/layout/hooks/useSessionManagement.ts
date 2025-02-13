@@ -43,19 +43,17 @@ export const useSessionManagement = (isAuthPage: boolean) => {
           return;
         }
 
-        if (isAuthPage) {
-          // Redirect from auth page to appropriate dashboard based on role
-          const { data: roleData } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', session.user.id)
-            .maybeSingle();
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
 
-          if (roleData?.role === 'admin') {
-            navigate('/');
-          } else {
-            navigate('/dashboard');
-          }
+        const userIsAdmin = roleData?.role === 'admin';
+        setIsAdmin(userIsAdmin);
+
+        if (isAuthPage) {
+          navigate(userIsAdmin ? '/' : '/dashboard');
           return;
         }
 
@@ -84,25 +82,10 @@ export const useSessionManagement = (isAuthPage: boolean) => {
               .insert([sessionData]);
           }
 
-          const { data: roleData } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', session.user.id)
-            .maybeSingle();
-
-          const userIsAdmin = roleData?.role === 'admin';
-          setIsAdmin(userIsAdmin);
-
-          // Always redirect non-admin users away from index page
-          if (!userIsAdmin && window.location.pathname === '/') {
+          // Only redirect if user is on a restricted page
+          const currentPath = window.location.pathname;
+          if (!userIsAdmin && currentPath === '/') {
             navigate('/dashboard');
-            return;
-          }
-
-          // Only allow admin users to access index page
-          if (userIsAdmin && window.location.pathname === '/dashboard') {
-            navigate('/');
-            return;
           }
         } catch (error) {
           console.error("Session management error:", error);
@@ -119,20 +102,13 @@ export const useSessionManagement = (isAuthPage: boolean) => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN') {
-        if (isAuthPage) {
-          // Check user role and redirect accordingly
-          const { data: roleData } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', session?.user.id)
-            .maybeSingle();
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session?.user.id)
+          .maybeSingle();
 
-          if (roleData?.role === 'admin') {
-            navigate('/');
-          } else {
-            navigate('/dashboard');
-          }
-        }
+        navigate(roleData?.role === 'admin' ? '/' : '/dashboard');
       } else if (event === 'SIGNED_OUT') {
         navigate('/auth');
       }
