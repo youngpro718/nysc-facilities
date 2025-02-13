@@ -11,7 +11,7 @@ import Occupants from "@/pages/Occupants";
 import Keys from "@/pages/Keys";
 import Profile from "@/pages/Profile";
 import Lighting from "@/pages/Lighting";
-import AdminUsers from "@/pages/AdminUsers";
+import UserDashboard from "@/pages/UserDashboard";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -33,7 +33,7 @@ function App() {
               <Route path="keys" element={<Keys />} />
               <Route path="lighting" element={<Lighting />} />
               <Route path="profile" element={<Profile />} />
-              <Route path="dashboard" element={<AdminUsers />} />
+              <Route path="dashboard" element={<UserDashboard />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
