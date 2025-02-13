@@ -1,52 +1,14 @@
+
 import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { IssueDialog } from "@/components/issues/IssueDialog";
-
-interface RoomData {
-  id: string;
-  assigned_at: string;
-  rooms: {
-    name: string | null;
-  } | null;
-}
-
-interface KeyData {
-  id: string;
-  assigned_at: string;
-  keys: {
-    name: string | null;
-  } | null;
-}
-
-interface UserAssignment {
-  id: string;
-  room_name?: string;
-  key_name?: string;
-  assigned_at: string;
-}
-
-interface UserIssue {
-  id: string;
-  title: string;
-  status: string;
-  created_at: string;
-  priority: string;
-  rooms?: {
-    name: string;
-  } | null;
-}
+import { ReportedIssuesCard } from "@/components/dashboard/ReportedIssuesCard";
+import { AssignedRoomsCard } from "@/components/dashboard/AssignedRoomsCard";
+import { AssignedKeysCard } from "@/components/dashboard/AssignedKeysCard";
+import type { RoomData, KeyData, UserAssignment, UserIssue } from "@/types/dashboard";
 
 export default function UserDashboard() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -177,101 +139,9 @@ export default function UserDashboard() {
       </div>
 
       <div className="space-y-6">
-        <Card className="p-6">
-          <h2 className="text-2xl font-semibold mb-4">My Reported Issues</h2>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Priority</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Date Reported</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {userIssues.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center">
-                    No issues reported
-                  </TableCell>
-                </TableRow>
-              ) : (
-                userIssues.map((issue) => (
-                  <TableRow key={issue.id}>
-                    <TableCell>{issue.title}</TableCell>
-                    <TableCell className="capitalize">{issue.status}</TableCell>
-                    <TableCell className="capitalize">{issue.priority}</TableCell>
-                    <TableCell>{issue.rooms?.name || 'N/A'}</TableCell>
-                    <TableCell>
-                      {new Date(issue.created_at).toLocaleDateString()}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </Card>
-
-        <Card className="p-6">
-          <h2 className="text-2xl font-semibold mb-4">Assigned Rooms</h2>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Room Name</TableHead>
-                <TableHead>Assigned Date</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {assignedRooms.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={2} className="text-center">
-                    No rooms assigned
-                  </TableCell>
-                </TableRow>
-              ) : (
-                assignedRooms.map((room) => (
-                  <TableRow key={room.id}>
-                    <TableCell>{room.room_name}</TableCell>
-                    <TableCell>
-                      {new Date(room.assigned_at).toLocaleDateString()}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </Card>
-
-        <Card className="p-6">
-          <h2 className="text-2xl font-semibold mb-4">Assigned Keys</h2>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Key Name</TableHead>
-                <TableHead>Assigned Date</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {assignedKeys.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={2} className="text-center">
-                    No keys assigned
-                  </TableCell>
-                </TableRow>
-              ) : (
-                assignedKeys.map((key) => (
-                  <TableRow key={key.id}>
-                    <TableCell>{key.key_name}</TableCell>
-                    <TableCell>
-                      {new Date(key.assigned_at).toLocaleDateString()}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </Card>
+        <ReportedIssuesCard issues={userIssues} />
+        <AssignedRoomsCard rooms={assignedRooms} />
+        <AssignedKeysCard keys={assignedKeys} />
       </div>
 
       <IssueDialog 
