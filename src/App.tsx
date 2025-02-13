@@ -12,6 +12,7 @@ import Keys from "@/pages/Keys";
 import Profile from "@/pages/Profile";
 import Lighting from "@/pages/Lighting";
 import UserDashboard from "@/pages/UserDashboard";
+import AdminProfile from "@/pages/AdminProfile";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -34,6 +35,7 @@ function App() {
               <Route path="lighting" element={<Lighting />} />
               <Route path="profile" element={<Profile />} />
               <Route path="dashboard" element={<UserDashboard />} />
+              <Route path="admin-profile" element={<AdminProfile />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
