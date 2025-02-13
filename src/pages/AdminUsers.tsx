@@ -30,6 +30,22 @@ interface UserIssue {
   rooms?: { name: string };
 }
 
+interface RoomAssignment {
+  id: string;
+  assigned_at: string;
+  rooms: {
+    name: string | null;
+  } | null;
+}
+
+interface KeyAssignment {
+  id: string;
+  assigned_at: string;
+  keys: {
+    name: string | null;
+  } | null;
+}
+
 export default function AdminUsers() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -86,11 +102,11 @@ export default function AdminUsers() {
         console.error('Error fetching rooms:', roomsError);
         setAssignedRooms([]);
       } else {
-        setAssignedRooms(roomsData?.map((d: any) => ({
+        setAssignedRooms((roomsData as RoomAssignment[] || []).map(d => ({
           id: d.id,
-          room_name: d.rooms?.name,
+          room_name: d.rooms?.name || undefined,
           assigned_at: d.assigned_at
-        })) || []);
+        })));
       }
 
       // Fetch assigned keys
@@ -110,11 +126,11 @@ export default function AdminUsers() {
         console.error('Error fetching keys:', keysError);
         setAssignedKeys([]);
       } else {
-        setAssignedKeys(keysData?.map((d: any) => ({
+        setAssignedKeys((keysData as KeyAssignment[] || []).map(d => ({
           id: d.id,
-          key_name: d.keys?.name,
+          key_name: d.keys?.name || undefined,
           assigned_at: d.assigned_at
-        })) || []);
+        })));
       }
 
       // Fetch user's reported issues
