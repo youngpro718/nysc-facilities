@@ -25,6 +25,14 @@ type DeviceInfo = {
   language: string;
 };
 
+type UserSession = {
+  id: string;
+  user_id: string;
+  device_hash: string;
+  device_info: DeviceInfo;
+  last_active_at: string;
+};
+
 const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -50,6 +58,16 @@ const Layout = () => {
     };
   };
 
+  const findExistingSession = async (userId: string, deviceHash: string) => {
+    const { data } = await supabase
+      .from('user_sessions')
+      .select<'*', UserSession>('*')
+      .eq('user_id', userId)
+      .eq('device_hash', deviceHash)
+      .maybeSingle();
+    return data;
+  };
+
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -73,12 +91,7 @@ const Layout = () => {
           const { info: deviceInfo, hash: deviceHash } = getCurrentDeviceInfo();
 
           try {
-            const { data: existingSession } = await supabase
-              .from('user_sessions')
-              .select('id')
-              .eq('user_id', session.user.id)
-              .eq('device_hash', deviceHash)
-              .maybeSingle();
+            const existingSession = await findExistingSession(session.user.id, deviceHash);
 
             if (existingSession?.id) {
               await supabase
@@ -91,7 +104,7 @@ const Layout = () => {
               const sessionData = {
                 user_id: session.user.id,
                 device_hash: deviceHash,
-                device_info: deviceInfo as any, // Type assertion needed for jsonb
+                device_info: deviceInfo,
                 last_active_at: new Date().toISOString()
               };
               
@@ -141,12 +154,7 @@ const Layout = () => {
         const { hash: deviceHash } = getCurrentDeviceInfo();
 
         try {
-          const { data: existingSession } = await supabase
-            .from('user_sessions')
-            .select('id')
-            .eq('user_id', session.user.id)
-            .eq('device_hash', deviceHash)
-            .maybeSingle();
+          const existingSession = await findExistingSession(session.user.id, deviceHash);
 
           if (existingSession?.id) {
             await supabase
