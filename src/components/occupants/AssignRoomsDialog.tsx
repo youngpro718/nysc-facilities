@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,7 +19,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { Building2, Users } from "lucide-react";
+import { Building2, Users, Calendar } from "lucide-react";
+import { format } from "date-fns";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 interface AssignRoomsDialogProps {
   open: boolean;
@@ -55,18 +60,18 @@ export function AssignRoomsDialog({
 }: AssignRoomsDialogProps) {
   const [selectedRoom, setSelectedRoom] = useState<string>("");
   const [isAssigning, setIsAssigning] = useState(false);
+  const [startDate, setStartDate] = useState<Date>(new Date());
+  const [endDate, setEndDate] = useState<Date | undefined>();
 
   const { data: availableRooms, isLoading: isLoadingRooms } = useQuery({
     queryKey: ["available-rooms"],
     queryFn: async () => {
-      // First get all room assignments for occupancy counting
       const { data: assignmentsData, error: assignmentsError } = await supabase
         .from('occupant_room_assignments')
         .select('room_id');
 
       if (assignmentsError) throw assignmentsError;
 
-      // Create a map of room occupancy counts
       const occupancyCounts = (assignmentsData || []).reduce((acc: Record<string, number>, curr) => {
         acc[curr.room_id] = (acc[curr.room_id] || 0) + 1;
         return acc;
@@ -89,7 +94,6 @@ export function AssignRoomsDialog({
 
       if (roomsError) throw roomsError;
 
-      // Transform the data to include current_occupancy
       return (roomsData || []).map(room => ({
         ...room,
         current_occupancy: occupancyCounts[room.id] || 0
@@ -123,6 +127,11 @@ export function AssignRoomsDialog({
       return;
     }
 
+    if (!startDate) {
+      toast.error("Please select a start date");
+      return;
+    }
+
     const selectedRoomDetails = availableRooms?.find(r => r.id === selectedRoom);
     
     if (selectedRoomDetails?.capacity && 
@@ -134,11 +143,30 @@ export function AssignRoomsDialog({
     try {
       setIsAssigning(true);
 
+      // Create a batch record first
+      const { data: batchData, error: batchError } = await supabase
+        .from("room_assignment_batches")
+        .insert({
+          created_by: (await supabase.auth.getUser()).data.user?.id,
+          metadata: {
+            occupant_count: selectedOccupants.length,
+            room_id: selectedRoom
+          }
+        })
+        .select()
+        .single();
+
+      if (batchError) throw batchError;
+
       const assignments = selectedOccupants.map((occupantId) => ({
         occupant_id: occupantId,
         room_id: selectedRoom,
         assigned_at: new Date().toISOString(),
-        is_primary: true
+        start_date: startDate.toISOString(),
+        end_date: endDate?.toISOString() || null,
+        batch_id: batchData.id,
+        is_primary: true,
+        approval_status: 'pending'
       }));
 
       const { error: assignmentError } = await supabase
@@ -147,7 +175,7 @@ export function AssignRoomsDialog({
 
       if (assignmentError) throw assignmentError;
 
-      toast.success("Rooms assigned successfully");
+      toast.success("Room assignments submitted for approval");
       onSuccess();
       onOpenChange(false);
     } catch (error: any) {
@@ -201,6 +229,63 @@ export function AssignRoomsDialog({
             </Select>
           </div>
 
+          <div className="grid gap-4 grid-cols-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Start Date</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !startDate && "text-muted-foreground"
+                    )}
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {startDate ? format(startDate, "PPP") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={startDate}
+                    onSelect={(date) => date && setStartDate(date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">End Date (Optional)</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !endDate && "text-muted-foreground"
+                    )}
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {endDate ? format(endDate, "PPP") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={endDate}
+                    onSelect={(date) => setEndDate(date)}
+                    initialFocus
+                    disabled={(date) =>
+                      date < startDate || date < new Date()
+                    }
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+
           {selectedRoom && currentOccupants && currentOccupants.length > 0 && (
             <div className="space-y-2">
               <label className="text-sm font-medium">Current Occupants</label>
@@ -226,9 +311,9 @@ export function AssignRoomsDialog({
           </Button>
           <Button 
             onClick={handleAssign} 
-            disabled={isAssigning || !selectedRoom}
+            disabled={isAssigning || !selectedRoom || !startDate}
           >
-            {isAssigning ? "Assigning..." : "Assign Rooms"}
+            {isAssigning ? "Assigning..." : "Submit for Approval"}
           </Button>
         </div>
       </DialogContent>

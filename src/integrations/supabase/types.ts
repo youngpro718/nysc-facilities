@@ -2860,30 +2860,45 @@ export type Database = {
       }
       occupant_room_assignments: {
         Row: {
+          approval_status: string | null
+          approved_at: string | null
+          approved_by: string | null
           assigned_at: string | null
           created_at: string | null
+          end_date: string | null
           id: string
           is_primary: boolean | null
           occupant_id: string | null
           room_id: string | null
+          start_date: string | null
           updated_at: string | null
         }
         Insert: {
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           assigned_at?: string | null
           created_at?: string | null
+          end_date?: string | null
           id?: string
           is_primary?: boolean | null
           occupant_id?: string | null
           room_id?: string | null
+          start_date?: string | null
           updated_at?: string | null
         }
         Update: {
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           assigned_at?: string | null
           created_at?: string | null
+          end_date?: string | null
           id?: string
           is_primary?: boolean | null
           occupant_id?: string | null
           room_id?: string | null
+          start_date?: string | null
           updated_at?: string | null
         }
         Relationships: [
