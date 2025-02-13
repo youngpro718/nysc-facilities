@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -68,12 +67,12 @@ export function AssignRoomsDialog({
       if (assignmentsError) throw assignmentsError;
 
       // Create a map of room occupancy counts
-      const occupancyCounts = assignmentsData.reduce((acc: Record<string, number>, curr) => {
+      const occupancyCounts = (assignmentsData || []).reduce((acc: Record<string, number>, curr) => {
         acc[curr.room_id] = (acc[curr.room_id] || 0) + 1;
         return acc;
       }, {});
 
-      const { data, error } = await supabase
+      const { data: roomsData, error: roomsError } = await supabase
         .from("rooms")
         .select(`
           id,
@@ -88,15 +87,13 @@ export function AssignRoomsDialog({
         .eq("status", "active")
         .order("name");
 
-      if (error) throw error;
+      if (roomsError) throw roomsError;
 
       // Transform the data to include current_occupancy
-      const roomsWithOccupancy = data.map(room => ({
+      return (roomsData || []).map(room => ({
         ...room,
         current_occupancy: occupancyCounts[room.id] || 0
-      }));
-
-      return roomsWithOccupancy as RoomDetails[];
+      })) as RoomDetails[];
     },
   });
 

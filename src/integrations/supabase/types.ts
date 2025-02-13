@@ -3305,8 +3305,10 @@ export type Database = {
       }
       rooms: {
         Row: {
+          capacity: number | null
           created_at: string | null
           current_function: string | null
+          current_occupancy: number | null
           description: string | null
           floor_id: string
           function_change_date: string | null
@@ -3329,8 +3331,10 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          capacity?: number | null
           created_at?: string | null
           current_function?: string | null
+          current_occupancy?: number | null
           description?: string | null
           floor_id: string
           function_change_date?: string | null
@@ -3353,8 +3357,10 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          capacity?: number | null
           created_at?: string | null
           current_function?: string | null
+          current_occupancy?: number | null
           description?: string | null
           floor_id?: string
           function_change_date?: string | null
