@@ -1,4 +1,3 @@
-
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   Building2,
@@ -54,20 +53,30 @@ const Layout = () => {
             language: navigator.language,
           };
 
-          // First try to update existing session
-          const { error: updateError, data: updateData } = await supabase
+          // First get existing sessions for this device
+          const { data: existingSessions } = await supabase
             .from('user_sessions')
-            .update({ 
-              last_active_at: new Date().toISOString() 
-            })
-            .match({ 
-              user_id: session.user.id,
-              device_info: deviceInfo
-            })
-            .select();
+            .select()
+            .eq('user_id', session.user.id)
+            .filter('device_info->name', 'eq', deviceInfo.name)
+            .filter('device_info->platform', 'eq', deviceInfo.platform)
+            .filter('device_info->language', 'eq', deviceInfo.language)
+            .limit(1);
 
-          // If no rows were affected by the update, create a new session
-          if (!updateData || updateData.length === 0) {
+          if (existingSessions && existingSessions.length > 0) {
+            // Update existing session
+            const { error: updateError } = await supabase
+              .from('user_sessions')
+              .update({ 
+                last_active_at: new Date().toISOString() 
+              })
+              .eq('id', existingSessions[0].id);
+
+            if (updateError) {
+              console.error("Error updating session:", updateError);
+            }
+          } else {
+            // Create new session
             const { error: insertError } = await supabase
               .from('user_sessions')
               .insert({
@@ -79,8 +88,6 @@ const Layout = () => {
             if (insertError) {
               console.error("Error creating session:", insertError);
             }
-          } else if (updateError) {
-            console.error("Error updating session:", updateError);
           }
         }
 
@@ -124,17 +131,25 @@ const Layout = () => {
           language: navigator.language,
         };
 
-        // Update existing session
-        await supabase
+        // Get existing session for this device
+        const { data: existingSessions } = await supabase
           .from('user_sessions')
-          .update({ 
-            last_active_at: new Date().toISOString() 
-          })
-          .match({ 
-            user_id: session.user.id,
-            device_info: deviceInfo
-          })
-          .select();
+          .select()
+          .eq('user_id', session.user.id)
+          .filter('device_info->name', 'eq', deviceInfo.name)
+          .filter('device_info->platform', 'eq', deviceInfo.platform)
+          .filter('device_info->language', 'eq', deviceInfo.language)
+          .limit(1);
+
+        if (existingSessions && existingSessions.length > 0) {
+          // Update existing session
+          await supabase
+            .from('user_sessions')
+            .update({ 
+              last_active_at: new Date().toISOString() 
+            })
+            .eq('id', existingSessions[0].id);
+        }
       }
     }, 5 * 60 * 1000); // Update every 5 minutes
 
@@ -194,13 +209,22 @@ const Layout = () => {
           language: navigator.language,
         };
 
-        await supabase
+        // Find and delete the session for this device
+        const { data: existingSessions } = await supabase
           .from('user_sessions')
-          .delete()
-          .match({
-            user_id: session.user.id,
-            device_info: deviceInfo
-          });
+          .select()
+          .eq('user_id', session.user.id)
+          .filter('device_info->name', 'eq', deviceInfo.name)
+          .filter('device_info->platform', 'eq', deviceInfo.platform)
+          .filter('device_info->language', 'eq', deviceInfo.language)
+          .limit(1);
+
+        if (existingSessions && existingSessions.length > 0) {
+          await supabase
+            .from('user_sessions')
+            .delete()
+            .eq('id', existingSessions[0].id);
+        }
       }
 
       await supabase.auth.signOut();
