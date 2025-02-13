@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +19,7 @@ interface EmergencyContact {
   name?: string;
   phone?: string;
   relationship?: string;
+  [key: string]: string | undefined;
 }
 
 interface Profile {
@@ -120,6 +120,13 @@ export function AdminProfileHeader() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Create a JSON-compatible emergency contact object
+      const emergencyContact: EmergencyContact = {
+        name: editedProfile.emergency_contact?.name || '',
+        phone: editedProfile.emergency_contact?.phone || '',
+        relationship: editedProfile.emergency_contact?.relationship || '',
+      };
+
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -130,7 +137,7 @@ export function AdminProfileHeader() {
           bio: editedProfile.bio,
           email: editedProfile.email,
           phone: editedProfile.phone,
-          emergency_contact: editedProfile.emergency_contact
+          emergency_contact: emergencyContact
         })
         .eq('id', user.id);
 
