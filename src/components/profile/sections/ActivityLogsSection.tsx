@@ -12,11 +12,10 @@ import {
 } from "@/components/ui/table";
 
 interface ActivityLog {
-  id: string;
+  created_at: string;
   activity_type: string;
   action: string;
   performed_by: string;
-  created_at: string;
   metadata: any;
 }
 
@@ -62,8 +61,8 @@ export function ActivityLogsSection() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {logs.map((log) => (
-            <TableRow key={log.id}>
+          {logs.map((log, index) => (
+            <TableRow key={index}>
               <TableCell className="font-medium">{log.activity_type}</TableCell>
               <TableCell>{log.action}</TableCell>
               <TableCell>{log.performed_by}</TableCell>

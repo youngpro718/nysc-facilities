@@ -14,13 +14,15 @@ interface SystemSettings {
   session_timeout_minutes: number;
 }
 
+const defaultSettings: SystemSettings = {
+  maintenance_mode: false,
+  allow_user_registration: true,
+  require_email_verification: true,
+  session_timeout_minutes: 60
+};
+
 export function SystemSettingsSection() {
-  const [settings, setSettings] = useState<SystemSettings>({
-    maintenance_mode: false,
-    allow_user_registration: true,
-    require_email_verification: true,
-    session_timeout_minutes: 60
-  });
+  const [settings, setSettings] = useState<SystemSettings>(defaultSettings);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -33,14 +35,21 @@ export function SystemSettingsSection() {
         .from('system_settings')
         .select('*')
         .eq('key', 'general_settings')
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      
       if (data) {
-        setSettings(data.value as SystemSettings);
+        // Type assertion to handle the JSON value
+        const settingsData = data.value as SystemSettings;
+        setSettings({
+          ...defaultSettings,  // Fallback values
+          ...settingsData     // Override with stored values
+        });
       }
     } catch (error) {
       console.error('Error fetching system settings:', error);
+      toast.error('Failed to load settings');
     } finally {
       setIsLoading(false);
     }

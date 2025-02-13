@@ -49,28 +49,28 @@ export function AdminProfileHeader() {
       }
 
       // Fetch quick stats
-      const { data: activeUsers } = await supabase
+      const { count: activeUsersCount } = await supabase
         .from('user_sessions')
-        .select('user_id', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true });
 
-      const { data: pendingIssues } = await supabase
+      const { count: pendingIssuesCount } = await supabase
         .from('issues')
-        .select('id', { count: 'exact', head: true })
+        .select('*', { count: 'exact', head: true })
         .eq('status', 'open');
 
-      const { data: totalKeys } = await supabase
+      const { count: totalKeysCount } = await supabase
         .from('keys')
-        .select('id', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true });
 
-      const { data: buildings } = await supabase
+      const { count: buildingsCount } = await supabase
         .from('buildings')
-        .select('id', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true });
 
       setStats({
-        activeUsers: activeUsers?.count || 0,
-        pendingIssues: pendingIssues?.count || 0,
-        totalKeys: totalKeys?.count || 0,
-        managedBuildings: buildings?.count || 0,
+        activeUsers: activeUsersCount || 0,
+        pendingIssues: pendingIssuesCount || 0,
+        totalKeys: totalKeysCount || 0,
+        managedBuildings: buildingsCount || 0,
       });
 
     } catch (error) {
