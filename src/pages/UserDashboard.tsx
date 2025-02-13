@@ -33,6 +33,49 @@ export default function UserDashboard() {
 
   useEffect(() => {
     checkUserRoleAndFetchData();
+
+    // Set up real-time subscriptions
+    const issuesChannel = supabase
+      .channel('issues-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'issues' },
+        (payload) => {
+          console.log('Issues update received:', payload);
+          checkUserRoleAndFetchData();
+        }
+      )
+      .subscribe();
+
+    const roomsChannel = supabase
+      .channel('rooms-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'occupant_room_assignments' },
+        (payload) => {
+          console.log('Rooms update received:', payload);
+          checkUserRoleAndFetchData();
+        }
+      )
+      .subscribe();
+
+    const keysChannel = supabase
+      .channel('keys-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'key_assignments' },
+        (payload) => {
+          console.log('Keys update received:', payload);
+          checkUserRoleAndFetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(issuesChannel);
+      supabase.removeChannel(roomsChannel);
+      supabase.removeChannel(keysChannel);
+    };
   }, []);
 
   const checkUserRoleAndFetchData = async () => {
@@ -148,27 +191,27 @@ export default function UserDashboard() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-6 px-4">
+      <div className="container mx-auto p-4">
         <div className="text-center">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-6 px-4 max-w-6xl">
-      <div className="mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Avatar className={isMobile ? "h-12 w-12" : "h-16 w-16"}>
+    <div className="container mx-auto p-4 max-w-6xl">
+      <div className="mb-4 sm:mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Avatar className={isMobile ? "h-10 w-10" : "h-16 w-16"}>
               <AvatarImage src={profile.avatar_url} />
               <AvatarFallback>{getInitials()}</AvatarFallback>
             </Avatar>
-            <div>
-              <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold tracking-tight`}>
+            <div className="min-w-0">
+              <h1 className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold tracking-tight truncate`}>
                 {profile.first_name ? `${profile.first_name} ${profile.last_name}` : 'My Dashboard'}
               </h1>
               {profile.title && (
-                <p className="text-muted-foreground text-sm sm:text-lg">
+                <p className="text-muted-foreground text-xs sm:text-base truncate">
                   {profile.title}
                 </p>
               )}
@@ -177,18 +220,18 @@ export default function UserDashboard() {
           <Button 
             onClick={handleReportIssue}
             size={isMobile ? "sm" : "default"}
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto mt-2 sm:mt-0"
           >
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'} mr-1.5`} />
             Report Issue
           </Button>
         </div>
-        <p className="text-muted-foreground text-sm border-t mt-4 pt-4">
+        <p className="text-muted-foreground text-xs sm:text-sm border-t mt-3 pt-3">
           View your assignments and reported issues
         </p>
       </div>
 
-      <div className="space-y-4 sm:space-y-6">
+      <div className="grid gap-3 sm:gap-6">
         <ReportedIssuesCard issues={userIssues} />
         <AssignedRoomsCard rooms={assignedRooms} />
         <AssignedKeysCard keys={assignedKeys} />
