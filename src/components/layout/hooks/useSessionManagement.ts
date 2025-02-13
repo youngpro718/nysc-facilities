@@ -27,15 +27,20 @@ export const useSessionManagement = (isAuthPage: boolean) => {
   };
 
   useEffect(() => {
+    let mounted = true;
+
     const checkSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         
+        if (!mounted) return;
+
         if (error) {
           console.error("Session error:", error);
-          if (location.pathname !== '/auth') {
+          if (!isAuthPage) {
             navigate('/auth');
           }
+          setIsLoading(false);
           return;
         }
 
@@ -43,6 +48,18 @@ export const useSessionManagement = (isAuthPage: boolean) => {
           if (!isAuthPage) {
             navigate('/auth');
           }
+          setIsLoading(false);
+          return;
+        }
+
+        // Refresh session to ensure token is valid
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) {
+          console.error("Session refresh error:", refreshError);
+          if (!isAuthPage) {
+            navigate('/auth');
+          }
+          setIsLoading(false);
           return;
         }
 
@@ -51,6 +68,8 @@ export const useSessionManagement = (isAuthPage: boolean) => {
           .select('role')
           .eq('user_id', session.user.id)
           .maybeSingle();
+
+        if (!mounted) return;
 
         const userIsAdmin = roleData?.role === 'admin';
         setIsAdmin(userIsAdmin);
@@ -61,6 +80,7 @@ export const useSessionManagement = (isAuthPage: boolean) => {
           if (location.pathname !== targetPath) {
             navigate(targetPath);
           }
+          setIsLoading(false);
           return;
         }
 
@@ -68,6 +88,7 @@ export const useSessionManagement = (isAuthPage: boolean) => {
         const currentPath = location.pathname;
         if (!userIsAdmin && currentPath === '/') {
           navigate('/dashboard');
+          setIsLoading(false);
           return;
         }
 
@@ -98,10 +119,13 @@ export const useSessionManagement = (isAuthPage: boolean) => {
         } catch (error) {
           console.error("Session management error:", error);
         }
+
+        setIsLoading(false);
       } catch (error) {
         console.error("Auth error:", error);
-        navigate('/auth');
-      } finally {
+        if (!isAuthPage) {
+          navigate('/auth');
+        }
         setIsLoading(false);
       }
     };
@@ -124,10 +148,14 @@ export const useSessionManagement = (isAuthPage: boolean) => {
         if (location.pathname !== '/auth') {
           navigate('/auth');
         }
+      } else if (event === 'TOKEN_REFRESHED') {
+        // Handle successful token refresh
+        console.log('Token refreshed successfully');
       }
     });
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, [navigate, isAuthPage, location.pathname]);
