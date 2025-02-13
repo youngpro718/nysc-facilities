@@ -1,4 +1,3 @@
-
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   Building2,
@@ -44,25 +43,23 @@ const Layout = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  const getCurrentDeviceInfo = (): DeviceInfo => {
-    return {
-      name: navigator.userAgent,
+  const getCurrentDeviceInfo = () => {
+    const info = {
+      name: navigator.userAgent.split('/')[0], // Only take the first part to avoid syntax issues
       platform: navigator.platform,
       language: navigator.language,
     };
+    return info;
   };
 
-  const findExistingSession = async (userId: string, deviceInfo: DeviceInfo) => {
-    const { data: sessions } = await supabase
+  const findExistingSession = async (userId: string) => {
+    const { data } = await supabase
       .from('user_sessions')
       .select('id')
-      .eq('device_info->name', deviceInfo.name)
-      .eq('device_info->platform', deviceInfo.platform)
-      .eq('device_info->language', deviceInfo.language)
       .eq('user_id', userId)
-      .limit(1);
-    
-    return sessions?.[0];
+      .limit(1)
+      .maybeSingle();
+    return data;
   };
 
   useEffect(() => {
@@ -91,26 +88,27 @@ const Layout = () => {
         const deviceInfo = getCurrentDeviceInfo();
 
         try {
-          const existingSession = await findExistingSession(session.user.id, deviceInfo);
+          const existingSession = await findExistingSession(session.user.id);
 
           if (existingSession?.id) {
             await supabase
               .from('user_sessions')
               .update({
                 last_active_at: new Date().toISOString(),
+                device_info: deviceInfo,
                 updated_at: new Date().toISOString()
               })
               .eq('id', existingSession.id);
           } else {
             const sessionData = {
               user_id: session.user.id,
-              device_info: deviceInfo as Record<string, string>,
+              device_info: deviceInfo,
               last_active_at: new Date().toISOString()
             };
 
             await supabase
               .from('user_sessions')
-              .insert(sessionData);
+              .insert([sessionData]);
           }
 
           // Check if user is admin
@@ -149,21 +147,17 @@ const Layout = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         const deviceInfo = getCurrentDeviceInfo();
+        const existingSession = await findExistingSession(session.user.id);
 
-        try {
-          const existingSession = await findExistingSession(session.user.id, deviceInfo);
-
-          if (existingSession?.id) {
-            await supabase
-              .from('user_sessions')
-              .update({
-                last_active_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', existingSession.id);
-          }
-        } catch (error) {
-          console.error("Error updating session activity:", error);
+        if (existingSession?.id) {
+          await supabase
+            .from('user_sessions')
+            .update({
+              last_active_at: new Date().toISOString(),
+              device_info: deviceInfo,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingSession.id);
         }
       }
     }, 5 * 60 * 1000); // Update every 5 minutes
@@ -178,10 +172,8 @@ const Layout = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        const deviceInfo = getCurrentDeviceInfo();
-
         // Find and delete the session
-        const existingSession = await findExistingSession(session.user.id, deviceInfo);
+        const existingSession = await findExistingSession(session.user.id);
         if (existingSession?.id) {
           await supabase
             .from('user_sessions')
