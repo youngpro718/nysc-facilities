@@ -14,7 +14,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-// Simplified type definitions to avoid deep nesting
 interface RoomData {
   id: string;
   assigned_at: string;
@@ -49,7 +48,7 @@ interface UserIssue {
   } | null;
 }
 
-export default function AdminUsers() {
+export default function UserDashboard() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [assignedRooms, setAssignedRooms] = useState<UserAssignment[]>([]);
