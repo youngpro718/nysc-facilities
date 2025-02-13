@@ -3,7 +3,11 @@ import { Card } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Activity, Building2, Globe2, Key, Languages, Shield, UserRound } from "lucide-react";
+import { Activity, Building2, Globe2, Key, Languages, Shield, UserRound, Edit2, Save, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 
 interface AdminStats {
   activeUsers: number;
@@ -29,10 +33,14 @@ interface Profile {
   time_zone?: string;
   language?: string;
   emergency_contact?: EmergencyContact;
+  email?: string;
+  phone?: string;
 }
 
 export function AdminProfileHeader() {
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedProfile, setEditedProfile] = useState<Profile | null>(null);
   
   const [stats, setStats] = useState<AdminStats>({
     activeUsers: 0,
@@ -53,17 +61,17 @@ export function AdminProfileHeader() {
       // Fetch profile data
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('first_name, last_name, avatar_url, title, department, last_login_at, bio, time_zone, language, emergency_contact')
+        .select('first_name, last_name, avatar_url, title, department, last_login_at, bio, time_zone, language, emergency_contact, email, phone')
         .eq('id', user.id)
         .single();
 
       if (profileData) {
-        // Cast the emergency_contact to the correct type
         const typedProfileData: Profile = {
           ...profileData,
           emergency_contact: profileData.emergency_contact as EmergencyContact
         };
         setProfile(typedProfileData);
+        setEditedProfile(typedProfileData);
       }
 
       // Fetch quick stats
@@ -96,6 +104,47 @@ export function AdminProfileHeader() {
     }
   };
 
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancel = () => {
+    setEditedProfile(profile);
+    setIsEditing(false);
+  };
+
+  const handleSave = async () => {
+    if (!editedProfile) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          first_name: editedProfile.first_name,
+          last_name: editedProfile.last_name,
+          title: editedProfile.title,
+          department: editedProfile.department,
+          bio: editedProfile.bio,
+          email: editedProfile.email,
+          phone: editedProfile.phone,
+          emergency_contact: editedProfile.emergency_contact
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setProfile(editedProfile);
+      setIsEditing(false);
+      toast.success('Profile updated successfully');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Failed to update profile');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-start gap-6 bg-card p-6 rounded-lg">
@@ -106,23 +155,92 @@ export function AdminProfileHeader() {
           </AvatarFallback>
         </Avatar>
         <div className="space-y-4 flex-1">
-          <div>
-            <h2 className="text-2xl font-bold">
-              {profile?.first_name} {profile?.last_name}
-            </h2>
-            <div className="text-muted-foreground">
-              <p>{profile?.title || 'Administrator'}</p>
-              <p>{profile?.department}</p>
+          <div className="flex justify-between items-start">
+            <div>
+              {isEditing ? (
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="First Name"
+                      value={editedProfile?.first_name || ''}
+                      onChange={(e) => setEditedProfile(prev => prev ? {...prev, first_name: e.target.value} : null)}
+                      className="w-[150px]"
+                    />
+                    <Input
+                      placeholder="Last Name"
+                      value={editedProfile?.last_name || ''}
+                      onChange={(e) => setEditedProfile(prev => prev ? {...prev, last_name: e.target.value} : null)}
+                      className="w-[150px]"
+                    />
+                  </div>
+                  <Input
+                    placeholder="Title"
+                    value={editedProfile?.title || ''}
+                    onChange={(e) => setEditedProfile(prev => prev ? {...prev, title: e.target.value} : null)}
+                  />
+                  <Input
+                    placeholder="Department"
+                    value={editedProfile?.department || ''}
+                    onChange={(e) => setEditedProfile(prev => prev ? {...prev, department: e.target.value} : null)}
+                  />
+                  <Input
+                    placeholder="Email"
+                    type="email"
+                    value={editedProfile?.email || ''}
+                    onChange={(e) => setEditedProfile(prev => prev ? {...prev, email: e.target.value} : null)}
+                  />
+                  <Input
+                    placeholder="Phone"
+                    type="tel"
+                    value={editedProfile?.phone || ''}
+                    onChange={(e) => setEditedProfile(prev => prev ? {...prev, phone: e.target.value} : null)}
+                  />
+                </div>
+              ) : (
+                <div>
+                  <h2 className="text-2xl font-bold">
+                    {profile?.first_name} {profile?.last_name}
+                  </h2>
+                  <div className="text-muted-foreground">
+                    <p>{profile?.title || 'Administrator'}</p>
+                    <p>{profile?.department}</p>
+                    <p>{profile?.email}</p>
+                    <p>{profile?.phone}</p>
+                  </div>
+                </div>
+              )}
             </div>
-            {profile?.last_login_at && (
-              <p className="text-sm text-muted-foreground mt-1">
-                Last login: {new Date(profile.last_login_at).toLocaleString()}
-              </p>
-            )}
+            <div>
+              {isEditing ? (
+                <div className="space-x-2">
+                  <Button onClick={handleSave} size="sm">
+                    <Save className="h-4 w-4 mr-1" />
+                    Save
+                  </Button>
+                  <Button onClick={handleCancel} variant="outline" size="sm">
+                    <X className="h-4 w-4 mr-1" />
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <Button onClick={handleEdit} variant="outline" size="sm">
+                  <Edit2 className="h-4 w-4 mr-1" />
+                  Edit Profile
+                </Button>
+              )}
+            </div>
           </div>
-          
-          {profile?.bio && (
-            <p className="text-sm text-muted-foreground">{profile.bio}</p>
+
+          {isEditing ? (
+            <Textarea
+              placeholder="Bio"
+              value={editedProfile?.bio || ''}
+              onChange={(e) => setEditedProfile(prev => prev ? {...prev, bio: e.target.value} : null)}
+            />
+          ) : (
+            profile?.bio && (
+              <p className="text-sm text-muted-foreground">{profile.bio}</p>
+            )
           )}
 
           <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
@@ -140,15 +258,45 @@ export function AdminProfileHeader() {
             )}
           </div>
 
-          {profile?.emergency_contact && (
-            <div className="text-sm">
-              <p className="font-medium">Emergency Contact</p>
-              <div className="text-muted-foreground">
-                {profile.emergency_contact.name && <p>Name: {profile.emergency_contact.name}</p>}
-                {profile.emergency_contact.phone && <p>Phone: {profile.emergency_contact.phone}</p>}
-                {profile.emergency_contact.relationship && <p>Relationship: {profile.emergency_contact.relationship}</p>}
-              </div>
+          {isEditing ? (
+            <div className="space-y-2">
+              <h3 className="font-medium">Emergency Contact</h3>
+              <Input
+                placeholder="Contact Name"
+                value={editedProfile?.emergency_contact?.name || ''}
+                onChange={(e) => setEditedProfile(prev => prev ? {
+                  ...prev,
+                  emergency_contact: { ...prev.emergency_contact, name: e.target.value }
+                } : null)}
+              />
+              <Input
+                placeholder="Contact Phone"
+                value={editedProfile?.emergency_contact?.phone || ''}
+                onChange={(e) => setEditedProfile(prev => prev ? {
+                  ...prev,
+                  emergency_contact: { ...prev.emergency_contact, phone: e.target.value }
+                } : null)}
+              />
+              <Input
+                placeholder="Relationship"
+                value={editedProfile?.emergency_contact?.relationship || ''}
+                onChange={(e) => setEditedProfile(prev => prev ? {
+                  ...prev,
+                  emergency_contact: { ...prev.emergency_contact, relationship: e.target.value }
+                } : null)}
+              />
             </div>
+          ) : (
+            profile?.emergency_contact && (
+              <div className="text-sm">
+                <p className="font-medium">Emergency Contact</p>
+                <div className="text-muted-foreground">
+                  {profile.emergency_contact.name && <p>Name: {profile.emergency_contact.name}</p>}
+                  {profile.emergency_contact.phone && <p>Phone: {profile.emergency_contact.phone}</p>}
+                  {profile.emergency_contact.relationship && <p>Relationship: {profile.emergency_contact.relationship}</p>}
+                </div>
+              </div>
+            )
           )}
         </div>
       </div>

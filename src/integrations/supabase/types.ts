@@ -3124,6 +3124,7 @@ export type Database = {
           bio: string | null
           created_at: string | null
           department: string | null
+          email: string | null
           emergency_contact: Json | null
           feature_flags: Json | null
           first_name: string | null
@@ -3151,6 +3152,7 @@ export type Database = {
           bio?: string | null
           created_at?: string | null
           department?: string | null
+          email?: string | null
           emergency_contact?: Json | null
           feature_flags?: Json | null
           first_name?: string | null
@@ -3178,6 +3180,7 @@ export type Database = {
           bio?: string | null
           created_at?: string | null
           department?: string | null
+          email?: string | null
           emergency_contact?: Json | null
           feature_flags?: Json | null
           first_name?: string | null
