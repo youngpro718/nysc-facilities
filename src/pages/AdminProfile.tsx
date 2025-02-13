@@ -1,6 +1,6 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Database, FileText, ChevronLeft } from "lucide-react";
+import { Shield, Database, FileText, ChevronLeft, Settings, Activity } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -9,7 +9,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { DatabaseSection } from "@/components/profile/DatabaseSection";
 import { ReportsSection } from "@/components/profile/ReportsSection";
 import { SecuritySection } from "@/components/profile/SecuritySection";
-import { ProfileHeader } from "@/components/profile/ProfileHeader";
+import { AdminProfileHeader } from "@/components/profile/sections/AdminProfileHeader";
+import { SystemSettingsSection } from "@/components/profile/sections/SystemSettingsSection";
+import { ActivityLogsSection } from "@/components/profile/sections/ActivityLogsSection";
 
 export default function AdminProfile() {
   const navigate = useNavigate();
@@ -68,9 +70,13 @@ export default function AdminProfile() {
           Manage system-wide settings and configurations
         </p>
       </div>
+
+      <div className="mb-8">
+        <AdminProfileHeader />
+      </div>
       
       <Tabs defaultValue="security" className="w-full space-y-8">
-        <TabsList className="grid w-full grid-cols-3 gap-4 bg-background p-1">
+        <TabsList className="grid w-full grid-cols-5 gap-4 bg-background p-1">
           <TabsTrigger 
             value="security" 
             className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
@@ -83,7 +89,7 @@ export default function AdminProfile() {
             className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
           >
             <Database className="h-4 w-4" />
-            Database Management
+            Database
           </TabsTrigger>
           <TabsTrigger 
             value="reports" 
@@ -91,6 +97,20 @@ export default function AdminProfile() {
           >
             <FileText className="h-4 w-4" />
             Reports
+          </TabsTrigger>
+          <TabsTrigger 
+            value="settings" 
+            className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
+          >
+            <Settings className="h-4 w-4" />
+            Settings
+          </TabsTrigger>
+          <TabsTrigger 
+            value="activity" 
+            className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
+          >
+            <Activity className="h-4 w-4" />
+            Activity
           </TabsTrigger>
         </TabsList>
 
@@ -104,6 +124,14 @@ export default function AdminProfile() {
 
         <TabsContent value="reports">
           <ReportsSection />
+        </TabsContent>
+
+        <TabsContent value="settings">
+          <SystemSettingsSection />
+        </TabsContent>
+
+        <TabsContent value="activity">
+          <ActivityLogsSection />
         </TabsContent>
       </Tabs>
     </div>
