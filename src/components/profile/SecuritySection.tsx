@@ -60,8 +60,10 @@ export function SecuritySection({ isAdmin = false }: SecuritySectionProps) {
 
       if (error) throw error;
       fetchSessions();
+      toast.success("Session ended successfully");
     } catch (error) {
       console.error('Error ending session:', error);
+      toast.error("Failed to end session");
     }
   };
 
