@@ -44,7 +44,18 @@ export const useSessionManagement = (isAuthPage: boolean) => {
         }
 
         if (isAuthPage) {
-          navigate('/');
+          // Redirect from auth page to appropriate dashboard based on role
+          const { data: roleData } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+
+          if (roleData?.role === 'admin') {
+            navigate('/');
+          } else {
+            navigate('/dashboard');
+          }
           return;
         }
 
@@ -82,17 +93,16 @@ export const useSessionManagement = (isAuthPage: boolean) => {
           const userIsAdmin = roleData?.role === 'admin';
           setIsAdmin(userIsAdmin);
 
-          // Redirect based on role
-          if (!isAuthPage) {
-            if (userIsAdmin) {
-              if (window.location.pathname === '/dashboard') {
-                navigate('/');
-              }
-            } else {
-              if (window.location.pathname === '/') {
-                navigate('/dashboard');
-              }
-            }
+          // Always redirect non-admin users away from index page
+          if (!userIsAdmin && window.location.pathname === '/') {
+            navigate('/dashboard');
+            return;
+          }
+
+          // Only allow admin users to access index page
+          if (userIsAdmin && window.location.pathname === '/dashboard') {
+            navigate('/');
+            return;
           }
         } catch (error) {
           console.error("Session management error:", error);
