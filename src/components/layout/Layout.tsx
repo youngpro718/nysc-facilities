@@ -19,11 +19,11 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-type DeviceInfo = {
+interface DeviceInfo {
   name: string;
   platform: string;
   language: string;
-};
+}
 
 interface UserSession {
   id: string;
@@ -31,6 +31,8 @@ interface UserSession {
   device_hash: string;
   device_info: DeviceInfo;
   last_active_at: string;
+  created_at: string;
+  updated_at: string;
 }
 
 const Layout = () => {
@@ -42,8 +44,12 @@ const Layout = () => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   const getDeviceHash = (info: DeviceInfo): string => {
-    const str = `${info.name}-${info.platform}-${info.language}`;
-    return btoa(str);
+    const str = JSON.stringify({
+      name: info.name,
+      platform: info.platform,
+      language: info.language
+    });
+    return btoa(str).replace(/[^a-zA-Z0-9]/g, '');
   };
 
   const getCurrentDeviceInfo = () => {
@@ -83,42 +89,39 @@ const Layout = () => {
           if (!isAuthPage) {
             navigate('/auth');
           }
-        } else {
-          if (isAuthPage) {
-            navigate('/');
-          }
+          return;
+        }
 
-          const { info: deviceInfo, hash: deviceHash } = getCurrentDeviceInfo();
+        if (isAuthPage) {
+          navigate('/');
+          return;
+        }
 
-          try {
-            const existingSession = await findExistingSession(session.user.id, deviceHash);
+        const { info: deviceInfo, hash: deviceHash } = getCurrentDeviceInfo();
 
-            if (existingSession?.id) {
-              await supabase
-                .from('user_sessions')
-                .update({
-                  last_active_at: new Date().toISOString()
-                })
-                .eq('id', existingSession.id);
-            } else {
-              const sessionData = {
+        try {
+          const existingSession = await findExistingSession(session.user.id, deviceHash);
+
+          if (existingSession?.id) {
+            await supabase
+              .from('user_sessions')
+              .update({
+                last_active_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', existingSession.id);
+          } else {
+            await supabase
+              .from('user_sessions')
+              .insert([{
                 user_id: session.user.id,
                 device_hash: deviceHash,
                 device_info: deviceInfo,
                 last_active_at: new Date().toISOString()
-              };
-              
-              await supabase
-                .from('user_sessions')
-                .insert([sessionData]);
-            }
-          } catch (error) {
-            console.error("Session management error:", error);
+              }]);
           }
-        }
 
-        // Check if user is admin
-        if (session?.user) {
+          // Check if user is admin
           const { data: roleData } = await supabase
             .from('user_roles')
             .select('role')
@@ -126,6 +129,8 @@ const Layout = () => {
             .maybeSingle();
 
           setIsAdmin(roleData?.role === 'admin');
+        } catch (error) {
+          console.error("Session management error:", error);
         }
       } catch (error) {
         console.error("Auth error:", error);
@@ -160,7 +165,8 @@ const Layout = () => {
             await supabase
               .from('user_sessions')
               .update({
-                last_active_at: new Date().toISOString()
+                last_active_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
               })
               .eq('id', existingSession.id);
           }
