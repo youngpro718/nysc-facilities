@@ -4,7 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Issue } from "../types/IssueTypes";
+import { Issue, RecurringPattern, MaintenanceRequirements } from "../types/IssueTypes";
 import { IssueStatusBadge } from "../card/IssueStatusBadge";
 import { IssuePhotos } from "../card/IssuePhotos";
 import { IssueBadges } from "../card/IssueBadges";
@@ -51,10 +51,23 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
 
       if (error) throw error;
 
-      const transformedData = {
+      // Transform the data to match our Issue type
+      const transformedData: Issue = {
         ...data,
-        lighting_fixtures: data.lighting_fixtures ? [data.lighting_fixtures] : []
-      } as Issue;
+        lighting_fixtures: data.lighting_fixtures ? [data.lighting_fixtures] : [],
+        recurring_pattern: data.recurring_pattern ? {
+          is_recurring: data.recurring_pattern.is_recurring || false,
+          frequency: data.recurring_pattern.frequency,
+          last_occurrence: data.recurring_pattern.last_occurrence,
+          pattern_confidence: data.recurring_pattern.pattern_confidence || 0
+        } as RecurringPattern,
+        maintenance_requirements: data.maintenance_requirements ? {
+          scheduled: data.maintenance_requirements.scheduled || false,
+          frequency: data.maintenance_requirements.frequency,
+          last_maintenance: data.maintenance_requirements.last_maintenance,
+          next_due: data.maintenance_requirements.next_due
+        } as MaintenanceRequirements
+      };
 
       return transformedData;
     },
