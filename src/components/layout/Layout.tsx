@@ -89,7 +89,7 @@ const Layout = () => {
     { title: "Keys", icon: Key },
     { title: "Issues", icon: AlertCircle },
     { type: "separator" as const },
-    { title: "Profile", icon: UserRound },
+    { title: "Admin Profile", icon: UserRound },
   ];
 
   const userNavigation = [
@@ -104,7 +104,7 @@ const Layout = () => {
     if (index === null) return;
     
     if (isAdmin) {
-      const routes = ['/', '/spaces', '/occupants', null, '/keys', '/issues', null, '/profile'];
+      const routes = ['/', '/spaces', '/occupants', null, '/keys', '/issues', null, '/admin/profile'];
       const route = routes[index];
       if (route) {
         navigate(route);
