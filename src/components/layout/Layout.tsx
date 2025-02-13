@@ -2,12 +2,15 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useSessionManagement } from "./hooks/useSessionManagement";
 import { adminNavigation, userNavigation, getNavigationRoutes } from "./config/navigation";
 import { MobileMenu } from "./components/MobileMenu";
 import { DesktopNavigation } from "./components/DesktopNavigation";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserRound } from "lucide-react";
 
 const Layout = () => {
   const navigate = useNavigate();
@@ -15,6 +18,30 @@ const Layout = () => {
   const isAuthPage = location.pathname === '/auth';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isLoading, isAdmin } = useSessionManagement(isAuthPage);
+  const [profile, setProfile] = useState<{ first_name?: string; last_name?: string; avatar_url?: string } | null>(null);
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('first_name, last_name, avatar_url')
+        .eq('id', user.id)
+        .single();
+
+      if (profileData) {
+        setProfile(profileData);
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    }
+  };
 
   const handleSignOut = async () => {
     try {
@@ -75,24 +102,46 @@ const Layout = () => {
                 />
                 <h1 className="text-xl font-bold text-foreground">NYSC Facilities Hub</h1>
               </div>
-              
-              {/* Mobile Menu */}
-              <div className="md:hidden">
-                <MobileMenu
-                  isOpen={isMobileMenuOpen}
-                  onOpenChange={setIsMobileMenuOpen}
+
+              <div className="flex items-center gap-4">
+                {/* Profile Section */}
+                {!isAuthPage && (
+                  <div className="flex items-center gap-3">
+                    <div className="hidden md:flex flex-col items-end">
+                      <span className="text-sm font-medium">
+                        {profile?.first_name} {profile?.last_name}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {isAdmin ? 'Administrator' : 'User'}
+                      </span>
+                    </div>
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={profile?.avatar_url ?? undefined} />
+                      <AvatarFallback>
+                        <UserRound className="h-4 w-4" />
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+                )}
+                
+                {/* Mobile Menu */}
+                <div className="md:hidden">
+                  <MobileMenu
+                    isOpen={isMobileMenuOpen}
+                    onOpenChange={setIsMobileMenuOpen}
+                    navigation={navigation}
+                    onNavigationChange={handleNavigationChange}
+                    onSignOut={handleSignOut}
+                  />
+                </div>
+
+                {/* Desktop Navigation */}
+                <DesktopNavigation
                   navigation={navigation}
                   onNavigationChange={handleNavigationChange}
                   onSignOut={handleSignOut}
                 />
               </div>
-
-              {/* Desktop Navigation */}
-              <DesktopNavigation
-                navigation={navigation}
-                onNavigationChange={handleNavigationChange}
-                onSignOut={handleSignOut}
-              />
             </div>
           </div>
         </header>
