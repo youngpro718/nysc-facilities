@@ -60,13 +60,13 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
           frequency: data.recurring_pattern.frequency,
           last_occurrence: data.recurring_pattern.last_occurrence,
           pattern_confidence: data.recurring_pattern.pattern_confidence || 0
-        } as RecurringPattern,
+        } as RecurringPattern : undefined,
         maintenance_requirements: data.maintenance_requirements ? {
           scheduled: data.maintenance_requirements.scheduled || false,
           frequency: data.maintenance_requirements.frequency,
           last_maintenance: data.maintenance_requirements.last_maintenance,
           next_due: data.maintenance_requirements.next_due
-        } as MaintenanceRequirements
+        } as MaintenanceRequirements : undefined
       };
 
       return transformedData;
@@ -109,7 +109,7 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
   });
 
   const handleMarkAsSeen = () => {
-    if (!issue.seen) {
+    if (!issue?.seen) {
       markAsSeenMutation.mutate();
     }
   };
