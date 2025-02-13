@@ -66,8 +66,8 @@ const Layout = () => {
       {!isAuthPage && (
         <header className="bg-card shadow sticky top-0 z-50">
           <div className="mx-auto px-4">
-            <div className="flex h-16 items-center justify-between">
-              <div className="flex items-center gap-3">
+            <div className="flex h-16 items-center">
+              <div className="flex items-center gap-3 shrink-0">
                 <img 
                   src="/lovable-uploads/ca12c24b-cc46-4318-b46d-8af88c0deae9.png" 
                   alt="NYSC Logo" 
@@ -77,7 +77,7 @@ const Layout = () => {
               </div>
               
               {/* Mobile Menu */}
-              <div className="md:hidden">
+              <div className="md:hidden ml-auto">
                 <MobileMenu
                   isOpen={isMobileMenuOpen}
                   onOpenChange={setIsMobileMenuOpen}
