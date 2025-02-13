@@ -7,7 +7,16 @@ import { IssueDialog } from "@/components/issues/IssueDialog";
 import { ReportedIssuesCard } from "@/components/dashboard/ReportedIssuesCard";
 import { AssignedRoomsCard } from "@/components/dashboard/AssignedRoomsCard";
 import { AssignedKeysCard } from "@/components/dashboard/AssignedKeysCard";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { RoomData, KeyData, UserAssignment, UserIssue } from "@/types/dashboard";
+
+interface UserProfile {
+  username?: string;
+  first_name?: string;
+  last_name?: string;
+  title?: string;
+  avatar_url?: string;
+}
 
 export default function UserDashboard() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -16,6 +25,7 @@ export default function UserDashboard() {
   const [assignedKeys, setAssignedKeys] = useState<UserAssignment[]>([]);
   const [userIssues, setUserIssues] = useState<UserIssue[]>([]);
   const [showReportIssue, setShowReportIssue] = useState(false);
+  const [profile, setProfile] = useState<UserProfile>({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -28,6 +38,19 @@ export default function UserDashboard() {
       if (!user) {
         navigate('/auth');
         return;
+      }
+
+      // Fetch user profile
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('username, first_name, last_name, title, avatar_url')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+      } else {
+        setProfile(profileData || {});
       }
 
       // Check if user is admin
@@ -114,6 +137,12 @@ export default function UserDashboard() {
     setShowReportIssue(true);
   };
 
+  const getInitials = () => {
+    const first = profile.first_name?.[0] || '';
+    const last = profile.last_name?.[0] || '';
+    return (first + last).toUpperCase() || 'U';
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto py-10 px-4">
@@ -125,14 +154,29 @@ export default function UserDashboard() {
   return (
     <div className="container mx-auto py-10 px-4 max-w-6xl">
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-3xl font-bold tracking-tight">My Dashboard</h1>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <Avatar className="h-16 w-16">
+              <AvatarImage src={profile.avatar_url} />
+              <AvatarFallback>{getInitials()}</AvatarFallback>
+            </Avatar>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">
+                {profile.first_name ? `${profile.first_name} ${profile.last_name}` : 'My Dashboard'}
+              </h1>
+              {profile.title && (
+                <p className="text-muted-foreground text-lg">
+                  {profile.title}
+                </p>
+              )}
+            </div>
+          </div>
           <Button onClick={handleReportIssue}>
             <Plus className="h-4 w-4 mr-2" />
             Report Issue
           </Button>
         </div>
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground border-t pt-4">
           View your assignments and reported issues
         </p>
       </div>
