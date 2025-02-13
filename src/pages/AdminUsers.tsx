@@ -1,0 +1,187 @@
+
+import { useState, useEffect } from "react";
+import { Card } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+interface UserAssignment {
+  id: string;
+  room_name?: string;
+  key_name?: string;
+  assigned_at: string;
+}
+
+export default function AdminUsers() {
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [assignedRooms, setAssignedRooms] = useState<UserAssignment[]>([]);
+  const [assignedKeys, setAssignedKeys] = useState<UserAssignment[]>([]);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    checkUserRoleAndFetchData();
+  }, []);
+
+  const checkUserRoleAndFetchData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/auth');
+        return;
+      }
+
+      // Check if user is admin
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+
+      if (roleError) throw roleError;
+      
+      const userIsAdmin = roleData?.role === 'admin';
+      setIsAdmin(userIsAdmin);
+
+      if (userIsAdmin) {
+        // If admin, redirect to profile page where they can access admin features
+        navigate('/profile');
+        return;
+      }
+
+      // Fetch assigned rooms
+      const { data: roomsData, error: roomsError } = await supabase
+        .from('occupant_room_assignments')
+        .select(`
+          id,
+          assigned_at,
+          rooms (
+            name
+          )
+        `)
+        .eq('occupant_id', user.id);
+
+      if (roomsError) throw roomsError;
+
+      // Fetch assigned keys
+      const { data: keysData, error: keysError } = await supabase
+        .from('key_assignments')
+        .select(`
+          id,
+          assigned_at,
+          keys (
+            name
+          )
+        `)
+        .eq('occupant_id', user.id)
+        .is('returned_at', null);
+
+      if (keysError) throw keysError;
+
+      setAssignedRooms(roomsData.map((d: any) => ({
+        id: d.id,
+        room_name: d.rooms?.name,
+        assigned_at: d.assigned_at
+      })));
+
+      setAssignedKeys(keysData.map((d: any) => ({
+        id: d.id,
+        key_name: d.keys?.name,
+        assigned_at: d.assigned_at
+      })));
+
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-10 px-4">
+        <div className="text-center">Loading...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto py-10 px-4 max-w-6xl">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold tracking-tight">My Dashboard</h1>
+        <p className="text-muted-foreground mt-2">
+          View your assigned rooms and keys
+        </p>
+      </div>
+
+      <div className="space-y-6">
+        <Card className="p-6">
+          <h2 className="text-2xl font-semibold mb-4">Assigned Rooms</h2>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Room Name</TableHead>
+                <TableHead>Assigned Date</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {assignedRooms.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={2} className="text-center">
+                    No rooms assigned
+                  </TableCell>
+                </TableRow>
+              ) : (
+                assignedRooms.map((room) => (
+                  <TableRow key={room.id}>
+                    <TableCell>{room.room_name}</TableCell>
+                    <TableCell>
+                      {new Date(room.assigned_at).toLocaleDateString()}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </Card>
+
+        <Card className="p-6">
+          <h2 className="text-2xl font-semibold mb-4">Assigned Keys</h2>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Key Name</TableHead>
+                <TableHead>Assigned Date</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {assignedKeys.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={2} className="text-center">
+                    No keys assigned
+                  </TableCell>
+                </TableRow>
+              ) : (
+                assignedKeys.map((key) => (
+                  <TableRow key={key.id}>
+                    <TableCell>{key.key_name}</TableCell>
+                    <TableCell>
+                      {new Date(key.assigned_at).toLocaleDateString()}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </Card>
+      </div>
+    </div>
+  );
+}
