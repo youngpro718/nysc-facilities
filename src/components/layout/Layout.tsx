@@ -63,9 +63,10 @@ const Layout = () => {
             .match({ 
               user_id: session.user.id,
               device_info: deviceInfo
-            });
+            })
+            .select();
 
-          // If no existing session was updated, create a new one
+          // If no rows were affected by the update, create a new session
           if (!updateData || updateData.length === 0) {
             const { error: insertError } = await supabase
               .from('user_sessions')
@@ -132,7 +133,8 @@ const Layout = () => {
           .match({ 
             user_id: session.user.id,
             device_info: deviceInfo
-          });
+          })
+          .select();
       }
     }, 5 * 60 * 1000); // Update every 5 minutes
 
