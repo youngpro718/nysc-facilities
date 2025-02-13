@@ -28,7 +28,7 @@ export const userNavigation: NavigationTab[] = [
 
 export const getNavigationRoutes = (isAdmin: boolean) => {
   if (isAdmin) {
-    return ['/', '/spaces', '/occupants', null, '/keys', '/issues', null, '/AdminProfile'];
+    return ['/', '/spaces', '/occupants', null, '/keys', '/issues', null, '/admin-profile'];
   }
   return ['/dashboard', null, '/profile'];
 };
