@@ -3,13 +3,19 @@ import { Card } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Activity, Building2, Key, Shield, UserRound } from "lucide-react";
+import { Activity, Building2, Globe2, Key, Languages, Shield, UserRound } from "lucide-react";
 
 interface AdminStats {
   activeUsers: number;
   pendingIssues: number;
   totalKeys: number;
   managedBuildings: number;
+}
+
+interface EmergencyContact {
+  name?: string;
+  phone?: string;
+  relationship?: string;
 }
 
 export function AdminProfileHeader() {
@@ -20,7 +26,12 @@ export function AdminProfileHeader() {
     title?: string;
     department?: string;
     last_login_at?: string;
+    bio?: string;
+    time_zone?: string;
+    language?: string;
+    emergency_contact?: EmergencyContact;
   } | null>(null);
+  
   const [stats, setStats] = useState<AdminStats>({
     activeUsers: 0,
     pendingIssues: 0,
@@ -40,7 +51,7 @@ export function AdminProfileHeader() {
       // Fetch profile data
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('first_name, last_name, avatar_url, title, department, last_login_at')
+        .select('first_name, last_name, avatar_url, title, department, last_login_at, bio, time_zone, language, emergency_contact')
         .eq('id', user.id)
         .single();
 
@@ -80,25 +91,57 @@ export function AdminProfileHeader() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-6">
+      <div className="flex items-start gap-6 bg-card p-6 rounded-lg">
         <Avatar className="h-20 w-20">
           <AvatarImage src={profile?.avatar_url ?? undefined} />
           <AvatarFallback>
             <UserRound className="h-10 w-10" />
           </AvatarFallback>
         </Avatar>
-        <div>
-          <h2 className="text-2xl font-bold">
-            {profile?.first_name} {profile?.last_name}
-          </h2>
-          <div className="text-muted-foreground">
-            <p>{profile?.title || 'Administrator'}</p>
-            <p>{profile?.department}</p>
+        <div className="space-y-4 flex-1">
+          <div>
+            <h2 className="text-2xl font-bold">
+              {profile?.first_name} {profile?.last_name}
+            </h2>
+            <div className="text-muted-foreground">
+              <p>{profile?.title || 'Administrator'}</p>
+              <p>{profile?.department}</p>
+            </div>
+            {profile?.last_login_at && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Last login: {new Date(profile.last_login_at).toLocaleString()}
+              </p>
+            )}
           </div>
-          {profile?.last_login_at && (
-            <p className="text-sm text-muted-foreground mt-1">
-              Last login: {new Date(profile.last_login_at).toLocaleString()}
-            </p>
+          
+          {profile?.bio && (
+            <p className="text-sm text-muted-foreground">{profile.bio}</p>
+          )}
+
+          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+            {profile?.time_zone && (
+              <div className="flex items-center gap-1">
+                <Globe2 className="h-4 w-4" />
+                <span>{profile.time_zone}</span>
+              </div>
+            )}
+            {profile?.language && (
+              <div className="flex items-center gap-1">
+                <Languages className="h-4 w-4" />
+                <span>{profile.language}</span>
+              </div>
+            )}
+          </div>
+
+          {profile?.emergency_contact && (
+            <div className="text-sm">
+              <p className="font-medium">Emergency Contact</p>
+              <div className="text-muted-foreground">
+                {profile.emergency_contact.name && <p>Name: {profile.emergency_contact.name}</p>}
+                {profile.emergency_contact.phone && <p>Phone: {profile.emergency_contact.phone}</p>}
+                {profile.emergency_contact.relationship && <p>Relationship: {profile.emergency_contact.relationship}</p>}
+              </div>
+            </div>
           )}
         </div>
       </div>
