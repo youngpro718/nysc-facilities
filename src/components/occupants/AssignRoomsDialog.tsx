@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -147,19 +146,17 @@ export function AssignRoomsDialog({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Create a batch record using raw insert
-      const { data: { id: batchId }, error: batchError } = await supabase.rpc(
-        'create_assignment_batch' as never,
-        {
-          creator_id: user.id,
-          batch_metadata: {
-            occupant_count: selectedOccupants.length,
-            room_id: selectedRoom
-          }
+      // Call the RPC function with proper typing
+      const { data, error: batchError } = await supabase.rpc('create_assignment_batch', {
+        creator_id: user.id,
+        batch_metadata: {
+          occupant_count: selectedOccupants.length,
+          room_id: selectedRoom
         }
-      );
+      });
 
       if (batchError) throw batchError;
+      if (!data) throw new Error("Failed to create batch");
 
       const assignments = selectedOccupants.map((occupantId) => ({
         occupant_id: occupantId,
@@ -167,7 +164,7 @@ export function AssignRoomsDialog({
         assigned_at: new Date().toISOString(),
         start_date: startDate.toISOString(),
         end_date: endDate?.toISOString() || null,
-        batch_id: batchId,
+        batch_id: data,
         is_primary: true,
         approval_status: 'pending'
       }));
