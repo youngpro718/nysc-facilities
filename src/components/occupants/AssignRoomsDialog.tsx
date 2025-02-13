@@ -60,10 +60,26 @@ export function AssignRoomsDialog({
   const { data: availableRooms, isLoading: isLoadingRooms } = useQuery({
     queryKey: ["available-rooms"],
     queryFn: async () => {
+      // First get all room assignments for occupancy counting
+      const { data: assignmentsData, error: assignmentsError } = await supabase
+        .from('occupant_room_assignments')
+        .select('room_id');
+
+      if (assignmentsError) throw assignmentsError;
+
+      // Create a map of room occupancy counts
+      const occupancyCounts = assignmentsData.reduce((acc: Record<string, number>, curr) => {
+        acc[curr.room_id] = (acc[curr.room_id] || 0) + 1;
+        return acc;
+      }, {});
+
       const { data, error } = await supabase
         .from("rooms")
         .select(`
-          *,
+          id,
+          name,
+          room_number,
+          capacity,
           floors(
             name,
             buildings(name)
@@ -73,7 +89,14 @@ export function AssignRoomsDialog({
         .order("name");
 
       if (error) throw error;
-      return data as RoomDetails[];
+
+      // Transform the data to include current_occupancy
+      const roomsWithOccupancy = data.map(room => ({
+        ...room,
+        current_occupancy: occupancyCounts[room.id] || 0
+      }));
+
+      return roomsWithOccupancy as RoomDetails[];
     },
   });
 
@@ -114,15 +137,13 @@ export function AssignRoomsDialog({
     try {
       setIsAssigning(true);
 
-      // Create assignments for each selected occupant
       const assignments = selectedOccupants.map((occupantId) => ({
         occupant_id: occupantId,
         room_id: selectedRoom,
         assigned_at: new Date().toISOString(),
-        is_primary: true // Set as primary by default
+        is_primary: true
       }));
 
-      // Insert assignments
       const { error: assignmentError } = await supabase
         .from("occupant_room_assignments")
         .insert(assignments);
@@ -168,8 +189,8 @@ export function AssignRoomsDialog({
                           <Badge variant={
                             !room.capacity ? "secondary" :
                             room.current_occupancy >= room.capacity ? "destructive" :
-                            room.current_occupancy >= room.capacity * 0.8 ? "warning" :
-                            "success"
+                            room.current_occupancy >= room.capacity * 0.8 ? "outline" :
+                            "default"
                           }>
                             <Users className="w-3 h-3 mr-1" />
                             {room.current_occupancy}{room.capacity ? `/${room.capacity}` : ''}
