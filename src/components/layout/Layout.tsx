@@ -18,13 +18,12 @@ import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { createHash } from 'crypto';
 
-interface DeviceInfo {
+type DeviceInfo = {
   name: string;
   platform: string;
   language: string;
-}
+};
 
 const Layout = () => {
   const navigate = useNavigate();
@@ -35,11 +34,12 @@ const Layout = () => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   const getDeviceHash = (info: DeviceInfo): string => {
-    return btoa(JSON.stringify(info));
+    const str = `${info.name}-${info.platform}-${info.language}`;
+    return btoa(str);
   };
 
-  const getCurrentDeviceInfo = (): { info: DeviceInfo; hash: string } => {
-    const info = {
+  const getCurrentDeviceInfo = () => {
+    const info: DeviceInfo = {
       name: navigator.userAgent,
       platform: navigator.platform,
       language: navigator.language,
@@ -88,14 +88,16 @@ const Layout = () => {
                 })
                 .eq('id', existingSession.id);
             } else {
+              const sessionData = {
+                user_id: session.user.id,
+                device_hash: deviceHash,
+                device_info: deviceInfo as any, // Type assertion needed for jsonb
+                last_active_at: new Date().toISOString()
+              };
+              
               await supabase
                 .from('user_sessions')
-                .insert({
-                  user_id: session.user.id,
-                  device_hash: deviceHash,
-                  device_info: deviceInfo,
-                  last_active_at: new Date().toISOString()
-                });
+                .insert([sessionData]);
             }
           } catch (error) {
             console.error("Session management error:", error);
@@ -136,7 +138,7 @@ const Layout = () => {
     const updateInterval = setInterval(async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        const { info: deviceInfo, hash: deviceHash } = getCurrentDeviceInfo();
+        const { hash: deviceHash } = getCurrentDeviceInfo();
 
         try {
           const { data: existingSession } = await supabase
