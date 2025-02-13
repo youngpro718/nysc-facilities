@@ -71,10 +71,36 @@ export default function UserDashboard() {
       )
       .subscribe();
 
+    const hallwaysChannel = supabase
+      .channel('hallways-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'hallways' },
+        (payload) => {
+          console.log('Hallways update received:', payload);
+          checkUserRoleAndFetchData();
+        }
+      )
+      .subscribe();
+
+    const doorsChannel = supabase
+      .channel('doors-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'doors' },
+        (payload) => {
+          console.log('Doors update received:', payload);
+          checkUserRoleAndFetchData();
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(issuesChannel);
       supabase.removeChannel(roomsChannel);
       supabase.removeChannel(keysChannel);
+      supabase.removeChannel(hallwaysChannel);
+      supabase.removeChannel(doorsChannel);
     };
   }, []);
 
