@@ -29,6 +29,17 @@ export function SystemSettingsSection() {
     fetchSystemSettings();
   }, []);
 
+  const isValidSystemSettings = (value: unknown): value is SystemSettings => {
+    if (typeof value !== 'object' || value === null) return false;
+    const v = value as Record<string, unknown>;
+    return (
+      typeof v.maintenance_mode === 'boolean' &&
+      typeof v.allow_user_registration === 'boolean' &&
+      typeof v.require_email_verification === 'boolean' &&
+      typeof v.session_timeout_minutes === 'number'
+    );
+  };
+
   const fetchSystemSettings = async () => {
     try {
       const { data, error } = await supabase
@@ -40,12 +51,19 @@ export function SystemSettingsSection() {
       if (error) throw error;
       
       if (data?.value) {
-        // Explicitly type cast the value to SystemSettings and merge with defaults
-        const settingsData = data.value as SystemSettings;
-        setSettings({
-          ...defaultSettings,
-          ...settingsData
-        });
+        // First cast to unknown, then validate and type cast
+        const valueAsUnknown = data.value as unknown;
+        
+        if (isValidSystemSettings(valueAsUnknown)) {
+          setSettings({
+            ...defaultSettings,
+            ...valueAsUnknown
+          });
+        } else {
+          console.error('Invalid settings data format');
+          toast.error('Invalid settings format, using defaults');
+          setSettings(defaultSettings);
+        }
       }
     } catch (error) {
       console.error('Error fetching system settings:', error);
