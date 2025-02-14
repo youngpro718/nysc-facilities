@@ -74,16 +74,20 @@ export function useOccupantList() {
           status: occupant.status || 'inactive',
           room_count: occupant.room_count || 0,
           key_count: occupant.key_count || 0,
-          rooms: parsedRooms.map((room: any) => ({
-            name: room.name || '',
-            room_number: room.room_number || '',
-            floors: room.floors ? {
-              name: room.floors.name || '',
-              buildings: room.floors.buildings ? {
-                name: room.floors.buildings.name || ''
+          rooms: parsedRooms.map((room: any) => {
+            // Ensure we return an object that exactly matches the expected type
+            const roomData = {
+              name: room?.name || '',
+              room_number: room?.room_number || '',
+              floors: room?.floors ? {
+                name: room.floors?.name || '',
+                buildings: room.floors?.buildings ? {
+                  name: room.floors.buildings?.name || ''
+                } : undefined
               } : undefined
-            } : undefined
-          }))
+            };
+            return roomData;
+          })
         };
       });
 
