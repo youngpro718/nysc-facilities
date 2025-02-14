@@ -58,7 +58,12 @@ export function useIssueDetails(issueId: string | null) {
 
       const transformedData: Issue = {
         ...data,
-        timeline: data.issue_history || [],
+        timeline: data.issue_history ? data.issue_history.map((history: any) => ({
+          ...history,
+          action_details: typeof history.action_details === 'string' 
+            ? JSON.parse(history.action_details) 
+            : history.action_details || {}
+        })) : [],
         lighting_fixtures: transformLightingFixtures(Array.isArray(data.lighting_fixtures) ? data.lighting_fixtures : null),
         recurring_pattern: data.recurring_pattern && typeof data.recurring_pattern === 'object' ? {
           is_recurring: Boolean((data.recurring_pattern as any).is_recurring),

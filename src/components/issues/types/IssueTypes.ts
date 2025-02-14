@@ -38,6 +38,7 @@ export interface LightingFixture {
 
 export interface IssueHistory {
   id: string;
+  issue_id: string;
   action_type: string;
   action_details: Record<string, any>;
   performed_by: string;
@@ -85,5 +86,35 @@ export interface Issue {
   impact_level?: ImpactLevel;
   recurring_pattern?: RecurringPattern;
   maintenance_requirements?: MaintenanceRequirements;
-  timeline?: IssueHistory[];  // Add this line to fix the timeline error
+  timeline?: IssueHistory[];
 }
+
+export interface Comment {
+  id: string;
+  issue_id: string;
+  content: string;
+  author_id: string;
+  created_at: string;
+  updated_at: string;
+  attachments: string[];
+  mentions: string[];
+}
+
+export interface RoomHealthMetrics {
+  id: string;
+  room_id: string;
+  health_score: number;
+  last_assessment_date: string;
+  total_issues_count: number;
+  open_issues_count: number;
+  critical_issues_count: number;
+  avg_resolution_time: string;
+  recurring_issues_count: number;
+  maintenance_compliance_score: number;
+  last_maintenance_date?: string;
+  next_maintenance_due?: string;
+  metrics_data: Record<string, any>;
+}
+
+// Alias for backward compatibility
+export type IssueType = Issue;
