@@ -20,19 +20,40 @@ export const useInventory = (roomId: string) => {
   const { data: inventoryData, isLoading } = useQuery({
     queryKey: ['inventory', roomId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First fetch inventory items
+      const { data: items, error: itemsError } = await supabase
         .from('inventory_items')
-        .select(`
-          *,
-          category:inventory_categories (
-            name,
-            color
-          )
-        `)
+        .select('id, name, quantity, description, minimum_quantity, unit, category_id, storage_room_id')
         .eq('storage_room_id', roomId);
       
-      if (error) throw error;
-      return data as InventoryItem[];
+      if (itemsError) throw itemsError;
+      
+      if (!items?.length) return [];
+
+      // Then fetch categories separately
+      const { data: categories, error: categoriesError } = await supabase
+        .from('inventory_categories')
+        .select('id, name, color')
+        .in('id', items.map(item => item.category_id).filter(Boolean));
+
+      if (categoriesError) {
+        console.error('Error fetching categories:', categoriesError);
+      }
+
+      // Create a lookup map for categories
+      const categoryMap = (categories || []).reduce((acc, cat) => {
+        acc[cat.id] = cat;
+        return acc;
+      }, {} as Record<string, { name: string; color: string }>);
+
+      // Combine the data
+      return items.map(item => ({
+        ...item,
+        category: item.category_id ? {
+          name: categoryMap[item.category_id]?.name,
+          color: categoryMap[item.category_id]?.color
+        } : undefined
+      })) as InventoryItem[];
     }
   });
 
