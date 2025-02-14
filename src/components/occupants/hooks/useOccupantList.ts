@@ -45,34 +45,32 @@ export function useOccupantList() {
 
       console.log('Raw data from Supabase:', rawData);
 
-      // Transform to match our expected type
       const transformedData: OccupantQueryResponse[] = (rawData || []).map(occupant => {
-        // Safely handle rooms data, which might be an array, string, or other format
-        let parsedRooms: RoomDetails[] = [];
-        if (occupant.rooms) {
-          if (Array.isArray(occupant.rooms)) {
-            parsedRooms = occupant.rooms;
-          } else if (typeof occupant.rooms === 'string') {
-            try {
-              parsedRooms = JSON.parse(occupant.rooms);
-            } catch (e) {
-              console.error('Error parsing rooms data:', e);
-              parsedRooms = [];
-            }
-          }
-        }
+        // Parse rooms data
+        let roomsData: RoomDetails[] = [];
+        try {
+          if (occupant.rooms) {
+            const parsedRooms = typeof occupant.rooms === 'string' 
+              ? JSON.parse(occupant.rooms) 
+              : occupant.rooms;
 
-        // Transform each room to match the RoomDetails type exactly
-        const transformedRooms: RoomDetails[] = parsedRooms.map((room: any): RoomDetails => ({
-          name: String(room?.name || ''),
-          room_number: String(room?.room_number || ''),
-          floors: room?.floors ? {
-            name: String(room.floors?.name || ''),
-            buildings: room.floors?.buildings ? {
-              name: String(room.floors.buildings?.name || '')
-            } : undefined
-          } : undefined
-        }));
+            roomsData = Array.isArray(parsedRooms) 
+              ? parsedRooms.map((room): RoomDetails => ({
+                  name: String(room?.name || ''),
+                  room_number: String(room?.room_number || ''),
+                  floors: room?.floors ? {
+                    name: String(room.floors?.name || ''),
+                    buildings: room.floors?.buildings ? {
+                      name: String(room.floors.buildings?.name || '')
+                    } : undefined
+                  } : undefined
+                }))
+              : [];
+          }
+        } catch (e) {
+          console.error('Error parsing rooms data:', e);
+          roomsData = [];
+        }
 
         return {
           id: occupant.id,
@@ -85,7 +83,7 @@ export function useOccupantList() {
           status: occupant.status || 'inactive',
           room_count: occupant.room_count || 0,
           key_count: occupant.key_count || 0,
-          rooms: transformedRooms
+          rooms: roomsData
         };
       });
 

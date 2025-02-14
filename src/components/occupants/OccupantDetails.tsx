@@ -7,32 +7,17 @@ import { useKeyAssignments } from "./hooks/useKeyAssignments";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Separator } from "@/components/ui/separator";
 import { Card } from "@/components/ui/card";
+import { OccupantQueryResponse } from "./types/occupantTypes";
 
 interface OccupantDetailsProps {
-  occupant: {
-    id: string;
-    email: string | null;
-    phone: string | null;
-    department: string | null;
-    title: string | null;
-    status: string | null;
-    rooms?: {
-      name: string;
-      room_number: string;
-      floors?: {
-        name: string;
-        buildings?: {
-          name: string;
-        };
-      };
-    };
-  };
+  occupant: OccupantQueryResponse;
 }
 
 export function OccupantDetails({ occupant }: OccupantDetailsProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { keyAssignments, isLoading } = useKeyAssignments(occupant.id);
+  const primaryRoom = occupant.rooms[0];
 
   const totalDoorAccess = keyAssignments?.reduce((count, assignment) => {
     if (assignment.keys?.is_passkey) return count + 5;
@@ -107,13 +92,13 @@ export function OccupantDetails({ occupant }: OccupantDetailsProps) {
       <Separator />
 
       {/* Location */}
-      {occupant.rooms?.floors?.buildings && (
+      {primaryRoom?.floors?.buildings && (
         <div className="space-y-4">
           <h3 className="text-sm font-medium text-muted-foreground">Location</h3>
           <div className="flex items-center gap-2 text-sm">
             <Building2 className="h-4 w-4 text-muted-foreground" />
             <span>
-              {occupant.rooms.floors.buildings.name} - Room {occupant.rooms.room_number}
+              {primaryRoom.floors.buildings.name} - Room {primaryRoom.room_number}
             </span>
           </div>
         </div>
