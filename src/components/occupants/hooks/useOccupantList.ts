@@ -1,9 +1,55 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { OccupantStatus } from "../schemas/occupantSchema";
 import { OccupantQueryResponse, RoomDetails, SupabaseError } from "../types/occupantTypes";
+
+// Utility function to parse room data
+const parseRoomData = (room: any): RoomDetails => ({
+  name: String(room?.name || ''),
+  room_number: String(room?.room_number || ''),
+  floors: room?.floors ? {
+    name: String(room.floors?.name || ''),
+    buildings: room.floors?.buildings ? {
+      name: String(room.floors.buildings?.name || '')
+    } : undefined
+  } : undefined
+});
+
+// Utility function to parse rooms array
+const parseRoomsData = (roomsData: any): RoomDetails[] => {
+  try {
+    if (!roomsData) return [];
+    
+    const parsedRooms = typeof roomsData === 'string' 
+      ? JSON.parse(roomsData) 
+      : roomsData;
+
+    return Array.isArray(parsedRooms) 
+      ? parsedRooms.map(parseRoomData)
+      : [];
+  } catch (e) {
+    console.error('Error parsing rooms data:', e);
+    return [];
+  }
+};
+
+// Transform occupant data
+const transformOccupantData = (occupant: any): OccupantQueryResponse => ({
+  id: occupant.id,
+  first_name: occupant.first_name || '',
+  last_name: occupant.last_name || '',
+  email: occupant.email,
+  phone: occupant.phone,
+  department: occupant.department,
+  title: occupant.title,
+  status: occupant.status || 'inactive',
+  room_count: occupant.room_count || 0,
+  key_count: occupant.key_count || 0,
+  rooms: parseRoomsData(occupant.rooms)
+});
 
 export function useOccupantList() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -44,50 +90,9 @@ export function useOccupantList() {
       }
 
       console.log('Raw data from Supabase:', rawData);
-
-      const transformedData: OccupantQueryResponse[] = (rawData || []).map(occupant => {
-        // Parse rooms data
-        let roomsData: RoomDetails[] = [];
-        try {
-          if (occupant.rooms) {
-            const parsedRooms = typeof occupant.rooms === 'string' 
-              ? JSON.parse(occupant.rooms) 
-              : occupant.rooms;
-
-            roomsData = Array.isArray(parsedRooms) 
-              ? parsedRooms.map((room): RoomDetails => ({
-                  name: String(room?.name || ''),
-                  room_number: String(room?.room_number || ''),
-                  floors: room?.floors ? {
-                    name: String(room.floors?.name || ''),
-                    buildings: room.floors?.buildings ? {
-                      name: String(room.floors.buildings?.name || '')
-                    } : undefined
-                  } : undefined
-                }))
-              : [];
-          }
-        } catch (e) {
-          console.error('Error parsing rooms data:', e);
-          roomsData = [];
-        }
-
-        return {
-          id: occupant.id,
-          first_name: occupant.first_name || '',
-          last_name: occupant.last_name || '',
-          email: occupant.email,
-          phone: occupant.phone,
-          department: occupant.department,
-          title: occupant.title,
-          status: occupant.status || 'inactive',
-          room_count: occupant.room_count || 0,
-          key_count: occupant.key_count || 0,
-          rooms: roomsData
-        };
-      });
-
+      const transformedData = (rawData || []).map(transformOccupantData);
       console.log('Final transformed data:', transformedData);
+      
       return transformedData;
     },
   });
