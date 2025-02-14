@@ -13,30 +13,20 @@ export function useOccupantList() {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [selectedOccupants, setSelectedOccupants] = useState<string[]>([]);
 
-  const { data: occupants, isLoading, isError, error, refetch } = useQuery<
-    OccupantQueryResponse[],
-    SupabaseError
-  >({
+  const { data: occupants, isLoading, isError, error, refetch } = useQuery<OccupantQueryResponse[], SupabaseError>({
     queryKey: ['occupants', searchQuery, departmentFilter, statusFilter],
-    queryFn: async () => {
+    queryFn: async (): Promise<OccupantQueryResponse[]> => {
+      console.log('Starting occupants query...'); // Debug log
+
       let query = supabase
         .from('occupant_details')
-        .select(`
-          *,
-          rooms (
-            name,
-            room_number,
-            floors (
-              name,
-              buildings (
-                name
-              )
-            )
-          )
-        `);
+        .select('*');
 
+      // Apply filters
       if (searchQuery) {
-        query = query.or(`first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`);
+        query = query.or(
+          `first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`
+        );
       }
 
       if (departmentFilter !== 'all') {
@@ -47,10 +37,33 @@ export function useOccupantList() {
         query = query.eq('status', statusFilter);
       }
 
-      const { data, error } = await query.order('last_name');
+      const { data: rawData, error } = await query
+        .order('last_name');
       
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error('Supabase query error:', error);
+        throw error;
+      }
+
+      console.log('Raw data from Supabase:', rawData);
+
+      // Transform to match our expected type
+      const transformedData: OccupantQueryResponse[] = (rawData || []).map(occupant => ({
+        id: occupant.id,
+        first_name: occupant.first_name || '',
+        last_name: occupant.last_name || '',
+        email: occupant.email,
+        phone: occupant.phone,
+        department: occupant.department,
+        title: occupant.title,
+        status: occupant.status || 'inactive',
+        room_count: occupant.room_count || 0,
+        key_count: occupant.key_count || 0,
+        rooms: occupant.rooms || []
+      }));
+
+      console.log('Final transformed data:', transformedData);
+      return transformedData;
     },
   });
 
@@ -73,7 +86,7 @@ export function useOccupantList() {
   };
 
   const handleSelectAll = () => {
-    if (selectedOccupants.length === occupants?.length) {
+    if (selectedOccupants.length === (occupants?.length ?? 0)) {
       setSelectedOccupants([]);
     } else {
       setSelectedOccupants(occupants?.map(o => o.id) || []);
@@ -116,7 +129,7 @@ export function useOccupantList() {
   };
 
   return {
-    occupants,
+    occupants: occupants ?? [],
     isLoading,
     isError,
     error,
