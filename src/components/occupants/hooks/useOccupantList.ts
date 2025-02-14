@@ -17,7 +17,7 @@ export function useOccupantList() {
     queryKey: ['occupants', searchQuery, departmentFilter, statusFilter],
     queryFn: async () => {
       let query = supabase
-        .from('occupant_details')
+        .from('occupants')
         .select(`
           *,
           rooms:occupant_room_assignments(
@@ -27,13 +27,15 @@ export function useOccupantList() {
             is_primary,
             schedule,
             notes,
-            rooms(
+            rooms!inner(
               id,
               name,
               room_number,
-              floors(
+              floors!inner(
                 name,
-                buildings(name)
+                buildings!inner(
+                  name
+                )
               )
             )
           )
@@ -54,16 +56,16 @@ export function useOccupantList() {
         query = query.eq('status', statusFilter);
       }
 
-      const { data, error } = await query
+      const { data: rawData, error } = await query
         .order('last_name');
       
       if (error) throw error;
 
       // Transform the nested room data to match our types
-      const transformedData = data?.map(occupant => ({
+      const transformedData = rawData?.map(occupant => ({
         ...occupant,
         rooms: occupant.rooms?.map((assignment: any) => ({
-          id: assignment.room_id,
+          id: assignment.rooms.id,
           name: assignment.rooms.name,
           room_number: assignment.rooms.room_number,
           assignment_type: assignment.assignment_type,
@@ -71,9 +73,10 @@ export function useOccupantList() {
           schedule: assignment.schedule,
           notes: assignment.notes,
           floors: assignment.rooms.floors
-        })) || null
+        })) || []
       }));
 
+      console.log('Transformed occupant data:', transformedData); // Debug log
       return transformedData || [];
     },
   });
