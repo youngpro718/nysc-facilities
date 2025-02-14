@@ -1983,13 +1983,6 @@ export type Database = {
             foreignKeyName: "key_assignments_occupant_id_fkey"
             columns: ["occupant_id"]
             isOneToOne: false
-            referencedRelation: "occupant_details"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "key_assignments_occupant_id_fkey"
-            columns: ["occupant_id"]
-            isOneToOne: false
             referencedRelation: "occupants"
             referencedColumns: ["id"]
           },
@@ -2907,21 +2900,7 @@ export type Database = {
             foreignKeyName: "occupant_position_history_occupant_id_fkey"
             columns: ["occupant_id"]
             isOneToOne: false
-            referencedRelation: "occupant_details"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "occupant_position_history_occupant_id_fkey"
-            columns: ["occupant_id"]
-            isOneToOne: false
             referencedRelation: "occupants"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "occupant_position_history_supervisor_id_fkey"
-            columns: ["supervisor_id"]
-            isOneToOne: false
-            referencedRelation: "occupant_details"
             referencedColumns: ["id"]
           },
           {
@@ -2935,99 +2914,74 @@ export type Database = {
       }
       occupant_room_assignments: {
         Row: {
-          approval_status: string | null
-          approved_at: string | null
-          approved_by: string | null
           assigned_at: string | null
           created_at: string | null
-          end_date: string | null
           id: string
-          is_primary: boolean | null
           occupant_id: string | null
           room_id: string | null
-          start_date: string | null
           updated_at: string | null
         }
         Insert: {
-          approval_status?: string | null
-          approved_at?: string | null
-          approved_by?: string | null
           assigned_at?: string | null
           created_at?: string | null
-          end_date?: string | null
           id?: string
-          is_primary?: boolean | null
           occupant_id?: string | null
           room_id?: string | null
-          start_date?: string | null
           updated_at?: string | null
         }
         Update: {
-          approval_status?: string | null
-          approved_at?: string | null
-          approved_by?: string | null
           assigned_at?: string | null
           created_at?: string | null
-          end_date?: string | null
           id?: string
-          is_primary?: boolean | null
           occupant_id?: string | null
           room_id?: string | null
-          start_date?: string | null
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "occupant_room_assignments_occupant_id_fkey"
-            columns: ["occupant_id"]
-            isOneToOne: false
-            referencedRelation: "occupant_details"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "occupant_room_assignments_occupant_id_fkey"
+            foreignKeyName: "occupant_room_assignments_new_occupant_id_fkey"
             columns: ["occupant_id"]
             isOneToOne: false
             referencedRelation: "occupants"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "occupant_room_assignments_room_id_fkey"
+            foreignKeyName: "occupant_room_assignments_new_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "room_health_overview"
             referencedColumns: ["room_id"]
           },
           {
-            foreignKeyName: "occupant_room_assignments_room_id_fkey"
+            foreignKeyName: "occupant_room_assignments_new_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "room_issue_analytics"
             referencedColumns: ["room_id"]
           },
           {
-            foreignKeyName: "occupant_room_assignments_room_id_fkey"
+            foreignKeyName: "occupant_room_assignments_new_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "room_lighting_status"
             referencedColumns: ["room_id"]
           },
           {
-            foreignKeyName: "occupant_room_assignments_room_id_fkey"
+            foreignKeyName: "occupant_room_assignments_new_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "room_occupancy_stats"
             referencedColumns: ["room_id"]
           },
           {
-            foreignKeyName: "occupant_room_assignments_room_id_fkey"
+            foreignKeyName: "occupant_room_assignments_new_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "rooms"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "occupant_room_assignments_room_id_fkey"
+            foreignKeyName: "occupant_room_assignments_new_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "storage_room_inventory"
@@ -3080,90 +3034,6 @@ export type Database = {
         }
         Relationships: []
       }
-      occupant_room_assignments_new: {
-        Row: {
-          assigned_at: string | null
-          created_at: string | null
-          id: string
-          occupant_id: string | null
-          room_id: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          assigned_at?: string | null
-          created_at?: string | null
-          id?: string
-          occupant_id?: string | null
-          room_id?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          assigned_at?: string | null
-          created_at?: string | null
-          id?: string
-          occupant_id?: string | null
-          room_id?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "occupant_room_assignments_new_occupant_id_fkey"
-            columns: ["occupant_id"]
-            isOneToOne: false
-            referencedRelation: "occupant_details"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "occupant_room_assignments_new_occupant_id_fkey"
-            columns: ["occupant_id"]
-            isOneToOne: false
-            referencedRelation: "occupants"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "occupant_room_assignments_new_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "room_health_overview"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "occupant_room_assignments_new_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "room_issue_analytics"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "occupant_room_assignments_new_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "room_lighting_status"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "occupant_room_assignments_new_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "room_occupancy_stats"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "occupant_room_assignments_new_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "rooms"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "occupant_room_assignments_new_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "storage_room_inventory"
-            referencedColumns: ["room_id"]
-          },
-        ]
-      }
       occupant_status_history: {
         Row: {
           change_date: string
@@ -3205,13 +3075,6 @@ export type Database = {
             | null
         }
         Relationships: [
-          {
-            foreignKeyName: "occupant_status_history_occupant_id_fkey"
-            columns: ["occupant_id"]
-            isOneToOne: false
-            referencedRelation: "occupant_details"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "occupant_status_history_occupant_id_fkey"
             columns: ["occupant_id"]
@@ -3333,13 +3196,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "storage_room_inventory"
             referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "occupants_supervisor_id_fkey"
-            columns: ["supervisor_id"]
-            isOneToOne: false
-            referencedRelation: "occupant_details"
-            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "occupants_supervisor_id_fkey"
@@ -4866,147 +4722,6 @@ export type Database = {
           rooms_under_maintenance: number | null
         }
         Relationships: []
-      }
-      occupant_details: {
-        Row: {
-          access_level: string | null
-          assigned_resources: Json | null
-          created_at: string | null
-          department: string | null
-          email: string | null
-          emergency_contact: Json | null
-          employment_type: string | null
-          end_date: string | null
-          first_name: string | null
-          hire_date: string | null
-          id: string | null
-          key_count: number | null
-          key_names: string | null
-          last_name: string | null
-          notes: string | null
-          phone: string | null
-          room_count: number | null
-          room_id: string | null
-          room_names: string | null
-          start_date: string | null
-          status: Database["public"]["Enums"]["occupant_status_enum"] | null
-          supervisor_id: string | null
-          termination_date: string | null
-          title: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          access_level?: string | null
-          assigned_resources?: Json | null
-          created_at?: string | null
-          department?: string | null
-          email?: string | null
-          emergency_contact?: Json | null
-          employment_type?: string | null
-          end_date?: string | null
-          first_name?: string | null
-          hire_date?: string | null
-          id?: string | null
-          key_count?: never
-          key_names?: never
-          last_name?: string | null
-          notes?: string | null
-          phone?: string | null
-          room_count?: never
-          room_id?: string | null
-          room_names?: never
-          start_date?: string | null
-          status?: Database["public"]["Enums"]["occupant_status_enum"] | null
-          supervisor_id?: string | null
-          termination_date?: string | null
-          title?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          access_level?: string | null
-          assigned_resources?: Json | null
-          created_at?: string | null
-          department?: string | null
-          email?: string | null
-          emergency_contact?: Json | null
-          employment_type?: string | null
-          end_date?: string | null
-          first_name?: string | null
-          hire_date?: string | null
-          id?: string | null
-          key_count?: never
-          key_names?: never
-          last_name?: string | null
-          notes?: string | null
-          phone?: string | null
-          room_count?: never
-          room_id?: string | null
-          room_names?: never
-          start_date?: string | null
-          status?: Database["public"]["Enums"]["occupant_status_enum"] | null
-          supervisor_id?: string | null
-          termination_date?: string | null
-          title?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "occupants_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "room_health_overview"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "occupants_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "room_issue_analytics"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "occupants_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "room_lighting_status"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "occupants_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "room_occupancy_stats"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "occupants_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "rooms"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "occupants_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "storage_room_inventory"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "occupants_supervisor_id_fkey"
-            columns: ["supervisor_id"]
-            isOneToOne: false
-            referencedRelation: "occupant_details"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "occupants_supervisor_id_fkey"
-            columns: ["supervisor_id"]
-            isOneToOne: false
-            referencedRelation: "occupants"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       room_health_overview: {
         Row: {
