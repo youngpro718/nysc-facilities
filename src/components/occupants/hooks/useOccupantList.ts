@@ -48,9 +48,20 @@ export function useOccupantList() {
 
       // Transform to match our expected type
       const transformedData: OccupantQueryResponse[] = (rawData || []).map(occupant => {
-        // Parse the rooms JSON if it exists, otherwise use empty array
-        const parsedRooms = occupant.rooms ? 
-          (Array.isArray(occupant.rooms) ? occupant.rooms : JSON.parse(occupant.rooms)) : [];
+        // Safely handle rooms data, which might be an array, string, or other format
+        let parsedRooms = [];
+        if (occupant.rooms) {
+          if (Array.isArray(occupant.rooms)) {
+            parsedRooms = occupant.rooms;
+          } else if (typeof occupant.rooms === 'string') {
+            try {
+              parsedRooms = JSON.parse(occupant.rooms);
+            } catch (e) {
+              console.error('Error parsing rooms data:', e);
+              parsedRooms = [];
+            }
+          }
+        }
 
         return {
           id: occupant.id,
