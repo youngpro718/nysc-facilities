@@ -16,31 +16,33 @@ export function useOccupantList() {
   const { data: occupants, isLoading, isError, error, refetch } = useQuery<OccupantQueryResponse[], SupabaseError>({
     queryKey: ['occupants', searchQuery, departmentFilter, statusFilter],
     queryFn: async (): Promise<OccupantQueryResponse[]> => {
+      console.log('Starting occupants query...'); // Debug log
+
       let query = supabase
         .from('occupants')
         .select(`
           *,
-          rooms:occupant_room_assignments(
+          key_count:key_assignments(count),
+          room_count:occupant_room_assignments(count),
+          rooms:occupant_room_assignments!inner(
             id,
             room_id,
             assignment_type,
             is_primary,
             schedule,
             notes,
-            rooms!inner(
+            rooms:rooms!inner(
               id,
               name,
               room_number,
-              floors!inner(
+              floors:floors!inner(
                 name,
-                buildings!inner(
+                buildings:buildings!inner(
                   name
                 )
               )
             )
-          ),
-          key_count:key_assignments(count),
-          room_count:occupant_room_assignments(count)
+          )
         `);
 
       // Apply filters
@@ -61,26 +63,39 @@ export function useOccupantList() {
       const { data: rawData, error } = await query
         .order('last_name');
       
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase query error:', error); // Debug log
+        throw error;
+      }
+
+      console.log('Raw data from Supabase:', rawData); // Debug log
 
       // Transform the nested room data to match our types
-      const transformedData: OccupantQueryResponse[] = (rawData || []).map(occupant => ({
-        ...occupant,
-        room_count: occupant.room_count?.[0]?.count || 0,
-        key_count: occupant.key_count?.[0]?.count || 0,
-        rooms: occupant.rooms?.map((assignment: any) => ({
-          id: assignment.rooms.id,
-          name: assignment.rooms.name,
-          room_number: assignment.rooms.room_number,
-          assignment_type: assignment.assignment_type,
-          is_primary: assignment.is_primary,
-          schedule: assignment.schedule,
-          notes: assignment.notes,
-          floors: assignment.rooms.floors
-        })) || []
-      }));
+      const transformedData: OccupantQueryResponse[] = (rawData || []).map(occupant => {
+        console.log('Processing occupant:', occupant.first_name, occupant.last_name); // Debug individual occupant
+        console.log('Room assignments:', occupant.rooms); // Debug room assignments
+        
+        return {
+          ...occupant,
+          room_count: occupant.room_count?.[0]?.count || 0,
+          key_count: occupant.key_count?.[0]?.count || 0,
+          rooms: occupant.rooms?.map((assignment: any) => {
+            console.log('Processing room assignment:', assignment); // Debug individual room assignment
+            return {
+              id: assignment.rooms.id,
+              name: assignment.rooms.name,
+              room_number: assignment.rooms.room_number,
+              assignment_type: assignment.assignment_type,
+              is_primary: assignment.is_primary,
+              schedule: assignment.schedule,
+              notes: assignment.notes,
+              floors: assignment.rooms.floors
+            };
+          }) || []
+        };
+      });
 
-      console.log('Transformed occupant data:', transformedData); // Debug log
+      console.log('Final transformed data:', transformedData); // Debug final result
       return transformedData;
     },
   });
