@@ -14,14 +14,27 @@ export type Occupant = {
 };
 
 export type RoomReference = {
+  id: string;
   name: string;
   room_number: string;
+  assignment_type: 'primary_office' | 'work_location' | 'support_space';
+  is_primary: boolean;
+  schedule: {
+    days: string[];
+    hours: string | null;
+  } | null;
+  notes: string | null;
   floors: {
     name: string;
     buildings: {
       name: string;
     };
   };
+  related_rooms?: {
+    room_id: string;
+    room_name: string;
+    relationship_type: 'chamber_courtroom' | 'courtroom_robing' | 'office_courtroom';
+  }[];
 };
 
 // Extended type for occupant details

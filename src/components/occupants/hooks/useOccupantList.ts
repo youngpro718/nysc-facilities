@@ -16,31 +16,65 @@ export function useOccupantList() {
   const { data: occupants, isLoading, isError, error, refetch } = useQuery<OccupantQueryResponse[], SupabaseError>({
     queryKey: ['occupants', searchQuery, departmentFilter, statusFilter],
     queryFn: async () => {
-      let baseQuery = supabase
+      let query = supabase
         .from('occupant_details')
-        .select('*');
+        .select(`
+          *,
+          rooms:occupant_room_assignments(
+            id,
+            room_id,
+            assignment_type,
+            is_primary,
+            schedule,
+            notes,
+            rooms(
+              id,
+              name,
+              room_number,
+              floors(
+                name,
+                buildings(name)
+              )
+            )
+          )
+        `);
 
       // Apply filters
       if (searchQuery) {
-        baseQuery = baseQuery.or(
+        query = query.or(
           `first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`
         );
       }
 
       if (departmentFilter !== 'all') {
-        baseQuery = baseQuery.eq('department', departmentFilter);
+        query = query.eq('department', departmentFilter);
       }
 
       if (statusFilter !== 'all') {
-        baseQuery = baseQuery.eq('status', statusFilter);
+        query = query.eq('status', statusFilter);
       }
 
-      const { data, error } = await baseQuery
-        .order('last_name')
-        .returns<OccupantQueryResponse[]>();
+      const { data, error } = await query
+        .order('last_name');
       
       if (error) throw error;
-      return data || [];
+
+      // Transform the nested room data to match our types
+      const transformedData = data?.map(occupant => ({
+        ...occupant,
+        rooms: occupant.rooms?.map((assignment: any) => ({
+          id: assignment.room_id,
+          name: assignment.rooms.name,
+          room_number: assignment.rooms.room_number,
+          assignment_type: assignment.assignment_type,
+          is_primary: assignment.is_primary,
+          schedule: assignment.schedule,
+          notes: assignment.notes,
+          floors: assignment.rooms.floors
+        })) || null
+      }));
+
+      return transformedData || [];
     },
   });
 
