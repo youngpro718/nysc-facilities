@@ -4,7 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Issue, RecurringPattern, MaintenanceRequirements, ElectricalIssues, LightingFixture, ImpactLevel } from "../types/IssueTypes";
+import { Issue, RecurringPattern, MaintenanceRequirements, ElectricalIssues, LightingFixture, ImpactLevel, FixtureType, FixtureStatus, FixturePosition } from "../types/IssueTypes";
 import { IssueStatusBadge } from "../card/IssueStatusBadge";
 import { IssuePhotos } from "../card/IssuePhotos";
 import { IssueBadges } from "../card/IssueBadges";
@@ -53,9 +53,9 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
 
       interface RawLightingFixture {
         name: string;
-        type: string;
-        status: string;
-        position: string;
+        type: FixtureType;
+        status: FixtureStatus;
+        position: FixturePosition;
         electrical_issues: Record<string, any>;
       }
 
@@ -63,9 +63,9 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
         if (!fixtures || !Array.isArray(fixtures)) return [];
         return fixtures.map(fixture => ({
           name: fixture.name,
-          type: fixture.type,
-          status: fixture.status,
-          position: fixture.position,
+          type: fixture.type as FixtureType,
+          status: fixture.status as FixtureStatus,
+          position: fixture.position as FixturePosition,
           electrical_issues: fixture.electrical_issues ? {
             short_circuit: fixture.electrical_issues.short_circuit || false,
             wiring_issues: fixture.electrical_issues.wiring_issues || false,
