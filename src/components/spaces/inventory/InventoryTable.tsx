@@ -24,7 +24,7 @@ export function InventoryTable({ items, onUpdateQuantity, onDeleteItem }: Invent
       return { label: "Out of Stock", variant: "destructive" as const };
     }
     if (isLowStock(item)) {
-      return { label: "Low Stock", variant: "warning" as const };
+      return { label: "Low Stock", variant: "outline" as const };
     }
     return { label: "In Stock", variant: "secondary" as const };
   };
@@ -119,7 +119,9 @@ export function InventoryTable({ items, onUpdateQuantity, onDeleteItem }: Invent
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={stockStatus.variant}>
+                  <Badge variant={stockStatus.variant} className={cn(
+                    showWarning && "border-yellow-600 text-yellow-600"
+                  )}>
                     {stockStatus.label}
                   </Badge>
                 </TableCell>
