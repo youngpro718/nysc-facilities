@@ -13,27 +13,13 @@ export function useOccupantList() {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [selectedOccupants, setSelectedOccupants] = useState<string[]>([]);
 
-  const { data: occupants, isLoading, isError, error, refetch } = useQuery<
-    OccupantQueryResponse[],
-    SupabaseError
-  >({
+  const { data: occupants, isLoading, isError, error, refetch } = useQuery<OccupantQueryResponse[], SupabaseError>({
     queryKey: ['occupants', searchQuery, departmentFilter, statusFilter],
     queryFn: async () => {
       let query = supabase
         .from('occupant_details')
-        .select(`
-          *,
-          rooms (
-            name,
-            room_number,
-            floors (
-              name,
-              buildings (
-                name
-              )
-            )
-          )
-        `);
+        .select()
+        .returns<OccupantQueryResponse[]>();
 
       if (searchQuery) {
         query = query.or(`first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`);
@@ -73,7 +59,7 @@ export function useOccupantList() {
   };
 
   const handleSelectAll = () => {
-    if (selectedOccupants.length === occupants?.length) {
+    if (selectedOccupants.length === (occupants?.length ?? 0)) {
       setSelectedOccupants([]);
     } else {
       setSelectedOccupants(occupants?.map(o => o.id) || []);
@@ -116,7 +102,7 @@ export function useOccupantList() {
   };
 
   return {
-    occupants,
+    occupants: occupants ?? [],
     isLoading,
     isError,
     error,
