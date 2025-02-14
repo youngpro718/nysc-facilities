@@ -1,65 +1,34 @@
 
 import {
-  Building,
-  Key,
-  Lightbulb,
-  AlertCircle,
+  Building2,
   Users,
-  FileCheck
+  Key,
+  AlertCircle,
+  LayoutDashboard,
+  UserRound,
 } from "lucide-react";
-import type { NavigationTab } from "../types";
+import { NavigationTab } from "../types";
 
-// Base navigation items shared between admin and user
-const baseNavigation: NavigationTab[] = [
-  {
-    title: "Spaces",
-    href: "/spaces",
-    icon: Building,
-  },
-  {
-    title: "Keys",
-    href: "/keys",
-    icon: Key,
-  },
-  {
-    title: "Lighting",
-    href: "/lighting",
-    icon: Lightbulb,
-  },
-  {
-    title: "Issues",
-    href: "/issues",
-    icon: AlertCircle,
-  },
-];
-
-// Admin-specific navigation
 export const adminNavigation: NavigationTab[] = [
-  ...baseNavigation,
-  {
-    title: "Occupants",
-    href: "/occupants",
-    icon: Users,
-  },
-  {
-    title: "Verification",
-    href: "/verification",
-    icon: FileCheck,
-  },
+  { title: "Dashboard", icon: LayoutDashboard },
+  { title: "Spaces", icon: Building2 },
+  { title: "Occupants", icon: Users },
+  { type: "separator" },
+  { title: "Keys", icon: Key },
+  { title: "Issues", icon: AlertCircle },
+  { type: "separator" },
+  { title: "Admin Profile", icon: UserRound },
 ];
 
-// User-specific navigation
 export const userNavigation: NavigationTab[] = [
-  ...baseNavigation,
-  {
-    title: "Verification",
-    href: "/verification",
-    icon: FileCheck,
-  },
+  { title: "Dashboard", icon: LayoutDashboard },
+  { type: "separator" },
+  { title: "Profile", icon: UserRound },
 ];
 
-// Helper function to get routes
-export const getNavigationRoutes = (isAdmin: boolean): string[] => {
-  const routes = isAdmin ? adminNavigation : userNavigation;
-  return routes.map(item => item.href);
+export const getNavigationRoutes = (isAdmin: boolean) => {
+  if (isAdmin) {
+    return ['/', '/spaces', '/occupants', null, '/keys', '/issues', null, '/admin-profile'];
+  }
+  return ['/dashboard', null, '/profile'];
 };

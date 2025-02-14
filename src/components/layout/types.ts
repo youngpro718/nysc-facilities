@@ -17,10 +17,14 @@ export interface UserSession {
   location?: string;
 }
 
-export interface NavigationTab {
+export interface NavigationItem {
   title: string;
-  href: string;
   icon: LucideIcon;
+  type?: undefined;
 }
 
-export type NavigationItem = NavigationTab;
+export interface NavigationSeparator {
+  type: "separator";
+}
+
+export type NavigationTab = NavigationItem | NavigationSeparator;
