@@ -4,7 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Issue, RecurringPattern, MaintenanceRequirements, ElectricalIssues, LightingFixture } from "../types/IssueTypes";
+import { Issue, RecurringPattern, MaintenanceRequirements, ElectricalIssues, LightingFixture, ImpactLevel } from "../types/IssueTypes";
 import { IssueStatusBadge } from "../card/IssueStatusBadge";
 import { IssuePhotos } from "../card/IssuePhotos";
 import { IssueBadges } from "../card/IssueBadges";
@@ -52,7 +52,7 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
       if (error) throw error;
 
       const transformLightingFixtures = (fixtures: any[]): LightingFixture[] => {
-        if (!fixtures) return [];
+        if (!fixtures || !Array.isArray(fixtures)) return [];
         return fixtures.map(fixture => ({
           name: fixture.name,
           type: fixture.type,
@@ -71,18 +71,19 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
       const transformedData: Issue = {
         ...data,
         lighting_fixtures: transformLightingFixtures(data.lighting_fixtures || []),
-        recurring_pattern: data.recurring_pattern ? {
-          is_recurring: Boolean(data.recurring_pattern.is_recurring),
-          frequency: String(data.recurring_pattern.frequency || ''),
-          last_occurrence: String(data.recurring_pattern.last_occurrence || ''),
-          pattern_confidence: Number(data.recurring_pattern.pattern_confidence || 0)
+        recurring_pattern: data.recurring_pattern && typeof data.recurring_pattern === 'object' ? {
+          is_recurring: Boolean((data.recurring_pattern as any).is_recurring),
+          frequency: String((data.recurring_pattern as any).frequency || ''),
+          last_occurrence: String((data.recurring_pattern as any).last_occurrence || ''),
+          pattern_confidence: Number((data.recurring_pattern as any).pattern_confidence || 0)
         } : undefined,
-        maintenance_requirements: data.maintenance_requirements ? {
-          scheduled: Boolean(data.maintenance_requirements.scheduled),
-          frequency: String(data.maintenance_requirements.frequency || ''),
-          last_maintenance: String(data.maintenance_requirements.last_maintenance || ''),
-          next_due: String(data.maintenance_requirements.next_due || '')
-        } : undefined
+        maintenance_requirements: data.maintenance_requirements && typeof data.maintenance_requirements === 'object' ? {
+          scheduled: Boolean((data.maintenance_requirements as any).scheduled),
+          frequency: String((data.maintenance_requirements as any).frequency || ''),
+          last_maintenance: String((data.maintenance_requirements as any).last_maintenance || ''),
+          next_due: String((data.maintenance_requirements as any).next_due || '')
+        } : undefined,
+        impact_level: (data.impact_level as ImpactLevel) || 'minimal',
       };
 
       return transformedData;
