@@ -6,6 +6,7 @@ import { Users } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { FormDescription } from "@/components/ui/form";
+import { cn } from "@/lib/utils";
 
 interface RoomDetails {
   id: string;
@@ -54,10 +55,14 @@ export function RoomSelector({
         <div>
           <Label>Assignment Type</Label>
           <Select value={assignmentType} onValueChange={onAssignmentTypeChange}>
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Select assignment type" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent 
+              className="bg-popover z-[51] min-w-[200px]" 
+              position="popper"
+              sideOffset={4}
+            >
               <SelectItem value="primary_office">Primary Office</SelectItem>
               <SelectItem value="work_location">Work Location</SelectItem>
               <SelectItem value="support_space">Support Space</SelectItem>
@@ -80,28 +85,36 @@ export function RoomSelector({
       <div className="space-y-2">
         <Label>Select Room</Label>
         <Select value={selectedRoom} onValueChange={onRoomSelect}>
-          <SelectTrigger>
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Select a room" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent 
+            className="bg-popover z-[51]" 
+            position="popper"
+            sideOffset={4}
+          >
             <ScrollArea className="max-h-[300px]">
               {availableRooms?.map((room) => (
-                <SelectItem key={room.id} value={room.id}>
-                  <div className="flex items-center justify-between w-full pr-4">
-                    <span>
+                <SelectItem 
+                  key={room.id} 
+                  value={room.id}
+                  className="pr-8"
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="truncate">
                       {room.name} - {room.floors?.name}, {room.floors?.buildings?.name}
                     </span>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={
-                        !room.capacity ? "secondary" :
-                        room.current_occupancy >= room.capacity ? "destructive" :
-                        room.current_occupancy >= room.capacity * 0.8 ? "outline" :
-                        "default"
-                      }>
-                        <Users className="w-3 h-3 mr-1" />
-                        {room.current_occupancy}{room.capacity ? `/${room.capacity}` : ''}
-                      </Badge>
-                    </div>
+                    <Badge variant={
+                      !room.capacity ? "secondary" :
+                      room.current_occupancy >= room.capacity ? "destructive" :
+                      room.current_occupancy >= room.capacity * 0.8 ? "outline" :
+                      "default"
+                    }
+                    className="ml-2 shrink-0"
+                    >
+                      <Users className="w-3 h-3 mr-1" />
+                      {room.current_occupancy}{room.capacity ? `/${room.capacity}` : ''}
+                    </Badge>
                   </div>
                 </SelectItem>
               ))}
