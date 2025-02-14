@@ -4,7 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Issue, RecurringPattern, MaintenanceRequirements } from "../types/IssueTypes";
+import { Issue, RecurringPattern, MaintenanceRequirements, ElectricalIssues, LightingFixture } from "../types/IssueTypes";
 import { IssueStatusBadge } from "../card/IssueStatusBadge";
 import { IssuePhotos } from "../card/IssuePhotos";
 import { IssueBadges } from "../card/IssueBadges";
@@ -51,22 +51,38 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
 
       if (error) throw error;
 
+      const transformLightingFixtures = (fixtures: any[]): LightingFixture[] => {
+        if (!fixtures) return [];
+        return fixtures.map(fixture => ({
+          name: fixture.name,
+          type: fixture.type,
+          status: fixture.status,
+          position: fixture.position,
+          electrical_issues: fixture.electrical_issues ? {
+            short_circuit: fixture.electrical_issues.short_circuit || false,
+            wiring_issues: fixture.electrical_issues.wiring_issues || false,
+            voltage_problems: fixture.electrical_issues.voltage_problems || false,
+            ballast_issue: fixture.electrical_issues.ballast_issue || false
+          } : undefined
+        }));
+      };
+
       // Transform the data to match our Issue type
       const transformedData: Issue = {
         ...data,
-        lighting_fixtures: data.lighting_fixtures ? [data.lighting_fixtures] : [],
+        lighting_fixtures: transformLightingFixtures(data.lighting_fixtures || []),
         recurring_pattern: data.recurring_pattern ? {
-          is_recurring: data.recurring_pattern.is_recurring || false,
-          frequency: data.recurring_pattern.frequency,
-          last_occurrence: data.recurring_pattern.last_occurrence,
-          pattern_confidence: data.recurring_pattern.pattern_confidence || 0
-        } as RecurringPattern : undefined,
+          is_recurring: Boolean(data.recurring_pattern.is_recurring),
+          frequency: String(data.recurring_pattern.frequency || ''),
+          last_occurrence: String(data.recurring_pattern.last_occurrence || ''),
+          pattern_confidence: Number(data.recurring_pattern.pattern_confidence || 0)
+        } : undefined,
         maintenance_requirements: data.maintenance_requirements ? {
-          scheduled: data.maintenance_requirements.scheduled || false,
-          frequency: data.maintenance_requirements.frequency,
-          last_maintenance: data.maintenance_requirements.last_maintenance,
-          next_due: data.maintenance_requirements.next_due
-        } as MaintenanceRequirements : undefined
+          scheduled: Boolean(data.maintenance_requirements.scheduled),
+          frequency: String(data.maintenance_requirements.frequency || ''),
+          last_maintenance: String(data.maintenance_requirements.last_maintenance || ''),
+          next_due: String(data.maintenance_requirements.next_due || '')
+        } : undefined
       };
 
       return transformedData;
