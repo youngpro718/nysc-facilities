@@ -15,7 +15,7 @@ export function useOccupantList() {
 
   const { data: occupants, isLoading, isError, error, refetch } = useQuery<OccupantQueryResponse[], SupabaseError>({
     queryKey: ['occupants', searchQuery, departmentFilter, statusFilter],
-    queryFn: async () => {
+    queryFn: async (): Promise<OccupantQueryResponse[]> => {
       let query = supabase
         .from('occupants')
         .select(`
@@ -38,7 +38,9 @@ export function useOccupantList() {
                 )
               )
             )
-          )
+          ),
+          key_count:key_assignments(count),
+          room_count:occupant_room_assignments(count)
         `);
 
       // Apply filters
@@ -62,8 +64,10 @@ export function useOccupantList() {
       if (error) throw error;
 
       // Transform the nested room data to match our types
-      const transformedData = rawData?.map(occupant => ({
+      const transformedData: OccupantQueryResponse[] = (rawData || []).map(occupant => ({
         ...occupant,
+        room_count: occupant.room_count?.[0]?.count || 0,
+        key_count: occupant.key_count?.[0]?.count || 0,
         rooms: occupant.rooms?.map((assignment: any) => ({
           id: assignment.rooms.id,
           name: assignment.rooms.name,
@@ -77,7 +81,7 @@ export function useOccupantList() {
       }));
 
       console.log('Transformed occupant data:', transformedData); // Debug log
-      return transformedData || [];
+      return transformedData;
     },
   });
 
