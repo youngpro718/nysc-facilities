@@ -1414,6 +1414,13 @@ export type Database = {
             foreignKeyName: "inventory_transactions_item_id_fkey"
             columns: ["item_id"]
             isOneToOne: false
+            referencedRelation: "inventory_items_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_transactions_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
             referencedRelation: "low_stock_items"
             referencedColumns: ["id"]
           },
@@ -4547,6 +4554,75 @@ export type Database = {
           floorplan_data: Json | null
         }
         Relationships: []
+      }
+      inventory_items_view: {
+        Row: {
+          category_color:
+            | Database["public"]["Enums"]["category_color_enum"]
+            | null
+          category_id: string | null
+          category_name: string | null
+          created_at: string | null
+          description: string | null
+          id: string | null
+          minimum_quantity: number | null
+          name: string | null
+          quantity: number | null
+          storage_room_id: string | null
+          unit: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_storage_room_id_fkey"
+            columns: ["storage_room_id"]
+            isOneToOne: false
+            referencedRelation: "room_health_overview"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "inventory_items_storage_room_id_fkey"
+            columns: ["storage_room_id"]
+            isOneToOne: false
+            referencedRelation: "room_issue_analytics"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "inventory_items_storage_room_id_fkey"
+            columns: ["storage_room_id"]
+            isOneToOne: false
+            referencedRelation: "room_lighting_status"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "inventory_items_storage_room_id_fkey"
+            columns: ["storage_room_id"]
+            isOneToOne: false
+            referencedRelation: "room_occupancy_stats"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "inventory_items_storage_room_id_fkey"
+            columns: ["storage_room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_storage_room_id_fkey"
+            columns: ["storage_room_id"]
+            isOneToOne: false
+            referencedRelation: "storage_room_inventory"
+            referencedColumns: ["room_id"]
+          },
+        ]
       }
       key_access_points: {
         Row: {
