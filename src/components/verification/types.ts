@@ -1,4 +1,6 @@
 
+import type { Database } from "@/integrations/supabase/types";
+
 export type VerificationRequest = {
   id: string;
   userId: string;
@@ -27,3 +29,7 @@ export type VerificationFormData = {
   department: string;
   supportingDocuments: string[];
 };
+
+// Type for the database responses
+export type AgencyAffiliation = Database['public']['Tables']['agency_affiliations']['Row'];
+export type VerificationRequestRow = Database['public']['Tables']['verification_requests']['Row'];

@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import type { Agency, VerificationFormData } from "./types";
+import type { Agency, VerificationFormData, AgencyAffiliation } from "./types";
 
 export function VerificationRequestForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -23,12 +23,17 @@ export function VerificationRequestForm() {
   const { data: agencies, isLoading: isLoadingAgencies } = useQuery({
     queryKey: ['agencies'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: agencyData, error } = await supabase
         .from('agency_affiliations')
         .select('*');
       
       if (error) throw error;
-      return data as Agency[];
+      
+      return (agencyData as AgencyAffiliation[]).map(agency => ({
+        id: agency.id,
+        name: agency.name,
+        type: agency.type
+      }));
     }
   });
 
@@ -43,7 +48,8 @@ export function VerificationRequestForm() {
           agency_id: formData.agencyId,
           employee_id: formData.employeeId,
           department: formData.department,
-          supporting_documents: formData.supportingDocuments
+          supporting_documents: formData.supportingDocuments,
+          status: 'pending'
         }]);
 
       if (error) throw error;
