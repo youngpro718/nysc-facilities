@@ -51,7 +51,7 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
 
       if (error) throw error;
 
-      const transformLightingFixtures = (fixtures: any[]): LightingFixture[] => {
+      const transformLightingFixtures = (fixtures: any): LightingFixture[] => {
         if (!fixtures || !Array.isArray(fixtures)) return [];
         return fixtures.map(fixture => ({
           name: fixture.name,
@@ -70,7 +70,7 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
       // Transform the data to match our Issue type
       const transformedData: Issue = {
         ...data,
-        lighting_fixtures: transformLightingFixtures(data.lighting_fixtures || []),
+        lighting_fixtures: transformLightingFixtures(data.lighting_fixtures),
         recurring_pattern: data.recurring_pattern && typeof data.recurring_pattern === 'object' ? {
           is_recurring: Boolean((data.recurring_pattern as any).is_recurring),
           frequency: String((data.recurring_pattern as any).frequency || ''),
