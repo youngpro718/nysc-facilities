@@ -31,6 +31,10 @@ export function AssignRoomsDialog({
     setStartDate,
     endDate,
     setEndDate,
+    assignmentType,
+    setAssignmentType,
+    isPrimary,
+    setIsPrimary,
     isAssigning,
     availableRooms,
     currentOccupants,
@@ -56,6 +60,11 @@ export function AssignRoomsDialog({
             selectedRoom={selectedRoom}
             onRoomSelect={setSelectedRoom}
             availableRooms={availableRooms}
+            assignmentType={assignmentType}
+            onAssignmentTypeChange={setAssignmentType}
+            isPrimary={isPrimary}
+            onIsPrimaryChange={setIsPrimary}
+            currentOccupants={currentOccupants}
           />
 
           <DateRangePicker
