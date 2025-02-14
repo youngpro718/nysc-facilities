@@ -5,21 +5,6 @@ export type FixtureType = 'standard' | 'emergency' | 'motion_sensor';
 export type FixtureStatus = 'functional' | 'maintenance_needed' | 'non_functional' | 'pending_maintenance' | 'scheduled_replacement';
 export type FixturePosition = 'ceiling' | 'wall' | 'floor' | 'desk' | 'recessed';
 export type ResolutionType = 'fixed' | 'replaced' | 'maintenance_performed' | 'no_action_needed' | 'deferred' | 'other';
-export type ImpactLevel = 'minimal' | 'moderate' | 'significant' | 'critical';
-
-export interface RecurringPattern {
-  is_recurring: boolean;
-  frequency?: string;
-  last_occurrence?: string;
-  pattern_confidence: number;
-}
-
-export interface MaintenanceRequirements {
-  scheduled: boolean;
-  frequency?: string;
-  last_maintenance?: string;
-  next_due?: string;
-}
 
 export interface ElectricalIssues {
   short_circuit?: boolean;
@@ -38,7 +23,6 @@ export interface LightingFixture {
 
 export interface IssueHistory {
   id: string;
-  issue_id: string;
   action_type: string;
   action_details: Record<string, any>;
   performed_by: string;
@@ -83,10 +67,6 @@ export interface Issue {
   resolution_notes?: string;
   resolved_by?: string;
   resolution_date?: string;
-  impact_level?: ImpactLevel;
-  recurring_pattern?: RecurringPattern;
-  maintenance_requirements?: MaintenanceRequirements;
-  timeline?: IssueHistory[];
 }
 
 export interface Comment {
@@ -100,21 +80,5 @@ export interface Comment {
   mentions: string[];
 }
 
-export interface RoomHealthMetrics {
-  id: string;
-  room_id: string;
-  health_score: number;
-  last_assessment_date: string;
-  total_issues_count: number;
-  open_issues_count: number;
-  critical_issues_count: number;
-  avg_resolution_time: string;
-  recurring_issues_count: number;
-  maintenance_compliance_score: number;
-  last_maintenance_date?: string;
-  next_maintenance_due?: string;
-  metrics_data: Record<string, any>;
-}
-
-// Alias for backward compatibility
+// Adding IssueType as an alias for compatibility
 export type IssueType = Issue;

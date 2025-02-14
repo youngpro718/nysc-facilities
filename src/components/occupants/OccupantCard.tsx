@@ -20,8 +20,6 @@ export function OccupantCard({
   onEdit,
   onDelete,
 }: OccupantCardProps) {
-  const firstRoom = occupant.rooms?.[0];
-
   return (
     <Card className="w-full">
       <CardContent className="pt-6">
@@ -115,11 +113,11 @@ export function OccupantCard({
                   </a>
                 </div>
               )}
-              {firstRoom && (
+              {occupant.rooms?.floors?.buildings && (
                 <div className="flex items-center gap-2 text-sm">
                   <Building2 className="h-4 w-4 text-muted-foreground" />
                   <span>
-                    {firstRoom.floors.buildings.name} - Room {firstRoom.room_number}
+                    {occupant.rooms.floors.buildings.name} - Room {occupant.rooms.room_number}
                   </span>
                 </div>
               )}

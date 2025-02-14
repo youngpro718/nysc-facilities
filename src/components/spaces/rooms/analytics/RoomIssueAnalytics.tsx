@@ -1,78 +1,144 @@
 
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Card } from "@/components/ui/card";
 import { format } from "date-fns";
-import { AlertTriangle, CheckCircle2, Clock } from "lucide-react";
-import { RoomIssue } from "../types/RoomTypes";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
 
-interface RoomIssueAnalyticsProps {
+interface RoomAnalyticsProps {
   roomId: string;
 }
 
-export function RoomIssueAnalytics({ roomId }: RoomIssueAnalyticsProps) {
-  const { data: issues, isLoading } = useQuery({
-    queryKey: ['room-issues', roomId],
+interface RoomIssueStats {
+  room_id: string;
+  room_name: string;
+  room_number: string;
+  total_issues: number;
+  open_issues: number;
+  resolved_issues: number;
+  avg_resolution_hours: number;
+  issue_types: Record<string, number>;
+  last_issue_date: string;
+  most_common_issue: string;
+}
+
+export function RoomIssueAnalytics({ roomId }: RoomAnalyticsProps) {
+  const { data: analytics, isLoading } = useQuery({
+    queryKey: ["room-analytics", roomId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('issues')
-        .select('*')
-        .eq('room_id', roomId)
-        .order('created_at', { ascending: false });
+        .from("room_issue_analytics")
+        .select("*")
+        .eq("room_id", roomId)
+        .single();
 
       if (error) throw error;
-      return data as RoomIssue[];
-    }
+      return data as RoomIssueStats;
+    },
   });
 
   if (isLoading) {
-    return <div className="p-4">Loading issue history...</div>;
+    return <div>Loading analytics...</div>;
   }
 
-  if (!issues?.length) {
-    return <div className="p-4 text-muted-foreground">No issue history found</div>;
+  if (!analytics) {
+    return <div>No analytics data available</div>;
   }
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'resolved':
-        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
-      case 'in_progress':
-        return <Clock className="h-4 w-4 text-yellow-500" />;
-      default:
-        return <AlertTriangle className="h-4 w-4 text-red-500" />;
-    }
-  };
+  const issueTypeData = Object.entries(analytics.issue_types || {}).map(
+    ([type, count]) => ({
+      type,
+      count,
+    })
+  );
+
+  const resolvedPercentage = analytics.total_issues
+    ? Math.round((analytics.resolved_issues / analytics.total_issues) * 100)
+    : 0;
+
+  const COLORS = ["#2563eb", "#3b82f6", "#60a5fa", "#93c5fd"];
 
   return (
-    <Card className="p-4">
-      <h3 className="text-lg font-semibold mb-4">Issue History</h3>
-      <ScrollArea className="h-[300px]">
-        <div className="space-y-4">
-          {issues.map((issue) => (
-            <div
-              key={issue.id}
-              className="border rounded-lg p-3 flex flex-col gap-2"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {getStatusIcon(issue.status)}
-                  <h4 className="font-medium">{issue.title}</h4>
-                </div>
-                <Badge variant={issue.status === 'resolved' ? 'default' : 'destructive'}>
-                  {issue.status}
-                </Badge>
-              </div>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm text-muted-foreground">
-                <Badge variant="outline">{issue.type}</Badge>
-                <span>{format(new Date(issue.created_at), 'MMM d, yyyy')}</span>
-              </div>
-            </div>
-          ))}
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card className="p-4">
+          <h4 className="text-sm font-medium text-muted-foreground">
+            Total Issues
+          </h4>
+          <p className="mt-2 text-2xl font-bold">{analytics.total_issues}</p>
+        </Card>
+        <Card className="p-4">
+          <h4 className="text-sm font-medium text-muted-foreground">
+            Open Issues
+          </h4>
+          <p className="mt-2 text-2xl font-bold">{analytics.open_issues}</p>
+        </Card>
+        <Card className="p-4">
+          <h4 className="text-sm font-medium text-muted-foreground">
+            Resolution Rate
+          </h4>
+          <p className="mt-2 text-2xl font-bold">{resolvedPercentage}%</p>
+        </Card>
+        <Card className="p-4">
+          <h4 className="text-sm font-medium text-muted-foreground">
+            Avg. Resolution Time
+          </h4>
+          <p className="mt-2 text-2xl font-bold">
+            {Math.round(analytics.avg_resolution_hours)}h
+          </p>
+        </Card>
+      </div>
+
+      <Card className="p-6">
+        <h3 className="mb-4 text-lg font-semibold">Issues by Type</h3>
+        <div className="h-[300px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={issueTypeData}>
+              <XAxis dataKey="type" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="count">
+                {issueTypeData.map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={COLORS[index % COLORS.length]}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         </div>
-      </ScrollArea>
-    </Card>
+      </Card>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card className="p-4">
+          <h4 className="text-sm font-medium text-muted-foreground">
+            Most Common Issue
+          </h4>
+          <p className="mt-2 text-lg font-medium">
+            {analytics.most_common_issue || "N/A"}
+          </p>
+        </Card>
+        <Card className="p-4">
+          <h4 className="text-sm font-medium text-muted-foreground">
+            Last Issue Reported
+          </h4>
+          <p className="mt-2 text-lg font-medium">
+            {analytics.last_issue_date
+              ? format(new Date(analytics.last_issue_date), "MMM d, yyyy")
+              : "N/A"}
+          </p>
+        </Card>
+      </div>
+    </div>
   );
 }

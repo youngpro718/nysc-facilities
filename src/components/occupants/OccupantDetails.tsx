@@ -1,101 +1,165 @@
 
-import React from "react";
+import { useNavigate } from "react-router-dom";
+import { ChevronLeft, Mail, Phone, Briefcase, UserCircle, Building2, Key, DoorOpen } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { OccupantQueryResponse, RoomReference } from "./types/occupantTypes";
-import { Building2, CalendarDays, Link } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useKeyAssignments } from "./hooks/useKeyAssignments";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Separator } from "@/components/ui/separator";
+import { Card } from "@/components/ui/card";
 
 interface OccupantDetailsProps {
-  occupant: OccupantQueryResponse;
-}
-
-function RoomCard({ room }: { room: RoomReference }) {
-  return (
-    <Card className="mb-2">
-      <CardContent className="p-4">
-        <div className="flex flex-col space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="font-medium">{room.name}</span>
-            <Badge variant={room.is_primary ? "default" : "secondary"}>
-              {room.assignment_type.replace('_', ' ')}
-            </Badge>
-          </div>
-          
-          <div className="flex items-center text-sm text-muted-foreground">
-            <Building2 className="mr-2 h-4 w-4" />
-            <span>{room.floors.buildings.name} &gt; {room.floors.name}</span>
-          </div>
-
-          {room.schedule && (room.schedule.days.length > 0 || room.schedule.hours) && (
-            <div className="flex items-center text-sm text-muted-foreground">
-              <CalendarDays className="mr-2 h-4 w-4" />
-              <span>
-                {room.schedule.days.join(', ')} 
-                {room.schedule.hours && ` (${room.schedule.hours})`}
-              </span>
-            </div>
-          )}
-
-          {room.related_rooms && room.related_rooms.length > 0 && (
-            <div className="flex items-center text-sm text-muted-foreground">
-              <Link className="mr-2 h-4 w-4" />
-              <div className="flex flex-wrap gap-1">
-                {room.related_rooms.map((related) => (
-                  <Badge 
-                    key={related.room_id}
-                    variant="outline" 
-                    className="text-xs"
-                  >
-                    {related.room_name}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {room.notes && (
-            <p className="text-sm text-muted-foreground mt-2">
-              {room.notes}
-            </p>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
+  occupant: {
+    id: string;
+    email: string | null;
+    phone: string | null;
+    department: string | null;
+    title: string | null;
+    status: string | null;
+    rooms?: {
+      name: string;
+      room_number: string;
+      floors?: {
+        name: string;
+        buildings?: {
+          name: string;
+        };
+      };
+    };
+  };
 }
 
 export function OccupantDetails({ occupant }: OccupantDetailsProps) {
-  const roomsByType = React.useMemo(() => {
-    if (!occupant.rooms) return null;
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const { keyAssignments, isLoading } = useKeyAssignments(occupant.id);
 
-    return occupant.rooms.reduce((acc, room) => {
-      const type = room.assignment_type;
-      if (!acc[type]) acc[type] = [];
-      acc[type].push(room);
-      return acc;
-    }, {} as Record<string, RoomReference[]>);
-  }, [occupant.rooms]);
-
-  if (!roomsByType) return null;
+  const totalDoorAccess = keyAssignments?.reduce((count, assignment) => {
+    if (assignment.keys?.is_passkey) return count + 5;
+    return count + (assignment.keys?.key_door_locations?.length || 1);
+  }, 0) || 0;
 
   return (
-    <div className="space-y-6">
-      {Object.entries(roomsByType).map(([type, rooms]) => (
-        <div key={type} className="space-y-2">
-          <h3 className={cn(
-            "text-sm font-medium",
-            type === "primary_office" && "text-primary"
-          )}>
-            {type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-          </h3>
+    <Card className="bg-background/50 p-4 space-y-6">
+      {isMobile && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mb-2"
+          onClick={() => navigate("/occupants")}
+        >
+          <ChevronLeft className="h-4 w-4 mr-2" />
+          Back to Occupants
+        </Button>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Contact Information */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-medium text-muted-foreground">Contact Information</h3>
           <div className="space-y-2">
-            {rooms.map((room) => (
-              <RoomCard key={room.id} room={room} />
-            ))}
+            {occupant.email && (
+              <div className="flex items-center gap-2 text-sm">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <a href={`mailto:${occupant.email}`} className="hover:text-primary">
+                  {occupant.email}
+                </a>
+              </div>
+            )}
+            {occupant.phone && (
+              <div className="flex items-center gap-2 text-sm">
+                <Phone className="h-4 w-4 text-muted-foreground" />
+                <a href={`tel:${occupant.phone}`} className="hover:text-primary">
+                  {occupant.phone}
+                </a>
+              </div>
+            )}
           </div>
         </div>
-      ))}
-    </div>
+
+        {/* Employment Details */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-medium text-muted-foreground">Employment Details</h3>
+          <div className="space-y-2">
+            {occupant.department && (
+              <div className="flex items-center gap-2 text-sm">
+                <Briefcase className="h-4 w-4 text-muted-foreground" />
+                <span>{occupant.department}</span>
+              </div>
+            )}
+            {occupant.title && (
+              <div className="flex items-center gap-2 text-sm">
+                <UserCircle className="h-4 w-4 text-muted-foreground" />
+                <span>{occupant.title}</span>
+              </div>
+            )}
+            {occupant.status && (
+              <div className="flex items-center gap-2">
+                <Badge variant={occupant.status === 'active' ? 'default' : 'secondary'}>
+                  {occupant.status}
+                </Badge>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Location */}
+      {occupant.rooms?.floors?.buildings && (
+        <div className="space-y-4">
+          <h3 className="text-sm font-medium text-muted-foreground">Location</h3>
+          <div className="flex items-center gap-2 text-sm">
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+            <span>
+              {occupant.rooms.floors.buildings.name} - Room {occupant.rooms.room_number}
+            </span>
+          </div>
+        </div>
+      )}
+
+      <Separator />
+
+      {/* Access Information */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-medium text-muted-foreground">Access Information</h3>
+        <div className="flex flex-wrap gap-4">
+          <div className="flex items-center gap-2">
+            <Key className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm">{keyAssignments?.length || 0} Keys Assigned</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <DoorOpen className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm">{totalDoorAccess} Door Access</span>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="animate-pulse space-y-4">
+            <div className="h-12 bg-muted rounded"></div>
+            <div className="h-12 bg-muted rounded"></div>
+          </div>
+        ) : keyAssignments && keyAssignments.length > 0 ? (
+          <div className="grid gap-2">
+            {keyAssignments.map((assignment) => (
+              <div 
+                key={assignment.id}
+                className="flex items-center justify-between p-2 bg-muted rounded-lg text-sm"
+              >
+                <span>{assignment.keys.name}</span>
+                {assignment.keys.is_passkey && (
+                  <Badge variant="secondary">Passkey</Badge>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-4 text-sm text-muted-foreground">
+            No keys currently assigned
+          </div>
+        )}
+      </div>
+    </Card>
   );
 }

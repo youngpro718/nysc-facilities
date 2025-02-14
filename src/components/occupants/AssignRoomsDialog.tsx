@@ -1,15 +1,25 @@
 
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { RoomSelector } from "./assign-rooms/RoomSelector";
-import { DateRangePicker } from "./assign-rooms/DateRangePicker";
-import { CurrentOccupants } from "./assign-rooms/CurrentOccupants";
-import { useRoomAssignment } from "./assign-rooms/hooks/useRoomAssignment";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { toast } from "sonner";
+import { Building2, Users } from "lucide-react";
 
 interface AssignRoomsDialogProps {
   open: boolean;
@@ -18,34 +28,115 @@ interface AssignRoomsDialogProps {
   onSuccess: () => void;
 }
 
+interface RoomDetails {
+  id: string;
+  name: string;
+  room_number: string;
+  capacity: number | null;
+  current_occupancy: number;
+  floors: {
+    name: string;
+    buildings: {
+      name: string;
+    };
+  } | null;
+}
+
+interface CurrentOccupant {
+  id: string;
+  first_name: string;
+  last_name: string;
+}
+
 export function AssignRoomsDialog({
   open,
   onOpenChange,
   selectedOccupants,
   onSuccess,
 }: AssignRoomsDialogProps) {
-  const {
-    selectedRoom,
-    setSelectedRoom,
-    startDate,
-    setStartDate,
-    endDate,
-    setEndDate,
-    assignmentType,
-    setAssignmentType,
-    isPrimary,
-    setIsPrimary,
-    isAssigning,
-    availableRooms,
-    currentOccupants,
-    handleAssign
-  } = useRoomAssignment(selectedOccupants);
+  const [selectedRoom, setSelectedRoom] = useState<string>("");
+  const [isAssigning, setIsAssigning] = useState(false);
 
-  const handleSubmit = async () => {
-    await handleAssign(() => {
+  const { data: availableRooms, isLoading: isLoadingRooms } = useQuery({
+    queryKey: ["available-rooms"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("rooms")
+        .select(`
+          *,
+          floors(
+            name,
+            buildings(name)
+          )
+        `)
+        .eq("status", "active")
+        .order("name");
+
+      if (error) throw error;
+      return data as RoomDetails[];
+    },
+  });
+
+  const { data: currentOccupants } = useQuery({
+    queryKey: ["room-occupants", selectedRoom],
+    enabled: !!selectedRoom,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("occupant_room_assignments")
+        .select(`
+          occupants (
+            id,
+            first_name,
+            last_name
+          )
+        `)
+        .eq("room_id", selectedRoom);
+
+      if (error) throw error;
+      return data?.map(d => d.occupants) as CurrentOccupant[];
+    }
+  });
+
+  const handleAssign = async () => {
+    if (!selectedRoom) {
+      toast.error("Please select a room to assign");
+      return;
+    }
+
+    const selectedRoomDetails = availableRooms?.find(r => r.id === selectedRoom);
+    
+    if (selectedRoomDetails?.capacity && 
+        selectedRoomDetails.current_occupancy + selectedOccupants.length > selectedRoomDetails.capacity) {
+      toast.error("This assignment would exceed the room's capacity");
+      return;
+    }
+
+    try {
+      setIsAssigning(true);
+
+      // Create assignments for each selected occupant
+      const assignments = selectedOccupants.map((occupantId) => ({
+        occupant_id: occupantId,
+        room_id: selectedRoom,
+        assigned_at: new Date().toISOString(),
+        is_primary: true // Set as primary by default
+      }));
+
+      // Insert assignments
+      const { error: assignmentError } = await supabase
+        .from("occupant_room_assignments")
+        .insert(assignments);
+
+      if (assignmentError) throw assignmentError;
+
+      toast.success("Rooms assigned successfully");
       onSuccess();
       onOpenChange(false);
-    });
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsAssigning(false);
+    }
   };
 
   return (
@@ -56,25 +147,55 @@ export function AssignRoomsDialog({
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          <RoomSelector
-            selectedRoom={selectedRoom}
-            onRoomSelect={setSelectedRoom}
-            availableRooms={availableRooms}
-            assignmentType={assignmentType}
-            onAssignmentTypeChange={setAssignmentType}
-            isPrimary={isPrimary}
-            onIsPrimaryChange={setIsPrimary}
-            currentOccupants={currentOccupants}
-          />
+          <div className="space-y-4">
+            <label className="text-sm font-medium">Select Room</label>
+            <Select
+              value={selectedRoom}
+              onValueChange={setSelectedRoom}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a room" />
+              </SelectTrigger>
+              <SelectContent>
+                <ScrollArea className="max-h-[300px]">
+                  {availableRooms?.map((room) => (
+                    <SelectItem key={room.id} value={room.id}>
+                      <div className="flex items-center justify-between w-full pr-4">
+                        <span>
+                          {room.name} - {room.floors?.name}, {room.floors?.buildings?.name}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={
+                            !room.capacity ? "secondary" :
+                            room.current_occupancy >= room.capacity ? "destructive" :
+                            room.current_occupancy >= room.capacity * 0.8 ? "warning" :
+                            "success"
+                          }>
+                            <Users className="w-3 h-3 mr-1" />
+                            {room.current_occupancy}{room.capacity ? `/${room.capacity}` : ''}
+                          </Badge>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </ScrollArea>
+              </SelectContent>
+            </Select>
+          </div>
 
-          <DateRangePicker
-            startDate={startDate}
-            endDate={endDate}
-            onStartDateChange={setStartDate}
-            onEndDateChange={setEndDate}
-          />
-
-          <CurrentOccupants occupants={currentOccupants} />
+          {selectedRoom && currentOccupants && currentOccupants.length > 0 && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Current Occupants</label>
+              <div className="rounded-md border p-4 space-y-2">
+                {currentOccupants.map((occupant) => (
+                  <div key={occupant.id} className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                    <span>{occupant.first_name} {occupant.last_name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="text-sm text-muted-foreground">
             Selected occupants: {selectedOccupants.length}
@@ -86,10 +207,10 @@ export function AssignRoomsDialog({
             Cancel
           </Button>
           <Button 
-            onClick={handleSubmit} 
-            disabled={isAssigning || !selectedRoom || !startDate}
+            onClick={handleAssign} 
+            disabled={isAssigning || !selectedRoom}
           >
-            {isAssigning ? "Assigning..." : "Submit for Approval"}
+            {isAssigning ? "Assigning..." : "Assign Rooms"}
           </Button>
         </div>
       </DialogContent>

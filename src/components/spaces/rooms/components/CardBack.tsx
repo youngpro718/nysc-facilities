@@ -9,7 +9,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { RoomInventory } from "../../RoomInventory";
 import { Boxes } from "lucide-react";
-import { RoomIssueAnalytics } from "../analytics/RoomIssueAnalytics";
 
 interface CardBackProps {
   room: Room;
@@ -66,7 +65,35 @@ export function CardBack({ room }: CardBackProps) {
             </div>
           )}
 
-          <RoomIssueAnalytics roomId={room.id} />
+          {room.issues && room.issues.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">Issue History</h4>
+              <div className="space-y-2">
+                {room.issues.slice(0, 5).map((issue) => (
+                  <div 
+                    key={issue.id} 
+                    className="text-sm p-2 bg-muted rounded-lg"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <span className="break-words">{issue.title}</span>
+                      <Badge 
+                        variant={issue.status === 'resolved' ? 'default' : 'destructive'}
+                        className="w-fit"
+                      >
+                        {issue.status}
+                      </Badge>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-1 gap-2">
+                      <Badge variant="outline" className="w-fit">{issue.type}</Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(issue.created_at), 'MMM d, yyyy')}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </ScrollArea>
     </Card>
