@@ -114,15 +114,13 @@ export function AssignRoomsDialog({
     try {
       setIsAssigning(true);
 
-      // Create assignments for each selected occupant
       const assignments = selectedOccupants.map((occupantId) => ({
         occupant_id: occupantId,
         room_id: selectedRoom,
         assigned_at: new Date().toISOString(),
-        is_primary: true // Set as primary by default
+        is_primary: true
       }));
 
-      // Insert assignments
       const { error: assignmentError } = await supabase
         .from("occupant_room_assignments")
         .insert(assignments);
@@ -168,8 +166,8 @@ export function AssignRoomsDialog({
                           <Badge variant={
                             !room.capacity ? "secondary" :
                             room.current_occupancy >= room.capacity ? "destructive" :
-                            room.current_occupancy >= room.capacity * 0.8 ? "warning" :
-                            "success"
+                            room.current_occupancy >= room.capacity * 0.8 ? "outline" :
+                            "default"
                           }>
                             <Users className="w-3 h-3 mr-1" />
                             {room.current_occupancy}{room.capacity ? `/${room.capacity}` : ''}

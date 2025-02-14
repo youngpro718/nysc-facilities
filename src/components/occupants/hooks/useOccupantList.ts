@@ -16,13 +16,12 @@ export function useOccupantList() {
   const { data: occupants, isLoading, isError, error, refetch } = useQuery<OccupantQueryResponse[], SupabaseError>({
     queryKey: ['occupants', searchQuery, departmentFilter, statusFilter],
     queryFn: async (): Promise<OccupantQueryResponse[]> => {
-      console.log('Starting occupants query...'); // Debug log
+      console.log('Starting occupants query...');
 
       let query = supabase
         .from('occupant_details')
         .select('*');
 
-      // Apply filters
       if (searchQuery) {
         query = query.or(
           `first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`
@@ -48,19 +47,34 @@ export function useOccupantList() {
       console.log('Raw data from Supabase:', rawData);
 
       // Transform to match our expected type
-      const transformedData: OccupantQueryResponse[] = (rawData || []).map(occupant => ({
-        id: occupant.id,
-        first_name: occupant.first_name || '',
-        last_name: occupant.last_name || '',
-        email: occupant.email,
-        phone: occupant.phone,
-        department: occupant.department,
-        title: occupant.title,
-        status: occupant.status || 'inactive',
-        room_count: occupant.room_count || 0,
-        key_count: occupant.key_count || 0,
-        rooms: occupant.rooms || []
-      }));
+      const transformedData: OccupantQueryResponse[] = (rawData || []).map(occupant => {
+        // Parse the rooms JSON if it exists, otherwise use empty array
+        const parsedRooms = occupant.rooms ? 
+          (Array.isArray(occupant.rooms) ? occupant.rooms : JSON.parse(occupant.rooms)) : [];
+
+        return {
+          id: occupant.id,
+          first_name: occupant.first_name || '',
+          last_name: occupant.last_name || '',
+          email: occupant.email,
+          phone: occupant.phone,
+          department: occupant.department,
+          title: occupant.title,
+          status: occupant.status || 'inactive',
+          room_count: occupant.room_count || 0,
+          key_count: occupant.key_count || 0,
+          rooms: parsedRooms.map((room: any) => ({
+            name: room.name || '',
+            room_number: room.room_number || '',
+            floors: room.floors ? {
+              name: room.floors.name || '',
+              buildings: room.floors.buildings ? {
+                name: room.floors.buildings.name || ''
+              } : undefined
+            } : undefined
+          }))
+        };
+      });
 
       console.log('Final transformed data:', transformedData);
       return transformedData;
