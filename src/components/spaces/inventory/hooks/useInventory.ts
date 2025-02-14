@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -20,38 +19,21 @@ export const useInventory = (roomId: string) => {
   const { data: inventoryData, isLoading } = useQuery({
     queryKey: ['inventory', roomId],
     queryFn: async () => {
-      // First fetch inventory items
-      const { data: items, error: itemsError } = await supabase
-        .from('inventory_items')
-        .select('id, name, quantity, description, minimum_quantity, unit, category_id, storage_room_id')
+      const { data, error } = await supabase
+        .from('inventory_items_view')
+        .select()
         .eq('storage_room_id', roomId);
       
-      if (itemsError) throw itemsError;
+      if (error) throw error;
       
-      if (!items?.length) return [];
+      if (!data?.length) return [];
 
-      // Then fetch categories separately
-      const { data: categories, error: categoriesError } = await supabase
-        .from('inventory_categories')
-        .select('id, name, color')
-        .in('id', items.map(item => item.category_id).filter(Boolean));
-
-      if (categoriesError) {
-        console.error('Error fetching categories:', categoriesError);
-      }
-
-      // Create a lookup map for categories
-      const categoryMap = (categories || []).reduce((acc, cat) => {
-        acc[cat.id] = cat;
-        return acc;
-      }, {} as Record<string, { name: string; color: string }>);
-
-      // Combine the data
-      return items.map(item => ({
+      // Transform the data to match our InventoryItem type
+      return data.map(item => ({
         ...item,
         category: item.category_id ? {
-          name: categoryMap[item.category_id]?.name,
-          color: categoryMap[item.category_id]?.color
+          name: item.category_name,
+          color: item.category_color
         } : undefined
       })) as InventoryItem[];
     }
