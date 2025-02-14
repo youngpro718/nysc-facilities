@@ -57,6 +57,30 @@ export type Database = {
           },
         ]
       }
+      agency_affiliations: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          type: Database["public"]["Enums"]["agency_type"]
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          type: Database["public"]["Enums"]["agency_type"]
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          type?: Database["public"]["Enums"]["agency_type"]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       backup_history: {
         Row: {
           completed_at: string | null
@@ -4203,6 +4227,62 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      verification_requests: {
+        Row: {
+          agency_id: string | null
+          created_at: string | null
+          department: string | null
+          employee_id: string | null
+          id: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["verification_status"] | null
+          submitted_at: string | null
+          supporting_documents: string[] | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          agency_id?: string | null
+          created_at?: string | null
+          department?: string | null
+          employee_id?: string | null
+          id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["verification_status"] | null
+          submitted_at?: string | null
+          supporting_documents?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          agency_id?: string | null
+          created_at?: string | null
+          department?: string | null
+          employee_id?: string | null
+          id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["verification_status"] | null
+          submitted_at?: string | null
+          supporting_documents?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verification_requests_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agency_affiliations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
