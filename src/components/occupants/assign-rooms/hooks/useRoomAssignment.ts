@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -25,9 +26,16 @@ export interface CurrentOccupant {
 
 export function useRoomAssignment(selectedOccupants: string[]) {
   const [selectedRoom, setSelectedRoom] = useState<string>("");
+  const [assignmentType, setAssignmentType] = useState<'primary_office' | 'work_location' | 'support_space'>('work_location');
+  const [isPrimary, setIsPrimary] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
   const [startDate, setStartDate] = useState<Date>(new Date());
   const [endDate, setEndDate] = useState<Date | undefined>();
+  const [schedule, setSchedule] = useState<{ days: string[]; hours: string | null }>({
+    days: [],
+    hours: null
+  });
+  const [notes, setNotes] = useState<string>("");
 
   const { data: availableRooms, isLoading: isLoadingRooms, refetch: refetchRooms } = useQuery({
     queryKey: ["available-rooms"],
@@ -87,31 +95,6 @@ export function useRoomAssignment(selectedOccupants: string[]) {
     }
   });
 
-  useEffect(() => {
-    const roomsChannel = supabase
-      .channel('room-assignments')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'occupant_room_assignments'
-        },
-        () => {
-          console.log('Room assignment changed, refetching data...');
-          refetchRooms();
-          if (selectedRoom) {
-            refetchOccupants();
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(roomsChannel);
-    };
-  }, [selectedRoom, refetchRooms, refetchOccupants]);
-
   const handleAssign = async (onSuccess: () => void) => {
     if (!selectedRoom) {
       toast.error("Please select a room to assign");
@@ -137,7 +120,7 @@ export function useRoomAssignment(selectedOccupants: string[]) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { data, error: batchError } = await supabase.rpc('create_assignment_batch', {
+      const { data: batchData, error: batchError } = await supabase.rpc('create_assignment_batch', {
         creator_id: user.id,
         batch_metadata: {
           occupant_count: selectedOccupants.length,
@@ -146,7 +129,7 @@ export function useRoomAssignment(selectedOccupants: string[]) {
       });
 
       if (batchError) throw batchError;
-      if (!data) throw new Error("Failed to create batch");
+      if (!batchData) throw new Error("Failed to create batch");
 
       const assignments = selectedOccupants.map((occupantId) => ({
         occupant_id: occupantId,
@@ -154,9 +137,11 @@ export function useRoomAssignment(selectedOccupants: string[]) {
         assigned_at: new Date().toISOString(),
         start_date: startDate.toISOString(),
         end_date: endDate?.toISOString() || null,
-        batch_id: data,
-        is_primary: true,
-        approval_status: 'pending'
+        batch_id: batchData,
+        assignment_type: assignmentType,
+        is_primary: isPrimary,
+        schedule,
+        notes
       }));
 
       const { error: assignmentError } = await supabase
@@ -178,10 +163,18 @@ export function useRoomAssignment(selectedOccupants: string[]) {
   return {
     selectedRoom,
     setSelectedRoom,
+    assignmentType,
+    setAssignmentType,
+    isPrimary,
+    setIsPrimary,
     startDate,
     setStartDate,
     endDate,
     setEndDate,
+    schedule,
+    setSchedule,
+    notes,
+    setNotes,
     isAssigning,
     availableRooms,
     isLoadingRooms,
