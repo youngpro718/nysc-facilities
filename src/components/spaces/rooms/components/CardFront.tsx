@@ -2,10 +2,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trash2, Phone, Users } from "lucide-react";
+import { Trash2, Phone, Users, Building2 } from "lucide-react";
 import { EditSpaceDialog } from "../../EditSpaceDialog";
 import { Room } from "../types/RoomTypes";
 import { LightingStatusIndicator } from "./LightingStatusIndicator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface CardFrontProps {
   room: Room;
@@ -44,13 +45,13 @@ export function CardFront({ room, onDelete }: CardFrontProps) {
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
         <div className="space-y-4">
           <div className="flex flex-col gap-2">
             {room.room_number && (
               <div className="flex items-center gap-2">
-                <p className="text-sm font-medium">Room Number:</p>
-                <Badge variant="outline">{room.room_number}</Badge>
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+                <p className="text-sm font-medium">Room {room.room_number}</p>
               </div>
             )}
             <p className="text-sm text-muted-foreground">Type: {room.room_type}</p>
@@ -63,21 +64,29 @@ export function CardFront({ room, onDelete }: CardFrontProps) {
                 {room.phone_number}
               </p>
             )}
-            <div className="flex items-center gap-2 mt-2">
+          </div>
+
+          {/* Occupants Section */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">
-                {room.occupant_count ? `${room.occupant_count} occupant${room.occupant_count !== 1 ? 's' : ''}` : 'No occupants'}
+                {room.current_occupants?.length 
+                  ? `${room.current_occupants.length} occupant${room.current_occupants.length !== 1 ? 's' : ''}`
+                  : 'No occupants'}
               </span>
             </div>
             {room.current_occupants && room.current_occupants.length > 0 && (
-              <div className="mt-1 pl-6">
+              <ScrollArea className="h-[100px] rounded-md border p-2">
                 {room.current_occupants.map((occupant, index) => (
-                  <p key={index} className="text-sm text-muted-foreground">
-                    {occupant.first_name} {occupant.last_name}
-                    {occupant.title && ` - ${occupant.title}`}
-                  </p>
+                  <div key={index} className="text-sm py-1">
+                    <p className="font-medium">{occupant.first_name} {occupant.last_name}</p>
+                    {occupant.title && (
+                      <p className="text-muted-foreground text-xs">{occupant.title}</p>
+                    )}
+                  </div>
                 ))}
-              </div>
+              </ScrollArea>
             )}
           </div>
         </div>
