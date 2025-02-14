@@ -16,27 +16,31 @@ export function useOccupantList() {
   const { data: occupants, isLoading, isError, error, refetch } = useQuery<OccupantQueryResponse[], SupabaseError>({
     queryKey: ['occupants', searchQuery, departmentFilter, statusFilter],
     queryFn: async () => {
-      let query = supabase
+      let baseQuery = supabase
         .from('occupant_details')
-        .select()
-        .returns<OccupantQueryResponse[]>();
+        .select('*');
 
+      // Apply filters
       if (searchQuery) {
-        query = query.or(`first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`);
+        baseQuery = baseQuery.or(
+          `first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`
+        );
       }
 
       if (departmentFilter !== 'all') {
-        query = query.eq('department', departmentFilter);
+        baseQuery = baseQuery.eq('department', departmentFilter);
       }
 
       if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter);
+        baseQuery = baseQuery.eq('status', statusFilter);
       }
 
-      const { data, error } = await query.order('last_name');
+      const { data, error } = await baseQuery
+        .order('last_name')
+        .returns<OccupantQueryResponse[]>();
       
       if (error) throw error;
-      return data;
+      return data || [];
     },
   });
 

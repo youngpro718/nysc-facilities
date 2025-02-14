@@ -16,9 +16,9 @@ export type Occupant = {
 export type RoomReference = {
   name: string;
   room_number: string;
-  floors?: {
+  floors: {
     name: string;
-    buildings?: {
+    buildings: {
       name: string;
     };
   };
