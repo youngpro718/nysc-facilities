@@ -31,6 +31,10 @@ export type OccupantDetails = {
 export interface RoomDetails {
   name: string;
   room_number: string;
+  assignment_type?: string;
+  schedule?: string;
+  notes?: string;
+  connections?: Array<{ name: string }>;
   floors?: {
     name: string;
     buildings?: {
