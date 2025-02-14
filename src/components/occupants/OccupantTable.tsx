@@ -134,12 +134,7 @@ export function OccupantTable({
                   <TableRow key={`${occupant.id}-details`}>
                     <TableCell colSpan={8} className="p-0">
                       <div className="p-4">
-                        <OccupantDetails 
-                          occupant={{
-                            ...occupant,
-                            rooms: occupant.rooms?.[0] || null
-                          }}
-                        />
+                        <OccupantDetails occupant={occupant} />
                       </div>
                     </TableCell>
                   </TableRow>
