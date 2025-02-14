@@ -1,7 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Issue, FixtureType, FixtureStatus, FixturePosition, ImpactLevel } from "../../types/IssueTypes";
+import { Issue, FixtureType, FixtureStatus, FixturePosition, ImpactLevel, LightingFixture } from "../../types/IssueTypes";
 import { toast } from "sonner";
 
 interface RawLightingFixture {
@@ -32,7 +32,8 @@ export function useIssueDetails(issueId: string | null) {
             status,
             position,
             electrical_issues
-          )
+          ),
+          issue_history(*)
         `)
         .eq('id', issueId)
         .single();
@@ -57,6 +58,7 @@ export function useIssueDetails(issueId: string | null) {
 
       const transformedData: Issue = {
         ...data,
+        timeline: data.issue_history || [],
         lighting_fixtures: transformLightingFixtures(Array.isArray(data.lighting_fixtures) ? data.lighting_fixtures : null),
         recurring_pattern: data.recurring_pattern && typeof data.recurring_pattern === 'object' ? {
           is_recurring: Boolean((data.recurring_pattern as any).is_recurring),
