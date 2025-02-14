@@ -4985,6 +4985,7 @@ export type Database = {
     }
     Enums: {
       access_level_enum: "none" | "read" | "write" | "admin"
+      agency_type: "DCAS" | "OCA" | "EMPLOYEE"
       category_color_enum:
         | "red"
         | "blue"
@@ -5105,6 +5106,7 @@ export type Database = {
       security_level_enum: "standard" | "restricted" | "high_security"
       status_enum: "active" | "inactive" | "under_maintenance"
       user_role: "admin" | "standard"
+      verification_status: "pending" | "approved" | "rejected"
       zone_type_enum: "general" | "emergency" | "restricted"
     }
     CompositeTypes: {
