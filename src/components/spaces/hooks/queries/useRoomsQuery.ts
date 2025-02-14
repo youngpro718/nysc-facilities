@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Room, StorageType, RoomType } from "../../rooms/types/RoomTypes";
 import { useToast } from "@/hooks/use-toast";
-import { IssueType } from "@/components/issues/types/IssueTypes";
 
 export function useRoomsQuery() {
   const { toast } = useToast();
@@ -11,7 +10,7 @@ export function useRoomsQuery() {
   return useQuery({
     queryKey: ['rooms'],
     queryFn: async () => {
-      console.log("Fetching rooms with connections, history, and lighting...");
+      console.log("Fetching rooms with connections, history, lighting, and occupants...");
       
       const { data: roomsData, error: roomsError } = await supabase
         .from('rooms')
@@ -40,6 +39,16 @@ export function useRoomsQuery() {
             previous_values,
             new_values,
             created_at
+          ),
+          occupant_room_assignments(
+            assignment_type,
+            is_primary,
+            schedule,
+            occupant:occupant_id(
+              first_name,
+              last_name,
+              title
+            )
           )
         `);
 
@@ -78,6 +87,15 @@ export function useRoomsQuery() {
 
       const transformedRooms: Room[] = roomsData.map(room => {
         const lightingFixture = fixturesByRoomId[room.id];
+
+        // Transform occupants data
+        const current_occupants = room.occupant_room_assignments
+          ?.filter(assignment => assignment.occupant) // Filter out any assignments without occupant data
+          .map(assignment => ({
+            first_name: assignment.occupant.first_name,
+            last_name: assignment.occupant.last_name,
+            title: assignment.occupant.title
+          })) || [];
 
         return {
           ...room,
@@ -126,7 +144,8 @@ export function useRoomsQuery() {
             priority: issue.priority,
             created_at: issue.created_at
           })),
-          room_history: room.room_history || []
+          room_history: room.room_history || [],
+          current_occupants // Add transformed occupants data
         };
       });
 
