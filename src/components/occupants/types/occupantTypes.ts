@@ -25,17 +25,19 @@ export type OccupantDetails = {
   status: string;
   room_count?: number;
   key_count?: number;
-  rooms?: {
+  rooms?: RoomDetails;
+};
+
+export interface RoomDetails {
+  name: string;
+  room_number: string;
+  floors?: {
     name: string;
-    room_number: string;
-    floors?: {
+    buildings?: {
       name: string;
-      buildings?: {
-        name: string;
-      };
     };
   };
-};
+}
 
 export type OccupantQueryResponse = {
   id: string;
@@ -48,16 +50,7 @@ export type OccupantQueryResponse = {
   status: string;
   room_count: number;
   key_count: number;
-  rooms?: {
-    name: string;
-    room_number: string;
-    floors?: {
-      name: string;
-      buildings?: {
-        name: string;
-      };
-    };
-  };
+  rooms: RoomDetails[];
 };
 
 export interface SupabaseError {

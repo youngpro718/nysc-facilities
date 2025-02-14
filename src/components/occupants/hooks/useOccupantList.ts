@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { OccupantStatus } from "../schemas/occupantSchema";
-import { OccupantQueryResponse, SupabaseError } from "../types/occupantTypes";
+import { OccupantQueryResponse, RoomDetails, SupabaseError } from "../types/occupantTypes";
 
 export function useOccupantList() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -49,7 +48,7 @@ export function useOccupantList() {
       // Transform to match our expected type
       const transformedData: OccupantQueryResponse[] = (rawData || []).map(occupant => {
         // Safely handle rooms data, which might be an array, string, or other format
-        let parsedRooms = [];
+        let parsedRooms: RoomDetails[] = [];
         if (occupant.rooms) {
           if (Array.isArray(occupant.rooms)) {
             parsedRooms = occupant.rooms;
@@ -63,6 +62,18 @@ export function useOccupantList() {
           }
         }
 
+        // Transform each room to match the RoomDetails type exactly
+        const transformedRooms: RoomDetails[] = parsedRooms.map((room: any): RoomDetails => ({
+          name: String(room?.name || ''),
+          room_number: String(room?.room_number || ''),
+          floors: room?.floors ? {
+            name: String(room.floors?.name || ''),
+            buildings: room.floors?.buildings ? {
+              name: String(room.floors.buildings?.name || '')
+            } : undefined
+          } : undefined
+        }));
+
         return {
           id: occupant.id,
           first_name: occupant.first_name || '',
@@ -74,20 +85,7 @@ export function useOccupantList() {
           status: occupant.status || 'inactive',
           room_count: occupant.room_count || 0,
           key_count: occupant.key_count || 0,
-          rooms: parsedRooms.map((room: any) => {
-            // Ensure we return an object that exactly matches the expected type
-            const roomData = {
-              name: room?.name || '',
-              room_number: room?.room_number || '',
-              floors: room?.floors ? {
-                name: room.floors?.name || '',
-                buildings: room.floors?.buildings ? {
-                  name: room.floors.buildings?.name || ''
-                } : undefined
-              } : undefined
-            };
-            return roomData;
-          })
+          rooms: transformedRooms
         };
       });
 
