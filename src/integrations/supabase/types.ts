@@ -1204,29 +1204,184 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string | null
+          enabled: boolean | null
+          id: string
+          item_id: string | null
+          last_notification_date: string | null
+          notification_sent: boolean | null
+          threshold: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          item_id?: string | null
+          last_notification_date?: string | null
+          notification_sent?: boolean | null
+          threshold?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          item_id?: string | null
+          last_notification_date?: string | null
+          notification_sent?: boolean | null
+          threshold?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_alerts_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_alerts_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_alerts_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "low_stock_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_alerts_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "storage_room_inventory"
+            referencedColumns: ["item_id"]
+          },
+        ]
+      }
+      inventory_audits: {
+        Row: {
+          audit_date: string | null
+          discrepancies: Json | null
+          id: string
+          notes: string | null
+          performed_by: string | null
+          status: string | null
+          storage_room_id: string | null
+        }
+        Insert: {
+          audit_date?: string | null
+          discrepancies?: Json | null
+          id?: string
+          notes?: string | null
+          performed_by?: string | null
+          status?: string | null
+          storage_room_id?: string | null
+        }
+        Update: {
+          audit_date?: string | null
+          discrepancies?: Json | null
+          id?: string
+          notes?: string | null
+          performed_by?: string | null
+          status?: string | null
+          storage_room_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_audits_storage_room_id_fkey"
+            columns: ["storage_room_id"]
+            isOneToOne: false
+            referencedRelation: "room_health_overview"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "inventory_audits_storage_room_id_fkey"
+            columns: ["storage_room_id"]
+            isOneToOne: false
+            referencedRelation: "room_issue_analytics"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "inventory_audits_storage_room_id_fkey"
+            columns: ["storage_room_id"]
+            isOneToOne: false
+            referencedRelation: "room_lighting_status"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "inventory_audits_storage_room_id_fkey"
+            columns: ["storage_room_id"]
+            isOneToOne: false
+            referencedRelation: "room_occupancy_stats"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "inventory_audits_storage_room_id_fkey"
+            columns: ["storage_room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_audits_storage_room_id_fkey"
+            columns: ["storage_room_id"]
+            isOneToOne: false
+            referencedRelation: "storage_room_inventory"
+            referencedColumns: ["room_id"]
+          },
+        ]
+      }
       inventory_categories: {
         Row: {
           color: Database["public"]["Enums"]["category_color_enum"]
           created_at: string | null
+          description: string | null
+          icon: string | null
           id: string
           name: string
+          parent_category_id: string | null
           updated_at: string | null
         }
         Insert: {
           color?: Database["public"]["Enums"]["category_color_enum"]
           created_at?: string | null
+          description?: string | null
+          icon?: string | null
           id?: string
           name: string
+          parent_category_id?: string | null
           updated_at?: string | null
         }
         Update: {
           color?: Database["public"]["Enums"]["category_color_enum"]
           created_at?: string | null
+          description?: string | null
+          icon?: string | null
           id?: string
           name?: string
+          parent_category_id?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "inventory_categories_parent_category_id_fkey"
+            columns: ["parent_category_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       inventory_item_transactions: {
         Row: {
@@ -1303,7 +1458,10 @@ export type Database = {
           location_details: string | null
           minimum_quantity: number | null
           name: string
+          notes: string | null
+          preferred_vendor: string | null
           quantity: number
+          reorder_point: number | null
           status: string | null
           storage_room_id: string | null
           unit: string | null
@@ -1318,7 +1476,10 @@ export type Database = {
           location_details?: string | null
           minimum_quantity?: number | null
           name: string
+          notes?: string | null
+          preferred_vendor?: string | null
           quantity?: number
+          reorder_point?: number | null
           status?: string | null
           storage_room_id?: string | null
           unit?: string | null
@@ -1333,7 +1494,10 @@ export type Database = {
           location_details?: string | null
           minimum_quantity?: number | null
           name?: string
+          notes?: string | null
+          preferred_vendor?: string | null
           quantity?: number
+          reorder_point?: number | null
           status?: string | null
           storage_room_id?: string | null
           unit?: string | null
@@ -4625,6 +4789,8 @@ export type Database = {
           category_color:
             | Database["public"]["Enums"]["category_color_enum"]
             | null
+          category_description: string | null
+          category_icon: string | null
           category_id: string | null
           category_name: string | null
           created_at: string | null
@@ -4634,7 +4800,10 @@ export type Database = {
           location_details: string | null
           minimum_quantity: number | null
           name: string | null
+          notes: string | null
+          preferred_vendor: string | null
           quantity: number | null
+          reorder_point: number | null
           status: string | null
           storage_room_id: string | null
           unit: string | null
@@ -5013,7 +5182,8 @@ export type Database = {
       }
       low_stock_items: {
         Row: {
-          category: string | null
+          category_id: string | null
+          category_name: string | null
           id: string | null
           minimum_quantity: number | null
           name: string | null
@@ -5021,7 +5191,15 @@ export type Database = {
           room_name: string | null
           storage_location: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       maintenance_summary: {
         Row: {
@@ -5324,7 +5502,7 @@ export type Database = {
       }
       storage_room_inventory: {
         Row: {
-          category: string | null
+          category_name: string | null
           item_id: string | null
           item_name: string | null
           minimum_quantity: number | null
