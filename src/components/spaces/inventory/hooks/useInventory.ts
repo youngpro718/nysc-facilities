@@ -55,7 +55,7 @@ export const useInventory = (roomId: string) => {
   const { toast } = useToast();
 
   // Query for inventory items with explicit typing
-  const { data: inventoryData, isLoading } = useQuery<DatabaseInventoryItem[], Error>({
+  const { data: inventoryData, isLoading } = useQuery<InventoryItem[], Error>({
     queryKey: ['inventory', roomId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -246,7 +246,7 @@ export const useInventory = (roomId: string) => {
   });
 
   return {
-    inventoryData,
+    inventoryData: inventoryData || [],
     isLoading,
     lowStockItems,
     recentTransactions,

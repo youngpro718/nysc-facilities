@@ -15,7 +15,7 @@ export function RoomInventory({ roomId }: { roomId: string }) {
     deleteItemMutation
   } = useInventory(roomId);
 
-  const filteredItems = inventoryData?.filter(item =>
+  const filteredItems = inventoryData.filter(item =>
     item.name.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -42,11 +42,11 @@ export function RoomInventory({ roomId }: { roomId: string }) {
       <InventoryActions
         onAddItem={handleAddItem}
         onSearch={setSearch}
-        inventoryData={inventoryData || []}
+        inventoryData={inventoryData}
       />
 
       <InventoryTable
-        items={filteredItems || []}
+        items={filteredItems}
         onUpdateQuantity={(id, quantity) => updateQuantityMutation.mutate({ id, quantity })}
         onDeleteItem={(id) => deleteItemMutation.mutate(id)}
       />
