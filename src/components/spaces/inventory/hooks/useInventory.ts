@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -50,27 +49,17 @@ interface DatabaseInventoryItem {
   category_description?: string;
 }
 
-interface LowStockItemResponse {
+interface LowStockItem {
   id: string;
   name: string;
   quantity: number;
   minimum_quantity: number;
   category_id: string;
   category_name: string;
-  room_name: string | null;
-  storage_location: string | null;
+  room_name: string;
+  storage_location: string;
   room_id: string;
 }
-
-const fetchLowStockItems = async (roomId: string): Promise<LowStockItemResponse[]> => {
-  const { data, error } = await supabase
-    .from('low_stock_items')
-    .select('*')
-    .eq('room_id', roomId);
-  
-  if (error) throw error;
-  return data || [];
-};
 
 export const useInventory = (roomId: string) => {
   const queryClient = useQueryClient();
@@ -113,10 +102,18 @@ export const useInventory = (roomId: string) => {
 
   const { data: lowStockData } = useQuery({
     queryKey: ['inventory', 'low-stock', roomId],
-    queryFn: () => fetchLowStockItems(roomId)
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('low_stock_items')
+        .select('*')
+        .eq('room_id', roomId);
+      
+      if (error) throw error;
+      return data || [];
+    }
   });
 
-  const lowStockItems = (lowStockData || []).map(item => ({
+  const lowStockItems: LowStockItem[] = (lowStockData || []).map(item => ({
     id: item.id,
     name: item.name,
     quantity: item.quantity,
