@@ -21,27 +21,6 @@ export interface InventoryItem {
   };
 }
 
-export interface InventoryTransaction {
-  id: string;
-  item_id: string;
-  transaction_type: 'add' | 'remove' | 'adjust' | 'transfer';
-  quantity: number;
-  from_room_id?: string;
-  to_room_id?: string;
-  notes?: string;
-  created_at: string;
-}
-
-export interface InventoryAlert {
-  id: string;
-  item_id: string;
-  alert_type: 'low_stock' | 'reorder' | 'expiry';
-  threshold: number;
-  enabled: boolean;
-  notification_sent: boolean;
-  last_notification_date?: string;
-}
-
 export interface DatabaseInventoryItem {
   id: string;
   name: string;
