@@ -65,6 +65,26 @@ export interface LowStockItem {
   room_id: string;
 }
 
+export interface AddItemParams {
+  name: string;
+  quantity: number;
+  categoryId: string;
+  description?: string;
+  minimum_quantity?: number;
+  unit?: string;
+}
+
+export interface UpdateQuantityParams {
+  id: string;
+  quantity: number;
+}
+
+export interface TransferItemParams {
+  id: string;
+  quantity: number;
+  toRoomId: string;
+}
+
 export interface InventoryTransaction {
   id: string;
   item_id: string | null;

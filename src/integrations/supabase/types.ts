@@ -5188,6 +5188,7 @@ export type Database = {
           minimum_quantity: number | null
           name: string | null
           quantity: number | null
+          room_id: string | null
           room_name: string | null
           storage_location: string | null
         }
@@ -5198,6 +5199,48 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "inventory_categories"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_storage_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_health_overview"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "inventory_items_storage_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_issue_analytics"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "inventory_items_storage_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_lighting_status"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "inventory_items_storage_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_occupancy_stats"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "inventory_items_storage_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_storage_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "storage_room_inventory"
+            referencedColumns: ["room_id"]
           },
         ]
       }

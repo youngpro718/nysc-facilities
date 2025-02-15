@@ -44,7 +44,7 @@ export const useInventoryQueries = (roomId: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('low_stock_items')
-        .select('*, room_id')
+        .select()
         .eq('room_id', roomId);
       
       if (error) throw error;
@@ -68,9 +68,9 @@ export const useInventoryQueries = (roomId: string) => {
   });
 
   return {
-    inventoryData: inventoryData || [],
+    inventoryData: inventoryData ?? [],
     isLoading,
-    lowStockData: lowStockQuery.data || [],
-    transactionData: transactionData || []
+    lowStockData: lowStockQuery.data ?? [],
+    transactionData: transactionData ?? []
   };
 };

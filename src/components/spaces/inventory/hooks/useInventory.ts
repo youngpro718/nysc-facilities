@@ -7,7 +7,7 @@ export const useInventory = (roomId: string) => {
   const { inventoryData, isLoading, lowStockData, transactionData } = useInventoryQueries(roomId);
   const mutations = useInventoryMutations(roomId);
 
-  const lowStockItems: LowStockItem[] = lowStockData.map(item => ({
+  const lowStockItems: LowStockItem[] = (lowStockData ?? []).map(item => ({
     id: item.id,
     name: item.name,
     quantity: item.quantity,
@@ -19,10 +19,10 @@ export const useInventory = (roomId: string) => {
     storage_location: item.storage_location || ''
   }));
 
-  const recentTransactions = transactionData.map(transaction => ({
+  const recentTransactions = (transactionData ?? []).map(transaction => ({
     id: transaction.id,
     item_id: transaction.item_id || '',
-    transaction_type: transaction.transaction_type as "add" | "remove" | "adjust" | "transfer",
+    transaction_type: transaction.transaction_type,
     quantity: transaction.quantity,
     from_room_id: transaction.from_room_id || undefined,
     to_room_id: transaction.to_room_id || undefined,
