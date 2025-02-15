@@ -29,6 +29,17 @@ interface TransferItemParams {
   notes?: string;
 }
 
+interface LowStockItemResponse {
+  id: string | null;
+  name: string | null;
+  quantity: number | null;
+  minimum_quantity: number | null;
+  category_id: string | null;
+  category_name: string | null;
+  room_name: string | null;
+  storage_location: string | null;
+}
+
 interface LowStockItem {
   id: string;
   name: string;
@@ -112,8 +123,8 @@ export const useInventory = (roomId: string) => {
     }
   });
 
-  const lowStockItemsQuery = useQuery({
-    queryKey: ['inventory', 'low-stock', roomId] as const,
+  const lowStockItemsQuery = useQuery<LowStockItemResponse[], Error>({
+    queryKey: ['inventory', 'low-stock', roomId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('low_stock_items')
@@ -121,23 +132,24 @@ export const useInventory = (roomId: string) => {
         .eq('room_id', roomId);
       
       if (error) throw error;
-      
-      return (data || []).map((item): LowStockItem => ({
-        id: item.id || '',
-        name: item.name || '',
-        quantity: item.quantity || 0,
-        minimum_quantity: item.minimum_quantity || 0,
-        category_id: item.category_id || '',
-        category_name: item.category_name || '',
-        room_id: roomId,
-        room_name: item.room_name || '',
-        storage_location: item.storage_location || ''
-      }));
+      return data || [];
     }
   });
 
-  const recentTransactionsQuery = useQuery({
-    queryKey: ['inventory', 'transactions', roomId] as const,
+  const lowStockItems: LowStockItem[] = (lowStockItemsQuery.data || []).map(item => ({
+    id: item.id || '',
+    name: item.name || '',
+    quantity: item.quantity || 0,
+    minimum_quantity: item.minimum_quantity || 0,
+    category_id: item.category_id || '',
+    category_name: item.category_name || '',
+    room_id: roomId,
+    room_name: item.room_name || '',
+    storage_location: item.storage_location || ''
+  }));
+
+  const recentTransactionsQuery = useQuery<DatabaseInventoryTransaction[], Error>({
+    queryKey: ['inventory', 'transactions', roomId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('inventory_transactions')
@@ -147,19 +159,20 @@ export const useInventory = (roomId: string) => {
         .limit(10);
       
       if (error) throw error;
-      
-      return (data || []).map((transaction): InventoryTransaction => ({
-        id: transaction.id,
-        item_id: transaction.item_id || '',
-        transaction_type: transaction.transaction_type as "add" | "remove" | "adjust" | "transfer",
-        quantity: transaction.quantity,
-        from_room_id: transaction.from_room_id || undefined,
-        to_room_id: transaction.to_room_id || undefined,
-        notes: transaction.notes || undefined,
-        created_at: transaction.created_at
-      }));
+      return data || [];
     }
   });
+
+  const recentTransactions: InventoryTransaction[] = (recentTransactionsQuery.data || []).map(transaction => ({
+    id: transaction.id,
+    item_id: transaction.item_id || '',
+    transaction_type: transaction.transaction_type as "add" | "remove" | "adjust" | "transfer",
+    quantity: transaction.quantity,
+    from_room_id: transaction.from_room_id || undefined,
+    to_room_id: transaction.to_room_id || undefined,
+    notes: transaction.notes || undefined,
+    created_at: transaction.created_at
+  }));
 
   const addItemMutation = useMutation({
     mutationFn: async (params: AddItemParams) => {
@@ -282,8 +295,8 @@ export const useInventory = (roomId: string) => {
   return {
     inventoryData: inventoryData || [],
     isLoading,
-    lowStockItems: lowStockItemsQuery.data || [],
-    recentTransactions: recentTransactionsQuery.data || [],
+    lowStockItems,
+    recentTransactions,
     addItemMutation,
     updateQuantityMutation,
     transferItemMutation,
