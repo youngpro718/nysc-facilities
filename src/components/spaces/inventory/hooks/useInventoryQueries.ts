@@ -3,8 +3,19 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DatabaseInventoryItem, RawLowStockData } from "../types";
 
+interface InventoryTransaction {
+  id: string;
+  item_id: string | null;
+  transaction_type: string;
+  quantity: number;
+  from_room_id: string | null;
+  to_room_id: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
 export const useInventoryQueries = (roomId: string) => {
-  const { data: inventoryData, isLoading } = useQuery({
+  const { data: inventoryData, isLoading } = useQuery<DatabaseInventoryItem[]>({
     queryKey: ['inventory', roomId] as const,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -39,7 +50,7 @@ export const useInventoryQueries = (roomId: string) => {
     }
   });
 
-  const lowStockQuery = useQuery({
+  const lowStockQuery = useQuery<RawLowStockData[]>({
     queryKey: ['inventory', 'low-stock', roomId] as const,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -48,11 +59,11 @@ export const useInventoryQueries = (roomId: string) => {
         .eq('room_id', roomId);
       
       if (error) throw error;
-      return (data || []) as RawLowStockData[];
+      return data || [];
     }
   });
 
-  const { data: transactionData } = useQuery({
+  const { data: transactionData } = useQuery<InventoryTransaction[]>({
     queryKey: ['inventory', 'transactions', roomId] as const,
     queryFn: async () => {
       const { data, error } = await supabase
