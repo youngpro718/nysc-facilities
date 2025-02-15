@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -61,6 +60,16 @@ type LowStockItem = {
   storage_location: string | null;
 };
 
+const fetchLowStockItems = async (roomId: string) => {
+  const { data, error } = await supabase
+    .from('low_stock_items')
+    .select('id, name, quantity, minimum_quantity, category_id, category_name, room_name, storage_location')
+    .eq('room_id', roomId);
+  
+  if (error) throw error;
+  return data || [];
+};
+
 export const useInventory = (roomId: string) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -102,27 +111,19 @@ export const useInventory = (roomId: string) => {
 
   const { data: lowStockData } = useQuery<LowStockItem[]>({
     queryKey: ['inventory', 'low-stock', roomId] as const,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('low_stock_items')
-        .select()
-        .eq('room_id', roomId);
-      
-      if (error) throw error;
-      return data || [];
-    }
+    queryFn: () => fetchLowStockItems(roomId)
   });
 
   const lowStockItems = (lowStockData || []).map(item => ({
-    id: item.id,
-    name: item.name,
-    quantity: item.quantity || 0,
-    minimum_quantity: item.minimum_quantity || 0,
-    category_id: item.category_id,
-    category_name: item.category_name,
+    id: item.id ?? '',
+    name: item.name ?? '',
+    quantity: item.quantity ?? 0,
+    minimum_quantity: item.minimum_quantity ?? 0,
+    category_id: item.category_id ?? '',
+    category_name: item.category_name ?? '',
     room_id: roomId,
-    room_name: item.room_name || '',
-    storage_location: item.storage_location || ''
+    room_name: item.room_name ?? '',
+    storage_location: item.storage_location ?? ''
   }));
 
   const { data: transactionData } = useQuery({
