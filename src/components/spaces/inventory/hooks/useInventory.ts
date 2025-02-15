@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -29,7 +30,7 @@ interface TransferItemParams {
   notes?: string;
 }
 
-type DatabaseInventoryItem = {
+interface DatabaseInventoryItem {
   id: string;
   name: string;
   quantity: number;
@@ -47,9 +48,9 @@ type DatabaseInventoryItem = {
   category_color: string;
   category_icon?: string;
   category_description?: string;
-};
+}
 
-type LowStockItem = {
+interface LowStockItemResponse {
   id: string;
   name: string;
   quantity: number;
@@ -58,9 +59,10 @@ type LowStockItem = {
   category_name: string;
   room_name: string | null;
   storage_location: string | null;
-};
+  room_id: string;
+}
 
-const fetchLowStockItems = async (roomId: string) => {
+const fetchLowStockItems = async (roomId: string): Promise<LowStockItemResponse[]> => {
   const { data, error } = await supabase
     .from('low_stock_items')
     .select('*')
@@ -75,7 +77,7 @@ export const useInventory = (roomId: string) => {
   const { toast } = useToast();
 
   const { data: inventoryData, isLoading } = useQuery({
-    queryKey: ['inventory', roomId] as const,
+    queryKey: ['inventory', roomId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('inventory_items_view')
@@ -109,25 +111,25 @@ export const useInventory = (roomId: string) => {
     }
   });
 
-  const { data: lowStockData } = useQuery<LowStockItem[]>({
-    queryKey: ['inventory', 'low-stock', roomId] as const,
+  const { data: lowStockData } = useQuery({
+    queryKey: ['inventory', 'low-stock', roomId],
     queryFn: () => fetchLowStockItems(roomId)
   });
 
   const lowStockItems = (lowStockData || []).map(item => ({
-    id: item?.id ?? '',
-    name: item?.name ?? '',
-    quantity: item?.quantity ?? 0,
-    minimum_quantity: item?.minimum_quantity ?? 0,
-    category_id: item?.category_id ?? '',
-    category_name: item?.category_name ?? '',
+    id: item.id,
+    name: item.name,
+    quantity: item.quantity,
+    minimum_quantity: item.minimum_quantity,
+    category_id: item.category_id,
+    category_name: item.category_name,
     room_id: roomId,
-    room_name: item?.room_name ?? '',
-    storage_location: item?.storage_location ?? ''
+    room_name: item.room_name || '',
+    storage_location: item.storage_location || ''
   }));
 
   const { data: transactionData } = useQuery({
-    queryKey: ['inventory', 'transactions', roomId] as const,
+    queryKey: ['inventory', 'transactions', roomId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('inventory_transactions')
