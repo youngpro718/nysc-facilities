@@ -4630,9 +4630,12 @@ export type Database = {
           created_at: string | null
           description: string | null
           id: string | null
+          last_inventory_date: string | null
+          location_details: string | null
           minimum_quantity: number | null
           name: string | null
           quantity: number | null
+          status: string | null
           storage_room_id: string | null
           unit: string | null
           updated_at: string | null
@@ -5421,6 +5424,14 @@ export type Database = {
       safely_delete_key: {
         Args: {
           key_id_to_delete: string
+        }
+        Returns: undefined
+      }
+      safely_update_inventory_quantity: {
+        Args: {
+          p_item_id: string
+          p_new_quantity: number
+          p_performed_by?: string
         }
         Returns: undefined
       }
