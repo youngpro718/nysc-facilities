@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { DatabaseInventoryItem, InventoryItem, RawLowStockData } from "../types";
+import { DatabaseInventoryItem, InventoryItem, RawLowStockData } from "../types/inventoryTypes";
 
 export const useInventoryQueries = (roomId: string) => {
   const { data: inventoryData, isLoading } = useQuery({
@@ -40,7 +40,7 @@ export const useInventoryQueries = (roomId: string) => {
   });
 
   const lowStockQuery = useQuery({
-    queryKey: ['inventory', 'low-stock', roomId],
+    queryKey: ['inventory', 'low-stock', roomId] as const,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('low_stock_items')
