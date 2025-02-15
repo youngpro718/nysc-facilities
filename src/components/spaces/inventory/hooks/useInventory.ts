@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -49,12 +50,23 @@ type DatabaseInventoryItem = {
   category_description?: string;
 };
 
+type LowStockItem = {
+  id: string;
+  name: string;
+  quantity: number;
+  minimum_quantity: number;
+  category_id: string;
+  category_name: string;
+  room_name: string | null;
+  storage_location: string | null;
+};
+
 export const useInventory = (roomId: string) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const { data: inventoryData, isLoading } = useQuery({
-    queryKey: ['inventory', roomId],
+    queryKey: ['inventory', roomId] as const,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('inventory_items_view')
@@ -88,7 +100,7 @@ export const useInventory = (roomId: string) => {
     }
   });
 
-  const { data: lowStockData } = useQuery({
+  const { data: lowStockData } = useQuery<LowStockItem[]>({
     queryKey: ['inventory', 'low-stock', roomId] as const,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -97,17 +109,17 @@ export const useInventory = (roomId: string) => {
         .eq('room_id', roomId);
       
       if (error) throw error;
-      return data;
+      return data || [];
     }
   });
 
   const lowStockItems = (lowStockData || []).map(item => ({
-    id: item.id || '',
-    name: item.name || '',
+    id: item.id,
+    name: item.name,
     quantity: item.quantity || 0,
     minimum_quantity: item.minimum_quantity || 0,
-    category_id: item.category_id || '',
-    category_name: item.category_name || '',
+    category_id: item.category_id,
+    category_name: item.category_name,
     room_id: roomId,
     room_name: item.room_name || '',
     storage_location: item.storage_location || ''
@@ -124,7 +136,7 @@ export const useInventory = (roomId: string) => {
         .limit(10);
       
       if (error) throw error;
-      return data;
+      return data || [];
     }
   });
 
