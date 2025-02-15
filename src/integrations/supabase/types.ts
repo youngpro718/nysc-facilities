@@ -1228,6 +1228,71 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_item_transactions: {
+        Row: {
+          created_at: string | null
+          id: string
+          item_id: string
+          new_quantity: number
+          notes: string | null
+          performed_by: string | null
+          previous_quantity: number
+          quantity: number
+          transaction_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          item_id: string
+          new_quantity: number
+          notes?: string | null
+          performed_by?: string | null
+          previous_quantity: number
+          quantity: number
+          transaction_type: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          item_id?: string
+          new_quantity?: number
+          notes?: string | null
+          performed_by?: string | null
+          previous_quantity?: number
+          quantity?: number
+          transaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_item_transactions_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_item_transactions_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_item_transactions_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "low_stock_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_item_transactions_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "storage_room_inventory"
+            referencedColumns: ["item_id"]
+          },
+        ]
+      }
       inventory_items: {
         Row: {
           category_id: string | null
