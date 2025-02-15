@@ -61,6 +61,18 @@ interface LowStockItem {
   room_id: string;
 }
 
+type RawLowStockData = {
+  id: string;
+  name: string;
+  quantity: number;
+  minimum_quantity: number;
+  category_id: string;
+  category_name: string;
+  room_name: string | null;
+  storage_location: string | null;
+  room_id: string;
+}
+
 export const useInventory = (roomId: string) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -100,20 +112,20 @@ export const useInventory = (roomId: string) => {
     }
   });
 
-  const { data: lowStockData } = useQuery({
-    queryKey: ['inventory', 'low-stock', roomId],
+  const lowStockQuery = useQuery({
+    queryKey: ['inventory', 'low-stock', roomId] as const,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('low_stock_items')
-        .select('*')
+        .select()
         .eq('room_id', roomId);
       
       if (error) throw error;
-      return data || [];
+      return (data || []) as RawLowStockData[];
     }
   });
 
-  const lowStockItems: LowStockItem[] = (lowStockData || []).map(item => ({
+  const lowStockItems: LowStockItem[] = (lowStockQuery.data || []).map(item => ({
     id: item.id,
     name: item.name,
     quantity: item.quantity,
