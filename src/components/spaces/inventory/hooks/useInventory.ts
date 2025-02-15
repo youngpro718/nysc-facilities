@@ -112,8 +112,8 @@ export const useInventory = (roomId: string) => {
     }
   });
 
-  const lowStockItemsQuery = useQuery<LowStockItem[], Error>({
-    queryKey: ['inventory', 'low-stock', roomId],
+  const lowStockItemsQuery = useQuery({
+    queryKey: ['inventory', 'low-stock', roomId] as const,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('low_stock_items')
@@ -122,8 +122,7 @@ export const useInventory = (roomId: string) => {
       
       if (error) throw error;
       
-      const items = data || [];
-      return items.map(item => ({
+      return (data || []).map((item): LowStockItem => ({
         id: item.id || '',
         name: item.name || '',
         quantity: item.quantity || 0,
@@ -137,8 +136,8 @@ export const useInventory = (roomId: string) => {
     }
   });
 
-  const recentTransactionsQuery = useQuery<InventoryTransaction[], Error>({
-    queryKey: ['inventory', 'transactions', roomId],
+  const recentTransactionsQuery = useQuery({
+    queryKey: ['inventory', 'transactions', roomId] as const,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('inventory_transactions')
@@ -149,8 +148,7 @@ export const useInventory = (roomId: string) => {
       
       if (error) throw error;
       
-      const transactions = data || [];
-      return transactions.map((transaction): InventoryTransaction => ({
+      return (data || []).map((transaction): InventoryTransaction => ({
         id: transaction.id,
         item_id: transaction.item_id || '',
         transaction_type: transaction.transaction_type as "add" | "remove" | "adjust" | "transfer",
