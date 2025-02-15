@@ -3,6 +3,7 @@ import { useState } from "react";
 import { InventoryActions } from "./inventory/InventoryActions";
 import { InventoryTable } from "./inventory/InventoryTable";
 import { useInventory } from "./inventory/hooks/useInventory";
+import { InventoryItem } from "./inventory/types/inventoryTypes";
 
 export function RoomInventory({ roomId }: { roomId: string }) {
   const [search, setSearch] = useState("");
@@ -15,7 +16,7 @@ export function RoomInventory({ roomId }: { roomId: string }) {
     deleteItemMutation
   } = useInventory(roomId);
 
-  const filteredItems = inventoryData.filter(item =>
+  const filteredItems = (inventoryData as InventoryItem[]).filter(item =>
     item.name.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -42,7 +43,7 @@ export function RoomInventory({ roomId }: { roomId: string }) {
       <InventoryActions
         onAddItem={handleAddItem}
         onSearch={setSearch}
-        inventoryData={inventoryData}
+        inventoryData={inventoryData as InventoryItem[]}
       />
 
       <InventoryTable

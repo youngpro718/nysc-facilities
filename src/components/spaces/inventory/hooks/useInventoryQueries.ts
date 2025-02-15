@@ -1,21 +1,10 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { DatabaseInventoryItem, RawLowStockData } from "../types";
-
-interface InventoryTransaction {
-  id: string;
-  item_id: string | null;
-  transaction_type: string;
-  quantity: number;
-  from_room_id: string | null;
-  to_room_id: string | null;
-  notes: string | null;
-  created_at: string;
-}
+import { DatabaseInventoryItem, InventoryItem, RawLowStockData, InventoryTransaction } from "../types/inventoryTypes";
 
 export const useInventoryQueries = (roomId: string) => {
-  const { data: inventoryData, isLoading } = useQuery<DatabaseInventoryItem[]>({
+  const { data: inventoryData, isLoading } = useQuery<InventoryItem[], Error>({
     queryKey: ['inventory', roomId] as const,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -26,7 +15,7 @@ export const useInventoryQueries = (roomId: string) => {
       
       if (error) throw error;
       
-      return (data || []).map((item: DatabaseInventoryItem) => ({
+      return (data || []).map((item: DatabaseInventoryItem): InventoryItem => ({
         id: item.id,
         name: item.name,
         quantity: item.quantity,
@@ -50,12 +39,12 @@ export const useInventoryQueries = (roomId: string) => {
     }
   });
 
-  const lowStockQuery = useQuery<RawLowStockData[]>({
+  const lowStockQuery = useQuery<RawLowStockData[], Error>({
     queryKey: ['inventory', 'low-stock', roomId] as const,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('low_stock_items')
-        .select()
+        .select('*, room_id')
         .eq('room_id', roomId);
       
       if (error) throw error;
@@ -63,7 +52,7 @@ export const useInventoryQueries = (roomId: string) => {
     }
   });
 
-  const { data: transactionData } = useQuery<InventoryTransaction[]>({
+  const { data: transactionData } = useQuery<InventoryTransaction[], Error>({
     queryKey: ['inventory', 'transactions', roomId] as const,
     queryFn: async () => {
       const { data, error } = await supabase
