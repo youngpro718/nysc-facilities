@@ -51,6 +51,7 @@ export const useInventoryMutations = (roomId: string) => {
       const { error } = await supabase.rpc('safely_update_inventory_quantity', {
         p_item_id: id,
         p_new_quantity: quantity,
+        p_notes: notes,
         p_performed_by: null
       });
       if (error) throw error;

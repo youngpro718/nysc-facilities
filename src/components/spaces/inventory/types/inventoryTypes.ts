@@ -72,17 +72,23 @@ export interface AddItemParams {
   description?: string;
   minimum_quantity?: number;
   unit?: string;
+  location_details?: string;
+  reorder_point?: number;
+  preferred_vendor?: string;
+  notes?: string;
 }
 
 export interface UpdateQuantityParams {
   id: string;
   quantity: number;
+  notes?: string;
 }
 
 export interface TransferItemParams {
   id: string;
   quantity: number;
   toRoomId: string;
+  notes?: string;
 }
 
 export interface InventoryTransaction {
