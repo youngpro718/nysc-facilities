@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -30,20 +29,33 @@ interface TransferItemParams {
   notes?: string;
 }
 
-// Define the database response type
-type DatabaseInventoryItem = Omit<InventoryItem, 'category'> & {
+// Define the database response type separately
+interface DatabaseInventoryItem {
+  id: string;
+  name: string;
+  quantity: number;
+  category_id: string;
+  description?: string;
+  minimum_quantity?: number;
+  unit?: string;
+  status: string;
+  location_details?: string;
+  last_inventory_date?: string;
+  reorder_point?: number;
+  preferred_vendor?: string;
+  notes?: string;
   category_name: string;
   category_color: string;
   category_icon?: string;
   category_description?: string;
-};
+}
 
 export const useInventory = (roomId: string) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Query for inventory items
-  const { data: inventoryData, isLoading } = useQuery({
+  // Query for inventory items with explicit typing
+  const { data: inventoryData, isLoading } = useQuery<DatabaseInventoryItem[], Error>({
     queryKey: ['inventory', roomId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -54,15 +66,28 @@ export const useInventory = (roomId: string) => {
       
       if (error) throw error;
       
-      return (data || []).map((item: DatabaseInventoryItem) => ({
-        ...item,
+      // Transform the data with explicit typing
+      return (data || []).map((item: DatabaseInventoryItem): InventoryItem => ({
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        category_id: item.category_id,
+        description: item.description,
+        minimum_quantity: item.minimum_quantity,
+        unit: item.unit,
+        status: item.status,
+        location_details: item.location_details,
+        last_inventory_date: item.last_inventory_date,
+        reorder_point: item.reorder_point,
+        preferred_vendor: item.preferred_vendor,
+        notes: item.notes,
         category: item.category_name ? {
           name: item.category_name,
           color: item.category_color,
           icon: item.category_icon,
           description: item.category_description
         } : undefined
-      })) as InventoryItem[];
+      }));
     }
   });
 
