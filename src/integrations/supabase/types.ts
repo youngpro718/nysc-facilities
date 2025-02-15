@@ -5648,14 +5648,24 @@ export type Database = {
         }
         Returns: undefined
       }
-      safely_update_inventory_quantity: {
-        Args: {
-          p_item_id: string
-          p_new_quantity: number
-          p_performed_by?: string
-        }
-        Returns: undefined
-      }
+      safely_update_inventory_quantity:
+        | {
+            Args: {
+              p_item_id: string
+              p_new_quantity: number
+              p_performed_by?: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_item_id: string
+              p_new_quantity: number
+              p_performed_by?: string
+              p_notes?: string
+            }
+            Returns: undefined
+          }
     }
     Enums: {
       access_level_enum: "none" | "read" | "write" | "admin"
