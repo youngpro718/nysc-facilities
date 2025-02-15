@@ -41,18 +41,6 @@ interface LowStockItem {
   storage_location: string;
 }
 
-interface DatabaseLowStockItem {
-  id: string | null;
-  name: string | null;
-  quantity: number | null;
-  minimum_quantity: number | null;
-  category_id: string | null;
-  category_name: string | null;
-  room_id: string | null;
-  room_name: string | null;
-  storage_location: string | null;
-}
-
 interface DatabaseInventoryItem {
   id: string;
   name: string;
@@ -124,7 +112,7 @@ export const useInventory = (roomId: string) => {
     }
   });
 
-  const lowStockItemsQuery = useQuery<DatabaseLowStockItem[], Error>({
+  const lowStockItemsQuery = useQuery<LowStockItem[], Error>({
     queryKey: ['inventory', 'low-stock', roomId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -136,15 +124,15 @@ export const useInventory = (roomId: string) => {
       
       const items = data || [];
       return items.map(item => ({
-        id: item.id,
-        name: item.name,
-        quantity: item.quantity,
-        minimum_quantity: item.minimum_quantity,
-        category_id: item.category_id,
-        category_name: item.category_name,
-        room_id: item.room_id,
-        room_name: item.room_name,
-        storage_location: item.storage_location
+        id: item.id || '',
+        name: item.name || '',
+        quantity: item.quantity || 0,
+        minimum_quantity: item.minimum_quantity || 0,
+        category_id: item.category_id || '',
+        category_name: item.category_name || '',
+        room_id: roomId,
+        room_name: item.room_name || '',
+        storage_location: item.storage_location || ''
       }));
     }
   });
