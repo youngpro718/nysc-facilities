@@ -30,6 +30,14 @@ interface TransferItemParams {
   notes?: string;
 }
 
+// Define the database response type
+type DatabaseInventoryItem = Omit<InventoryItem, 'category'> & {
+  category_name: string;
+  category_color: string;
+  category_icon?: string;
+  category_description?: string;
+};
+
 export const useInventory = (roomId: string) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -46,7 +54,15 @@ export const useInventory = (roomId: string) => {
       
       if (error) throw error;
       
-      return (data || []) as InventoryItem[];
+      return (data || []).map((item: DatabaseInventoryItem) => ({
+        ...item,
+        category: item.category_name ? {
+          name: item.category_name,
+          color: item.category_color,
+          icon: item.category_icon,
+          description: item.category_description
+        } : undefined
+      })) as InventoryItem[];
     }
   });
 
