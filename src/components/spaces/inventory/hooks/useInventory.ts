@@ -124,7 +124,7 @@ export const useInventory = (roomId: string) => {
     }
   });
 
-  const { data: lowStockItems } = useQuery<DatabaseLowStockItem[], Error>({
+  const lowStockItemsQuery = useQuery<DatabaseLowStockItem[], Error>({
     queryKey: ['inventory', 'low-stock', roomId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -134,21 +134,22 @@ export const useInventory = (roomId: string) => {
       
       if (error) throw error;
       
-      return (data || []).map((item): DatabaseLowStockItem => ({
+      const items = data || [];
+      return items.map(item => ({
         id: item.id,
         name: item.name,
         quantity: item.quantity,
         minimum_quantity: item.minimum_quantity,
         category_id: item.category_id,
         category_name: item.category_name,
-        room_id: roomId,
+        room_id: item.room_id,
         room_name: item.room_name,
         storage_location: item.storage_location
       }));
     }
   });
 
-  const { data: recentTransactions } = useQuery<InventoryTransaction[], Error>({
+  const recentTransactionsQuery = useQuery<InventoryTransaction[], Error>({
     queryKey: ['inventory', 'transactions', roomId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -160,7 +161,8 @@ export const useInventory = (roomId: string) => {
       
       if (error) throw error;
       
-      return (data || []).map((transaction: DatabaseInventoryTransaction): InventoryTransaction => ({
+      const transactions = data || [];
+      return transactions.map((transaction): InventoryTransaction => ({
         id: transaction.id,
         item_id: transaction.item_id || '',
         transaction_type: transaction.transaction_type as "add" | "remove" | "adjust" | "transfer",
@@ -294,8 +296,8 @@ export const useInventory = (roomId: string) => {
   return {
     inventoryData: inventoryData || [],
     isLoading,
-    lowStockItems: lowStockItems || [],
-    recentTransactions: recentTransactions || [],
+    lowStockItems: lowStockItemsQuery.data || [],
+    recentTransactions: recentTransactionsQuery.data || [],
     addItemMutation,
     updateQuantityMutation,
     transferItemMutation,
