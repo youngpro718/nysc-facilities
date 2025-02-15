@@ -63,7 +63,7 @@ type LowStockItem = {
 const fetchLowStockItems = async (roomId: string) => {
   const { data, error } = await supabase
     .from('low_stock_items')
-    .select('id, name, quantity, minimum_quantity, category_id, category_name, room_name, storage_location')
+    .select('*')
     .eq('room_id', roomId);
   
   if (error) throw error;
@@ -115,15 +115,15 @@ export const useInventory = (roomId: string) => {
   });
 
   const lowStockItems = (lowStockData || []).map(item => ({
-    id: item.id ?? '',
-    name: item.name ?? '',
-    quantity: item.quantity ?? 0,
-    minimum_quantity: item.minimum_quantity ?? 0,
-    category_id: item.category_id ?? '',
-    category_name: item.category_name ?? '',
+    id: item?.id ?? '',
+    name: item?.name ?? '',
+    quantity: item?.quantity ?? 0,
+    minimum_quantity: item?.minimum_quantity ?? 0,
+    category_id: item?.category_id ?? '',
+    category_name: item?.category_name ?? '',
     room_id: roomId,
-    room_name: item.room_name ?? '',
-    storage_location: item.storage_location ?? ''
+    room_name: item?.room_name ?? '',
+    storage_location: item?.storage_location ?? ''
   }));
 
   const { data: transactionData } = useQuery({
