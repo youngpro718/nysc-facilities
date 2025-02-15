@@ -41,6 +41,18 @@ interface LowStockItem {
   storage_location: string;
 }
 
+interface DatabaseLowStockItem {
+  id: string | null;
+  name: string | null;
+  quantity: number | null;
+  minimum_quantity: number | null;
+  category_id: string | null;
+  category_name: string | null;
+  room_id: string | null;
+  room_name: string | null;
+  storage_location: string | null;
+}
+
 interface DatabaseInventoryItem {
   id: string;
   name: string;
@@ -59,6 +71,18 @@ interface DatabaseInventoryItem {
   category_color: string;
   category_icon?: string;
   category_description?: string;
+}
+
+interface DatabaseInventoryTransaction {
+  id: string;
+  item_id: string | null;
+  transaction_type: string;
+  quantity: number;
+  from_room_id: string | null;
+  to_room_id: string | null;
+  notes: string | null;
+  created_at: string;
+  performed_by: string | null;
 }
 
 export const useInventory = (roomId: string) => {
@@ -100,7 +124,7 @@ export const useInventory = (roomId: string) => {
     }
   });
 
-  const { data: lowStockItems } = useQuery<LowStockItem[], Error>({
+  const { data: lowStockItems } = useQuery<DatabaseLowStockItem[], Error>({
     queryKey: ['inventory', 'low-stock', roomId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -110,7 +134,17 @@ export const useInventory = (roomId: string) => {
       
       if (error) throw error;
       
-      return data || [];
+      return (data || []).map((item): DatabaseLowStockItem => ({
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        minimum_quantity: item.minimum_quantity,
+        category_id: item.category_id,
+        category_name: item.category_name,
+        room_id: roomId,
+        room_name: item.room_name,
+        storage_location: item.storage_location
+      }));
     }
   });
 
@@ -126,7 +160,16 @@ export const useInventory = (roomId: string) => {
       
       if (error) throw error;
       
-      return data || [];
+      return (data || []).map((transaction: DatabaseInventoryTransaction): InventoryTransaction => ({
+        id: transaction.id,
+        item_id: transaction.item_id || '',
+        transaction_type: transaction.transaction_type as "add" | "remove" | "adjust" | "transfer",
+        quantity: transaction.quantity,
+        from_room_id: transaction.from_room_id || undefined,
+        to_room_id: transaction.to_room_id || undefined,
+        notes: transaction.notes || undefined,
+        created_at: transaction.created_at
+      }));
     }
   });
 
