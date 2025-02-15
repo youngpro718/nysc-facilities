@@ -29,7 +29,18 @@ interface TransferItemParams {
   notes?: string;
 }
 
-// Define the database response type separately
+interface LowStockItem {
+  id: string;
+  name: string;
+  quantity: number;
+  minimum_quantity: number;
+  category_id: string;
+  category_name: string;
+  room_id: string;
+  room_name: string;
+  storage_location: string;
+}
+
 interface DatabaseInventoryItem {
   id: string;
   name: string;
@@ -54,7 +65,6 @@ export const useInventory = (roomId: string) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Query for inventory items with explicit typing
   const { data: inventoryData, isLoading } = useQuery<InventoryItem[], Error>({
     queryKey: ['inventory', roomId],
     queryFn: async () => {
@@ -66,7 +76,6 @@ export const useInventory = (roomId: string) => {
       
       if (error) throw error;
       
-      // Transform the data with explicit typing
       return (data || []).map((item: DatabaseInventoryItem): InventoryItem => ({
         id: item.id,
         name: item.name,
@@ -91,8 +100,7 @@ export const useInventory = (roomId: string) => {
     }
   });
 
-  // Query for low stock items
-  const { data: lowStockItems } = useQuery({
+  const { data: lowStockItems } = useQuery<LowStockItem[], Error>({
     queryKey: ['inventory', 'low-stock', roomId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -106,8 +114,7 @@ export const useInventory = (roomId: string) => {
     }
   });
 
-  // Query for recent transactions
-  const { data: recentTransactions } = useQuery({
+  const { data: recentTransactions } = useQuery<InventoryTransaction[], Error>({
     queryKey: ['inventory', 'transactions', roomId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -119,11 +126,10 @@ export const useInventory = (roomId: string) => {
       
       if (error) throw error;
       
-      return data as InventoryTransaction[];
+      return data || [];
     }
   });
 
-  // Add item mutation
   const addItemMutation = useMutation({
     mutationFn: async (params: AddItemParams) => {
       const { error } = await supabase
@@ -162,7 +168,6 @@ export const useInventory = (roomId: string) => {
     },
   });
 
-  // Update quantity mutation using the new safely_update_inventory_quantity function
   const updateQuantityMutation = useMutation({
     mutationFn: async ({ id, quantity, notes }: UpdateQuantityParams) => {
       const { error } = await supabase.rpc('safely_update_inventory_quantity', {
@@ -186,7 +191,6 @@ export const useInventory = (roomId: string) => {
     },
   });
 
-  // Transfer item mutation
   const transferItemMutation = useMutation({
     mutationFn: async ({ id, quantity, toRoomId, notes }: TransferItemParams) => {
       const { error } = await supabase
@@ -219,7 +223,6 @@ export const useInventory = (roomId: string) => {
     },
   });
 
-  // Delete item mutation (soft delete by updating status)
   const deleteItemMutation = useMutation({
     mutationFn: async (itemId: string) => {
       const { error } = await supabase
@@ -248,8 +251,8 @@ export const useInventory = (roomId: string) => {
   return {
     inventoryData: inventoryData || [],
     isLoading,
-    lowStockItems,
-    recentTransactions,
+    lowStockItems: lowStockItems || [],
+    recentTransactions: recentTransactions || [],
     addItemMutation,
     updateQuantityMutation,
     transferItemMutation,
