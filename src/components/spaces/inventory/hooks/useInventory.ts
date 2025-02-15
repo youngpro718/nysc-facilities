@@ -29,30 +29,7 @@ interface TransferItemParams {
   notes?: string;
 }
 
-interface LowStockItemResponse {
-  id: string | null;
-  name: string | null;
-  quantity: number | null;
-  minimum_quantity: number | null;
-  category_id: string | null;
-  category_name: string | null;
-  room_name: string | null;
-  storage_location: string | null;
-}
-
-interface LowStockItem {
-  id: string;
-  name: string;
-  quantity: number;
-  minimum_quantity: number;
-  category_id: string;
-  category_name: string;
-  room_id: string;
-  room_name: string;
-  storage_location: string;
-}
-
-interface DatabaseInventoryItem {
+type DatabaseInventoryItem = {
   id: string;
   name: string;
   quantity: number;
@@ -70,25 +47,13 @@ interface DatabaseInventoryItem {
   category_color: string;
   category_icon?: string;
   category_description?: string;
-}
-
-interface DatabaseInventoryTransaction {
-  id: string;
-  item_id: string | null;
-  transaction_type: string;
-  quantity: number;
-  from_room_id: string | null;
-  to_room_id: string | null;
-  notes: string | null;
-  created_at: string;
-  performed_by: string | null;
-}
+};
 
 export const useInventory = (roomId: string) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: inventoryData, isLoading } = useQuery<InventoryItem[], Error>({
+  const { data: inventoryData, isLoading } = useQuery({
     queryKey: ['inventory', roomId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -124,7 +89,7 @@ export const useInventory = (roomId: string) => {
   });
 
   const { data: lowStockData } = useQuery({
-    queryKey: ['inventory', 'low-stock', roomId],
+    queryKey: ['inventory', 'low-stock', roomId] as const,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('low_stock_items')
@@ -132,7 +97,7 @@ export const useInventory = (roomId: string) => {
         .eq('room_id', roomId);
       
       if (error) throw error;
-      return (data || []) as LowStockItemResponse[];
+      return data;
     }
   });
 
@@ -149,7 +114,7 @@ export const useInventory = (roomId: string) => {
   }));
 
   const { data: transactionData } = useQuery({
-    queryKey: ['inventory', 'transactions', roomId],
+    queryKey: ['inventory', 'transactions', roomId] as const,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('inventory_transactions')
@@ -159,7 +124,7 @@ export const useInventory = (roomId: string) => {
         .limit(10);
       
       if (error) throw error;
-      return (data || []) as DatabaseInventoryTransaction[];
+      return data;
     }
   });
 
