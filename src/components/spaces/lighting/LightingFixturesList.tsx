@@ -14,10 +14,22 @@ interface LightingFixturesListProps {
   selectedFloor: string;
 }
 
+interface FixtureResponse {
+  id: string;
+  name: string;
+  type: LightingFixture['type'];
+  status: LightingFixture['status'];
+  zone_name: string | null;
+  building_name: string | null;
+  floor_name: string | null;
+  floor_id: string | null;
+  [key: string]: any; // Allow other properties from the DB
+}
+
 export function LightingFixturesList({ selectedBuilding, selectedFloor }: LightingFixturesListProps) {
   const [selectedFixtures, setSelectedFixtures] = useState<string[]>([]);
 
-  const { data: fixtures, isLoading, refetch } = useQuery({
+  const { data: fixtures, isLoading, refetch } = useQuery<LightingFixture[]>({
     queryKey: ['lighting-fixtures', selectedBuilding, selectedFloor],
     queryFn: async () => {
       let query = supabase
@@ -36,7 +48,7 @@ export function LightingFixturesList({ selectedBuilding, selectedFloor }: Lighti
       if (error) throw error;
       if (!data) return [];
 
-      return data.map((raw: any): LightingFixture => ({
+      return data.map((raw: FixtureResponse) => ({
         id: raw.id,
         name: raw.name,
         type: raw.type,
