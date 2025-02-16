@@ -16,9 +16,10 @@ interface CategorySelectorProps {
 }
 
 export function CategorySelector({ value, onValueChange }: CategorySelectorProps) {
-  const { data: categories, isLoading } = useQuery({
+  const { data: categories, isLoading, error } = useQuery({
     queryKey: ['inventory-categories'],
     queryFn: async () => {
+      console.log('Fetching categories...');
       const { data, error } = await supabase
         .from('inventory_categories')
         .select('*')
@@ -28,9 +29,16 @@ export function CategorySelector({ value, onValueChange }: CategorySelectorProps
         console.error('Error fetching categories:', error);
         throw error;
       }
+      
+      console.log('Retrieved categories:', data);
       return (data || []) as Category[];
     },
   });
+
+  // Debug logging
+  console.log('Current categories state:', categories);
+  console.log('Loading state:', isLoading);
+  console.log('Error state:', error);
 
   if (isLoading) {
     return (
