@@ -7,12 +7,20 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import type { Json } from '@/integrations/supabase/types';
 import { 
   LightingFixture, 
   LightingPosition,
   LightingTechnology,
   LightingType,
-  LightStatus
+  LightStatus,
+  ElectricalIssues,
+  EnergyUsageData,
+  EmergencyProtocols,
+  WarrantyInfo,
+  ManufacturerDetails,
+  InspectionEntry,
+  MaintenanceEntry
 } from "@/components/lighting/types";
 
 interface LightingFixturesListProps {
@@ -40,13 +48,13 @@ type DatabaseLightingFixture = {
   technology: LightingTechnology | null;
   ballast_issue: boolean;
   bulb_count: number;
-  electrical_issues: string | null;
-  energy_usage_data: string | null;
-  emergency_protocols: string | null;
-  warranty_info: string | null;
-  manufacturer_details: string | null;
-  inspection_history: string | null;
-  maintenance_history: string | null;
+  electrical_issues: Json;
+  energy_usage_data: Json;
+  emergency_protocols: Json;
+  warranty_info: Json;
+  manufacturer_details: Json;
+  inspection_history: Json;
+  maintenance_history: Json;
   connected_fixtures: string[];
   maintenance_notes: string | null;
   ballast_check_notes: string | null;
@@ -56,10 +64,13 @@ type DatabaseLightingFixture = {
   updated_at: string | null;
 };
 
-function parseJsonField<T>(field: string | null, defaultValue: T): T {
+function parseJsonField<T>(field: Json | null, defaultValue: T): T {
   if (!field) return defaultValue;
   try {
-    return JSON.parse(field) as T;
+    if (typeof field === 'string') {
+      return JSON.parse(field) as T;
+    }
+    return field as T;
   } catch {
     return defaultValue;
   }
@@ -83,48 +94,12 @@ export function LightingFixturesList({ selectedBuilding, selectedFloor }: Lighti
         query = query.eq('building_id', selectedBuilding);
       }
 
-      const { data, error } = await query;
+      const { data: rawData, error } = await query;
       if (error) throw error;
-      if (!data) return [];
+      if (!rawData) return [];
 
-      return data.map((raw: DatabaseLightingFixture): LightingFixture => {
-        // Parse JSON fields with their default values
-        const electrical_issues = parseJsonField(raw.electrical_issues, {
-          short_circuit: false,
-          wiring_issues: false,
-          voltage_problems: false
-        });
-
-        const energy_usage_data = parseJsonField(raw.energy_usage_data, {
-          daily_usage: [],
-          efficiency_rating: null,
-          last_reading: null
-        });
-
-        const emergency_protocols = parseJsonField(raw.emergency_protocols, {
-          emergency_contact: null,
-          backup_system: false,
-          evacuation_route: false
-        });
-
-        const warranty_info = parseJsonField(raw.warranty_info, {
-          start_date: null,
-          end_date: null,
-          provider: null,
-          terms: null
-        });
-
-        const manufacturer_details = parseJsonField(raw.manufacturer_details, {
-          name: null,
-          model: null,
-          serial_number: null,
-          support_contact: null
-        });
-
-        const inspection_history = parseJsonField(raw.inspection_history, []);
-        const maintenance_history = parseJsonField(raw.maintenance_history, []);
-
-        return {
+      return rawData.map((raw) => {
+        const fixture: LightingFixture = {
           id: raw.id,
           name: raw.name,
           type: raw.type,
@@ -144,13 +119,35 @@ export function LightingFixturesList({ selectedBuilding, selectedFloor }: Lighti
           technology: raw.technology,
           ballast_issue: raw.ballast_issue ?? false,
           bulb_count: raw.bulb_count ?? 1,
-          electrical_issues,
-          energy_usage_data,
-          emergency_protocols,
-          warranty_info,
-          manufacturer_details,
-          inspection_history,
-          maintenance_history,
+          electrical_issues: parseJsonField<ElectricalIssues>(raw.electrical_issues, {
+            short_circuit: false,
+            wiring_issues: false,
+            voltage_problems: false
+          }),
+          energy_usage_data: parseJsonField<EnergyUsageData>(raw.energy_usage_data, {
+            daily_usage: [],
+            efficiency_rating: null,
+            last_reading: null
+          }),
+          emergency_protocols: parseJsonField<EmergencyProtocols>(raw.emergency_protocols, {
+            emergency_contact: null,
+            backup_system: false,
+            evacuation_route: false
+          }),
+          warranty_info: parseJsonField<WarrantyInfo>(raw.warranty_info, {
+            start_date: null,
+            end_date: null,
+            provider: null,
+            terms: null
+          }),
+          manufacturer_details: parseJsonField<ManufacturerDetails>(raw.manufacturer_details, {
+            name: null,
+            model: null,
+            serial_number: null,
+            support_contact: null
+          }),
+          inspection_history: parseJsonField<InspectionEntry[]>(raw.inspection_history, []),
+          maintenance_history: parseJsonField<MaintenanceEntry[]>(raw.maintenance_history, []),
           connected_fixtures: raw.connected_fixtures || [],
           maintenance_notes: raw.maintenance_notes,
           ballast_check_notes: raw.ballast_check_notes,
@@ -159,6 +156,7 @@ export function LightingFixturesList({ selectedBuilding, selectedFloor }: Lighti
           created_at: raw.created_at,
           updated_at: raw.updated_at
         };
+        return fixture;
       });
     }
   });
