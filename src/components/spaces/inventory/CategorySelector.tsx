@@ -22,7 +22,7 @@ export function CategorySelector({ value, onValueChange }: CategorySelectorProps
       console.log('Fetching categories...');
       const { data, error } = await supabase
         .from('inventory_categories')
-        .select('*')
+        .select('id, name, color, icon')
         .order('name');
       
       if (error) {
@@ -39,6 +39,20 @@ export function CategorySelector({ value, onValueChange }: CategorySelectorProps
   console.log('Current categories state:', categories);
   console.log('Loading state:', isLoading);
   console.log('Error state:', error);
+
+  if (error) {
+    console.error('Error in CategorySelector:', error);
+    return (
+      <Select value={value} onValueChange={onValueChange}>
+        <SelectTrigger>
+          <SelectValue placeholder="Error loading categories" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="error" disabled>Error loading categories</SelectItem>
+        </SelectContent>
+      </Select>
+    );
+  }
 
   if (isLoading) {
     return (
