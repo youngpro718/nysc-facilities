@@ -36,7 +36,7 @@ function FloorPlanObjects({ objects }: { objects: any[] }) {
             <meshStandardMaterial 
               color={obj.data?.style?.backgroundColor || '#e2e8f0'}
               opacity={0.8}
-              transparent={true}
+              transparent
             />
           </mesh>
         );
@@ -65,7 +65,6 @@ function LightingFixtures({ fixtures }: { fixtures: any[] }) {
               color={color}
               emissive={color}
               emissiveIntensity={0.5}
-              toneMapped={false}
             />
           </mesh>
         );
@@ -76,14 +75,14 @@ function LightingFixtures({ fixtures }: { fixtures: any[] }) {
 
 function Scene({ objects, fixtures }: { objects: any[], fixtures: any[] }) {
   return (
-    <ErrorBoundary>
+    <>
       <ambientLight intensity={0.5} />
       <directionalLight position={[10, 10, 10]} intensity={0.5} />
       <OrbitControls makeDefault enableDamping={false} />
       <gridHelper args={[100, 100]} />
       <FloorPlanObjects objects={objects || []} />
       <LightingFixtures fixtures={fixtures || []} />
-    </ErrorBoundary>
+    </>
   );
 }
 
@@ -116,9 +115,10 @@ export function FloorPlan3DView({ floorId }: FloorPlan3DViewProps) {
             near: 0.1,
             far: 1000
           }}
-          gl={{ preserveDrawingBuffer: true }}
         >
-          <Scene objects={objects} fixtures={fixtures} />
+          <Suspense fallback={null}>
+            <Scene objects={objects} fixtures={fixtures} />
+          </Suspense>
         </Canvas>
       </ErrorBoundary>
     </div>
