@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Room, StorageType, RoomType } from "../../rooms/types/RoomTypes";
 import { useToast } from "@/hooks/use-toast";
+import { parseJsonField } from "../../lighting/utils/jsonUtils";
 
 export function useRoomsQuery() {
   const { toast } = useToast();
@@ -67,6 +68,12 @@ export function useRoomsQuery() {
           ? room.lighting_fixtures[0]  // Take the first fixture if it exists
           : null;
 
+        const defaultElectricalIssues = {
+          short_circuit: false,
+          wiring_issues: false,
+          voltage_problems: false
+        };
+
         return {
           id: room.id,
           name: room.name,
@@ -90,7 +97,7 @@ export function useRoomsQuery() {
             type: lightingFixture.type,
             status: lightingFixture.status,
             technology: lightingFixture.technology,
-            electrical_issues: lightingFixture.electrical_issues,
+            electrical_issues: parseJsonField(lightingFixture.electrical_issues, defaultElectricalIssues),
             ballast_issue: lightingFixture.ballast_issue,
             maintenance_notes: lightingFixture.maintenance_notes,
             emergency_circuit: lightingFixture.emergency_circuit,
