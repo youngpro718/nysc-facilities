@@ -3,6 +3,7 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera, Grid, SpotLight } from "@react-three/drei";
 import { useFloorPlanData } from "../hooks/useFloorPlanData";
 import { useLightingFixtures } from "../../lighting/hooks/useLightingFixtures";
+import { Vector3, Euler } from "three";
 
 interface FloorPlan3DViewProps {
   floorId: string | null;
@@ -41,8 +42,16 @@ export function FloorPlan3DView({ floorId }: FloorPlan3DViewProps) {
         
         {objects.map((obj, index) => {
           // Ensure all required properties exist before rendering
-          const position = obj.position ? [obj.position.x || 0, 0, obj.position.y || 0] : [0, 0, 0];
-          const rotation = obj.rotation ? [0, obj.rotation, 0] : [0, 0, 0];
+          const position: [number, number, number] = [
+            obj.position?.x || 0,
+            0,
+            obj.position?.y || 0
+          ];
+          const rotation: [number, number, number] = [
+            0,
+            obj.rotation || 0,
+            0
+          ];
           const width = obj.data?.size?.width || 10;
           const height = obj.data?.size?.height || 10;
           const color = obj.data?.style?.backgroundColor || '#e2e8f0';
@@ -65,7 +74,7 @@ export function FloorPlan3DView({ floorId }: FloorPlan3DViewProps) {
         
         {fixtures.map((fixture, index) => {
           // Calculate position with fallbacks
-          const position = [
+          const position: [number, number, number] = [
             fixture.coordinates?.x || index * 20,
             10,
             fixture.coordinates?.y || index * 20
