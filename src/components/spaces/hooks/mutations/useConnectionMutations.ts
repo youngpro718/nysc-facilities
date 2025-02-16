@@ -50,11 +50,18 @@ export function useConnectionMutations(spaceType: "room" | "hallway" | "door") {
         throw new Error("Connection already exists between these spaces");
       }
 
+      // Map connectionType to valid database enum values
+      const connectionTypeMap = {
+        room: "direct",
+        hallway: "direct",
+        door: "door"
+      };
+
       const insertData = {
         from_space_id: data.spaceId,
         to_space_id: toSpaceId,
         space_type: spaceType,
-        connection_type: data.connectionType,
+        connection_type: connectionTypeMap[data.connectionType],
         direction: data.direction || "adjacent",
         position: data.position || "adjacent",
         hallway_position: data.hallwayPosition,
