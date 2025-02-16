@@ -7,6 +7,7 @@ interface Category {
   id: string;
   name: string;
   color: string;
+  icon?: string;
 }
 
 interface CategorySelectorProps {
@@ -15,7 +16,7 @@ interface CategorySelectorProps {
 }
 
 export function CategorySelector({ value, onValueChange }: CategorySelectorProps) {
-  const { data: categories } = useQuery({
+  const { data: categories, isLoading } = useQuery({
     queryKey: ['inventory-categories'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -23,10 +24,26 @@ export function CategorySelector({ value, onValueChange }: CategorySelectorProps
         .select('*')
         .order('name');
       
-      if (error) throw error;
-      return data as Category[];
+      if (error) {
+        console.error('Error fetching categories:', error);
+        throw error;
+      }
+      return (data || []) as Category[];
     },
   });
+
+  if (isLoading) {
+    return (
+      <Select value={value} onValueChange={onValueChange}>
+        <SelectTrigger>
+          <SelectValue placeholder="Loading categories..." />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="loading" disabled>Loading...</SelectItem>
+        </SelectContent>
+      </Select>
+    );
+  }
 
   return (
     <Select value={value} onValueChange={onValueChange}>
