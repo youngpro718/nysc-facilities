@@ -4,12 +4,12 @@ import { OrbitControls } from "@react-three/drei";
 import { useFloorPlanData } from "../hooks/useFloorPlanData";
 import { useLightingFixtures } from "../../lighting/hooks/useLightingFixtures";
 import { Suspense } from "react";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 interface FloorPlan3DViewProps {
   floorId: string | null;
 }
 
-// Separate components for better error handling
 function FloorPlanObjects({ objects }: { objects: any[] }) {
   return (
     <group>
@@ -19,8 +19,8 @@ function FloorPlanObjects({ objects }: { objects: any[] }) {
           return null;
         }
         
-        const width = Number(obj.data.size.width) || 10;
-        const height = Number(obj.data.size.height) || 10;
+        const width = Math.max(Number(obj.data.size.width) || 10, 1);
+        const height = Math.max(Number(obj.data.size.height) || 10, 1);
         const depth = 10;
         const posX = Number(obj.position.x) || 0;
         const posY = Number(obj.position.y) || 0;
@@ -35,8 +35,8 @@ function FloorPlanObjects({ objects }: { objects: any[] }) {
             <boxGeometry args={[width, depth, height]} />
             <meshStandardMaterial 
               color={obj.data?.style?.backgroundColor || '#e2e8f0'}
-              transparent
               opacity={0.8}
+              transparent={true}
             />
           </mesh>
         );
@@ -49,19 +49,23 @@ function LightingFixtures({ fixtures }: { fixtures: any[] }) {
   return (
     <group>
       {fixtures.map((fixture, index) => {
+        if (!fixture) return null;
+        
         const posX = Number(fixture.coordinates?.x) || index * 20;
         const posY = Number(fixture.coordinates?.y) || index * 20;
+        const color = fixture.status === 'functional' ? '#4ade80' : '#ef4444';
         
         return (
           <mesh
-            key={fixture.id}
+            key={fixture.id || `fixture-${index}`}
             position={[posX, 10, posY]}
           >
-            <sphereGeometry args={[2, 32, 32]} />
+            <sphereGeometry args={[2, 16, 16]} />
             <meshStandardMaterial 
-              color={fixture.status === 'functional' ? '#4ade80' : '#ef4444'}
-              emissive={fixture.status === 'functional' ? '#4ade80' : '#ef4444'}
+              color={color}
+              emissive={color}
               emissiveIntensity={0.5}
+              toneMapped={false}
             />
           </mesh>
         );
@@ -72,16 +76,14 @@ function LightingFixtures({ fixtures }: { fixtures: any[] }) {
 
 function Scene({ objects, fixtures }: { objects: any[], fixtures: any[] }) {
   return (
-    <>
+    <ErrorBoundary>
       <ambientLight intensity={0.5} />
       <directionalLight position={[10, 10, 10]} intensity={0.5} />
-      <OrbitControls makeDefault />
+      <OrbitControls makeDefault enableDamping={false} />
       <gridHelper args={[100, 100]} />
-      <Suspense fallback={null}>
-        <FloorPlanObjects objects={objects} />
-        <LightingFixtures fixtures={fixtures} />
-      </Suspense>
-    </>
+      <FloorPlanObjects objects={objects || []} />
+      <LightingFixtures fixtures={fixtures || []} />
+    </ErrorBoundary>
   );
 }
 
@@ -92,10 +94,6 @@ export function FloorPlan3DView({ floorId }: FloorPlan3DViewProps) {
     selectedFloor: floorId || 'all'
   });
 
-  console.log('Floor ID:', floorId);
-  console.log('Floor plan objects:', objects);
-  console.log('Lighting fixtures:', fixtures);
-
   if (floorPlanLoading || fixturesLoading) {
     return <div>Loading...</div>;
   }
@@ -104,22 +102,25 @@ export function FloorPlan3DView({ floorId }: FloorPlan3DViewProps) {
     return <div>Please select a floor to view the floor plan</div>;
   }
 
-  if (!objects || objects.length === 0) {
+  if (!objects?.length) {
     return <div>No floor plan objects found for this floor</div>;
   }
 
   return (
     <div style={{ width: '100%', height: '500px' }}>
-      <Canvas
-        camera={{
-          position: [0, 50, 100],
-          fov: 50,
-          near: 0.1,
-          far: 1000
-        }}
-      >
-        <Scene objects={objects} fixtures={fixtures} />
-      </Canvas>
+      <ErrorBoundary>
+        <Canvas
+          camera={{
+            position: [0, 50, 100],
+            fov: 50,
+            near: 0.1,
+            far: 1000
+          }}
+          gl={{ preserveDrawingBuffer: true }}
+        >
+          <Scene objects={objects} fixtures={fixtures} />
+        </Canvas>
+      </ErrorBoundary>
     </div>
   );
 }
