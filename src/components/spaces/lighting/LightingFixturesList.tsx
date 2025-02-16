@@ -14,7 +14,7 @@ interface LightingFixturesListProps {
   selectedFloor: string;
 }
 
-// Define raw database response type
+// Define raw database response type to match actual database structure
 interface RawLightingFixture {
   id: string;
   name: string;
@@ -24,15 +24,30 @@ interface RawLightingFixture {
   building_name: string | null;
   floor_name: string | null;
   floor_id: string | null;
-  electrical_issues: string | Record<string, boolean>;
-  energy_usage_data: string | null;
-  emergency_protocols: string | null;
-  warranty_info: string | null;
-  manufacturer_details: string | null;
-  inspection_history: string | null;
-  maintenance_history: string | null;
+  backup_power_source: string | null;
+  ballast_check_notes: string | null;
+  ballast_issue: boolean;
+  emergency_circuit: boolean;
+  emergency_duration_minutes: number | null;
+  technology: "LED" | "Fluorescent" | "Bulb" | null;
+  bulb_count: number;
+  space_id: string | null;
+  space_type: 'room' | 'hallway' | null;
+  position: 'ceiling' | 'wall' | 'floor' | 'desk' | 'recessed' | null;
+  sequence_number: number | null;
+  zone_id: string | null;
+  space_name: string | null;
+  room_number: string | null;
+  electrical_issues: any;
+  energy_usage_data: any;
+  emergency_protocols: any;
+  warranty_info: any;
+  manufacturer_details: any;
+  inspection_history: any;
+  maintenance_history: any;
   connected_fixtures: string[] | null;
-  [key: string]: any; // Allow other fields from the database
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 export function LightingFixturesList({ selectedBuilding, selectedFloor }: LightingFixturesListProps) {
@@ -56,7 +71,9 @@ export function LightingFixturesList({ selectedBuilding, selectedFloor }: Lighti
       const { data, error } = await query;
       if (error) throw error;
       
-      return (data as RawLightingFixture[]).map(fixture => ({
+      const rawFixtures = data as unknown as RawLightingFixture[];
+      
+      return rawFixtures.map(fixture => ({
         ...fixture,
         electrical_issues: typeof fixture.electrical_issues === 'string' 
           ? JSON.parse(fixture.electrical_issues) 
@@ -131,7 +148,12 @@ export function LightingFixturesList({ selectedBuilding, selectedFloor }: Lighti
               notes: entry.notes
             }))
           : [],
-        connected_fixtures: fixture.connected_fixtures || []
+        connected_fixtures: fixture.connected_fixtures || [],
+        // Ensure required fields are present
+        emergency_circuit: fixture.emergency_circuit || false,
+        technology: fixture.technology || null,
+        ballast_issue: fixture.ballast_issue || false,
+        bulb_count: fixture.bulb_count || 1
       })) satisfies LightingFixture[];
     }
   });
