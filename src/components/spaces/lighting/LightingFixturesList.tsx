@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -11,6 +12,27 @@ import { LightingFixture } from "@/components/lighting/types";
 interface LightingFixturesListProps {
   selectedBuilding: string;
   selectedFloor: string;
+}
+
+// Define raw database response type
+interface RawLightingFixture {
+  id: string;
+  name: string;
+  type: "standard" | "emergency" | "motion_sensor";
+  status: "functional" | "maintenance_needed" | "non_functional" | "pending_maintenance" | "scheduled_replacement";
+  zone_name: string | null;
+  building_name: string | null;
+  floor_name: string | null;
+  floor_id: string | null;
+  electrical_issues: string | Record<string, boolean>;
+  energy_usage_data: string | null;
+  emergency_protocols: string | null;
+  warranty_info: string | null;
+  manufacturer_details: string | null;
+  inspection_history: string | null;
+  maintenance_history: string | null;
+  connected_fixtures: string[] | null;
+  [key: string]: any; // Allow other fields from the database
 }
 
 export function LightingFixturesList({ selectedBuilding, selectedFloor }: LightingFixturesListProps) {
@@ -33,7 +55,8 @@ export function LightingFixturesList({ selectedBuilding, selectedFloor }: Lighti
 
       const { data, error } = await query;
       if (error) throw error;
-      return data.map(fixture => ({
+      
+      return (data as RawLightingFixture[]).map(fixture => ({
         ...fixture,
         electrical_issues: typeof fixture.electrical_issues === 'string' 
           ? JSON.parse(fixture.electrical_issues) 
@@ -109,7 +132,7 @@ export function LightingFixturesList({ selectedBuilding, selectedFloor }: Lighti
             }))
           : [],
         connected_fixtures: fixture.connected_fixtures || []
-      })) as LightingFixture[];
+      })) satisfies LightingFixture[];
     }
   });
 
