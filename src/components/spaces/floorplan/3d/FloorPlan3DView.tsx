@@ -59,9 +59,9 @@ export function FloorPlan3DView({ floorId }: FloorPlan3DViewProps) {
           <mesh
             key={fixture.id}
             position={[
-              fixture.position?.x || index * 20, 
+              fixture.coordinates?.x || index * 20, 
               10, 
-              fixture.position?.y || index * 20
+              fixture.coordinates?.y || index * 20
             ]}
           >
             <sphereGeometry args={[5]} />

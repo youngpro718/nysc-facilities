@@ -10,7 +10,8 @@ import {
   WarrantyInfo,
   ManufacturerDetails,
   InspectionEntry,
-  MaintenanceEntry
+  MaintenanceEntry,
+  LightingCoordinates
 } from "@/components/lighting/types";
 
 export type DatabaseLightingFixture = {
@@ -26,6 +27,7 @@ export type DatabaseLightingFixture = {
   space_id: string | null;
   space_type: 'room' | 'hallway' | null;
   position: LightingPosition | null;
+  coordinates: LightingCoordinates | null;
   sequence_number: number | null;
   zone_id: string | null;
   space_name: string | null;
@@ -56,6 +58,7 @@ export function mapDatabaseFixtureToLightingFixture(dbFixture: any): DatabaseLig
     space_type: dbFixture.space_type === 'room' || dbFixture.space_type === 'hallway' 
       ? dbFixture.space_type 
       : null,
+    coordinates: dbFixture.coordinates || null,
     electrical_issues: {
       short_circuit: dbFixture.electrical_issues?.short_circuit ?? false,
       wiring_issues: dbFixture.electrical_issues?.wiring_issues ?? false,

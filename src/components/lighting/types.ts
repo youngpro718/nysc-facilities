@@ -1,4 +1,3 @@
-
 export interface Space {
   id: string;
   name: string;
@@ -9,7 +8,7 @@ export interface Space {
 export type LightStatus = 'functional' | 'maintenance_needed' | 'non_functional' | 'pending_maintenance' | 'scheduled_replacement';
 export type LightingType = 'standard' | 'emergency' | 'motion_sensor';
 export type LightingTechnology = 'LED' | 'Fluorescent' | 'Bulb' | null;
-export type LightingPosition = 'ceiling' | 'wall' | 'floor' | 'desk' | 'recessed' | null;
+export type LightingPosition = 'ceiling' | 'wall' | 'floor' | 'desk' | 'recessed';
 
 export interface ElectricalIssues {
   short_circuit: boolean;
@@ -61,6 +60,11 @@ export interface SpatialAssignment {
   sequence_number: number;
 }
 
+export interface LightingCoordinates {
+  x: number;
+  y: number;
+}
+
 export interface LightingFixture {
   id: string;
   name: string;
@@ -73,6 +77,7 @@ export interface LightingFixture {
   space_id?: string | null;
   space_type?: 'room' | 'hallway' | null;
   position?: LightingPosition;
+  coordinates?: LightingCoordinates | null;
   sequence_number?: number | null;
   zone_id?: string | null;
   space_name?: string | null;
