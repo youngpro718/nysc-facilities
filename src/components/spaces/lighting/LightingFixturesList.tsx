@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -14,18 +13,10 @@ interface LightingFixturesListProps {
   selectedFloor: string;
 }
 
-interface LightingFixtureResponse extends Omit<LightingFixture, 'energy_usage_data'> {
-  energy_usage_data: {
-    daily_usage: any[];
-    efficiency_rating: string | null;
-    last_reading: string | null;
-  } | null;
-}
-
 export function LightingFixturesList({ selectedBuilding, selectedFloor }: LightingFixturesListProps) {
   const [selectedFixtures, setSelectedFixtures] = useState<string[]>([]);
 
-  const { data: fixtures, isLoading, refetch } = useQuery<LightingFixture[]>({
+  const { data: fixtures, isLoading, refetch } = useQuery({
     queryKey: ['lighting-fixtures', selectedBuilding, selectedFloor],
     queryFn: async () => {
       let query = supabase

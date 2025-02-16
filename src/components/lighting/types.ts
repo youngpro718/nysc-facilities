@@ -1,4 +1,11 @@
 
+export interface Space {
+  id: string;
+  name: string;
+  space_type: 'room' | 'hallway';
+  room_number?: string | null;
+}
+
 export interface LightingFixture {
   id: string;
   name: string;
@@ -69,4 +76,26 @@ export interface LightingFixture {
   room_number?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
+}
+
+export interface RoomLightingConfig {
+  id?: string;
+  room_id: string;
+  name: string;
+  type: "standard" | "emergency" | "motion_sensor";
+  technology: "LED" | "Fluorescent" | "Bulb";
+  bulb_count: number;
+  status: "functional" | "maintenance_needed" | "non_functional" | "pending_maintenance" | "scheduled_replacement";
+  electrical_issues: {
+    short_circuit: boolean;
+    wiring_issues: boolean;
+    voltage_problems: boolean;
+  };
+  ballast_issue: boolean;
+  emergency_circuit: boolean;
+  maintenance_notes?: string;
+  ballast_check_notes?: string;
+  position: 'ceiling' | 'wall' | 'floor' | 'desk' | 'recessed';
+  sequence_number?: number;
+  zone_id?: string;
 }
