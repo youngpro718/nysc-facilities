@@ -16,7 +16,7 @@ export function useRoomsQuery() {
         .from('rooms')
         .select(`
           *,
-          lighting_fixture:lighting_fixtures (
+          lighting_fixtures!room_id (
             id,
             type,
             status,
@@ -63,8 +63,8 @@ export function useRoomsQuery() {
       console.log("Raw room data:", roomsData);
 
       const transformedRooms: Room[] = roomsData.map(room => {
-        const lightingFixture = Array.isArray(room.lighting_fixture) && room.lighting_fixture.length > 0
-          ? room.lighting_fixture[0]  // Take the first fixture if it exists
+        const lightingFixture = Array.isArray(room.lighting_fixtures) && room.lighting_fixtures.length > 0
+          ? room.lighting_fixtures[0]  // Take the first fixture if it exists
           : null;
 
         return {
