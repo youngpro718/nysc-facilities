@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -14,48 +13,12 @@ interface LightingFixturesListProps {
   selectedFloor: string;
 }
 
-// Define raw database response type to match actual database structure
-interface RawLightingFixture {
-  id: string;
-  name: string;
-  type: "standard" | "emergency" | "motion_sensor";
-  status: "functional" | "maintenance_needed" | "non_functional" | "pending_maintenance" | "scheduled_replacement";
-  zone_name: string | null;
-  building_name: string | null;
-  floor_name: string | null;
-  floor_id: string | null;
-  backup_power_source: string | null;
-  ballast_check_notes: string | null;
-  ballast_issue: boolean;
-  emergency_circuit: boolean;
-  emergency_duration_minutes: number | null;
-  technology: "LED" | "Fluorescent" | "Bulb" | null;
-  bulb_count: number;
-  space_id: string | null;
-  space_type: 'room' | 'hallway' | null;
-  position: 'ceiling' | 'wall' | 'floor' | 'desk' | 'recessed' | null;
-  sequence_number: number | null;
-  zone_id: string | null;
-  space_name: string | null;
-  room_number: string | null;
-  electrical_issues: any;
-  energy_usage_data: any;
-  emergency_protocols: any;
-  warranty_info: any;
-  manufacturer_details: any;
-  inspection_history: any;
-  maintenance_history: any;
-  connected_fixtures: string[] | null;
-  created_at: string | null;
-  updated_at: string | null;
-}
-
 export function LightingFixturesList({ selectedBuilding, selectedFloor }: LightingFixturesListProps) {
   const [selectedFixtures, setSelectedFixtures] = useState<string[]>([]);
 
   const { data: fixtures, isLoading, refetch } = useQuery({
     queryKey: ['lighting-fixtures', selectedBuilding, selectedFloor],
-    queryFn: async () => {
+    queryFn: async (): Promise<LightingFixture[]> => {
       let query = supabase
         .from('lighting_fixture_details')
         .select('*')
@@ -71,10 +34,26 @@ export function LightingFixturesList({ selectedBuilding, selectedFloor }: Lighti
       const { data, error } = await query;
       if (error) throw error;
       
-      const rawFixtures = data as unknown as RawLightingFixture[];
-      
-      return rawFixtures.map(fixture => ({
-        ...fixture,
+      return data.map(fixture => ({
+        id: fixture.id,
+        name: fixture.name,
+        type: fixture.type as LightingFixture['type'],
+        status: fixture.status as LightingFixture['status'],
+        zone_name: fixture.zone_name,
+        building_name: fixture.building_name,
+        floor_name: fixture.floor_name,
+        floor_id: fixture.floor_id,
+        space_id: fixture.space_id,
+        space_type: fixture.space_type,
+        position: fixture.position,
+        sequence_number: fixture.sequence_number,
+        zone_id: fixture.zone_id,
+        space_name: fixture.space_name,
+        room_number: fixture.room_number,
+        emergency_circuit: fixture.emergency_circuit || false,
+        technology: fixture.technology || null,
+        ballast_issue: fixture.ballast_issue || false,
+        bulb_count: fixture.bulb_count || 1,
         electrical_issues: typeof fixture.electrical_issues === 'string' 
           ? JSON.parse(fixture.electrical_issues) 
           : fixture.electrical_issues || {
@@ -149,12 +128,9 @@ export function LightingFixturesList({ selectedBuilding, selectedFloor }: Lighti
             }))
           : [],
         connected_fixtures: fixture.connected_fixtures || [],
-        // Ensure required fields are present
-        emergency_circuit: fixture.emergency_circuit || false,
-        technology: fixture.technology || null,
-        ballast_issue: fixture.ballast_issue || false,
-        bulb_count: fixture.bulb_count || 1
-      })) satisfies LightingFixture[];
+        created_at: fixture.created_at,
+        updated_at: fixture.updated_at
+      }));
     }
   });
 
