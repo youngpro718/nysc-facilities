@@ -766,6 +766,13 @@ export type Database = {
             foreignKeyName: "fk_floorplan_objects_rooms"
             columns: ["object_id"]
             isOneToOne: false
+            referencedRelation: "room_lighting_status"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "fk_floorplan_objects_rooms"
+            columns: ["object_id"]
+            isOneToOne: false
             referencedRelation: "room_occupancy_stats"
             referencedColumns: ["room_id"]
           },
@@ -1309,6 +1316,13 @@ export type Database = {
             foreignKeyName: "inventory_audits_storage_room_id_fkey"
             columns: ["storage_room_id"]
             isOneToOne: false
+            referencedRelation: "room_lighting_status"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "inventory_audits_storage_room_id_fkey"
+            columns: ["storage_room_id"]
+            isOneToOne: false
             referencedRelation: "room_occupancy_stats"
             referencedColumns: ["room_id"]
           },
@@ -1515,6 +1529,13 @@ export type Database = {
             foreignKeyName: "inventory_items_storage_room_id_fkey"
             columns: ["storage_room_id"]
             isOneToOne: false
+            referencedRelation: "room_lighting_status"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "inventory_items_storage_room_id_fkey"
+            columns: ["storage_room_id"]
+            isOneToOne: false
             referencedRelation: "room_occupancy_stats"
             referencedColumns: ["room_id"]
           },
@@ -1587,6 +1608,13 @@ export type Database = {
             foreignKeyName: "inventory_transactions_from_room_id_fkey"
             columns: ["from_room_id"]
             isOneToOne: false
+            referencedRelation: "room_lighting_status"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "inventory_transactions_from_room_id_fkey"
+            columns: ["from_room_id"]
+            isOneToOne: false
             referencedRelation: "room_occupancy_stats"
             referencedColumns: ["room_id"]
           },
@@ -1644,6 +1672,13 @@ export type Database = {
             columns: ["to_room_id"]
             isOneToOne: false
             referencedRelation: "room_issue_analytics"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "inventory_transactions_to_room_id_fkey"
+            columns: ["to_room_id"]
+            isOneToOne: false
+            referencedRelation: "room_lighting_status"
             referencedColumns: ["room_id"]
           },
           {
@@ -2058,6 +2093,13 @@ export type Database = {
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "room_issue_analytics"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "issues_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_lighting_status"
             referencedColumns: ["room_id"]
           },
           {
@@ -2603,6 +2645,13 @@ export type Database = {
             foreignKeyName: "keys_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
+            referencedRelation: "room_lighting_status"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "keys_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
             referencedRelation: "room_occupancy_stats"
             referencedColumns: ["room_id"]
           },
@@ -2652,7 +2701,6 @@ export type Database = {
           next_inspection_date: string | null
           next_maintenance_date: string | null
           position: Database["public"]["Enums"]["lighting_position_enum"] | null
-          room_id: string | null
           scheduled_maintenance_date: string | null
           sequence_number: number | null
           space_id: string | null
@@ -2697,7 +2745,6 @@ export type Database = {
           position?:
             | Database["public"]["Enums"]["lighting_position_enum"]
             | null
-          room_id?: string | null
           scheduled_maintenance_date?: string | null
           sequence_number?: number | null
           space_id?: string | null
@@ -2742,7 +2789,6 @@ export type Database = {
           position?:
             | Database["public"]["Enums"]["lighting_position_enum"]
             | null
-          room_id?: string | null
           scheduled_maintenance_date?: string | null
           sequence_number?: number | null
           space_id?: string | null
@@ -2784,41 +2830,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "lighting_fixtures_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "room_health_overview"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "lighting_fixtures_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "room_issue_analytics"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "lighting_fixtures_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "room_occupancy_stats"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "lighting_fixtures_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "rooms"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "lighting_fixtures_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "storage_room_inventory"
-            referencedColumns: ["room_id"]
           },
           {
             foreignKeyName: "lighting_fixtures_zone_id_fkey"
@@ -3328,6 +3339,13 @@ export type Database = {
             foreignKeyName: "occupant_room_assignments_new_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
+            referencedRelation: "room_lighting_status"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "occupant_room_assignments_new_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
             referencedRelation: "room_occupancy_stats"
             referencedColumns: ["room_id"]
           },
@@ -3532,6 +3550,13 @@ export type Database = {
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "room_issue_analytics"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "occupants_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_lighting_status"
             referencedColumns: ["room_id"]
           },
           {
@@ -3762,6 +3787,13 @@ export type Database = {
             foreignKeyName: "room_health_metrics_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
+            referencedRelation: "room_lighting_status"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "room_health_metrics_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
             referencedRelation: "room_occupancy_stats"
             referencedColumns: ["room_id"]
           },
@@ -3822,6 +3854,13 @@ export type Database = {
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "room_issue_analytics"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "room_history_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_lighting_status"
             referencedColumns: ["room_id"]
           },
           {
@@ -3894,78 +3933,6 @@ export type Database = {
           },
         ]
       }
-      room_lighting_status: {
-        Row: {
-          created_at: string | null
-          id: string
-          non_working_fixtures: number | null
-          room_id: string | null
-          room_name: string | null
-          room_number: string | null
-          total_fixtures: number | null
-          updated_at: string | null
-          working_fixtures: number | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          non_working_fixtures?: number | null
-          room_id?: string | null
-          room_name?: string | null
-          room_number?: string | null
-          total_fixtures?: number | null
-          updated_at?: string | null
-          working_fixtures?: number | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          non_working_fixtures?: number | null
-          room_id?: string | null
-          room_name?: string | null
-          room_number?: string | null
-          total_fixtures?: number | null
-          updated_at?: string | null
-          working_fixtures?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "room_lighting_status_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "room_health_overview"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "room_lighting_status_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "room_issue_analytics"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "room_lighting_status_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "room_occupancy_stats"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "room_lighting_status_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "rooms"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "room_lighting_status_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "storage_room_inventory"
-            referencedColumns: ["room_id"]
-          },
-        ]
-      }
       room_maintenance_schedule: {
         Row: {
           assigned_to: string | null
@@ -4025,6 +3992,13 @@ export type Database = {
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "room_issue_analytics"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "room_maintenance_schedule_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_lighting_status"
             referencedColumns: ["room_id"]
           },
           {
@@ -4094,6 +4068,13 @@ export type Database = {
             foreignKeyName: "room_relationships_primary_room_id_fkey"
             columns: ["primary_room_id"]
             isOneToOne: false
+            referencedRelation: "room_lighting_status"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "room_relationships_primary_room_id_fkey"
+            columns: ["primary_room_id"]
+            isOneToOne: false
             referencedRelation: "room_occupancy_stats"
             referencedColumns: ["room_id"]
           },
@@ -4123,6 +4104,13 @@ export type Database = {
             columns: ["related_room_id"]
             isOneToOne: false
             referencedRelation: "room_issue_analytics"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "room_relationships_related_room_id_fkey"
+            columns: ["related_room_id"]
+            isOneToOne: false
+            referencedRelation: "room_lighting_status"
             referencedColumns: ["room_id"]
           },
           {
@@ -4254,6 +4242,13 @@ export type Database = {
             columns: ["parent_room_id"]
             isOneToOne: false
             referencedRelation: "room_issue_analytics"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "rooms_parent_room_id_fkey"
+            columns: ["parent_room_id"]
+            isOneToOne: false
+            referencedRelation: "room_lighting_status"
             referencedColumns: ["room_id"]
           },
           {
@@ -4470,41 +4465,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "space_connections_from_space_id_fkey"
-            columns: ["from_space_id"]
-            isOneToOne: false
-            referencedRelation: "room_health_overview"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "space_connections_from_space_id_fkey"
-            columns: ["from_space_id"]
-            isOneToOne: false
-            referencedRelation: "room_issue_analytics"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "space_connections_from_space_id_fkey"
-            columns: ["from_space_id"]
-            isOneToOne: false
-            referencedRelation: "room_occupancy_stats"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "space_connections_from_space_id_fkey"
-            columns: ["from_space_id"]
-            isOneToOne: false
-            referencedRelation: "rooms"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "space_connections_from_space_id_fkey"
-            columns: ["from_space_id"]
-            isOneToOne: false
-            referencedRelation: "storage_room_inventory"
-            referencedColumns: ["room_id"]
-          },
-          {
             foreignKeyName: "space_connections_from_space_id_hallways_fkey"
             columns: ["from_space_id"]
             isOneToOne: false
@@ -4523,6 +4483,13 @@ export type Database = {
             columns: ["from_space_id"]
             isOneToOne: false
             referencedRelation: "room_issue_analytics"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "space_connections_from_space_id_rooms_fkey"
+            columns: ["from_space_id"]
+            isOneToOne: false
+            referencedRelation: "room_lighting_status"
             referencedColumns: ["room_id"]
           },
           {
@@ -4554,41 +4521,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "space_connections_to_space_id_fkey"
-            columns: ["to_space_id"]
-            isOneToOne: false
-            referencedRelation: "room_health_overview"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "space_connections_to_space_id_fkey"
-            columns: ["to_space_id"]
-            isOneToOne: false
-            referencedRelation: "room_issue_analytics"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "space_connections_to_space_id_fkey"
-            columns: ["to_space_id"]
-            isOneToOne: false
-            referencedRelation: "room_occupancy_stats"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "space_connections_to_space_id_fkey"
-            columns: ["to_space_id"]
-            isOneToOne: false
-            referencedRelation: "rooms"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "space_connections_to_space_id_fkey"
-            columns: ["to_space_id"]
-            isOneToOne: false
-            referencedRelation: "storage_room_inventory"
-            referencedColumns: ["room_id"]
-          },
-          {
             foreignKeyName: "space_connections_to_space_id_hallways_fkey"
             columns: ["to_space_id"]
             isOneToOne: false
@@ -4607,6 +4539,13 @@ export type Database = {
             columns: ["to_space_id"]
             isOneToOne: false
             referencedRelation: "room_issue_analytics"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "space_connections_to_space_id_rooms_fkey"
+            columns: ["to_space_id"]
+            isOneToOne: false
+            referencedRelation: "room_lighting_status"
             referencedColumns: ["room_id"]
           },
           {
@@ -5065,6 +5004,13 @@ export type Database = {
             foreignKeyName: "inventory_items_storage_room_id_fkey"
             columns: ["storage_room_id"]
             isOneToOne: false
+            referencedRelation: "room_lighting_status"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "inventory_items_storage_room_id_fkey"
+            columns: ["storage_room_id"]
+            isOneToOne: false
             referencedRelation: "room_occupancy_stats"
             referencedColumns: ["room_id"]
           },
@@ -5114,6 +5060,13 @@ export type Database = {
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "room_issue_analytics"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "keys_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_lighting_status"
             referencedColumns: ["room_id"]
           },
           {
@@ -5507,6 +5460,13 @@ export type Database = {
             foreignKeyName: "inventory_items_storage_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
+            referencedRelation: "room_lighting_status"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "inventory_items_storage_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
             referencedRelation: "room_occupancy_stats"
             referencedColumns: ["room_id"]
           },
@@ -5634,6 +5594,13 @@ export type Database = {
             foreignKeyName: "occupants_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
+            referencedRelation: "room_lighting_status"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "occupants_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
             referencedRelation: "room_occupancy_stats"
             referencedColumns: ["room_id"]
           },
@@ -5714,6 +5681,13 @@ export type Database = {
             foreignKeyName: "occupant_room_assignments_new_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
+            referencedRelation: "room_lighting_status"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "occupant_room_assignments_new_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
             referencedRelation: "room_occupancy_stats"
             referencedColumns: ["room_id"]
           },
@@ -5760,6 +5734,17 @@ export type Database = {
           room_name: string | null
           room_number: string | null
           total_issues: number | null
+        }
+        Relationships: []
+      }
+      room_lighting_status: {
+        Row: {
+          non_working_fixtures: number | null
+          room_id: string | null
+          room_name: string | null
+          room_number: string | null
+          total_fixtures: number | null
+          working_fixtures: number | null
         }
         Relationships: []
       }
