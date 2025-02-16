@@ -99,7 +99,7 @@ export function LightingFixturesList({ selectedBuilding, selectedFloor }: Lighti
       if (error) throw error;
       if (!rawData) return [];
 
-      return rawData.map((raw): LightingFixture => ({
+      return rawData.map((raw: DatabaseLightingFixture): LightingFixture => ({
         id: raw.id,
         name: raw.name,
         type: raw.type,
