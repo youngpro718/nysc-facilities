@@ -7,63 +7,108 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { LightingFixture } from "@/components/lighting/types";
+import { 
+  LightingFixture, 
+  InspectionEntry, 
+  MaintenanceEntry, 
+  ElectricalIssues,
+  EnergyUsageData,
+  EmergencyProtocols,
+  WarrantyInfo,
+  ManufacturerDetails 
+} from "@/components/lighting/types";
 
 interface LightingFixturesListProps {
   selectedBuilding: string;
   selectedFloor: string;
 }
 
-async function fetchLightingFixtures(buildingId: string, floorId: string) {
-  let query = supabase
-    .from('lighting_fixture_details')
-    .select('*')
-    .order('name');
-
-  if (floorId !== 'all') {
-    query = query.eq('floor_id', floorId);
-  }
-  if (buildingId !== 'all') {
-    query = query.eq('building_id', buildingId);
-  }
-
-  const { data, error } = await query;
-  
-  if (error) throw error;
-  return data || [];
+interface DatabaseFixture {
+  id: string;
+  name: string;
+  type: LightingFixture['type'];
+  status: LightingFixture['status'];
+  zone_name: string | null;
+  building_name: string | null;
+  floor_name: string | null;
+  floor_id: string | null;
+  space_id: string | null;
+  space_type: string | null;
+  position: string | null;
+  sequence_number: number | null;
+  zone_id: string | null;
+  space_name: string | null;
+  room_number: string | null;
+  emergency_circuit: boolean;
+  technology: string | null;
+  ballast_issue: boolean;
+  bulb_count: number;
+  electrical_issues: {
+    short_circuit: boolean;
+    wiring_issues: boolean;
+    voltage_problems: boolean;
+  } | null;
+  energy_usage_data: Partial<EnergyUsageData> | null;
+  emergency_protocols: Partial<EmergencyProtocols> | null;
+  warranty_info: Partial<WarrantyInfo> | null;
+  manufacturer_details: Partial<ManufacturerDetails> | null;
+  inspection_history: InspectionEntry[];
+  maintenance_history: MaintenanceEntry[];
+  connected_fixtures: string[];
+  maintenance_notes: string | null;
+  ballast_check_notes: string | null;
+  backup_power_source: string | null;
+  emergency_duration_minutes: number | null;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 export function LightingFixturesList({ selectedBuilding, selectedFloor }: LightingFixturesListProps) {
   const [selectedFixtures, setSelectedFixtures] = useState<string[]>([]);
 
   const query = useQuery({
-    queryKey: ['lighting-fixtures', selectedBuilding, selectedFloor],
+    queryKey: ['lighting-fixtures', selectedBuilding, selectedFloor] as const,
     queryFn: async () => {
-      const data = await fetchLightingFixtures(selectedBuilding, selectedFloor);
-      return data.map(item => ({
+      let query = supabase
+        .from('lighting_fixture_details')
+        .select('*')
+        .order('name');
+
+      if (selectedFloor !== 'all') {
+        query = query.eq('floor_id', selectedFloor);
+      }
+      if (selectedBuilding !== 'all') {
+        query = query.eq('building_id', selectedBuilding);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      if (!data) return [];
+
+      return data.map((item: DatabaseFixture): LightingFixture => ({
         id: item.id,
         name: item.name,
         type: item.type,
         status: item.status,
-        zone_name: item.zone_name ?? null,
-        building_name: item.building_name ?? null,
-        floor_name: item.floor_name ?? null,
-        floor_id: item.floor_id ?? null,
-        space_id: item.space_id ?? null,
+        zone_name: item.zone_name,
+        building_name: item.building_name,
+        floor_name: item.floor_name,
+        floor_id: item.floor_id,
+        space_id: item.space_id,
         space_type: item.space_type === 'room' || item.space_type === 'hallway' ? item.space_type : null,
-        position: item.position ?? null,
-        sequence_number: item.sequence_number ?? null,
-        zone_id: item.zone_id ?? null,
-        space_name: item.space_name ?? null,
-        room_number: item.room_number ?? null,
+        position: item.position,
+        sequence_number: item.sequence_number,
+        zone_id: item.zone_id,
+        space_name: item.space_name,
+        room_number: item.room_number,
         emergency_circuit: item.emergency_circuit ?? false,
-        technology: item.technology ?? null,
+        technology: item.technology,
         ballast_issue: item.ballast_issue ?? false,
         bulb_count: item.bulb_count ?? 1,
-        electrical_issues: {
-          short_circuit: item.electrical_issues?.short_circuit ?? false,
-          wiring_issues: item.electrical_issues?.wiring_issues ?? false,
-          voltage_problems: item.electrical_issues?.voltage_problems ?? false
+        electrical_issues: item.electrical_issues ?? {
+          short_circuit: false,
+          wiring_issues: false,
+          voltage_problems: false
         },
         energy_usage_data: {
           daily_usage: [],
@@ -91,16 +136,16 @@ export function LightingFixturesList({ selectedBuilding, selectedFloor }: Lighti
           support_contact: null,
           ...(item.manufacturer_details || {})
         },
-        inspection_history: Array.isArray(item.inspection_history) ? item.inspection_history : [],
-        maintenance_history: Array.isArray(item.maintenance_history) ? item.maintenance_history : [],
-        connected_fixtures: Array.isArray(item.connected_fixtures) ? item.connected_fixtures : [],
-        maintenance_notes: item.maintenance_notes ?? null,
-        ballast_check_notes: item.ballast_check_notes ?? null,
-        backup_power_source: item.backup_power_source ?? null,
-        emergency_duration_minutes: item.emergency_duration_minutes ?? null,
-        created_at: item.created_at ?? null,
-        updated_at: item.updated_at ?? null
-      } as LightingFixture));
+        inspection_history: item.inspection_history || [],
+        maintenance_history: item.maintenance_history || [],
+        connected_fixtures: item.connected_fixtures || [],
+        maintenance_notes: item.maintenance_notes,
+        ballast_check_notes: item.ballast_check_notes,
+        backup_power_source: item.backup_power_source,
+        emergency_duration_minutes: item.emergency_duration_minutes,
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      }));
     }
   });
 
