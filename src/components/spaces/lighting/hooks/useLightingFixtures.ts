@@ -19,24 +19,8 @@ interface UseLightingFixturesProps {
   selectedFloor: string;
 }
 
-async function fetchLightingFixtures(selectedBuilding: string, selectedFloor: string) {
-  let query = supabase
-    .from('lighting_fixture_details')
-    .select('*')
-    .order('name');
-
-  if (selectedFloor !== 'all') {
-    query = query.eq('floor_id', selectedFloor);
-  }
-  if (selectedBuilding !== 'all') {
-    query = query.eq('building_id', selectedBuilding);
-  }
-
-  const { data: rawData, error } = await query;
-  if (error) throw error;
-  if (!rawData) return [];
-
-  const fixtures: LightingFixture[] = (rawData as DatabaseLightingFixture[]).map(raw => ({
+function transformToLightingFixture(raw: DatabaseLightingFixture): LightingFixture {
+  return {
     id: raw.id,
     name: raw.name,
     type: raw.type,
@@ -92,14 +76,34 @@ async function fetchLightingFixtures(selectedBuilding: string, selectedFloor: st
     emergency_duration_minutes: raw.emergency_duration_minutes,
     created_at: raw.created_at,
     updated_at: raw.updated_at
-  }));
-
-  return fixtures;
+  };
 }
 
-export function useLightingFixtures({ selectedBuilding, selectedFloor }: UseLightingFixturesProps) {
-  return useQuery({
-    queryKey: ['lighting-fixtures', selectedBuilding, selectedFloor],
-    queryFn: () => fetchLightingFixtures(selectedBuilding, selectedFloor)
-  });
+async function fetchLightingFixtures(selectedBuilding: string, selectedFloor: string) {
+  let query = supabase
+    .from('lighting_fixture_details')
+    .select('*')
+    .order('name');
+
+  if (selectedFloor !== 'all') {
+    query = query.eq('floor_id', selectedFloor);
+  }
+  if (selectedBuilding !== 'all') {
+    query = query.eq('building_id', selectedBuilding);
+  }
+
+  const { data: rawData, error } = await query;
+  if (error) throw error;
+  if (!rawData) return [];
+
+  return (rawData as DatabaseLightingFixture[]).map(transformToLightingFixture);
+}
+
+export function useLightingFixtures(props: UseLightingFixturesProps) {
+  const { selectedBuilding, selectedFloor } = props;
+  
+  return useQuery(
+    ['lighting-fixtures', selectedBuilding, selectedFloor],
+    () => fetchLightingFixtures(selectedBuilding, selectedFloor)
+  );
 }
