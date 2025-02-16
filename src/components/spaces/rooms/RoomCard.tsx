@@ -14,8 +14,6 @@ interface RoomCardProps {
 export function RoomCard({ room, onDelete }: RoomCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
 
-  console.log("Room data in card:", room); // Debug log
-
   return (
     <div className="relative w-full h-[400px] perspective-1000">
       <div className={`relative w-full h-full transition-transform duration-500 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>

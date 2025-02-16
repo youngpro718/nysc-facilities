@@ -120,16 +120,6 @@ export const SpacesList = () => {
                     type: "room",
                     status: space.status,
                     floorId: space.floor_id,
-                    roomNumber: space.room_number,
-                    roomType: space.room_type,
-                    description: space.description,
-                    isStorage: space.is_storage,
-                    storageCapacity: space.storage_capacity,
-                    storageType: space.storage_type,
-                    storageNotes: space.storage_notes,
-                    phoneNumber: space.phone_number,
-                    parentRoomId: space.parent_room_id,
-                    currentFunction: space.current_function
                   }}
                 />
                 <Button
