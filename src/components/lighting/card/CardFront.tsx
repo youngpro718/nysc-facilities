@@ -1,4 +1,3 @@
-
 import { LightingFixture } from "@/components/lighting/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +10,7 @@ import { cn } from "@/lib/utils";
 interface CardFrontProps {
   fixture: LightingFixture;
   isSelected: boolean;
-  onToggleSelect: (checked: boolean) => void;
+  onSelect: (checked: boolean) => void;
   onDelete: () => void;
   onFixtureUpdated: () => void;
 }
@@ -19,7 +18,7 @@ interface CardFrontProps {
 export function CardFront({ 
   fixture, 
   isSelected, 
-  onToggleSelect, 
+  onSelect, 
   onDelete,
   onFixtureUpdated 
 }: CardFrontProps) {
@@ -51,7 +50,7 @@ export function CardFront({
           <input
             type="checkbox"
             checked={isSelected}
-            onChange={(e) => onToggleSelect(e.target.checked)}
+            onChange={(e) => onSelect(e.target.checked)}
             className="h-4 w-4 rounded border-gray-300"
           />
         </div>

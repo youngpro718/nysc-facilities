@@ -34,7 +34,7 @@ export function LightingFixturesList({ selectedBuilding, selectedFloor }: Lighti
     if (error) throw error;
     if (!data) return [];
 
-    return data.map((raw): LightingFixture => ({
+    return data.map((raw: any): LightingFixture => ({
       id: raw.id,
       name: raw.name,
       type: raw.type,
@@ -54,44 +54,44 @@ export function LightingFixturesList({ selectedBuilding, selectedFloor }: Lighti
       technology: raw.technology ?? null,
       ballast_issue: raw.ballast_issue ?? false,
       bulb_count: raw.bulb_count ?? 1,
-      electrical_issues: {
-        short_circuit: raw.electrical_issues?.short_circuit ?? false,
-        wiring_issues: raw.electrical_issues?.wiring_issues ?? false,
-        voltage_problems: raw.electrical_issues?.voltage_problems ?? false
+      electrical_issues: typeof raw.electrical_issues === 'object' ? raw.electrical_issues : {
+        short_circuit: false,
+        wiring_issues: false,
+        voltage_problems: false
       },
-      energy_usage_data: {
-        daily_usage: raw.energy_usage_data?.daily_usage ?? [],
-        efficiency_rating: raw.energy_usage_data?.efficiency_rating ?? null,
-        last_reading: raw.energy_usage_data?.last_reading ?? null
+      energy_usage_data: typeof raw.energy_usage_data === 'object' ? raw.energy_usage_data : {
+        daily_usage: [],
+        efficiency_rating: null,
+        last_reading: null
       },
-      emergency_protocols: {
-        emergency_contact: raw.emergency_protocols?.emergency_contact ?? null,
-        backup_system: raw.emergency_protocols?.backup_system ?? false,
-        evacuation_route: raw.emergency_protocols?.evacuation_route ?? false
+      emergency_protocols: typeof raw.emergency_protocols === 'object' ? raw.emergency_protocols : {
+        emergency_contact: null,
+        backup_system: false,
+        evacuation_route: false
       },
-      warranty_info: {
-        start_date: raw.warranty_info?.start_date ?? null,
-        end_date: raw.warranty_info?.end_date ?? null,
-        provider: raw.warranty_info?.provider ?? null,
-        terms: raw.warranty_info?.terms ?? null
+      warranty_info: typeof raw.warranty_info === 'object' ? raw.warranty_info : {
+        start_date: null,
+        end_date: null,
+        provider: null,
+        terms: null
       },
-      manufacturer_details: {
-        name: raw.manufacturer_details?.name ?? null,
-        model: raw.manufacturer_details?.model ?? null,
-        serial_number: raw.manufacturer_details?.serial_number ?? null,
-        support_contact: raw.manufacturer_details?.support_contact ?? null
+      manufacturer_details: typeof raw.manufacturer_details === 'object' ? raw.manufacturer_details : {
+        name: null,
+        model: null,
+        serial_number: null,
+        support_contact: null
       },
-      inspection_history: (raw.inspection_history ?? []).map(entry => ({
+      inspection_history: Array.isArray(raw.inspection_history) ? raw.inspection_history.map(entry => ({
         date: entry.date || '',
         status: entry.status || '',
         notes: entry.notes
-      })),
-      maintenance_history: (raw.maintenance_history ?? []).map(entry => ({
+      })) : [],
+      maintenance_history: Array.isArray(raw.maintenance_history) ? raw.maintenance_history.map(entry => ({
         date: entry.date || '',
         type: entry.type || '',
         notes: entry.notes
-      })),
-      connected_fixtures: raw.connected_fixtures ?? [],
+      })) : [],
+      connected_fixtures: Array.isArray(raw.connected_fixtures) ? raw.connected_fixtures : [],
       created_at: raw.created_at ?? null,
       updated_at: raw.updated_at ?? null
     }));
