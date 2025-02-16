@@ -1,33 +1,14 @@
 
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { 
-  AlertTriangle, 
-  Lightbulb, 
-  Zap, 
-  Scale,
-  Settings
-} from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { RoomLightingDialog } from "./RoomLightingDialog";
 import { AssignFixtureDialog } from "./AssignFixtureDialog";
-import type { LightingFixture, RoomLightingConfig as RoomLightingConfigType } from "@/components/lighting/types";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { LightingFixture } from "@/components/lighting/types";
 
-interface RoomLightingConfigProps {
+interface RoomLightingSectionProps {
   roomId: string;
 }
 
-interface GroupedFixtures {
-  [position: string]: LightingFixture[];
-}
-
-export function RoomLightingConfig({ roomId }: RoomLightingConfigProps) {
-  const [isEditing, setIsEditing] = useState(false);
-
+export function RoomLightingSection({ roomId }: RoomLightingSectionProps) {
   const { data: fixtures, isLoading, refetch } = useQuery({
     queryKey: ['room-lighting', roomId],
     queryFn: async () => {
@@ -41,233 +22,62 @@ export function RoomLightingConfig({ roomId }: RoomLightingConfigProps) {
 
       if (error) {
         console.error('Error fetching lighting fixtures:', error);
-        toast.error('Failed to load lighting configuration');
         throw error;
       }
 
       console.log("Fixture data:", fixtureData);
 
-      // Transform the data to match LightingFixture type
-      return (fixtureData || []).map(fixture => ({
-        id: fixture.id,
-        name: fixture.name,
-        type: fixture.type,
-        status: fixture.status,
-        zone_id: fixture.zone_id,
-        technology: fixture.technology || "LED",
-        position: fixture.position,
-        sequence_number: fixture.sequence_number,
-        bulb_count: fixture.bulb_count,
-        emergency_circuit: fixture.emergency_circuit,
-        ballast_issue: fixture.ballast_issue,
-        maintenance_notes: fixture.maintenance_notes,
-        // Safely handle potentially missing ballast_check_notes
-        ballast_check_notes: fixture.ballast_check_notes || null,
-        electrical_issues: fixture.electrical_issues || {
+      return (fixtureData || []).map((raw: any): LightingFixture => ({
+        id: raw.id,
+        name: raw.name,
+        type: raw.type,
+        status: raw.status,
+        building_name: raw.building_name || null,
+        floor_name: raw.floor_name || null,
+        floor_id: raw.floor_id || null,
+        zone_name: raw.zone_name || null,
+        space_id: raw.space_id || null,
+        space_type: raw.space_type as 'room' | 'hallway' | null,
+        position: raw.position || null,
+        sequence_number: raw.sequence_number || null,
+        zone_id: raw.zone_id || null,
+        space_name: raw.space_name || null,
+        room_number: raw.room_number || null,
+        emergency_circuit: raw.emergency_circuit || false,
+        technology: raw.technology || null,
+        ballast_issue: raw.ballast_issue || false,
+        bulb_count: raw.bulb_count || 1,
+        electrical_issues: typeof raw.electrical_issues === 'object' ? raw.electrical_issues : {
           short_circuit: false,
           wiring_issues: false,
           voltage_problems: false
         },
-        energy_usage_data: fixture.energy_usage_data ? {
-          daily_usage: [],
-          efficiency_rating: null,
-          last_reading: null,
-          ...JSON.parse(JSON.stringify(fixture.energy_usage_data))
-        } : null,
-        emergency_protocols: fixture.emergency_protocols ? {
-          emergency_contact: null,
-          backup_system: false,
-          evacuation_route: false,
-          ...JSON.parse(JSON.stringify(fixture.emergency_protocols))
-        } : null,
-        warranty_info: fixture.warranty_info ? {
-          start_date: null,
-          end_date: null,
-          provider: null,
-          terms: null,
-          ...JSON.parse(JSON.stringify(fixture.warranty_info))
-        } : null,
-        manufacturer_details: fixture.manufacturer_details ? {
-          name: null,
-          model: null,
-          serial_number: null,
-          support_contact: null,
-          ...JSON.parse(JSON.stringify(fixture.manufacturer_details))
-        } : null,
-        inspection_history: fixture.inspection_history || [],
-        maintenance_history: fixture.maintenance_history || [],
-        connected_fixtures: fixture.connected_fixtures || []
-      })) as LightingFixture[];
+        energy_usage_data: raw.energy_usage_data || null,
+        emergency_protocols: raw.emergency_protocols || null,
+        warranty_info: raw.warranty_info || null,
+        manufacturer_details: raw.manufacturer_details || null,
+        inspection_history: Array.isArray(raw.inspection_history) ? raw.inspection_history : [],
+        maintenance_history: Array.isArray(raw.maintenance_history) ? raw.maintenance_history : [],
+        connected_fixtures: Array.isArray(raw.connected_fixtures) ? raw.connected_fixtures : [],
+        maintenance_notes: raw.maintenance_notes || null,
+        ballast_check_notes: raw.ballast_check_notes || null,
+        backup_power_source: raw.backup_power_source || null,
+        emergency_duration_minutes: raw.emergency_duration_minutes || null,
+        created_at: raw.created_at || null,
+        updated_at: raw.updated_at || null
+      }));
     }
   });
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Loading lighting configuration...</span>
-          </CardTitle>
-        </CardHeader>
-      </Card>
-    );
-  }
-
-  const groupedFixtures = fixtures?.reduce<GroupedFixtures>((acc, fixture) => {
-    const position = fixture.position || 'unknown';
-    if (!acc[position]) {
-      acc[position] = [];
-    }
-    acc[position].push(fixture);
-    return acc;
-  }, {}) || {};
-
-  // Transform LightingFixture to RoomLightingConfig
-  const transformToRoomConfig = (fixture: LightingFixture): RoomLightingConfigType => ({
-    id: fixture.id,
-    room_id: roomId,
-    name: fixture.name,
-    zone_id: fixture.zone_id,
-    type: fixture.type,
-    technology: fixture.technology || "LED",
-    bulb_count: fixture.bulb_count,
-    status: fixture.status,
-    maintenance_notes: fixture.maintenance_notes,
-    electrical_issues: fixture.electrical_issues || {
-      short_circuit: false,
-      wiring_issues: false,
-      voltage_problems: false
-    },
-    ballast_issue: fixture.ballast_issue,
-    ballast_check_notes: fixture.ballast_check_notes || undefined,
-    emergency_circuit: fixture.emergency_circuit,
-    position: fixture.position,
-    sequence_number: fixture.sequence_number
-  });
-
-  const workingFixtures = fixtures?.filter(f => f.status === 'functional').length || 0;
-  const totalFixtures = fixtures?.length || 0;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span>Lighting Configuration</span>
-            <Badge variant="outline" className="text-xs">
-              {workingFixtures}/{totalFixtures} Working
-            </Badge>
-          </div>
-          <div className="flex items-center gap-2">
-            {fixtures && fixtures.length > 0 && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setIsEditing(true)}
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                Configure
-              </Button>
-            )}
-            <AssignFixtureDialog 
-              roomId={roomId} 
-              onAssignmentComplete={refetch}
-            />
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {fixtures && fixtures.length > 0 ? (
-          <div className="space-y-6">
-            {/* Progress bar for working fixtures */}
-            <div className="space-y-2">
-              <div className="h-2 rounded-full bg-secondary">
-                <div
-                  className="h-full rounded-full bg-green-500 transition-all duration-500"
-                  style={{
-                    width: `${totalFixtures ? (workingFixtures / totalFixtures) * 100 : 0}%`,
-                  }}
-                />
-              </div>
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Total Fixtures: {totalFixtures}</span>
-                <span className="font-medium text-green-500">
-                  {Math.round((workingFixtures / totalFixtures) * 100) || 0}% Operational
-                </span>
-              </div>
-            </div>
-
-            {Object.entries(groupedFixtures).map(([position, positionFixtures]) => (
-              <div key={position} className="space-y-4">
-                <h3 className="font-medium capitalize">{position} Fixtures</h3>
-                <div className="space-y-4">
-                  {positionFixtures.map((fixture) => (
-                    <div key={fixture.id} className="border rounded-lg p-4 space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Lightbulb className="h-4 w-4 text-primary" />
-                          <span>{fixture.name}</span>
-                        </div>
-                        <Badge variant={fixture.status === 'functional' ? 'default' : 'destructive'}>
-                          {fixture.status}
-                        </Badge>
-                      </div>
-
-                      {fixture.technology && (
-                        <div className="text-sm text-muted-foreground">
-                          Technology: {fixture.technology}
-                        </div>
-                      )}
-
-                      {fixture.electrical_issues && (
-                        Object.entries(fixture.electrical_issues).some(([_, value]) => value) && (
-                          <div className="flex items-center gap-2 text-red-600">
-                            <Zap className="h-4 w-4" />
-                            <span className="text-sm">Electrical Issues Detected</span>
-                          </div>
-                        )
-                      )}
-
-                      {fixture.ballast_issue && (
-                        <div className="flex items-center gap-2 text-orange-600">
-                          <Scale className="h-4 w-4" />
-                          <span className="text-sm">Ballast Issue Present</span>
-                        </div>
-                      )}
-
-                      {fixture.emergency_circuit && (
-                        <div className="flex items-center gap-2 text-red-600">
-                          <AlertTriangle className="h-4 w-4" />
-                          <span className="text-sm">Emergency Circuit</span>
-                        </div>
-                      )}
-
-                      {fixture.maintenance_notes && (
-                        <div className="text-sm text-muted-foreground">
-                          <span className="font-semibold">Maintenance Notes:</span> {fixture.maintenance_notes}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-4 text-muted-foreground">
-            No lighting fixtures assigned
-          </div>
-        )}
-      </CardContent>
-
-      {isEditing && fixtures && fixtures[0] && (
-        <RoomLightingDialog
-          open={isEditing}
-          onOpenChange={setIsEditing}
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-medium">Lighting</h3>
+        <AssignFixtureDialog 
           roomId={roomId}
-          initialData={transformToRoomConfig(fixtures[0])}
+          onAssignmentComplete={refetch}
         />
-      )}
-    </Card>
+      </div>
+    </div>
   );
 }

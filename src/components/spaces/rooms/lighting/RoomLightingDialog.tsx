@@ -53,30 +53,15 @@ export function RoomLightingDialog({
     setIsSubmitting(true);
     try {
       const fixtureData = {
-        name: values.name,
-        type: values.type,
-        technology: values.technology,
-        bulb_count: values.bulb_count,
-        status: values.status,
-        electrical_issues: values.electrical_issues,
-        ballast_issue: values.ballast_issue,
-        emergency_circuit: values.emergency_circuit,
-        maintenance_notes: values.maintenance_notes,
-        ballast_check_notes: values.ballast_check_notes,
-        position: values.position,
-        id: values.id, // Include if it exists (for updates)
+        ...values,
         space_id: roomId,
-        space_type: 'room' as const
+        space_type: 'room' as const,
+        electrical_issues: JSON.stringify(values.electrical_issues) // Convert to JSON string for Supabase
       };
 
       const { error } = await supabase
         .from('lighting_fixtures')
-        .upsert({
-          ...fixtureData,
-          id: values.id, // For updates
-          space_id: roomId,
-          space_type: 'room'
-        });
+        .upsert(fixtureData);
 
       if (error) throw error;
 
