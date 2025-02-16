@@ -7,6 +7,8 @@ export interface CreateConnectionData {
   hallwayId?: string;
   doorId?: string;
   direction?: Direction;
-  connectionType?: "door" | "direct" | "secured";
+  connectionType: ConnectionType;
   position?: Position;
+  hallwayPosition?: number;
+  offsetDistance?: number;
 }

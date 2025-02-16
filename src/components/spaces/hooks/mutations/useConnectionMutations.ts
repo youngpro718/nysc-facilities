@@ -1,3 +1,4 @@
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -17,11 +18,11 @@ export function useConnectionMutations(spaceType: "room" | "hallway" | "door") {
 
       // Determine the target space ID based on the connection type
       let toSpaceId: string | undefined;
-      if (data.connectionType === "room") {
+      if (data.connectionType === "room" && data.roomId) {
         toSpaceId = data.roomId;
-      } else if (data.connectionType === "hallway") {
+      } else if (data.connectionType === "hallway" && data.hallwayId) {
         toSpaceId = data.hallwayId;
-      } else if (data.connectionType === "door") {
+      } else if (data.connectionType === "door" && data.doorId) {
         toSpaceId = data.doorId;
       }
 
@@ -29,18 +30,18 @@ export function useConnectionMutations(spaceType: "room" | "hallway" | "door") {
         throw new Error(`Target ${data.connectionType} ID is required`);
       }
 
-      // First check if connection already exists
+      // First check if connection already exists using maybeSingle()
       const { data: existingConnection, error: existingError } = await supabase
         .from("space_connections")
         .select("id")
         .or(
-          `from_space_id.eq.${data.spaceId},to_space_id.eq.${toSpaceId}`,
-          `from_space_id.eq.${toSpaceId},to_space_id.eq.${data.spaceId}`
+          `and(from_space_id.eq.${data.spaceId},to_space_id.eq.${toSpaceId}),` +
+          `and(from_space_id.eq.${toSpaceId},to_space_id.eq.${data.spaceId})`
         )
         .eq("status", "active")
-        .single();
+        .maybeSingle();
 
-      if (existingError && existingError.code !== 'PGRST116') {
+      if (existingError) {
         console.error("Error checking existing connection:", existingError);
         throw new Error("Failed to check for existing connection");
       }
@@ -52,10 +53,12 @@ export function useConnectionMutations(spaceType: "room" | "hallway" | "door") {
       const insertData = {
         from_space_id: data.spaceId,
         to_space_id: toSpaceId,
-        space_type: data.connectionType,
-        connection_type: data.connectionType || "direct",
-        direction: data.direction || "bidirectional",
-        position: data.position || "middle",
+        space_type: spaceType,
+        connection_type: data.connectionType,
+        direction: data.direction || "adjacent",
+        position: data.position || "adjacent",
+        hallway_position: data.hallwayPosition,
+        offset_distance: data.offsetDistance,
         status: "active" as const
       };
       
