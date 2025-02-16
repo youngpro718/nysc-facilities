@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -7,10 +8,20 @@ import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { LightingFixture } from "@/components/lighting/types";
+import { PostgrestResponse } from "@supabase/supabase-js";
 
 interface LightingFixturesListProps {
   selectedBuilding: string;
   selectedFloor: string;
+}
+
+type DatabaseFixture = {
+  id: string;
+  name: string;
+  type: "standard" | "emergency" | "motion_sensor";
+  status: "functional" | "maintenance_needed" | "non_functional" | "pending_maintenance" | "scheduled_replacement";
+  space_type: "room" | "hallway" | null;
+  [key: string]: any;
 }
 
 export function LightingFixturesList({ selectedBuilding, selectedFloor }: LightingFixturesListProps) {
@@ -18,7 +29,7 @@ export function LightingFixturesList({ selectedBuilding, selectedFloor }: Lighti
 
   const { data: fixtures, isLoading, refetch } = useQuery({
     queryKey: ['lighting-fixtures', selectedBuilding, selectedFloor],
-    queryFn: async (): Promise<LightingFixture[]> => {
+    queryFn: async () => {
       let query = supabase
         .from('lighting_fixture_details')
         .select('*')
@@ -31,106 +42,87 @@ export function LightingFixturesList({ selectedBuilding, selectedFloor }: Lighti
         query = query.eq('building_id', selectedBuilding);
       }
 
-      const { data, error } = await query;
+      const { data, error }: PostgrestResponse<DatabaseFixture> = await query;
       if (error) throw error;
+      if (!data) return [];
       
-      return data.map(fixture => ({
-        id: fixture.id,
-        name: fixture.name,
-        type: fixture.type as LightingFixture['type'],
-        status: fixture.status as LightingFixture['status'],
-        zone_name: fixture.zone_name,
-        building_name: fixture.building_name,
-        floor_name: fixture.floor_name,
-        floor_id: fixture.floor_id,
-        space_id: fixture.space_id,
-        space_type: fixture.space_type,
-        position: fixture.position,
-        sequence_number: fixture.sequence_number,
-        zone_id: fixture.zone_id,
-        space_name: fixture.space_name,
-        room_number: fixture.room_number,
-        emergency_circuit: fixture.emergency_circuit || false,
-        technology: fixture.technology || null,
-        ballast_issue: fixture.ballast_issue || false,
-        bulb_count: fixture.bulb_count || 1,
-        electrical_issues: typeof fixture.electrical_issues === 'string' 
-          ? JSON.parse(fixture.electrical_issues) 
-          : fixture.electrical_issues || {
-              short_circuit: false,
-              wiring_issues: false,
-              voltage_problems: false
-            },
-        energy_usage_data: {
-          daily_usage: [],
-          efficiency_rating: null,
-          last_reading: null,
-          ...(fixture.energy_usage_data ? 
-            typeof fixture.energy_usage_data === 'string' ? 
-              JSON.parse(fixture.energy_usage_data) : 
-              fixture.energy_usage_data
-            : {})
-        },
-        emergency_protocols: {
-          emergency_contact: null,
-          backup_system: false,
-          evacuation_route: false,
-          ...(fixture.emergency_protocols ? 
-            typeof fixture.emergency_protocols === 'string' ? 
-              JSON.parse(fixture.emergency_protocols) : 
-              fixture.emergency_protocols
-            : {})
-        },
-        warranty_info: {
-          start_date: null,
-          end_date: null,
-          provider: null,
-          terms: null,
-          ...(fixture.warranty_info ? 
-            typeof fixture.warranty_info === 'string' ? 
-              JSON.parse(fixture.warranty_info) : 
-              fixture.warranty_info
-            : {})
-        },
-        manufacturer_details: {
-          name: null,
-          model: null,
-          serial_number: null,
-          support_contact: null,
-          ...(fixture.manufacturer_details ? 
-            typeof fixture.manufacturer_details === 'string' ? 
-              JSON.parse(fixture.manufacturer_details) : 
-              fixture.manufacturer_details
-            : {})
-        },
-        inspection_history: fixture.inspection_history 
-          ? (Array.isArray(fixture.inspection_history) 
-              ? fixture.inspection_history 
-              : typeof fixture.inspection_history === 'string' 
-                ? JSON.parse(fixture.inspection_history) 
-                : []
-            ).map((entry: any) => ({
-              date: entry.date || '',
-              status: entry.status || '',
-              notes: entry.notes
-            }))
-          : [],
-        maintenance_history: fixture.maintenance_history 
-          ? (Array.isArray(fixture.maintenance_history)
-              ? fixture.maintenance_history
-              : typeof fixture.maintenance_history === 'string'
-                ? JSON.parse(fixture.maintenance_history)
-                : []
-            ).map((entry: any) => ({
-              date: entry.date || '',
-              type: entry.type || '',
-              notes: entry.notes
-            }))
-          : [],
-        connected_fixtures: fixture.connected_fixtures || [],
-        created_at: fixture.created_at,
-        updated_at: fixture.updated_at
-      }));
+      return data.map(fixture => {
+        // Helper function to safely parse JSON strings
+        const parseJson = <T,>(value: any, defaultValue: T): T => {
+          if (typeof value === 'string') {
+            try {
+              return JSON.parse(value);
+            } catch {
+              return defaultValue;
+            }
+          }
+          return value || defaultValue;
+        };
+
+        const transformed: LightingFixture = {
+          id: fixture.id,
+          name: fixture.name,
+          type: fixture.type,
+          status: fixture.status,
+          zone_name: fixture.zone_name ?? null,
+          building_name: fixture.building_name ?? null,
+          floor_name: fixture.floor_name ?? null,
+          floor_id: fixture.floor_id ?? null,
+          space_id: fixture.space_id ?? null,
+          space_type: fixture.space_type ?? null,
+          position: fixture.position ?? null,
+          sequence_number: fixture.sequence_number ?? null,
+          zone_id: fixture.zone_id ?? null,
+          space_name: fixture.space_name ?? null,
+          room_number: fixture.room_number ?? null,
+          emergency_circuit: fixture.emergency_circuit ?? false,
+          technology: fixture.technology ?? null,
+          ballast_issue: fixture.ballast_issue ?? false,
+          bulb_count: fixture.bulb_count ?? 1,
+          electrical_issues: parseJson(fixture.electrical_issues, {
+            short_circuit: false,
+            wiring_issues: false,
+            voltage_problems: false
+          }),
+          energy_usage_data: parseJson(fixture.energy_usage_data, {
+            daily_usage: [],
+            efficiency_rating: null,
+            last_reading: null
+          }),
+          emergency_protocols: parseJson(fixture.emergency_protocols, {
+            emergency_contact: null,
+            backup_system: false,
+            evacuation_route: false
+          }),
+          warranty_info: parseJson(fixture.warranty_info, {
+            start_date: null,
+            end_date: null,
+            provider: null,
+            terms: null
+          }),
+          manufacturer_details: parseJson(fixture.manufacturer_details, {
+            name: null,
+            model: null,
+            serial_number: null,
+            support_contact: null
+          }),
+          inspection_history: parseJson(fixture.inspection_history, []).map((entry: any) => ({
+            date: entry.date || '',
+            status: entry.status || '',
+            notes: entry.notes
+          })),
+          maintenance_history: parseJson(fixture.maintenance_history, []).map((entry: any) => ({
+            date: entry.date || '',
+            type: entry.type || '',
+            notes: entry.notes
+          })),
+          connected_fixtures: fixture.connected_fixtures ?? [],
+          created_at: fixture.created_at ?? null,
+          updated_at: fixture.updated_at ?? null
+        };
+
+        return transformed;
+      });
     }
   });
 
