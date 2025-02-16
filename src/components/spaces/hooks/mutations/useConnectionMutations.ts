@@ -57,12 +57,19 @@ export function useConnectionMutations(spaceType: "room" | "hallway" | "door") {
         door: "door"
       };
 
-      // Validate and transform direction based on connection type
+      // Validate direction based on space type and connection type
       let direction = data.direction || "adjacent";
-      if (data.connectionType === "room" || data.connectionType === "door") {
+      
+      // Enforce direction rules based on space type
+      if (spaceType === "room" || spaceType === "door") {
         if (direction === "left_of_hallway" || direction === "right_of_hallway") {
-          direction = "adjacent";
+          direction = "adjacent"; // Default to adjacent for invalid room/door directions
         }
+      }
+      
+      // For hallway connections, convert adjacent to a default side if needed
+      if (spaceType === "hallway" && direction === "adjacent") {
+        direction = "right_of_hallway"; // Default side for hallway connections
       }
 
       const insertData = {
