@@ -58,7 +58,7 @@ const SpacesTabs = ({ selectedBuilding, selectedFloor }: SpaceViewProps) => {
 
         <TabsContent value="floorplan" className="mt-4">
           <Suspense fallback={<div>Loading floor plan...</div>}>
-            <FloorPlanView />
+            <FloorPlanView selectedFloor={selectedFloor} selectedBuilding={selectedBuilding} />
           </Suspense>
         </TabsContent>
       </Tabs>

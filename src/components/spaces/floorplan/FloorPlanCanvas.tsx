@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import { FloorPlanFlow } from "./components/FloorPlanFlow";
 import { FloorPlan3DView } from "./3d/FloorPlan3DView";
 import { Button } from "@/components/ui/button";
 import { Box, View } from "lucide-react";
@@ -14,8 +13,16 @@ interface FloorPlanCanvasProps {
 export function FloorPlanCanvas({ floorId, zoom = 1, onObjectSelect }: FloorPlanCanvasProps) {
   const [view, setView] = useState<"2d" | "3d">("2d");
 
+  if (!floorId) {
+    return (
+      <div className="flex items-center justify-center h-[500px] border rounded-lg bg-muted">
+        <p className="text-muted-foreground">Please select a floor to view the floor plan</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="relative">
+    <div className="relative border rounded-lg bg-background">
       <div className="absolute top-4 right-4 z-10">
         <Button
           variant="outline"
@@ -30,19 +37,7 @@ export function FloorPlanCanvas({ floorId, zoom = 1, onObjectSelect }: FloorPlan
         </Button>
       </div>
 
-      {view === "2d" ? (
-        <FloorPlanFlow 
-          nodes={[]} 
-          edges={[]} 
-          onNodesChange={() => {}}
-          onEdgesChange={() => {}}
-          onConnect={() => {}}
-          onNodeClick={onObjectSelect}
-          nodeTypes={{}}
-        />
-      ) : (
-        <FloorPlan3DView floorId={floorId} />
-      )}
+      <FloorPlan3DView floorId={floorId} />
     </div>
   );
 }
