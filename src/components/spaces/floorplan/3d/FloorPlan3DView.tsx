@@ -28,10 +28,10 @@ export function FloorPlan3DView({ floorId }: FloorPlan3DViewProps) {
           fov={50}
         />
         
-        <ambientLight intensity={0.2} /> {/* Reduced ambient light to make fixture lights more visible */}
+        <ambientLight intensity={0.2} />
         <directionalLight
           position={[10, 10, 10]}
-          intensity={0.5} // Reduced intensity
+          intensity={0.5}
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
@@ -51,6 +51,17 @@ export function FloorPlan3DView({ floorId }: FloorPlan3DViewProps) {
         <group position={[-50, 0, -50]}>
           {objects.map((obj) => {
             if (obj.type === "room") {
+              // Calculate color based on room type or status
+              const baseColor = obj.data.properties.room_type === "courtroom" 
+                ? "#dbeafe" 
+                : obj.data.properties.room_type === "office"
+                ? "#e2e8f0"
+                : obj.data.properties.room_type === "storage"
+                ? "#f1f5f9"
+                : obj.data.properties.room_type === "conference"
+                ? "#fef3c7"
+                : "#e2e8f0";
+
               return (
                 <mesh
                   key={obj.id}
@@ -63,6 +74,7 @@ export function FloorPlan3DView({ floorId }: FloorPlan3DViewProps) {
                   castShadow
                   receiveShadow
                 >
+                  {/* Room walls */}
                   <boxGeometry 
                     args={[
                       obj.data.size.width / 10,
@@ -71,10 +83,29 @@ export function FloorPlan3DView({ floorId }: FloorPlan3DViewProps) {
                     ]} 
                   />
                   <meshStandardMaterial 
-                    color={obj.data.style.backgroundColor || "#e2e8f0"}
+                    color={baseColor}
                     transparent
                     opacity={0.8}
                   />
+
+                  {/* Room ceiling */}
+                  <mesh
+                    position={[0, 1.5, 0]}
+                    rotation={[Math.PI / 2, 0, 0]}
+                  >
+                    <planeGeometry 
+                      args={[
+                        obj.data.size.width / 10,
+                        obj.data.size.height / 10
+                      ]} 
+                    />
+                    <meshStandardMaterial
+                      color={baseColor}
+                      transparent
+                      opacity={0.9}
+                      side={2}
+                    />
+                  </mesh>
                 </mesh>
               );
             }
@@ -84,10 +115,8 @@ export function FloorPlan3DView({ floorId }: FloorPlan3DViewProps) {
 
         {/* Lighting fixtures */}
         {fixtures?.map((fixture) => {
-          // Skip fixtures without position data
           if (!fixture.position) return null;
 
-          // Convert position to match our scale
           const x = (fixture.space_id ? fixture.position === 'ceiling' ? 0 : -2 : 0) / 10;
           const y = fixture.position === 'ceiling' ? 3 : 1.5;
           const z = (fixture.space_id ? fixture.position === 'ceiling' ? 0 : -2 : 0) / 10;
