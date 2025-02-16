@@ -78,15 +78,17 @@ function transformFixture(raw: DatabaseLightingFixture): LightingFixture {
   };
 }
 
-export function useLightingFixtures({ selectedBuilding, selectedFloor }: UseLightingFixturesProps) {
-  return useQuery({
-    queryKey: ['lighting-fixtures', selectedBuilding, selectedFloor] as const,
+export function useLightingFixtures(props: UseLightingFixturesProps) {
+  type QueryKey = readonly ['lighting-fixtures', string, string];
+  
+  return useQuery<LightingFixture[], Error, LightingFixture[], QueryKey>({
+    queryKey: ['lighting-fixtures', props.selectedBuilding, props.selectedFloor],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('lighting_fixture_details')
         .select('*')
-        .eq(selectedFloor !== 'all' ? 'floor_id' : 'floor_id', selectedFloor)
-        .eq(selectedBuilding !== 'all' ? 'building_id' : 'building_id', selectedBuilding)
+        .eq(props.selectedFloor !== 'all' ? 'floor_id' : 'floor_id', props.selectedFloor)
+        .eq(props.selectedBuilding !== 'all' ? 'building_id' : 'building_id', props.selectedBuilding)
         .order('name');
 
       if (error) throw error;
