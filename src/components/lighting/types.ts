@@ -55,6 +55,12 @@ export interface MaintenanceEntry {
   notes?: string;
 }
 
+export interface SpatialAssignment {
+  space_type: 'room' | 'hallway';
+  position: LightingPosition;
+  sequence_number: number;
+}
+
 export interface LightingFixture {
   id: string;
   name: string;
@@ -85,4 +91,27 @@ export interface LightingFixture {
   connected_fixtures?: string[];
   created_at?: string | null;
   updated_at?: string | null;
+  maintenance_notes?: string | null;
+  ballast_check_notes?: string | null;
+  backup_power_source?: string | null;
+  emergency_duration_minutes?: number | null;
+  spatial_assignment?: SpatialAssignment | null;
+}
+
+export interface RoomLightingConfig {
+  id?: string;
+  room_id: string;
+  name: string;
+  type: LightingType;
+  technology: LightingTechnology;
+  bulb_count: number;
+  status: LightStatus;
+  maintenance_notes?: string | null;
+  electrical_issues: ElectricalIssues;
+  ballast_issue: boolean;
+  ballast_check_notes?: string | null;
+  emergency_circuit: boolean;
+  position: LightingPosition;
+  sequence_number?: number;
+  zone_id?: string | null;
 }
