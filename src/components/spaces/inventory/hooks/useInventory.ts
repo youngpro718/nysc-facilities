@@ -20,20 +20,25 @@ export const useInventory = (roomId: string) => {
     queryKey: ['inventory', roomId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('inventory_items_view')
-        .select()
+        .from('inventory_items')
+        .select(`
+          *,
+          category:category_id (
+            name,
+            color
+          )
+        `)
         .eq('storage_room_id', roomId);
       
       if (error) throw error;
       
       if (!data?.length) return [];
 
-      // Transform the data to match our InventoryItem type
       return data.map(item => ({
         ...item,
-        category: item.category_id ? {
-          name: item.category_name,
-          color: item.category_color
+        category: item.category ? {
+          name: item.category.name,
+          color: item.category.color
         } : undefined
       })) as InventoryItem[];
     }
@@ -56,7 +61,7 @@ export const useInventory = (roomId: string) => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory', roomId] });
       toast({
         title: "Success",
         description: "Item added successfully",
@@ -73,15 +78,28 @@ export const useInventory = (roomId: string) => {
 
   const updateQuantityMutation = useMutation({
     mutationFn: async ({ id, quantity }: { id: string; quantity: number }) => {
-      const { error } = await supabase
-        .from('inventory_items')
-        .update({ quantity })
-        .eq('id', id);
+      // First, update the local cache optimistically
+      queryClient.setQueryData(['inventory', roomId], (oldData: InventoryItem[] | undefined) => {
+        if (!oldData) return oldData;
+        return oldData.map(item => 
+          item.id === id ? { ...item, quantity } : item
+        );
+      });
 
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      try {
+        const { error } = await supabase
+          .from('inventory_items')
+          .update({ quantity })
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (error) throw error;
+      } catch (error) {
+        // If the update fails, revert the optimistic update
+        queryClient.invalidateQueries({ queryKey: ['inventory', roomId] });
+        throw error;
+      }
     },
     onError: (error: any) => {
       toast({
@@ -102,7 +120,7 @@ export const useInventory = (roomId: string) => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory', roomId] });
       toast({
         title: "Success",
         description: "Item deleted successfully",
@@ -125,6 +143,6 @@ export const useInventory = (roomId: string) => {
     deleteItem: deleteItemMutation.mutateAsync,
     isAdding: addItemMutation.isPending,
     isUpdating: updateQuantityMutation.isPending,
-    isDeleting: deleteItemMutation.isPending,
+    isDeleting: deleteItemMutation.isPending
   };
 };

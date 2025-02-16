@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -14,14 +13,17 @@ interface InventoryDialogProps {
 export function InventoryDialog({ onSubmit }: InventoryDialogProps) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (data: InventoryFormInputs) => {
     setIsSubmitting(true);
+    setIsLoading(true);
     try {
       await onSubmit(data);
       setOpen(false);
     } finally {
       setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
@@ -38,10 +40,14 @@ export function InventoryDialog({ onSubmit }: InventoryDialogProps) {
           <DialogTitle>Add New Inventory Item</DialogTitle>
         </DialogHeader>
         <ScrollArea className="h-full max-h-[70vh] overflow-y-auto pr-4">
-          <InventoryForm
-            onSubmit={handleSubmit}
-            isSubmitting={isSubmitting}
-          />
+          {isLoading ? (
+            <div>Loading...</div>
+          ) : (
+            <InventoryForm
+              onSubmit={handleSubmit}
+              isSubmitting={isSubmitting}
+            />
+          )}
         </ScrollArea>
       </DialogContent>
     </Dialog>
