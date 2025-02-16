@@ -28,20 +28,20 @@ export const useHallwayData = ({ selectedBuilding, selectedFloor }: UseHallwayDa
               name
             )
           ),
-          space_connections!hallways_space_connections_fkey (
+          space_connections (
             id,
             position,
             connection_type,
             door_details,
             access_requirements,
             is_emergency_exit,
-            connected_room:rooms!space_connections_to_space_id_fkey (
+            connected_room:rooms (
               name
             ),
-            connected_hallway:hallways!space_connections_to_space_id_fkey (
+            connected_hallway:hallways (
               name
             ),
-            connected_door:doors!space_connections_to_space_id_fkey (
+            connected_door:doors (
               name
             )
           )
@@ -93,7 +93,7 @@ export const useHallwayData = ({ selectedBuilding, selectedFloor }: UseHallwayDa
         };
 
         // Transform space connections to include the correct connected space name
-        const transformedConnections: HallwayConnection[] = (hallway.space_connections || []).map(conn => {
+        const transformedConnections: HallwayConnection[] = ((hallway.space_connections || []) as any[]).map(conn => {
           let connectedSpaceName = '';
           
           // Determine which connected space to use based on what's available
