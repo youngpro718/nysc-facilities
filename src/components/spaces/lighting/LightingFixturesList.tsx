@@ -8,20 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { LightingFixture } from "@/components/lighting/types";
-import { PostgrestResponse } from "@supabase/supabase-js";
 
 interface LightingFixturesListProps {
   selectedBuilding: string;
   selectedFloor: string;
-}
-
-type DatabaseFixture = {
-  id: string;
-  name: string;
-  type: "standard" | "emergency" | "motion_sensor";
-  status: "functional" | "maintenance_needed" | "non_functional" | "pending_maintenance" | "scheduled_replacement";
-  space_type: "room" | "hallway" | null;
-  [key: string]: any;
 }
 
 export function LightingFixturesList({ selectedBuilding, selectedFloor }: LightingFixturesListProps) {
@@ -42,86 +32,84 @@ export function LightingFixturesList({ selectedBuilding, selectedFloor }: Lighti
         query = query.eq('building_id', selectedBuilding);
       }
 
-      const { data, error }: PostgrestResponse<DatabaseFixture> = await query;
+      const { data, error } = await query;
       if (error) throw error;
       if (!data) return [];
-      
-      return data.map(fixture => {
-        // Helper function to safely parse JSON strings
-        const parseJson = <T,>(value: any, defaultValue: T): T => {
-          if (typeof value === 'string') {
-            try {
-              return JSON.parse(value);
-            } catch {
-              return defaultValue;
-            }
-          }
-          return value || defaultValue;
-        };
 
-        const transformed: LightingFixture = {
-          id: fixture.id,
-          name: fixture.name,
-          type: fixture.type,
-          status: fixture.status,
-          zone_name: fixture.zone_name ?? null,
-          building_name: fixture.building_name ?? null,
-          floor_name: fixture.floor_name ?? null,
-          floor_id: fixture.floor_id ?? null,
-          space_id: fixture.space_id ?? null,
-          space_type: fixture.space_type ?? null,
-          position: fixture.position ?? null,
-          sequence_number: fixture.sequence_number ?? null,
-          zone_id: fixture.zone_id ?? null,
-          space_name: fixture.space_name ?? null,
-          room_number: fixture.room_number ?? null,
-          emergency_circuit: fixture.emergency_circuit ?? false,
-          technology: fixture.technology ?? null,
-          ballast_issue: fixture.ballast_issue ?? false,
-          bulb_count: fixture.bulb_count ?? 1,
-          electrical_issues: parseJson(fixture.electrical_issues, {
+      const parseJsonSafely = (value: any, defaultValue: any) => {
+        try {
+          return typeof value === 'string' ? JSON.parse(value) : value ?? defaultValue;
+        } catch {
+          return defaultValue;
+        }
+      };
+
+      return data.map((raw: any): LightingFixture => {
+        const spaceType = raw.space_type === 'room' || raw.space_type === 'hallway' 
+          ? raw.space_type 
+          : null;
+
+        return {
+          id: raw.id,
+          name: raw.name,
+          type: raw.type,
+          status: raw.status,
+          zone_name: raw.zone_name ?? null,
+          building_name: raw.building_name ?? null,
+          floor_name: raw.floor_name ?? null,
+          floor_id: raw.floor_id ?? null,
+          space_id: raw.space_id ?? null,
+          space_type: spaceType,
+          position: raw.position ?? null,
+          sequence_number: raw.sequence_number ?? null,
+          zone_id: raw.zone_id ?? null,
+          space_name: raw.space_name ?? null,
+          room_number: raw.room_number ?? null,
+          emergency_circuit: raw.emergency_circuit ?? false,
+          technology: raw.technology ?? null,
+          ballast_issue: raw.ballast_issue ?? false,
+          bulb_count: raw.bulb_count ?? 1,
+          electrical_issues: parseJsonSafely(raw.electrical_issues, {
             short_circuit: false,
             wiring_issues: false,
             voltage_problems: false
           }),
-          energy_usage_data: parseJson(fixture.energy_usage_data, {
+          energy_usage_data: parseJsonSafely(raw.energy_usage_data, {
             daily_usage: [],
             efficiency_rating: null,
             last_reading: null
           }),
-          emergency_protocols: parseJson(fixture.emergency_protocols, {
+          emergency_protocols: parseJsonSafely(raw.emergency_protocols, {
             emergency_contact: null,
             backup_system: false,
             evacuation_route: false
           }),
-          warranty_info: parseJson(fixture.warranty_info, {
+          warranty_info: parseJsonSafely(raw.warranty_info, {
             start_date: null,
             end_date: null,
             provider: null,
             terms: null
           }),
-          manufacturer_details: parseJson(fixture.manufacturer_details, {
+          manufacturer_details: parseJsonSafely(raw.manufacturer_details, {
             name: null,
             model: null,
             serial_number: null,
             support_contact: null
           }),
-          inspection_history: parseJson(fixture.inspection_history, []).map((entry: any) => ({
+          inspection_history: parseJsonSafely(raw.inspection_history, []).map((entry: any) => ({
             date: entry.date || '',
             status: entry.status || '',
             notes: entry.notes
           })),
-          maintenance_history: parseJson(fixture.maintenance_history, []).map((entry: any) => ({
+          maintenance_history: parseJsonSafely(raw.maintenance_history, []).map((entry: any) => ({
             date: entry.date || '',
             type: entry.type || '',
             notes: entry.notes
           })),
-          connected_fixtures: fixture.connected_fixtures ?? [],
-          created_at: fixture.created_at ?? null,
-          updated_at: fixture.updated_at ?? null
+          connected_fixtures: raw.connected_fixtures ?? [],
+          created_at: raw.created_at ?? null,
+          updated_at: raw.updated_at ?? null
         };
-
-        return transformed;
       });
     }
   });
