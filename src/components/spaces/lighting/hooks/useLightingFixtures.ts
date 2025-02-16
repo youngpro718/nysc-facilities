@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { DatabaseLightingFixture } from "../types/databaseTypes";
+import { DatabaseLightingFixture, mapDatabaseFixtureToLightingFixture } from "../types/databaseTypes";
 
 interface UseLightingFixturesProps {
   selectedBuilding: string;
@@ -31,13 +31,16 @@ export function useLightingFixtures({ selectedBuilding, selectedFloor }: UseLigh
         throw error;
       }
 
-      // Ensure space_type is either 'room', 'hallway', or null
-      const typedData = (data || []).map(fixture => ({
-        ...fixture,
-        space_type: fixture.space_type === 'room' || fixture.space_type === 'hallway' 
-          ? fixture.space_type 
-          : null
-      })) as DatabaseLightingFixture[];
+      // Map the raw database data to our expected type structure
+      const typedData = (data || []).map(fixture => {
+        const mappedFixture = mapDatabaseFixtureToLightingFixture(fixture);
+        return {
+          ...mappedFixture,
+          space_type: fixture.space_type === 'room' || fixture.space_type === 'hallway' 
+            ? fixture.space_type 
+            : null
+        };
+      });
 
       return typedData;
     }
