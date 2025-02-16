@@ -4,20 +4,9 @@ import { transformLayer } from "../utils/layerTransforms";
 import { transformSpaceToNode } from "../utils/nodeTransforms";
 import { createEdgesFromConnections } from "../utils/edgeTransforms";
 import { fetchFloorPlanLayers, fetchFloorPlanObjects } from "../queries/floorPlanQueries";
-import { FloorPlanLayerDB } from "../types/floorPlanTypes";
+import { FloorPlanLayerDB, FloorPlanNode, FloorPlanEdge } from "../types/floorPlanTypes";
 
 export function useFloorPlanData(floorId: string | null) {
-  // Query for layers
-  const { data: layers, isLoading: isLoadingLayers } = useQuery({
-    queryKey: ['floorplan-layers', floorId],
-    queryFn: async () => {
-      if (!floorId) return [];
-      const data = await fetchFloorPlanLayers(floorId);
-      return data.map(layer => transformLayer(layer as FloorPlanLayerDB));
-    },
-    enabled: !!floorId
-  });
-
   // Query for floor plan objects and connections
   const { data: spaceData, isLoading: isLoadingObjects } = useQuery({
     queryKey: ['floorplan-objects', floorId],
@@ -33,6 +22,7 @@ export function useFloorPlanData(floorId: string | null) {
   const objects = spaceData?.objects.map((obj, index) => transformSpaceToNode(obj, index)) || [];
   const edges = spaceData?.connections ? createEdgesFromConnections(spaceData.connections) : [];
   
+  console.log('Space data:', spaceData);
   console.log('Transformed objects:', objects);
   console.log('Created edges:', edges);
 
@@ -52,9 +42,8 @@ export function useFloorPlanData(floorId: string | null) {
   });
 
   return {
-    layers,
     objects: processedObjects,
     edges,
-    isLoading: isLoadingLayers || isLoadingObjects
+    isLoading: isLoadingObjects
   };
 }

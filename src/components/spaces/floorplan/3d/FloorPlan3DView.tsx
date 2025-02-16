@@ -15,169 +15,63 @@ export function FloorPlan3DView({ floorId }: FloorPlan3DViewProps) {
     selectedFloor: floorId || 'all'
   });
 
+  console.log('Floor ID:', floorId);
+  console.log('Floor plan objects:', objects);
+  console.log('Lighting fixtures:', fixtures);
+
   if (floorPlanLoading || fixturesLoading) {
     return <div>Loading...</div>;
   }
 
+  if (!floorId) {
+    return <div>Please select a floor to view the floor plan</div>;
+  }
+
+  if (!objects || objects.length === 0) {
+    return <div>No floor plan objects found for this floor</div>;
+  }
+
   return (
-    <div className="w-full h-[600px]">
-      <Canvas shadows>
-        <PerspectiveCamera 
-          makeDefault 
-          position={[20, 20, 20]} 
-          fov={50}
-        />
+    <div style={{ width: '100%', height: '500px' }}>
+      <Canvas>
+        <PerspectiveCamera makeDefault position={[0, 50, 100]} />
+        <OrbitControls />
+        <ambientLight intensity={0.5} />
+        <SpotLight position={[10, 10, 10]} angle={0.15} penumbra={1} />
+        <Grid args={[100, 100]} />
         
-        <ambientLight intensity={0.2} />
-        <directionalLight
-          position={[10, 10, 10]}
-          intensity={0.5}
-          castShadow
-          shadow-mapSize-width={2048}
-          shadow-mapSize-height={2048}
-        />
+        {objects.map((obj, index) => (
+          <mesh 
+            key={obj.id || index}
+            position={[obj.position.x, 0, obj.position.y]}
+            rotation={[0, obj.rotation || 0, 0]}
+          >
+            <boxGeometry args={[obj.data.size.width, 10, obj.data.size.height]} />
+            <meshStandardMaterial 
+              color={obj.data.style.backgroundColor || '#e2e8f0'} 
+              opacity={0.8}
+              transparent
+            />
+          </mesh>
+        ))}
         
-        <Grid
-          args={[100, 100]}
-          cellSize={1}
-          cellThickness={1}
-          cellColor="#6b7280"
-          sectionSize={3}
-          position={[0, -0.01, 0]}
-          receiveShadow
-        />
-
-        {/* Room objects */}
-        <group position={[-50, 0, -50]}>
-          {objects.map((obj) => {
-            if (obj.type === "room") {
-              // Calculate color based on room type or status
-              const baseColor = obj.data.properties.room_type === "courtroom" 
-                ? "#dbeafe" 
-                : obj.data.properties.room_type === "office"
-                ? "#e2e8f0"
-                : obj.data.properties.room_type === "storage"
-                ? "#f1f5f9"
-                : obj.data.properties.room_type === "conference"
-                ? "#fef3c7"
-                : "#e2e8f0";
-
-              return (
-                <mesh
-                  key={obj.id}
-                  position={[
-                    obj.position.x / 10,
-                    1.5,
-                    obj.position.y / 10
-                  ]}
-                  rotation={[0, obj.rotation || 0, 0]}
-                  castShadow
-                  receiveShadow
-                >
-                  {/* Room walls */}
-                  <boxGeometry 
-                    args={[
-                      obj.data.size.width / 10,
-                      3,
-                      obj.data.size.height / 10
-                    ]} 
-                  />
-                  <meshStandardMaterial 
-                    color={baseColor}
-                    transparent
-                    opacity={0.8}
-                  />
-
-                  {/* Room ceiling */}
-                  <mesh
-                    position={[0, 1.5, 0]}
-                    rotation={[Math.PI / 2, 0, 0]}
-                  >
-                    <planeGeometry 
-                      args={[
-                        obj.data.size.width / 10,
-                        obj.data.size.height / 10
-                      ]} 
-                    />
-                    <meshStandardMaterial
-                      color={baseColor}
-                      transparent
-                      opacity={0.9}
-                      side={2}
-                    />
-                  </mesh>
-                </mesh>
-              );
-            }
-            return null;
-          })}
-        </group>
-
-        {/* Lighting fixtures */}
-        {fixtures?.map((fixture) => {
-          if (!fixture.position) return null;
-
-          const x = (fixture.space_id ? fixture.position === 'ceiling' ? 0 : -2 : 0) / 10;
-          const y = fixture.position === 'ceiling' ? 3 : 1.5;
-          const z = (fixture.space_id ? fixture.position === 'ceiling' ? 0 : -2 : 0) / 10;
-
-          return (
-            <group key={fixture.id}>
-              {/* Fixture representation */}
-              <mesh 
-                position={[x, y, z]}
-                scale={[0.2, 0.2, 0.2]}
-              >
-                <sphereGeometry />
-                <meshStandardMaterial 
-                  color={
-                    fixture.status === 'functional' ? '#f7b955' :
-                    fixture.status === 'maintenance_needed' ? '#f59e0b' :
-                    '#ef4444'
-                  }
-                  emissive={
-                    fixture.status === 'functional' ? '#f7b955' :
-                    fixture.status === 'maintenance_needed' ? '#f59e0b' :
-                    '#ef4444'
-                  }
-                  emissiveIntensity={0.5}
-                />
-              </mesh>
-
-              {/* Light source */}
-              {fixture.status === 'functional' && (
-                <SpotLight
-                  position={[x, y, z]}
-                  angle={0.5}
-                  penumbra={0.5}
-                  intensity={0.8}
-                  color="#f7b955"
-                  distance={8}
-                  castShadow
-                />
-              )}
-            </group>
-          );
-        })}
-
-        <OrbitControls
-          makeDefault
-          maxPolarAngle={Math.PI / 2.1}
-          minPolarAngle={Math.PI / 8}
-          maxAzimuthAngle={Math.PI / 1.5}
-          minAzimuthAngle={-Math.PI / 1.5}
-          minDistance={5}
-          maxDistance={50}
-          enablePan={true}
-          enableZoom={true}
-          enableRotate={true}
-          dampingFactor={0.05}
-          enabled={true}
-          rotateSpeed={0.5}
-          zoomSpeed={0.8}
-          panSpeed={0.8}
-          target={[0, 0, 0]}
-        />
+        {fixtures.map((fixture, index) => (
+          <mesh
+            key={fixture.id}
+            position={[
+              fixture.position?.x || index * 20, 
+              10, 
+              fixture.position?.y || index * 20
+            ]}
+          >
+            <sphereGeometry args={[5]} />
+            <meshStandardMaterial 
+              color={fixture.status === 'functional' ? '#4ade80' : '#ef4444'} 
+              emissive={fixture.status === 'functional' ? '#4ade80' : '#ef4444'}
+              emissiveIntensity={0.5}
+            />
+          </mesh>
+        ))}
       </Canvas>
     </div>
   );
