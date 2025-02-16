@@ -4364,48 +4364,6 @@ export type Database = {
             referencedRelation: "hallways"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "space_connections_to_space_id_fkey"
-            columns: ["to_space_id"]
-            isOneToOne: false
-            referencedRelation: "room_health_overview"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "space_connections_to_space_id_fkey"
-            columns: ["to_space_id"]
-            isOneToOne: false
-            referencedRelation: "room_issue_analytics"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "space_connections_to_space_id_fkey"
-            columns: ["to_space_id"]
-            isOneToOne: false
-            referencedRelation: "room_lighting_status"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "space_connections_to_space_id_fkey"
-            columns: ["to_space_id"]
-            isOneToOne: false
-            referencedRelation: "room_occupancy_stats"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "space_connections_to_space_id_fkey"
-            columns: ["to_space_id"]
-            isOneToOne: false
-            referencedRelation: "rooms"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "space_connections_to_space_id_fkey"
-            columns: ["to_space_id"]
-            isOneToOne: false
-            referencedRelation: "storage_room_inventory"
-            referencedColumns: ["room_id"]
-          },
         ]
       }
       spatial_assignments: {
