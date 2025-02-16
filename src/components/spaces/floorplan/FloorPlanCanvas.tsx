@@ -7,9 +7,11 @@ import { Box, View } from "lucide-react";
 
 interface FloorPlanCanvasProps {
   floorId: string | null;
+  zoom?: number;
+  onObjectSelect?: (obj: any) => void;
 }
 
-export function FloorPlanCanvas({ floorId }: FloorPlanCanvasProps) {
+export function FloorPlanCanvas({ floorId, zoom = 1, onObjectSelect }: FloorPlanCanvasProps) {
   const [view, setView] = useState<"2d" | "3d">("2d");
 
   return (
@@ -35,7 +37,7 @@ export function FloorPlanCanvas({ floorId }: FloorPlanCanvasProps) {
           onNodesChange={() => {}}
           onEdgesChange={() => {}}
           onConnect={() => {}}
-          onNodeClick={() => {}}
+          onNodeClick={onObjectSelect}
           nodeTypes={{}}
         />
       ) : (
