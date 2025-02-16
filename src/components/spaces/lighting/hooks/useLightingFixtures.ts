@@ -1,5 +1,5 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DatabaseLightingFixture } from "../types/databaseTypes";
 import { parseJsonField } from "../utils/jsonUtils";
@@ -19,15 +19,11 @@ interface UseLightingFixturesProps {
   selectedFloor: string;
 }
 
-type QueryResult = {
-  data: LightingFixture[] | null;
-  isLoading: boolean;
-  error: Error | null;
-  refetch: () => Promise<unknown>;
-}
-
-export function useLightingFixtures({ selectedBuilding, selectedFloor }: UseLightingFixturesProps): QueryResult {
-  const query = useQuery({
+export function useLightingFixtures({ 
+  selectedBuilding, 
+  selectedFloor 
+}: UseLightingFixturesProps): UseQueryResult<LightingFixture[], Error> {
+  return useQuery({
     queryKey: ['lighting-fixtures', selectedBuilding, selectedFloor] as const,
     queryFn: async () => {
       let query = supabase
@@ -107,11 +103,4 @@ export function useLightingFixtures({ selectedBuilding, selectedFloor }: UseLigh
       return fixtures;
     }
   });
-
-  return {
-    data: query.data ?? null,
-    isLoading: query.isLoading,
-    error: query.error as Error | null,
-    refetch: query.refetch
-  };
 }
