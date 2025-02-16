@@ -28,14 +28,20 @@ export const useHallwayData = ({ selectedBuilding, selectedFloor }: UseHallwayDa
               name
             )
           ),
-          space_connections (
+          space_connections!hallways_space_connections_fkey (
             id,
             position,
             connection_type,
             door_details,
             access_requirements,
             is_emergency_exit,
-            to_space:to_space_id (
+            connected_room:rooms!space_connections_to_space_id_fkey (
+              name
+            ),
+            connected_hallway:hallways!space_connections_to_space_id_fkey (
+              name
+            ),
+            connected_door:doors!space_connections_to_space_id_fkey (
               name
             )
           )
@@ -86,6 +92,32 @@ export const useHallwayData = ({ selectedBuilding, selectedFloor }: UseHallwayDa
           last_updated: (hallway.usage_statistics as any)?.last_updated || null
         };
 
+        // Transform space connections to include the correct connected space name
+        const transformedConnections: HallwayConnection[] = (hallway.space_connections || []).map(conn => {
+          let connectedSpaceName = '';
+          
+          // Determine which connected space to use based on what's available
+          if (conn.connected_room?.name) {
+            connectedSpaceName = conn.connected_room.name;
+          } else if (conn.connected_hallway?.name) {
+            connectedSpaceName = conn.connected_hallway.name;
+          } else if (conn.connected_door?.name) {
+            connectedSpaceName = conn.connected_door.name;
+          }
+
+          return {
+            id: conn.id,
+            position: conn.position,
+            connection_type: conn.connection_type,
+            door_details: conn.door_details,
+            access_requirements: conn.access_requirements,
+            is_emergency_exit: conn.is_emergency_exit,
+            to_space: {
+              name: connectedSpaceName
+            }
+          };
+        });
+
         return {
           ...hallway,
           type: hallway.type as Hallway['type'],
@@ -97,7 +129,7 @@ export const useHallwayData = ({ selectedBuilding, selectedFloor }: UseHallwayDa
           emergency_exits: emergencyExits,
           maintenance_schedule: maintenanceSchedule,
           usage_statistics: usageStats,
-          space_connections: (hallway.space_connections || []) as HallwayConnection[],
+          space_connections: transformedConnections,
           floors: hallway.floors ? {
             name: hallway.floors.name,
             buildings: hallway.floors.buildings ? {
