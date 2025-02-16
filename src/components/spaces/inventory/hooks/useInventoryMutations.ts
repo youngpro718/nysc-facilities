@@ -66,12 +66,16 @@ export const useInventoryMutations = (roomId: string) => {
 
   const batchUpdateMutation = useMutation({
     mutationFn: async ({ items, notes }: BatchUpdateInput) => {
-      // Use transaction to ensure all updates succeed or none do
-      const { error } = await supabase.rpc('batch_update_inventory', {
-        p_updates: items,
-        p_notes: notes
-      });
-      if (error) throw error;
+      // Process each update individually using the safe update function
+      for (const item of items) {
+        const { error } = await supabase.rpc('safely_update_inventory_quantity', {
+          p_item_id: item.id,
+          p_new_quantity: item.quantity,
+          p_performed_by: null,
+          p_notes: notes
+        });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory', roomId] });

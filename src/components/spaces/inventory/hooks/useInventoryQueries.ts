@@ -8,8 +8,16 @@ export const useInventoryQueries = (roomId: string) => {
     queryKey: ['inventory', roomId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('inventory_items_view')
-        .select()
+        .from('inventory_items')
+        .select(`
+          *,
+          category:inventory_categories (
+            name,
+            color,
+            icon,
+            description
+          )
+        `)
         .eq('storage_room_id', roomId)
         .eq('status', 'active');
       
@@ -52,9 +60,19 @@ export const useInventoryQueries = (roomId: string) => {
     queryKey: ['inventory-low-stock', roomId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('detailed_low_stock_items')
-        .select()
-        .eq('storage_room_id', roomId);
+        .from('inventory_items')
+        .select(`
+          *,
+          category:inventory_categories (
+            name,
+            color,
+            icon,
+            description
+          )
+        `)
+        .eq('storage_room_id', roomId)
+        .eq('status', 'active')
+        .filter('quantity', 'lte', 'minimum_quantity');
       
       if (error) throw error;
       return data as InventoryItem[];
