@@ -11,14 +11,29 @@ export function useLightingFixtures({ selectedBuilding, selectedFloor }: UseLigh
   return useQuery({
     queryKey: ['lighting-fixtures', selectedBuilding, selectedFloor] as const,
     queryFn: async () => {
-      const { data, error } = await supabase
+      // If 'all' is selected, we don't include that filter
+      const query = supabase
         .from('lighting_fixture_details')
         .select('*')
-        .eq(selectedFloor !== 'all' ? 'floor_id' : 'floor_id', selectedFloor)
-        .eq(selectedBuilding !== 'all' ? 'building_id' : 'building_id', selectedBuilding)
         .order('name');
 
-      if (error) throw error;
+      // Only add floor filter if a specific floor is selected
+      if (selectedFloor !== 'all') {
+        query.eq('floor_id', selectedFloor);
+      }
+
+      // Only add building filter if a specific building is selected
+      if (selectedBuilding !== 'all') {
+        query.eq('building_id', selectedBuilding);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error fetching lighting fixtures:', error);
+        throw error;
+      }
+
       return data || [];
     }
   });
