@@ -17,7 +17,7 @@ export type DatabaseLightingFixture = {
   floor_name: string | null;
   floor_id: string | null;
   space_id: string | null;
-  space_type: string | null;
+  space_type: 'room' | 'hallway' | string | null;
   position: LightingPosition | null;
   sequence_number: number | null;
   zone_id: string | null;

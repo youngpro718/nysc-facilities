@@ -19,24 +19,16 @@ interface UseLightingFixturesProps {
   selectedFloor: string;
 }
 
-async function fetchLightingFixtures(selectedBuilding: string, selectedFloor: string) {
-  let query = supabase
-    .from('lighting_fixture_details')
-    .select('*')
-    .order('name');
+function transformDatabaseFixture(raw: DatabaseLightingFixture): LightingFixture {
+  // Helper function to validate space type
+  const validateSpaceType = (type: string | null): "room" | "hallway" | null => {
+    if (type === "room" || type === "hallway") {
+      return type;
+    }
+    return null;
+  };
 
-  if (selectedFloor !== 'all') {
-    query = query.eq('floor_id', selectedFloor);
-  }
-  if (selectedBuilding !== 'all') {
-    query = query.eq('building_id', selectedBuilding);
-  }
-
-  const { data: rawData, error } = await query;
-  if (error) throw error;
-  if (!rawData) return [];
-
-  return (rawData as DatabaseLightingFixture[]).map(raw => ({
+  return {
     id: raw.id,
     name: raw.name,
     type: raw.type,
@@ -46,7 +38,7 @@ async function fetchLightingFixtures(selectedBuilding: string, selectedFloor: st
     floor_name: raw.floor_name,
     floor_id: raw.floor_id,
     space_id: raw.space_id,
-    space_type: raw.space_type === 'room' || raw.space_type === 'hallway' ? raw.space_type : null,
+    space_type: validateSpaceType(raw.space_type),
     position: raw.position,
     sequence_number: raw.sequence_number,
     zone_id: raw.zone_id,
@@ -92,7 +84,27 @@ async function fetchLightingFixtures(selectedBuilding: string, selectedFloor: st
     emergency_duration_minutes: raw.emergency_duration_minutes,
     created_at: raw.created_at,
     updated_at: raw.updated_at
-  }));
+  };
+}
+
+async function fetchLightingFixtures(selectedBuilding: string, selectedFloor: string) {
+  let query = supabase
+    .from('lighting_fixture_details')
+    .select('*')
+    .order('name');
+
+  if (selectedFloor !== 'all') {
+    query = query.eq('floor_id', selectedFloor);
+  }
+  if (selectedBuilding !== 'all') {
+    query = query.eq('building_id', selectedBuilding);
+  }
+
+  const { data: rawData, error } = await query;
+  if (error) throw error;
+  if (!rawData) return [];
+
+  return (rawData as DatabaseLightingFixture[]).map(transformDatabaseFixture);
 }
 
 export function useLightingFixtures({ selectedBuilding, selectedFloor }: UseLightingFixturesProps) {
