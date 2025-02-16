@@ -5685,6 +5685,14 @@ export type Database = {
         | "orange"
         | "pink"
         | "gray"
+      connection_direction_enum:
+        | "north"
+        | "south"
+        | "east"
+        | "west"
+        | "adjacent"
+        | "left_of_hallway"
+        | "right_of_hallway"
       connection_status_enum: "active" | "inactive" | "under_maintenance"
       connection_type_enum: "door" | "direct" | "secured"
       department_enum:
