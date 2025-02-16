@@ -79,7 +79,7 @@ function transformToLightingFixture(raw: DatabaseLightingFixture): LightingFixtu
   };
 }
 
-async function fetchLightingFixtures(selectedBuilding: string, selectedFloor: string) {
+async function fetchLightingFixtures(selectedBuilding: string, selectedFloor: string): Promise<LightingFixture[]> {
   let query = supabase
     .from('lighting_fixture_details')
     .select('*')
@@ -102,8 +102,8 @@ async function fetchLightingFixtures(selectedBuilding: string, selectedFloor: st
 export function useLightingFixtures(props: UseLightingFixturesProps) {
   const { selectedBuilding, selectedFloor } = props;
   
-  return useQuery(
-    ['lighting-fixtures', selectedBuilding, selectedFloor],
-    () => fetchLightingFixtures(selectedBuilding, selectedFloor)
-  );
+  return useQuery({
+    queryKey: ['lighting-fixtures', selectedBuilding, selectedFloor] as const,
+    queryFn: () => fetchLightingFixtures(selectedBuilding, selectedFloor)
+  });
 }
