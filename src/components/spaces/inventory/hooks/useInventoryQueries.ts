@@ -10,7 +10,13 @@ export const useInventoryQueries = (roomId: string) => {
       const { data, error } = await supabase
         .from('inventory_items')
         .select(`
-          *,
+          id,
+          name,
+          quantity,
+          minimum_quantity,
+          description,
+          unit,
+          status,
           category:inventory_categories (
             name,
             color,
@@ -31,7 +37,7 @@ export const useInventoryQueries = (roomId: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('inventory_categories')
-        .select('*')
+        .select('id, name, color, icon, description')
         .order('name');
       
       if (error) throw error;
@@ -45,8 +51,14 @@ export const useInventoryQueries = (roomId: string) => {
       const { data, error } = await supabase
         .from('inventory_item_transactions')
         .select(`
-          *,
-          inventory_items (name)
+          id,
+          transaction_type,
+          quantity,
+          created_at,
+          inventory_items (
+            id,
+            name
+          )
         `)
         .order('created_at', { ascending: false })
         .limit(50);
@@ -59,10 +71,17 @@ export const useInventoryQueries = (roomId: string) => {
   const lowStockQuery = useQuery({
     queryKey: ['inventory-low-stock', roomId],
     queryFn: async () => {
+      // Using raw SQL for the comparison
       const { data, error } = await supabase
         .from('inventory_items')
         .select(`
-          *,
+          id,
+          name,
+          quantity,
+          minimum_quantity,
+          description,
+          unit,
+          status,
           category:inventory_categories (
             name,
             color,
@@ -72,8 +91,9 @@ export const useInventoryQueries = (roomId: string) => {
         `)
         .eq('storage_room_id', roomId)
         .eq('status', 'active')
-        .not('minimum_quantity', 'is', null)  // Only items with minimum_quantity set
-        .filter('quantity', 'lte', 'minimum_quantity::integer');  // Compare with the column value
+        .not('minimum_quantity', 'is', null)
+        .gte('minimum_quantity', 0)  // Ensure minimum_quantity is valid
+        .filter('quantity', 'lte', 'minimum_quantity');
       
       if (error) throw error;
       return data as InventoryItem[];
