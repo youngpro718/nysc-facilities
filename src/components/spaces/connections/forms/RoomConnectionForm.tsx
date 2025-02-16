@@ -1,19 +1,32 @@
-
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Direction } from "../types/ConnectionTypes";
 
+interface Space {
+  id: string;
+  name: string;
+  type: string;
+  room_number?: string;
+}
+
 interface RoomConnectionFormProps {
   form: any;
-  availableRooms: Array<{ id: string; name: string; room_number?: string; room_type: string }>;
-  isLoading?: boolean;
+  availableSpaces: Space[];
+  isDisabled?: boolean;
 }
 
 export function RoomConnectionForm({
   form,
-  availableRooms,
-  isLoading
+  availableSpaces,
+  isDisabled
 }: RoomConnectionFormProps) {
+  // Filter spaces to only include rooms
+  const availableRooms = availableSpaces.filter(space => 
+    space.type.includes("room") || 
+    space.type.includes("chamber") || 
+    space.type === "office"
+  );
+
   return (
     <div className="space-y-4">
       <FormField
@@ -25,7 +38,7 @@ export function RoomConnectionForm({
             <Select 
               value={field.value} 
               onValueChange={field.onChange}
-              disabled={isLoading}
+              disabled={isDisabled}
             >
               <FormControl>
                 <SelectTrigger>
@@ -35,7 +48,7 @@ export function RoomConnectionForm({
               <SelectContent>
                 {availableRooms.map((room) => (
                   <SelectItem key={room.id} value={room.id}>
-                    {room.name} {room.room_number ? `(${room.room_number})` : ""} - {room.room_type}
+                    {room.name} {room.room_number ? `(${room.room_number})` : ""} - {room.type}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -54,7 +67,7 @@ export function RoomConnectionForm({
             <Select 
               value={field.value} 
               onValueChange={field.onChange}
-              disabled={isLoading}
+              disabled={isDisabled}
             >
               <FormControl>
                 <SelectTrigger>

@@ -8,9 +8,10 @@ interface ConnectionTypeSelectorProps {
   onChange: (value: ConnectionType) => void;
   form: UseFormReturn<any>;
   disabled?: boolean;
+  spaceType?: "room" | "hallway" | "door";
 }
 
-export function ConnectionTypeSelector({ value, onChange, form, disabled }: ConnectionTypeSelectorProps) {
+export function ConnectionTypeSelector({ value, onChange, form, disabled, spaceType }: ConnectionTypeSelectorProps) {
   return (
     <FormField
       control={form.control}

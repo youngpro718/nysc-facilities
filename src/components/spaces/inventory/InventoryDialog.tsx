@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import { InventoryForm } from "./InventoryForm";
 import { InventoryFormInputs } from "./types/inventoryTypes";
 
@@ -35,13 +35,15 @@ export function InventoryDialog({ onSubmit }: InventoryDialogProps) {
           Add Item
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] bg-background">
         <DialogHeader>
-          <DialogTitle>Add New Inventory Item</DialogTitle>
+          <DialogTitle className="text-foreground">Add New Inventory Item</DialogTitle>
         </DialogHeader>
         <ScrollArea className="h-full max-h-[70vh] overflow-y-auto pr-4">
           {isLoading ? (
-            <div>Loading...</div>
+            <div className="flex items-center justify-center p-4">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
           ) : (
             <InventoryForm
               onSubmit={handleSubmit}

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Form } from "@/components/ui/form";
@@ -8,7 +7,8 @@ import { RoomConnectionForm } from "./RoomConnectionForm";
 import { HallwayConnectionForm } from "./HallwayConnectionForm";
 import { DoorConnectionForm } from "./DoorConnectionForm";
 import { ConnectionType } from "../types/ConnectionTypes";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
 
 interface Space {
   id: string;
@@ -24,19 +24,28 @@ interface ConnectedSpacesFormProps {
   onSubmit: (data: any) => Promise<void>;
   isLoading?: boolean;
   availableSpaces: Space[];
+  onConnectionTypeChange?: (type: ConnectionType) => void;
+  selectedConnectionType?: ConnectionType;
+  spaceType?: "room" | "hallway" | "door";
+  onSuccess?: () => void;
 }
 
 export function ConnectedSpacesForm({ 
   onSubmit, 
   isLoading,
-  availableSpaces 
+  availableSpaces,
+  onConnectionTypeChange,
+  selectedConnectionType = "room",
+  spaceType = "room",
+  onSuccess
 }: ConnectedSpacesFormProps) {
-  const [connectionType, setConnectionType] = useState<ConnectionType>("room");
+  const [connectionType, setConnectionType] = useState<ConnectionType>(selectedConnectionType);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   const form = useForm({
     defaultValues: {
-      connectionType: "room" as ConnectionType,
+      connectionType: selectedConnectionType,
       roomId: "",
       hallwayId: "",
       doorId: "",
@@ -45,91 +54,98 @@ export function ConnectedSpacesForm({
     }
   });
 
+  const handleConnectionTypeChange = (type: ConnectionType) => {
+    setConnectionType(type);
+    form.setValue("connectionType", type);
+    onConnectionTypeChange?.(type);
+    setError(null); // Clear any previous errors
+  };
+
   const handleFormSubmit = async (data: any) => {
     try {
       setIsSubmitting(true);
-      await onSubmit(data);
+      setError(null);
+      
+      // Validate required fields based on connection type
+      if (connectionType === "room" && !data.roomId) {
+        throw new Error("Please select a room");
+      }
+      if (connectionType === "hallway" && !data.hallwayId) {
+        throw new Error("Please select a hallway");
+      }
+      if (connectionType === "door" && !data.doorId) {
+        throw new Error("Please select a door");
+      }
+
+      const result = await onSubmit(data);
+      
+      // Only reset and close if submission was successful
       form.reset();
+      toast.success("Connection created successfully");
+      onSuccess?.();
     } catch (error) {
-      console.error("Form submission error:", error);
+      console.error("Error submitting form:", error);
+      setError(error instanceof Error ? error.message : "Failed to create connection");
+      toast.error(error instanceof Error ? error.message : "Failed to create connection");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Create separate mapped arrays for each connection type
-  const roomSpaces = connectionType === "room" ? availableSpaces.map(space => ({
-    id: space.id,
-    name: space.name,
-    room_type: space.type,
-    room_number: space.room_number || "",
-    floor_id: space.floor_id
-  })) : [];
-
-  const hallwaySpaces = connectionType === "hallway" ? availableSpaces.map(space => ({
-    id: space.id,
-    name: space.name,
-    type: space.type,
-    section: space.section,
-    floor_id: space.floor_id
-  })) : [];
-
-  const doorSpaces = connectionType === "door" ? availableSpaces.map(space => ({
-    id: space.id,
-    name: space.name,
-    type: space.type,
-    security_level: space.security_level,
-    floor_id: space.floor_id
-  })) : [];
-
-  const isFormDisabled = isLoading || isSubmitting;
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
+        {error && (
+          <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4" />
+            {error}
+          </div>
+        )}
+        
         <ConnectionTypeSelector
           value={connectionType}
-          onChange={setConnectionType}
+          onChange={handleConnectionTypeChange}
+          disabled={isLoading || isSubmitting}
+          spaceType={spaceType}
           form={form}
-          disabled={isFormDisabled}
         />
 
         {connectionType === "room" && (
-          <RoomConnectionForm 
-            form={form} 
-            availableRooms={roomSpaces}
-            isLoading={isFormDisabled}
+          <RoomConnectionForm
+            form={form}
+            availableSpaces={availableSpaces}
+            isDisabled={isLoading || isSubmitting}
           />
         )}
 
         {connectionType === "hallway" && (
-          <HallwayConnectionForm 
+          <HallwayConnectionForm
             form={form}
-            availableHallways={hallwaySpaces}
-            isLoading={isFormDisabled}
+            availableSpaces={availableSpaces}
+            isDisabled={isLoading || isSubmitting}
           />
         )}
 
         {connectionType === "door" && (
-          <DoorConnectionForm 
+          <DoorConnectionForm
             form={form}
-            availableDoors={doorSpaces}
-            isLoading={isFormDisabled}
+            availableSpaces={availableSpaces}
+            isDisabled={isLoading || isSubmitting}
           />
         )}
 
         <Button 
           type="submit" 
-          disabled={isFormDisabled}
+          disabled={isLoading || isSubmitting}
           className="w-full"
         >
-          {isFormDisabled ? (
+          {isSubmitting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Connecting...
+              Creating Connection...
             </>
           ) : (
-            "Add Connection"
+            'Create Connection'
           )}
         </Button>
       </form>

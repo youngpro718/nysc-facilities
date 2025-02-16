@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link2 } from "lucide-react";
@@ -7,6 +6,7 @@ import { useSpaceConnections } from "./hooks/useSpaceConnections";
 import { useAvailableSpaces } from "./hooks/useAvailableSpaces";
 import { ConnectionType } from "./connections/types/ConnectionTypes";
 import { ConnectedSpacesForm } from "./connections/forms/ConnectedSpacesForm";
+import { useToast } from "@/hooks/use-toast";
 
 interface SpaceConnectionManagerProps {
   spaceId: string;
@@ -15,6 +15,7 @@ interface SpaceConnectionManagerProps {
 
 export function SpaceConnectionManager({ spaceId, spaceType }: SpaceConnectionManagerProps) {
   const [selectedConnectionType, setSelectedConnectionType] = useState<ConnectionType>("room");
+  const { toast } = useToast();
   
   const { 
     connections, 
@@ -31,8 +32,8 @@ export function SpaceConnectionManager({ spaceId, spaceType }: SpaceConnectionMa
   } = useAvailableSpaces(spaceId, spaceType, selectedConnectionType);
 
   const handleSubmit = async (data: any) => {
-    console.log("Submitting connection data:", { spaceId, ...data });
     try {
+      console.log("Submitting connection data:", { spaceId, ...data });
       await createConnection({
         spaceId,
         roomId: data.roomId,
@@ -44,7 +45,29 @@ export function SpaceConnectionManager({ spaceId, spaceType }: SpaceConnectionMa
       });
     } catch (error) {
       console.error("Error creating connection:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create connection",
+        variant: "destructive"
+      });
     }
+  };
+
+  const handleDelete = async (connectionId: string) => {
+    try {
+      await deleteConnection(connectionId);
+    } catch (error) {
+      console.error("Error deleting connection:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete connection",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleConnectionTypeChange = (type: ConnectionType) => {
+    setSelectedConnectionType(type);
   };
 
   return (
@@ -60,6 +83,9 @@ export function SpaceConnectionManager({ spaceId, spaceType }: SpaceConnectionMa
           onSubmit={handleSubmit}
           isLoading={isLoadingSpaces || isCreatingConnection}
           availableSpaces={availableSpaces || []}
+          onConnectionTypeChange={handleConnectionTypeChange}
+          selectedConnectionType={selectedConnectionType}
+          spaceType={spaceType}
         />
 
         <div className="border-t pt-4 border-border/40">
@@ -67,7 +93,7 @@ export function SpaceConnectionManager({ spaceId, spaceType }: SpaceConnectionMa
             connections={connections || []}
             isLoading={isLoadingConnections}
             isDeleting={isDeletingConnection}
-            onDelete={deleteConnection}
+            onDelete={handleDelete}
             spaceType={spaceType}
           />
         </div>

@@ -1,8 +1,30 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { SpaceConnection, Connection, Direction, Position } from "../../connections/types/ConnectionTypes";
-import { PostgrestResponse } from "@supabase/supabase-js";
+import { SpaceConnection, Connection, Direction, Position, ConnectionStatus } from "../../connections/types/ConnectionTypes";
+
+interface ConnectedSpace {
+  id: string;
+  name: string;
+  type?: string;
+  room_number?: string;
+  room_type?: string;
+}
+
+interface SpaceConnectionData {
+  id: string;
+  from_space_id: string;
+  to_space_id: string;
+  space_type: string;
+  connection_type: string;
+  direction?: Direction;
+  position?: Position;
+  status: ConnectionStatus;
+  hallway_position?: number;
+  offset_distance?: number;
+  connected_room?: ConnectedSpace;
+  connected_hallway?: ConnectedSpace;
+  connected_door?: ConnectedSpace;
+}
 
 export function useConnectionQueries(spaceId: string, spaceType: "room" | "hallway" | "door") {
   return useQuery({
@@ -20,12 +42,13 @@ export function useConnectionQueries(spaceId: string, spaceType: "room" | "hallw
         direction,
         position,
         status,
-        metadata`;
+        hallway_position,
+        offset_distance`;
 
       // Add the appropriate join based on space type
       if (spaceType === "room") {
         selectStatement += `,
-          to_space:rooms!space_connections_to_space_id_fkey (
+          connected_room:rooms!space_connections_to_space_id_fkey (
             id,
             name,
             room_number,
@@ -33,7 +56,14 @@ export function useConnectionQueries(spaceId: string, spaceType: "room" | "hallw
           )`;
       } else if (spaceType === "hallway") {
         selectStatement += `,
-          to_space:hallways!space_connections_to_space_id_fkey (
+          connected_hallway:hallways!space_connections_to_space_id_fkey (
+            id,
+            name,
+            type
+          )`;
+      } else if (spaceType === "door") {
+        selectStatement += `,
+          connected_door:doors!space_connections_to_space_id_fkey (
             id,
             name,
             type
@@ -44,9 +74,8 @@ export function useConnectionQueries(spaceId: string, spaceType: "room" | "hallw
         .from("space_connections")
         .select(selectStatement)
         .or(`from_space_id.eq.${spaceId},to_space_id.eq.${spaceId}`)
-        .eq("space_type", spaceType)
-        .eq("connection_status", "active")
-        .returns<SpaceConnection[]>();
+        .eq("status", "active")
+        .returns<SpaceConnectionData[]>();
 
       if (error) {
         console.error("Error fetching space connections:", error);
@@ -58,16 +87,21 @@ export function useConnectionQueries(spaceId: string, spaceType: "room" | "hallw
       if (!data) return [];
 
       return data.map((conn): Connection => {
-        const isFromSpace = conn.from_space_id === spaceId;
+        const connectedSpace = conn.connected_room || conn.connected_hallway || conn.connected_door;
+        
         return {
           id: conn.id,
-          connectedSpaceName: conn.to_space?.name || "Unknown Space",
+          connectedSpaceName: connectedSpace?.name || "Unknown Space",
           connectionType: conn.connection_type,
           status: conn.status,
-          direction: conn.direction as Direction,
-          position: conn.position as Position
+          direction: conn.direction,
+          position: conn.position,
+          hallwayPosition: conn.hallway_position,
+          offsetDistance: conn.offset_distance
         };
       });
     },
+    staleTime: 1000 * 60, // Cache for 1 minute
+    refetchOnWindowFocus: true,
   });
 }
