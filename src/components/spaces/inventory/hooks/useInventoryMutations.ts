@@ -38,11 +38,10 @@ export const useInventoryMutations = (roomId: string) => {
   });
 
   const updateQuantityMutation = useMutation({
-    mutationFn: async ({ id, quantity, notes }: { id: string; quantity: number; notes?: string }) => {
+    mutationFn: async ({ id, quantity }: { id: string; quantity: number }) => {
       const { error } = await supabase.rpc('safely_update_inventory_quantity', {
         p_item_id: id,
         p_new_quantity: quantity,
-        p_notes: notes,
         p_performed_by: null
       });
       if (error) throw error;
