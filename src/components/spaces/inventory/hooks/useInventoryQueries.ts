@@ -72,7 +72,8 @@ export const useInventoryQueries = (roomId: string) => {
         `)
         .eq('storage_room_id', roomId)
         .eq('status', 'active')
-        .filter('quantity', 'lte', 'minimum_quantity');
+        .not('minimum_quantity', 'is', null)  // Only items with minimum_quantity set
+        .filter('quantity', 'lte', 'minimum_quantity::integer');  // Compare with the column value
       
       if (error) throw error;
       return data as InventoryItem[];
