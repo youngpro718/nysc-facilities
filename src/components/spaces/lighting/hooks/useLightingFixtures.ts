@@ -1,5 +1,5 @@
 
-import { useQuery, UseQueryResult } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DatabaseLightingFixture } from "../types/databaseTypes";
 import { parseJsonField } from "../utils/jsonUtils";
@@ -19,9 +19,7 @@ interface UseLightingFixturesProps {
   selectedFloor: string;
 }
 
-type QueryKey = readonly ['lighting-fixtures', string, string];
-
-async function fetchLightingFixtures(selectedBuilding: string, selectedFloor: string): Promise<LightingFixture[]> {
+async function fetchLightingFixtures(selectedBuilding: string, selectedFloor: string) {
   let query = supabase
     .from('lighting_fixture_details')
     .select('*')
@@ -97,12 +95,9 @@ async function fetchLightingFixtures(selectedBuilding: string, selectedFloor: st
   }));
 }
 
-export function useLightingFixtures({ 
-  selectedBuilding, 
-  selectedFloor 
-}: UseLightingFixturesProps): UseQueryResult<LightingFixture[], Error> {
-  return useQuery<LightingFixture[], Error, LightingFixture[], QueryKey>({
-    queryKey: ['lighting-fixtures', selectedBuilding, selectedFloor] as const,
+export function useLightingFixtures({ selectedBuilding, selectedFloor }: UseLightingFixturesProps) {
+  return useQuery({
+    queryKey: ['lighting-fixtures', selectedBuilding, selectedFloor],
     queryFn: () => fetchLightingFixtures(selectedBuilding, selectedFloor)
   });
 }
