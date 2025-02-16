@@ -2,7 +2,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { InventoryFormInputs } from "../types/inventoryTypes";
+import { InventoryFormInputs, BatchUpdateInput } from "../types/inventoryTypes";
 
 export const useInventoryMutations = (roomId: string) => {
   const queryClient = useQueryClient();
@@ -48,7 +48,7 @@ export const useInventoryMutations = (roomId: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory', roomId] });
-      queryClient.invalidateQueries({ queryKey: ['inventory', 'transactions', roomId] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-transactions', roomId] });
       toast({
         title: "Quantity updated",
         description: "The item quantity has been updated successfully.",
@@ -61,6 +61,33 @@ export const useInventoryMutations = (roomId: string) => {
         variant: "destructive",
       });
       console.error('Error updating quantity:', error);
+    },
+  });
+
+  const batchUpdateMutation = useMutation({
+    mutationFn: async ({ items, notes }: BatchUpdateInput) => {
+      // Use transaction to ensure all updates succeed or none do
+      const { error } = await supabase.rpc('batch_update_inventory', {
+        p_updates: items,
+        p_notes: notes
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory', roomId] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-transactions', roomId] });
+      toast({
+        title: "Batch update complete",
+        description: "All items have been updated successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update items. Please try again.",
+        variant: "destructive",
+      });
+      console.error('Error in batch update:', error);
     },
   });
 
@@ -92,6 +119,7 @@ export const useInventoryMutations = (roomId: string) => {
   return {
     addItemMutation,
     updateQuantityMutation,
+    batchUpdateMutation,
     deleteItemMutation
   };
 };

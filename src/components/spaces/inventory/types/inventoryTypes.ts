@@ -21,24 +21,25 @@ export interface InventoryItem {
   };
 }
 
-export interface DatabaseInventoryItem {
+export interface InventoryCategory {
   id: string;
   name: string;
-  quantity: number;
-  category_id: string;
+  color: string;
+  icon?: string;
   description?: string;
-  minimum_quantity?: number;
-  unit?: string;
-  status: string;
-  location_details?: string;
-  last_inventory_date?: string;
-  reorder_point?: number;
-  preferred_vendor?: string;
+  parent_category_id?: string;
+}
+
+export interface InventoryTransaction {
+  id: string;
+  item_id: string;
+  transaction_type: 'add' | 'remove' | 'transfer';
+  quantity: number;
+  previous_quantity: number;
+  new_quantity: number;
+  performed_by?: string;
   notes?: string;
-  category_name: string;
-  category_color: string;
-  category_icon?: string;
-  category_description?: string;
+  created_at: string;
 }
 
 export interface InventoryFormInputs {
@@ -54,38 +55,7 @@ export interface InventoryFormInputs {
   notes?: string;
 }
 
-export interface InventoryTransactionType {
-  id: string;
-  item_id: string;
-  transaction_type: 'add' | 'remove' | 'transfer';
-  quantity: number;
-  from_room_id?: string;
-  to_room_id?: string;
-  performed_by?: string;
+export interface BatchUpdateInput {
+  items: { id: string; quantity: number }[];
   notes?: string;
-  created_at: string;
-}
-
-export interface LowStockItem {
-  id: string;
-  name: string;
-  quantity: number;
-  minimum_quantity: number;
-  category_id: string;
-  category_name: string;
-  room_id: string;
-  room_name: string;
-  storage_location: string;
-}
-
-export interface RawLowStockData {
-  id: string;
-  name: string;
-  quantity: number;
-  minimum_quantity: number;
-  category_id: string;
-  category_name: string;
-  room_name: string | null;
-  storage_location: string | null;
-  room_id: string;
 }

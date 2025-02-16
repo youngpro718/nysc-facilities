@@ -1,11 +1,11 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { DatabaseInventoryItem, InventoryItem, RawLowStockData, InventoryTransactionType } from "../types/inventoryTypes";
+import { InventoryItem, InventoryCategory, InventoryTransaction } from "../types/inventoryTypes";
 
 export const useInventoryQueries = (roomId: string) => {
-  const { data: inventoryData, isLoading } = useQuery<InventoryItem[], Error>({
-    queryKey: ['inventory', roomId] as const,
+  const inventoryQuery = useQuery({
+    queryKey: ['inventory', roomId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('inventory_items_view')
@@ -14,88 +14,73 @@ export const useInventoryQueries = (roomId: string) => {
         .eq('status', 'active');
       
       if (error) throw error;
-      
-      return (data || []).map((item: DatabaseInventoryItem): InventoryItem => ({
-        id: item.id,
-        name: item.name,
-        quantity: item.quantity,
-        category_id: item.category_id,
-        description: item.description,
-        minimum_quantity: item.minimum_quantity,
-        unit: item.unit,
-        status: item.status,
-        location_details: item.location_details,
-        last_inventory_date: item.last_inventory_date,
-        reorder_point: item.reorder_point,
-        preferred_vendor: item.preferred_vendor,
-        notes: item.notes,
-        category: item.category_name ? {
-          name: item.category_name,
-          color: item.category_color,
-          icon: item.category_icon,
-          description: item.category_description
-        } : undefined
-      }));
+      return data as InventoryItem[];
     }
   });
 
-  const lowStockQuery = useQuery<RawLowStockData[], Error>({
-    queryKey: ['inventory', 'low-stock', roomId] as const,
+  const categoriesQuery = useQuery({
+    queryKey: ['inventory-categories'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('low_stock_items')
-        .select()
-        .eq('room_id', roomId);
-      
-      if (error) throw error;
-      return data || [];
-    }
-  });
-
-  const { data: transactionData } = useQuery<InventoryTransactionType[], Error>({
-    queryKey: ['inventory', 'transactions', roomId] as const,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('inventory_transactions')
+        .from('inventory_categories')
         .select('*')
-        .eq('from_room_id', roomId)
-        .order('created_at', { ascending: false })
-        .limit(10);
+        .order('name');
       
       if (error) throw error;
-      
-      return (data || []).map((transaction): InventoryTransactionType => {
-        // Ensure transaction_type is one of the allowed values
-        let validTransactionType: 'add' | 'remove' | 'transfer';
-        switch (transaction.transaction_type) {
-          case 'add':
-          case 'remove':
-          case 'transfer':
-            validTransactionType = transaction.transaction_type;
-            break;
-          default:
-            validTransactionType = 'add'; // Default fallback if unknown type
-        }
+      return data as InventoryCategory[];
+    }
+  });
 
-        return {
-          id: transaction.id,
-          item_id: transaction.item_id || '',
-          transaction_type: validTransactionType,
-          quantity: transaction.quantity,
-          from_room_id: transaction.from_room_id || undefined,
-          to_room_id: transaction.to_room_id || undefined,
-          performed_by: transaction.performed_by || undefined,
-          notes: transaction.notes || undefined,
-          created_at: transaction.created_at
-        };
-      });
+  const transactionsQuery = useQuery({
+    queryKey: ['inventory-transactions', roomId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('inventory_item_transactions')
+        .select(`
+          *,
+          inventory_items (name)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      
+      if (error) throw error;
+      return data as InventoryTransaction[];
+    }
+  });
+
+  const lowStockQuery = useQuery({
+    queryKey: ['inventory-low-stock', roomId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('detailed_low_stock_items')
+        .select()
+        .eq('storage_room_id', roomId);
+      
+      if (error) throw error;
+      return data as InventoryItem[];
     }
   });
 
   return {
-    inventoryData: inventoryData ?? [],
-    isLoading,
-    lowStockData: lowStockQuery.data ?? [],
-    transactionData: transactionData ?? []
+    inventory: {
+      data: inventoryQuery.data ?? [],
+      isLoading: inventoryQuery.isLoading,
+      error: inventoryQuery.error
+    },
+    categories: {
+      data: categoriesQuery.data ?? [],
+      isLoading: categoriesQuery.isLoading,
+      error: categoriesQuery.error
+    },
+    transactions: {
+      data: transactionsQuery.data ?? [],
+      isLoading: transactionsQuery.isLoading,
+      error: transactionsQuery.error
+    },
+    lowStock: {
+      data: lowStockQuery.data ?? [],
+      isLoading: lowStockQuery.isLoading,
+      error: lowStockQuery.error
+    }
   };
 };
