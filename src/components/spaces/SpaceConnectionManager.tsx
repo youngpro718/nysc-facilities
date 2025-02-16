@@ -21,7 +21,8 @@ export function SpaceConnectionManager({ spaceId, spaceType }: SpaceConnectionMa
     isLoadingConnections, 
     deleteConnection,
     isDeletingConnection,
-    createConnection
+    createConnection,
+    isCreatingConnection
   } = useSpaceConnections(spaceId, spaceType);
 
   const { 
@@ -57,7 +58,7 @@ export function SpaceConnectionManager({ spaceId, spaceType }: SpaceConnectionMa
       <CardContent className="space-y-6">
         <ConnectedSpacesForm
           onSubmit={handleSubmit}
-          isLoading={isLoadingSpaces}
+          isLoading={isLoadingSpaces || isCreatingConnection}
           availableSpaces={availableSpaces || []}
         />
 

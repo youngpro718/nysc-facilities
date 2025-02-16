@@ -8,6 +8,7 @@ import { RoomConnectionForm } from "./RoomConnectionForm";
 import { HallwayConnectionForm } from "./HallwayConnectionForm";
 import { DoorConnectionForm } from "./DoorConnectionForm";
 import { ConnectionType } from "../types/ConnectionTypes";
+import { Loader2 } from "lucide-react";
 
 interface Space {
   id: string;
@@ -31,6 +32,7 @@ export function ConnectedSpacesForm({
   availableSpaces 
 }: ConnectedSpacesFormProps) {
   const [connectionType, setConnectionType] = useState<ConnectionType>("room");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const form = useForm({
     defaultValues: {
@@ -42,6 +44,18 @@ export function ConnectedSpacesForm({
       position: "adjacent"
     }
   });
+
+  const handleFormSubmit = async (data: any) => {
+    try {
+      setIsSubmitting(true);
+      await onSubmit(data);
+      form.reset();
+    } catch (error) {
+      console.error("Form submission error:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // Create separate mapped arrays for each connection type
   const roomSpaces = connectionType === "room" ? availableSpaces.map(space => ({
@@ -68,21 +82,23 @@ export function ConnectedSpacesForm({
     floor_id: space.floor_id
   })) : [];
 
+  const isFormDisabled = isLoading || isSubmitting;
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
         <ConnectionTypeSelector
           value={connectionType}
           onChange={setConnectionType}
           form={form}
-          disabled={isLoading}
+          disabled={isFormDisabled}
         />
 
         {connectionType === "room" && (
           <RoomConnectionForm 
             form={form} 
             availableRooms={roomSpaces}
-            isLoading={isLoading}
+            isLoading={isFormDisabled}
           />
         )}
 
@@ -90,7 +106,7 @@ export function ConnectedSpacesForm({
           <HallwayConnectionForm 
             form={form}
             availableHallways={hallwaySpaces}
-            isLoading={isLoading}
+            isLoading={isFormDisabled}
           />
         )}
 
@@ -98,16 +114,23 @@ export function ConnectedSpacesForm({
           <DoorConnectionForm 
             form={form}
             availableDoors={doorSpaces}
-            isLoading={isLoading}
+            isLoading={isFormDisabled}
           />
         )}
 
         <Button 
           type="submit" 
-          disabled={isLoading}
+          disabled={isFormDisabled}
           className="w-full"
         >
-          {isLoading ? "Connecting..." : "Add Connection"}
+          {isFormDisabled ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Connecting...
+            </>
+          ) : (
+            "Add Connection"
+          )}
         </Button>
       </form>
     </Form>
