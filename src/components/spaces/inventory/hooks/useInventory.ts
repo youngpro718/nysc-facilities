@@ -52,22 +52,22 @@ export const useInventory = (roomId: string) => {
           minimum_quantity: params.minimum_quantity,
           unit: params.unit
         });
+
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory', roomId] });
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
       toast({
-        title: "Item added",
-        description: "The item has been successfully added.",
+        title: "Success",
+        description: "Item added successfully",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: "Failed to add item. Please try again.",
+        description: error.message || "Failed to add item",
         variant: "destructive",
       });
-      console.error('Error adding item:', error);
     },
   });
 
@@ -77,18 +77,18 @@ export const useInventory = (roomId: string) => {
         .from('inventory_items')
         .update({ quantity })
         .eq('id', id);
+
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory', roomId] });
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: "Failed to update quantity. Please try again.",
+        description: error.message || "Failed to update quantity",
         variant: "destructive",
       });
-      console.error('Error updating quantity:', error);
     },
   });
 
@@ -98,30 +98,33 @@ export const useInventory = (roomId: string) => {
         .from('inventory_items')
         .delete()
         .eq('id', itemId);
+
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inventory', roomId] });
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
       toast({
-        title: "Item deleted",
-        description: "The item has been successfully deleted.",
+        title: "Success",
+        description: "Item deleted successfully",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: "Failed to delete item. Please try again.",
+        description: error.message || "Failed to delete item",
         variant: "destructive",
       });
-      console.error('Error deleting item:', error);
     },
   });
 
   return {
     inventoryData,
     isLoading,
-    addItemMutation,
-    updateQuantityMutation,
-    deleteItemMutation
+    addItem: addItemMutation.mutateAsync,
+    updateQuantity: updateQuantityMutation.mutateAsync,
+    deleteItem: deleteItemMutation.mutateAsync,
+    isAdding: addItemMutation.isPending,
+    isUpdating: updateQuantityMutation.isPending,
+    isDeleting: deleteItemMutation.isPending,
   };
 };

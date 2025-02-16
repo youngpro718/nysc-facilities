@@ -4,10 +4,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Room } from "../types/RoomTypes";
 import { RoomConnections } from "../RoomConnections";
 import { format } from "date-fns";
-import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { InventoryPage } from "@/components/inventory/InventoryPage";
+import { RoomInventory } from "../../RoomInventory";
 import { Boxes } from "lucide-react";
 
 interface CardBackProps {
@@ -15,8 +14,6 @@ interface CardBackProps {
 }
 
 export function CardBack({ room }: CardBackProps) {
-  const [isInventoryOpen, setIsInventoryOpen] = useState(false);
-
   return (
     <Card className="absolute w-full h-full backface-hidden rotate-y-180">
       <CardHeader className="flex-none">
@@ -45,7 +42,7 @@ export function CardBack({ room }: CardBackProps) {
           {room.is_storage && (
             <div className="space-y-2">
               <h4 className="text-sm font-medium">Inventory</h4>
-              <Dialog open={isInventoryOpen} onOpenChange={setIsInventoryOpen}>
+              <Dialog>
                 <DialogTrigger asChild>
                   <Button 
                     variant="outline" 
@@ -60,7 +57,7 @@ export function CardBack({ room }: CardBackProps) {
                     <DialogTitle>Room Inventory - {room.name}</DialogTitle>
                   </DialogHeader>
                   <div className="flex-1 overflow-y-auto">
-                    <InventoryPage roomId={room.id} />
+                    <RoomInventory roomId={room.id} />
                   </div>
                 </DialogContent>
               </Dialog>
