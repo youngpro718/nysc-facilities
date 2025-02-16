@@ -24,8 +24,8 @@ export const useInventory = (roomId: string) => {
     item_id: transaction.item_id || '',
     transaction_type: transaction.transaction_type,
     quantity: transaction.quantity,
-    from_room_id: transaction.from_room_id || undefined,
-    to_room_id: transaction.to_room_id || undefined,
+    previous_quantity: transaction.previous_quantity,
+    new_quantity: transaction.new_quantity,
     notes: transaction.notes || undefined,
     created_at: transaction.created_at
   }));
