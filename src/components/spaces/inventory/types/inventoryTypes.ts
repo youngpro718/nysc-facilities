@@ -21,54 +21,10 @@ export interface InventoryItem {
   };
 }
 
-export interface DatabaseInventoryItem {
-  id: string;
+export interface InventoryFormInputs {
   name: string;
   quantity: number;
   category_id: string;
-  description?: string;
-  minimum_quantity?: number;
-  unit?: string;
-  status: string;
-  location_details?: string;
-  last_inventory_date?: string;
-  reorder_point?: number;
-  preferred_vendor?: string;
-  notes?: string;
-  category_name: string;
-  category_color: string;
-  category_icon?: string;
-  category_description?: string;
-}
-
-export interface RawLowStockData {
-  id: string;
-  name: string;
-  quantity: number;
-  minimum_quantity: number;
-  category_id: string;
-  category_name: string;
-  room_name: string | null;
-  storage_location: string | null;
-  room_id: string;
-}
-
-export interface LowStockItem {
-  id: string;
-  name: string;
-  quantity: number;
-  minimum_quantity: number;
-  category_id: string;
-  category_name: string;
-  room_name: string;
-  storage_location: string;
-  room_id: string;
-}
-
-export interface AddItemParams {
-  name: string;
-  quantity: number;
-  categoryId: string;
   description?: string;
   minimum_quantity?: number;
   unit?: string;
@@ -78,26 +34,14 @@ export interface AddItemParams {
   notes?: string;
 }
 
-export interface UpdateQuantityParams {
+export interface InventoryTransactionType {
   id: string;
+  item_id: string;
+  transaction_type: 'add' | 'remove' | 'transfer';
   quantity: number;
+  previous_quantity: number;
+  new_quantity: number;
+  performed_by?: string;
   notes?: string;
-}
-
-export interface TransferItemParams {
-  id: string;
-  quantity: number;
-  toRoomId: string;
-  notes?: string;
-}
-
-export interface InventoryTransaction {
-  id: string;
-  item_id: string | null;
-  transaction_type: string;
-  quantity: number;
-  from_room_id: string | null;
-  to_room_id: string | null;
-  notes: string | null;
   created_at: string;
 }

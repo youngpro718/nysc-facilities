@@ -1,9 +1,11 @@
 
 import { useState } from "react";
-import { InventoryActions } from "./inventory/InventoryActions";
+import { Input } from "@/components/ui/input";
+import { InventoryDialog } from "./inventory/InventoryDialog";
 import { InventoryTable } from "./inventory/InventoryTable";
 import { useInventory } from "./inventory/hooks/useInventory";
-import { InventoryItem } from "./inventory/types/inventoryTypes";
+import { InventoryFormInputs, InventoryItem } from "./inventory/types/inventoryTypes";
+import { InventoryImportExport } from "./inventory/InventoryImportExport";
 
 export function RoomInventory({ roomId }: { roomId: string }) {
   const [search, setSearch] = useState("");
@@ -20,31 +22,25 @@ export function RoomInventory({ roomId }: { roomId: string }) {
     item.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleAddItem = (
-    name: string, 
-    quantity: number, 
-    categoryId: string,
-    description?: string,
-    minQuantity?: number,
-    unit?: string
-  ) => {
-    addItemMutation.mutate({ 
-      name, 
-      quantity, 
-      categoryId,
-      description,
-      minimum_quantity: minQuantity,
-      unit
-    });
+  const handleAddItem = async (data: InventoryFormInputs) => {
+    await addItemMutation.mutateAsync(data);
   };
 
   return (
     <div className="space-y-4">
-      <InventoryActions
-        onAddItem={handleAddItem}
-        onSearch={setSearch}
-        inventoryData={inventoryData as InventoryItem[]}
-      />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h3 className="text-lg font-semibold">Inventory</h3>
+        <InventoryImportExport inventoryData={inventoryData as InventoryItem[]} />
+      </div>
+
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+        <Input
+          placeholder="Search items..."
+          onChange={(e) => setSearch(e.target.value)}
+          className="sm:max-w-[300px]"
+        />
+        <InventoryDialog onSubmit={handleAddItem} />
+      </div>
 
       <InventoryTable
         items={filteredItems}
