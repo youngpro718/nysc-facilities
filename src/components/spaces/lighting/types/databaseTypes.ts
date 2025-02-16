@@ -53,6 +53,9 @@ export type DatabaseLightingFixture = {
 export function mapDatabaseFixtureToLightingFixture(dbFixture: any): DatabaseLightingFixture {
   return {
     ...dbFixture,
+    space_type: dbFixture.space_type === 'room' || dbFixture.space_type === 'hallway' 
+      ? dbFixture.space_type 
+      : null,
     electrical_issues: {
       short_circuit: dbFixture.electrical_issues?.short_circuit ?? false,
       wiring_issues: dbFixture.electrical_issues?.wiring_issues ?? false,

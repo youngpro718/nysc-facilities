@@ -9,7 +9,7 @@ interface UseLightingFixturesProps {
 }
 
 export function useLightingFixtures({ selectedBuilding, selectedFloor }: UseLightingFixturesProps) {
-  return useQuery<DatabaseLightingFixture[]>({
+  return useQuery<DatabaseLightingFixture[], Error>({
     queryKey: ['lighting-fixtures', selectedBuilding, selectedFloor],
     queryFn: async () => {
       const query = supabase
@@ -31,18 +31,7 @@ export function useLightingFixtures({ selectedBuilding, selectedFloor }: UseLigh
         throw error;
       }
 
-      // Map the raw database data to our expected type structure
-      const typedData = (data || []).map(fixture => {
-        const mappedFixture = mapDatabaseFixtureToLightingFixture(fixture);
-        return {
-          ...mappedFixture,
-          space_type: fixture.space_type === 'room' || fixture.space_type === 'hallway' 
-            ? fixture.space_type 
-            : null
-        };
-      });
-
-      return typedData;
+      return (data || []).map(fixture => mapDatabaseFixtureToLightingFixture(fixture));
     }
   });
 }

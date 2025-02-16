@@ -10,7 +10,7 @@ interface FloorPlan3DViewProps {
 
 export function FloorPlan3DView({ floorId }: FloorPlan3DViewProps) {
   const { objects, isLoading: floorPlanLoading } = useFloorPlanData(floorId);
-  const { data: fixtures, isLoading: fixturesLoading } = useLightingFixtures({
+  const { data: fixtures = [], isLoading: fixturesLoading } = useLightingFixtures({
     selectedBuilding: 'all',
     selectedFloor: floorId || 'all'
   });
