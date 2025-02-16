@@ -16,7 +16,7 @@ export function useRoomsQuery() {
         .from('rooms')
         .select(`
           *,
-          lighting_fixture:lighting_fixtures!rooms_id_fkey (
+          lighting_fixture:lighting_fixtures (
             id,
             type,
             status,
@@ -62,55 +62,61 @@ export function useRoomsQuery() {
 
       console.log("Raw room data:", roomsData);
 
-      const transformedRooms: Room[] = roomsData.map(room => ({
-        id: room.id,
-        name: room.name,
-        room_number: room.room_number,
-        room_type: room.room_type as RoomType,
-        description: room.description || undefined,
-        status: room.status,
-        floor_id: room.floor_id,
-        parent_room_id: room.parent_room_id || undefined,
-        is_storage: room.is_storage,
-        storage_capacity: room.storage_capacity || null,
-        storage_type: room.storage_type ? (room.storage_type as StorageType) : null,
-        storage_notes: room.storage_notes || undefined,
-        phone_number: room.phone_number || undefined,
-        created_at: room.created_at,
-        current_function: room.current_function || undefined,
-        previous_functions: room.previous_functions || undefined,
-        function_change_date: room.function_change_date || undefined,
-        lighting_fixture: room.lighting_fixture ? {
-          id: room.lighting_fixture.id,
-          type: room.lighting_fixture.type,
-          status: room.lighting_fixture.status,
-          technology: room.lighting_fixture.technology,
-          electrical_issues: room.lighting_fixture.electrical_issues,
-          ballast_issue: room.lighting_fixture.ballast_issue,
-          maintenance_notes: room.lighting_fixture.maintenance_notes,
-          emergency_circuit: room.lighting_fixture.emergency_circuit,
-          bulb_count: room.lighting_fixture.bulb_count,
-          position: room.lighting_fixture.position,
-          sequence_number: room.lighting_fixture.sequence_number,
-          name: room.lighting_fixture.name
-        } : null,
-        floors: room.floors ? {
-          id: room.floors.id,
-          name: room.floors.name,
-          floor_number: room.floors.floor_number,
-          buildings: room.floors.buildings ? {
-            id: room.floors.buildings.id,
-            name: room.floors.buildings.name,
-            address: room.floors.buildings.address
-          } : undefined
-        } : undefined,
-        parent_room: room.parent_room ? {
-          id: room.parent_room.id,
-          name: room.parent_room.name,
-          room_number: room.parent_room.room_number,
-          room_type: room.parent_room.room_type
-        } : undefined,
-      }));
+      const transformedRooms: Room[] = roomsData.map(room => {
+        const lightingFixture = Array.isArray(room.lighting_fixture) && room.lighting_fixture.length > 0
+          ? room.lighting_fixture[0]  // Take the first fixture if it exists
+          : null;
+
+        return {
+          id: room.id,
+          name: room.name,
+          room_number: room.room_number,
+          room_type: room.room_type as RoomType,
+          description: room.description || undefined,
+          status: room.status,
+          floor_id: room.floor_id,
+          parent_room_id: room.parent_room_id || undefined,
+          is_storage: room.is_storage,
+          storage_capacity: room.storage_capacity || null,
+          storage_type: room.storage_type ? (room.storage_type as StorageType) : null,
+          storage_notes: room.storage_notes || undefined,
+          phone_number: room.phone_number || undefined,
+          created_at: room.created_at,
+          current_function: room.current_function || undefined,
+          previous_functions: room.previous_functions || undefined,
+          function_change_date: room.function_change_date || undefined,
+          lighting_fixture: lightingFixture ? {
+            id: lightingFixture.id,
+            type: lightingFixture.type,
+            status: lightingFixture.status,
+            technology: lightingFixture.technology,
+            electrical_issues: lightingFixture.electrical_issues,
+            ballast_issue: lightingFixture.ballast_issue,
+            maintenance_notes: lightingFixture.maintenance_notes,
+            emergency_circuit: lightingFixture.emergency_circuit,
+            bulb_count: lightingFixture.bulb_count,
+            position: lightingFixture.position,
+            sequence_number: lightingFixture.sequence_number,
+            name: lightingFixture.name
+          } : null,
+          floors: room.floors ? {
+            id: room.floors.id,
+            name: room.floors.name,
+            floor_number: room.floors.floor_number,
+            buildings: room.floors.buildings ? {
+              id: room.floors.buildings.id,
+              name: room.floors.buildings.name,
+              address: room.floors.buildings.address
+            } : undefined
+          } : undefined,
+          parent_room: room.parent_room ? {
+            id: room.parent_room.id,
+            name: room.parent_room.name,
+            room_number: room.parent_room.room_number,
+            room_type: room.parent_room.room_type
+          } : undefined,
+        };
+      });
 
       console.log("Transformed room data:", transformedRooms);
       return transformedRooms;
