@@ -19,8 +19,15 @@ interface UseLightingFixturesProps {
   selectedFloor: string;
 }
 
-export function useLightingFixtures({ selectedBuilding, selectedFloor }: UseLightingFixturesProps) {
-  return useQuery({
+type QueryResult = {
+  data: LightingFixture[] | null;
+  isLoading: boolean;
+  error: Error | null;
+  refetch: () => Promise<unknown>;
+}
+
+export function useLightingFixtures({ selectedBuilding, selectedFloor }: UseLightingFixturesProps): QueryResult {
+  const query = useQuery({
     queryKey: ['lighting-fixtures', selectedBuilding, selectedFloor] as const,
     queryFn: async () => {
       let query = supabase
@@ -100,4 +107,11 @@ export function useLightingFixtures({ selectedBuilding, selectedFloor }: UseLigh
       return fixtures;
     }
   });
+
+  return {
+    data: query.data ?? null,
+    isLoading: query.isLoading,
+    error: query.error as Error | null,
+    refetch: query.refetch
+  };
 }
