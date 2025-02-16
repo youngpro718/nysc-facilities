@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link2 } from "lucide-react";
@@ -26,7 +27,7 @@ export function SpaceConnectionManager({ spaceId, spaceType }: SpaceConnectionMa
   const { 
     data: availableSpaces, 
     isLoading: isLoadingSpaces 
-  } = useAvailableSpaces(spaceId, selectedConnectionType);
+  } = useAvailableSpaces(spaceId, spaceType, selectedConnectionType);
 
   const handleSubmit = async (data: any) => {
     console.log("Submitting connection data:", { spaceId, ...data });
@@ -35,6 +36,7 @@ export function SpaceConnectionManager({ spaceId, spaceType }: SpaceConnectionMa
         spaceId,
         roomId: data.roomId,
         hallwayId: data.hallwayId,
+        doorId: data.doorId,
         direction: data.direction,
         connectionType: data.connectionType,
         position: data.position

@@ -16,6 +16,7 @@ interface Space {
   floor_id?: string;
   security_level?: string;
   section?: string;
+  room_number?: string;
 }
 
 interface ConnectedSpacesFormProps {
@@ -47,7 +48,23 @@ export function ConnectedSpacesForm({
     id: space.id,
     name: space.name,
     room_type: space.type,
-    room_number: "",
+    room_number: space.room_number || "",
+    floor_id: space.floor_id
+  })) : [];
+
+  const hallwaySpaces = connectionType === "hallway" ? availableSpaces.map(space => ({
+    id: space.id,
+    name: space.name,
+    type: space.type,
+    section: space.section,
+    floor_id: space.floor_id
+  })) : [];
+
+  const doorSpaces = connectionType === "door" ? availableSpaces.map(space => ({
+    id: space.id,
+    name: space.name,
+    type: space.type,
+    security_level: space.security_level,
     floor_id: space.floor_id
   })) : [];
 
@@ -72,8 +89,7 @@ export function ConnectedSpacesForm({
         {connectionType === "hallway" && (
           <HallwayConnectionForm 
             form={form}
-            availableHallways={availableSpaces}
-            onConnect={() => form.handleSubmit(onSubmit)()}
+            availableHallways={hallwaySpaces}
             isLoading={isLoading}
           />
         )}
@@ -81,8 +97,7 @@ export function ConnectedSpacesForm({
         {connectionType === "door" && (
           <DoorConnectionForm 
             form={form}
-            availableDoors={availableSpaces}
-            onConnect={() => form.handleSubmit(onSubmit)()}
+            availableDoors={doorSpaces}
             isLoading={isLoading}
           />
         )}

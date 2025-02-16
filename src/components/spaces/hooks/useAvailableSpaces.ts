@@ -4,19 +4,26 @@ import { supabase } from "@/integrations/supabase/client";
 
 export function useAvailableSpaces(
   spaceId: string,
+  spaceType: "room" | "hallway" | "door",
   connectionType: "room" | "hallway" | "door"
 ) {
   return useQuery({
-    queryKey: ["available-spaces", spaceId, connectionType],
+    queryKey: ["available-spaces", spaceId, spaceType, connectionType],
     queryFn: async () => {
-      console.log("Fetching available spaces:", { spaceId, connectionType });
+      console.log("Fetching available spaces:", { spaceId, spaceType, connectionType });
 
-      // First get the floor_id from the current space
-      const { data: currentSpace } = await supabase
-        .from("rooms")
+      // Get floor_id from the appropriate table based on space type
+      const { data: currentSpace, error: spaceError } = await supabase
+        .from(spaceType === "room" ? "rooms" : 
+              spaceType === "hallway" ? "hallways" : "doors")
         .select("floor_id")
         .eq("id", spaceId)
         .single();
+
+      if (spaceError) {
+        console.error("Error finding current space:", spaceError);
+        throw spaceError;
+      }
 
       if (!currentSpace) {
         console.error("Could not find current space");
