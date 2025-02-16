@@ -1,11 +1,12 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, DoorClosed, GitFork, LayoutPanelLeft } from "lucide-react";
+import { Building2, DoorClosed, GitFork, LayoutPanelLeft, Lightbulb } from "lucide-react";
 import RoomsList from "./RoomsList";
 import HallwaysList from "./HallwaysList";
 import DoorsList from "./DoorsList";
 import { FloorPlanView } from "./floorplan/FloorPlanView";
 import { Suspense } from "react";
+import { SpacesLightingView } from "./lighting/SpacesLightingView";
 
 export interface SpaceViewProps {
   selectedBuilding: string;
@@ -29,6 +30,10 @@ const SpacesTabs = ({ selectedBuilding, selectedFloor }: SpaceViewProps) => {
             <DoorClosed size={16} />
             Doors
           </TabsTrigger>
+          <TabsTrigger value="lighting" className="flex items-center gap-2">
+            <Lightbulb size={16} />
+            Lighting
+          </TabsTrigger>
           <TabsTrigger value="floorplan" className="flex items-center gap-2">
             <LayoutPanelLeft size={16} />
             Floor Plan
@@ -45,6 +50,10 @@ const SpacesTabs = ({ selectedBuilding, selectedFloor }: SpaceViewProps) => {
 
         <TabsContent value="doors" className="mt-4">
           <DoorsList selectedBuilding={selectedBuilding} selectedFloor={selectedFloor} />
+        </TabsContent>
+
+        <TabsContent value="lighting" className="mt-4">
+          <SpacesLightingView selectedBuilding={selectedBuilding} selectedFloor={selectedFloor} />
         </TabsContent>
 
         <TabsContent value="floorplan" className="mt-4">
