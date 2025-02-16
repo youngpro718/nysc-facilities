@@ -59,8 +59,8 @@ export interface InventoryTransactionType {
   item_id: string;
   transaction_type: 'add' | 'remove' | 'transfer';
   quantity: number;
-  previous_quantity: number;
-  new_quantity: number;
+  from_room_id?: string;
+  to_room_id?: string;
   performed_by?: string;
   notes?: string;
   created_at: string;

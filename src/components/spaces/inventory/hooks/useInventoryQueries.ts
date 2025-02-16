@@ -57,13 +57,24 @@ export const useInventoryQueries = (roomId: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('inventory_transactions')
-        .select()
+        .select('*')
         .eq('from_room_id', roomId)
         .order('created_at', { ascending: false })
         .limit(10);
       
       if (error) throw error;
-      return data || [];
+      
+      return (data || []).map((transaction): InventoryTransactionType => ({
+        id: transaction.id,
+        item_id: transaction.item_id || '',
+        transaction_type: transaction.transaction_type,
+        quantity: transaction.quantity,
+        from_room_id: transaction.from_room_id || undefined,
+        to_room_id: transaction.to_room_id || undefined,
+        performed_by: transaction.performed_by || undefined,
+        notes: transaction.notes || undefined,
+        created_at: transaction.created_at
+      }));
     }
   });
 

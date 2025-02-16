@@ -19,16 +19,7 @@ export const useInventory = (roomId: string) => {
     storage_location: item.storage_location || ''
   }));
 
-  const recentTransactions = (transactionData ?? []).map(transaction => ({
-    id: transaction.id,
-    item_id: transaction.item_id || '',
-    transaction_type: transaction.transaction_type,
-    quantity: transaction.quantity,
-    previous_quantity: transaction.previous_quantity,
-    new_quantity: transaction.new_quantity,
-    notes: transaction.notes || undefined,
-    created_at: transaction.created_at
-  }));
+  const recentTransactions = transactionData;
 
   return {
     inventoryData,
