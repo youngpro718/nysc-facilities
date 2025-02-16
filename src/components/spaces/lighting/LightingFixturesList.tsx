@@ -7,16 +7,25 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { LightingFixture } from "@/components/lighting/types";
 
 interface LightingFixturesListProps {
   selectedBuilding: string;
   selectedFloor: string;
 }
 
+interface LightingFixtureResponse extends Omit<LightingFixture, 'energy_usage_data'> {
+  energy_usage_data: {
+    daily_usage: any[];
+    efficiency_rating: string | null;
+    last_reading: string | null;
+  } | null;
+}
+
 export function LightingFixturesList({ selectedBuilding, selectedFloor }: LightingFixturesListProps) {
   const [selectedFixtures, setSelectedFixtures] = useState<string[]>([]);
 
-  const { data: fixtures, isLoading, refetch } = useQuery({
+  const { data: fixtures, isLoading, refetch } = useQuery<LightingFixtureResponse[]>({
     queryKey: ['lighting-fixtures', selectedBuilding, selectedFloor],
     queryFn: async () => {
       let query = supabase
@@ -33,7 +42,7 @@ export function LightingFixturesList({ selectedBuilding, selectedFloor }: Lighti
 
       const { data, error } = await query;
       if (error) throw error;
-      return data;
+      return data as LightingFixtureResponse[];
     }
   });
 
@@ -79,7 +88,7 @@ export function LightingFixturesList({ selectedBuilding, selectedFloor }: Lighti
         {fixtures?.map((fixture) => (
           <LightingFixtureCard
             key={fixture.id}
-            fixture={fixture}
+            fixture={fixture as LightingFixture}
             isSelected={selectedFixtures.includes(fixture.id)}
             onSelect={(checked) => {
               setSelectedFixtures(prev => 

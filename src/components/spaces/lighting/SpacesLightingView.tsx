@@ -1,5 +1,5 @@
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LightingFixturesList } from "./LightingFixturesList";
 import { LightingZonesList } from "./LightingZonesList";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,7 @@ export function SpacesLightingView({ selectedBuilding, selectedFloor }: SpacesLi
             </TabsList>
             
             <div className="flex items-center gap-2">
-              <AssignFixtureDialog />
+              {/* Remove AssignFixtureDialog since it requires a roomId context */}
               <Button variant="secondary" size="sm">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Zone
