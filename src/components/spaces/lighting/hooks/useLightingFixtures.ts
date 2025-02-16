@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DatabaseLightingFixture } from "../types/databaseTypes";
@@ -79,27 +78,19 @@ function transformFixture(raw: DatabaseLightingFixture): LightingFixture {
   };
 }
 
-export function useLightingFixtures(props: UseLightingFixturesProps) {
-  const queryFn = async () => {
-    const query = supabase
-      .from('lighting_fixture_details')
-      .select('*')
-      .order('name');
-
-    if (props.selectedFloor !== 'all') {
-      query.eq('floor_id', props.selectedFloor);
-    }
-    if (props.selectedBuilding !== 'all') {
-      query.eq('building_id', props.selectedBuilding);
-    }
-
-    const { data, error } = await query;
-    if (error) throw error;
-    return (data || []).map(transformFixture);
-  };
-
+export function useLightingFixtures({ selectedBuilding, selectedFloor }: UseLightingFixturesProps) {
   return useQuery({
-    queryKey: ['lighting-fixtures', props.selectedBuilding, props.selectedFloor] as const,
-    queryFn
+    queryKey: ['lighting-fixtures', selectedBuilding, selectedFloor] as const,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('lighting_fixture_details')
+        .select('*')
+        .eq(selectedFloor !== 'all' ? 'floor_id' : 'floor_id', selectedFloor)
+        .eq(selectedBuilding !== 'all' ? 'building_id' : 'building_id', selectedBuilding)
+        .order('name');
+
+      if (error) throw error;
+      return (data || []).map(transformFixture);
+    }
   });
 }
