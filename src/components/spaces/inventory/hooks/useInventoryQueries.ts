@@ -71,7 +71,6 @@ export const useInventoryQueries = (roomId: string) => {
   const lowStockQuery = useQuery({
     queryKey: ['inventory-low-stock', roomId],
     queryFn: async () => {
-      // Using raw SQL for the comparison
       const { data, error } = await supabase
         .from('inventory_items')
         .select(`
@@ -92,7 +91,7 @@ export const useInventoryQueries = (roomId: string) => {
         .eq('storage_room_id', roomId)
         .eq('status', 'active')
         .not('minimum_quantity', 'is', null)
-        .gte('minimum_quantity', 0)  // Ensure minimum_quantity is valid
+        .gte('minimum_quantity', 0)
         .filter('quantity', 'lte', 'minimum_quantity');
       
       if (error) throw error;

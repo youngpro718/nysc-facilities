@@ -32,14 +32,13 @@ export interface InventoryCategory {
 
 export interface InventoryTransaction {
   id: string;
-  item_id: string;
   transaction_type: 'add' | 'remove' | 'transfer';
   quantity: number;
-  previous_quantity: number;
-  new_quantity: number;
-  performed_by?: string;
-  notes?: string;
   created_at: string;
+  inventory_items?: {
+    id: string;
+    name: string;
+  };
 }
 
 export interface InventoryFormInputs {
