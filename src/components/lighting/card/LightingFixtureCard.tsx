@@ -46,7 +46,6 @@ export const LightingFixtureCard = ({
           onSelect={onSelect}
           onDelete={onDelete}
           onFixtureUpdated={onFixtureUpdated}
-          onFlip={() => setIsFlipped(true)}
         />
         <CardBack
           fixture={fixture}
