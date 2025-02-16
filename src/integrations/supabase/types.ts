@@ -2918,6 +2918,106 @@ export type Database = {
           },
         ]
       }
+      lighting_maintenance_schedules: {
+        Row: {
+          assigned_technician: string | null
+          completed_by: string | null
+          completed_date: string | null
+          completion_notes: string | null
+          created_at: string | null
+          estimated_duration: unknown | null
+          fixture_id: string | null
+          id: string
+          maintenance_type: string
+          notes: string | null
+          parts_required: Json | null
+          priority_level: string | null
+          reminder_sent: boolean | null
+          scheduled_date: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_technician?: string | null
+          completed_by?: string | null
+          completed_date?: string | null
+          completion_notes?: string | null
+          created_at?: string | null
+          estimated_duration?: unknown | null
+          fixture_id?: string | null
+          id?: string
+          maintenance_type: string
+          notes?: string | null
+          parts_required?: Json | null
+          priority_level?: string | null
+          reminder_sent?: boolean | null
+          scheduled_date: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_technician?: string | null
+          completed_by?: string | null
+          completed_date?: string | null
+          completion_notes?: string | null
+          created_at?: string | null
+          estimated_duration?: unknown | null
+          fixture_id?: string | null
+          id?: string
+          maintenance_type?: string
+          notes?: string | null
+          parts_required?: Json | null
+          priority_level?: string | null
+          reminder_sent?: boolean | null
+          scheduled_date?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lighting_maintenance_schedules_assigned_technician_fkey"
+            columns: ["assigned_technician"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lighting_maintenance_schedules_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lighting_maintenance_schedules_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "emergency_lighting_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lighting_maintenance_schedules_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "lighting_assignments"
+            referencedColumns: ["fixture_id"]
+          },
+          {
+            foreignKeyName: "lighting_maintenance_schedules_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "lighting_fixture_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lighting_maintenance_schedules_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "lighting_fixtures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lighting_notifications: {
         Row: {
           created_at: string | null
@@ -5248,6 +5348,79 @@ export type Database = {
           type: Database["public"]["Enums"]["light_fixture_type_enum"] | null
         }
         Relationships: []
+      }
+      lighting_maintenance_view: {
+        Row: {
+          assigned_technician: string | null
+          completed_by: string | null
+          completed_by_name: string | null
+          completed_date: string | null
+          completion_notes: string | null
+          created_at: string | null
+          estimated_duration: unknown | null
+          fixture_id: string | null
+          fixture_name: string | null
+          fixture_status:
+            | Database["public"]["Enums"]["light_status_enum"]
+            | null
+          fixture_type:
+            | Database["public"]["Enums"]["light_fixture_type_enum"]
+            | null
+          id: string | null
+          maintenance_type: string | null
+          notes: string | null
+          parts_required: Json | null
+          priority_level: string | null
+          reminder_sent: boolean | null
+          scheduled_date: string | null
+          status: string | null
+          technician_name: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lighting_maintenance_schedules_assigned_technician_fkey"
+            columns: ["assigned_technician"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lighting_maintenance_schedules_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lighting_maintenance_schedules_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "emergency_lighting_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lighting_maintenance_schedules_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "lighting_assignments"
+            referencedColumns: ["fixture_id"]
+          },
+          {
+            foreignKeyName: "lighting_maintenance_schedules_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "lighting_fixture_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lighting_maintenance_schedules_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "lighting_fixtures"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       low_stock_items: {
         Row: {
