@@ -51,19 +51,24 @@ export function CategorySelector({ value, onValueChange }: CategorySelectorProps
         <SelectValue placeholder="Select category" />
       </SelectTrigger>
       <SelectContent>
-        {categories?.map((category) => (
+        {(categories || []).map((category) => (
           <SelectItem 
             key={category.id} 
             value={category.id}
             className="flex items-center gap-2"
           >
-            <div 
-              className="w-3 h-3 rounded-full" 
-              style={{ backgroundColor: category.color }} 
-            />
-            {category.name}
+            <div className="flex items-center gap-2">
+              <div 
+                className="w-3 h-3 rounded-full" 
+                style={{ backgroundColor: category.color }} 
+              />
+              {category.name}
+            </div>
           </SelectItem>
         ))}
+        {(!categories || categories.length === 0) && (
+          <SelectItem value="none" disabled>No categories available</SelectItem>
+        )}
       </SelectContent>
     </Select>
   );
