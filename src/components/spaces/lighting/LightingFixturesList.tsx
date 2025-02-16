@@ -5,9 +5,10 @@ import { Card } from "@/components/ui/card";
 import { LightingFixtureCard } from "@/components/lighting/card/LightingFixtureCard";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import type { Json } from '@/integrations/supabase/types';
+import { CreateLightingDialog } from "@/components/lighting/CreateLightingDialog";
 import { 
   LightingFixture, 
   LightingPosition,
@@ -98,66 +99,63 @@ export function LightingFixturesList({ selectedBuilding, selectedFloor }: Lighti
       if (error) throw error;
       if (!rawData) return [];
 
-      return rawData.map((raw) => {
-        const fixture: LightingFixture = {
-          id: raw.id,
-          name: raw.name,
-          type: raw.type,
-          status: raw.status,
-          zone_name: raw.zone_name,
-          building_name: raw.building_name,
-          floor_name: raw.floor_name,
-          floor_id: raw.floor_id,
-          space_id: raw.space_id,
-          space_type: raw.space_type === 'room' || raw.space_type === 'hallway' ? raw.space_type : null,
-          position: raw.position,
-          sequence_number: raw.sequence_number,
-          zone_id: raw.zone_id,
-          space_name: raw.space_name,
-          room_number: raw.room_number,
-          emergency_circuit: raw.emergency_circuit ?? false,
-          technology: raw.technology,
-          ballast_issue: raw.ballast_issue ?? false,
-          bulb_count: raw.bulb_count ?? 1,
-          electrical_issues: parseJsonField<ElectricalIssues>(raw.electrical_issues, {
-            short_circuit: false,
-            wiring_issues: false,
-            voltage_problems: false
-          }),
-          energy_usage_data: parseJsonField<EnergyUsageData>(raw.energy_usage_data, {
-            daily_usage: [],
-            efficiency_rating: null,
-            last_reading: null
-          }),
-          emergency_protocols: parseJsonField<EmergencyProtocols>(raw.emergency_protocols, {
-            emergency_contact: null,
-            backup_system: false,
-            evacuation_route: false
-          }),
-          warranty_info: parseJsonField<WarrantyInfo>(raw.warranty_info, {
-            start_date: null,
-            end_date: null,
-            provider: null,
-            terms: null
-          }),
-          manufacturer_details: parseJsonField<ManufacturerDetails>(raw.manufacturer_details, {
-            name: null,
-            model: null,
-            serial_number: null,
-            support_contact: null
-          }),
-          inspection_history: parseJsonField<InspectionEntry[]>(raw.inspection_history, []),
-          maintenance_history: parseJsonField<MaintenanceEntry[]>(raw.maintenance_history, []),
-          connected_fixtures: raw.connected_fixtures || [],
-          maintenance_notes: raw.maintenance_notes,
-          ballast_check_notes: raw.ballast_check_notes,
-          backup_power_source: raw.backup_power_source,
-          emergency_duration_minutes: raw.emergency_duration_minutes,
-          created_at: raw.created_at,
-          updated_at: raw.updated_at
-        };
-        return fixture;
-      });
+      return rawData.map((raw): LightingFixture => ({
+        id: raw.id,
+        name: raw.name,
+        type: raw.type,
+        status: raw.status,
+        zone_name: raw.zone_name,
+        building_name: raw.building_name,
+        floor_name: raw.floor_name,
+        floor_id: raw.floor_id,
+        space_id: raw.space_id,
+        space_type: raw.space_type === 'room' || raw.space_type === 'hallway' ? raw.space_type : null,
+        position: raw.position,
+        sequence_number: raw.sequence_number,
+        zone_id: raw.zone_id,
+        space_name: raw.space_name,
+        room_number: raw.room_number,
+        emergency_circuit: raw.emergency_circuit ?? false,
+        technology: raw.technology,
+        ballast_issue: raw.ballast_issue ?? false,
+        bulb_count: raw.bulb_count ?? 1,
+        electrical_issues: parseJsonField<ElectricalIssues>(raw.electrical_issues, {
+          short_circuit: false,
+          wiring_issues: false,
+          voltage_problems: false
+        }),
+        energy_usage_data: parseJsonField<EnergyUsageData>(raw.energy_usage_data, {
+          daily_usage: [],
+          efficiency_rating: null,
+          last_reading: null
+        }),
+        emergency_protocols: parseJsonField<EmergencyProtocols>(raw.emergency_protocols, {
+          emergency_contact: null,
+          backup_system: false,
+          evacuation_route: false
+        }),
+        warranty_info: parseJsonField<WarrantyInfo>(raw.warranty_info, {
+          start_date: null,
+          end_date: null,
+          provider: null,
+          terms: null
+        }),
+        manufacturer_details: parseJsonField<ManufacturerDetails>(raw.manufacturer_details, {
+          name: null,
+          model: null,
+          serial_number: null,
+          support_contact: null
+        }),
+        inspection_history: parseJsonField<InspectionEntry[]>(raw.inspection_history, []),
+        maintenance_history: parseJsonField<MaintenanceEntry[]>(raw.maintenance_history, []),
+        connected_fixtures: raw.connected_fixtures || [],
+        maintenance_notes: raw.maintenance_notes,
+        ballast_check_notes: raw.ballast_check_notes,
+        backup_power_source: raw.backup_power_source,
+        emergency_duration_minutes: raw.emergency_duration_minutes,
+        created_at: raw.created_at,
+        updated_at: raw.updated_at
+      }));
     }
   });
 
@@ -185,6 +183,13 @@ export function LightingFixturesList({ selectedBuilding, selectedFloor }: Lighti
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <CreateLightingDialog 
+          onFixtureCreated={() => query.refetch()}
+          onZoneCreated={() => query.refetch()}
+        />
+      </div>
+
       {selectedFixtures.length > 0 && (
         <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
           <span>{selectedFixtures.length} fixtures selected</span>
