@@ -24,12 +24,10 @@ export const LightingFixtureCard = ({
   const [isFlipped, setIsFlipped] = useState(false);
 
   return (
-    <div className="relative w-full h-[300px] [perspective:1000px]">
-      <div 
-        className={`relative w-full h-full transition-transform duration-500 [transform-style:preserve-3d] ${
-          isFlipped ? '[transform:rotateY(180deg)]' : ''
-        }`}
-      >
+    <div className="relative w-full h-[300px] perspective-1000">
+      <div className={`relative w-full h-full transform-style-3d transition-transform duration-500 ${
+        isFlipped ? 'rotate-y-180' : ''
+      }`}>
         <div className="absolute bottom-4 right-4 z-10">
           <Button
             variant="outline"
@@ -51,6 +49,7 @@ export const LightingFixtureCard = ({
         />
         <CardBack
           fixture={fixture}
+          onFlip={() => setIsFlipped(false)}
         />
       </div>
     </div>

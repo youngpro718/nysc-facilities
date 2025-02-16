@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LightingFixtureCard } from "@/components/lighting/card/LightingFixtureCard";
@@ -6,7 +7,6 @@ import { CreateLightingDialog } from "@/components/lighting/CreateLightingDialog
 import { useLightingFixtures } from "./hooks/useLightingFixtures";
 import { NoFixturesFound } from "./components/NoFixturesFound";
 import { SelectedFixturesBar } from "./components/SelectedFixturesBar";
-import { LightingFixture } from "@/components/lighting/types";
 
 interface LightingFixturesListProps {
   selectedBuilding: string;
@@ -16,7 +16,6 @@ interface LightingFixturesListProps {
 export function LightingFixturesList({ selectedBuilding, selectedFloor }: LightingFixturesListProps) {
   const [selectedFixtures, setSelectedFixtures] = useState<string[]>([]);
   const query = useLightingFixtures({ selectedBuilding, selectedFloor });
-  const fixtures = query.data || [];
 
   const handleDelete = async () => {
     try {
@@ -57,7 +56,7 @@ export function LightingFixturesList({ selectedBuilding, selectedFloor }: Lighti
       )}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {fixtures.map((fixture) => (
+        {query.data?.map((fixture) => (
           <LightingFixtureCard
             key={fixture.id}
             fixture={fixture}
@@ -75,7 +74,7 @@ export function LightingFixturesList({ selectedBuilding, selectedFloor }: Lighti
         ))}
       </div>
 
-      {(!fixtures || fixtures.length === 0) && <NoFixturesFound />}
+      {(!query.data || query.data.length === 0) && <NoFixturesFound />}
     </div>
   );
 }
