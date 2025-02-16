@@ -9,13 +9,10 @@ import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { 
   LightingFixture, 
-  InspectionEntry, 
-  MaintenanceEntry, 
-  ElectricalIssues,
-  EnergyUsageData,
-  EmergencyProtocols,
-  WarrantyInfo,
-  ManufacturerDetails 
+  LightingPosition,
+  LightingTechnology,
+  LightingType,
+  LightStatus
 } from "@/components/lighting/types";
 
 interface LightingFixturesListProps {
@@ -23,37 +20,33 @@ interface LightingFixturesListProps {
   selectedFloor: string;
 }
 
-interface DatabaseFixture {
+type DatabaseLightingFixture = {
   id: string;
   name: string;
-  type: LightingFixture['type'];
-  status: LightingFixture['status'];
+  type: LightingType;
+  status: LightStatus;
   zone_name: string | null;
   building_name: string | null;
   floor_name: string | null;
   floor_id: string | null;
   space_id: string | null;
   space_type: string | null;
-  position: string | null;
+  position: LightingPosition | null;
   sequence_number: number | null;
   zone_id: string | null;
   space_name: string | null;
   room_number: string | null;
   emergency_circuit: boolean;
-  technology: string | null;
+  technology: LightingTechnology | null;
   ballast_issue: boolean;
   bulb_count: number;
-  electrical_issues: {
-    short_circuit: boolean;
-    wiring_issues: boolean;
-    voltage_problems: boolean;
-  } | null;
-  energy_usage_data: Partial<EnergyUsageData> | null;
-  emergency_protocols: Partial<EmergencyProtocols> | null;
-  warranty_info: Partial<WarrantyInfo> | null;
-  manufacturer_details: Partial<ManufacturerDetails> | null;
-  inspection_history: InspectionEntry[];
-  maintenance_history: MaintenanceEntry[];
+  electrical_issues: string | null;
+  energy_usage_data: string | null;
+  emergency_protocols: string | null;
+  warranty_info: string | null;
+  manufacturer_details: string | null;
+  inspection_history: string | null;
+  maintenance_history: string | null;
   connected_fixtures: string[];
   maintenance_notes: string | null;
   ballast_check_notes: string | null;
@@ -61,6 +54,15 @@ interface DatabaseFixture {
   emergency_duration_minutes: number | null;
   created_at: string | null;
   updated_at: string | null;
+};
+
+function parseJsonField<T>(field: string | null, defaultValue: T): T {
+  if (!field) return defaultValue;
+  try {
+    return JSON.parse(field) as T;
+  } catch {
+    return defaultValue;
+  }
 }
 
 export function LightingFixturesList({ selectedBuilding, selectedFloor }: LightingFixturesListProps) {
@@ -85,67 +87,79 @@ export function LightingFixturesList({ selectedBuilding, selectedFloor }: Lighti
       if (error) throw error;
       if (!data) return [];
 
-      return data.map((item: DatabaseFixture): LightingFixture => ({
-        id: item.id,
-        name: item.name,
-        type: item.type,
-        status: item.status,
-        zone_name: item.zone_name,
-        building_name: item.building_name,
-        floor_name: item.floor_name,
-        floor_id: item.floor_id,
-        space_id: item.space_id,
-        space_type: item.space_type === 'room' || item.space_type === 'hallway' ? item.space_type : null,
-        position: item.position,
-        sequence_number: item.sequence_number,
-        zone_id: item.zone_id,
-        space_name: item.space_name,
-        room_number: item.room_number,
-        emergency_circuit: item.emergency_circuit ?? false,
-        technology: item.technology,
-        ballast_issue: item.ballast_issue ?? false,
-        bulb_count: item.bulb_count ?? 1,
-        electrical_issues: item.electrical_issues ?? {
+      return data.map((raw: DatabaseLightingFixture): LightingFixture => {
+        // Parse JSON fields with their default values
+        const electrical_issues = parseJsonField(raw.electrical_issues, {
           short_circuit: false,
           wiring_issues: false,
           voltage_problems: false
-        },
-        energy_usage_data: {
+        });
+
+        const energy_usage_data = parseJsonField(raw.energy_usage_data, {
           daily_usage: [],
           efficiency_rating: null,
-          last_reading: null,
-          ...(item.energy_usage_data || {})
-        },
-        emergency_protocols: {
+          last_reading: null
+        });
+
+        const emergency_protocols = parseJsonField(raw.emergency_protocols, {
           emergency_contact: null,
           backup_system: false,
-          evacuation_route: false,
-          ...(item.emergency_protocols || {})
-        },
-        warranty_info: {
+          evacuation_route: false
+        });
+
+        const warranty_info = parseJsonField(raw.warranty_info, {
           start_date: null,
           end_date: null,
           provider: null,
-          terms: null,
-          ...(item.warranty_info || {})
-        },
-        manufacturer_details: {
+          terms: null
+        });
+
+        const manufacturer_details = parseJsonField(raw.manufacturer_details, {
           name: null,
           model: null,
           serial_number: null,
-          support_contact: null,
-          ...(item.manufacturer_details || {})
-        },
-        inspection_history: item.inspection_history || [],
-        maintenance_history: item.maintenance_history || [],
-        connected_fixtures: item.connected_fixtures || [],
-        maintenance_notes: item.maintenance_notes,
-        ballast_check_notes: item.ballast_check_notes,
-        backup_power_source: item.backup_power_source,
-        emergency_duration_minutes: item.emergency_duration_minutes,
-        created_at: item.created_at,
-        updated_at: item.updated_at
-      }));
+          support_contact: null
+        });
+
+        const inspection_history = parseJsonField(raw.inspection_history, []);
+        const maintenance_history = parseJsonField(raw.maintenance_history, []);
+
+        return {
+          id: raw.id,
+          name: raw.name,
+          type: raw.type,
+          status: raw.status,
+          zone_name: raw.zone_name,
+          building_name: raw.building_name,
+          floor_name: raw.floor_name,
+          floor_id: raw.floor_id,
+          space_id: raw.space_id,
+          space_type: raw.space_type === 'room' || raw.space_type === 'hallway' ? raw.space_type : null,
+          position: raw.position,
+          sequence_number: raw.sequence_number,
+          zone_id: raw.zone_id,
+          space_name: raw.space_name,
+          room_number: raw.room_number,
+          emergency_circuit: raw.emergency_circuit ?? false,
+          technology: raw.technology,
+          ballast_issue: raw.ballast_issue ?? false,
+          bulb_count: raw.bulb_count ?? 1,
+          electrical_issues,
+          energy_usage_data,
+          emergency_protocols,
+          warranty_info,
+          manufacturer_details,
+          inspection_history,
+          maintenance_history,
+          connected_fixtures: raw.connected_fixtures || [],
+          maintenance_notes: raw.maintenance_notes,
+          ballast_check_notes: raw.ballast_check_notes,
+          backup_power_source: raw.backup_power_source,
+          emergency_duration_minutes: raw.emergency_duration_minutes,
+          created_at: raw.created_at,
+          updated_at: raw.updated_at
+        };
+      });
     }
   });
 
