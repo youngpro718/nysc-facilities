@@ -28,22 +28,15 @@ export const useHallwayData = ({ selectedBuilding, selectedFloor }: UseHallwayDa
               name
             )
           ),
-          space_connections (
+          space_connections!from_space_id (
             id,
             position,
             connection_type,
             door_details,
             access_requirements,
             is_emergency_exit,
-            connected_room:rooms (
-              name
-            ),
-            connected_hallway:hallways (
-              name
-            ),
-            connected_door:doors (
-              name
-            )
+            to_space_id,
+            space_type
           )
         `);
 
@@ -56,20 +49,39 @@ export const useHallwayData = ({ selectedBuilding, selectedFloor }: UseHallwayDa
         query = query.eq('floors.buildings.id', selectedBuilding);
       }
 
-      const { data, error } = await query;
+      const { data: hallwaysData, error: hallwaysError } = await query;
 
-      if (error) {
-        console.error('Error fetching hallways:', error);
+      if (hallwaysError) {
+        console.error('Error fetching hallways:', hallwaysError);
         toast({
           title: "Error",
           description: "Failed to fetch hallways. Please try again.",
           variant: "destructive",
         });
-        throw error;
+        throw hallwaysError;
+      }
+
+      // Fetch connected space names in a separate query
+      const spaceConnections = hallwaysData?.flatMap(h => h.space_connections) || [];
+      const connectedSpaceNames: Record<string, string> = {};
+
+      for (const connection of spaceConnections) {
+        if (!connection.to_space_id) continue;
+
+        const { data, error } = await supabase
+          .from(connection.space_type === 'room' ? 'rooms' : 
+                connection.space_type === 'hallway' ? 'hallways' : 'doors')
+          .select('name')
+          .eq('id', connection.to_space_id)
+          .single();
+
+        if (!error && data) {
+          connectedSpaceNames[connection.to_space_id] = data.name;
+        }
       }
 
       // Transform and type the response data
-      const transformedHallways: Hallway[] = (data || []).map(hallway => {
+      const transformedHallways: Hallway[] = (hallwaysData || []).map(hallway => {
         // Cast emergency_exits with type assertion
         const emergencyExits = (hallway.emergency_exits as any[] || []).map((exit): EmergencyExit => ({
           location: exit.location || '',
@@ -93,30 +105,17 @@ export const useHallwayData = ({ selectedBuilding, selectedFloor }: UseHallwayDa
         };
 
         // Transform space connections to include the correct connected space name
-        const transformedConnections: HallwayConnection[] = ((hallway.space_connections || []) as any[]).map(conn => {
-          let connectedSpaceName = '';
-          
-          // Determine which connected space to use based on what's available
-          if (conn.connected_room?.name) {
-            connectedSpaceName = conn.connected_room.name;
-          } else if (conn.connected_hallway?.name) {
-            connectedSpaceName = conn.connected_hallway.name;
-          } else if (conn.connected_door?.name) {
-            connectedSpaceName = conn.connected_door.name;
+        const transformedConnections: HallwayConnection[] = ((hallway.space_connections || []) as any[]).map(conn => ({
+          id: conn.id,
+          position: conn.position,
+          connection_type: conn.connection_type,
+          door_details: conn.door_details,
+          access_requirements: conn.access_requirements,
+          is_emergency_exit: conn.is_emergency_exit,
+          to_space: {
+            name: connectedSpaceNames[conn.to_space_id] || 'Unknown Space'
           }
-
-          return {
-            id: conn.id,
-            position: conn.position,
-            connection_type: conn.connection_type,
-            door_details: conn.door_details,
-            access_requirements: conn.access_requirements,
-            is_emergency_exit: conn.is_emergency_exit,
-            to_space: {
-              name: connectedSpaceName
-            }
-          };
-        });
+        }));
 
         return {
           ...hallway,
