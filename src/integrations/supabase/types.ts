@@ -4288,10 +4288,12 @@ export type Database = {
           door_details: Json | null
           floor_id: string | null
           from_space_id: string
+          hallway_position: number | null
           id: string
           is_emergency_exit: boolean | null
           last_modified: string | null
           metadata: Json | null
+          offset_distance: number | null
           position: string | null
           space_type: string
           status: Database["public"]["Enums"]["connection_status_enum"] | null
@@ -4307,10 +4309,12 @@ export type Database = {
           door_details?: Json | null
           floor_id?: string | null
           from_space_id: string
+          hallway_position?: number | null
           id?: string
           is_emergency_exit?: boolean | null
           last_modified?: string | null
           metadata?: Json | null
+          offset_distance?: number | null
           position?: string | null
           space_type: string
           status?: Database["public"]["Enums"]["connection_status_enum"] | null
@@ -4326,10 +4330,12 @@ export type Database = {
           door_details?: Json | null
           floor_id?: string | null
           from_space_id?: string
+          hallway_position?: number | null
           id?: string
           is_emergency_exit?: boolean | null
           last_modified?: string | null
           metadata?: Json | null
+          offset_distance?: number | null
           position?: string | null
           space_type?: string
           status?: Database["public"]["Enums"]["connection_status_enum"] | null
