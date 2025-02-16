@@ -12,11 +12,20 @@ export function useRoomsQuery() {
     queryFn: async () => {
       console.log("Fetching rooms data...");
       
-      // First, fetch basic room data with essential relations
       const { data: roomsData, error: roomsError } = await supabase
         .from('rooms')
         .select(`
           *,
+          lighting_fixtures (
+            id,
+            name,
+            type,
+            status,
+            position,
+            emergency_circuit,
+            technology,
+            maintenance_notes
+          ),
           floors (
             id,
             name,
@@ -47,7 +56,8 @@ export function useRoomsQuery() {
 
       if (!roomsData) return [];
 
-      // Transform the data to match our Room type
+      console.log("Raw room data:", roomsData);
+
       const transformedRooms: Room[] = roomsData.map(room => ({
         id: room.id,
         name: room.name,
@@ -66,6 +76,7 @@ export function useRoomsQuery() {
         current_function: room.current_function || undefined,
         previous_functions: room.previous_functions || undefined,
         function_change_date: room.function_change_date || undefined,
+        lighting_fixtures: room.lighting_fixtures || [],
         floors: room.floors ? {
           id: room.floors.id,
           name: room.floors.name,
