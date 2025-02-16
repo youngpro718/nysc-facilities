@@ -1,3 +1,4 @@
+
 import { LightingFixture } from "@/components/lighting/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -31,10 +32,7 @@ export function CardFront({
   };
 
   return (
-    <Card className={cn(
-      "relative group transition-all", 
-      isSelected ? "ring-2 ring-primary" : ""
-    )}>
+    <Card className="absolute w-full h-full backface-hidden">
       <CardContent className="p-4">
         <div className="flex items-start justify-between">
           <div className="space-y-1">

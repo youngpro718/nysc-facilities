@@ -20,14 +20,6 @@ interface UseLightingFixturesProps {
 }
 
 function transformDatabaseFixture(raw: DatabaseLightingFixture): LightingFixture {
-  // Helper function to validate space type
-  const validateSpaceType = (type: string | null): "room" | "hallway" | null => {
-    if (type === "room" || type === "hallway") {
-      return type;
-    }
-    return null;
-  };
-
   return {
     id: raw.id,
     name: raw.name,
@@ -38,7 +30,7 @@ function transformDatabaseFixture(raw: DatabaseLightingFixture): LightingFixture
     floor_name: raw.floor_name,
     floor_id: raw.floor_id,
     space_id: raw.space_id,
-    space_type: validateSpaceType(raw.space_type),
+    space_type: raw.space_type === "room" || raw.space_type === "hallway" ? raw.space_type : null,
     position: raw.position,
     sequence_number: raw.sequence_number,
     zone_id: raw.zone_id,
@@ -87,29 +79,29 @@ function transformDatabaseFixture(raw: DatabaseLightingFixture): LightingFixture
   };
 }
 
-async function fetchLightingFixtures(selectedBuilding: string, selectedFloor: string) {
-  let query = supabase
-    .from('lighting_fixture_details')
-    .select('*')
-    .order('name');
-
-  if (selectedFloor !== 'all') {
-    query = query.eq('floor_id', selectedFloor);
-  }
-  if (selectedBuilding !== 'all') {
-    query = query.eq('building_id', selectedBuilding);
-  }
-
-  const { data: rawData, error } = await query;
-  if (error) throw error;
-  if (!rawData) return [];
-
-  return (rawData as DatabaseLightingFixture[]).map(transformDatabaseFixture);
-}
-
 export function useLightingFixtures({ selectedBuilding, selectedFloor }: UseLightingFixturesProps) {
-  return useQuery({
-    queryKey: ['lighting-fixtures', selectedBuilding, selectedFloor],
-    queryFn: () => fetchLightingFixtures(selectedBuilding, selectedFloor)
+  const query = useQuery({
+    queryKey: ['lighting-fixtures', selectedBuilding, selectedFloor] as const,
+    queryFn: async () => {
+      const query = supabase
+        .from('lighting_fixture_details')
+        .select('*')
+        .order('name');
+
+      if (selectedFloor !== 'all') {
+        query.eq('floor_id', selectedFloor);
+      }
+      if (selectedBuilding !== 'all') {
+        query.eq('building_id', selectedBuilding);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      if (!data) return [];
+
+      return data.map(transformDatabaseFixture);
+    }
   });
+
+  return query;
 }
