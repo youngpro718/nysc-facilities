@@ -9,28 +9,25 @@ interface UseLightingFixturesProps {
 }
 
 export function useLightingFixtures({ selectedBuilding, selectedFloor }: UseLightingFixturesProps) {
-  return useQuery<DatabaseLightingFixture[], Error>({
-    queryKey: ['lighting-fixtures', selectedBuilding, selectedFloor],
+  const queryKey = ['lighting-fixtures', selectedBuilding, selectedFloor];
+  
+  return useQuery<DatabaseLightingFixture[]>({
+    queryKey,
     queryFn: async () => {
-      const query = supabase
+      console.log("Fetching lighting fixtures...");
+      
+      const { data, error } = await supabase
         .from('lighting_fixture_details')
-        .select('*');
-
-      if (selectedFloor !== 'all') {
-        query.eq('floor_id', selectedFloor);
-      }
-
-      if (selectedBuilding !== 'all') {
-        query.eq('building_id', selectedBuilding);
-      }
-
-      const { data, error } = await query.order('name');
-
+        .select('*')
+        .order('name');
+      
       if (error) {
-        console.error('Error fetching lighting fixtures:', error);
+        console.error('Error fetching fixtures:', error);
         throw error;
       }
-
+      
+      console.log("Raw fixtures data:", data);
+      
       return (data || []).map(fixture => mapDatabaseFixtureToLightingFixture(fixture));
     }
   });
