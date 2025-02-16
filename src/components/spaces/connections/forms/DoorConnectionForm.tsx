@@ -1,3 +1,4 @@
+
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -14,9 +15,10 @@ const doorConnectionSchema = z.object({
 
 type DoorConnectionFormData = z.infer<typeof doorConnectionSchema>;
 
-interface DoorConnectionFormProps extends BaseConnectionFormProps {
+interface DoorConnectionFormProps {
   availableDoors: Array<{ id: string; name: string; type: string }>;
   form: UseFormReturn<any>;
+  isLoading?: boolean;
 }
 
 export function DoorConnectionForm({

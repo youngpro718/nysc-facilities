@@ -1,3 +1,4 @@
+
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -14,9 +15,10 @@ const hallwayConnectionSchema = z.object({
 
 type HallwayConnectionFormData = z.infer<typeof hallwayConnectionSchema>;
 
-interface HallwayConnectionFormProps extends BaseConnectionFormProps {
-  availableHallways: Array<{ id: string; name: string }>;
+interface HallwayConnectionFormProps {
+  availableHallways: Array<{ id: string; name: string; type: string }>;
   form: UseFormReturn<any>;
+  isLoading?: boolean;
 }
 
 export function HallwayConnectionForm({
@@ -33,7 +35,7 @@ export function HallwayConnectionForm({
         placeholder="Select a hallway"
         options={availableHallways.map(hallway => ({
           value: hallway.id,
-          label: hallway.name
+          label: `${hallway.name} (${hallway.type})`
         }))}
       />
 
