@@ -126,7 +126,7 @@ export function AssignRoomsDialog({
         .select(`
           is_primary,
           occupant_id,
-          occupants!occupant_room_assignments_occupant_id_fkey (
+          occupants(
             id,
             first_name,
             last_name
@@ -138,10 +138,10 @@ export function AssignRoomsDialog({
       
       if (!data) return [];
 
-      return data.map((assignment: OccupantAssignmentResponse) => ({
-        id: assignment.occupants.id,
-        first_name: assignment.occupants.first_name,
-        last_name: assignment.occupants.last_name,
+      return data.map((assignment) => ({
+        id: assignment.occupant_id,
+        first_name: assignment.occupants?.first_name ?? '',
+        last_name: assignment.occupants?.last_name ?? '',
         is_primary: assignment.is_primary
       })) as CurrentOccupant[];
     }
