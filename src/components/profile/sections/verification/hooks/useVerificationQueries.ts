@@ -34,6 +34,20 @@ export function useVerificationQueries() {
     }
   });
 
+  // Query to get admin roles
+  const { data: adminRoles } = useQuery({
+    queryKey: ['admin-roles'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'admin');
+      
+      if (error) throw error;
+      return data.map(role => role.user_id);
+    }
+  });
+
   const mapVerificationStatusToRequestStatus = (status: VerificationStatus): RequestStatus => {
     switch (status) {
       case 'verified':
@@ -58,7 +72,8 @@ export function useVerificationQueries() {
       last_name: user.last_name,
       verification_status: user.verification_status || 'pending',
       department_id: user.department_id
-    }
+    },
+    is_admin: adminRoles?.includes(user.id) || false
   })) || [];
 
   return {

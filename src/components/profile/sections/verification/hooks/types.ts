@@ -31,6 +31,7 @@ export interface VerificationRequest {
   status: RequestStatus;
   submitted_at: string;
   profile: Profile | null;
+  is_admin: boolean;
 }
 
 export interface Department {
