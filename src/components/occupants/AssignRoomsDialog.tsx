@@ -19,7 +19,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { Building2, Search, Users } from "lucide-react";
+import { Building2, Loader2, Search, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 interface AssignRoomsDialogProps {
@@ -47,6 +47,7 @@ interface CurrentOccupant {
   id: string;
   first_name: string;
   last_name: string;
+  is_primary: boolean;
 }
 
 export function AssignRoomsDialog({
@@ -56,6 +57,7 @@ export function AssignRoomsDialog({
   onSuccess,
 }: AssignRoomsDialogProps) {
   const [selectedRoom, setSelectedRoom] = useState<string>("");
+  const [isPrimaryAssignment, setIsPrimaryAssignment] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -79,7 +81,7 @@ export function AssignRoomsDialog({
     },
   });
 
-  const { data: currentOccupants } = useQuery({
+  const { data: currentOccupants, isLoading: isLoadingOccupants } = useQuery({
     queryKey: ["room-occupants", selectedRoom],
     enabled: !!selectedRoom,
     queryFn: async () => {
@@ -90,12 +92,32 @@ export function AssignRoomsDialog({
             id,
             first_name,
             last_name
-          )
+          ),
+          is_primary
         `)
         .eq("room_id", selectedRoom);
 
       if (error) throw error;
-      return data?.map(d => d.occupants) as CurrentOccupant[];
+      return data?.map(d => ({
+        ...d.occupants,
+        is_primary: d.is_primary
+      })) as CurrentOccupant[];
+    }
+  });
+
+  // Check if any selected occupants already have primary assignments
+  const { data: existingPrimaryAssignments } = useQuery({
+    queryKey: ["primary-assignments", selectedOccupants],
+    enabled: isPrimaryAssignment,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("occupant_room_assignments")
+        .select("occupant_id")
+        .in("occupant_id", selectedOccupants)
+        .eq("is_primary", true);
+
+      if (error) throw error;
+      return data;
     }
   });
 
@@ -123,6 +145,11 @@ export function AssignRoomsDialog({
       return;
     }
 
+    if (isPrimaryAssignment && existingPrimaryAssignments?.length) {
+      toast.error("Some selected occupants already have primary room assignments");
+      return;
+    }
+
     try {
       setIsAssigning(true);
 
@@ -130,7 +157,7 @@ export function AssignRoomsDialog({
         occupant_id: occupantId,
         room_id: selectedRoom,
         assigned_at: new Date().toISOString(),
-        is_primary: true
+        is_primary: isPrimaryAssignment
       }));
 
       const { error: assignmentError } = await supabase
@@ -139,11 +166,11 @@ export function AssignRoomsDialog({
 
       if (assignmentError) throw assignmentError;
 
-      toast.success("Rooms assigned successfully");
+      toast.success(`Room${selectedOccupants.length > 1 ? 's' : ''} assigned successfully`);
       onSuccess();
       onOpenChange(false);
     } catch (error: any) {
-      toast.error(error.message);
+      toast.error(error.message || "Failed to assign rooms");
     } finally {
       setIsAssigning(false);
     }
@@ -153,7 +180,9 @@ export function AssignRoomsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Assign Rooms to Selected Occupants</DialogTitle>
+          <DialogTitle>
+            Assign Room{selectedOccupants.length > 1 ? 's' : ''} to {selectedOccupants.length} Occupant{selectedOccupants.length > 1 ? 's' : ''}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
@@ -173,9 +202,10 @@ export function AssignRoomsDialog({
             <Select
               value={selectedRoom}
               onValueChange={setSelectedRoom}
+              disabled={isLoadingRooms}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a room" />
+                <SelectValue placeholder={isLoadingRooms ? "Loading rooms..." : "Select a room"} />
               </SelectTrigger>
               <SelectContent>
                 <ScrollArea className="max-h-[300px]">
@@ -202,18 +232,48 @@ export function AssignRoomsDialog({
                 </ScrollArea>
               </SelectContent>
             </Select>
+
+            <div className="flex items-center space-x-2">
+              <label className="text-sm font-medium">Primary Assignment</label>
+              <Select
+                value={isPrimaryAssignment ? "yes" : "no"}
+                onValueChange={(value) => setIsPrimaryAssignment(value === "yes")}
+              >
+                <SelectTrigger className="w-[100px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="yes">Yes</SelectItem>
+                  <SelectItem value="no">No</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          {selectedRoom && currentOccupants && currentOccupants.length > 0 && (
+          {selectedRoom && (
             <div className="space-y-2">
               <label className="text-sm font-medium">Current Occupants</label>
               <div className="rounded-md border p-4 space-y-2">
-                {currentOccupants.map((occupant) => (
-                  <div key={occupant.id} className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-muted-foreground" />
-                    <span>{occupant.first_name} {occupant.last_name}</span>
+                {isLoadingOccupants ? (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading occupants...
                   </div>
-                ))}
+                ) : currentOccupants && currentOccupants.length > 0 ? (
+                  currentOccupants.map((occupant) => (
+                    <div key={occupant.id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-muted-foreground" />
+                        <span>{occupant.first_name} {occupant.last_name}</span>
+                      </div>
+                      {occupant.is_primary && (
+                        <Badge variant="outline">Primary</Badge>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <span className="text-muted-foreground">No current occupants</span>
+                )}
               </div>
             </div>
           )}
@@ -231,7 +291,17 @@ export function AssignRoomsDialog({
             onClick={handleAssign} 
             disabled={isAssigning || !selectedRoom}
           >
-            {isAssigning ? "Assigning..." : "Assign Rooms"}
+            {isAssigning ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Assigning...
+              </>
+            ) : (
+              <>
+                <Building2 className="mr-2 h-4 w-4" />
+                Assign Room{selectedOccupants.length > 1 ? 's' : ''}
+              </>
+            )}
           </Button>
         </div>
       </DialogContent>
