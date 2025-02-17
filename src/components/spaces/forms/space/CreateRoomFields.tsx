@@ -1,4 +1,3 @@
-
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -9,10 +8,11 @@ import { Check, ChevronDown } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { CreateSpaceFormData } from "../../schemas/createSpaceSchema";
-import { ParentRoomField } from "../room/ParentRoomField";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { RoomType, StorageType } from "../../rooms/types/RoomTypes";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const roomTypes: { value: RoomType; label: string }[] = [
   { value: "courtroom", label: "Courtroom" },
@@ -49,11 +49,84 @@ interface CreateRoomFieldsProps {
 export function CreateRoomFields({ form, floorId }: CreateRoomFieldsProps) {
   const [isRoomTypeOpen, setIsRoomTypeOpen] = useState(false);
   const [isStorageTypeOpen, setIsStorageTypeOpen] = useState(false);
+  const [isParentRoomOpen, setIsParentRoomOpen] = useState(false);
   const isStorage = form.watch("isStorage");
+
+  const { data: availableRooms } = useQuery({
+    queryKey: ["available-rooms", floorId],
+    queryFn: async () => {
+      console.log("Fetching available rooms for floor:", floorId);
+      const { data, error } = await supabase
+        .from("rooms")
+        .select("id, name, room_number")
+        .eq("floor_id", floorId)
+        .eq("status", "active")
+        .order("room_number");
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!floorId
+  });
 
   return (
     <div className="space-y-4">
-      {floorId && <ParentRoomField form={form} floorId={floorId} />}
+      {floorId && (
+        <FormField
+          control={form.control}
+          name="parentRoomId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Parent Room</FormLabel>
+              <Popover open={isParentRoomOpen} onOpenChange={setIsParentRoomOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={isParentRoomOpen}
+                    className="w-full justify-between bg-background"
+                  >
+                    <span className={cn("truncate", !field.value && "text-muted-foreground")}>
+                      {field.value
+                        ? availableRooms?.find((room) => room.id === field.value)
+                          ? `${availableRooms.find((room) => room.id === field.value)?.room_number} - ${availableRooms.find((room) => room.id === field.value)?.name}`
+                          : "Select parent room"
+                        : "Select parent room"}
+                    </span>
+                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[300px] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search rooms..." />
+                    <CommandList>
+                      <CommandEmpty>No rooms found.</CommandEmpty>
+                      <CommandGroup>
+                        {availableRooms?.map((room) => (
+                          <CommandItem
+                            key={room.id}
+                            value={`${room.room_number} ${room.name}`.toLowerCase()}
+                            onSelect={() => {
+                              form.setValue("parentRoomId", room.id);
+                              setIsParentRoomOpen(false);
+                            }}
+                          >
+                            {room.room_number} - {room.name}
+                            {field.value === room.id && (
+                              <Check className="ml-auto h-4 w-4" />
+                            )}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      )}
 
       <FormField
         control={form.control}
