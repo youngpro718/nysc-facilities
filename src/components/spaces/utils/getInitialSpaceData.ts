@@ -1,4 +1,3 @@
-
 import { EditSpaceFormData } from "../schemas/editSpaceSchema";
 import { RoomType, StorageType } from "../rooms/types/RoomTypes";
 
@@ -26,7 +25,6 @@ type InitialData = {
   status?: "active" | "inactive" | "under_maintenance";
   floorId?: string;
   description?: string;
-  // Snake case fields from database
   room_number?: string;
   room_type?: RoomType;
   phone_number?: string;
@@ -36,11 +34,9 @@ type InitialData = {
   storage_capacity?: number | null;
   storage_notes?: string;
   current_function?: string;
-  // Additional door fields
   doorType?: DoorType;
   securityLevel?: SecurityLevel;
   passkeyEnabled?: boolean;
-  // Additional hallway fields
   hallwayType?: HallwayType;
   section?: Section;
   notes?: string;
