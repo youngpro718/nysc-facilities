@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Pencil } from "lucide-react";
 import { InventoryItem } from "../types/inventoryTypes";
+import { useMemo } from "react";
 
 interface InventoryTableProps {
   items: InventoryItem[];
@@ -23,6 +24,18 @@ export function InventoryTable({
   onEditItem,
   onDeleteItem
 }: InventoryTableProps) {
+  // Maintain stable sort order by using created_at or name
+  const sortedItems = useMemo(() => {
+    return [...items].sort((a, b) => {
+      // First try to sort by created_at
+      if (a.created_at && b.created_at) {
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      }
+      // Fallback to sorting by name
+      return a.name.localeCompare(b.name);
+    });
+  }, [items]);
+
   const handleQuantityChange = (itemId: string, currentQuantity: number, change: number) => {
     const newQuantity = currentQuantity + change;
     if (newQuantity >= 0) {
@@ -42,7 +55,7 @@ export function InventoryTable({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {items?.map(item => (
+        {sortedItems?.map(item => (
           <TableRow key={item.id}>
             <TableCell className="font-medium">
               {item.name}
