@@ -14,11 +14,16 @@ export function useLightingFixtures() {
         .from('lighting_fixtures')
         .select(`
           *,
-          space:space_id (
-            *,
-            floor:floor_id (
+          floor_id,
+          room_number,
+          spaces!space_id (
+            name,
+            room_number,
+            floor_id,
+            floors!floor_id (
               name,
-              building:building_id (
+              building_id,
+              buildings!building_id (
                 name
               )
             )
@@ -33,16 +38,16 @@ export function useLightingFixtures() {
         type: raw.type || 'standard',
         status: raw.status || 'functional',
         zone_name: null, // Will implement zone relation later
-        building_name: raw.space?.floor?.building?.name || null,
-        floor_name: raw.space?.floor?.name || null,
-        floor_id: raw.space?.floor_id || null,
+        building_name: raw.spaces?.floors?.buildings?.name || null,
+        floor_name: raw.spaces?.floors?.name || null,
+        floor_id: raw.spaces?.floor_id || null,
         space_id: raw.space_id || null,
         space_type: (raw.space_type || 'room') as 'room' | 'hallway',
         position: (raw.position || 'ceiling') as 'ceiling' | 'wall' | 'floor' | 'desk',
         sequence_number: raw.sequence_number || null,
         zone_id: raw.zone_id || null,
-        space_name: raw.space?.name || null,
-        room_number: raw.space?.room_number || null,
+        space_name: raw.spaces?.name || null,
+        room_number: raw.spaces?.room_number || null,
         technology: raw.technology || null,
         maintenance_notes: raw.maintenance_notes || null,
         created_at: raw.created_at || null,
@@ -59,9 +64,9 @@ export function useLightingFixtures() {
         },
         ballast_issue: raw.ballast_issue || false,
         ballast_check_notes: raw.ballast_check_notes || null,
-        emergency_circuit: raw.emergency_circuit || false,
-        backup_power_source: raw.backup_power_source || null,
-        emergency_duration_minutes: raw.emergency_duration_minutes || null,
+        emergency_circuit: false, // These fields are not in the schema yet
+        backup_power_source: null,
+        emergency_duration_minutes: null,
         maintenance_history: Array.isArray(raw.maintenance_history) 
           ? (raw.maintenance_history as any[]).map(record => ({
               id: record.id || '',
