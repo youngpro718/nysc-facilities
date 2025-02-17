@@ -1,6 +1,6 @@
 
-import { AssignRoomsDialog } from "@/components/occupants/AssignRoomsDialog";
-import { AssignKeysDialog } from "@/components/occupants/AssignKeysDialog";
+import { VerificationActionDialogs } from "./VerificationActionDialogs";
+import { PostVerificationDialogs } from "./PostVerificationDialogs";
 import { SelectedUser } from "../hooks/useVerificationState";
 
 interface VerificationDialogsProps {
@@ -12,35 +12,14 @@ interface VerificationDialogsProps {
   setSelectedUsers: (users: SelectedUser[]) => void;
 }
 
-export function VerificationDialogs({
-  showAssignRooms,
-  setShowAssignRooms,
-  showAssignKeys,
-  setShowAssignKeys,
-  selectedUsers,
-  setSelectedUsers
-}: VerificationDialogsProps) {
+export function VerificationDialogs(props: VerificationDialogsProps) {
   return (
     <>
-      <AssignRoomsDialog
-        open={showAssignRooms}
-        onOpenChange={setShowAssignRooms}
-        selectedOccupants={selectedUsers.map(u => u.userId)}
-        onSuccess={() => {
-          setShowAssignRooms(false);
-          setSelectedUsers([]);
-        }}
+      <VerificationActionDialogs
+        selectedUsers={props.selectedUsers}
+        setSelectedUsers={props.setSelectedUsers}
       />
-
-      <AssignKeysDialog
-        open={showAssignKeys}
-        onOpenChange={setShowAssignKeys}
-        selectedOccupants={selectedUsers.map(u => u.userId)}
-        onSuccess={() => {
-          setShowAssignKeys(false);
-          setSelectedUsers([]);
-        }}
-      />
+      <PostVerificationDialogs {...props} />
     </>
   );
 }

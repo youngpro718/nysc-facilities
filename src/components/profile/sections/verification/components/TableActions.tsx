@@ -1,6 +1,8 @@
 
 import { Button } from "@/components/ui/button";
-import { Building, Check, Key, Trash2, X } from "lucide-react";
+import { Check, Trash2, X } from "lucide-react";
+import { PostVerificationActions } from "./PostVerificationActions";
+import { VerificationRequest } from "../hooks/types";
 
 interface TableActionsProps {
   status: 'pending' | 'approved' | 'rejected';
@@ -42,26 +44,15 @@ export function TableActions({
           </Button>
         </>
       )}
+      
       {status === 'approved' && (
-        <>
-          <Button 
-            size="sm" 
-            variant="outline"
-            onClick={() => onAssignRooms(userId)}
-          >
-            <Building className="h-4 w-4 mr-1" />
-            Assign Rooms
-          </Button>
-          <Button 
-            size="sm" 
-            variant="outline"
-            onClick={() => onAssignKeys(userId)}
-          >
-            <Key className="h-4 w-4 mr-1" />
-            Assign Keys
-          </Button>
-        </>
+        <PostVerificationActions
+          request={{ user_id: userId, id: requestId, status: 'approved' } as VerificationRequest}
+          onAssignRooms={onAssignRooms}
+          onAssignKeys={onAssignKeys}
+        />
       )}
+
       {onDeleteUser && (
         <Button
           size="sm"

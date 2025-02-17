@@ -5,6 +5,7 @@ export interface SelectedUser {
   requestId: string;
   userId: string;
   name: string;
+  status?: 'pending' | 'approved' | 'rejected';
 }
 
 export function useVerificationState() {
