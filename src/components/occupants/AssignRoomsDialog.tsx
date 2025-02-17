@@ -123,7 +123,7 @@ export function AssignRoomsDialog({
       const { data, error } = await supabase
         .from("occupant_room_assignments")
         .select(`
-          occupants (
+          occupant:occupant_id (
             id,
             first_name,
             last_name
@@ -136,10 +136,10 @@ export function AssignRoomsDialog({
       
       if (!data) return [];
 
-      return data.map((assignment: OccupantAssignment) => ({
-        id: assignment.occupants.id,
-        first_name: assignment.occupants.first_name,
-        last_name: assignment.occupants.last_name,
+      return data.map((assignment) => ({
+        id: assignment.occupant.id,
+        first_name: assignment.occupant.first_name,
+        last_name: assignment.occupant.last_name,
         is_primary: assignment.is_primary
       })) as CurrentOccupant[];
     }
