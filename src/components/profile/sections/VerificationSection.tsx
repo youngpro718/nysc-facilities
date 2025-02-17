@@ -11,8 +11,20 @@ import { VerificationHeader } from "./verification/VerificationHeader";
 import { BulkActionBar } from "./verification/BulkActionBar";
 import { VerificationTable } from "./verification/VerificationTable";
 
+interface UserMetadata {
+  id: string;
+  department: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  profile?: {
+    email: string | null;
+    first_name: string | null;
+    last_name: string | null;
+  } | null;
+}
+
 export function VerificationSection() {
-  const [selectedOccupants, setSelectedOccupants] = useState<string[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [showAssignRooms, setShowAssignRooms] = useState(false);
   const [showAssignKeys, setShowAssignKeys] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
@@ -30,56 +42,36 @@ export function VerificationSection() {
     }
   });
 
-  const { data: requests, isLoading, refetch } = useQuery({
-    queryKey: ['verification-requests'],
+  const { data: users, isLoading, refetch } = useQuery({
+    queryKey: ['users-metadata'],
     queryFn: async () => {
-      const { data: verificationData, error } = await supabase
-        .from('verification_requests')
+      const { data: usersData, error } = await supabase
+        .from('users_metadata')
         .select(`
           *,
           profile:profiles(
             email,
             first_name,
-            last_name,
-            department_id
+            last_name
           )
-        `)
-        .order('submitted_at', { ascending: false });
+        `);
 
       if (error) throw error;
-      return verificationData;
+      return usersData as UserMetadata[];
     }
   });
 
-  const handleVerification = async (requestId: string, approved: boolean) => {
+  const handleVerification = async (userId: string, approved: boolean) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { error: verificationError } = await supabase
-        .from('verification_requests')
+      const { error: profileError } = await supabase
+        .from('profiles')
         .update({
-          status: approved ? 'approved' : 'rejected',
-          reviewed_by: user.id,
-          reviewed_at: new Date().toISOString(),
+          verification_status: approved ? 'verified' : 'rejected',
           department_id: selectedDepartment
         })
-        .eq('id', requestId);
+        .eq('id', userId);
 
-      if (verificationError) throw verificationError;
-
-      const request = requests?.find(r => r.id === requestId);
-      if (request?.user_id) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({
-            verification_status: approved ? 'verified' : 'rejected',
-            department_id: selectedDepartment
-          })
-          .eq('id', request.user_id);
-
-        if (profileError) throw profileError;
-      }
+      if (profileError) throw profileError;
 
       toast.success(`User ${approved ? 'approved' : 'rejected'} successfully`);
       refetch();
@@ -91,36 +83,18 @@ export function VerificationSection() {
 
   const handleBulkVerification = async (approve: boolean) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { error: verificationError } = await supabase
-        .from('verification_requests')
-        .update({
-          status: approve ? 'approved' : 'rejected',
-          reviewed_by: user.id,
-          reviewed_at: new Date().toISOString(),
-          department_id: selectedDepartment
-        })
-        .in('id', selectedOccupants);
-
-      if (verificationError) throw verificationError;
-
-      const selectedRequests = requests?.filter(r => selectedOccupants.includes(r.id)) || [];
-      const userIds = selectedRequests.map(r => r.user_id);
-
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
           verification_status: approve ? 'verified' : 'rejected',
           department_id: selectedDepartment
         })
-        .in('id', userIds);
+        .in('id', selectedUsers);
 
       if (profileError) throw profileError;
 
-      toast.success(`${selectedOccupants.length} users ${approve ? 'approved' : 'rejected'} successfully`);
-      setSelectedOccupants([]);
+      toast.success(`${selectedUsers.length} users ${approve ? 'approved' : 'rejected'} successfully`);
+      setSelectedUsers([]);
       refetch();
     } catch (error) {
       console.error('Error in bulk verification:', error);
@@ -136,9 +110,9 @@ export function VerificationSection() {
     <Card>
       <VerificationHeader />
       <CardContent>
-        {selectedOccupants.length > 0 && (
+        {selectedUsers.length > 0 && (
           <BulkActionBar
-            selectedCount={selectedOccupants.length}
+            selectedCount={selectedUsers.length}
             departments={departments}
             selectedDepartment={selectedDepartment}
             onDepartmentChange={setSelectedDepartment}
@@ -147,36 +121,36 @@ export function VerificationSection() {
           />
         )}
 
-        {requests?.length === 0 ? (
+        {users?.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <AlertCircle className="h-8 w-8 mx-auto mb-2" />
-            No verification requests found
+            No users found
           </div>
         ) : (
           <VerificationTable
-            requests={requests}
+            requests={users}
             departments={departments}
-            selectedOccupants={selectedOccupants}
+            selectedOccupants={selectedUsers}
             selectedDepartment={selectedDepartment}
             onSelectAll={(selected) => {
-              const pendingRequests = requests.filter(r => r.status === 'pending');
-              setSelectedOccupants(selected ? pendingRequests.map(r => r.id) : []);
+              const pendingUsers = users.filter(u => !u.profile?.verification_status);
+              setSelectedUsers(selected ? pendingUsers.map(u => u.id) : []);
             }}
             onSelectOne={(id, selected) => {
               if (selected) {
-                setSelectedOccupants([...selectedOccupants, id]);
+                setSelectedUsers([...selectedUsers, id]);
               } else {
-                setSelectedOccupants(selectedOccupants.filter(i => i !== id));
+                setSelectedUsers(selectedUsers.filter(i => i !== id));
               }
             }}
             onDepartmentChange={setSelectedDepartment}
             onVerify={handleVerification}
             onAssignRooms={(userId) => {
-              setSelectedOccupants([userId]);
+              setSelectedUsers([userId]);
               setShowAssignRooms(true);
             }}
             onAssignKeys={(userId) => {
-              setSelectedOccupants([userId]);
+              setSelectedUsers([userId]);
               setShowAssignKeys(true);
             }}
           />
@@ -185,20 +159,20 @@ export function VerificationSection() {
         <AssignRoomsDialog
           open={showAssignRooms}
           onOpenChange={setShowAssignRooms}
-          selectedOccupants={selectedOccupants}
+          selectedOccupants={selectedUsers}
           onSuccess={() => {
             setShowAssignRooms(false);
-            setSelectedOccupants([]);
+            setSelectedUsers([]);
           }}
         />
 
         <AssignKeysDialog
           open={showAssignKeys}
           onOpenChange={setShowAssignKeys}
-          selectedOccupants={selectedOccupants}
+          selectedOccupants={selectedUsers}
           onSuccess={() => {
             setShowAssignKeys(false);
-            setSelectedOccupants([]);
+            setSelectedUsers([]);
           }}
         />
       </CardContent>
