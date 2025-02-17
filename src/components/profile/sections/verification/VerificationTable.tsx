@@ -4,13 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Building, Check, Key, X } from "lucide-react";
 import { format } from "date-fns";
 import { StatusBadge } from "./StatusBadge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
 
 interface Department {
   id: string;
@@ -27,6 +22,7 @@ interface VerificationRequest {
     first_name: string | null;
     last_name: string | null;
   } | null;
+  is_admin?: boolean;
 }
 
 interface VerificationTableProps {
@@ -40,6 +36,7 @@ interface VerificationTableProps {
   onVerify: (id: string, approved: boolean) => void;
   onAssignRooms: (userId: string) => void;
   onAssignKeys: (userId: string) => void;
+  onToggleAdmin: (userId: string, isAdmin: boolean) => void;
 }
 
 export function VerificationTable({
@@ -50,6 +47,7 @@ export function VerificationTable({
   onVerify,
   onAssignRooms,
   onAssignKeys,
+  onToggleAdmin
 }: VerificationTableProps) {
   const pendingRequests = requests?.filter(r => r.status === 'pending') || [];
 
@@ -69,6 +67,7 @@ export function VerificationTable({
           <TableHead>Room Assignment</TableHead>
           <TableHead>Submitted</TableHead>
           <TableHead>Status</TableHead>
+          <TableHead>Admin</TableHead>
           <TableHead>Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -109,6 +108,15 @@ export function VerificationTable({
             </TableCell>
             <TableCell>
               <StatusBadge status={request.status} />
+            </TableCell>
+            <TableCell>
+              <Switch
+                checked={request.is_admin || false}
+                onCheckedChange={(checked) => {
+                  onToggleAdmin(request.user_id, checked);
+                  toast.success(`User ${checked ? 'promoted to' : 'removed from'} admin role`);
+                }}
+              />
             </TableCell>
             <TableCell>
               {request.status === 'pending' && (

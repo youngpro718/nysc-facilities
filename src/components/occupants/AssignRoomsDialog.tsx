@@ -19,7 +19,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { Building2, Users } from "lucide-react";
+import { Building2, Search, Users } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 interface AssignRoomsDialogProps {
   open: boolean;
@@ -56,6 +57,7 @@ export function AssignRoomsDialog({
 }: AssignRoomsDialogProps) {
   const [selectedRoom, setSelectedRoom] = useState<string>("");
   const [isAssigning, setIsAssigning] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: availableRooms, isLoading: isLoadingRooms } = useQuery({
     queryKey: ["available-rooms"],
@@ -95,6 +97,16 @@ export function AssignRoomsDialog({
       if (error) throw error;
       return data?.map(d => d.occupants) as CurrentOccupant[];
     }
+  });
+
+  const filteredRooms = availableRooms?.filter(room => {
+    const searchStr = searchQuery.toLowerCase();
+    return (
+      room.name.toLowerCase().includes(searchStr) ||
+      room.room_number.toLowerCase().includes(searchStr) ||
+      room.floors?.name.toLowerCase().includes(searchStr) ||
+      room.floors?.buildings?.name.toLowerCase().includes(searchStr)
+    );
   });
 
   const handleAssign = async () => {
@@ -146,7 +158,18 @@ export function AssignRoomsDialog({
 
         <div className="space-y-6 py-4">
           <div className="space-y-4">
-            <label className="text-sm font-medium">Select Room</label>
+            <label className="text-sm font-medium">Search and Select Room</label>
+            <div className="flex gap-2 items-center">
+              <div className="relative flex-1">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search rooms..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+            </div>
             <Select
               value={selectedRoom}
               onValueChange={setSelectedRoom}
@@ -156,7 +179,7 @@ export function AssignRoomsDialog({
               </SelectTrigger>
               <SelectContent>
                 <ScrollArea className="max-h-[300px]">
-                  {availableRooms?.map((room) => (
+                  {filteredRooms?.map((room) => (
                     <SelectItem key={room.id} value={room.id}>
                       <div className="flex items-center justify-between w-full pr-4">
                         <span>
