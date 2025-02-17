@@ -51,13 +51,13 @@ export function KeyAssignmentSection() {
           assigned_at,
           is_spare,
           spare_key_reason,
-          keys:key_id!key_assignments_key_id_fkey (
+          keys (
             id,
             name,
             type,
             is_passkey
           ),
-          occupant:occupant_id!key_assignments_occupant_id_fkey (
+          occupant:occupants (
             id,
             first_name,
             last_name,
@@ -68,7 +68,7 @@ export function KeyAssignmentSection() {
         .order('assigned_at', { ascending: false });
 
       if (error) throw error;
-      return data as KeyAssignment[];
+      return data as unknown as KeyAssignment[];
     },
   });
 

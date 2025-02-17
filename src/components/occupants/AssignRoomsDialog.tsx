@@ -59,15 +59,14 @@ interface CurrentOccupant {
 }
 
 function generateSpaceSelectItem(room: RoomDetails): SpaceSelectItem {
-  const spaceItem: SpaceSelectItem = {
+  return {
     id: room.id,
     name: room.name,
     room_number: room.room_number,
-    capacity: room.capacity || null,
-    current_occupancy: room.current_occupancy || 0,
+    capacity: room.capacity ?? null,
+    current_occupancy: room.current_occupancy ?? 0,
     floors: room.floors
   };
-  return spaceItem;
 }
 
 export function AssignRoomsDialog({
