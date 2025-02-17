@@ -2,7 +2,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DatabaseLightingFixture } from "../types/databaseTypes";
-import { parseJsonField } from "../utils/jsonUtils";
 import { 
   LightingFixture, 
   ElectricalIssues,
@@ -19,73 +18,87 @@ interface UseLightingFixturesProps {
   selectedFloor: string;
 }
 
-const defaultElectricalIssues: ElectricalIssues = {
-  short_circuit: false,
-  wiring_issues: false,
-  voltage_problems: false
+// Simplified JSON parsing helper
+const safeParseJson = <T>(jsonString: any, defaultValue: T): T => {
+  if (!jsonString) return defaultValue;
+  try {
+    return typeof jsonString === 'string' 
+      ? JSON.parse(jsonString) 
+      : jsonString as T;
+  } catch {
+    return defaultValue;
+  }
 };
 
-const defaultEnergyUsageData: EnergyUsageData = {
-  daily_usage: [],
-  efficiency_rating: null,
-  last_reading: null
-};
+const transformDatabaseFixture = (raw: DatabaseLightingFixture): LightingFixture => {
+  const defaultElectricalIssues: ElectricalIssues = {
+    short_circuit: false,
+    wiring_issues: false,
+    voltage_problems: false
+  };
 
-const defaultEmergencyProtocols: EmergencyProtocols = {
-  emergency_contact: null,
-  backup_system: false,
-  evacuation_route: false
-};
+  const defaultEnergyUsageData: EnergyUsageData = {
+    daily_usage: [],
+    efficiency_rating: null,
+    last_reading: null
+  };
 
-const defaultWarrantyInfo: WarrantyInfo = {
-  start_date: null,
-  end_date: null,
-  provider: null,
-  terms: null
-};
+  const defaultEmergencyProtocols: EmergencyProtocols = {
+    emergency_contact: null,
+    backup_system: false,
+    evacuation_route: false
+  };
 
-const defaultManufacturerDetails: ManufacturerDetails = {
-  name: null,
-  model: null,
-  serial_number: null,
-  support_contact: null
-};
+  const defaultWarrantyInfo: WarrantyInfo = {
+    start_date: null,
+    end_date: null,
+    provider: null,
+    terms: null
+  };
 
-const transformDatabaseFixture = (raw: DatabaseLightingFixture): LightingFixture => ({
-  id: raw.id,
-  name: raw.name,
-  type: raw.type,
-  status: raw.status,
-  zone_name: raw.zone_name,
-  building_name: raw.building_name,
-  floor_name: raw.floor_name,
-  floor_id: raw.floor_id,
-  space_id: raw.space_id,
-  space_type: raw.space_type === 'room' || raw.space_type === 'hallway' ? raw.space_type : null,
-  position: raw.position,
-  sequence_number: raw.sequence_number,
-  zone_id: raw.zone_id,
-  space_name: raw.space_name,
-  room_number: raw.room_number,
-  emergency_circuit: raw.emergency_circuit ?? false,
-  technology: raw.technology,
-  ballast_issue: raw.ballast_issue ?? false,
-  bulb_count: raw.bulb_count ?? 1,
-  electrical_issues: parseJsonField<ElectricalIssues>(raw.electrical_issues, defaultElectricalIssues),
-  energy_usage_data: parseJsonField<EnergyUsageData>(raw.energy_usage_data, defaultEnergyUsageData),
-  emergency_protocols: parseJsonField<EmergencyProtocols>(raw.emergency_protocols, defaultEmergencyProtocols),
-  warranty_info: parseJsonField<WarrantyInfo>(raw.warranty_info, defaultWarrantyInfo),
-  manufacturer_details: parseJsonField<ManufacturerDetails>(raw.manufacturer_details, defaultManufacturerDetails),
-  inspection_history: parseJsonField<InspectionEntry[]>(raw.inspection_history, []),
-  maintenance_history: parseJsonField<MaintenanceEntry[]>(raw.maintenance_history, []),
-  connected_fixtures: raw.connected_fixtures || [],
-  maintenance_notes: raw.maintenance_notes,
-  ballast_check_notes: raw.ballast_check_notes,
-  backup_power_source: raw.backup_power_source,
-  emergency_duration_minutes: raw.emergency_duration_minutes,
-  created_at: raw.created_at,
-  updated_at: raw.updated_at
-});
+  const defaultManufacturerDetails: ManufacturerDetails = {
+    name: null,
+    model: null,
+    serial_number: null,
+    support_contact: null
+  };
+
+  return {
+    id: raw.id,
+    name: raw.name,
+    type: raw.type,
+    status: raw.status,
+    zone_name: raw.zone_name,
+    building_name: raw.building_name,
+    floor_name: raw.floor_name,
+    floor_id: raw.floor_id,
+    space_id: raw.space_id,
+    space_type: raw.space_type === 'room' || raw.space_type === 'hallway' ? raw.space_type : null,
+    position: raw.position,
+    sequence_number: raw.sequence_number,
+    zone_id: raw.zone_id,
+    space_name: raw.space_name,
+    room_number: raw.room_number,
+    emergency_circuit: raw.emergency_circuit ?? false,
+    technology: raw.technology,
+    ballast_issue: raw.ballast_issue ?? false,
+    bulb_count: raw.bulb_count ?? 1,
+    electrical_issues: safeParseJson(raw.electrical_issues, defaultElectricalIssues),
+    energy_usage_data: safeParseJson(raw.energy_usage_data, defaultEnergyUsageData),
+    emergency_protocols: safeParseJson(raw.emergency_protocols, defaultEmergencyProtocols),
+    warranty_info: safeParseJson(raw.warranty_info, defaultWarrantyInfo),
+    manufacturer_details: safeParseJson(raw.manufacturer_details, defaultManufacturerDetails),
+    inspection_history: safeParseJson<InspectionEntry[]>(raw.inspection_history, []),
+    maintenance_history: safeParseJson<MaintenanceEntry[]>(raw.maintenance_history, []),
+    connected_fixtures: raw.connected_fixtures || [],
+    maintenance_notes: raw.maintenance_notes,
+    ballast_check_notes: raw.ballast_check_notes,
+    backup_power_source: raw.backup_power_source,
+    emergency_duration_minutes: raw.emergency_duration_minutes,
+    created_at: raw.created_at,
+    updated_at: raw.updated_at
+  };
+};
 
 export function useLightingFixtures({ selectedBuilding, selectedFloor }: UseLightingFixturesProps) {
   return useQuery({
