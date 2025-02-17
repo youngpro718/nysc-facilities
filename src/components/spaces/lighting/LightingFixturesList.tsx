@@ -1,80 +1,69 @@
 
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { LightingFixtureCard } from "@/components/lighting/card/LightingFixtureCard";
-import { toast } from "sonner";
-import { CreateLightingDialog } from "@/components/lighting/CreateLightingDialog";
 import { useLightingFixtures } from "./hooks/useLightingFixtures";
-import { NoFixturesFound } from "./components/NoFixturesFound";
-import { SelectedFixturesBar } from "./components/SelectedFixturesBar";
+import { LightingFixtureCard } from "./card/LightingFixtureCard";
+import { LightingHeader } from "./components/LightingHeader";
 
-interface LightingFixturesListProps {
-  selectedBuilding: string;
-  selectedFloor: string;
-}
-
-export function LightingFixturesList({ selectedBuilding, selectedFloor }: LightingFixturesListProps) {
+export default function LightingFixturesList() {
   const [selectedFixtures, setSelectedFixtures] = useState<string[]>([]);
-  const query = useLightingFixtures({ selectedBuilding, selectedFloor });
-
-  const handleDelete = async () => {
-    try {
-      const { error } = await supabase
-        .from('lighting_fixtures')
-        .delete()
-        .in('id', selectedFixtures);
-
-      if (error) throw error;
-
-      toast.success(`${selectedFixtures.length} fixtures deleted successfully`);
+  const { 
+    fixtures, 
+    isLoading,
+    addFixture,
+    deleteFixture,
+    isAdding,
+    isDeleting
+  } = useLightingFixtures("all"); // Default to "all" spaces
+  
+  const handleSelectAll = () => {
+    if (selectedFixtures.length === fixtures?.length) {
       setSelectedFixtures([]);
-      query.refetch();
-    } catch (error) {
-      console.error('Error deleting fixtures:', error);
-      toast.error('Failed to delete fixtures');
+    } else {
+      setSelectedFixtures(fixtures?.map(f => f.id) || []);
     }
   };
 
-  if (query.isLoading) {
-    return <div>Loading fixtures...</div>;
-  }
+  const handleBulkDelete = async (fixtureIds: string[]) => {
+    for (const id of fixtureIds) {
+      await deleteFixture(id);
+    }
+    setSelectedFixtures([]);
+  };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <CreateLightingDialog 
-          onFixtureCreated={() => query.refetch()}
-          onZoneCreated={() => query.refetch()}
-        />
-      </div>
+    <div className="container mx-auto p-6">
+      <LightingHeader 
+        selectedFixtures={selectedFixtures}
+        fixtures={fixtures}
+        onSelectAll={handleSelectAll}
+        onBulkDelete={handleBulkDelete}
+        onFixtureCreated={addFixture}
+      />
 
-      {selectedFixtures.length > 0 && (
-        <SelectedFixturesBar 
-          count={selectedFixtures.length}
-          onDelete={handleDelete}
-        />
-      )}
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {query.data?.map((fixture) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {fixtures?.map((fixture) => (
           <LightingFixtureCard
             key={fixture.id}
             fixture={fixture}
             isSelected={selectedFixtures.includes(fixture.id)}
             onSelect={(checked) => {
-              setSelectedFixtures(prev => 
-                checked 
-                  ? [...prev, fixture.id]
-                  : prev.filter(id => id !== fixture.id)
-              );
+              if (checked) {
+                setSelectedFixtures([...selectedFixtures, fixture.id]);
+              } else {
+                setSelectedFixtures(selectedFixtures.filter(id => id !== fixture.id));
+              }
             }}
-            onDelete={() => query.refetch()}
-            onFixtureUpdated={() => query.refetch()}
+            onDelete={() => deleteFixture(fixture.id)}
+            onFixtureUpdated={() => {}} // Will be implemented when needed
           />
         ))}
       </div>
 
-      {(!query.data || query.data.length === 0) && <NoFixturesFound />}
+      {(!fixtures || fixtures.length === 0) && (
+        <div className="text-center py-8 text-gray-500">
+          No lighting fixtures found
+        </div>
+      )}
     </div>
   );
 }

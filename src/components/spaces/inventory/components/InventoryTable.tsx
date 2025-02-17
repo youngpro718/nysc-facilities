@@ -24,16 +24,9 @@ export function InventoryTable({
   onEditItem,
   onDeleteItem
 }: InventoryTableProps) {
-  // Maintain stable sort order by using created_at or name
+  // Sort items by name to maintain stable order
   const sortedItems = useMemo(() => {
-    return [...items].sort((a, b) => {
-      // First try to sort by created_at
-      if (a.created_at && b.created_at) {
-        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-      }
-      // Fallback to sorting by name
-      return a.name.localeCompare(b.name);
-    });
+    return [...items].sort((a, b) => a.name.localeCompare(b.name));
   }, [items]);
 
   const handleQuantityChange = (itemId: string, currentQuantity: number, change: number) => {
