@@ -1,31 +1,30 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export function useOccupantAssignments(occupantId: string | undefined) {
+export function useOccupantAssignments(roomIds: string[]) {
   return useQuery({
-    queryKey: ["occupant-assignments", occupantId],
+    queryKey: ["occupant-assignments", roomIds],
+    enabled: roomIds.length > 0,
     queryFn: async () => {
-      if (!occupantId) return { rooms: [], keys: [] };
+      const { data, error } = await supabase
+        .from("occupant_room_assignments")
+        .select(`
+          room_id,
+          assignment_type,
+          is_primary,
+          schedule,
+          occupants!fk_occupant_room_assignments_occupant (
+            id,
+            first_name,
+            last_name,
+            title
+          )
+        `)
+        .in("room_id", roomIds);
 
-      const [roomAssignments, keyAssignments] = await Promise.all([
-        supabase
-          .from("occupant_room_assignments")
-          .select("room_id, rooms(name, floor_id, floors(name, buildings(name)))")
-          .eq("occupant_id", occupantId),
-        supabase
-          .from("key_assignments")
-          .select("key_id, keys(name, type)")
-          .eq("occupant_id", occupantId)
-          .is("returned_at", null),
-      ]);
-
-      return {
-        rooms: roomAssignments.data?.map((ra) => ra.room_id) || [],
-        keys: keyAssignments.data?.map((ka) => ka.key_id) || [],
-        roomDetails: roomAssignments.data || [],
-        keyDetails: keyAssignments.data || [],
-      };
-    },
-    enabled: !!occupantId,
+      if (error) throw error;
+      return data || [];
+    }
   });
 }
