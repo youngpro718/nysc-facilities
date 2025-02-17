@@ -52,6 +52,7 @@ export function useVerification() {
 }
 
 export type { 
+  Department,
   VerificationStatus,
   RequestStatus,
   Profile,
