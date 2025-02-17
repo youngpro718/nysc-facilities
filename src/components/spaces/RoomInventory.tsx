@@ -25,9 +25,9 @@ export function RoomInventory({ roomId }: { roomId: string }) {
     item.name.toLowerCase().includes(search.toLowerCase())
   ) : [];
 
-  const handleAddItem = async (data: InventoryFormInputs) => {
+  const handleAddItem = async (formData: Omit<InventoryFormInputs, 'storage_room_id'>) => {
     await addItem({
-      ...data,
+      ...formData,
       storage_room_id: roomId
     });
   };

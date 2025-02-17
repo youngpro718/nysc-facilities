@@ -1,16 +1,8 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { InventoryItem } from "../types";
-
-interface AddItemParams {
-  name: string;
-  quantity: number;
-  categoryId: string;
-  description?: string;
-  minimum_quantity?: number;
-  unit?: string;
-}
+import { InventoryItem, InventoryFormInputs } from "../types/inventoryTypes";
 
 export const useInventory = (roomId: string) => {
   const queryClient = useQueryClient();
@@ -45,17 +37,12 @@ export const useInventory = (roomId: string) => {
   });
 
   const addItemMutation = useMutation({
-    mutationFn: async (params: AddItemParams) => {
+    mutationFn: async (params: InventoryFormInputs) => {
       const { error } = await supabase
         .from('inventory_items')
         .insert({ 
-          name: params.name, 
-          quantity: params.quantity, 
-          storage_room_id: roomId,
-          category_id: params.categoryId,
-          description: params.description,
-          minimum_quantity: params.minimum_quantity,
-          unit: params.unit
+          ...params,
+          status: 'active'
         });
 
       if (error) throw error;

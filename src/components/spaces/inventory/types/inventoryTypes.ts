@@ -22,6 +22,26 @@ export interface InventoryItem {
   };
 }
 
+export interface InventoryCategory {
+  id: string;
+  name: string;
+  color: string;
+  icon?: string;
+  description?: string;
+  parent_category_id?: string;
+}
+
+export interface InventoryTransaction {
+  id: string;
+  transaction_type: 'add' | 'remove' | 'transfer';
+  quantity: number;
+  created_at: string;
+  inventory_items?: {
+    id: string;
+    name: string;
+  };
+}
+
 export interface InventoryFormInputs {
   name: string;
   quantity: number;
@@ -33,7 +53,7 @@ export interface InventoryFormInputs {
   reorder_point?: number;
   preferred_vendor?: string;
   notes?: string;
-  storage_room_id?: string;
+  storage_room_id: string;
 }
 
 export interface BatchUpdateInput {
