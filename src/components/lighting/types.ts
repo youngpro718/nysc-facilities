@@ -1,3 +1,4 @@
+
 export interface Space {
   id: string;
   name: string;
@@ -52,9 +53,10 @@ export interface InspectionEntry {
 }
 
 export interface MaintenanceEntry {
+  id: string;
   date: string;
   type: string;
-  notes?: string;
+  notes: string;
 }
 
 export interface SpatialAssignment {
@@ -98,22 +100,4 @@ export interface LightingFixture {
   backup_power_source?: string | null;
   emergency_duration_minutes?: number | null;
   spatial_assignment?: SpatialAssignment | null;
-}
-
-export interface RoomLightingConfig {
-  id?: string;
-  room_id: string;
-  name: string;
-  type: LightingType;
-  technology: LightingTechnology;
-  bulb_count: number;
-  status: LightStatus;
-  maintenance_notes?: string | null;
-  electrical_issues: ElectricalIssues;
-  ballast_issue: boolean;
-  ballast_check_notes?: string | null;
-  emergency_circuit: boolean;
-  position: LightingPosition;
-  sequence_number?: number;
-  zone_id?: string | null;
 }

@@ -10,11 +10,11 @@ import {
 import { RefreshCw, CheckSquare, XSquare, Download } from "lucide-react";
 import { LightingFixture } from "../types";
 
-interface LightingHeaderProps {
+export interface LightingHeaderProps {
   selectedFixtures: string[];
   fixtures: LightingFixture[] | undefined;
   onSelectAll: () => void;
-  onBulkStatusUpdate: (status: LightingFixture['status']) => void;
+  onBulkStatusUpdate?: (status: LightingFixture['status']) => void;
   onBulkDelete: () => void;
   onFixtureCreated: () => void;
 }
@@ -72,14 +72,18 @@ export const LightingHeader = ({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => onBulkStatusUpdate('functional')}>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Mark as Functional
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onBulkStatusUpdate('maintenance_needed')}>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Mark as Needs Maintenance
-                </DropdownMenuItem>
+                {onBulkStatusUpdate && (
+                  <>
+                    <DropdownMenuItem onClick={() => onBulkStatusUpdate('functional')}>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Mark as Functional
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onBulkStatusUpdate('maintenance_needed')}>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Mark as Needs Maintenance
+                    </DropdownMenuItem>
+                  </>
+                )}
                 <DropdownMenuItem onClick={onBulkDelete}>
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Delete Selected
@@ -100,4 +104,3 @@ export const LightingHeader = ({
     </div>
   );
 };
-
