@@ -158,7 +158,19 @@ export function AssignRoomsDialog({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("occupant_room_assignments")
-        .select("occupant_id")
+        .select(`
+          occupant_id,
+          room_id,
+          assignment_type,
+          is_primary,
+          schedule,
+          occupants!fk_occupant_room_assignments_occupant (
+            id,
+            first_name,
+            last_name,
+            title
+          )
+        `)
         .in("occupant_id", selectedOccupants)
         .eq("is_primary", true);
 
