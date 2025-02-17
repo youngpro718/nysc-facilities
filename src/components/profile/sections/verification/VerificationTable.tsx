@@ -1,7 +1,7 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Building, Check, Key, X } from "lucide-react";
+import { Building, Check, Key, Trash2, X } from "lucide-react";
 import { format } from "date-fns";
 import { StatusBadge } from "./StatusBadge";
 import { Switch } from "@/components/ui/switch";
@@ -22,7 +22,7 @@ interface VerificationRequest {
     first_name: string | null;
     last_name: string | null;
   } | null;
-  is_admin?: boolean;
+  is_admin: boolean;
 }
 
 interface VerificationTableProps {
@@ -37,6 +37,7 @@ interface VerificationTableProps {
   onAssignRooms: (userId: string) => void;
   onAssignKeys: (userId: string) => void;
   onToggleAdmin: (userId: string, isAdmin: boolean) => void;
+  onDeleteUser?: (userId: string) => void;
 }
 
 export function VerificationTable({
@@ -47,7 +48,8 @@ export function VerificationTable({
   onVerify,
   onAssignRooms,
   onAssignKeys,
-  onToggleAdmin
+  onToggleAdmin,
+  onDeleteUser
 }: VerificationTableProps) {
   const pendingRequests = requests?.filter(r => r.status === 'pending') || [];
 
@@ -64,7 +66,7 @@ export function VerificationTable({
             />
           </TableHead>
           <TableHead>Name</TableHead>
-          <TableHead>Room Assignment</TableHead>
+          <TableHead>Email</TableHead>
           <TableHead>Submitted</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>Admin</TableHead>
@@ -89,20 +91,7 @@ export function VerificationTable({
                 `${request.profile.first_name || ''} ${request.profile.last_name || ''}`.trim() || '-' 
                 : '-'}
             </TableCell>
-            <TableCell>
-              {request.status === 'pending' ? (
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => onAssignRooms(request.user_id)}
-                >
-                  <Building className="h-4 w-4 mr-1" />
-                  Assign Room
-                </Button>
-              ) : (
-                '-'
-              )}
-            </TableCell>
+            <TableCell>{request.profile?.email || '-'}</TableCell>
             <TableCell>
               {format(new Date(request.submitted_at), 'MMM d, yyyy')}
             </TableCell>
@@ -116,48 +105,61 @@ export function VerificationTable({
                   onToggleAdmin(request.user_id, checked);
                   toast.success(`User ${checked ? 'promoted to' : 'removed from'} admin role`);
                 }}
+                disabled={request.status !== 'approved'}
               />
             </TableCell>
             <TableCell>
-              {request.status === 'pending' && (
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => onVerify(request.id, true)}
-                  >
-                    <Check className="h-4 w-4 mr-1" />
-                    Approve
-                  </Button>
+              <div className="flex gap-2">
+                {request.status === 'pending' && (
+                  <>
+                    <Button
+                      size="sm"
+                      onClick={() => onVerify(request.id, true)}
+                    >
+                      <Check className="h-4 w-4 mr-1" />
+                      Approve
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => onVerify(request.id, false)}
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Reject
+                    </Button>
+                  </>
+                )}
+                {request.status === 'approved' && (
+                  <>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => onAssignRooms(request.user_id)}
+                    >
+                      <Building className="h-4 w-4 mr-1" />
+                      Assign Rooms
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => onAssignKeys(request.user_id)}
+                    >
+                      <Key className="h-4 w-4 mr-1" />
+                      Assign Keys
+                    </Button>
+                  </>
+                )}
+                {onDeleteUser && (
                   <Button
                     size="sm"
                     variant="destructive"
-                    onClick={() => onVerify(request.id, false)}
+                    onClick={() => onDeleteUser(request.user_id)}
                   >
-                    <X className="h-4 w-4 mr-1" />
-                    Reject
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Delete
                   </Button>
-                </div>
-              )}
-              {request.status === 'approved' && (
-                <div className="flex gap-2">
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => onAssignRooms(request.user_id)}
-                  >
-                    <Building className="h-4 w-4 mr-1" />
-                    Assign Rooms
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => onAssignKeys(request.user_id)}
-                  >
-                    <Key className="h-4 w-4 mr-1" />
-                    Assign Keys
-                  </Button>
-                </div>
-              )}
+                )}
+              </div>
             </TableCell>
           </TableRow>
         ))}

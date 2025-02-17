@@ -156,9 +156,25 @@ export function useVerificationMutations(
     }
   };
 
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      // Delete the auth user (this will cascade to profiles and other related data)
+      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+      
+      if (authError) throw authError;
+      
+      toast.success('User deleted successfully');
+      refetchUsers();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast.error('Failed to delete user');
+    }
+  };
+
   return {
     handleVerification,
     handleBulkVerification,
-    handleToggleAdmin
+    handleToggleAdmin,
+    handleDeleteUser
   };
 }

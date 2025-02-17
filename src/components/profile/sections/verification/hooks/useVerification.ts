@@ -23,7 +23,8 @@ export function useVerification() {
   const {
     handleVerification,
     handleBulkVerification,
-    handleToggleAdmin
+    handleToggleAdmin,
+    handleDeleteUser
   } = useVerificationMutations(departments, refetchUsers);
 
   return {
@@ -45,6 +46,7 @@ export function useVerification() {
     handleBulkVerification: (approve: boolean) => 
       handleBulkVerification(selectedUsers, approve, selectedDepartment),
     handleToggleAdmin,
+    handleDeleteUser,
     clearSelections
   };
 }
