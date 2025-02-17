@@ -4,26 +4,45 @@ import type { Occupant } from "../types/occupantTypes";
 
 export function useOccupantDialogs() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editDialogs, setEditDialogs] = useState<Record<string, boolean>>({});
   const [isAssignKeysDialogOpen, setIsAssignKeysDialogOpen] = useState(false);
   const [isAssignRoomsDialogOpen, setIsAssignRoomsDialogOpen] = useState(false);
-  const [editingOccupant, setEditingOccupant] = useState<Occupant | null>(null);
+  const [editingOccupants, setEditingOccupants] = useState<Record<string, Occupant>>({});
 
   const startEdit = (occupant: Occupant) => {
-    setEditingOccupant(occupant);
-    setIsEditDialogOpen(true);
+    setEditingOccupants(prev => ({
+      ...prev,
+      [occupant.id]: occupant
+    }));
+    setEditDialogs(prev => ({
+      ...prev,
+      [occupant.id]: true
+    }));
+  };
+
+  const closeEdit = (occupantId: string) => {
+    setEditDialogs(prev => {
+      const newDialogs = { ...prev };
+      delete newDialogs[occupantId];
+      return newDialogs;
+    });
+    setEditingOccupants(prev => {
+      const newOccupants = { ...prev };
+      delete newOccupants[occupantId];
+      return newOccupants;
+    });
   };
 
   return {
     isCreateDialogOpen,
     setIsCreateDialogOpen,
-    isEditDialogOpen,
-    setIsEditDialogOpen,
+    editDialogs,
     isAssignKeysDialogOpen,
     setIsAssignKeysDialogOpen,
     isAssignRoomsDialogOpen,
     setIsAssignRoomsDialogOpen,
-    editingOccupant,
-    startEdit
+    editingOccupants,
+    startEdit,
+    closeEdit
   };
 }

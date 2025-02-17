@@ -40,14 +40,14 @@ export function OccupantListView() {
   const {
     isCreateDialogOpen,
     setIsCreateDialogOpen,
-    isEditDialogOpen,
-    setIsEditDialogOpen,
+    editDialogs,
     isAssignKeysDialogOpen,
     setIsAssignKeysDialogOpen,
     isAssignRoomsDialogOpen,
     setIsAssignRoomsDialogOpen,
-    editingOccupant,
-    startEdit
+    editingOccupants,
+    startEdit,
+    closeEdit
   } = useOccupantDialogs();
 
   return (
@@ -96,12 +96,18 @@ export function OccupantListView() {
         onSuccess={refetch}
       />
 
-      <EditOccupantDialog
-        open={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
-        occupant={editingOccupant}
-        onSuccess={refetch}
-      />
+      {/* Render individual edit dialogs for each editing occupant */}
+      {Object.entries(editingOccupants).map(([id, occupant]) => (
+        <EditOccupantDialog
+          key={id}
+          open={editDialogs[id]}
+          onOpenChange={(open) => {
+            if (!open) closeEdit(id);
+          }}
+          occupant={occupant}
+          onSuccess={refetch}
+        />
+      ))}
 
       <AssignKeysDialog
         open={isAssignKeysDialogOpen}
