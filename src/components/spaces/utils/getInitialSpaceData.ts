@@ -71,7 +71,7 @@ export const getInitialSpaceData = (
       type: "door" as const,
       doorType: (initialData?.doorType || "standard") as DoorType,
       securityLevel: (initialData?.securityLevel || "standard") as SecurityLevel,
-      passkeyEnabled: initialData?.passkeyEnabled || false,
+      passkeyEnabled: initialData?.passkeyEnabled ?? false,
     };
   }
 
