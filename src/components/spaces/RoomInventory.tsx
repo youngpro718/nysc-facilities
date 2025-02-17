@@ -62,11 +62,11 @@ export function RoomInventory({ roomId }: { roomId: string }) {
       await editItem({
         id: selectedItem.id,
         ...data,
-        storage_room_id: roomId,
       });
       setIsEditDialogOpen(false);
       setSelectedItem(null);
     } catch (error) {
+      console.error('Error editing item:', error);
       toast({
         title: "Error",
         description: "Failed to update item. Please try again.",
