@@ -26,13 +26,13 @@ import {
 import { AssignRoomsDialog } from "@/components/occupants/AssignRoomsDialog";
 import { AssignKeysDialog } from "@/components/occupants/AssignKeysDialog";
 
-type Profile = {
+interface Profile {
   email: string | null;
   first_name: string | null;
   last_name: string | null;
 }
 
-type VerificationRequest = {
+interface VerificationRequest {
   id: string;
   user_id: string;
   agency_id: string | null;
@@ -47,7 +47,7 @@ type VerificationRequest = {
   created_at: string;
   updated_at: string;
   profile: Profile | null;
-};
+}
 
 export function VerificationSection() {
   const [selectedOccupants, setSelectedOccupants] = useState<string[]>([]);
@@ -57,11 +57,16 @@ export function VerificationSection() {
   const { data: requests, isLoading, refetch } = useQuery({
     queryKey: ['verification-requests'],
     queryFn: async () => {
-      const { data: verificationData, error } = await supabase
+      type DbResult = {
+        data: VerificationRequest[] | null;
+        error: Error | null;
+      };
+
+      const { data, error }: DbResult = await supabase
         .from('verification_requests')
         .select(`
           *,
-          profile(
+          profile:profiles!verification_requests_user_id_fkey(
             email,
             first_name,
             last_name
@@ -70,13 +75,7 @@ export function VerificationSection() {
         .order('submitted_at', { ascending: false });
 
       if (error) throw error;
-      
-      const typedData = (verificationData || []).map(request => ({
-        ...request,
-        profile: request.profile as Profile | null
-      })) as VerificationRequest[];
-
-      return typedData;
+      return data || [];
     }
   });
 
@@ -171,7 +170,6 @@ export function VerificationSection() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {/* Bulk Actions */}
         {selectedOccupants.length > 0 && (
           <div className="mb-4 p-4 bg-muted rounded-lg flex items-center justify-between">
             <span className="text-sm font-medium">
