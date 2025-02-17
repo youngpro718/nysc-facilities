@@ -74,7 +74,13 @@ export function useVerification() {
         const { error: profileError } = await supabase
           .from('profiles')
           .update({
-            verification_status: 'verified'
+            verification_status: 'verified',
+            department_id: selectedDepartment,
+            metadata: {
+              employment_type: 'full_time',
+              access_level: 'standard',
+              start_date: new Date().toISOString().split('T')[0]
+            }
           })
           .eq('id', userId);
 
@@ -108,12 +114,23 @@ export function useVerification() {
   };
 
   const handleBulkVerification = async (approve: boolean) => {
+    if (approve && !selectedDepartment) {
+      toast.error('Please select a department before approving users');
+      return;
+    }
+
     try {
       if (approve) {
         const { error: profileError } = await supabase
           .from('profiles')
           .update({
-            verification_status: 'verified'
+            verification_status: 'verified',
+            department_id: selectedDepartment,
+            metadata: {
+              employment_type: 'full_time',
+              access_level: 'standard',
+              start_date: new Date().toISOString().split('T')[0]
+            }
           })
           .in('id', selectedUsers);
 
