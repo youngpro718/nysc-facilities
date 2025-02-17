@@ -59,6 +59,15 @@ interface CurrentOccupant {
   is_primary: boolean;
 }
 
+interface OccupantAssignment {
+  occupants: {
+    id: string;
+    first_name: string;
+    last_name: string;
+  };
+  is_primary: boolean;
+}
+
 function generateSpaceSelectItem(room: RoomDetails): SpaceSelectItem {
   return {
     id: room.id,
@@ -124,9 +133,14 @@ export function AssignRoomsDialog({
         .eq("room_id", selectedRoom);
 
       if (error) throw error;
-      return data?.map(d => ({
-        ...d.occupants,
-        is_primary: d.is_primary
+      
+      if (!data) return [];
+
+      return data.map((assignment: OccupantAssignment) => ({
+        id: assignment.occupants.id,
+        first_name: assignment.occupants.first_name,
+        last_name: assignment.occupants.last_name,
+        is_primary: assignment.is_primary
       })) as CurrentOccupant[];
     }
   });
