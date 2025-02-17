@@ -3,10 +3,10 @@ export interface Space {
   id: string;
   name: string;
   type: string;
+  space_type: 'room' | 'hallway';
   room_number?: string | null;
   status: 'active' | 'inactive' | 'under_maintenance';
   floor_id: string;
-  space_type: 'room' | 'hallway';
 }
 
 export type LightStatus = 'functional' | 'maintenance_needed' | 'non_functional' | 'pending_maintenance' | 'scheduled_replacement';
@@ -100,4 +100,24 @@ export interface LightingFixture {
   backup_power_source?: string | null;
   emergency_duration_minutes?: number | null;
   spatial_assignment?: SpatialAssignment | null;
+}
+
+export interface RoomLightingConfig {
+  room_id: string;
+  name: string;
+  type: LightingType;
+  status: LightStatus;
+  technology: LightingTechnology;
+  position: LightingPosition;
+  emergency_circuit: boolean;
+  backup_power_source: string | null;
+  emergency_duration_minutes: number | null;
+  bulb_count: number;
+  electrical_issues: ElectricalIssues;
+  ballast_issue: boolean;
+  ballast_check_notes: string | null;
+  maintenance_notes: string | null;
+  space_id: string;
+  space_type: 'room' | 'hallway';
+  zone_id: string | null;
 }
