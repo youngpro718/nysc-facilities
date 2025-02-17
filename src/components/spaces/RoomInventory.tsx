@@ -22,6 +22,7 @@ import {
 import { Plus, MoreHorizontal, Package, Search } from "lucide-react";
 import { AddInventoryDialog } from "./inventory/AddInventoryDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { InventoryFormInputs } from "./inventory/types/inventoryTypes";
 
 export function RoomInventory({ roomId }: { roomId: string }) {
   const [searchQuery, setSearchQuery] = useState("");

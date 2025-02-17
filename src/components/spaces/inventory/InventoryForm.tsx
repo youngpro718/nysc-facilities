@@ -17,7 +17,6 @@ const inventoryFormSchema = z.object({
   minimum_quantity: z.number().min(0).optional(),
   unit: z.string().optional(),
   location_details: z.string().optional(),
-  reorder_point: z.number().min(0).optional(),
   preferred_vendor: z.string().optional(),
   notes: z.string().optional(),
 });
@@ -39,7 +38,6 @@ export function InventoryForm({ onSubmit, defaultValues, isSubmitting }: Invento
       minimum_quantity: defaultValues?.minimum_quantity || undefined,
       unit: defaultValues?.unit || "",
       location_details: defaultValues?.location_details || "",
-      reorder_point: defaultValues?.reorder_point || undefined,
       preferred_vendor: defaultValues?.preferred_vendor || "",
       notes: defaultValues?.notes || "",
     },
@@ -154,37 +152,18 @@ export function InventoryForm({ onSubmit, defaultValues, isSubmitting }: Invento
 
           <FormField
             control={form.control}
-            name="reorder_point"
+            name="location_details"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Reorder Point (optional)</FormLabel>
+                <FormLabel>Location Details (optional)</FormLabel>
                 <FormControl>
-                  <Input 
-                    type="number"
-                    min={0}
-                    {...field}
-                    onChange={e => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                  />
+                  <Input placeholder="e.g., Shelf A3, Cabinet 2" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
-
-        <FormField
-          control={form.control}
-          name="location_details"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Location Details (optional)</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g., Shelf A3, Cabinet 2" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
         <FormField
           control={form.control}
