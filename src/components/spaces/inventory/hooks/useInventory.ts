@@ -43,7 +43,6 @@ export function useInventory(roomId: string) {
   const createMutation = useMutation({
     mutationFn: async (newItem: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>) => {
       try {
-        // Filter out category object since it's not in the database schema
         const { category, ...itemData } = newItem;
         
         const { data, error } = await supabase
@@ -64,6 +63,41 @@ export function useInventory(roomId: string) {
       toast({
         title: "Success",
         description: "Item created successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const bulkCreateMutation = useMutation({
+    mutationFn: async (items: Array<Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>>) => {
+      try {
+        const { error } = await supabase
+          .from("inventory_items")
+          .insert(
+            items.map(item => ({
+              ...item,
+              storage_room_id: roomId,
+              status: 'active'
+            }))
+          );
+
+        if (error) throw error;
+      } catch (error: any) {
+        console.error("Error creating items:", error);
+        throw new Error(error.message || "Failed to create inventory items");
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inventory", roomId] });
+      toast({
+        title: "Success",
+        description: "Items imported successfully",
       });
     },
     onError: (error: Error) => {
@@ -164,6 +198,7 @@ export function useInventory(roomId: string) {
     inventory,
     isLoading,
     addItem: createMutation.mutateAsync,
+    addBulkItems: bulkCreateMutation.mutateAsync,
     editItem: updateMutation.mutateAsync,
     updateQuantity: updateQuantityMutation.mutateAsync,
     deleteItem: deleteMutation.mutateAsync,

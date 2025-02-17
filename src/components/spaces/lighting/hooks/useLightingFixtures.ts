@@ -1,126 +1,127 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { DatabaseLightingFixture } from "../types/databaseTypes";
-import { 
-  LightingFixture, 
-  ElectricalIssues,
-  EnergyUsageData,
-  EmergencyProtocols,
-  WarrantyInfo,
-  ManufacturerDetails,
-  InspectionEntry,
-  MaintenanceEntry 
-} from "@/components/lighting/types";
+import { useToast } from "@/hooks/use-toast";
 
-interface UseLightingFixturesProps {
-  selectedBuilding: string;
-  selectedFloor: string;
+interface LightingFixture {
+  id: string;
+  name: string;
+  type: string;
+  status: string;
+  location: string;
+  zone_id?: string;
+  maintenance_history?: MaintenanceRecord[];
 }
 
-// Simplified JSON parsing helper
-const safeParseJson = <T>(jsonString: any, defaultValue: T): T => {
-  if (!jsonString) return defaultValue;
-  try {
-    return typeof jsonString === 'string' 
-      ? JSON.parse(jsonString) 
-      : jsonString as T;
-  } catch {
-    return defaultValue;
-  }
-};
+interface MaintenanceRecord {
+  id: string;
+  date: string;
+  type: string;
+  notes: string;
+}
 
-const transformDatabaseFixture = (raw: DatabaseLightingFixture): LightingFixture => {
-  const defaultElectricalIssues: ElectricalIssues = {
-    short_circuit: false,
-    wiring_issues: false,
-    voltage_problems: false
-  };
+export function useLightingFixtures(spaceId: string) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
-  const defaultEnergyUsageData: EnergyUsageData = {
-    daily_usage: [],
-    efficiency_rating: null,
-    last_reading: null
-  };
-
-  const defaultEmergencyProtocols: EmergencyProtocols = {
-    emergency_contact: null,
-    backup_system: false,
-    evacuation_route: false
-  };
-
-  const defaultWarrantyInfo: WarrantyInfo = {
-    start_date: null,
-    end_date: null,
-    provider: null,
-    terms: null
-  };
-
-  const defaultManufacturerDetails: ManufacturerDetails = {
-    name: null,
-    model: null,
-    serial_number: null,
-    support_contact: null
-  };
-
-  return {
-    id: raw.id,
-    name: raw.name,
-    type: raw.type,
-    status: raw.status,
-    zone_name: raw.zone_name,
-    building_name: raw.building_name,
-    floor_name: raw.floor_name,
-    floor_id: raw.floor_id,
-    space_id: raw.space_id,
-    space_type: raw.space_type === 'room' || raw.space_type === 'hallway' ? raw.space_type : null,
-    position: raw.position,
-    sequence_number: raw.sequence_number,
-    zone_id: raw.zone_id,
-    space_name: raw.space_name,
-    room_number: raw.room_number,
-    emergency_circuit: raw.emergency_circuit ?? false,
-    technology: raw.technology,
-    ballast_issue: raw.ballast_issue ?? false,
-    bulb_count: raw.bulb_count ?? 1,
-    electrical_issues: safeParseJson(raw.electrical_issues, defaultElectricalIssues),
-    energy_usage_data: safeParseJson(raw.energy_usage_data, defaultEnergyUsageData),
-    emergency_protocols: safeParseJson(raw.emergency_protocols, defaultEmergencyProtocols),
-    warranty_info: safeParseJson(raw.warranty_info, defaultWarrantyInfo),
-    manufacturer_details: safeParseJson(raw.manufacturer_details, defaultManufacturerDetails),
-    inspection_history: safeParseJson<InspectionEntry[]>(raw.inspection_history, []),
-    maintenance_history: safeParseJson<MaintenanceEntry[]>(raw.maintenance_history, []),
-    connected_fixtures: raw.connected_fixtures || [],
-    maintenance_notes: raw.maintenance_notes,
-    ballast_check_notes: raw.ballast_check_notes,
-    backup_power_source: raw.backup_power_source,
-    emergency_duration_minutes: raw.emergency_duration_minutes,
-    created_at: raw.created_at,
-    updated_at: raw.updated_at
-  };
-};
-
-export function useLightingFixtures({ selectedBuilding, selectedFloor }: UseLightingFixturesProps) {
-  return useQuery({
-    queryKey: ['lighting-fixtures', selectedBuilding, selectedFloor],
+  const { data: fixtures, isLoading } = useQuery({
+    queryKey: ['lighting-fixtures', spaceId],
     queryFn: async () => {
-      let query = supabase
-        .from('lighting_fixture_details')
+      const { data, error } = await supabase
+        .from('lighting_fixtures')
         .select('*')
-        .order('name');
+        .eq('space_id', spaceId);
 
-      if (selectedFloor !== 'all') {
-        query = query.eq('floor_id', selectedFloor);
-      }
-      if (selectedBuilding !== 'all') {
-        query = query.eq('building_id', selectedBuilding);
-      }
-
-      const { data: rawData, error } = await query;
       if (error) throw error;
-      if (!rawData) return [];
-
-      return rawData.map(transformDatabaseFixture);
+      return data as LightingFixture[];
     }
   });
+
+  const createMutation = useMutation({
+    mutationFn: async (fixture: Omit<LightingFixture, 'id'>) => {
+      const { data, error } = await supabase
+        .from('lighting_fixtures')
+        .insert([{ ...fixture, space_id: spaceId }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lighting-fixtures', spaceId] });
+      toast({
+        title: "Success",
+        description: "Lighting fixture added successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<LightingFixture> & { id: string }) => {
+      const { error } = await supabase
+        .from('lighting_fixtures')
+        .update(updates)
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lighting-fixtures', spaceId] });
+      toast({
+        title: "Success",
+        description: "Lighting fixture updated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('lighting_fixtures')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lighting-fixtures', spaceId] });
+      toast({
+        title: "Success",
+        description: "Lighting fixture deleted successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  return {
+    fixtures,
+    isLoading,
+    addFixture: createMutation.mutateAsync,
+    updateFixture: updateMutation.mutateAsync,
+    deleteFixture: deleteMutation.mutateAsync,
+    isAdding: createMutation.isPending,
+    isUpdating: updateMutation.isPending,
+    isDeleting: deleteMutation.isPending,
+  };
 }
