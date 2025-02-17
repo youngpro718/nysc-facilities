@@ -2758,13 +2758,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_hallway_space"
-            columns: ["space_id"]
-            isOneToOne: false
-            referencedRelation: "hallways"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "lighting_fixtures_floor_id_fkey"
             columns: ["floor_id"]
             isOneToOne: false
@@ -4670,28 +4663,28 @@ export type Database = {
           {
             foreignKeyName: "spatial_assignments_fixture_id_fkey"
             columns: ["fixture_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "emergency_lighting_status"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "spatial_assignments_fixture_id_fkey"
             columns: ["fixture_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "lighting_assignments"
             referencedColumns: ["fixture_id"]
           },
           {
             foreignKeyName: "spatial_assignments_fixture_id_fkey"
             columns: ["fixture_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "lighting_fixture_details"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "spatial_assignments_fixture_id_fkey"
             columns: ["fixture_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "lighting_fixtures"
             referencedColumns: ["id"]
           },
@@ -5277,13 +5270,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_hallway_space"
-            columns: ["location_id"]
-            isOneToOne: false
-            referencedRelation: "hallways"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "lighting_fixtures_floor_id_fkey"
             columns: ["floor_id"]
             isOneToOne: false
@@ -5348,13 +5334,6 @@ export type Database = {
           zone_name: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_hallway_space"
-            columns: ["space_id"]
-            isOneToOne: false
-            referencedRelation: "hallways"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "lighting_fixtures_floor_id_fkey"
             columns: ["floor_id"]
