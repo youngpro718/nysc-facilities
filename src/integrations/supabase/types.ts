@@ -4786,78 +4786,26 @@ export type Database = {
         }
         Relationships: []
       }
-      verification_requests: {
+      users_metadata: {
         Row: {
-          agency_id: string | null
           created_at: string | null
           department: string | null
-          department_id: string | null
-          employee_id: string | null
           id: string
-          rejection_reason: string | null
-          reviewed_at: string | null
-          reviewed_by: string | null
-          status: Database["public"]["Enums"]["verification_status"] | null
-          submitted_at: string | null
-          supporting_documents: string[] | null
           updated_at: string | null
-          user_id: string | null
         }
         Insert: {
-          agency_id?: string | null
           created_at?: string | null
           department?: string | null
-          department_id?: string | null
-          employee_id?: string | null
-          id?: string
-          rejection_reason?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: Database["public"]["Enums"]["verification_status"] | null
-          submitted_at?: string | null
-          supporting_documents?: string[] | null
+          id: string
           updated_at?: string | null
-          user_id?: string | null
         }
         Update: {
-          agency_id?: string | null
           created_at?: string | null
           department?: string | null
-          department_id?: string | null
-          employee_id?: string | null
           id?: string
-          rejection_reason?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: Database["public"]["Enums"]["verification_status"] | null
-          submitted_at?: string | null
-          supporting_documents?: string[] | null
           updated_at?: string | null
-          user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "verification_requests_agency_id_fkey"
-            columns: ["agency_id"]
-            isOneToOne: false
-            referencedRelation: "agency_affiliations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "verification_requests_department_id_fkey"
-            columns: ["department_id"]
-            isOneToOne: false
-            referencedRelation: "departments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "verification_requests_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
@@ -5954,7 +5902,6 @@ export type Database = {
       security_level_enum: "standard" | "restricted" | "high_security"
       status_enum: "active" | "inactive" | "under_maintenance"
       user_role: "admin" | "standard"
-      verification_status: "pending" | "approved" | "rejected"
       verification_status_enum: "pending" | "verified" | "rejected"
       zone_type_enum: "general" | "emergency" | "restricted"
     }
