@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -83,12 +84,20 @@ export function useVerification() {
         
         toast.success('User approved successfully');
       } else {
-        const { error: deleteError } = await supabase
+        // Delete from both profiles and users_metadata tables
+        const { error: metadataError } = await supabase
+          .from('users_metadata')
+          .delete()
+          .eq('id', userId);
+
+        if (metadataError) throw metadataError;
+
+        const { error: profileError } = await supabase
           .from('profiles')
           .delete()
           .eq('id', userId);
 
-        if (deleteError) throw deleteError;
+        if (profileError) throw profileError;
         
         toast.success('User rejected and removed');
       }
@@ -115,12 +124,20 @@ export function useVerification() {
         
         toast.success(`${selectedUsers.length} users approved successfully`);
       } else {
-        const { error: deleteError } = await supabase
+        // Delete from both profiles and users_metadata tables
+        const { error: metadataError } = await supabase
+          .from('users_metadata')
+          .delete()
+          .in('id', selectedUsers);
+
+        if (metadataError) throw metadataError;
+
+        const { error: profileError } = await supabase
           .from('profiles')
           .delete()
           .in('id', selectedUsers);
 
-        if (deleteError) throw deleteError;
+        if (profileError) throw profileError;
         
         toast.success(`${selectedUsers.length} users rejected and removed`);
       }
