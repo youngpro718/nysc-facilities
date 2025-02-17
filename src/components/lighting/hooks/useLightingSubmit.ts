@@ -24,7 +24,6 @@ export const useLightingSubmit = (onFixtureCreated: () => void, onZoneCreated: (
           status: data.status,
           electrical_issues: data.electrical_issues,
           ballast_issue: data.ballast_issue,
-          emergency_circuit: data.emergency_circuit,
           maintenance_notes: data.maintenance_notes,
           ballast_check_notes: data.ballast_check_notes,
           zone_id: data.zone_id || null

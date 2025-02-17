@@ -45,7 +45,6 @@ export function CreateLightingDialog({ onFixtureCreated, onZoneCreated }: Create
         voltage_problems: false
       },
       ballast_issue: false,
-      emergency_circuit: false,
       maintenance_notes: "",
       ballast_check_notes: ""
     },

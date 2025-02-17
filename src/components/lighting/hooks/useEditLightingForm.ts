@@ -19,9 +19,6 @@ export function useEditLightingForm(
       type: fixture.type,
       status: fixture.status,
       maintenance_notes: fixture.maintenance_notes || null,
-      emergency_circuit: fixture.emergency_circuit,
-      backup_power_source: fixture.backup_power_source || null,
-      emergency_duration_minutes: fixture.emergency_duration_minutes || null,
       technology: fixture.technology || null,
       bulb_count: fixture.bulb_count || 1,
       electrical_issues: fixture.electrical_issues || {

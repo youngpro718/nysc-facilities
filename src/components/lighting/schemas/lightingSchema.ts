@@ -39,7 +39,14 @@ export const lightingFixtureSchema = z.object({
   zone_id: z.string().uuid().nullable()
 });
 
+export const lightingZoneSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  type: z.enum(["general", "emergency", "restricted"]),
+  floorId: z.string().uuid()
+});
+
 export type LightingFixtureFormData = z.infer<typeof lightingFixtureSchema>;
+export type LightingZoneFormData = z.infer<typeof lightingZoneSchema>;
 
 // Utility function to generate fixture name
 export const generateFixtureName = (
