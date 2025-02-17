@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -59,16 +58,6 @@ interface CurrentOccupant {
   is_primary: boolean;
 }
 
-interface OccupantAssignmentResponse {
-  is_primary: boolean;
-  occupant_id: string;
-  occupants: {
-    id: string;
-    first_name: string;
-    last_name: string;
-  }
-}
-
 function generateSpaceSelectItem(room: RoomDetails): SpaceSelectItem {
   return {
     id: room.id,
@@ -125,8 +114,7 @@ export function AssignRoomsDialog({
         .from("occupant_room_assignments")
         .select(`
           is_primary,
-          occupant_id,
-          occupants!occupant_room_assignments_occupant_id_fkey (
+          occupant: occupants!occupant_id(
             id,
             first_name,
             last_name
@@ -139,9 +127,9 @@ export function AssignRoomsDialog({
       if (!data) return [];
 
       return data.map((assignment) => ({
-        id: assignment.occupant_id,
-        first_name: assignment.occupants?.first_name ?? '',
-        last_name: assignment.occupants?.last_name ?? '',
+        id: assignment.occupant.id,
+        first_name: assignment.occupant.first_name,
+        last_name: assignment.occupant.last_name,
         is_primary: assignment.is_primary
       })) as CurrentOccupant[];
     }
