@@ -52,21 +52,21 @@ export const useInventory = (roomId: string) => {
   const updateQuantity = useMutation({
     mutationFn: async ({ 
       id, 
-      quantity, 
+      quantity,
       notes 
     }: { 
       id: string; 
       quantity: number; 
       notes?: string 
     }) => {
-      const { data, error } = await supabase.rpc('safely_update_inventory_quantity', {
-        p_item_id: id,
-        p_new_quantity: quantity,
-        p_notes: notes || 'Quantity update'
-      });
+      const { error } = await supabase
+        .rpc('safely_update_inventory_quantity', {
+          p_item_id: id,
+          p_new_quantity: quantity,
+          p_notes: notes || 'Quantity update'
+        });
 
       if (error) throw error;
-      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory', roomId] });
