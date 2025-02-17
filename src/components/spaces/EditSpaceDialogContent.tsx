@@ -28,6 +28,21 @@ export function EditSpaceDialogContent({
   isPending,
   onCancel,
 }: EditSpaceDialogContentProps) {
+  // Reset form with initial values when they change
+  React.useEffect(() => {
+    if (form.formState.isDirty) return;
+    const currentValues = form.getValues();
+    Object.keys(currentValues).forEach(key => {
+      const value = currentValues[key as keyof EditSpaceFormData];
+      if (value !== undefined) {
+        form.setValue(key as keyof EditSpaceFormData, value, {
+          shouldDirty: false,
+          shouldTouch: false
+        });
+      }
+    });
+  }, [form]);
+
   return (
     <ScrollArea className="max-h-[80vh]">
       <div className="space-y-6 p-1">

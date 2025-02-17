@@ -48,6 +48,13 @@ export const EditSpaceDialog = ({
     defaultValues,
   });
 
+  // Reset form when dialog opens
+  React.useEffect(() => {
+    if (open) {
+      form.reset(defaultValues);
+    }
+  }, [open, form, defaultValues]);
+
   const queryClient = useQueryClient();
   
   const editSpaceMutation = useMutation({
