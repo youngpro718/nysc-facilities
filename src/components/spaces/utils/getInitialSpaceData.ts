@@ -34,6 +34,34 @@ type InitialData = {
   notes?: string;
 };
 
+const getDefaultRoomType = (type?: RoomType): RoomType => {
+  return (type && Object.values(RoomType).includes(type)) ? type : "office";
+};
+
+const getDefaultStorageType = (type?: StorageType | null): StorageType => {
+  return (type && Object.values(StorageType).includes(type)) ? type : "general_storage";
+};
+
+const getDefaultDoorType = (type?: DoorType): DoorType => {
+  const validTypes: DoorType[] = ["standard", "emergency", "secure", "maintenance"];
+  return (type && validTypes.includes(type)) ? type : "standard";
+};
+
+const getDefaultSecurityLevel = (level?: SecurityLevel): SecurityLevel => {
+  const validLevels: SecurityLevel[] = ["standard", "restricted", "high_security"];
+  return (level && validLevels.includes(level)) ? level : "standard";
+};
+
+const getDefaultHallwayType = (type?: HallwayType): HallwayType => {
+  const validTypes: HallwayType[] = ["public_main", "private"];
+  return (type && validTypes.includes(type)) ? type : "public_main";
+};
+
+const getDefaultSection = (section?: Section): Section => {
+  const validSections: Section[] = ["left_wing", "right_wing", "connector"];
+  return (section && validSections.includes(section)) ? section : "left_wing";
+};
+
 export const getInitialSpaceData = (
   id: string,
   type: SpaceType,
@@ -48,8 +76,8 @@ export const getInitialSpaceData = (
   };
 
   if (type === "room") {
-    const roomType: RoomType = initialData?.room_type || "office";
-    const storageType: StorageType = initialData?.storage_type || "general_storage";
+    const roomType = getDefaultRoomType(initialData?.room_type);
+    const storageType = getDefaultStorageType(initialData?.storage_type);
     
     return {
       ...baseValues,
@@ -68,8 +96,8 @@ export const getInitialSpaceData = (
   }
 
   if (type === "door") {
-    const doorType: DoorType = initialData?.doorType || "standard";
-    const securityLevel: SecurityLevel = initialData?.securityLevel || "standard";
+    const doorType = getDefaultDoorType(initialData?.doorType);
+    const securityLevel = getDefaultSecurityLevel(initialData?.securityLevel);
     
     return {
       ...baseValues,
@@ -81,8 +109,8 @@ export const getInitialSpaceData = (
   }
 
   if (type === "hallway") {
-    const hallwayType: HallwayType = initialData?.hallwayType || "public_main";
-    const section: Section = initialData?.section || "left_wing";
+    const hallwayType = getDefaultHallwayType(initialData?.hallwayType);
+    const section = getDefaultSection(initialData?.section);
     
     return {
       ...baseValues,
