@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Connection, Direction, Position, ConnectionStatus } from "../../connections/types/ConnectionTypes";
+import { Connection, Direction, Position, ConnectionStatus, ConnectionType } from "../../connections/types/ConnectionTypes";
 import { toast } from "sonner";
 
 export function useConnectionQueries(spaceId: string, spaceType: "room" | "hallway" | "door") {
@@ -64,14 +64,15 @@ export function useConnectionQueries(spaceId: string, spaceType: "room" | "hallw
           from_space_id: conn.from_space_id,
           to_space_id: conn.to_space_id,
           space_type: conn.space_type,
-          connection_type: conn.connection_type,
+          connection_type: conn.connection_type as ConnectionType,
           direction: conn.direction as Direction,
           position: conn.position as Position,
           status: conn.status as ConnectionStatus,
           hallway_position: conn.hallway_position,
           offset_distance: conn.offset_distance,
           to_space: connectedSpace,
-          connectionType: conn.connection_type
+          connectionType: conn.connection_type as ConnectionType,
+          connectedSpaceName: connectedSpace?.name || ''
         };
       });
     },
