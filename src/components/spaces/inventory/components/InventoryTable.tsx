@@ -1,11 +1,9 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Pencil } from "lucide-react";
 import { InventoryItem } from "../types/inventoryTypes";
-
 interface InventoryTableProps {
   items: InventoryItem[];
   isLoading: boolean;
@@ -14,7 +12,6 @@ interface InventoryTableProps {
   onEditItem: (item: InventoryItem) => void;
   onDeleteItem: (id: string) => void;
 }
-
 export function InventoryTable({
   items,
   isLoading,
@@ -28,7 +25,7 @@ export function InventoryTable({
         <TableRow>
           <TableHead>Item</TableHead>
           <TableHead>Category</TableHead>
-          <TableHead>Quantity</TableHead>
+          <TableHead className="px-[51px]">Quantity</TableHead>
           <TableHead>Status</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
@@ -39,17 +36,15 @@ export function InventoryTable({
               {item.name}
             </TableCell>
             <TableCell>
-              {item.category && (
-                <Badge variant="outline" style={{
-                  backgroundColor: `${item.category.color}20`,
-                  borderColor: item.category.color
-                }}>
+              {item.category && <Badge variant="outline" style={{
+            backgroundColor: `${item.category.color}20`,
+            borderColor: item.category.color
+          }} className="px-0">
                   {item.category.name}
-                </Badge>
-              )}
+                </Badge>}
             </TableCell>
             <TableCell>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 px-0 my-0 py-0">
                 <Button variant="outline" size="sm" onClick={() => onUpdateQuantity(item.id, item.quantity - 1)} disabled={item.quantity <= 0 || isUpdatingQuantity}>
                   -
                 </Button>
@@ -78,10 +73,10 @@ export function InventoryTable({
                     Edit
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => {
-                    if (window.confirm('Are you sure you want to delete this item?')) {
-                      onDeleteItem(item.id);
-                    }
-                  }}>
+                if (window.confirm('Are you sure you want to delete this item?')) {
+                  onDeleteItem(item.id);
+                }
+              }}>
                     Delete
                   </DropdownMenuItem>
                 </DropdownMenuContent>
