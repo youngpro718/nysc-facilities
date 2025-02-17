@@ -34,7 +34,20 @@ export function useConnectionQueries(spaceId: string, spaceType: "room" | "hallw
     queryFn: async () => {
       console.log("Fetching connections for space:", { spaceId, spaceType });
       
-      // First get the connections with their related spaces
+      // First validate that the source space exists and is active
+      const { data: sourceSpace, error: sourceError } = await supabase
+        .from("spaces")
+        .select("id, type")
+        .eq("id", spaceId)
+        .eq("status", "active")
+        .single();
+
+      if (sourceError || !sourceSpace) {
+        console.error("Source space not found or not active:", sourceError);
+        return [];
+      }
+
+      // Then get the connections with their related spaces
       const { data: connections, error } = await supabase
         .from("space_connections")
         .select(`
@@ -60,7 +73,7 @@ export function useConnectionQueries(spaceId: string, spaceType: "room" | "hallw
 
       if (!connections) return [];
 
-      // Then get the connected spaces info
+      // Get the connected spaces info
       const spaceIds = connections.map(conn => 
         conn.from_space_id === spaceId ? conn.to_space_id : conn.from_space_id
       );
