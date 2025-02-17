@@ -39,7 +39,7 @@ export function InventoryTable({
               {item.category && <Badge variant="outline" style={{
             backgroundColor: `${item.category.color}20`,
             borderColor: item.category.color
-          }} className="px-0">
+          }} className="px-[9px]">
                   {item.category.name}
                 </Badge>}
             </TableCell>
