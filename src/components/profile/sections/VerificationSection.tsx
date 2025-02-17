@@ -22,7 +22,8 @@ export function VerificationSection() {
     isLoading,
     verificationRequests,
     handleVerification,
-    handleBulkVerification
+    handleBulkVerification,
+    handleToggleAdmin
   } = useVerification();
 
   if (isLoading) {
@@ -73,6 +74,7 @@ export function VerificationSection() {
               setSelectedUsers([userId]);
               setShowAssignKeys(true);
             }}
+            onToggleAdmin={handleToggleAdmin}
           />
         )}
 

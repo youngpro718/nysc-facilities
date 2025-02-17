@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -164,6 +163,36 @@ export function useVerification() {
     }
   };
 
+  const handleToggleAdmin = async (userId: string, isAdmin: boolean) => {
+    try {
+      if (isAdmin) {
+        // Add user to admin role
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: userId,
+            role: 'admin'
+          });
+
+        if (roleError) throw roleError;
+      } else {
+        // Remove admin role
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .delete()
+          .eq('user_id', userId)
+          .eq('role', 'admin');
+
+        if (roleError) throw roleError;
+      }
+      
+      refetch();
+    } catch (error) {
+      console.error('Error toggling admin status:', error);
+      toast.error('Failed to update admin status');
+    }
+  };
+
   const mapVerificationStatusToRequestStatus = (status: VerificationStatus): RequestStatus => {
     switch (status) {
       case 'verified':
@@ -201,6 +230,7 @@ export function useVerification() {
     isLoading,
     verificationRequests,
     handleVerification,
-    handleBulkVerification
+    handleBulkVerification,
+    handleToggleAdmin
   };
 }
