@@ -2496,6 +2496,7 @@ export type Database = {
           next_maintenance_date: string | null
           position: Database["public"]["Enums"]["lighting_position_enum"] | null
           room_id: string | null
+          room_number: string | null
           scheduled_maintenance_date: string | null
           sequence_number: number | null
           space_id: string | null
@@ -2533,6 +2534,7 @@ export type Database = {
             | Database["public"]["Enums"]["lighting_position_enum"]
             | null
           room_id?: string | null
+          room_number?: string | null
           scheduled_maintenance_date?: string | null
           sequence_number?: number | null
           space_id?: string | null
@@ -2570,6 +2572,7 @@ export type Database = {
             | Database["public"]["Enums"]["lighting_position_enum"]
             | null
           room_id?: string | null
+          room_number?: string | null
           scheduled_maintenance_date?: string | null
           sequence_number?: number | null
           space_id?: string | null
@@ -2630,6 +2633,20 @@ export type Database = {
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lighting_fixtures_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "new_spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lighting_fixtures_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
             referencedColumns: ["id"]
           },
           {
@@ -5076,6 +5093,20 @@ export type Database = {
             referencedRelation: "floors"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "lighting_fixtures_space_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "new_spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lighting_fixtures_space_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
         ]
       }
       lighting_fixture_details: {
@@ -5168,6 +5199,20 @@ export type Database = {
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lighting_fixtures_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "new_spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lighting_fixtures_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
             referencedColumns: ["id"]
           },
           {
