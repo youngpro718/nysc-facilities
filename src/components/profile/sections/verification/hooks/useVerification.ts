@@ -40,6 +40,7 @@ export interface VerificationRequest {
 
 export function useVerification() {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
 
   const { data: departments } = useQuery({
     queryKey: ['departments'],
@@ -176,6 +177,8 @@ export function useVerification() {
   return {
     selectedUsers,
     setSelectedUsers,
+    selectedDepartment,
+    setSelectedDepartment,
     departments,
     users,
     isLoading,
