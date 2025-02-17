@@ -18,6 +18,7 @@ export const useInventoryQueries = (roomId: string) => {
           unit,
           status,
           category_id,
+          storage_room_id,
           inventory_categories!category_id (
             id,
             name,
@@ -32,8 +33,21 @@ export const useInventoryQueries = (roomId: string) => {
 
       // Transform the response to match our frontend types
       const transformedData = data.map(item => ({
-        ...item,
-        category: item.inventory_categories
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        category_id: item.category_id,
+        description: item.description,
+        minimum_quantity: item.minimum_quantity,
+        unit: item.unit,
+        status: item.status,
+        storage_room_id: item.storage_room_id,
+        category: item.inventory_categories ? {
+          id: item.inventory_categories.id,
+          name: item.inventory_categories.name,
+          color: item.inventory_categories.color,
+          icon: item.inventory_categories.icon
+        } : undefined
       }));
 
       return transformedData as InventoryItem[];
@@ -90,6 +104,7 @@ export const useInventoryQueries = (roomId: string) => {
           unit,
           status,
           category_id,
+          storage_room_id,
           inventory_categories!category_id (
             id,
             name,
@@ -107,8 +122,21 @@ export const useInventoryQueries = (roomId: string) => {
 
       // Transform the response to match our frontend types
       const transformedData = data.map(item => ({
-        ...item,
-        category: item.inventory_categories
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        category_id: item.category_id,
+        description: item.description,
+        minimum_quantity: item.minimum_quantity,
+        unit: item.unit,
+        status: item.status,
+        storage_room_id: item.storage_room_id,
+        category: item.inventory_categories ? {
+          id: item.inventory_categories.id,
+          name: item.inventory_categories.name,
+          color: item.inventory_categories.color,
+          icon: item.inventory_categories.icon
+        } : undefined
       }));
 
       return transformedData as InventoryItem[];
