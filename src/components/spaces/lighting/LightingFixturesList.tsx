@@ -1,10 +1,10 @@
 
 import { useState } from "react";
-import { useLightingFixtures } from "./hooks/useLightingFixtures";
-import { LightingFixtureCard } from "./card/LightingFixtureCard";
-import { LightingHeader } from "./components/LightingHeader";
+import { useLightingFixtures } from "@/components/lighting/hooks/useLightingFixtures";
+import { LightingFixtureCard } from "@/components/lighting/card/LightingFixtureCard";
+import { LightingHeader } from "@/components/lighting/components/LightingHeader";
 
-export default function LightingFixturesList() {
+export const LightingFixturesList = () => {
   const [selectedFixtures, setSelectedFixtures] = useState<string[]>([]);
   const { 
     fixtures, 
@@ -13,7 +13,7 @@ export default function LightingFixturesList() {
     deleteFixture,
     isAdding,
     isDeleting
-  } = useLightingFixtures("all"); // Default to "all" spaces
+  } = useLightingFixtures();
   
   const handleSelectAll = () => {
     if (selectedFixtures.length === fixtures?.length) {
@@ -53,7 +53,7 @@ export default function LightingFixturesList() {
                 setSelectedFixtures(selectedFixtures.filter(id => id !== fixture.id));
               }
             }}
-            onDelete={() => deleteFixture(fixture.id)}
+            onDelete={() => deleteFixture()}
             onFixtureUpdated={() => {}} // Will be implemented when needed
           />
         ))}
@@ -66,4 +66,6 @@ export default function LightingFixturesList() {
       )}
     </div>
   );
-}
+};
+
+export default LightingFixturesList;

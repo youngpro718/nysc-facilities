@@ -2,15 +2,22 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import type { Json } from '@/integrations/supabase/types';
 
 interface LightingFixture {
   id: string;
   name: string;
   type: string;
   status: string;
-  location: string;
+  space_type: string;
   zone_id?: string;
   maintenance_history?: MaintenanceRecord[];
+  electrical_issues?: Json;
+  backup_power_source?: string;
+  bulb_count?: number;
+  connected_fixtures?: string[];
+  created_at?: string;
+  space_id?: string;
 }
 
 interface MaintenanceRecord {
@@ -20,30 +27,19 @@ interface MaintenanceRecord {
   notes: string;
 }
 
-export function useLightingFixtures(spaceId: string) {
+export function useLightingFixtures() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const { data: fixtures, isLoading } = useQuery({
-    queryKey: ['lighting-fixtures', spaceId],
+    queryKey: ['lighting-fixtures'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('lighting_fixtures')
-        .select('*')
-        .eq('space_id', spaceId);
+        .select('*');
 
       if (error) throw error;
-      
-      // Transform the data to match our LightingFixture type
-      return (data as any[]).map(fixture => ({
-        id: fixture.id,
-        name: fixture.name,
-        type: fixture.type,
-        status: fixture.status,
-        location: fixture.space_type || 'unknown',
-        zone_id: fixture.zone_id,
-        maintenance_history: fixture.maintenance_history || []
-      })) as LightingFixture[];
+      return data as LightingFixture[];
     }
   });
 
@@ -51,14 +47,18 @@ export function useLightingFixtures(spaceId: string) {
     mutationFn: async (fixture: Omit<LightingFixture, 'id'>) => {
       const { data, error } = await supabase
         .from('lighting_fixtures')
-        .insert([{ 
+        .insert({
           name: fixture.name,
           type: fixture.type,
           status: fixture.status,
-          space_type: fixture.location,
+          space_type: fixture.space_type,
           zone_id: fixture.zone_id,
-          space_id: spaceId
-        }])
+          electrical_issues: fixture.electrical_issues || {},
+          backup_power_source: fixture.backup_power_source,
+          bulb_count: fixture.bulb_count || 1,
+          connected_fixtures: fixture.connected_fixtures || [],
+          maintenance_history: []
+        })
         .select()
         .single();
 
@@ -66,7 +66,7 @@ export function useLightingFixtures(spaceId: string) {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lighting-fixtures', spaceId] });
+      queryClient.invalidateQueries({ queryKey: ['lighting-fixtures'] });
       toast({
         title: "Success",
         description: "Lighting fixture added successfully",

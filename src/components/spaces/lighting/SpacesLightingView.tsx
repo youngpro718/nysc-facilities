@@ -1,10 +1,9 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LightingFixturesList } from "./LightingFixturesList";
+import LightingFixturesList from "./LightingFixturesList";
 import { LightingZonesList } from "./LightingZonesList";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { AssignFixtureDialog } from "@/components/spaces/rooms/lighting/AssignFixtureDialog";
 
 interface SpacesLightingViewProps {
   selectedBuilding: string;
@@ -24,7 +23,6 @@ export function SpacesLightingView({ selectedBuilding, selectedFloor }: SpacesLi
             </TabsList>
             
             <div className="flex items-center gap-2">
-              {/* Remove AssignFixtureDialog since it requires a roomId context */}
               <Button variant="secondary" size="sm">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Zone
@@ -33,7 +31,7 @@ export function SpacesLightingView({ selectedBuilding, selectedFloor }: SpacesLi
           </div>
 
           <TabsContent value="fixtures" className="mt-0">
-            <LightingFixturesList selectedBuilding={selectedBuilding} selectedFloor={selectedFloor} />
+            <LightingFixturesList />
           </TabsContent>
 
           <TabsContent value="zones" className="mt-0">
