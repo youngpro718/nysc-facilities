@@ -8,6 +8,18 @@ type DoorType = "standard" | "emergency" | "secure" | "maintenance";
 type HallwayType = "public_main" | "private";
 type Section = "left_wing" | "right_wing" | "connector";
 
+const VALID_ROOM_TYPES: RoomType[] = [
+  "courtroom", "judges_chambers", "jury_room", "conference_room", 
+  "office", "filing_room", "male_locker_room", "female_locker_room", 
+  "robing_room", "stake_holder", "records_room", "administrative_office", 
+  "break_room", "it_room", "utility_room"
+];
+
+const VALID_STORAGE_TYPES: StorageType[] = [
+  "file_storage", "equipment_storage", "supply_storage", 
+  "evidence_storage", "record_storage", "general_storage"
+];
+
 type InitialData = {
   type?: SpaceType;
   name?: string;
@@ -35,11 +47,11 @@ type InitialData = {
 };
 
 const getDefaultRoomType = (type?: RoomType): RoomType => {
-  return (type && Object.values(RoomType).includes(type)) ? type : "office";
+  return (type && VALID_ROOM_TYPES.includes(type)) ? type : "office";
 };
 
 const getDefaultStorageType = (type?: StorageType | null): StorageType => {
-  return (type && Object.values(StorageType).includes(type)) ? type : "general_storage";
+  return (type && VALID_STORAGE_TYPES.includes(type)) ? type : "general_storage";
 };
 
 const getDefaultDoorType = (type?: DoorType): DoorType => {
