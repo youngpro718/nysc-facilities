@@ -1,4 +1,3 @@
-
 export type LightStatus = 'functional' | 'maintenance_needed' | 'non_functional' | 'pending_maintenance' | 'scheduled_replacement';
 export type LightingType = 'standard' | 'emergency' | 'motion_sensor';
 export type LightingTechnology = 'LED' | 'Fluorescent' | 'Bulb' | null;
@@ -22,6 +21,13 @@ export interface InspectionRecord {
   date: string;
   status: string;
   notes?: string;
+}
+
+export interface SpatialAssignment {
+  id: string;
+  sequence_number: number;
+  position: string;
+  space_type: string;
 }
 
 export interface LightingFixture {
@@ -53,11 +59,26 @@ export interface LightingFixture {
   emergency_duration_minutes?: number | null;
   maintenance_history?: MaintenanceRecord[];
   inspection_history?: InspectionRecord[];
-  spatial_assignment?: {
-    id: string;
-    sequence_number: number;
-    position: string;
-  };
+  spatial_assignment?: SpatialAssignment;
+}
+
+export interface EditLightingFixtureData {
+  name: string;
+  type: LightingType;
+  status: LightStatus;
+  maintenance_notes?: string | null;
+  emergency_circuit: boolean;
+  backup_power_source?: string | null;
+  emergency_duration_minutes?: number | null;
+  technology: LightingTechnology;
+  bulb_count: number;
+  electrical_issues: ElectricalIssues;
+  ballast_issue: boolean;
+  ballast_check_notes?: string | null;
+  space_id: string;
+  space_type: 'room' | 'hallway';
+  position: LightingPosition;
+  zone_id?: string | null;
 }
 
 export interface LightingZone {
