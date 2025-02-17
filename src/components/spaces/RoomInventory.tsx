@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useInventory } from "./inventory/hooks/useInventory";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,24 +20,29 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, MoreHorizontal, Package, Search, Download, Upload } from "lucide-react";
+import { Plus, MoreHorizontal, Package, Search, Download, Upload, Pencil } from "lucide-react";
 import { AddInventoryDialog } from "./inventory/AddInventoryDialog";
+import { EditInventoryDialog } from "./inventory/EditInventoryDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { InventoryFormInputs } from "./inventory/types/inventoryTypes";
+import { InventoryFormInputs, InventoryItem } from "./inventory/types/inventoryTypes";
 import { exportToExcel, parseExcelFile } from "./inventory/excelUtils";
 
 export function RoomInventory({ roomId }: { roomId: string }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const { toast } = useToast();
   
   const {
     inventory,
     isLoading,
     addItem,
+    editItem,
     updateQuantity,
     deleteItem,
     isAddingItem,
+    isEditingItem,
     isUpdatingQuantity,
     isDeletingItem,
     addBulkItems
@@ -58,14 +62,30 @@ export function RoomInventory({ roomId }: { roomId: string }) {
         quantity: data.quantity || 0
       });
       setIsAddDialogOpen(false);
-      toast({
-        title: "Success",
-        description: "Item added successfully",
-      });
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to add item. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEdit = async (data: InventoryFormInputs) => {
+    if (!selectedItem) return;
+
+    try {
+      await editItem({
+        id: selectedItem.id,
+        ...data,
+        storage_room_id: roomId,
+      });
+      setIsEditDialogOpen(false);
+      setSelectedItem(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update item. Please try again.",
         variant: "destructive",
       });
     }
@@ -243,6 +263,15 @@ export function RoomInventory({ roomId }: { roomId: string }) {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setSelectedItem(item);
+                            setIsEditDialogOpen(true);
+                          }}
+                        >
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
                         <DropdownMenuItem 
                           onClick={() => {
                             if (window.confirm('Are you sure you want to delete this item?')) {
@@ -274,6 +303,15 @@ export function RoomInventory({ roomId }: { roomId: string }) {
         onSubmit={handleSubmit}
         isSubmitting={isAddingItem}
       />
+      {selectedItem && (
+        <EditInventoryDialog
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          onSubmit={handleEdit}
+          isSubmitting={isEditingItem}
+          initialData={selectedItem}
+        />
+      )}
     </Card>
   );
 }

@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -37,6 +38,34 @@ export const useInventory = (roomId: string) => {
       toast({
         title: "Success",
         description: "Item added successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  const editItem = useMutation({
+    mutationFn: async ({ id, ...data }: Partial<InventoryItem> & { id: string }) => {
+      const { data: updatedData, error } = await supabase
+        .from('inventory_items')
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return updatedData;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory', roomId] });
+      toast({
+        title: "Success",
+        description: "Item updated successfully",
       });
     },
     onError: (error: Error) => {
@@ -138,10 +167,12 @@ export const useInventory = (roomId: string) => {
     inventory,
     isLoading,
     addItem: addItem.mutateAsync,
+    editItem: editItem.mutateAsync,
     addBulkItems: addBulkItems.mutateAsync,
     updateQuantity: updateQuantity.mutateAsync,
     deleteItem: deleteItem.mutateAsync,
     isAddingItem: addItem.isPending,
+    isEditingItem: editItem.isPending,
     isUpdatingQuantity: updateQuantity.isPending,
     isDeletingItem: deleteItem.isPending
   };
