@@ -1,0 +1,153 @@
+
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+export type VerificationStatus = 'pending' | 'verified' | 'rejected';
+export type RequestStatus = 'pending' | 'approved' | 'rejected';
+
+export interface Profile {
+  id: string;
+  email: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  verification_status: VerificationStatus;
+  department_id: string | null;
+}
+
+export interface UserVerificationView {
+  id: string;
+  department: string | null;
+  created_at: string;
+  updated_at: string;
+  profile_id: string;
+  email: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  verification_status: VerificationStatus;
+  department_id: string | null;
+}
+
+export interface VerificationRequest {
+  id: string;
+  user_id: string;
+  department_id: string | null;
+  employee_id: string | null;
+  status: RequestStatus;
+  submitted_at: string;
+  profile: Profile | null;
+}
+
+export function useVerification() {
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
+
+  const { data: departments } = useQuery({
+    queryKey: ['departments'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('departments')
+        .select('*')
+        .order('name');
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  const { data: users, isLoading, refetch } = useQuery({
+    queryKey: ['users-verification'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_verification_view')
+        .select('*')
+        .returns<UserVerificationView[]>();
+
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  const handleVerification = async (userId: string, approved: boolean) => {
+    try {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          verification_status: approved ? 'verified' : 'rejected',
+          department_id: selectedDepartment
+        })
+        .eq('id', userId);
+
+      if (profileError) throw profileError;
+
+      toast.success(`User ${approved ? 'approved' : 'rejected'} successfully`);
+      refetch();
+    } catch (error) {
+      console.error('Error updating verification:', error);
+      toast.error('Failed to update verification status');
+    }
+  };
+
+  const handleBulkVerification = async (approve: boolean) => {
+    try {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          verification_status: approve ? 'verified' : 'rejected',
+          department_id: selectedDepartment
+        })
+        .in('id', selectedUsers);
+
+      if (profileError) throw profileError;
+
+      toast.success(`${selectedUsers.length} users ${approve ? 'approved' : 'rejected'} successfully`);
+      setSelectedUsers([]);
+      refetch();
+    } catch (error) {
+      console.error('Error in bulk verification:', error);
+      toast.error('Failed to update verification status');
+    }
+  };
+
+  const mapVerificationStatusToRequestStatus = (status: VerificationStatus): RequestStatus => {
+    switch (status) {
+      case 'verified':
+        return 'approved';
+      case 'rejected':
+        return 'rejected';
+      default:
+        return 'pending';
+    }
+  };
+
+  const verificationRequests: VerificationRequest[] = users?.map(user => ({
+    id: user.id,
+    user_id: user.id,
+    department_id: user.department_id,
+    employee_id: null,
+    status: mapVerificationStatusToRequestStatus(user.verification_status || 'pending'),
+    submitted_at: user.created_at,
+    profile: {
+      id: user.profile_id,
+      email: user.email,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      verification_status: user.verification_status || 'pending',
+      department_id: user.department_id
+    }
+  })) || [];
+
+  return {
+    selectedUsers,
+    setSelectedUsers,
+    selectedDepartment,
+    setSelectedDepartment,
+    departments,
+    users,
+    isLoading,
+    verificationRequests,
+    handleVerification,
+    handleBulkVerification
+  };
+}
