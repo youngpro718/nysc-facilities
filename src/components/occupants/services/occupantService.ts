@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { OccupantStatus } from "./schemas/occupantSchema";
+import { OccupantStatus } from "../schemas/occupantSchema";
 
 interface UpdateOccupantParams {
   occupantId: string;
