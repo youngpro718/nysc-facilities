@@ -40,22 +40,17 @@ export const SignupForm = ({
     try {
       setLoading(true);
       
-      // First create the user without metadata
-      const { data: { user }, error: signUpError } = await supabase.auth.signUp({
+      const { error: signUpError } = await supabase.auth.signUp({
         email,
-        password
+        password,
+        options: {
+          data: {
+            department
+          }
+        }
       });
 
       if (signUpError) throw signUpError;
-
-      if (user) {
-        // Then update the user's metadata
-        const { error: updateError } = await supabase.auth.updateUser({
-          data: { department }
-        });
-
-        if (updateError) throw updateError;
-      }
       
       toast.success("Check your email for the confirmation link!", {
         description: "Your verification request has been submitted and is pending review."
