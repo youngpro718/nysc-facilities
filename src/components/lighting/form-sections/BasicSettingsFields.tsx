@@ -53,7 +53,7 @@ export function BasicSettingsFields({ form, onSpaceOrPositionChange }: BasicSett
           const sequence = typeof sequenceData === 'number' ? sequenceData : 1;
           
           const name = generateFixtureName(
-            space.space_type as 'room' | 'hallway',
+            space.type as 'room' | 'hallway',
             space.name,
             space.room_number,
             position,
@@ -117,9 +117,9 @@ export function BasicSettingsFields({ form, onSpaceOrPositionChange }: BasicSett
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {spaces?.filter(space => space.space_type === spaceType).map((space) => (
+                {spaces?.filter(space => space.type === spaceType).map((space) => (
                   <SelectItem key={space.id} value={space.id}>
-                    {space.space_type === 'room' ? `Room ${space.room_number}` : space.name}
+                    {space.type === 'room' ? `Room ${space.room_number}` : space.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -148,6 +148,7 @@ export function BasicSettingsFields({ form, onSpaceOrPositionChange }: BasicSett
                 <SelectItem value="ceiling">Ceiling</SelectItem>
                 <SelectItem value="wall">Wall</SelectItem>
                 <SelectItem value="floor">Floor</SelectItem>
+                <SelectItem value="desk">Desk</SelectItem>
               </SelectContent>
             </Select>
             <FormMessage />

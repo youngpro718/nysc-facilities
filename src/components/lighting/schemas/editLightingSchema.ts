@@ -12,11 +12,13 @@ export const editLightingFormSchema = z.object({
     "pending_maintenance",
     "scheduled_replacement"
   ]),
-  maintenance_notes: z.string().nullable(),
-  emergency_circuit: z.boolean().default(false),
-  backup_power_source: z.string().nullable(),
-  emergency_duration_minutes: z.number().nullable(),
+  space_id: z.string().uuid(),
+  space_type: z.enum(["room", "hallway"]),
+  room_number: z.string().nullable(),
+  position: z.enum(["ceiling", "wall", "floor", "desk"]),
   technology: z.enum(["LED", "Fluorescent", "Bulb"]).nullable(),
+  maintenance_priority: z.enum(["low", "medium", "high"]).nullable(),
+  maintenance_notes: z.string().nullable(),
   bulb_count: z.number().min(1),
   electrical_issues: z.object({
     short_circuit: z.boolean(),
@@ -25,9 +27,6 @@ export const editLightingFormSchema = z.object({
   }).nullable(),
   ballast_issue: z.boolean(),
   ballast_check_notes: z.string().nullable(),
-  space_id: z.string().uuid(),
-  space_type: z.enum(["room", "hallway"]),
-  position: z.enum(["ceiling", "wall", "floor", "desk"]),
   zone_id: z.string().uuid().nullable()
 });
 

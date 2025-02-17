@@ -41,7 +41,7 @@ export function TechnicalFields({ form }: TechnicalFieldsProps) {
         render={({ field }) => (
           <FormItem>
             <FormLabel>Technology</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value}>
+            <Select onValueChange={field.onChange} value={field.value || ''}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Select technology" />
