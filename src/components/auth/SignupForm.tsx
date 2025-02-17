@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Mail, Lock, Building2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface SignupFormProps {
   email: string;
@@ -50,7 +51,20 @@ export const SignupForm = ({
         }
       });
 
-      if (signUpError) throw signUpError;
+      if (signUpError) {
+        // Check if the error is due to existing user
+        if (signUpError.message.includes("User already registered")) {
+          toast.error("This email is already registered", {
+            description: "Please sign in instead or use a different email address.",
+            action: {
+              label: "Sign In",
+              onClick: onToggleForm
+            }
+          });
+          return;
+        }
+        throw signUpError;
+      }
       
       toast.success("Check your email for the confirmation link!", {
         description: "Your verification request has been submitted and is pending review."
@@ -59,7 +73,17 @@ export const SignupForm = ({
       onToggleForm();
     } catch (error: any) {
       console.error("Auth error:", error);
-      toast.error(error.message || "Signup failed");
+      
+      // Extract the error message from the response if available
+      let errorMessage = "Signup failed";
+      try {
+        const errorBody = JSON.parse(error.body);
+        errorMessage = errorBody.message || errorMessage;
+      } catch {
+        errorMessage = error.message || errorMessage;
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
