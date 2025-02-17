@@ -27,15 +27,18 @@ import {
 
 type VerificationRequest = {
   id: string;
-  email: string;
-  first_name: string;
-  last_name: string;
+  user_id: string;
+  agency_id: string | null;
   department: string | null;
-  title: string | null;
-  status: 'pending' | 'approved' | 'rejected';
-  requested_at: string;
+  employee_id: string | null;
+  rejection_reason: string | null;
   reviewed_at: string | null;
-  notes: string | null;
+  reviewed_by: string | null;
+  status: 'pending' | 'approved' | 'rejected';
+  submitted_at: string;
+  supporting_documents: string[] | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export function VerificationSection() {
@@ -44,8 +47,14 @@ export function VerificationSection() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('verification_requests')
-        .select('*')
-        .order('requested_at', { ascending: false });
+        .select(`
+          *,
+          user:user_id (
+            email,
+            raw_user_meta_data
+          )
+        `)
+        .order('submitted_at', { ascending: false });
 
       if (error) throw error;
       return data as VerificationRequest[];
@@ -124,11 +133,9 @@ export function VerificationSection() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
+                <TableHead>Employee ID</TableHead>
                 <TableHead>Department</TableHead>
-                <TableHead>Title</TableHead>
-                <TableHead>Requested</TableHead>
+                <TableHead>Submitted</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -136,14 +143,10 @@ export function VerificationSection() {
             <TableBody>
               {requests?.map((request) => (
                 <TableRow key={request.id}>
-                  <TableCell>
-                    {request.first_name} {request.last_name}
-                  </TableCell>
-                  <TableCell>{request.email}</TableCell>
+                  <TableCell>{request.employee_id || '-'}</TableCell>
                   <TableCell>{request.department || '-'}</TableCell>
-                  <TableCell>{request.title || '-'}</TableCell>
                   <TableCell>
-                    {format(new Date(request.requested_at), 'MMM d, yyyy')}
+                    {format(new Date(request.submitted_at), 'MMM d, yyyy')}
                   </TableCell>
                   <TableCell>{getStatusBadge(request.status)}</TableCell>
                   <TableCell>
