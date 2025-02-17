@@ -1,6 +1,6 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Database, FileText, ChevronLeft, Settings, Activity } from "lucide-react";
+import { Shield, Database, FileText, ChevronLeft, Settings, Activity, UserCheck } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -12,6 +12,7 @@ import { SecuritySection } from "@/components/profile/SecuritySection";
 import { AdminProfileHeader } from "@/components/profile/sections/AdminProfileHeader";
 import { SystemSettingsSection } from "@/components/profile/sections/SystemSettingsSection";
 import { ActivityLogsSection } from "@/components/profile/sections/ActivityLogsSection";
+import { VerificationSection } from "@/components/profile/sections/VerificationSection";
 
 export default function AdminProfile() {
   const navigate = useNavigate();
@@ -76,13 +77,20 @@ export default function AdminProfile() {
       </div>
       
       <Tabs defaultValue="security" className="w-full space-y-8">
-        <TabsList className="grid w-full grid-cols-5 gap-4 bg-background p-1">
+        <TabsList className="grid w-full grid-cols-6 gap-4 bg-background p-1">
           <TabsTrigger 
             value="security" 
             className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
           >
             <Shield className="h-4 w-4" />
             Security
+          </TabsTrigger>
+          <TabsTrigger 
+            value="verifications" 
+            className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
+          >
+            <UserCheck className="h-4 w-4" />
+            Verifications
           </TabsTrigger>
           <TabsTrigger 
             value="database" 
@@ -116,6 +124,10 @@ export default function AdminProfile() {
 
         <TabsContent value="security">
           <SecuritySection isAdmin={true} />
+        </TabsContent>
+
+        <TabsContent value="verifications">
+          <VerificationSection />
         </TabsContent>
 
         <TabsContent value="database">
