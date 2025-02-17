@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useInventory } from "./inventory/hooks/useInventory";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -149,7 +150,7 @@ export function RoomInventory({ roomId }: { roomId: string }) {
   };
 
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
@@ -192,12 +193,11 @@ export function RoomInventory({ roomId }: { roomId: string }) {
         </div>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[calc(100vh-20rem)] rounded-md border">
+        <ScrollArea className="h-[calc(100vh-12rem)] border rounded-md">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Category</TableHead>
+                <TableHead className="w-[300px]">Item Details</TableHead>
                 <TableHead>Quantity</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -206,19 +206,21 @@ export function RoomInventory({ roomId }: { roomId: string }) {
             <TableBody>
               {filteredInventory?.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.name}</TableCell>
                   <TableCell>
-                    {item.category && (
-                      <Badge
-                        variant="outline"
-                        style={{
-                          backgroundColor: `${item.category.color}20`,
-                          borderColor: item.category.color,
-                        }}
-                      >
-                        {item.category.name}
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{item.name}</span>
+                      {item.category && (
+                        <Badge
+                          variant="outline"
+                          style={{
+                            backgroundColor: `${item.category.color}20`,
+                            borderColor: item.category.color,
+                          }}
+                        >
+                          {item.category.name}
+                        </Badge>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -288,7 +290,7 @@ export function RoomInventory({ roomId }: { roomId: string }) {
               ))}
               {!isLoading && (!filteredInventory || filteredInventory.length === 0) && (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
+                  <TableCell colSpan={4} className="h-24 text-center">
                     No items found
                   </TableCell>
                 </TableRow>
