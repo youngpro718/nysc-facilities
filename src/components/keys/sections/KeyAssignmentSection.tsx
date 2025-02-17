@@ -32,13 +32,13 @@ export function KeyAssignmentSection() {
           assigned_at,
           is_spare,
           spare_key_reason,
-          keys (
+          keys:key_id (
             id,
             name,
             type,
             is_passkey
           ),
-          occupants (
+          occupant:occupant_id (
             id,
             first_name,
             last_name,
@@ -115,10 +115,10 @@ export function KeyAssignmentSection() {
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4" />
-                    {assignment.occupants?.first_name} {assignment.occupants?.last_name}
+                    {assignment.occupant?.first_name} {assignment.occupant?.last_name}
                   </div>
                 </TableCell>
-                <TableCell>{assignment.occupants?.department}</TableCell>
+                <TableCell>{assignment.occupant?.department}</TableCell>
                 <TableCell>
                   {format(new Date(assignment.assigned_at), "MMM d, yyyy")}
                 </TableCell>

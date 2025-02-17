@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,6 +47,17 @@ interface CurrentOccupant {
   first_name: string;
   last_name: string;
   is_primary: boolean;
+}
+
+function generateSpaceSelectItem(room: RoomDetails) {
+  return {
+    id: room.id,
+    name: room.name,
+    room_number: room.room_number,
+    capacity: room.capacity || null,
+    current_occupancy: room.current_occupancy || 0,
+    floors: room.floors,
+  };
 }
 
 export function AssignRoomsDialog({
@@ -105,7 +115,6 @@ export function AssignRoomsDialog({
     }
   });
 
-  // Check if any selected occupants already have primary assignments
   const { data: existingPrimaryAssignments } = useQuery({
     queryKey: ["primary-assignments", selectedOccupants],
     enabled: isPrimaryAssignment,

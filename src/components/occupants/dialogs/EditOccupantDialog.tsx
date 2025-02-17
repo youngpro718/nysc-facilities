@@ -18,6 +18,7 @@ import {
 import { useOccupantAssignments } from "../hooks/useOccupantAssignments";
 import { handleOccupantUpdate } from "../services/occupantService";
 import type { Occupant } from "../types/occupantTypes";
+import { OccupantStatus } from "../schemas/occupantSchema";
 
 interface EditOccupantDialogProps {
   open: boolean;
@@ -68,6 +69,7 @@ export function EditOccupantDialog({
 
   const initialData = occupant ? {
     ...occupant,
+    status: occupant.status as OccupantStatus || "active",
     rooms: currentAssignments?.rooms || [],
     keys: currentAssignments?.keys || [],
   } : undefined;
