@@ -59,7 +59,7 @@ export function VerificationSection() {
         .from('verification_requests')
         .select(`
           *,
-          profile:user_id(
+          profile(
             email,
             first_name,
             last_name
