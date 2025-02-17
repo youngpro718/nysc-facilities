@@ -41,7 +41,7 @@ interface KeyAssignment {
 }
 
 export function KeyAssignmentSection() {
-  const { data: assignments, isLoading } = useQuery<KeyAssignment[]>({
+  const { data: assignments, isLoading } = useQuery({
     queryKey: ["active-key-assignments"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -51,13 +51,13 @@ export function KeyAssignmentSection() {
           assigned_at,
           is_spare,
           spare_key_reason,
-          keys!key_id (
+          keys:key_id!key_assignments_key_id_fkey (
             id,
             name,
             type,
             is_passkey
           ),
-          occupant!key_assignments_occupant_id_fkey (
+          occupant:occupant_id!key_assignments_occupant_id_fkey (
             id,
             first_name,
             last_name,
@@ -68,7 +68,7 @@ export function KeyAssignmentSection() {
         .order('assigned_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data as KeyAssignment[];
     },
   });
 

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -60,14 +59,15 @@ interface CurrentOccupant {
 }
 
 function generateSpaceSelectItem(room: RoomDetails): SpaceSelectItem {
-  return {
+  const spaceItem: SpaceSelectItem = {
     id: room.id,
     name: room.name,
     room_number: room.room_number,
     capacity: room.capacity || null,
     current_occupancy: room.current_occupancy || 0,
-    floors: room.floors,
+    floors: room.floors
   };
+  return spaceItem;
 }
 
 export function AssignRoomsDialog({
