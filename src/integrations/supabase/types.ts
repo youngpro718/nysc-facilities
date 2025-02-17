@@ -4807,6 +4807,33 @@ export type Database = {
         }
         Relationships: []
       }
+      verification_requests: {
+        Row: {
+          department: string | null
+          id: string
+          status: string
+          submitted_at: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          department?: string | null
+          id?: string
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          department?: string | null
+          id?: string
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       available_keys: {
