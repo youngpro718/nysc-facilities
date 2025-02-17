@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -122,7 +123,7 @@ export function AssignRoomsDialog({
         .from("occupant_room_assignments")
         .select(`
           is_primary,
-          occupant: occupants!occupant_id(
+          occupants!fk_occupant_room_assignments_occupant (
             id,
             first_name,
             last_name
@@ -141,11 +142,11 @@ export function AssignRoomsDialog({
       }
 
       return occupantsData
-        .filter(assignment => assignment.occupant)
+        .filter(assignment => assignment.occupants)
         .map(assignment => ({
-          id: assignment.occupant.id,
-          first_name: assignment.occupant.first_name,
-          last_name: assignment.occupant.last_name,
+          id: assignment.occupants.id,
+          first_name: assignment.occupants.first_name,
+          last_name: assignment.occupants.last_name,
           is_primary: assignment.is_primary
         })) as CurrentOccupant[];
     }
