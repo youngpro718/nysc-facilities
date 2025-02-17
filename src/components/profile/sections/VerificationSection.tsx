@@ -23,12 +23,17 @@ interface Profile {
   department_id: string | null;
 }
 
-interface UserData {
+interface UserVerificationView {
   id: string;
   department: string | null;
   created_at: string;
   updated_at: string;
-  profile: Profile | null;
+  profile_id: string;
+  email: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  verification_status: VerificationStatus;
+  department_id: string | null;
 }
 
 interface VerificationRequest {
@@ -61,25 +66,12 @@ export function VerificationSection() {
   });
 
   const { data: users, isLoading, refetch } = useQuery({
-    queryKey: ['users-metadata'],
+    queryKey: ['users-verification'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('users_metadata')
-        .select(`
-          id,
-          department,
-          created_at,
-          updated_at,
-          profile:profiles(
-            id,
-            email,
-            first_name,
-            last_name,
-            verification_status,
-            department_id
-          )
-        `)
-        .returns<UserData[]>();
+        .from('user_verification_view')
+        .select('*')
+        .returns<UserVerificationView[]>();
 
       if (error) throw error;
       return data;
@@ -131,7 +123,24 @@ export function VerificationSection() {
     return <div>Loading...</div>;
   }
 
-  const mapProfileStatusToRequestStatus = (status: VerificationStatus): RequestStatus => {
+  const verificationRequests: VerificationRequest[] = users?.map(user => ({
+    id: user.id,
+    user_id: user.id,
+    department_id: user.department_id,
+    employee_id: null,
+    status: mapVerificationStatusToRequestStatus(user.verification_status || 'pending'),
+    submitted_at: user.created_at,
+    profile: {
+      id: user.profile_id,
+      email: user.email,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      verification_status: user.verification_status || 'pending',
+      department_id: user.department_id
+    }
+  })) || [];
+
+  function mapVerificationStatusToRequestStatus(status: VerificationStatus): RequestStatus {
     switch (status) {
       case 'verified':
         return 'approved';
@@ -140,21 +149,7 @@ export function VerificationSection() {
       default:
         return 'pending';
     }
-  };
-
-  const verificationRequests: VerificationRequest[] = users?.map(user => {
-    if (!user) return null;
-    
-    return {
-      id: user.id,
-      user_id: user.id,
-      department_id: user.profile?.department_id || null,
-      employee_id: null,
-      status: mapProfileStatusToRequestStatus(user.profile?.verification_status || 'pending'),
-      submitted_at: user.created_at,
-      profile: user.profile
-    };
-  }).filter((request): request is VerificationRequest => request !== null) || [];
+  }
 
   return (
     <Card>
