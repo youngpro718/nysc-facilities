@@ -18,7 +18,7 @@ export interface Profile {
 
 export interface UserVerificationView {
   id: string;
-  department: string | null;
+  department_name: string | null;
   created_at: string;
   updated_at: string;
   profile_id: string;
