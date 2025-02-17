@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SelectedUser } from "./hooks/useVerificationState";
 
 interface Department {
   id: string;
