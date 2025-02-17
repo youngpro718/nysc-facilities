@@ -1872,13 +1872,6 @@ export type Database = {
             foreignKeyName: "issues_fixture_id_fkey"
             columns: ["fixture_id"]
             isOneToOne: false
-            referencedRelation: "emergency_lighting_status"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "issues_fixture_id_fkey"
-            columns: ["fixture_id"]
-            isOneToOne: false
             referencedRelation: "lighting_assignments"
             referencedColumns: ["fixture_id"]
           },
@@ -2481,18 +2474,12 @@ export type Database = {
       }
       lighting_fixtures: {
         Row: {
-          backup_power_source: string | null
           balance_check_date: string | null
           ballast_check_notes: string | null
           ballast_issue: boolean | null
           bulb_count: number | null
-          connected_fixtures: string[] | null
           created_at: string | null
           electrical_issues: Json | null
-          emergency_circuit: boolean | null
-          emergency_duration_minutes: number | null
-          emergency_protocols: Json | null
-          energy_usage_data: Json | null
           floor_id: string | null
           id: string
           inspection_history: Json[] | null
@@ -2504,7 +2491,6 @@ export type Database = {
           maintenance_history: Json[] | null
           maintenance_notes: string | null
           maintenance_priority: string | null
-          manufacturer_details: Json | null
           name: string
           next_inspection_date: string | null
           next_maintenance_date: string | null
@@ -2520,22 +2506,15 @@ export type Database = {
             | null
           type: Database["public"]["Enums"]["light_fixture_type_enum"]
           updated_at: string | null
-          warranty_info: Json | null
           zone_id: string | null
         }
         Insert: {
-          backup_power_source?: string | null
           balance_check_date?: string | null
           ballast_check_notes?: string | null
           ballast_issue?: boolean | null
           bulb_count?: number | null
-          connected_fixtures?: string[] | null
           created_at?: string | null
           electrical_issues?: Json | null
-          emergency_circuit?: boolean | null
-          emergency_duration_minutes?: number | null
-          emergency_protocols?: Json | null
-          energy_usage_data?: Json | null
           floor_id?: string | null
           id?: string
           inspection_history?: Json[] | null
@@ -2547,7 +2526,6 @@ export type Database = {
           maintenance_history?: Json[] | null
           maintenance_notes?: string | null
           maintenance_priority?: string | null
-          manufacturer_details?: Json | null
           name: string
           next_inspection_date?: string | null
           next_maintenance_date?: string | null
@@ -2565,22 +2543,15 @@ export type Database = {
             | null
           type: Database["public"]["Enums"]["light_fixture_type_enum"]
           updated_at?: string | null
-          warranty_info?: Json | null
           zone_id?: string | null
         }
         Update: {
-          backup_power_source?: string | null
           balance_check_date?: string | null
           ballast_check_notes?: string | null
           ballast_issue?: boolean | null
           bulb_count?: number | null
-          connected_fixtures?: string[] | null
           created_at?: string | null
           electrical_issues?: Json | null
-          emergency_circuit?: boolean | null
-          emergency_duration_minutes?: number | null
-          emergency_protocols?: Json | null
-          energy_usage_data?: Json | null
           floor_id?: string | null
           id?: string
           inspection_history?: Json[] | null
@@ -2592,7 +2563,6 @@ export type Database = {
           maintenance_history?: Json[] | null
           maintenance_notes?: string | null
           maintenance_priority?: string | null
-          manufacturer_details?: Json | null
           name?: string
           next_inspection_date?: string | null
           next_maintenance_date?: string | null
@@ -2610,7 +2580,6 @@ export type Database = {
             | null
           type?: Database["public"]["Enums"]["light_fixture_type_enum"]
           updated_at?: string | null
-          warranty_info?: Json | null
           zone_id?: string | null
         }
         Relationships: [
@@ -2724,13 +2693,6 @@ export type Database = {
             foreignKeyName: "lighting_maintenance_fixture_id_fkey"
             columns: ["fixture_id"]
             isOneToOne: false
-            referencedRelation: "emergency_lighting_status"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "lighting_maintenance_fixture_id_fkey"
-            columns: ["fixture_id"]
-            isOneToOne: false
             referencedRelation: "lighting_assignments"
             referencedColumns: ["fixture_id"]
           },
@@ -2824,13 +2786,6 @@ export type Database = {
             foreignKeyName: "lighting_maintenance_schedules_fixture_id_fkey"
             columns: ["fixture_id"]
             isOneToOne: false
-            referencedRelation: "emergency_lighting_status"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "lighting_maintenance_schedules_fixture_id_fkey"
-            columns: ["fixture_id"]
-            isOneToOne: false
             referencedRelation: "lighting_assignments"
             referencedColumns: ["fixture_id"]
           },
@@ -2879,13 +2834,6 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "lighting_notifications_fixture_id_fkey"
-            columns: ["fixture_id"]
-            isOneToOne: false
-            referencedRelation: "emergency_lighting_status"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "lighting_notifications_fixture_id_fkey"
             columns: ["fixture_id"]
@@ -3029,6 +2977,55 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_records: {
+        Row: {
+          created_at: string | null
+          date: string | null
+          fixture_id: string | null
+          id: string
+          notes: string | null
+          type: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date?: string | null
+          fixture_id?: string | null
+          id?: string
+          notes?: string | null
+          type?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string | null
+          fixture_id?: string | null
+          id?: string
+          notes?: string | null
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_records_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "lighting_assignments"
+            referencedColumns: ["fixture_id"]
+          },
+          {
+            foreignKeyName: "maintenance_records_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "lighting_fixture_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_records_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "lighting_fixtures"
             referencedColumns: ["id"]
           },
         ]
@@ -4526,13 +4523,6 @@ export type Database = {
             foreignKeyName: "spatial_assignments_fixture_id_fkey"
             columns: ["fixture_id"]
             isOneToOne: true
-            referencedRelation: "emergency_lighting_status"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "spatial_assignments_fixture_id_fkey"
-            columns: ["fixture_id"]
-            isOneToOne: true
             referencedRelation: "lighting_assignments"
             referencedColumns: ["fixture_id"]
           },
@@ -4842,23 +4832,6 @@ export type Database = {
           },
         ]
       }
-      emergency_lighting_status: {
-        Row: {
-          backup_power_source: string | null
-          emergency_circuit: boolean | null
-          emergency_duration_minutes: number | null
-          id: string | null
-          is_emergency_route: boolean | null
-          name: string | null
-          position: string | null
-          space_id: string | null
-          space_type: string | null
-          status: Database["public"]["Enums"]["light_status_enum"] | null
-          type: Database["public"]["Enums"]["light_fixture_type_enum"] | null
-          zone_name: string | null
-        }
-        Relationships: []
-      }
       floorplan_report_data: {
         Row: {
           building_name: string | null
@@ -5107,19 +5080,13 @@ export type Database = {
       }
       lighting_fixture_details: {
         Row: {
-          backup_power_source: string | null
           balance_check_date: string | null
           ballast_check_notes: string | null
           ballast_issue: boolean | null
           building_name: string | null
           bulb_count: number | null
-          connected_fixtures: string[] | null
           created_at: string | null
           electrical_issues: Json | null
-          emergency_circuit: boolean | null
-          emergency_duration_minutes: number | null
-          emergency_protocols: Json | null
-          energy_usage_data: Json | null
           floor_id: string | null
           floor_name: string | null
           id: string | null
@@ -5132,7 +5099,6 @@ export type Database = {
           maintenance_history: Json[] | null
           maintenance_notes: string | null
           maintenance_priority: string | null
-          manufacturer_details: Json | null
           name: string | null
           next_inspection_date: string | null
           next_maintenance_date: string | null
@@ -5141,7 +5107,9 @@ export type Database = {
           room_number: string | null
           scheduled_maintenance_date: string | null
           sequence_number: number | null
+          space_category: string | null
           space_id: string | null
+          space_name: string | null
           space_type: string | null
           status: Database["public"]["Enums"]["light_status_enum"] | null
           technology:
@@ -5149,8 +5117,8 @@ export type Database = {
             | null
           type: Database["public"]["Enums"]["light_fixture_type_enum"] | null
           updated_at: string | null
-          warranty_info: Json | null
           zone_id: string | null
+          zone_name: string | null
         }
         Relationships: [
           {
@@ -5263,13 +5231,6 @@ export type Database = {
             columns: ["completed_by"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "lighting_maintenance_schedules_fixture_id_fkey"
-            columns: ["fixture_id"]
-            isOneToOne: false
-            referencedRelation: "emergency_lighting_status"
             referencedColumns: ["id"]
           },
           {

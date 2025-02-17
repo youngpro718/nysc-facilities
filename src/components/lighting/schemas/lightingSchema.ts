@@ -9,32 +9,17 @@ export const lightingFixtureSchema = z.object({
       const hallwayPattern = /^Hallway .+ - Light \d+$/;
       return roomPattern.test(name) || hallwayPattern.test(name);
     }, "Name must follow the format: 'Room {number} - {position} Light {sequence}' or 'Hallway {name} - Light {sequence}'"),
-  type: z.enum(["standard", "emergency", "motion_sensor"]),
+  type: z.enum(["standard", "motion_sensor"]),
   technology: z.enum(["LED", "Fluorescent", "Bulb"]).default("LED"),
   status: z.enum([
     "functional",
     "maintenance_needed",
-    "non_functional",
-    "pending_maintenance",
-    "scheduled_replacement"
+    "non_functional"
   ]).default("functional"),
-  bulb_count: z.number().min(1, "At least one bulb is required").default(1),
-  electrical_issues: z.object({
-    short_circuit: z.boolean().default(false),
-    wiring_issues: z.boolean().default(false),
-    voltage_problems: z.boolean().default(false)
-  }).default({
-    short_circuit: false,
-    wiring_issues: false,
-    voltage_problems: false
-  }),
-  ballast_issue: z.boolean().default(false),
-  emergency_circuit: z.boolean().default(false),
   maintenance_notes: z.string().optional(),
-  ballast_check_notes: z.string().optional(),
   space_id: z.string().uuid(),
   space_type: z.enum(["room", "hallway"]),
-  position: z.enum(["ceiling", "wall", "floor"]),
+  position: z.enum(["ceiling", "wall", "floor", "desk"]),
   zone_id: z.string().uuid().optional(),
 });
 
@@ -42,7 +27,7 @@ export type LightingFixtureFormData = z.infer<typeof lightingFixtureSchema>;
 
 export const lightingZoneSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  type: z.enum(["general", "emergency", "restricted"]),
+  description: z.string().optional(),
   floorId: z.string().min(1, "Floor is required"),
 });
 
