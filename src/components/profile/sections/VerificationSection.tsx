@@ -28,7 +28,7 @@ interface UserData {
   department: string | null;
   created_at: string;
   updated_at: string;
-  profile: Profile;
+  profile: Profile | null;
 }
 
 interface VerificationRequest {
@@ -142,15 +142,19 @@ export function VerificationSection() {
     }
   };
 
-  const verificationRequests: VerificationRequest[] = users?.map(user => ({
-    id: user.id,
-    user_id: user.id,
-    department_id: user.profile?.department_id || null,
-    employee_id: null,
-    status: mapProfileStatusToRequestStatus(user.profile?.verification_status || 'pending'),
-    submitted_at: user.created_at,
-    profile: user.profile || null
-  })) || [];
+  const verificationRequests: VerificationRequest[] = users?.map(user => {
+    if (!user) return null;
+    
+    return {
+      id: user.id,
+      user_id: user.id,
+      department_id: user.profile?.department_id || null,
+      employee_id: null,
+      status: mapProfileStatusToRequestStatus(user.profile?.verification_status || 'pending'),
+      submitted_at: user.created_at,
+      profile: user.profile
+    };
+  }).filter((request): request is VerificationRequest => request !== null) || [];
 
   return (
     <Card>
