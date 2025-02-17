@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -86,17 +87,23 @@ export function AssignRoomsDialog({
       const { data, error } = await supabase
         .from("rooms")
         .select(`
-          *,
-          floors(
+          id,
+          name,
+          room_number,
+          capacity,
+          current_occupancy,
+          floors (
             name,
-            buildings(name)
+            buildings (
+              name
+            )
           )
         `)
         .eq("status", "active")
         .order("name");
 
       if (error) throw error;
-      return data as RoomDetails[];
+      return (data || []) as RoomDetails[];
     },
   });
 
