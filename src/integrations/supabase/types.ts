@@ -4914,6 +4914,7 @@ export type Database = {
           next_inspection_date: string | null
           next_maintenance_date: string | null
           position: Database["public"]["Enums"]["lighting_position_enum"] | null
+          room_id: string | null
           room_number: string | null
           scheduled_maintenance_date: string | null
           sequence_number: number | null
@@ -4928,7 +4929,6 @@ export type Database = {
           updated_at: string | null
           warranty_info: Json | null
           zone_id: string | null
-          zone_name: string | null
         }
         Relationships: [
           {
@@ -4950,6 +4950,34 @@ export type Database = {
             columns: ["last_scheduled_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lighting_fixtures_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_health_overview"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "lighting_fixtures_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_issue_analytics"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "lighting_fixtures_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_occupancy_stats"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "lighting_fixtures_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
             referencedColumns: ["id"]
           },
           {
@@ -5323,7 +5351,7 @@ export type Database = {
           id: string | null
           name: string | null
           room_number: string | null
-          space_type: string | null
+          type: string | null
         }
         Relationships: []
       }

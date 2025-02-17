@@ -2,7 +2,7 @@
 export type ConnectionType = "room" | "hallway" | "door";
 export type Direction = "north" | "south" | "east" | "west" | "adjacent" | "left_of_hallway" | "right_of_hallway";
 export type ConnectionStatus = "active" | "inactive" | "under_maintenance";
-export type Position = "start" | "middle" | "end" | "adjacent";
+export type Position = "start" | "middle" | "end" | "adjacent"; 
 
 export interface BaseConnectionFormProps {
   onConnect: (data: any) => void;
