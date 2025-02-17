@@ -3729,6 +3729,7 @@ export type Database = {
           last_login: string | null
           last_login_at: string | null
           last_name: string | null
+          metadata: Json | null
           notification_preferences: Json | null
           phone: string | null
           security_settings: Json | null
@@ -3762,6 +3763,7 @@ export type Database = {
           last_login?: string | null
           last_login_at?: string | null
           last_name?: string | null
+          metadata?: Json | null
           notification_preferences?: Json | null
           phone?: string | null
           security_settings?: Json | null
@@ -3795,6 +3797,7 @@ export type Database = {
           last_login?: string | null
           last_login_at?: string | null
           last_name?: string | null
+          metadata?: Json | null
           notification_preferences?: Json | null
           phone?: string | null
           security_settings?: Json | null
