@@ -315,6 +315,53 @@ export type Database = {
           },
         ]
       }
+      door_properties: {
+        Row: {
+          closer_status:
+            | Database["public"]["Enums"]["door_closer_status_enum"]
+            | null
+          hardware_status: Json | null
+          next_maintenance_date: string | null
+          passkey_enabled: boolean | null
+          security_config: Json | null
+          security_level: string | null
+          space_id: string
+          wind_pressure_issues: boolean | null
+        }
+        Insert: {
+          closer_status?:
+            | Database["public"]["Enums"]["door_closer_status_enum"]
+            | null
+          hardware_status?: Json | null
+          next_maintenance_date?: string | null
+          passkey_enabled?: boolean | null
+          security_config?: Json | null
+          security_level?: string | null
+          space_id: string
+          wind_pressure_issues?: boolean | null
+        }
+        Update: {
+          closer_status?:
+            | Database["public"]["Enums"]["door_closer_status_enum"]
+            | null
+          hardware_status?: Json | null
+          next_maintenance_date?: string | null
+          passkey_enabled?: boolean | null
+          security_config?: Json | null
+          security_level?: string | null
+          space_id?: string
+          wind_pressure_issues?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "door_properties_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: true
+            referencedRelation: "new_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       doors: {
         Row: {
           access_log: Json[] | null
@@ -993,6 +1040,65 @@ export type Database = {
             columns: ["hallway_id"]
             isOneToOne: false
             referencedRelation: "hallways"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hallway_properties: {
+        Row: {
+          accessibility:
+            | Database["public"]["Enums"]["hallway_accessibility_enum"]
+            | null
+          capacity_limit: number | null
+          emergency_exits: Json | null
+          emergency_route:
+            | Database["public"]["Enums"]["emergency_route_enum"]
+            | null
+          maintenance_priority: string | null
+          section: string | null
+          space_id: string
+          traffic_flow:
+            | Database["public"]["Enums"]["hallway_traffic_flow_enum"]
+            | null
+        }
+        Insert: {
+          accessibility?:
+            | Database["public"]["Enums"]["hallway_accessibility_enum"]
+            | null
+          capacity_limit?: number | null
+          emergency_exits?: Json | null
+          emergency_route?:
+            | Database["public"]["Enums"]["emergency_route_enum"]
+            | null
+          maintenance_priority?: string | null
+          section?: string | null
+          space_id: string
+          traffic_flow?:
+            | Database["public"]["Enums"]["hallway_traffic_flow_enum"]
+            | null
+        }
+        Update: {
+          accessibility?:
+            | Database["public"]["Enums"]["hallway_accessibility_enum"]
+            | null
+          capacity_limit?: number | null
+          emergency_exits?: Json | null
+          emergency_route?:
+            | Database["public"]["Enums"]["emergency_route_enum"]
+            | null
+          maintenance_priority?: string | null
+          section?: string | null
+          space_id?: string
+          traffic_flow?:
+            | Database["public"]["Enums"]["hallway_traffic_flow_enum"]
+            | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hallway_properties_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: true
+            referencedRelation: "new_spaces"
             referencedColumns: ["id"]
           },
         ]
@@ -2913,6 +3019,66 @@ export type Database = {
           },
         ]
       }
+      new_spaces: {
+        Row: {
+          created_at: string | null
+          floor_id: string
+          id: string
+          name: string
+          position: Json | null
+          properties: Json | null
+          room_number: string | null
+          rotation: number | null
+          size: Json | null
+          status: Database["public"]["Enums"]["status_enum"] | null
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          floor_id: string
+          id?: string
+          name: string
+          position?: Json | null
+          properties?: Json | null
+          room_number?: string | null
+          rotation?: number | null
+          size?: Json | null
+          status?: Database["public"]["Enums"]["status_enum"] | null
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          floor_id?: string
+          id?: string
+          name?: string
+          position?: Json | null
+          properties?: Json | null
+          room_number?: string | null
+          rotation?: number | null
+          size?: Json | null
+          status?: Database["public"]["Enums"]["status_enum"] | null
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "new_spaces_floor_id_fkey"
+            columns: ["floor_id"]
+            isOneToOne: false
+            referencedRelation: "floorplan_report_data"
+            referencedColumns: ["floor_id"]
+          },
+          {
+            foreignKeyName: "new_spaces_floor_id_fkey"
+            columns: ["floor_id"]
+            isOneToOne: false
+            referencedRelation: "floors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       occupant_position_history: {
         Row: {
           created_at: string | null
@@ -3727,6 +3893,63 @@ export type Database = {
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_properties: {
+        Row: {
+          current_function: string | null
+          current_occupancy: number | null
+          function_change_date: string | null
+          is_storage: boolean | null
+          parent_room_id: string | null
+          phone_number: string | null
+          previous_functions: Json[] | null
+          room_type: Database["public"]["Enums"]["room_type_enum"]
+          space_id: string
+          storage_capacity: number | null
+          storage_type: string | null
+        }
+        Insert: {
+          current_function?: string | null
+          current_occupancy?: number | null
+          function_change_date?: string | null
+          is_storage?: boolean | null
+          parent_room_id?: string | null
+          phone_number?: string | null
+          previous_functions?: Json[] | null
+          room_type?: Database["public"]["Enums"]["room_type_enum"]
+          space_id: string
+          storage_capacity?: number | null
+          storage_type?: string | null
+        }
+        Update: {
+          current_function?: string | null
+          current_occupancy?: number | null
+          function_change_date?: string | null
+          is_storage?: boolean | null
+          parent_room_id?: string | null
+          phone_number?: string | null
+          previous_functions?: Json[] | null
+          room_type?: Database["public"]["Enums"]["room_type_enum"]
+          space_id?: string
+          storage_capacity?: number | null
+          storage_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_properties_parent_room_id_fkey"
+            columns: ["parent_room_id"]
+            isOneToOne: false
+            referencedRelation: "new_spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_properties_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: true
+            referencedRelation: "new_spaces"
             referencedColumns: ["id"]
           },
         ]
@@ -5398,6 +5621,10 @@ export type Database = {
           user_id: string
         }
         Returns: boolean
+      }
+      migrate_spaces_data: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       safely_delete_key: {
         Args: {
