@@ -19,6 +19,38 @@ interface UseLightingFixturesProps {
   selectedFloor: string;
 }
 
+const defaultElectricalIssues: ElectricalIssues = {
+  short_circuit: false,
+  wiring_issues: false,
+  voltage_problems: false
+};
+
+const defaultEnergyUsageData: EnergyUsageData = {
+  daily_usage: [],
+  efficiency_rating: null,
+  last_reading: null
+};
+
+const defaultEmergencyProtocols: EmergencyProtocols = {
+  emergency_contact: null,
+  backup_system: false,
+  evacuation_route: false
+};
+
+const defaultWarrantyInfo: WarrantyInfo = {
+  start_date: null,
+  end_date: null,
+  provider: null,
+  terms: null
+};
+
+const defaultManufacturerDetails: ManufacturerDetails = {
+  name: null,
+  model: null,
+  serial_number: null,
+  support_contact: null
+};
+
 const transformDatabaseFixture = (raw: DatabaseLightingFixture): LightingFixture => ({
   id: raw.id,
   name: raw.name,
@@ -39,35 +71,13 @@ const transformDatabaseFixture = (raw: DatabaseLightingFixture): LightingFixture
   technology: raw.technology,
   ballast_issue: raw.ballast_issue ?? false,
   bulb_count: raw.bulb_count ?? 1,
-  electrical_issues: (raw.electrical_issues || {
-    short_circuit: false,
-    wiring_issues: false,
-    voltage_problems: false
-  }) as ElectricalIssues,
-  energy_usage_data: (raw.energy_usage_data || {
-    daily_usage: [],
-    efficiency_rating: null,
-    last_reading: null
-  }) as EnergyUsageData,
-  emergency_protocols: (raw.emergency_protocols || {
-    emergency_contact: null,
-    backup_system: false,
-    evacuation_route: false
-  }) as EmergencyProtocols,
-  warranty_info: (raw.warranty_info || {
-    start_date: null,
-    end_date: null,
-    provider: null,
-    terms: null
-  }) as WarrantyInfo,
-  manufacturer_details: (raw.manufacturer_details || {
-    name: null,
-    model: null,
-    serial_number: null,
-    support_contact: null
-  }) as ManufacturerDetails,
-  inspection_history: (raw.inspection_history || []) as InspectionEntry[],
-  maintenance_history: (raw.maintenance_history || []) as MaintenanceEntry[],
+  electrical_issues: parseJsonField<ElectricalIssues>(raw.electrical_issues, defaultElectricalIssues),
+  energy_usage_data: parseJsonField<EnergyUsageData>(raw.energy_usage_data, defaultEnergyUsageData),
+  emergency_protocols: parseJsonField<EmergencyProtocols>(raw.emergency_protocols, defaultEmergencyProtocols),
+  warranty_info: parseJsonField<WarrantyInfo>(raw.warranty_info, defaultWarrantyInfo),
+  manufacturer_details: parseJsonField<ManufacturerDetails>(raw.manufacturer_details, defaultManufacturerDetails),
+  inspection_history: parseJsonField<InspectionEntry[]>(raw.inspection_history, []),
+  maintenance_history: parseJsonField<MaintenanceEntry[]>(raw.maintenance_history, []),
   connected_fixtures: raw.connected_fixtures || [],
   maintenance_notes: raw.maintenance_notes,
   ballast_check_notes: raw.ballast_check_notes,
@@ -79,7 +89,7 @@ const transformDatabaseFixture = (raw: DatabaseLightingFixture): LightingFixture
 
 export function useLightingFixtures({ selectedBuilding, selectedFloor }: UseLightingFixturesProps) {
   return useQuery({
-    queryKey: ['lighting-fixtures', selectedBuilding, selectedFloor] as const,
+    queryKey: ['lighting-fixtures', selectedBuilding, selectedFloor],
     queryFn: async () => {
       let query = supabase
         .from('lighting_fixture_details')
