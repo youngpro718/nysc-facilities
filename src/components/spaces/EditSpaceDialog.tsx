@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -49,7 +49,7 @@ export const EditSpaceDialog = ({
   });
 
   // Reset form when dialog opens
-  React.useEffect(() => {
+  useEffect(() => {
     if (open) {
       form.reset(defaultValues);
     }

@@ -1,4 +1,5 @@
 
+import React, { useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -29,7 +30,7 @@ export function EditSpaceDialogContent({
   onCancel,
 }: EditSpaceDialogContentProps) {
   // Reset form with initial values when they change
-  React.useEffect(() => {
+  useEffect(() => {
     if (form.formState.isDirty) return;
     const currentValues = form.getValues();
     Object.keys(currentValues).forEach(key => {
