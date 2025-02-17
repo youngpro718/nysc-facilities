@@ -2,11 +2,34 @@
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Check, ChevronDown } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { CreateSpaceFormData } from "../../schemas/createSpaceSchema";
 import { ParentRoomField } from "../room/ParentRoomField";
+import { cn } from "@/lib/utils";
+import { useState } from "react";
+
+const roomTypes = [
+  { value: "courtroom", label: "Courtroom" },
+  { value: "judges_chambers", label: "Judge's Chambers" },
+  { value: "jury_room", label: "Jury Room" },
+  { value: "conference_room", label: "Conference Room" },
+  { value: "office", label: "Office" },
+  { value: "filing_room", label: "Filing Room" },
+  { value: "male_locker_room", label: "Male Locker Room" },
+  { value: "female_locker_room", label: "Female Locker Room" },
+  { value: "robing_room", label: "Robing Room" },
+  { value: "stake_holder", label: "Stake Holder" },
+  { value: "records_room", label: "Records Room" },
+  { value: "administrative_office", label: "Administrative Office" },
+  { value: "break_room", label: "Break Room" },
+  { value: "it_room", label: "IT Room" },
+  { value: "utility_room", label: "Utility Room" }
+];
 
 interface CreateRoomFieldsProps {
   form: UseFormReturn<CreateSpaceFormData>;
@@ -14,6 +37,7 @@ interface CreateRoomFieldsProps {
 }
 
 export function CreateRoomFields({ form, floorId }: CreateRoomFieldsProps) {
+  const [isRoomTypeOpen, setIsRoomTypeOpen] = useState(false);
   const isStorage = form.watch("isStorage");
 
   return (
@@ -40,30 +64,48 @@ export function CreateRoomFields({ form, floorId }: CreateRoomFieldsProps) {
         render={({ field }) => (
           <FormItem>
             <FormLabel>Room Type</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value}>
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                <SelectItem value="courtroom">Courtroom</SelectItem>
-                <SelectItem value="judges_chambers">Judge's Chambers</SelectItem>
-                <SelectItem value="jury_room">Jury Room</SelectItem>
-                <SelectItem value="conference_room">Conference Room</SelectItem>
-                <SelectItem value="office">Office</SelectItem>
-                <SelectItem value="filing_room">Filing Room</SelectItem>
-                <SelectItem value="male_locker_room">Male Locker Room</SelectItem>
-                <SelectItem value="female_locker_room">Female Locker Room</SelectItem>
-                <SelectItem value="robing_room">Robing Room</SelectItem>
-                <SelectItem value="stake_holder">Stake Holder</SelectItem>
-                <SelectItem value="records_room">Records Room</SelectItem>
-                <SelectItem value="administrative_office">Administrative Office</SelectItem>
-                <SelectItem value="break_room">Break Room</SelectItem>
-                <SelectItem value="it_room">IT Room</SelectItem>
-                <SelectItem value="utility_room">Utility Room</SelectItem>
-              </SelectContent>
-            </Select>
+            <Popover open={isRoomTypeOpen} onOpenChange={setIsRoomTypeOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={isRoomTypeOpen}
+                  className="w-full justify-between bg-background"
+                >
+                  <span className={cn("truncate", !field.value && "text-muted-foreground")}>
+                    {field.value
+                      ? roomTypes.find((type) => type.value === field.value)?.label
+                      : "Select room type"}
+                  </span>
+                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Search room types..." />
+                  <CommandList>
+                    <CommandEmpty>No room type found.</CommandEmpty>
+                    <CommandGroup>
+                      {roomTypes.map((type) => (
+                        <CommandItem
+                          key={type.value}
+                          value={type.value}
+                          onSelect={(value) => {
+                            form.setValue("roomType", value);
+                            setIsRoomTypeOpen(false);
+                          }}
+                        >
+                          {type.label}
+                          {field.value === type.value && (
+                            <Check className="ml-auto h-4 w-4" />
+                          )}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
             <FormMessage />
           </FormItem>
         )}
@@ -113,21 +155,45 @@ export function CreateRoomFields({ form, floorId }: CreateRoomFieldsProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Storage Type</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || ""}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select storage type" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="file_storage">File Storage</SelectItem>
-                    <SelectItem value="equipment_storage">Equipment Storage</SelectItem>
-                    <SelectItem value="supply_storage">Supply Storage</SelectItem>
-                    <SelectItem value="evidence_storage">Evidence Storage</SelectItem>
-                    <SelectItem value="record_storage">Record Storage</SelectItem>
-                    <SelectItem value="general_storage">General Storage</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className="w-full justify-between bg-background"
+                    >
+                      <span className={cn("truncate", !field.value && "text-muted-foreground")}>
+                        {field.value ? field.value.replace(/_/g, ' ') : "Select storage type"}
+                      </span>
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search storage types..." />
+                      <CommandList>
+                        <CommandEmpty>No storage type found.</CommandEmpty>
+                        <CommandGroup>
+                          {["file_storage", "equipment_storage", "supply_storage", 
+                            "evidence_storage", "record_storage", "general_storage"].map((type) => (
+                            <CommandItem
+                              key={type}
+                              value={type}
+                              onSelect={(value) => {
+                                form.setValue("storageType", value);
+                              }}
+                            >
+                              {type.replace(/_/g, ' ')}
+                              {field.value === type && (
+                                <Check className="ml-auto h-4 w-4" />
+                              )}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 <FormMessage />
               </FormItem>
             )}
