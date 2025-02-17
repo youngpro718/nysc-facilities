@@ -23,10 +23,10 @@ export function RoomConnections({ connections }: RoomConnectionsProps) {
         {connections.map((conn) => (
           <div key={conn.id} className="flex items-center gap-2">
             <Badge variant="outline" className="text-xs">
-              {conn.direction}
+              {conn.direction || 'Connected'}
             </Badge>
             <span className="text-sm text-muted-foreground">
-              {conn.to_space?.name || 'Unknown Room'}
+              {conn.to_space?.name || 'Unknown Space'}
             </span>
           </div>
         ))}

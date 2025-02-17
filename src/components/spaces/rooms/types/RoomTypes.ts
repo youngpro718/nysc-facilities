@@ -1,13 +1,21 @@
-
 export interface RoomConnection {
   id: string;
-  direction: "north" | "south" | "east" | "west" | "adjacent";
+  direction?: "north" | "south" | "east" | "west" | "adjacent";
   to_space?: {
+    id: string;
     name: string;
+    type?: string;
   };
   from_space?: {
+    id: string;
     name: string;
+    type?: string;
   };
+  connection_type?: string;
+  status?: string;
+  position?: string;
+  hallway_position?: number;
+  offset_distance?: number;
 }
 
 export type RoomType = "courtroom" | "judges_chambers" | "jury_room" | "conference_room" | 

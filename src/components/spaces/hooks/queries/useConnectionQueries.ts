@@ -22,9 +22,9 @@ interface SpaceConnectionData {
   status: ConnectionStatus;
   hallway_position?: number;
   offset_distance?: number;
-  connected_room?: ConnectedSpace;
-  connected_hallway?: ConnectedSpace;
-  connected_door?: ConnectedSpace;
+  rooms?: ConnectedSpace;
+  hallways?: ConnectedSpace;
+  doors?: ConnectedSpace;
 }
 
 export function useConnectionQueries(spaceId: string, spaceType: "room" | "hallway" | "door") {
@@ -49,7 +49,7 @@ export function useConnectionQueries(spaceId: string, spaceType: "room" | "hallw
       // Add the appropriate join based on space type
       if (spaceType === "room") {
         selectStatement += `,
-          connected_room:rooms!space_connections_to_space_id_fkey (
+          rooms!space_connections_to_space_id_fkey (
             id,
             name,
             room_number,
@@ -57,14 +57,14 @@ export function useConnectionQueries(spaceId: string, spaceType: "room" | "hallw
           )`;
       } else if (spaceType === "hallway") {
         selectStatement += `,
-          connected_hallway:hallways!space_connections_to_space_id_fkey (
+          hallways!space_connections_to_space_id_fkey (
             id,
             name,
             type
           )`;
       } else if (spaceType === "door") {
         selectStatement += `,
-          connected_door:doors!space_connections_to_space_id_fkey (
+          doors!space_connections_to_space_id_fkey (
             id,
             name,
             type
@@ -87,18 +87,22 @@ export function useConnectionQueries(spaceId: string, spaceType: "room" | "hallw
 
       if (!data) return [];
 
-      return data.map((conn): Connection => {
-        const connectedSpace = conn.connected_room || conn.connected_hallway || conn.connected_door;
+      return data.map((conn): SpaceConnection => {
+        const toSpace = conn.rooms || conn.hallways || conn.doors;
         
         return {
           id: conn.id,
-          connectedSpaceName: connectedSpace?.name || "Unknown Space",
-          connectionType: conn.connection_type,
-          status: conn.status,
+          to_space: toSpace ? {
+            name: toSpace.name,
+            id: toSpace.id,
+            type: toSpace.type || spaceType
+          } : undefined,
           direction: conn.direction,
+          connection_type: conn.connection_type,
+          status: conn.status,
           position: conn.position,
-          hallwayPosition: conn.hallway_position,
-          offsetDistance: conn.offset_distance
+          hallway_position: conn.hallway_position,
+          offset_distance: conn.offset_distance
         };
       });
     },
