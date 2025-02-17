@@ -30,35 +30,13 @@ const transformDatabaseFixture = (raw: DatabaseLightingFixture): LightingFixture
   technology: raw.technology,
   ballast_issue: raw.ballast_issue ?? false,
   bulb_count: raw.bulb_count ?? 1,
-  electrical_issues: parseJsonField(raw.electrical_issues, {
-    short_circuit: false,
-    wiring_issues: false,
-    voltage_problems: false
-  }),
-  energy_usage_data: parseJsonField(raw.energy_usage_data, {
-    daily_usage: [],
-    efficiency_rating: null,
-    last_reading: null
-  }),
-  emergency_protocols: parseJsonField(raw.emergency_protocols, {
-    emergency_contact: null,
-    backup_system: false,
-    evacuation_route: false
-  }),
-  warranty_info: parseJsonField(raw.warranty_info, {
-    start_date: null,
-    end_date: null,
-    provider: null,
-    terms: null
-  }),
-  manufacturer_details: parseJsonField(raw.manufacturer_details, {
-    name: null,
-    model: null,
-    serial_number: null,
-    support_contact: null
-  }),
-  inspection_history: parseJsonField(raw.inspection_history, []),
-  maintenance_history: parseJsonField(raw.maintenance_history, []),
+  electrical_issues: raw.electrical_issues,
+  energy_usage_data: raw.energy_usage_data,
+  emergency_protocols: raw.emergency_protocols,
+  warranty_info: raw.warranty_info,
+  manufacturer_details: raw.manufacturer_details,
+  inspection_history: raw.inspection_history,
+  maintenance_history: raw.maintenance_history,
   connected_fixtures: raw.connected_fixtures || [],
   maintenance_notes: raw.maintenance_notes,
   ballast_check_notes: raw.ballast_check_notes,
@@ -88,7 +66,7 @@ export function useLightingFixtures({ selectedBuilding, selectedFloor }: UseLigh
       if (error) throw error;
       if (!rawData) return [];
 
-      return (rawData as DatabaseLightingFixture[]).map(transformDatabaseFixture);
+      return rawData.map(transformDatabaseFixture);
     }
   });
 }

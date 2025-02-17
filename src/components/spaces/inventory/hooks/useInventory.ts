@@ -15,9 +15,11 @@ export const useInventory = (roomId: string) => {
         .from('inventory_items')
         .select(`
           *,
-          category:category_id (
+          inventory_categories!category_id (
+            id,
             name,
-            color
+            color,
+            icon
           )
         `)
         .eq('storage_room_id', roomId);
@@ -27,10 +29,25 @@ export const useInventory = (roomId: string) => {
       if (!data?.length) return [];
 
       return data.map(item => ({
-        ...item,
-        category: item.category ? {
-          name: item.category.name,
-          color: item.category.color
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        category_id: item.category_id,
+        description: item.description,
+        minimum_quantity: item.minimum_quantity,
+        unit: item.unit,
+        status: item.status,
+        location_details: item.location_details,
+        last_inventory_date: item.last_inventory_date,
+        reorder_point: item.reorder_point,
+        preferred_vendor: item.preferred_vendor,
+        notes: item.notes,
+        storage_room_id: item.storage_room_id,
+        category: item.inventory_categories ? {
+          id: item.inventory_categories.id,
+          name: item.inventory_categories.name,
+          color: item.inventory_categories.color,
+          icon: item.inventory_categories.icon
         } : undefined
       })) as InventoryItem[];
     }
