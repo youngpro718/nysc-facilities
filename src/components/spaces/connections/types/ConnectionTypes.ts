@@ -1,8 +1,12 @@
 
+// Database connection types
 export type Direction = 'adjacent' | 'left_of_hallway' | 'right_of_hallway';
 export type Position = 'adjacent' | 'custom';
 export type ConnectionType = 'direct' | 'door';
 export type ConnectionStatus = 'active' | 'inactive';
+
+// UI connection types 
+export type UIConnectionType = 'room' | 'hallway' | 'door';
 
 export interface Connection {
   id: string;
@@ -24,7 +28,7 @@ export interface Connection {
 
 export interface CreateConnectionData {
   spaceId: string;
-  connectionType: 'room' | 'hallway' | 'door';
+  connectionType: UIConnectionType;
   roomId?: string;
   hallwayId?: string;
   doorId?: string;
@@ -32,4 +36,9 @@ export interface CreateConnectionData {
   position?: Position;
   hallwayPosition?: number;
   offsetDistance?: number;
+}
+
+export interface BaseConnectionFormProps {
+  onConnect: (data: any) => void;
+  isLoading: boolean;
 }

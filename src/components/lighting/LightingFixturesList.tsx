@@ -27,7 +27,7 @@ export default function LightingFixturesList() {
     const success = await handleBulkStatusUpdate(selectedFixtures, status);
     if (success) {
       setSelectedFixtures([]);
-      refetch();
+      await refetch();
     }
   };
 
@@ -35,7 +35,7 @@ export default function LightingFixturesList() {
     const success = await handleBulkDelete(selectedFixtures);
     if (success) {
       setSelectedFixtures([]);
-      refetch();
+      await refetch();
     }
   };
 
