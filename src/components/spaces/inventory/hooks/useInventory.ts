@@ -49,6 +49,32 @@ export const useInventory = (roomId: string) => {
     }
   });
 
+  const addBulkItems = useMutation({
+    mutationFn: async (items: Omit<InventoryItem, 'id'>[]) => {
+      const { data, error } = await supabase
+        .from('inventory_items')
+        .insert(items)
+        .select();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory', roomId] });
+      toast({
+        title: "Success",
+        description: "Items imported successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
   const updateQuantity = useMutation({
     mutationFn: async ({ 
       id, 
@@ -113,6 +139,7 @@ export const useInventory = (roomId: string) => {
     inventory,
     isLoading,
     addItem: addItem.mutateAsync,
+    addBulkItems: addBulkItems.mutateAsync,
     updateQuantity: updateQuantity.mutateAsync,
     deleteItem: deleteItem.mutateAsync,
     isAddingItem: addItem.isPending,

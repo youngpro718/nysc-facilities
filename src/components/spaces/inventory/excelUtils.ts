@@ -1,6 +1,6 @@
 
 import * as XLSX from 'xlsx';
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 export interface InventoryExcelRow {
   name: string;
@@ -9,6 +9,8 @@ export interface InventoryExcelRow {
   description?: string;
   minimum_quantity?: number;
   unit?: string;
+  location_details?: string;
+  notes?: string;
 }
 
 export const exportToExcel = (data: InventoryExcelRow[], fileName: string) => {
@@ -19,6 +21,7 @@ export const exportToExcel = (data: InventoryExcelRow[], fileName: string) => {
     XLSX.writeFile(wb, `${fileName}.xlsx`);
   } catch (error) {
     console.error('Error exporting to Excel:', error);
+    const { toast } = useToast();
     toast({
       title: "Export Failed",
       description: "Failed to export inventory data to Excel.",
@@ -37,7 +40,20 @@ export const parseExcelFile = async (file: File): Promise<InventoryExcelRow[]> =
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet) as InventoryExcelRow[];
-        resolve(jsonData);
+        
+        // Validate required fields
+        const validatedData = jsonData.map(item => {
+          if (!item.name || typeof item.quantity !== 'number') {
+            throw new Error('Invalid data format: name and quantity are required fields');
+          }
+          return {
+            ...item,
+            quantity: Number(item.quantity),
+            minimum_quantity: item.minimum_quantity ? Number(item.minimum_quantity) : undefined
+          };
+        });
+        
+        resolve(validatedData);
       } catch (error) {
         reject(error);
       }
