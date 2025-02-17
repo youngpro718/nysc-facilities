@@ -34,6 +34,10 @@ export function RoomLightingDialog({ roomId, fixture }: RoomLightingDialogProps)
     resolver: zodResolver(roomLightingSchema),
     defaultValues: {
       room_id: roomId,
+      primary_lighting: fixture?.type === 'standard' || true,
+      emergency_lighting: fixture?.type === 'emergency' || false,
+      lighting_type: fixture?.type || 'standard',
+      fixture_count: fixture?.bulb_count || 1,
       name: fixture?.name || '',
       type: fixture?.type || 'standard',
       status: fixture?.status || 'functional',
@@ -57,7 +61,7 @@ export function RoomLightingDialog({ roomId, fixture }: RoomLightingDialogProps)
     try {
       const fixtureData = {
         name: data.name,
-        type: data.type,
+        type: data.lighting_type,
         status: data.status,
         bulb_count: data.bulb_count,
         room_id: data.room_id,

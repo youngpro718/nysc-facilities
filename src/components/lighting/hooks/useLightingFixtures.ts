@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { LightingFixture, LightStatus } from "../types";
-import { Database } from "@/types/supabase";
 
 export function useLightingFixtures() {
   const queryClient = useQueryClient();
@@ -13,7 +12,18 @@ export function useLightingFixtures() {
     queryFn: async () => {
       const { data: rawFixtures, error } = await supabase
         .from('lighting_fixtures')
-        .select('*, space:space_id ( * )');
+        .select(`
+          *,
+          space:space_id (
+            *,
+            floor:floor_id (
+              name,
+              building:building_id (
+                name
+              )
+            )
+          )
+        `);
 
       if (error) throw error;
 
@@ -23,8 +33,8 @@ export function useLightingFixtures() {
         type: raw.type || 'standard',
         status: raw.status || 'functional',
         zone_name: null, // Will implement zone relation later
-        building_name: raw.space?.building_name || null,
-        floor_name: raw.space?.floor_name || null,
+        building_name: raw.space?.floor?.building?.name || null,
+        floor_name: raw.space?.floor?.name || null,
         floor_id: raw.space?.floor_id || null,
         space_id: raw.space_id || null,
         space_type: (raw.space_type || 'room') as 'room' | 'hallway',

@@ -3,6 +3,10 @@ import { z } from "zod";
 
 export const roomLightingSchema = z.object({
   room_id: z.string(),
+  primary_lighting: z.boolean(),
+  emergency_lighting: z.boolean(),
+  lighting_type: z.enum(["standard", "emergency", "motion_sensor"]),
+  fixture_count: z.number().min(1),
   name: z.string(),
   type: z.enum(["standard", "emergency", "motion_sensor"]),
   status: z.enum([
