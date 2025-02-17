@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SpaceConnection, Connection, Direction, Position, ConnectionStatus } from "../../connections/types/ConnectionTypes";
@@ -63,8 +62,7 @@ export function useConnectionQueries(spaceId: string, spaceType: "room" | "hallw
           offset_distance
         `)
         .or(`from_space_id.eq.${spaceId},to_space_id.eq.${spaceId}`)
-        .eq("status", "active")
-        .returns<SpaceConnectionData[]>();
+        .eq("status", "active");
 
       if (error) {
         console.error("Error fetching space connections:", error);
@@ -80,7 +78,7 @@ export function useConnectionQueries(spaceId: string, spaceType: "room" | "hallw
 
       const { data: spacesData, error: spacesError } = await supabase
         .from("spaces")
-        .select("id, name, type, room_number, status")
+        .select("id, name, type, room_number, status, subtype")
         .in("id", spaceIds)
         .eq("status", "active");
 
@@ -107,7 +105,6 @@ export function useConnectionQueries(spaceId: string, spaceType: "room" | "hallw
           direction: conn.direction,
           position: conn.position,
           status: conn.status,
-          metadata: {},
           hallway_position: conn.hallway_position,
           offset_distance: conn.offset_distance,
           to_space: connectedSpace ? {

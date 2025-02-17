@@ -360,6 +360,13 @@ export type Database = {
             referencedRelation: "new_spaces"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "door_properties_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: true
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
         ]
       }
       doors: {
@@ -1099,6 +1106,13 @@ export type Database = {
             columns: ["space_id"]
             isOneToOne: true
             referencedRelation: "new_spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hallway_properties_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: true
+            referencedRelation: "spaces"
             referencedColumns: ["id"]
           },
         ]
@@ -3946,10 +3960,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "room_properties_parent_room_id_fkey"
+            columns: ["parent_room_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "room_properties_space_id_fkey"
             columns: ["space_id"]
             isOneToOne: true
             referencedRelation: "new_spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_properties_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: true
+            referencedRelation: "spaces"
             referencedColumns: ["id"]
           },
         ]
@@ -4353,6 +4381,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "space_connections_from_space_id_fkey"
+            columns: ["from_space_id"]
+            isOneToOne: false
+            referencedRelation: "new_spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_connections_from_space_id_fkey"
+            columns: ["from_space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "space_connections_from_space_id_hallways_fkey"
             columns: ["from_space_id"]
             isOneToOne: false
@@ -4392,6 +4434,20 @@ export type Database = {
             columns: ["to_space_id"]
             isOneToOne: false
             referencedRelation: "doors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_connections_to_space_id_fkey"
+            columns: ["to_space_id"]
+            isOneToOne: false
+            referencedRelation: "new_spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_connections_to_space_id_fkey"
+            columns: ["to_space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
             referencedColumns: ["id"]
           },
           {
@@ -5086,7 +5142,6 @@ export type Database = {
           scheduled_maintenance_date: string | null
           sequence_number: number | null
           space_id: string | null
-          space_name: string | null
           space_type: string | null
           status: Database["public"]["Enums"]["light_status_enum"] | null
           technology:
@@ -5514,14 +5569,36 @@ export type Database = {
       }
       spaces: {
         Row: {
+          created_at: string | null
           floor_id: string | null
           id: string | null
           name: string | null
+          position: Json | null
+          properties: Json | null
           room_number: string | null
+          rotation: number | null
+          size: Json | null
           status: Database["public"]["Enums"]["status_enum"] | null
+          subtype: string | null
           type: string | null
+          updated_at: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "new_spaces_floor_id_fkey"
+            columns: ["floor_id"]
+            isOneToOne: false
+            referencedRelation: "floorplan_report_data"
+            referencedColumns: ["floor_id"]
+          },
+          {
+            foreignKeyName: "new_spaces_floor_id_fkey"
+            columns: ["floor_id"]
+            isOneToOne: false
+            referencedRelation: "floors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       storage_room_inventory: {
         Row: {

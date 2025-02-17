@@ -3,63 +3,69 @@ import { supabase } from "@/integrations/supabase/client";
 import { CreateSpaceFormData } from "../schemas/createSpaceSchema";
 
 export async function createSpace(data: CreateSpaceFormData) {
-  if (data.type === "room") {
-    const { data: room, error: roomError } = await supabase
-      .from("rooms")
-      .insert({
-        name: data.name,
-        floor_id: data.floorId,
-        room_number: data.roomNumber,
+  console.log('Creating space with data:', data);
+  
+  // Create base space record
+  const spaceData = {
+    name: data.name,
+    type: data.type,
+    floor_id: data.floorId,
+    status: data.status,
+    room_number: data.type === 'room' ? data.roomNumber : null,
+    position: { x: 0, y: 0 },
+    size: data.type === 'door' ? 
+      { width: 60, height: 20 } : 
+      { width: 150, height: 100 },
+    rotation: 0
+  };
+
+  const { data: space, error: spaceError } = await supabase
+    .from('new_spaces')
+    .insert([spaceData])
+    .select()
+    .single();
+
+  if (spaceError) throw spaceError;
+
+  // Add type-specific properties
+  if (data.type === 'room') {
+    const { error: roomError } = await supabase
+      .from('room_properties')
+      .insert([{
+        space_id: space.id,
         room_type: data.roomType,
-        description: data.description,
-        status: data.status,
-        is_storage: data.isStorage,
-        storage_capacity: data.storageCapacity,
-        storage_type: data.storageType,
-        storage_notes: data.storageNotes,
+        phone_number: data.phoneNumber,
         current_function: data.currentFunction,
-        parent_room_id: data.parentRoomId,
-      })
-      .select()
-      .single();
+        is_storage: data.isStorage,
+        storage_type: data.isStorage ? data.storageType : null,
+        storage_capacity: data.storageCapacity,
+        parent_room_id: data.parentRoomId
+      }]);
 
     if (roomError) throw roomError;
-    return room;
-  }
-
-  if (data.type === "hallway") {
-    const { data: hallway, error: hallwayError } = await supabase
-      .from("hallways")
-      .insert({
-        name: data.name,
-        floor_id: data.floorId,
-        type: data.hallwayType,
+  } else if (data.type === 'hallway') {
+    const { error: hallwayError } = await supabase
+      .from('hallway_properties')
+      .insert([{
+        space_id: space.id,
         section: data.section,
-        status: data.status,
-        notes: data.notes,
-      })
-      .select()
-      .single();
+        traffic_flow: 'two_way',
+        accessibility: 'fully_accessible',
+        maintenance_priority: 'low'
+      }]);
 
     if (hallwayError) throw hallwayError;
-    return hallway;
-  }
-
-  if (data.type === "door") {
-    const { data: door, error: doorError } = await supabase
-      .from("doors")
-      .insert({
-        name: data.name,
-        floor_id: data.floorId,
-        type: data.doorType,
-        status: data.status,
+  } else if (data.type === 'door') {
+    const { error: doorError } = await supabase
+      .from('door_properties')
+      .insert([{
+        space_id: space.id,
         security_level: data.securityLevel,
-        passkey_enabled: data.passkeyEnabled,
-      })
-      .select()
-      .single();
+        passkey_enabled: data.passkeyEnabled
+      }]);
 
     if (doorError) throw doorError;
-    return door;
   }
+
+  return space;
 }
