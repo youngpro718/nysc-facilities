@@ -1,9 +1,11 @@
-
 export interface Space {
   id: string;
   name: string;
-  space_type: 'room' | 'hallway';
+  type: string;
   room_number?: string | null;
+  status: 'active' | 'inactive' | 'under_maintenance';
+  floor_id: string;
+  space_type: 'room' | 'hallway';
 }
 
 export type LightStatus = 'functional' | 'maintenance_needed' | 'non_functional' | 'pending_maintenance' | 'scheduled_replacement';

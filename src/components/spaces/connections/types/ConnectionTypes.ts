@@ -12,13 +12,20 @@ export interface BaseConnectionFormProps {
 
 export interface Connection {
   id: string;
-  connectedSpaceName: string;
-  connectionType: string;
+  from_space_id: string;
+  to_space_id: string;
+  space_type: string;
+  connection_type: string;
   status: ConnectionStatus;
   direction?: Direction;
   position?: Position;
-  hallwayPosition?: number;
+  hallway_position?: number;
   offsetDistance?: number;
+  to_space?: {
+    name: string;
+    room_number?: string;
+    type?: string;
+  };
 }
 
 export interface FormOption {
@@ -26,21 +33,4 @@ export interface FormOption {
   label: string;
 }
 
-export interface SpaceConnection {
-  id: string;
-  from_space_id: string;
-  to_space_id: string;
-  space_type: string;
-  connection_type: string;
-  direction?: Direction;
-  position?: Position;
-  status: ConnectionStatus;
-  metadata: Record<string, any>;
-  hallway_position?: number;
-  offset_distance?: number;
-  to_space?: {
-    name: string;
-    room_number?: string;
-    type?: string;
-  };
-}
+export type SpaceConnection = Connection;

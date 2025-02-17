@@ -9,10 +9,9 @@ export const LightingFixturesList = () => {
   const { 
     fixtures, 
     isLoading,
-    addFixture,
-    deleteFixture,
-    isAdding,
-    isDeleting
+    handleDelete,
+    handleBulkDelete,
+    refetch
   } = useLightingFixtures();
   
   const handleSelectAll = () => {
@@ -23,11 +22,11 @@ export const LightingFixturesList = () => {
     }
   };
 
-  const handleBulkDelete = async (fixtureIds: string[]) => {
-    for (const id of fixtureIds) {
-      await deleteFixture(id);
+  const handleBulkDeleteAction = async () => {
+    if (selectedFixtures.length > 0) {
+      await handleBulkDelete(selectedFixtures);
+      setSelectedFixtures([]);
     }
-    setSelectedFixtures([]);
   };
 
   return (
@@ -36,8 +35,8 @@ export const LightingFixturesList = () => {
         selectedFixtures={selectedFixtures}
         fixtures={fixtures}
         onSelectAll={handleSelectAll}
-        onBulkDelete={handleBulkDelete}
-        onFixtureCreated={addFixture}
+        onBulkDelete={handleBulkDeleteAction}
+        onFixtureCreated={refetch}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -53,8 +52,8 @@ export const LightingFixturesList = () => {
                 setSelectedFixtures(selectedFixtures.filter(id => id !== fixture.id));
               }
             }}
-            onDelete={() => deleteFixture()}
-            onFixtureUpdated={() => {}} // Will be implemented when needed
+            onDelete={() => handleDelete(fixture.id)}
+            onFixtureUpdated={refetch}
           />
         ))}
       </div>

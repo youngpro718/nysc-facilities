@@ -1,110 +1,71 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { LightingFixture } from "../types";
 import { toast } from "sonner";
+import { LightingFixture, MaintenanceRecord } from "../types";
+import type { Json } from '@/integrations/supabase/types';
 
-export const useLightingFixtures = () => {
-  const { data: fixtures, refetch, isLoading } = useQuery({
-    queryKey: ['lighting_fixtures'],
+export function useLightingFixtures() {
+  const queryClient = useQueryClient();
+
+  const { data: fixtures, isLoading } = useQuery({
+    queryKey: ['lighting-fixtures'],
     queryFn: async () => {
-      console.log("Fetching lighting fixtures...");
-      
       const { data, error } = await supabase
         .from('lighting_fixture_details')
-        .select('*')
-        .order('name');
-      
-      if (error) {
-        console.error('Error fetching fixtures:', error);
-        throw error;
-      }
-      
-      console.log("Raw fixtures data:", data);
-      
-      return data.map(fixture => ({
-        ...fixture,
-        electrical_issues: typeof fixture.electrical_issues === 'string' 
-          ? JSON.parse(fixture.electrical_issues) 
-          : fixture.electrical_issues || {
-              short_circuit: false,
-              wiring_issues: false,
-              voltage_problems: false
-            },
-        energy_usage_data: {
-          daily_usage: [],
-          efficiency_rating: null,
-          last_reading: null,
-          ...(fixture.energy_usage_data ? 
-            typeof fixture.energy_usage_data === 'string' ? 
-              JSON.parse(fixture.energy_usage_data) : 
-              fixture.energy_usage_data
-            : {})
-        },
-        emergency_protocols: {
-          emergency_contact: null,
-          backup_system: false,
-          evacuation_route: false,
-          ...(fixture.emergency_protocols ? 
-            typeof fixture.emergency_protocols === 'string' ? 
-              JSON.parse(fixture.emergency_protocols) : 
-              fixture.emergency_protocols
-            : {})
-        },
-        warranty_info: {
-          start_date: null,
-          end_date: null,
-          provider: null,
-          terms: null,
-          ...(fixture.warranty_info ? 
-            typeof fixture.warranty_info === 'string' ? 
-              JSON.parse(fixture.warranty_info) : 
-              fixture.warranty_info
-            : {})
-        },
-        manufacturer_details: {
-          name: null,
-          model: null,
-          serial_number: null,
-          support_contact: null,
-          ...(fixture.manufacturer_details ? 
-            typeof fixture.manufacturer_details === 'string' ? 
-              JSON.parse(fixture.manufacturer_details) : 
-              fixture.manufacturer_details
-            : {})
-        },
-        inspection_history: fixture.inspection_history 
-          ? (Array.isArray(fixture.inspection_history) 
-              ? fixture.inspection_history 
-              : typeof fixture.inspection_history === 'string' 
-                ? JSON.parse(fixture.inspection_history) 
-                : []
-            ).map((entry: any) => ({
-              date: entry.date || '',
-              status: entry.status || '',
-              notes: entry.notes
+        .select('*');
+
+      if (error) throw error;
+
+      return (data || []).map((raw): LightingFixture => ({
+        id: raw.id,
+        name: raw.name,
+        type: raw.type,
+        status: raw.status,
+        zone_name: raw.zone_name,
+        building_name: raw.building_name,
+        floor_name: raw.floor_name,
+        floor_id: raw.floor_id,
+        space_id: raw.space_id,
+        space_type: raw.space_type,
+        position: raw.position,
+        sequence_number: raw.sequence_number,
+        zone_id: raw.zone_id,
+        space_name: raw.space_name,
+        room_number: raw.room_number,
+        emergency_circuit: raw.emergency_circuit,
+        technology: raw.technology,
+        ballast_issue: raw.ballast_issue,
+        bulb_count: raw.bulb_count,
+        electrical_issues: typeof raw.electrical_issues === 'string' 
+          ? JSON.parse(raw.electrical_issues) 
+          : raw.electrical_issues,
+        energy_usage_data: raw.energy_usage_data,
+        emergency_protocols: raw.emergency_protocols,
+        warranty_info: raw.warranty_info,
+        manufacturer_details: raw.manufacturer_details,
+        maintenance_history: Array.isArray(raw.maintenance_history) 
+          ? raw.maintenance_history.map((record: any): MaintenanceRecord => ({
+              id: record.id || '',
+              date: record.date || '',
+              type: record.type || '',
+              notes: record.notes || ''
             }))
           : [],
-        maintenance_history: fixture.maintenance_history 
-          ? (Array.isArray(fixture.maintenance_history)
-              ? fixture.maintenance_history
-              : typeof fixture.maintenance_history === 'string'
-                ? JSON.parse(fixture.maintenance_history)
-                : []
-            ).map((entry: any) => ({
-              date: entry.date || '',
-              type: entry.type || '',
-              notes: entry.notes
-            }))
-          : [],
-        connected_fixtures: fixture.connected_fixtures || []
-      })) as LightingFixture[];
+        inspection_history: raw.inspection_history || [],
+        connected_fixtures: raw.connected_fixtures || [],
+        maintenance_notes: raw.maintenance_notes,
+        ballast_check_notes: raw.ballast_check_notes,
+        backup_power_source: raw.backup_power_source,
+        emergency_duration_minutes: raw.emergency_duration_minutes,
+        created_at: raw.created_at,
+        updated_at: raw.updated_at
+      }));
     }
   });
 
   const handleDelete = async (id: string) => {
     try {
-      console.log("Deleting fixture:", id);
       const { error } = await supabase
         .from('lighting_fixtures')
         .delete()
@@ -113,16 +74,14 @@ export const useLightingFixtures = () => {
       if (error) throw error;
 
       toast.success("Lighting fixture deleted successfully");
-      refetch();
+      queryClient.invalidateQueries({ queryKey: ['lighting-fixtures'] });
     } catch (error: any) {
-      console.error('Error deleting fixture:', error);
       toast.error(error.message || "Failed to delete lighting fixture");
     }
   };
 
   const handleBulkDelete = async (selectedFixtures: string[]) => {
     try {
-      console.log("Bulk deleting fixtures:", selectedFixtures);
       const { error } = await supabase
         .from('lighting_fixtures')
         .delete()
@@ -131,39 +90,17 @@ export const useLightingFixtures = () => {
       if (error) throw error;
 
       toast.success(`${selectedFixtures.length} fixtures deleted successfully`);
-      return true;
+      queryClient.invalidateQueries({ queryKey: ['lighting-fixtures'] });
     } catch (error: any) {
-      console.error('Error bulk deleting fixtures:', error);
       toast.error(error.message || "Failed to delete fixtures");
-      return false;
-    }
-  };
-
-  const handleBulkStatusUpdate = async (selectedFixtures: string[], status: LightingFixture['status']) => {
-    try {
-      console.log("Updating status for fixtures:", selectedFixtures, "to:", status);
-      const { error } = await supabase
-        .from('lighting_fixtures')
-        .update({ status })
-        .in('id', selectedFixtures);
-
-      if (error) throw error;
-
-      toast.success(`Status updated for ${selectedFixtures.length} fixtures`);
-      return true;
-    } catch (error: any) {
-      console.error('Error updating fixtures:', error);
-      toast.error(error.message || "Failed to update fixtures");
-      return false;
     }
   };
 
   return {
-    fixtures,
-    refetch,
+    fixtures: fixtures || [],
     isLoading,
     handleDelete,
     handleBulkDelete,
-    handleBulkStatusUpdate
+    refetch: () => queryClient.invalidateQueries({ queryKey: ['lighting-fixtures'] })
   };
-};
+}
