@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 import {
   Table,
   TableBody,
@@ -27,6 +28,7 @@ import { InventoryFormInputs } from "./inventory/types/inventoryTypes";
 export function RoomInventory({ roomId }: { roomId: string }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const { toast } = useToast();
   
   const {
     inventory,
@@ -45,13 +47,25 @@ export function RoomInventory({ roomId }: { roomId: string }) {
   );
 
   const handleSubmit = async (data: InventoryFormInputs) => {
-    await addItem({
-      ...data,
-      storage_room_id: roomId,
-      status: 'active',
-      quantity: data.quantity || 0
-    });
-    setIsAddDialogOpen(false);
+    try {
+      await addItem({
+        ...data,
+        storage_room_id: roomId,
+        status: 'active',
+        quantity: data.quantity || 0
+      });
+      setIsAddDialogOpen(false);
+      toast({
+        title: "Success",
+        description: "Item added successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add item. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -151,7 +165,13 @@ export function RoomInventory({ roomId }: { roomId: string }) {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => deleteItem(item.id)}>
+                        <DropdownMenuItem 
+                          onClick={() => {
+                            if (window.confirm('Are you sure you want to delete this item?')) {
+                              deleteItem(item.id);
+                            }
+                          }}
+                        >
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
