@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,21 +22,36 @@ import {
   UserCheck, 
   Building2, 
   Key,
-  AlertCircle
+  AlertCircle,
+  Building
 } from "lucide-react";
 import { AssignRoomsDialog } from "@/components/occupants/AssignRoomsDialog";
 import { AssignKeysDialog } from "@/components/occupants/AssignKeysDialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Profile = {
   email: string | null;
   first_name: string | null;
   last_name: string | null;
-}
+  department_id: string | null;
+};
+
+type Department = {
+  id: string;
+  name: string;
+};
 
 type VerificationRequest = {
   id: string;
   user_id: string;
   agency_id: string | null;
+  department_id: string | null;
   department: string | null;
   employee_id: string | null;
   rejection_reason: string | null;
@@ -53,7 +69,21 @@ export function VerificationSection() {
   const [selectedOccupants, setSelectedOccupants] = useState<string[]>([]);
   const [showAssignRooms, setShowAssignRooms] = useState(false);
   const [showAssignKeys, setShowAssignKeys] = useState(false);
+  const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
   
+  const { data: departments } = useQuery({
+    queryKey: ['departments'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('departments')
+        .select('*')
+        .order('name');
+      
+      if (error) throw error;
+      return data as Department[];
+    }
+  });
+
   const { data: requests, isLoading, refetch } = useQuery({
     queryKey: ['verification-requests'],
     queryFn: async () => {
@@ -64,14 +94,14 @@ export function VerificationSection() {
           profile:profiles(
             email,
             first_name,
-            last_name
+            last_name,
+            department_id
           )
         `)
         .order('submitted_at', { ascending: false });
 
       if (error) throw error;
       
-      // Type check the response
       const typedData = (verificationData || []).map(request => ({
         ...request,
         profile: request.profile as Profile | null
@@ -81,21 +111,37 @@ export function VerificationSection() {
     }
   });
 
-  const handleVerification = async (requestId: string, approved: boolean) => {
+  const handleVerification = async (requestId: string, approved: boolean, departmentId?: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { error } = await supabase
+      // Start a transaction
+      const { error: verificationError } = await supabase
         .from('verification_requests')
         .update({
           status: approved ? 'approved' : 'rejected',
           reviewed_by: user.id,
-          reviewed_at: new Date().toISOString()
+          reviewed_at: new Date().toISOString(),
+          department_id: departmentId
         })
         .eq('id', requestId);
 
-      if (error) throw error;
+      if (verificationError) throw verificationError;
+
+      // Update the user's profile verification status
+      const request = requests?.find(r => r.id === requestId);
+      if (request?.user_id) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            verification_status: approved ? 'verified' : 'rejected',
+            department_id: departmentId
+          })
+          .eq('id', request.user_id);
+
+        if (profileError) throw profileError;
+      }
 
       toast.success(`User ${approved ? 'approved' : 'rejected'} successfully`);
       refetch();
@@ -110,16 +156,32 @@ export function VerificationSection() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { error } = await supabase
+      // Update verification requests
+      const { error: verificationError } = await supabase
         .from('verification_requests')
         .update({
           status: approve ? 'approved' : 'rejected',
           reviewed_by: user.id,
-          reviewed_at: new Date().toISOString()
+          reviewed_at: new Date().toISOString(),
+          department_id: selectedDepartment
         })
         .in('id', selectedOccupants);
 
-      if (error) throw error;
+      if (verificationError) throw verificationError;
+
+      // Update profiles for selected users
+      const selectedRequests = requests?.filter(r => selectedOccupants.includes(r.id)) || [];
+      const userIds = selectedRequests.map(r => r.user_id);
+
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          verification_status: approve ? 'verified' : 'rejected',
+          department_id: selectedDepartment
+        })
+        .in('id', userIds);
+
+      if (profileError) throw profileError;
 
       toast.success(`${selectedOccupants.length} users ${approve ? 'approved' : 'rejected'} successfully`);
       setSelectedOccupants([]);
@@ -174,13 +236,32 @@ export function VerificationSection() {
       <CardContent>
         {selectedOccupants.length > 0 && (
           <div className="mb-4 p-4 bg-muted rounded-lg flex items-center justify-between">
-            <span className="text-sm font-medium">
-              {selectedOccupants.length} requests selected
-            </span>
+            <div className="space-y-2">
+              <span className="text-sm font-medium block">
+                {selectedOccupants.length} requests selected
+              </span>
+              <Select
+                value={selectedDepartment || ''}
+                onValueChange={setSelectedDepartment}
+              >
+                <SelectTrigger className="w-[200px]">
+                  <Building className="w-4 h-4 mr-2" />
+                  <SelectValue placeholder="Select department" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments?.map((dept) => (
+                    <SelectItem key={dept.id} value={dept.id}>
+                      {dept.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="flex gap-2">
               <Button
                 size="sm"
                 onClick={() => handleBulkVerification(true)}
+                disabled={!selectedDepartment}
               >
                 <Check className="h-4 w-4 mr-1" />
                 Approve Selected
@@ -253,7 +334,28 @@ export function VerificationSection() {
                       `${request.profile.first_name || ''} ${request.profile.last_name || ''}`.trim() || '-' 
                       : '-'}
                   </TableCell>
-                  <TableCell>{request.department || '-'}</TableCell>
+                  <TableCell>
+                    {request.status === 'pending' ? (
+                      <Select
+                        value={request.department_id || ''}
+                        onValueChange={(deptId) => setSelectedDepartment(deptId)}
+                      >
+                        <SelectTrigger className="w-[200px]">
+                          <Building className="w-4 h-4 mr-2" />
+                          <SelectValue placeholder="Select department" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {departments?.map((dept) => (
+                            <SelectItem key={dept.id} value={dept.id}>
+                              {dept.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      departments?.find(d => d.id === request.department_id)?.name || '-'
+                    )}
+                  </TableCell>
                   <TableCell>
                     {format(new Date(request.submitted_at), 'MMM d, yyyy')}
                   </TableCell>
@@ -263,7 +365,8 @@ export function VerificationSection() {
                       <div className="flex gap-2">
                         <Button
                           size="sm"
-                          onClick={() => handleVerification(request.id, true)}
+                          onClick={() => handleVerification(request.id, true, selectedDepartment || undefined)}
+                          disabled={!selectedDepartment}
                         >
                           <Check className="h-4 w-4 mr-1" />
                           Approve
