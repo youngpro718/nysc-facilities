@@ -12,8 +12,9 @@ import { CreateSpaceFormData } from "../../schemas/createSpaceSchema";
 import { ParentRoomField } from "../room/ParentRoomField";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { RoomType, StorageType } from "../../rooms/types/RoomTypes";
 
-const roomTypes = [
+const roomTypes: { value: RoomType; label: string }[] = [
   { value: "courtroom", label: "Courtroom" },
   { value: "judges_chambers", label: "Judge's Chambers" },
   { value: "jury_room", label: "Jury Room" },
@@ -31,6 +32,15 @@ const roomTypes = [
   { value: "utility_room", label: "Utility Room" }
 ];
 
+const storageTypes: { value: StorageType; label: string }[] = [
+  { value: "file_storage", label: "File Storage" },
+  { value: "equipment_storage", label: "Equipment Storage" },
+  { value: "supply_storage", label: "Supply Storage" },
+  { value: "evidence_storage", label: "Evidence Storage" },
+  { value: "record_storage", label: "Record Storage" },
+  { value: "general_storage", label: "General Storage" }
+];
+
 interface CreateRoomFieldsProps {
   form: UseFormReturn<CreateSpaceFormData>;
   floorId: string;
@@ -38,6 +48,7 @@ interface CreateRoomFieldsProps {
 
 export function CreateRoomFields({ form, floorId }: CreateRoomFieldsProps) {
   const [isRoomTypeOpen, setIsRoomTypeOpen] = useState(false);
+  const [isStorageTypeOpen, setIsStorageTypeOpen] = useState(false);
   const isStorage = form.watch("isStorage");
 
   return (
@@ -90,8 +101,8 @@ export function CreateRoomFields({ form, floorId }: CreateRoomFieldsProps) {
                         <CommandItem
                           key={type.value}
                           value={type.value}
-                          onSelect={(value) => {
-                            form.setValue("roomType", value);
+                          onSelect={() => {
+                            form.setValue("roomType", type.value);
                             setIsRoomTypeOpen(false);
                           }}
                         >
@@ -155,7 +166,7 @@ export function CreateRoomFields({ form, floorId }: CreateRoomFieldsProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Storage Type</FormLabel>
-                <Popover>
+                <Popover open={isStorageTypeOpen} onOpenChange={setIsStorageTypeOpen}>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
@@ -163,7 +174,9 @@ export function CreateRoomFields({ form, floorId }: CreateRoomFieldsProps) {
                       className="w-full justify-between bg-background"
                     >
                       <span className={cn("truncate", !field.value && "text-muted-foreground")}>
-                        {field.value ? field.value.replace(/_/g, ' ') : "Select storage type"}
+                        {field.value 
+                          ? storageTypes.find(type => type.value === field.value)?.label
+                          : "Select storage type"}
                       </span>
                       <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
@@ -174,17 +187,17 @@ export function CreateRoomFields({ form, floorId }: CreateRoomFieldsProps) {
                       <CommandList>
                         <CommandEmpty>No storage type found.</CommandEmpty>
                         <CommandGroup>
-                          {["file_storage", "equipment_storage", "supply_storage", 
-                            "evidence_storage", "record_storage", "general_storage"].map((type) => (
+                          {storageTypes.map((type) => (
                             <CommandItem
-                              key={type}
-                              value={type}
-                              onSelect={(value) => {
-                                form.setValue("storageType", value);
+                              key={type.value}
+                              value={type.value}
+                              onSelect={() => {
+                                form.setValue("storageType", type.value);
+                                setIsStorageTypeOpen(false);
                               }}
                             >
-                              {type.replace(/_/g, ' ')}
-                              {field.value === type && (
+                              {type.label}
+                              {field.value === type.value && (
                                 <Check className="ml-auto h-4 w-4" />
                               )}
                             </CommandItem>
