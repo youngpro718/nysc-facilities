@@ -7,6 +7,7 @@ import { EditSpaceDialog } from "../../EditSpaceDialog";
 import { Room } from "../types/RoomTypes";
 import { LightingStatusIndicator } from "./LightingStatusIndicator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useRoomOccupants } from "../../hooks/useRoomOccupants";
 
 interface CardFrontProps {
   room: Room;
@@ -14,6 +15,8 @@ interface CardFrontProps {
 }
 
 export function CardFront({ room, onDelete }: CardFrontProps) {
+  const { data: occupants, isLoading: isLoadingOccupants } = useRoomOccupants(room.id);
+
   return (
     <Card className="absolute w-full h-full backface-hidden">
       <CardHeader>
@@ -66,23 +69,27 @@ export function CardFront({ room, onDelete }: CardFrontProps) {
             )}
           </div>
 
-          {/* Occupants Section */}
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">
-                {room.current_occupants?.length 
-                  ? `${room.current_occupants.length} occupant${room.current_occupants.length !== 1 ? 's' : ''}`
-                  : 'No occupants'}
+                {isLoadingOccupants 
+                  ? 'Loading occupants...'
+                  : occupants?.length 
+                    ? `${occupants.length} occupant${occupants.length !== 1 ? 's' : ''}`
+                    : 'No occupants'}
               </span>
             </div>
-            {room.current_occupants && room.current_occupants.length > 0 && (
+            {occupants && occupants.length > 0 && (
               <ScrollArea className="h-[100px] rounded-md border p-2">
-                {room.current_occupants.map((occupant, index) => (
-                  <div key={index} className="text-sm py-1">
+                {occupants.map((occupant) => (
+                  <div key={occupant.id} className="text-sm py-1">
                     <p className="font-medium">{occupant.first_name} {occupant.last_name}</p>
                     {occupant.title && (
                       <p className="text-muted-foreground text-xs">{occupant.title}</p>
+                    )}
+                    {occupant.is_primary && (
+                      <Badge variant="outline" className="mt-1">Primary</Badge>
                     )}
                   </div>
                 ))}
