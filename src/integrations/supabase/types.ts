@@ -315,6 +315,30 @@ export type Database = {
           },
         ]
       }
+      departments: {
+        Row: {
+          access_level: Database["public"]["Enums"]["access_level_enum"] | null
+          created_at: string | null
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          access_level?: Database["public"]["Enums"]["access_level_enum"] | null
+          created_at?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          access_level?: Database["public"]["Enums"]["access_level_enum"] | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       door_properties: {
         Row: {
           closer_status:
@@ -3476,11 +3500,13 @@ export type Database = {
       }
       profiles: {
         Row: {
+          access_level: Database["public"]["Enums"]["access_level_enum"] | null
           accessibility_preferences: Json | null
           avatar_url: string | null
           bio: string | null
           created_at: string | null
           department: string | null
+          department_id: string | null
           email: string | null
           emergency_contact: Json | null
           feature_flags: Json | null
@@ -3502,13 +3528,18 @@ export type Database = {
           title: string | null
           updated_at: string | null
           username: string | null
+          verification_status:
+            | Database["public"]["Enums"]["verification_status_enum"]
+            | null
         }
         Insert: {
+          access_level?: Database["public"]["Enums"]["access_level_enum"] | null
           accessibility_preferences?: Json | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
           department?: string | null
+          department_id?: string | null
           email?: string | null
           emergency_contact?: Json | null
           feature_flags?: Json | null
@@ -3530,13 +3561,18 @@ export type Database = {
           title?: string | null
           updated_at?: string | null
           username?: string | null
+          verification_status?:
+            | Database["public"]["Enums"]["verification_status_enum"]
+            | null
         }
         Update: {
+          access_level?: Database["public"]["Enums"]["access_level_enum"] | null
           accessibility_preferences?: Json | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
           department?: string | null
+          department_id?: string | null
           email?: string | null
           emergency_contact?: Json | null
           feature_flags?: Json | null
@@ -3558,8 +3594,19 @@ export type Database = {
           title?: string | null
           updated_at?: string | null
           username?: string | null
+          verification_status?:
+            | Database["public"]["Enums"]["verification_status_enum"]
+            | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       report_templates: {
         Row: {
@@ -3593,6 +3640,38 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      role_assignments: {
+        Row: {
+          assigned_by: string | null
+          created_at: string | null
+          id: string
+          profile_id: string | null
+          role: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          created_at?: string | null
+          id?: string
+          profile_id?: string | null
+          role: string
+        }
+        Update: {
+          assigned_by?: string | null
+          created_at?: string | null
+          id?: string
+          profile_id?: string | null
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_assignments_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       room_health_metrics: {
         Row: {
@@ -4712,6 +4791,7 @@ export type Database = {
           agency_id: string | null
           created_at: string | null
           department: string | null
+          department_id: string | null
           employee_id: string | null
           id: string
           rejection_reason: string | null
@@ -4727,6 +4807,7 @@ export type Database = {
           agency_id?: string | null
           created_at?: string | null
           department?: string | null
+          department_id?: string | null
           employee_id?: string | null
           id?: string
           rejection_reason?: string | null
@@ -4742,6 +4823,7 @@ export type Database = {
           agency_id?: string | null
           created_at?: string | null
           department?: string | null
+          department_id?: string | null
           employee_id?: string | null
           id?: string
           rejection_reason?: string | null
@@ -4759,6 +4841,13 @@ export type Database = {
             columns: ["agency_id"]
             isOneToOne: false
             referencedRelation: "agency_affiliations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verification_requests_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
             referencedColumns: ["id"]
           },
           {
@@ -5866,6 +5955,7 @@ export type Database = {
       status_enum: "active" | "inactive" | "under_maintenance"
       user_role: "admin" | "standard"
       verification_status: "pending" | "approved" | "rejected"
+      verification_status_enum: "pending" | "verified" | "rejected"
       zone_type_enum: "general" | "emergency" | "restricted"
     }
     CompositeTypes: {
