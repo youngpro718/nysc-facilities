@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Department } from "./types";
@@ -32,8 +31,8 @@ export function useVerificationMutations(
 
         if (profileError) throw profileError;
 
-        // Then create the occupant record
-        const { error: occupantError } = await supabase
+        // Wait for the occupant creation to complete
+        const { data: occupant, error: occupantError } = await supabase
           .from('occupants')
           .insert({
             id: userId,
@@ -45,9 +44,18 @@ export function useVerificationMutations(
             access_level: 'standard',
             employment_type: 'full_time',
             start_date: new Date().toISOString().split('T')[0]
-          });
+          })
+          .select()
+          .single();
 
-        if (occupantError) throw occupantError;
+        if (occupantError) {
+          // Check if the error is due to the record already existing
+          if (occupantError.code === '23505') { // Unique violation
+            console.log('Occupant record already exists, continuing...');
+          } else {
+            throw occupantError;
+          }
+        }
         
         toast.success('User approved successfully');
       } else {
@@ -73,6 +81,7 @@ export function useVerificationMutations(
     } catch (error) {
       console.error('Error handling verification:', error);
       toast.error('Failed to process verification request');
+      throw error; // Re-throw to prevent further operations
     }
   };
 
