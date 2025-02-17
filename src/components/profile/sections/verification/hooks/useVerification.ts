@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -70,7 +71,8 @@ export function useVerification() {
   const handleVerification = async (userId: string, approved: boolean) => {
     try {
       if (approved) {
-        const { error: profileError } = await supabase
+        // First update the profile
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .update({
             verification_status: 'verified',
@@ -81,9 +83,28 @@ export function useVerification() {
               start_date: new Date().toISOString().split('T')[0]
             }
           })
-          .eq('id', userId);
+          .eq('id', userId)
+          .select()
+          .single();
 
         if (profileError) throw profileError;
+
+        // Then create the occupant record
+        const { error: occupantError } = await supabase
+          .from('occupants')
+          .insert({
+            id: userId,
+            first_name: profile.first_name,
+            last_name: profile.last_name,
+            email: profile.email,
+            department: departments?.find(d => d.id === selectedDepartment)?.name,
+            status: 'active',
+            access_level: 'standard',
+            employment_type: 'full_time',
+            start_date: new Date().toISOString().split('T')[0]
+          });
+
+        if (occupantError) throw occupantError;
         
         toast.success('User approved successfully');
       } else {
@@ -120,21 +141,9 @@ export function useVerification() {
 
     try {
       if (approve) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({
-            verification_status: 'verified',
-            department_id: selectedDepartment,
-            metadata: {
-              employment_type: 'full_time',
-              access_level: 'standard',
-              start_date: new Date().toISOString().split('T')[0]
-            }
-          })
-          .in('id', selectedUsers);
-
-        if (profileError) throw profileError;
-        
+        for (const userId of selectedUsers) {
+          await handleVerification(userId, true);
+        }
         toast.success(`${selectedUsers.length} users approved successfully`);
       } else {
         // Delete from both profiles and users_metadata tables
@@ -166,15 +175,27 @@ export function useVerification() {
   const handleToggleAdmin = async (userId: string, isAdmin: boolean) => {
     try {
       if (isAdmin) {
-        // Add user to admin role
-        const { error: roleError } = await supabase
+        // Check if role already exists
+        const { data: existingRole, error: checkError } = await supabase
           .from('user_roles')
-          .insert({
-            user_id: userId,
-            role: 'admin'
-          });
+          .select()
+          .eq('user_id', userId)
+          .eq('role', 'admin')
+          .maybeSingle();
 
-        if (roleError) throw roleError;
+        if (checkError) throw checkError;
+
+        // Only insert if role doesn't exist
+        if (!existingRole) {
+          const { error: roleError } = await supabase
+            .from('user_roles')
+            .insert({
+              user_id: userId,
+              role: 'admin'
+            });
+
+          if (roleError) throw roleError;
+        }
       } else {
         // Remove admin role
         const { error: roleError } = await supabase
