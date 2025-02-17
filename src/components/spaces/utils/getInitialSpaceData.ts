@@ -5,6 +5,15 @@ type SpaceType = "room" | "door" | "hallway";
 
 type InitialData = Partial<EditSpaceFormData> & {
   type?: SpaceType;
+  room_number?: string;  // Add snake_case variants
+  room_type?: string;
+  phone_number?: string;
+  parent_room_id?: string | null;
+  is_storage?: boolean;
+  storage_type?: string | null;
+  storage_capacity?: number | null;
+  storage_notes?: string;
+  current_function?: string;
 };
 
 export const getInitialSpaceData = (
@@ -24,17 +33,17 @@ export const getInitialSpaceData = (
     return {
       ...baseValues,
       type: "room" as const,
-      roomNumber: initialData?.type === "room" ? initialData.roomNumber : "",
-      roomType: initialData?.type === "room" ? initialData.roomType || "office" : "office",
-      phoneNumber: initialData?.type === "room" ? initialData.phoneNumber || "" : "",
-      description: initialData?.type === "room" ? initialData.description || "" : "",
-      isStorage: initialData?.type === "room" ? initialData.isStorage || false : false,
-      storageCapacity: initialData?.type === "room" ? initialData.storageCapacity || null : null,
-      storageType: initialData?.type === "room" && initialData.isStorage ? 
-        (initialData.storageType || "general_storage") : null,
-      storageNotes: initialData?.type === "room" ? initialData.storageNotes || "" : "",
-      parentRoomId: initialData?.type === "room" ? initialData.parentRoomId || null : null,
-      currentFunction: initialData?.type === "room" ? initialData.currentFunction || "" : "",
+      roomNumber: initialData?.room_number || initialData?.roomNumber || "",
+      roomType: initialData?.room_type || initialData?.roomType || "office",
+      phoneNumber: initialData?.phone_number || initialData?.phoneNumber || "",
+      description: initialData?.description || "",
+      isStorage: initialData?.is_storage ?? initialData?.isStorage ?? false,
+      storageCapacity: initialData?.storage_capacity ?? initialData?.storageCapacity ?? null,
+      storageType: (initialData?.is_storage || initialData?.isStorage) ? 
+        (initialData?.storage_type || initialData?.storageType || "general_storage") : null,
+      storageNotes: initialData?.storage_notes || initialData?.storageNotes || "",
+      parentRoomId: initialData?.parent_room_id ?? initialData?.parentRoomId ?? null,
+      currentFunction: initialData?.current_function || initialData?.currentFunction || "",
     };
   }
 
