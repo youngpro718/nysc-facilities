@@ -3,7 +3,16 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DatabaseLightingFixture } from "../types/databaseTypes";
 import { parseJsonField } from "../utils/jsonUtils";
-import { LightingFixture } from "@/components/lighting/types";
+import { 
+  LightingFixture, 
+  ElectricalIssues,
+  EnergyUsageData,
+  EmergencyProtocols,
+  WarrantyInfo,
+  ManufacturerDetails,
+  InspectionEntry,
+  MaintenanceEntry 
+} from "@/components/lighting/types";
 
 interface UseLightingFixturesProps {
   selectedBuilding: string;
@@ -30,13 +39,35 @@ const transformDatabaseFixture = (raw: DatabaseLightingFixture): LightingFixture
   technology: raw.technology,
   ballast_issue: raw.ballast_issue ?? false,
   bulb_count: raw.bulb_count ?? 1,
-  electrical_issues: raw.electrical_issues,
-  energy_usage_data: raw.energy_usage_data,
-  emergency_protocols: raw.emergency_protocols,
-  warranty_info: raw.warranty_info,
-  manufacturer_details: raw.manufacturer_details,
-  inspection_history: raw.inspection_history,
-  maintenance_history: raw.maintenance_history,
+  electrical_issues: (raw.electrical_issues || {
+    short_circuit: false,
+    wiring_issues: false,
+    voltage_problems: false
+  }) as ElectricalIssues,
+  energy_usage_data: (raw.energy_usage_data || {
+    daily_usage: [],
+    efficiency_rating: null,
+    last_reading: null
+  }) as EnergyUsageData,
+  emergency_protocols: (raw.emergency_protocols || {
+    emergency_contact: null,
+    backup_system: false,
+    evacuation_route: false
+  }) as EmergencyProtocols,
+  warranty_info: (raw.warranty_info || {
+    start_date: null,
+    end_date: null,
+    provider: null,
+    terms: null
+  }) as WarrantyInfo,
+  manufacturer_details: (raw.manufacturer_details || {
+    name: null,
+    model: null,
+    serial_number: null,
+    support_contact: null
+  }) as ManufacturerDetails,
+  inspection_history: (raw.inspection_history || []) as InspectionEntry[],
+  maintenance_history: (raw.maintenance_history || []) as MaintenanceEntry[],
   connected_fixtures: raw.connected_fixtures || [],
   maintenance_notes: raw.maintenance_notes,
   ballast_check_notes: raw.ballast_check_notes,
