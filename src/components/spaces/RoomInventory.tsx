@@ -1,32 +1,15 @@
 
 import { useState } from "react";
 import { useInventory } from "./inventory/hooks/useInventory";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Plus, MoreHorizontal, Package, Search, Download, Upload, Pencil } from "lucide-react";
-import { AddInventoryDialog } from "./inventory/AddInventoryDialog";
-import { EditInventoryDialog } from "./inventory/EditInventoryDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { InventoryFormInputs, InventoryItem } from "./inventory/types/inventoryTypes";
 import { exportToExcel, parseExcelFile } from "./inventory/excelUtils";
+import { AddInventoryDialog } from "./inventory/AddInventoryDialog";
+import { EditInventoryDialog } from "./inventory/EditInventoryDialog";
+import { InventoryHeader } from "./inventory/components/InventoryHeader";
+import { InventoryTable } from "./inventory/components/InventoryTable";
 
 export function RoomInventory({ roomId }: { roomId: string }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -120,7 +103,6 @@ export function RoomInventory({ roomId }: { roomId: string }) {
     try {
       const data = await parseExcelFile(file);
       
-      // Transform the data to match our database schema
       const itemsToImport = data.map(item => ({
         name: item.name,
         quantity: item.quantity,
@@ -139,7 +121,7 @@ export function RoomInventory({ roomId }: { roomId: string }) {
         title: "Success",
         description: `Imported ${data.length} items successfully.`,
       });
-      event.target.value = ''; // Reset file input
+      event.target.value = '';
     } catch (error) {
       toast({
         title: "Import failed",
@@ -149,154 +131,32 @@ export function RoomInventory({ roomId }: { roomId: string }) {
     }
   };
 
+  const handleUpdateQuantity = async (id: string, quantity: number) => {
+    await updateQuantity({ id, quantity });
+  };
+
   return (
     <Card className="h-full">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Inventory
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleExport}>
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-            <Button variant="outline" asChild>
-              <label className="cursor-pointer">
-                <Upload className="h-4 w-4 mr-2" />
-                Import
-                <input
-                  type="file"
-                  accept=".xlsx,.xls"
-                  className="hidden"
-                  onChange={handleImport}
-                />
-              </label>
-            </Button>
-            <Button onClick={() => setIsAddDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Item
-            </Button>
-          </div>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search inventory..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8"
-            />
-          </div>
-        </div>
-      </CardHeader>
+      <InventoryHeader
+        onExport={handleExport}
+        onImport={handleImport}
+        onAddItem={() => setIsAddDialogOpen(true)}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
       <CardContent>
         <ScrollArea className="h-[calc(100vh-12rem)] border rounded-md">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[300px]">Item Details</TableHead>
-                <TableHead>Quantity</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredInventory?.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{item.name}</span>
-                      {item.category && (
-                        <Badge
-                          variant="outline"
-                          style={{
-                            backgroundColor: `${item.category.color}20`,
-                            borderColor: item.category.color,
-                          }}
-                        >
-                          {item.category.name}
-                        </Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => updateQuantity({
-                          id: item.id,
-                          quantity: item.quantity - 1
-                        })}
-                        disabled={item.quantity <= 0 || isUpdatingQuantity}
-                      >
-                        -
-                      </Button>
-                      <span className="w-12 text-center">{item.quantity}</span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => updateQuantity({
-                          id: item.id,
-                          quantity: item.quantity + 1
-                        })}
-                        disabled={isUpdatingQuantity}
-                      >
-                        +
-                      </Button>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={item.quantity <= (item.minimum_quantity || 0) ? "destructive" : "default"}
-                    >
-                      {item.quantity <= (item.minimum_quantity || 0) ? "Low Stock" : "In Stock"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setSelectedItem(item);
-                            setIsEditDialogOpen(true);
-                          }}
-                        >
-                          <Pencil className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => {
-                            if (window.confirm('Are you sure you want to delete this item?')) {
-                              deleteItem(item.id);
-                            }
-                          }}
-                        >
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {!isLoading && (!filteredInventory || filteredInventory.length === 0) && (
-                <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
-                    No items found
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+          <InventoryTable
+            items={filteredInventory || []}
+            isLoading={isLoading}
+            isUpdatingQuantity={isUpdatingQuantity}
+            onUpdateQuantity={handleUpdateQuantity}
+            onEditItem={(item) => {
+              setSelectedItem(item);
+              setIsEditDialogOpen(true);
+            }}
+            onDeleteItem={deleteItem}
+          />
         </ScrollArea>
       </CardContent>
       <AddInventoryDialog
