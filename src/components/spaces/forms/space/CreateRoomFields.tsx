@@ -15,30 +15,30 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 const roomTypes: { value: RoomType; label: string }[] = [
-  { value: "courtroom", label: "Courtroom" },
-  { value: "judges_chambers", label: "Judge's Chambers" },
-  { value: "jury_room", label: "Jury Room" },
-  { value: "conference_room", label: "Conference Room" },
-  { value: "office", label: "Office" },
-  { value: "filing_room", label: "Filing Room" },
-  { value: "male_locker_room", label: "Male Locker Room" },
-  { value: "female_locker_room", label: "Female Locker Room" },
-  { value: "robing_room", label: "Robing Room" },
-  { value: "stake_holder", label: "Stake Holder" },
-  { value: "records_room", label: "Records Room" },
-  { value: "administrative_office", label: "Administrative Office" },
-  { value: "break_room", label: "Break Room" },
-  { value: "it_room", label: "IT Room" },
-  { value: "utility_room", label: "Utility Room" }
+  { value: RoomType.COURTROOM, label: "Courtroom" },
+  { value: RoomType.JUDGES_CHAMBERS, label: "Judge's Chambers" },
+  { value: RoomType.JURY_ROOM, label: "Jury Room" },
+  { value: RoomType.CONFERENCE_ROOM, label: "Conference Room" },
+  { value: RoomType.OFFICE, label: "Office" },
+  { value: RoomType.FILING_ROOM, label: "Filing Room" },
+  { value: RoomType.MALE_LOCKER_ROOM, label: "Male Locker Room" },
+  { value: RoomType.FEMALE_LOCKER_ROOM, label: "Female Locker Room" },
+  { value: RoomType.ROBING_ROOM, label: "Robing Room" },
+  { value: RoomType.STAKE_HOLDER, label: "Stake Holder" },
+  { value: RoomType.RECORDS_ROOM, label: "Records Room" },
+  { value: RoomType.ADMINISTRATIVE_OFFICE, label: "Administrative Office" },
+  { value: RoomType.BREAK_ROOM, label: "Break Room" },
+  { value: RoomType.IT_ROOM, label: "IT Room" },
+  { value: RoomType.UTILITY_ROOM, label: "Utility Room" }
 ];
 
 const storageTypes: { value: StorageType; label: string }[] = [
-  { value: "file_storage", label: "File Storage" },
-  { value: "equipment_storage", label: "Equipment Storage" },
-  { value: "supply_storage", label: "Supply Storage" },
-  { value: "evidence_storage", label: "Evidence Storage" },
-  { value: "record_storage", label: "Record Storage" },
-  { value: "general_storage", label: "General Storage" }
+  { value: StorageType.FILE_STORAGE, label: "File Storage" },
+  { value: StorageType.EQUIPMENT_STORAGE, label: "Equipment Storage" },
+  { value: StorageType.SUPPLY_STORAGE, label: "Supply Storage" },
+  { value: StorageType.EVIDENCE_STORAGE, label: "Evidence Storage" },
+  { value: StorageType.RECORD_STORAGE, label: "Record Storage" },
+  { value: StorageType.GENERAL_STORAGE, label: "General Storage" }
 ];
 
 interface CreateRoomFieldsProps {
