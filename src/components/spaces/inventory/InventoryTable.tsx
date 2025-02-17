@@ -1,7 +1,8 @@
+
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { MinusCircle, PlusCircle, Trash2, AlertTriangle, Loader2 } from "lucide-react";
-import { InventoryItem } from "./types";
+import { InventoryItem } from "./types/inventoryTypes";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
