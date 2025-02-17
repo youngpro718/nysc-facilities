@@ -83,7 +83,9 @@ export function AssignRoomsDialog({
   const { data: availableRooms, isLoading: isLoadingRooms } = useQuery({
     queryKey: ["available-rooms"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      console.log("Fetching rooms data...");
+      
+      const { data: roomsData, error: roomsError } = await supabase
         .from("rooms")
         .select(`
           id,
@@ -101,8 +103,14 @@ export function AssignRoomsDialog({
         .eq("status", "active")
         .order("name");
 
-      if (error) throw error;
-      return (data || []) as RoomDetails[];
+      if (roomsError) {
+        console.error('Error fetching rooms:', roomsError);
+        throw roomsError;
+      }
+
+      if (!roomsData) return [];
+
+      return roomsData as RoomDetails[];
     },
   });
 
@@ -166,7 +174,7 @@ export function AssignRoomsDialog({
       room.floors?.name.toLowerCase().includes(searchStr) ||
       room.floors?.buildings?.name.toLowerCase().includes(searchStr)
     );
-  });
+  }) || [];
 
   const handleAssign = async () => {
     if (!selectedRoom) {
