@@ -11,16 +11,23 @@ import { VerificationHeader } from "./verification/VerificationHeader";
 import { BulkActionBar } from "./verification/BulkActionBar";
 import { VerificationTable } from "./verification/VerificationTable";
 
-interface UserMetadata {
+type VerificationStatus = 'pending' | 'verified' | 'rejected';
+
+interface Profile {
+  id: string;
+  email: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  verification_status: VerificationStatus;
+  department_id: string | null;
+}
+
+interface UserData {
   id: string;
   department: string | null;
-  created_at: string | null;
-  updated_at: string | null;
-  profile?: {
-    email: string | null;
-    first_name: string | null;
-    last_name: string | null;
-  } | null;
+  created_at: string;
+  updated_at: string;
+  profile: Profile | null;
 }
 
 export function VerificationSection() {
@@ -45,19 +52,25 @@ export function VerificationSection() {
   const { data: users, isLoading, refetch } = useQuery({
     queryKey: ['users-metadata'],
     queryFn: async () => {
-      const { data: usersData, error } = await supabase
+      const { data, error } = await supabase
         .from('users_metadata')
         .select(`
-          *,
-          profile:profiles(
+          id,
+          department,
+          created_at,
+          updated_at,
+          profile:profiles!profiles_id_fkey (
+            id,
             email,
             first_name,
-            last_name
+            last_name,
+            verification_status,
+            department_id
           )
         `);
 
       if (error) throw error;
-      return usersData as UserMetadata[];
+      return data as UserData[];
     }
   });
 
@@ -106,6 +119,16 @@ export function VerificationSection() {
     return <div>Loading...</div>;
   }
 
+  const verificationRequests = users?.map(user => ({
+    id: user.id,
+    user_id: user.id,
+    department_id: user.profile?.department_id,
+    employee_id: null,
+    status: user.profile?.verification_status || 'pending',
+    submitted_at: user.created_at,
+    profile: user.profile
+  })) || [];
+
   return (
     <Card>
       <VerificationHeader />
@@ -128,12 +151,12 @@ export function VerificationSection() {
           </div>
         ) : (
           <VerificationTable
-            requests={users}
+            requests={verificationRequests}
             departments={departments}
             selectedOccupants={selectedUsers}
             selectedDepartment={selectedDepartment}
             onSelectAll={(selected) => {
-              const pendingUsers = users.filter(u => !u.profile?.verification_status);
+              const pendingUsers = verificationRequests.filter(u => u.status === 'pending');
               setSelectedUsers(selected ? pendingUsers.map(u => u.id) : []);
             }}
             onSelectOne={(id, selected) => {
