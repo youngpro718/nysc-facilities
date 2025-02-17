@@ -1,7 +1,8 @@
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { LightingFixture } from "@/components/lighting/types";
+import { LightingFixture, LightStatus } from "@/components/lighting/types";
 
 export function useLightingFixtures() {
   const queryClient = useQueryClient();
@@ -10,12 +11,15 @@ export function useLightingFixtures() {
     queryKey: ['lighting-fixtures'],
     queryFn: async () => {
       const { data: rawFixtures, error } = await supabase
-        .from('lighting_fixture_details')
-        .select('*');
+        .from('lighting_fixtures')
+        .select(`
+          *,
+          spatial_assignment:spatial_assignments(*)
+        `);
 
       if (error) throw error;
 
-      return (rawFixtures || []).map((raw: any) => ({
+      return (rawFixtures || []).map((raw: any): LightingFixture => ({
         id: raw.id,
         name: raw.name,
         type: raw.type,
@@ -46,74 +50,78 @@ export function useLightingFixtures() {
         emergency_circuit: raw.emergency_circuit || false,
         backup_power_source: raw.backup_power_source || null,
         emergency_duration_minutes: raw.emergency_duration_minutes || null,
-        maintenance_history: (raw.maintenance_history || []).map((record: any) => ({
-          id: record.id,
-          date: record.date,
-          type: record.type,
-          notes: record.notes
-        })),
-        inspection_history: (raw.inspection_history || []).map((record: any) => ({
-          id: record.id,
-          date: record.date,
-          status: record.status,
-          notes: record.notes
-        })),
+        maintenance_history: raw.maintenance_history || [],
+        inspection_history: raw.inspection_history || [],
         spatial_assignment: raw.spatial_assignment ? {
           id: raw.spatial_assignment.id,
           sequence_number: raw.spatial_assignment.sequence_number,
           position: raw.spatial_assignment.position,
           space_type: raw.spatial_assignment.space_type
         } : undefined
-      })) as LightingFixture[];
+      }));
     }
   });
 
-  const createMutation = useMutation({
-    mutationFn: async (fixture: Omit<LightingFixture, 'id'>) => {
-      const { data, error } = await supabase
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
         .from('lighting_fixtures')
-        .insert({
-          name: fixture.name,
-          type: fixture.type,
-          status: fixture.status,
-          space_type: fixture.space_type,
-          zone_id: fixture.zone_id,
-          electrical_issues: fixture.electrical_issues || {},
-          backup_power_source: fixture.backup_power_source,
-          bulb_count: fixture.bulb_count || 1,
-          connected_fixtures: fixture.connected_fixtures || [],
-          maintenance_history: []
-        })
-        .select()
-        .single();
+        .delete()
+        .eq('id', id);
 
       if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
+      
+      toast.success("Lighting fixture deleted successfully");
       queryClient.invalidateQueries({ queryKey: ['lighting-fixtures'] });
-      toast({
-        title: "Success",
-        description: "Lighting fixture added successfully",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+      return true;
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete lighting fixture");
+      return false;
+    }
+  };
+
+  const handleBulkDelete = async (selectedFixtures: string[]) => {
+    try {
+      const { error } = await supabase
+        .from('lighting_fixtures')
+        .delete()
+        .in('id', selectedFixtures);
+
+      if (error) throw error;
+      
+      toast.success(`${selectedFixtures.length} fixtures deleted successfully`);
+      queryClient.invalidateQueries({ queryKey: ['lighting-fixtures'] });
+      return true;
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete fixtures");
+      return false;
+    }
+  };
+
+  const handleBulkStatusUpdate = async (fixtureIds: string[], status: LightStatus) => {
+    try {
+      const { error } = await supabase
+        .from('lighting_fixtures')
+        .update({ status })
+        .in('id', fixtureIds);
+
+      if (error) throw error;
+      
+      toast.success(`Updated status for ${fixtureIds.length} fixtures`);
+      queryClient.invalidateQueries({ queryKey: ['lighting-fixtures'] });
+      return true;
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update fixtures status");
+      return false;
+    }
+  };
 
   return {
     fixtures: fixtures || [],
     isLoading,
-    addFixture: createMutation.mutateAsync,
-    updateFixture: async () => {}, // Implement if needed
-    deleteFixture: async () => {}, // Implement if needed
-    isAdding: createMutation.isPending,
-    isUpdating: false,
-    isDeleting: false,
+    handleDelete,
+    handleBulkDelete,
+    handleBulkStatusUpdate,
+    refetch: () => queryClient.invalidateQueries({ queryKey: ['lighting-fixtures'] })
   };
 }

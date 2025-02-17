@@ -1,14 +1,16 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import { editLightingFormSchema, type EditLightingFormData } from "../schemas/editLightingSchema";
-import { LightingFixture } from "../types";
+import { LightingFixture, Space } from "../types";
 import { useQuery } from "@tanstack/react-query";
-import { generateFixtureName } from "../schemas/lightingSchema";
+import { supabase } from "@/integrations/supabase/client";
 
-export function useEditLightingForm(fixture: LightingFixture, onFixtureUpdated: () => void, onClose: () => void) {
+export function useEditLightingForm(
+  fixture: LightingFixture,
+  onFixtureUpdated: () => void,
+  onClose: () => void
+) {
   const form = useForm<EditLightingFormData>({
     resolver: zodResolver(editLightingFormSchema),
     defaultValues: {
@@ -29,8 +31,8 @@ export function useEditLightingForm(fixture: LightingFixture, onFixtureUpdated: 
       ballast_issue: fixture.ballast_issue || false,
       ballast_check_notes: fixture.ballast_check_notes || null,
       space_id: fixture.space_id!,
-      space_type: fixture.space_type!,
-      position: fixture.position as "ceiling" | "wall" | "floor",
+      space_type: fixture.space_type as 'room' | 'hallway',
+      position: fixture.position as 'ceiling' | 'wall' | 'floor',
       zone_id: fixture.zone_id || null,
     },
   });
@@ -44,8 +46,9 @@ export function useEditLightingForm(fixture: LightingFixture, onFixtureUpdated: 
         .select('*')
         .eq('id', fixture.space_id)
         .single();
+
       if (error) throw error;
-      return data;
+      return data as Space;
     },
     enabled: !!fixture.space_id
   });
@@ -53,35 +56,7 @@ export function useEditLightingForm(fixture: LightingFixture, onFixtureUpdated: 
   // Watch for changes to update the name
   const spaceId = form.watch('space_id');
   const position = form.watch('position');
-  const spaceType = form.watch('space_type');
-
-  // Update name when space or position changes
-  const updateName = async () => {
-    if (spaceId && position && space) {
-      // Get the next sequence number from the database
-      const { data: sequenceData, error } = await supabase
-        .rpc('get_next_lighting_sequence', {
-          p_space_id: spaceId
-        });
-      
-      if (error) {
-        console.error('Error getting sequence:', error);
-        return;
-      }
-
-      // Convert to number and use default value of 1 if null
-      const sequence = typeof sequenceData === 'number' ? sequenceData : 1;
-      
-      const name = generateFixtureName(
-        space.space_type as 'room' | 'hallway',
-        space.name,
-        space.room_number,
-        position,
-        sequence
-      );
-      form.setValue('name', name);
-    }
-  };
+  const spaceType = space?.space_type || form.watch('space_type');
 
   const onSubmit = async (data: EditLightingFormData) => {
     try {
@@ -92,17 +67,16 @@ export function useEditLightingForm(fixture: LightingFixture, onFixtureUpdated: 
 
       if (error) throw error;
 
-      toast.success("Lighting fixture updated successfully");
       onFixtureUpdated();
       onClose();
     } catch (error: any) {
-      toast.error(error.message || "Failed to update lighting fixture");
+      console.error('Error updating lighting fixture:', error);
+      throw error;
     }
   };
 
   return {
     form,
     onSubmit: form.handleSubmit(onSubmit),
-    updateName,
   };
 }

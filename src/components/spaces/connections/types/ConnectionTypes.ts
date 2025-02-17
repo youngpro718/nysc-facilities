@@ -1,8 +1,7 @@
 
-// Database connection types
 export type Direction = 'adjacent' | 'left_of_hallway' | 'right_of_hallway';
 export type Position = 'adjacent' | 'custom';
-export type ConnectionType = 'room' | 'hallway' | 'door';  // Changed this to match UI types
+export type ConnectionType = 'room' | 'hallway' | 'door';
 export type ConnectionStatus = 'active' | 'inactive';
 
 export interface Connection {
@@ -21,14 +20,7 @@ export interface Connection {
     room_number?: string | null;
     type: string;
   };
-  connectedSpaceName?: string;
-}
-
-export interface SpatialAssignment {
-  id: string;
-  sequence_number: number;
-  position: string;
-  space_type: string;
+  connectionType?: ConnectionType;
 }
 
 export interface CreateConnectionData {

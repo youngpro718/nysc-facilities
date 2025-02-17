@@ -1,7 +1,9 @@
+
 export type LightStatus = 'functional' | 'maintenance_needed' | 'non_functional' | 'pending_maintenance' | 'scheduled_replacement';
 export type LightingType = 'standard' | 'emergency' | 'motion_sensor';
 export type LightingTechnology = 'LED' | 'Fluorescent' | 'Bulb' | null;
-export type LightingPosition = 'ceiling' | 'wall' | 'floor' | 'desk' | null;
+export type LightingPosition = 'ceiling' | 'wall' | 'floor' | 'desk';
+export type SpaceType = 'room' | 'hallway';
 
 export interface ElectricalIssues {
   short_circuit: boolean;
@@ -27,7 +29,7 @@ export interface SpatialAssignment {
   id: string;
   sequence_number: number;
   position: string;
-  space_type: string;
+  space_type: SpaceType;
 }
 
 export interface LightingFixture {
@@ -40,7 +42,7 @@ export interface LightingFixture {
   floor_name: string | null;
   floor_id: string | null;
   space_id?: string | null;
-  space_type?: 'room' | 'hallway' | null;
+  space_type?: SpaceType;
   position?: LightingPosition;
   sequence_number?: number | null;
   zone_id?: string | null;
@@ -50,45 +52,16 @@ export interface LightingFixture {
   maintenance_notes?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
-  bulb_count?: number;
-  electrical_issues?: ElectricalIssues;
-  ballast_issue?: boolean;
+  bulb_count: number;
+  electrical_issues: ElectricalIssues;
+  ballast_issue: boolean;
   ballast_check_notes?: string | null;
-  emergency_circuit?: boolean;
+  emergency_circuit: boolean;
   backup_power_source?: string | null;
   emergency_duration_minutes?: number | null;
   maintenance_history?: MaintenanceRecord[];
   inspection_history?: InspectionRecord[];
   spatial_assignment?: SpatialAssignment;
-}
-
-export interface EditLightingFixtureData {
-  name: string;
-  type: LightingType;
-  status: LightStatus;
-  maintenance_notes?: string | null;
-  emergency_circuit: boolean;
-  backup_power_source?: string | null;
-  emergency_duration_minutes?: number | null;
-  technology: LightingTechnology;
-  bulb_count: number;
-  electrical_issues: ElectricalIssues;
-  ballast_issue: boolean;
-  ballast_check_notes?: string | null;
-  space_id: string;
-  space_type: 'room' | 'hallway';
-  position: LightingPosition;
-  zone_id?: string | null;
-}
-
-export interface LightingZone {
-  id: string;
-  name: string;
-  floor_id: string;
-  description?: string | null;
-  type?: 'general' | 'emergency' | 'restricted';
-  created_at?: string;
-  updated_at?: string;
 }
 
 export interface RoomLightingConfig {
@@ -102,19 +75,22 @@ export interface RoomLightingConfig {
   emergency_circuit?: boolean;
   backup_duration_minutes?: number;
   electrical_issues?: ElectricalIssues;
-  name?: string;
-  type?: string;
-  technology?: string;
-  bulb_count?: number;
-  status?: string;
-  position?: string;
+  technology: LightingTechnology;
+  status: LightStatus;
+  position: LightingPosition;
+  space_type: SpaceType;
+  name: string;
+  bulb_count: number;
+  ballast_issue: boolean;
+  ballast_check_notes?: string | null;
+  maintenance_notes?: string | null;
 }
 
 export interface Space {
   id: string;
   name: string;
   type: string;
-  space_type: 'room' | 'hallway';
+  space_type: SpaceType;
   room_number?: string;
   floor_id: string;
   status: 'active' | 'inactive' | 'under_maintenance';
