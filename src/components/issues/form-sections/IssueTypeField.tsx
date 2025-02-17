@@ -1,15 +1,22 @@
 
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Check, ChevronDown } from "lucide-react";
 import { ISSUE_TYPES } from "../constants/issueTypes";
 import { UseFormReturn } from "react-hook-form";
 import { FormData } from "../types/formTypes";
+import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 interface IssueTypeFieldProps {
   form: UseFormReturn<FormData>;
 }
 
 export function IssueTypeField({ form }: IssueTypeFieldProps) {
+  const [open, setOpen] = useState(false);
+
   return (
     <FormField
       control={form.control}
@@ -17,20 +24,48 @@ export function IssueTypeField({ form }: IssueTypeFieldProps) {
       render={({ field }) => (
         <FormItem>
           <FormLabel>Issue Type</FormLabel>
-          <Select onValueChange={field.onChange} value={field.value}>
-            <FormControl>
-              <SelectTrigger>
-                <SelectValue placeholder="Select issue type" />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              {ISSUE_TYPES.map((type) => (
-                <SelectItem key={type} value={type}>
-                  {type}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={open}
+                className="w-full justify-between"
+              >
+                <span className={cn("truncate", !field.value && "text-muted-foreground")}>
+                  {field.value || "Select issue type"}
+                </span>
+                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[200px] p-0">
+              <Command>
+                <CommandInput placeholder="Search issue type..." />
+                <CommandList>
+                  <CommandEmpty>No issue type found.</CommandEmpty>
+                  <CommandGroup>
+                    {ISSUE_TYPES.map((type) => (
+                      <CommandItem
+                        key={type}
+                        value={type}
+                        onSelect={() => {
+                          form.setValue("issue_type", type);
+                          // Clear problem type when issue type changes
+                          form.setValue("problem_type", "");
+                          setOpen(false);
+                        }}
+                      >
+                        {type}
+                        {field.value === type && (
+                          <Check className="ml-auto h-4 w-4" />
+                        )}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
           <FormMessage />
         </FormItem>
       )}
