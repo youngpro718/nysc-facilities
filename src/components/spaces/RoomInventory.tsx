@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { InventoryDialog } from "./inventory/InventoryDialog";
@@ -26,12 +27,8 @@ export function RoomInventory({ roomId }: { roomId: string }) {
 
   const handleAddItem = async (data: InventoryFormInputs) => {
     await addItem({
-      name: data.name,
-      quantity: data.quantity,
-      categoryId: data.category_id,
-      description: data.description,
-      minimum_quantity: data.minimum_quantity,
-      unit: data.unit
+      ...data,
+      storage_room_id: roomId
     });
   };
 

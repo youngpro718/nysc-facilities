@@ -27,7 +27,7 @@ export const useInventoryMutations = (roomId: string) => {
         description: "The item has been successfully added.",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: "Failed to add item. Please try again.",
@@ -38,11 +38,13 @@ export const useInventoryMutations = (roomId: string) => {
   });
 
   const updateQuantityMutation = useMutation({
-    mutationFn: async ({ id, quantity }: { id: string; quantity: number }) => {
+    mutationFn: async ({ id, quantity, notes }: { id: string; quantity: number; notes?: string }) => {
       const { error } = await supabase.rpc('safely_update_inventory_quantity', {
         p_item_id: id,
         p_new_quantity: quantity,
-        p_performed_by: null
+        p_performed_by: null,
+        p_notes: notes || 'Quantity update',
+        p_status: 'active'
       });
       if (error) throw error;
     },
@@ -54,7 +56,7 @@ export const useInventoryMutations = (roomId: string) => {
         description: "The item quantity has been updated successfully.",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: "Failed to update quantity. Please try again.",
@@ -66,13 +68,13 @@ export const useInventoryMutations = (roomId: string) => {
 
   const batchUpdateMutation = useMutation({
     mutationFn: async ({ items, notes }: BatchUpdateInput) => {
-      // Process each update individually using the safe update function
       for (const item of items) {
         const { error } = await supabase.rpc('safely_update_inventory_quantity', {
           p_item_id: item.id,
           p_new_quantity: item.quantity,
           p_performed_by: null,
-          p_notes: notes
+          p_notes: notes,
+          p_status: 'active'
         });
         if (error) throw error;
       }
@@ -85,7 +87,7 @@ export const useInventoryMutations = (roomId: string) => {
         description: "All items have been updated successfully.",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: "Failed to update items. Please try again.",
@@ -110,7 +112,7 @@ export const useInventoryMutations = (roomId: string) => {
         description: "The item has been successfully deleted.",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: "Failed to delete item. Please try again.",
