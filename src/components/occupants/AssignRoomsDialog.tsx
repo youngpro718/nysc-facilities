@@ -59,13 +59,13 @@ interface CurrentOccupant {
   is_primary: boolean;
 }
 
-interface OccupantAssignment {
-  occupants: {
+interface OccupantAssignmentResponse {
+  is_primary: boolean;
+  occupant_id: {
     id: string;
     first_name: string;
     last_name: string;
-  };
-  is_primary: boolean;
+  }
 }
 
 function generateSpaceSelectItem(room: RoomDetails): SpaceSelectItem {
@@ -123,12 +123,12 @@ export function AssignRoomsDialog({
       const { data, error } = await supabase
         .from("occupant_room_assignments")
         .select(`
-          occupant:occupant_id (
+          is_primary,
+          occupant_id:occupant_id (
             id,
             first_name,
             last_name
-          ),
-          is_primary
+          )
         `)
         .eq("room_id", selectedRoom);
 
@@ -136,10 +136,10 @@ export function AssignRoomsDialog({
       
       if (!data) return [];
 
-      return data.map((assignment) => ({
-        id: assignment.occupant.id,
-        first_name: assignment.occupant.first_name,
-        last_name: assignment.occupant.last_name,
+      return data.map((assignment: OccupantAssignmentResponse) => ({
+        id: assignment.occupant_id.id,
+        first_name: assignment.occupant_id.first_name,
+        last_name: assignment.occupant_id.last_name,
         is_primary: assignment.is_primary
       })) as CurrentOccupant[];
     }
