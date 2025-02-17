@@ -24,6 +24,8 @@ import {
   Key,
   AlertCircle
 } from "lucide-react";
+import { AssignRoomsDialog } from "@/components/occupants/AssignRoomsDialog";
+import { AssignKeysDialog } from "@/components/occupants/AssignKeysDialog";
 
 type VerificationRequest = {
   id: string;
@@ -42,6 +44,10 @@ type VerificationRequest = {
 };
 
 export function VerificationSection() {
+  const [selectedOccupants, setSelectedOccupants] = useState<string[]>([]);
+  const [showAssignRooms, setShowAssignRooms] = useState(false);
+  const [showAssignKeys, setShowAssignKeys] = useState(false);
+  
   const { data: requests, isLoading, refetch } = useQuery({
     queryKey: ['verification-requests'],
     queryFn: async () => {
@@ -85,6 +91,31 @@ export function VerificationSection() {
     }
   };
 
+  const handleBulkVerification = async (approve: boolean) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('verification_requests')
+        .update({
+          status: approve ? 'approved' : 'rejected',
+          reviewed_by: user.id,
+          reviewed_at: new Date().toISOString()
+        })
+        .in('id', selectedOccupants);
+
+      if (error) throw error;
+
+      toast.success(`${selectedOccupants.length} users ${approve ? 'approved' : 'rejected'} successfully`);
+      setSelectedOccupants([]);
+      refetch();
+    } catch (error) {
+      console.error('Error in bulk verification:', error);
+      toast.error('Failed to update verification status');
+    }
+  };
+
   const getStatusBadge = (status: VerificationRequest['status']) => {
     switch (status) {
       case 'pending':
@@ -115,6 +146,9 @@ export function VerificationSection() {
     return <div>Loading...</div>;
   }
 
+  const pendingRequests = requests?.filter(r => r.status === 'pending') || [];
+  const approvedRequests = requests?.filter(r => r.status === 'approved') || [];
+
   return (
     <Card>
       <CardHeader>
@@ -124,6 +158,32 @@ export function VerificationSection() {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {/* Bulk Actions */}
+        {selectedOccupants.length > 0 && (
+          <div className="mb-4 p-4 bg-muted rounded-lg flex items-center justify-between">
+            <span className="text-sm font-medium">
+              {selectedOccupants.length} requests selected
+            </span>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                onClick={() => handleBulkVerification(true)}
+              >
+                <Check className="h-4 w-4 mr-1" />
+                Approve Selected
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => handleBulkVerification(false)}
+              >
+                <X className="h-4 w-4 mr-1" />
+                Reject Selected
+              </Button>
+            </div>
+          </div>
+        )}
+
         {requests?.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <AlertCircle className="h-8 w-8 mx-auto mb-2" />
@@ -133,6 +193,20 @@ export function VerificationSection() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-12">
+                  <input
+                    type="checkbox"
+                    checked={pendingRequests.length > 0 && selectedOccupants.length === pendingRequests.length}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedOccupants(pendingRequests.map(r => r.id));
+                      } else {
+                        setSelectedOccupants([]);
+                      }
+                    }}
+                    className="rounded border-input"
+                  />
+                </TableHead>
                 <TableHead>Employee ID</TableHead>
                 <TableHead>Department</TableHead>
                 <TableHead>Submitted</TableHead>
@@ -143,6 +217,22 @@ export function VerificationSection() {
             <TableBody>
               {requests?.map((request) => (
                 <TableRow key={request.id}>
+                  <TableCell>
+                    {request.status === 'pending' && (
+                      <input
+                        type="checkbox"
+                        checked={selectedOccupants.includes(request.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedOccupants([...selectedOccupants, request.id]);
+                          } else {
+                            setSelectedOccupants(selectedOccupants.filter(id => id !== request.id));
+                          }
+                        }}
+                        className="rounded border-input"
+                      />
+                    )}
+                  </TableCell>
                   <TableCell>{request.employee_id || '-'}</TableCell>
                   <TableCell>{request.department || '-'}</TableCell>
                   <TableCell>
@@ -171,11 +261,25 @@ export function VerificationSection() {
                     )}
                     {request.status === 'approved' && (
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedOccupants([request.user_id]);
+                            setShowAssignRooms(true);
+                          }}
+                        >
                           <Building2 className="h-4 w-4 mr-1" />
                           Assign Rooms
                         </Button>
-                        <Button size="sm" variant="outline">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedOccupants([request.user_id]);
+                            setShowAssignKeys(true);
+                          }}
+                        >
                           <Key className="h-4 w-4 mr-1" />
                           Assign Keys
                         </Button>
@@ -187,6 +291,26 @@ export function VerificationSection() {
             </TableBody>
           </Table>
         )}
+
+        <AssignRoomsDialog
+          open={showAssignRooms}
+          onOpenChange={setShowAssignRooms}
+          selectedOccupants={selectedOccupants}
+          onSuccess={() => {
+            setShowAssignRooms(false);
+            setSelectedOccupants([]);
+          }}
+        />
+
+        <AssignKeysDialog
+          open={showAssignKeys}
+          onOpenChange={setShowAssignKeys}
+          selectedOccupants={selectedOccupants}
+          onSuccess={() => {
+            setShowAssignKeys(false);
+            setSelectedOccupants([]);
+          }}
+        />
       </CardContent>
     </Card>
   );
