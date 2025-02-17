@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 interface UpdateOccupantParams {
@@ -9,6 +10,10 @@ interface UpdateOccupantParams {
     phone: string | null;
     department: string | null;
     title: string | null;
+    status?: string;
+    access_level?: string;
+    emergency_contact?: any;
+    notes?: string | null;
   };
   selectedRooms: string[];
   selectedKeys: string[];
@@ -35,10 +40,14 @@ export async function handleOccupantUpdate({
       phone: formData.phone,
       department: formData.department,
       title: formData.title,
+      status: formData.status,
+      access_level: formData.access_level,
+      emergency_contact: formData.emergency_contact,
+      notes: formData.notes,
     })
     .eq('id', occupantId);
 
-  if (occupantError) throw occupantError;
+  if (occupantError) throw new Error(`Error updating occupant: ${occupantError.message}`);
 
   // Update room assignments
   const currentRooms = new Set(currentAssignments?.rooms || []);
@@ -53,7 +62,7 @@ export async function handleOccupantUpdate({
       .eq('occupant_id', occupantId)
       .in('room_id', roomsToRemove);
 
-    if (removeRoomError) throw removeRoomError;
+    if (removeRoomError) throw new Error(`Error removing room assignments: ${removeRoomError.message}`);
   }
 
   // Rooms to add
@@ -66,7 +75,7 @@ export async function handleOccupantUpdate({
         room_id: roomId,
       })));
 
-    if (addRoomError) throw addRoomError;
+    if (addRoomError) throw new Error(`Error adding room assignments: ${addRoomError.message}`);
   }
 
   // Update key assignments
@@ -80,9 +89,10 @@ export async function handleOccupantUpdate({
       .from('key_assignments')
       .update({ returned_at: new Date().toISOString() })
       .eq('occupant_id', occupantId)
-      .in('key_id', keysToRemove);
+      .in('key_id', keysToRemove)
+      .is('returned_at', null);
 
-    if (removeKeyError) throw removeKeyError;
+    if (removeKeyError) throw new Error(`Error removing key assignments: ${removeKeyError.message}`);
 
     // Update keys status to available
     const { error: keyUpdateError } = await supabase
@@ -90,7 +100,7 @@ export async function handleOccupantUpdate({
       .update({ status: 'available' })
       .in('id', keysToRemove);
 
-    if (keyUpdateError) throw keyUpdateError;
+    if (keyUpdateError) throw new Error(`Error updating key status: ${keyUpdateError.message}`);
   }
 
   // Keys to add
@@ -104,7 +114,7 @@ export async function handleOccupantUpdate({
         assigned_at: new Date().toISOString(),
       })));
 
-    if (addKeyError) throw addKeyError;
+    if (addKeyError) throw new Error(`Error adding key assignments: ${addKeyError.message}`);
 
     // Update keys status to assigned
     const { error: keyUpdateError } = await supabase
@@ -112,6 +122,6 @@ export async function handleOccupantUpdate({
       .update({ status: 'assigned' })
       .in('id', keysToAdd);
 
-    if (keyUpdateError) throw keyUpdateError;
+    if (keyUpdateError) throw new Error(`Error updating key status: ${keyUpdateError.message}`);
   }
 }
