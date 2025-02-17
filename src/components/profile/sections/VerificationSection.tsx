@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,6 +40,11 @@ type VerificationRequest = {
   supporting_documents: string[] | null;
   created_at: string;
   updated_at: string;
+  profile?: {
+    email: string | null;
+    first_name: string | null;
+    last_name: string | null;
+  } | null;
 };
 
 export function VerificationSection() {
@@ -55,9 +59,10 @@ export function VerificationSection() {
         .from('verification_requests')
         .select(`
           *,
-          user:user_id (
+          profile:user_id(
             email,
-            raw_user_meta_data
+            first_name,
+            last_name
           )
         `)
         .order('submitted_at', { ascending: false });
@@ -208,6 +213,7 @@ export function VerificationSection() {
                   />
                 </TableHead>
                 <TableHead>Employee ID</TableHead>
+                <TableHead>Name</TableHead>
                 <TableHead>Department</TableHead>
                 <TableHead>Submitted</TableHead>
                 <TableHead>Status</TableHead>
@@ -234,6 +240,11 @@ export function VerificationSection() {
                     )}
                   </TableCell>
                   <TableCell>{request.employee_id || '-'}</TableCell>
+                  <TableCell>
+                    {request.profile ? 
+                      `${request.profile.first_name || ''} ${request.profile.last_name || ''}`.trim() || '-' 
+                      : '-'}
+                  </TableCell>
                   <TableCell>{request.department || '-'}</TableCell>
                   <TableCell>
                     {format(new Date(request.submitted_at), 'MMM d, yyyy')}
