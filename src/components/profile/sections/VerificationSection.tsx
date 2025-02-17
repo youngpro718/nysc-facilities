@@ -12,6 +12,7 @@ import { BulkActionBar } from "./verification/BulkActionBar";
 import { VerificationTable } from "./verification/VerificationTable";
 
 type VerificationStatus = 'pending' | 'verified' | 'rejected';
+type RequestStatus = 'pending' | 'approved' | 'rejected';
 
 interface Profile {
   id: string;
@@ -22,12 +23,20 @@ interface Profile {
   department_id: string | null;
 }
 
+interface UserData {
+  id: string;
+  department: string | null;
+  created_at: string;
+  updated_at: string;
+  profile: Profile;
+}
+
 interface VerificationRequest {
   id: string;
   user_id: string;
   department_id: string | null;
   employee_id: string | null;
-  status: 'pending' | 'approved' | 'rejected';
+  status: RequestStatus;
   submitted_at: string;
   profile: Profile | null;
 }
@@ -61,7 +70,7 @@ export function VerificationSection() {
           department,
           created_at,
           updated_at,
-          profile:profiles!profiles_id_fkey (
+          profile:profiles(
             id,
             email,
             first_name,
@@ -69,7 +78,8 @@ export function VerificationSection() {
             verification_status,
             department_id
           )
-        `);
+        `)
+        .returns<UserData[]>();
 
       if (error) throw error;
       return data;
@@ -121,15 +131,26 @@ export function VerificationSection() {
     return <div>Loading...</div>;
   }
 
-  const verificationRequests = users?.map(user => ({
+  const mapProfileStatusToRequestStatus = (status: VerificationStatus): RequestStatus => {
+    switch (status) {
+      case 'verified':
+        return 'approved';
+      case 'rejected':
+        return 'rejected';
+      default:
+        return 'pending';
+    }
+  };
+
+  const verificationRequests: VerificationRequest[] = users?.map(user => ({
     id: user.id,
     user_id: user.id,
-    department_id: user.profile?.department_id,
+    department_id: user.profile?.department_id || null,
     employee_id: null,
-    status: (user.profile?.verification_status === 'verified' ? 'approved' : user.profile?.verification_status) || 'pending',
+    status: mapProfileStatusToRequestStatus(user.profile?.verification_status || 'pending'),
     submitted_at: user.created_at,
-    profile: user.profile
-  } as VerificationRequest)) || [];
+    profile: user.profile || null
+  })) || [];
 
   return (
     <Card>
