@@ -48,17 +48,19 @@ export const getInitialSpaceData = (
   };
 
   if (type === "room") {
+    const roomType: RoomType = initialData?.room_type || "office";
+    const storageType: StorageType = initialData?.storage_type || "general_storage";
+    
     return {
       ...baseValues,
       type: "room" as const,
       roomNumber: initialData?.room_number || "",
-      roomType: (initialData?.room_type || "office") as RoomType,
+      roomType,
       phoneNumber: initialData?.phone_number || "",
       description: initialData?.description || "",
       isStorage: initialData?.is_storage ?? false,
       storageCapacity: initialData?.storage_capacity ?? null,
-      storageType: initialData?.is_storage ? 
-        (initialData?.storage_type || "general_storage" as StorageType) : null,
+      storageType: initialData?.is_storage ? storageType : null,
       storageNotes: initialData?.storage_notes || "",
       parentRoomId: initialData?.parent_room_id ?? null,
       currentFunction: initialData?.current_function || "",
@@ -66,21 +68,27 @@ export const getInitialSpaceData = (
   }
 
   if (type === "door") {
+    const doorType: DoorType = initialData?.doorType || "standard";
+    const securityLevel: SecurityLevel = initialData?.securityLevel || "standard";
+    
     return {
       ...baseValues,
       type: "door" as const,
-      doorType: (initialData?.doorType || "standard") as DoorType,
-      securityLevel: (initialData?.securityLevel || "standard") as SecurityLevel,
+      doorType,
+      securityLevel,
       passkeyEnabled: initialData?.passkeyEnabled ?? false,
     };
   }
 
   if (type === "hallway") {
+    const hallwayType: HallwayType = initialData?.hallwayType || "public_main";
+    const section: Section = initialData?.section || "left_wing";
+    
     return {
       ...baseValues,
       type: "hallway" as const,
-      hallwayType: (initialData?.hallwayType || "public_main") as HallwayType,
-      section: (initialData?.section || "left_wing") as Section,
+      hallwayType,
+      section,
       notes: initialData?.notes || "",
     };
   }
