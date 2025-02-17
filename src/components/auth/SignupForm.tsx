@@ -1,4 +1,3 @@
-
 import { FormEvent, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,16 +40,13 @@ export const SignupForm = ({
   const [title, setTitle] = useState("");
   const [phone, setPhone] = useState("");
   const [departmentId, setDepartmentId] = useState("");
-  const [employmentType, setEmploymentType] = useState("full_time");
-  const [startDate, setStartDate] = useState("");
-  const [accessLevel, setAccessLevel] = useState("standard");
+  const [courtPosition, setCourtPosition] = useState("");
   const [emergencyContact, setEmergencyContact] = useState({
     name: "",
     phone: "",
     relationship: ""
   });
 
-  // Fetch departments
   const { data: departments } = useQuery({
     queryKey: ["departments"],
     queryFn: async () => {
@@ -66,7 +62,7 @@ export const SignupForm = ({
 
   const handleSignup = async (e: FormEvent) => {
     e.preventDefault();
-    if (!email || !password || !departmentId || !firstName || !lastName || !title || !phone || !startDate) {
+    if (!email || !password || !departmentId || !firstName || !lastName || !title || !phone || !courtPosition) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -84,9 +80,8 @@ export const SignupForm = ({
             title,
             phone,
             department_id: departmentId,
-            employment_type: employmentType,
-            start_date: startDate,
-            access_level: accessLevel,
+            court_position: courtPosition,
+            access_level: 'standard',
             emergency_contact: emergencyContact
           }
         }
@@ -156,15 +151,27 @@ export const SignupForm = ({
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="title" className="text-white">Job Title *</Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
-              placeholder="Enter your job title"
-              required
-            />
+            <Label htmlFor="courtPosition" className="text-white">Court Position *</Label>
+            <Select value={courtPosition} onValueChange={setCourtPosition} required>
+              <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                <SelectValue placeholder="Select your position" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="judge">Judge</SelectItem>
+                <SelectItem value="clerk">Court Clerk</SelectItem>
+                <SelectItem value="officer">Court Officer</SelectItem>
+                <SelectItem value="officer_sergeant">Court Officer Sergeant</SelectItem>
+                <SelectItem value="officer_lieutenant">Court Officer Lieutenant</SelectItem>
+                <SelectItem value="officer_major">Court Officer Major</SelectItem>
+                <SelectItem value="court_attorney">Court Attorney</SelectItem>
+                <SelectItem value="court_reporter">Court Reporter</SelectItem>
+                <SelectItem value="court_interpreter">Court Interpreter</SelectItem>
+                <SelectItem value="court_analyst">Court Analyst</SelectItem>
+                <SelectItem value="assistant_court_analyst">Assistant Court Analyst</SelectItem>
+                <SelectItem value="clerical">Clerical Staff</SelectItem>
+                <SelectItem value="administrative">Administrative Staff</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       )
@@ -215,16 +222,16 @@ export const SignupForm = ({
       )
     },
     {
-      id: "employment",
+      id: "department",
       icon: <Building2 className="h-5 w-5 text-white/50" />,
-      title: "Employment Details",
+      title: "Court Information",
       children: (
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="department" className="text-white">Department *</Label>
+            <Label htmlFor="department" className="text-white">Court *</Label>
             <Select value={departmentId} onValueChange={setDepartmentId} required>
               <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                <SelectValue placeholder="Select department" />
+                <SelectValue placeholder="Select court" />
               </SelectTrigger>
               <SelectContent>
                 {departments?.map((dept) => (
@@ -236,42 +243,15 @@ export const SignupForm = ({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="employmentType" className="text-white">Employment Type *</Label>
-            <Select value={employmentType} onValueChange={setEmploymentType}>
-              <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                <SelectValue placeholder="Select employment type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="full_time">Full Time</SelectItem>
-                <SelectItem value="part_time">Part Time</SelectItem>
-                <SelectItem value="contractor">Contractor</SelectItem>
-                <SelectItem value="temporary">Temporary</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="startDate" className="text-white">Start Date *</Label>
+            <Label htmlFor="title" className="text-white">Official Title *</Label>
             <Input
-              id="startDate"
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="bg-white/10 border-white/20 text-white"
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+              placeholder="Enter your official title"
               required
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="accessLevel" className="text-white">Access Level *</Label>
-            <Select value={accessLevel} onValueChange={setAccessLevel}>
-              <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                <SelectValue placeholder="Select access level" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="standard">Standard</SelectItem>
-                <SelectItem value="restricted">Restricted</SelectItem>
-                <SelectItem value="elevated">Elevated</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
         </div>
       )
