@@ -17,11 +17,12 @@ import {
 } from "@/components/ui/drawer";
 import { useOccupantAssignments } from "../hooks/useOccupantAssignments";
 import { handleOccupantUpdate } from "../services/occupantService";
+import type { Occupant } from "../types/occupantTypes";
 
 interface EditOccupantDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  occupant: any;
+  occupant: Occupant;
   onSuccess: () => void;
 }
 
@@ -55,7 +56,7 @@ export function EditOccupantDialog({
       onOpenChange(false);
     } catch (error: any) {
       console.error("Update error:", error);
-      toast.error(error.message);
+      toast.error(error.message || "Failed to update occupant");
     } finally {
       setIsSubmitting(false);
     }
