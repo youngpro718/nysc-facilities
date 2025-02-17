@@ -44,7 +44,6 @@ export interface LightingFixture {
   maintenance_notes?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
-  // Additional fields from database
   bulb_count?: number;
   electrical_issues?: ElectricalIssues;
   ballast_issue?: boolean;
@@ -54,6 +53,11 @@ export interface LightingFixture {
   emergency_duration_minutes?: number | null;
   maintenance_history?: MaintenanceRecord[];
   inspection_history?: InspectionRecord[];
+  spatial_assignment?: {
+    id: string;
+    sequence_number: number;
+    position: string;
+  };
 }
 
 export interface LightingZone {
@@ -76,6 +80,13 @@ export interface RoomLightingConfig {
   last_inspection?: string;
   emergency_circuit?: boolean;
   backup_duration_minutes?: number;
+  electrical_issues?: ElectricalIssues;
+  name?: string;
+  type?: string;
+  technology?: string;
+  bulb_count?: number;
+  status?: string;
+  position?: string;
 }
 
 export interface Space {
@@ -88,4 +99,9 @@ export interface Space {
   status: 'active' | 'inactive' | 'under_maintenance';
   created_at: string;
   updated_at: string;
+  properties?: Record<string, any>;
+  position?: Record<string, any>;
+  size?: Record<string, any>;
+  rotation?: number;
+  subtype?: string;
 }

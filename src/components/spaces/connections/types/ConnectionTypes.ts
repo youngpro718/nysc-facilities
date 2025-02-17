@@ -24,6 +24,8 @@ export interface Connection {
     room_number?: string | null;
     type: string;
   };
+  connectedSpaceName?: string;
+  connectionType?: UIConnectionType;
 }
 
 export interface CreateConnectionData {
