@@ -126,7 +126,7 @@ export function AssignRoomsDialog({
         .select(`
           is_primary,
           occupant_id,
-          occupants(
+          occupants!occupant_room_assignments_occupant_id_fkey (
             id,
             first_name,
             last_name
