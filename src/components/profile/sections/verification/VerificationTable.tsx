@@ -1,5 +1,6 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { StatusBadge } from "./StatusBadge";
 import { TableActions } from "./components/TableActions";
@@ -37,11 +38,10 @@ export function VerificationTable({
       <TableHeader>
         <TableRow>
           <TableHead className="w-12">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={pendingRequests.length > 0 && selectedUsers.length === pendingRequests.length}
-              onChange={(e) => onSelectAll(e.target.checked)}
-              className="rounded border-input"
+              onCheckedChange={onSelectAll}
+              aria-label="Select all pending requests"
             />
           </TableHead>
           <TableHead>Name</TableHead>
@@ -54,19 +54,21 @@ export function VerificationTable({
       </TableHeader>
       <TableBody>
         {requests?.map((request) => (
-          <TableRow key={request.id}>
+          <TableRow 
+            key={request.id}
+            data-state={selectedUsers.some(u => u.requestId === request.id) ? "selected" : undefined}
+          >
             <TableCell>
               {request.status === 'pending' && (
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={selectedUsers.some(u => u.requestId === request.id)}
-                  onChange={(e) => onSelectOne(
+                  onCheckedChange={(checked) => onSelectOne(
                     request.id, 
                     request.user_id,
                     `${request.profile?.first_name || ''} ${request.profile?.last_name || ''}`.trim(),
-                    e.target.checked
+                    checked as boolean
                   )}
-                  className="rounded border-input"
+                  aria-label={`Select ${request.profile?.first_name || ''} ${request.profile?.last_name || ''}`}
                 />
               )}
             </TableCell>
