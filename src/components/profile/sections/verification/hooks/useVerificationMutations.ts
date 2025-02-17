@@ -171,11 +171,54 @@ export function useVerificationMutations(
 
   const handleDeleteUser = async (userId: string) => {
     try {
-      // Delete the auth user (this will cascade to profiles and other related data)
-      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
-      
-      if (authError) throw authError;
-      
+      // Delete occupant record if exists
+      const { error: occupantError } = await supabase
+        .from('occupants')
+        .delete()
+        .eq('id', userId);
+
+      if (occupantError && occupantError.code !== '23503') {
+        console.error('Error deleting occupant:', occupantError);
+      }
+
+      // Delete user roles
+      const { error: rolesError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId);
+
+      if (rolesError) {
+        console.error('Error deleting roles:', rolesError);
+      }
+
+      // Delete verification requests
+      const { error: verificationError } = await supabase
+        .from('verification_requests')
+        .delete()
+        .eq('user_id', userId);
+
+      if (verificationError) {
+        console.error('Error deleting verification request:', verificationError);
+      }
+
+      // Delete user metadata
+      const { error: metadataError } = await supabase
+        .from('users_metadata')
+        .delete()
+        .eq('id', userId);
+
+      if (metadataError) {
+        console.error('Error deleting metadata:', metadataError);
+      }
+
+      // Finally delete the profile (this should cascade to auth.users)
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+
+      if (profileError) throw profileError;
+
       toast.success('User deleted successfully');
       refetchUsers();
     } catch (error) {
