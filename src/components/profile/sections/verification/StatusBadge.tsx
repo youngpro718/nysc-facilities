@@ -7,9 +7,9 @@ interface StatusBadgeProps {
 }
 
 export function StatusBadge({ status }: StatusBadgeProps) {
-  const variants: Record<RequestStatus, 'default' | 'success' | 'destructive'> = {
-    pending: 'default',
-    approved: 'success',
+  const variants: Record<RequestStatus, 'default' | 'destructive' | 'secondary'> = {
+    pending: 'secondary',
+    approved: 'default',
     rejected: 'destructive'
   };
 

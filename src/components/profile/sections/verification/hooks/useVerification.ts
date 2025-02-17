@@ -55,7 +55,6 @@ export type {
   Department,
   VerificationStatus,
   RequestStatus,
-  Profile,
   UserVerificationView,
   VerificationRequest
 } from './types';
