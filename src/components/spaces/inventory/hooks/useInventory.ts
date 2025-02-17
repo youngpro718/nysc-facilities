@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -50,7 +49,7 @@ export const useInventory = (roomId: string) => {
   });
 
   const addBulkItems = useMutation({
-    mutationFn: async (items: Omit<InventoryItem, 'id'>[]) => {
+    mutationFn: async (items: Array<Omit<InventoryItem, 'id' | 'category_id'>>) => {
       const { data, error } = await supabase
         .from('inventory_items')
         .insert(items)

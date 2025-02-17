@@ -98,16 +98,21 @@ export function RoomInventory({ roomId }: { roomId: string }) {
 
     try {
       const data = await parseExcelFile(file);
-      await addBulkItems(data.map(item => ({
+      
+      // Transform the data to match our database schema
+      const itemsToImport = data.map(item => ({
         name: item.name,
         quantity: item.quantity,
-        category_id: item.category_id, // This will need to be matched with existing categories
         description: item.description,
         minimum_quantity: item.minimum_quantity,
         unit: item.unit,
         storage_room_id: roomId,
-        status: 'active'
-      })));
+        status: 'active' as const,
+        location_details: item.location_details,
+        notes: item.notes
+      }));
+
+      await addBulkItems(itemsToImport);
 
       toast({
         title: "Success",

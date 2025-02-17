@@ -49,7 +49,8 @@ export const parseExcelFile = async (file: File): Promise<InventoryExcelRow[]> =
           return {
             ...item,
             quantity: Number(item.quantity),
-            minimum_quantity: item.minimum_quantity ? Number(item.minimum_quantity) : undefined
+            minimum_quantity: item.minimum_quantity ? Number(item.minimum_quantity) : undefined,
+            category: item.category || 'General' // Ensure category is always defined
           };
         });
         
