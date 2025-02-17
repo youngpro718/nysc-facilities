@@ -26,13 +26,13 @@ import {
 import { AssignRoomsDialog } from "@/components/occupants/AssignRoomsDialog";
 import { AssignKeysDialog } from "@/components/occupants/AssignKeysDialog";
 
-interface Profile {
+type Profile = {
   email: string | null;
   first_name: string | null;
   last_name: string | null;
 }
 
-interface VerificationRequest {
+type VerificationRequest = {
   id: string;
   user_id: string;
   agency_id: string | null;
@@ -47,7 +47,7 @@ interface VerificationRequest {
   created_at: string;
   updated_at: string;
   profile: Profile | null;
-}
+};
 
 export function VerificationSection() {
   const [selectedOccupants, setSelectedOccupants] = useState<string[]>([]);
@@ -57,16 +57,11 @@ export function VerificationSection() {
   const { data: requests, isLoading, refetch } = useQuery({
     queryKey: ['verification-requests'],
     queryFn: async () => {
-      type DbResult = {
-        data: VerificationRequest[] | null;
-        error: Error | null;
-      };
-
-      const { data, error }: DbResult = await supabase
+      const { data: verificationData, error } = await supabase
         .from('verification_requests')
         .select(`
           *,
-          profile:profiles!verification_requests_user_id_fkey(
+          profile:profiles(
             email,
             first_name,
             last_name
@@ -75,7 +70,14 @@ export function VerificationSection() {
         .order('submitted_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      // Type check the response
+      const typedData = (verificationData || []).map(request => ({
+        ...request,
+        profile: request.profile as Profile | null
+      }));
+
+      return typedData;
     }
   });
 
