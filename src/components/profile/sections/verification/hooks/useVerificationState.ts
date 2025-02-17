@@ -1,8 +1,14 @@
 
 import { useState } from "react";
 
+export interface SelectedUser {
+  requestId: string;
+  userId: string;
+  name: string;
+}
+
 export function useVerificationState() {
-  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<SelectedUser[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
 
   const clearSelections = () => {
@@ -10,11 +16,16 @@ export function useVerificationState() {
     setSelectedDepartment(null);
   };
 
+  const getSelectedUserIds = () => selectedUsers.map(user => user.userId);
+  const getSelectedRequestIds = () => selectedUsers.map(user => user.requestId);
+
   return {
     selectedUsers,
     setSelectedUsers,
     selectedDepartment,
     setSelectedDepartment,
     clearSelections,
+    getSelectedUserIds,
+    getSelectedRequestIds,
   };
 }

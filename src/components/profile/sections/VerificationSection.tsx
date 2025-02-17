@@ -7,6 +7,7 @@ import { VerificationTable } from "./verification/VerificationTable";
 import { VerificationDialogs } from "./verification/components/VerificationDialogs";
 import { NoUsersFound } from "./verification/components/NoUsersFound";
 import { useVerification } from "./verification/hooks/useVerification";
+import { SelectedUser } from "./verification/hooks/useVerificationState";
 
 export function VerificationSection() {
   const [showAssignRooms, setShowAssignRooms] = useState(false);
@@ -23,8 +24,31 @@ export function VerificationSection() {
     verificationRequests,
     handleVerification,
     handleBulkVerification,
-    handleToggleAdmin
+    handleToggleAdmin,
   } = useVerification();
+
+  const handleSelectAll = (selected: boolean) => {
+    if (selected) {
+      const pendingUsers = verificationRequests
+        .filter(r => r.status === 'pending')
+        .map(r => ({
+          requestId: r.id,
+          userId: r.user_id,
+          name: `${r.profile?.first_name || ''} ${r.profile?.last_name || ''}`.trim()
+        }));
+      setSelectedUsers(pendingUsers);
+    } else {
+      setSelectedUsers([]);
+    }
+  };
+
+  const handleSelectOne = (requestId: string, userId: string, name: string, selected: boolean) => {
+    if (selected) {
+      setSelectedUsers([...selectedUsers, { requestId, userId, name }]);
+    } else {
+      setSelectedUsers(selectedUsers.filter(u => u.requestId !== requestId));
+    }
+  };
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -50,28 +74,24 @@ export function VerificationSection() {
         ) : (
           <VerificationTable
             requests={verificationRequests}
-            departments={departments}
-            selectedOccupants={selectedUsers}
-            selectedDepartment={selectedDepartment}
-            onSelectAll={(selected) => {
-              const pendingUsers = verificationRequests.filter(u => u.status === 'pending');
-              setSelectedUsers(selected ? pendingUsers.map(u => u.id) : []);
-            }}
-            onSelectOne={(id, selected) => {
-              if (selected) {
-                setSelectedUsers([...selectedUsers, id]);
-              } else {
-                setSelectedUsers(selectedUsers.filter(i => i !== id));
-              }
-            }}
-            onDepartmentChange={setSelectedDepartment}
+            selectedUsers={selectedUsers}
+            onSelectAll={handleSelectAll}
+            onSelectOne={handleSelectOne}
             onVerify={handleVerification}
             onAssignRooms={(userId) => {
-              setSelectedUsers([userId]);
+              setSelectedUsers([{
+                userId,
+                requestId: verificationRequests.find(r => r.user_id === userId)?.id || '',
+                name: ''
+              }]);
               setShowAssignRooms(true);
             }}
             onAssignKeys={(userId) => {
-              setSelectedUsers([userId]);
+              setSelectedUsers([{
+                userId,
+                requestId: verificationRequests.find(r => r.user_id === userId)?.id || '',
+                name: ''
+              }]);
               setShowAssignKeys(true);
             }}
             onToggleAdmin={handleToggleAdmin}

@@ -1,14 +1,15 @@
 
 import { AssignRoomsDialog } from "@/components/occupants/AssignRoomsDialog";
 import { AssignKeysDialog } from "@/components/occupants/AssignKeysDialog";
+import { SelectedUser } from "../hooks/useVerificationState";
 
 interface VerificationDialogsProps {
   showAssignRooms: boolean;
   setShowAssignRooms: (show: boolean) => void;
   showAssignKeys: boolean;
   setShowAssignKeys: (show: boolean) => void;
-  selectedUsers: string[];
-  setSelectedUsers: (users: string[]) => void;
+  selectedUsers: SelectedUser[];
+  setSelectedUsers: (users: SelectedUser[]) => void;
 }
 
 export function VerificationDialogs({
@@ -24,7 +25,7 @@ export function VerificationDialogs({
       <AssignRoomsDialog
         open={showAssignRooms}
         onOpenChange={setShowAssignRooms}
-        selectedOccupants={selectedUsers}
+        selectedOccupants={selectedUsers.map(u => u.userId)}
         onSuccess={() => {
           setShowAssignRooms(false);
           setSelectedUsers([]);
@@ -34,7 +35,7 @@ export function VerificationDialogs({
       <AssignKeysDialog
         open={showAssignKeys}
         onOpenChange={setShowAssignKeys}
-        selectedOccupants={selectedUsers}
+        selectedOccupants={selectedUsers.map(u => u.userId)}
         onSuccess={() => {
           setShowAssignKeys(false);
           setSelectedUsers([]);

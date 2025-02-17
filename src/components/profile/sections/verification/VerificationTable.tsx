@@ -4,11 +4,23 @@ import { format } from "date-fns";
 import { StatusBadge } from "./StatusBadge";
 import { TableActions } from "./components/TableActions";
 import { AdminToggle } from "./components/AdminToggle";
-import { VerificationTableProps } from "./components/types";
+import { SelectedUser } from "./hooks/useVerificationState";
+
+interface VerificationTableProps {
+  requests: any[];
+  selectedUsers: SelectedUser[];
+  onSelectAll: (selected: boolean) => void;
+  onSelectOne: (requestId: string, userId: string, name: string, selected: boolean) => void;
+  onVerify: (id: string, approved: boolean) => void;
+  onAssignRooms: (userId: string) => void;
+  onAssignKeys: (userId: string) => void;
+  onToggleAdmin: (userId: string, isAdmin: boolean) => void;
+  onDeleteUser?: (userId: string) => void;
+}
 
 export function VerificationTable({
   requests,
-  selectedOccupants,
+  selectedUsers,
   onSelectAll,
   onSelectOne,
   onVerify,
@@ -26,7 +38,7 @@ export function VerificationTable({
           <TableHead className="w-12">
             <input
               type="checkbox"
-              checked={pendingRequests.length > 0 && selectedOccupants.length === pendingRequests.length}
+              checked={pendingRequests.length > 0 && selectedUsers.length === pendingRequests.length}
               onChange={(e) => onSelectAll(e.target.checked)}
               className="rounded border-input"
             />
@@ -46,8 +58,13 @@ export function VerificationTable({
               {request.status === 'pending' && (
                 <input
                   type="checkbox"
-                  checked={selectedOccupants.includes(request.id)}
-                  onChange={(e) => onSelectOne(request.id, e.target.checked)}
+                  checked={selectedUsers.some(u => u.requestId === request.id)}
+                  onChange={(e) => onSelectOne(
+                    request.id, 
+                    request.user_id,
+                    `${request.profile?.first_name || ''} ${request.profile?.last_name || ''}`.trim(),
+                    e.target.checked
+                  )}
                   className="rounded border-input"
                 />
               )}
