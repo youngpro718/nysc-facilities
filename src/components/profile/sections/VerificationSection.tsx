@@ -40,7 +40,7 @@ type VerificationRequest = {
   supporting_documents: string[] | null;
   created_at: string;
   updated_at: string;
-  profile?: {
+  profile: {
     email: string | null;
     first_name: string | null;
     last_name: string | null;
@@ -68,7 +68,7 @@ export function VerificationSection() {
         .order('submitted_at', { ascending: false });
 
       if (error) throw error;
-      return data as VerificationRequest[];
+      return (data || []) as VerificationRequest[];
     }
   });
 

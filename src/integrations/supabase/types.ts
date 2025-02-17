@@ -4761,6 +4761,13 @@ export type Database = {
             referencedRelation: "agency_affiliations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "verification_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
