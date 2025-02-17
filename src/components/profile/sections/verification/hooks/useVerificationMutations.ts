@@ -1,6 +1,8 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Department } from "./types";
+import { SelectedUser } from "./useVerificationState";
 
 export function useVerificationMutations(
   departments: Department[] | undefined,
@@ -81,11 +83,11 @@ export function useVerificationMutations(
     } catch (error) {
       console.error('Error handling verification:', error);
       toast.error('Failed to process verification request');
-      throw error; // Re-throw to prevent further operations
+      throw error;
     }
   };
 
-  const handleBulkVerification = async (selectedUsers: string[], approve: boolean, selectedDepartment: string | null) => {
+  const handleBulkVerification = async (selectedUsers: SelectedUser[], approve: boolean, selectedDepartment: string | null) => {
     if (approve && !selectedDepartment) {
       toast.error('Please select a department before approving users');
       return;
@@ -93,23 +95,25 @@ export function useVerificationMutations(
 
     try {
       if (approve) {
-        for (const userId of selectedUsers) {
-          await handleVerification(userId, true, selectedDepartment);
+        for (const user of selectedUsers) {
+          await handleVerification(user.userId, true, selectedDepartment);
         }
         toast.success(`${selectedUsers.length} users approved successfully`);
       } else {
         // Delete from both profiles and users_metadata tables
+        const userIds = selectedUsers.map(user => user.userId);
+        
         const { error: metadataError } = await supabase
           .from('users_metadata')
           .delete()
-          .in('id', selectedUsers);
+          .in('id', userIds);
 
         if (metadataError) throw metadataError;
 
         const { error: profileError } = await supabase
           .from('profiles')
           .delete()
-          .in('id', selectedUsers);
+          .in('id', userIds);
 
         if (profileError) throw profileError;
         
