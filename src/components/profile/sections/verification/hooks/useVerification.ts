@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -71,42 +70,66 @@ export function useVerification() {
 
   const handleVerification = async (userId: string, approved: boolean) => {
     try {
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          verification_status: approved ? 'verified' : 'rejected',
-          department_id: selectedDepartment
-        })
-        .eq('id', userId);
+      if (approved) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            verification_status: 'verified',
+            department_id: selectedDepartment
+          })
+          .eq('id', userId);
 
-      if (profileError) throw profileError;
+        if (profileError) throw profileError;
+        
+        toast.success('User approved successfully');
+      } else {
+        const { error: deleteError } = await supabase
+          .from('profiles')
+          .delete()
+          .eq('id', userId);
 
-      toast.success(`User ${approved ? 'approved' : 'rejected'} successfully`);
+        if (deleteError) throw deleteError;
+        
+        toast.success('User rejected and removed');
+      }
+      
       refetch();
     } catch (error) {
-      console.error('Error updating verification:', error);
-      toast.error('Failed to update verification status');
+      console.error('Error handling verification:', error);
+      toast.error('Failed to process verification request');
     }
   };
 
   const handleBulkVerification = async (approve: boolean) => {
     try {
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          verification_status: approve ? 'verified' : 'rejected',
-          department_id: selectedDepartment
-        })
-        .in('id', selectedUsers);
+      if (approve) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            verification_status: 'verified',
+            department_id: selectedDepartment
+          })
+          .in('id', selectedUsers);
 
-      if (profileError) throw profileError;
+        if (profileError) throw profileError;
+        
+        toast.success(`${selectedUsers.length} users approved successfully`);
+      } else {
+        const { error: deleteError } = await supabase
+          .from('profiles')
+          .delete()
+          .in('id', selectedUsers);
 
-      toast.success(`${selectedUsers.length} users ${approve ? 'approved' : 'rejected'} successfully`);
+        if (deleteError) throw deleteError;
+        
+        toast.success(`${selectedUsers.length} users rejected and removed`);
+      }
+
       setSelectedUsers([]);
       refetch();
     } catch (error) {
       console.error('Error in bulk verification:', error);
-      toast.error('Failed to update verification status');
+      toast.error('Failed to process verification requests');
     }
   };
 
