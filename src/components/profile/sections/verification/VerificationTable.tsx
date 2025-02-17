@@ -5,9 +5,10 @@ import { StatusBadge } from "./StatusBadge";
 import { TableActions } from "./components/TableActions";
 import { AdminToggle } from "./components/AdminToggle";
 import { SelectedUser } from "./hooks/useVerificationState";
+import { VerificationRequest } from "./hooks/types";
 
 interface VerificationTableProps {
-  requests: any[];
+  requests: VerificationRequest[];
   selectedUsers: SelectedUser[];
   onSelectAll: (selected: boolean) => void;
   onSelectOne: (requestId: string, userId: string, name: string, selected: boolean) => void;

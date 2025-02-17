@@ -2,39 +2,38 @@
 export type VerificationStatus = 'pending' | 'verified' | 'rejected';
 export type RequestStatus = 'pending' | 'approved' | 'rejected';
 
-export interface Profile {
+export interface Department {
   id: string;
-  email: string | null;
-  first_name: string | null;
-  last_name: string | null;
-  verification_status: VerificationStatus;
-  department_id: string | null;
-}
-
-export interface UserVerificationView {
-  id: string;
-  department_name: string | null;
-  created_at: string;
-  updated_at: string;
-  profile_id: string;
-  email: string | null;
-  first_name: string | null;
-  last_name: string | null;
-  verification_status: VerificationStatus;
-  department_id: string | null;
+  name: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface VerificationRequest {
   id: string;
   user_id: string;
-  department_id: string | null;
   status: RequestStatus;
   submitted_at: string;
-  profile: Profile | null;
+  department_id?: string | null;
   is_admin: boolean;
+  profile?: {
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+    email: string | null;
+    verification_status: VerificationStatus;
+    department_id?: string | null;
+  }
 }
 
-export interface Department {
+export interface UserVerificationView {
   id: string;
-  name: string;
+  email: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  created_at: string;
+  updated_at: string;
+  verification_status: VerificationStatus | null;
+  department_id: string | null;
+  profile_id: string;
 }
