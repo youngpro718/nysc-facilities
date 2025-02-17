@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,6 +43,15 @@ interface RoomDetails {
   } | null;
 }
 
+interface SpaceSelectItem {
+  id: string;
+  name: string;
+  room_number: string;
+  capacity: number | null;
+  current_occupancy: number;
+  floors: RoomDetails['floors'];
+}
+
 interface CurrentOccupant {
   id: string;
   first_name: string;
@@ -49,7 +59,7 @@ interface CurrentOccupant {
   is_primary: boolean;
 }
 
-function generateSpaceSelectItem(room: RoomDetails) {
+function generateSpaceSelectItem(room: RoomDetails): SpaceSelectItem {
   return {
     id: room.id,
     name: room.name,

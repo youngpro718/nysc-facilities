@@ -21,8 +21,27 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+interface KeyAssignment {
+  id: string;
+  assigned_at: string;
+  is_spare: boolean;
+  spare_key_reason: string | null;
+  keys: {
+    id: string;
+    name: string;
+    type: string;
+    is_passkey: boolean;
+  } | null;
+  occupant: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    department: string | null;
+  } | null;
+}
+
 export function KeyAssignmentSection() {
-  const { data: assignments, isLoading } = useQuery({
+  const { data: assignments, isLoading } = useQuery<KeyAssignment[]>({
     queryKey: ["active-key-assignments"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -32,13 +51,13 @@ export function KeyAssignmentSection() {
           assigned_at,
           is_spare,
           spare_key_reason,
-          keys:key_id (
+          keys!key_id (
             id,
             name,
             type,
             is_passkey
           ),
-          occupant:occupant_id (
+          occupant!key_assignments_occupant_id_fkey (
             id,
             first_name,
             last_name,
