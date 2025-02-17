@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Settings2 } from "lucide-react";
-import { LightingFixture, LightingType } from "@/components/lighting/types";
+import { LightingFixture } from "@/components/lighting/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -32,45 +32,24 @@ export function RoomLightingDialog({ roomId, fixture }: RoomLightingDialogProps)
   
   const form = useForm<RoomLightingFormData>({
     resolver: zodResolver(roomLightingSchema),
-    defaultValues: fixture ? {
-      id: fixture.id,
+    defaultValues: {
       room_id: roomId,
-      primary_lighting: fixture.type === 'standard',
-      emergency_lighting: fixture.type === 'emergency',
-      lighting_type: fixture.type,
-      fixture_count: fixture.bulb_count,
-      last_inspection: fixture.inspection_history?.[0]?.date,
-      emergency_circuit: fixture.emergency_circuit,
-      backup_duration_minutes: fixture.emergency_duration_minutes || undefined,
-      electrical_issues: fixture.electrical_issues,
-      technology: fixture.technology,
-      status: fixture.status,
-      position: fixture.position || 'ceiling',
-      space_type: fixture.space_type || 'room',
-      name: fixture.name,
-      bulb_count: fixture.bulb_count,
-      ballast_issue: fixture.ballast_issue,
-      ballast_check_notes: fixture.ballast_check_notes,
-      maintenance_notes: fixture.maintenance_notes
-    } : {
-      room_id: roomId,
-      primary_lighting: true,
-      emergency_lighting: false,
-      lighting_type: 'standard' as LightingType,
-      fixture_count: 1,
-      emergency_circuit: false,
-      technology: 'LED',
-      status: 'functional',
-      position: 'ceiling',
-      space_type: 'room',
-      electrical_issues: {
+      name: fixture?.name || '',
+      type: fixture?.type || 'standard',
+      status: fixture?.status || 'functional',
+      position: fixture?.position || 'ceiling',
+      space_type: fixture?.space_type || 'room',
+      technology: fixture?.technology || 'LED',
+      bulb_count: fixture?.bulb_count || 1,
+      electrical_issues: fixture?.electrical_issues || {
         short_circuit: false,
         wiring_issues: false,
         voltage_problems: false
       },
-      name: '',
-      bulb_count: 1,
-      ballast_issue: false
+      ballast_issue: fixture?.ballast_issue || false,
+      ballast_check_notes: fixture?.ballast_check_notes || null,
+      emergency_circuit: fixture?.emergency_circuit || false,
+      maintenance_notes: fixture?.maintenance_notes || null
     }
   });
 
@@ -78,7 +57,7 @@ export function RoomLightingDialog({ roomId, fixture }: RoomLightingDialogProps)
     try {
       const fixtureData = {
         name: data.name,
-        type: data.lighting_type,
+        type: data.type,
         status: data.status,
         bulb_count: data.bulb_count,
         room_id: data.room_id,
@@ -111,7 +90,7 @@ export function RoomLightingDialog({ roomId, fixture }: RoomLightingDialogProps)
       toast.success(`Lighting configuration ${fixture ? 'updated' : 'created'} successfully`);
       queryClient.invalidateQueries({ queryKey: ['lighting-fixtures'] });
       setOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving lighting configuration:', error);
       toast.error('Failed to save lighting configuration');
     }

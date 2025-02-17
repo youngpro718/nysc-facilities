@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { LightingFixture, LightStatus } from "../types";
+import { Database } from "@/types/supabase";
 
 export function useLightingFixtures() {
   const queryClient = useQueryClient();
@@ -12,22 +13,7 @@ export function useLightingFixtures() {
     queryFn: async () => {
       const { data: rawFixtures, error } = await supabase
         .from('lighting_fixtures')
-        .select(`
-          *,
-          spaces:space_id (
-            name,
-            room_number,
-            type,
-            floor_id,
-            floors:floor_id (
-              name,
-              building_id,
-              buildings:building_id (
-                name
-              )
-            )
-          )
-        `);
+        .select('*, space:space_id ( * )');
 
       if (error) throw error;
 
@@ -36,26 +22,30 @@ export function useLightingFixtures() {
         name: raw.name || '',
         type: raw.type || 'standard',
         status: raw.status || 'functional',
-        zone_name: raw.zone?.name || null,
-        building_name: raw.spaces?.floors?.buildings?.name || null,
-        floor_name: raw.spaces?.floors?.name || null,
-        floor_id: raw.spaces?.floor_id || null,
+        zone_name: null, // Will implement zone relation later
+        building_name: raw.space?.building_name || null,
+        floor_name: raw.space?.floor_name || null,
+        floor_id: raw.space?.floor_id || null,
         space_id: raw.space_id || null,
         space_type: (raw.space_type || 'room') as 'room' | 'hallway',
         position: (raw.position || 'ceiling') as 'ceiling' | 'wall' | 'floor' | 'desk',
         sequence_number: raw.sequence_number || null,
         zone_id: raw.zone_id || null,
-        space_name: raw.spaces?.name || null,
-        room_number: raw.spaces?.room_number || null,
+        space_name: raw.space?.name || null,
+        room_number: raw.space?.room_number || null,
         technology: raw.technology || null,
         maintenance_notes: raw.maintenance_notes || null,
         created_at: raw.created_at || null,
         updated_at: raw.updated_at || null,
         bulb_count: raw.bulb_count || 1,
-        electrical_issues: {
-          short_circuit: raw.electrical_issues?.short_circuit || false,
-          wiring_issues: raw.electrical_issues?.wiring_issues || false,
-          voltage_problems: raw.electrical_issues?.voltage_problems || false
+        electrical_issues: typeof raw.electrical_issues === 'object' ? {
+          short_circuit: (raw.electrical_issues as any)?.short_circuit || false,
+          wiring_issues: (raw.electrical_issues as any)?.wiring_issues || false,
+          voltage_problems: (raw.electrical_issues as any)?.voltage_problems || false
+        } : {
+          short_circuit: false,
+          wiring_issues: false,
+          voltage_problems: false
         },
         ballast_issue: raw.ballast_issue || false,
         ballast_check_notes: raw.ballast_check_notes || null,
@@ -63,7 +53,7 @@ export function useLightingFixtures() {
         backup_power_source: raw.backup_power_source || null,
         emergency_duration_minutes: raw.emergency_duration_minutes || null,
         maintenance_history: Array.isArray(raw.maintenance_history) 
-          ? raw.maintenance_history.map(record => ({
+          ? (raw.maintenance_history as any[]).map(record => ({
               id: record.id || '',
               date: record.date || '',
               type: record.type || '',
@@ -71,7 +61,7 @@ export function useLightingFixtures() {
             }))
           : [],
         inspection_history: Array.isArray(raw.inspection_history)
-          ? raw.inspection_history.map(record => ({
+          ? (raw.inspection_history as any[]).map(record => ({
               id: record.id || '',
               date: record.date || '',
               status: record.status || '',
