@@ -4130,34 +4130,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "space_connections_from_space_id_fkey"
-            columns: ["from_space_id"]
-            isOneToOne: false
-            referencedRelation: "room_health_overview"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "space_connections_from_space_id_fkey"
-            columns: ["from_space_id"]
-            isOneToOne: false
-            referencedRelation: "room_issue_analytics"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "space_connections_from_space_id_fkey"
-            columns: ["from_space_id"]
-            isOneToOne: false
-            referencedRelation: "room_occupancy_stats"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "space_connections_from_space_id_fkey"
-            columns: ["from_space_id"]
-            isOneToOne: false
-            referencedRelation: "rooms"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "space_connections_from_space_id_hallways_fkey"
             columns: ["from_space_id"]
             isOneToOne: false
@@ -4197,34 +4169,6 @@ export type Database = {
             columns: ["to_space_id"]
             isOneToOne: false
             referencedRelation: "doors"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "space_connections_to_space_id_fkey"
-            columns: ["to_space_id"]
-            isOneToOne: false
-            referencedRelation: "room_health_overview"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "space_connections_to_space_id_fkey"
-            columns: ["to_space_id"]
-            isOneToOne: false
-            referencedRelation: "room_issue_analytics"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "space_connections_to_space_id_fkey"
-            columns: ["to_space_id"]
-            isOneToOne: false
-            referencedRelation: "room_occupancy_stats"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "space_connections_to_space_id_fkey"
-            columns: ["to_space_id"]
-            isOneToOne: false
-            referencedRelation: "rooms"
             referencedColumns: ["id"]
           },
           {
@@ -5491,6 +5435,7 @@ export type Database = {
         | "adjacent"
         | "left_of_hallway"
         | "right_of_hallway"
+      connection_position_enum: "start" | "middle" | "end" | "adjacent"
       connection_status_enum: "active" | "inactive" | "under_maintenance"
       connection_type_enum: "door" | "direct" | "secured"
       department_enum:
