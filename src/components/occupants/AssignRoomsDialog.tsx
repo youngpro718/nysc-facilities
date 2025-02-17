@@ -61,7 +61,7 @@ interface CurrentOccupant {
 
 interface OccupantAssignmentResponse {
   is_primary: boolean;
-  occupant_id: {
+  occupant: {
     id: string;
     first_name: string;
     last_name: string;
@@ -124,7 +124,7 @@ export function AssignRoomsDialog({
         .from("occupant_room_assignments")
         .select(`
           is_primary,
-          occupant_id:occupant_id (
+          occupant:occupants (
             id,
             first_name,
             last_name
@@ -137,9 +137,9 @@ export function AssignRoomsDialog({
       if (!data) return [];
 
       return data.map((assignment: OccupantAssignmentResponse) => ({
-        id: assignment.occupant_id.id,
-        first_name: assignment.occupant_id.first_name,
-        last_name: assignment.occupant_id.last_name,
+        id: assignment.occupant.id,
+        first_name: assignment.occupant.first_name,
+        last_name: assignment.occupant.last_name,
         is_primary: assignment.is_primary
       })) as CurrentOccupant[];
     }
