@@ -7,7 +7,6 @@ export const useInventoryQueries = (roomId: string) => {
   const inventoryQuery = useQuery({
     queryKey: ['inventory', roomId],
     queryFn: async () => {
-      // Simplified select statement to avoid deep nesting
       const { data, error } = await supabase
         .from('inventory_items')
         .select(`
@@ -19,7 +18,7 @@ export const useInventoryQueries = (roomId: string) => {
           unit,
           status,
           category_id,
-          category:inventory_categories!category_id (
+          inventory_categories!category_id (
             id,
             name,
             color,
@@ -30,7 +29,14 @@ export const useInventoryQueries = (roomId: string) => {
         .eq('status', 'active');
       
       if (error) throw error;
-      return data as InventoryItem[];
+
+      // Transform the response to match our frontend types
+      const transformedData = data.map(item => ({
+        ...item,
+        category: item.inventory_categories
+      }));
+
+      return transformedData as InventoryItem[];
     }
   });
 
@@ -84,7 +90,7 @@ export const useInventoryQueries = (roomId: string) => {
           unit,
           status,
           category_id,
-          category:inventory_categories!category_id (
+          inventory_categories!category_id (
             id,
             name,
             color,
@@ -98,7 +104,14 @@ export const useInventoryQueries = (roomId: string) => {
         .filter('quantity', 'lte', 'minimum_quantity');
       
       if (error) throw error;
-      return data as InventoryItem[];
+
+      // Transform the response to match our frontend types
+      const transformedData = data.map(item => ({
+        ...item,
+        category: item.inventory_categories
+      }));
+
+      return transformedData as InventoryItem[];
     }
   });
 
