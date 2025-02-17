@@ -5295,6 +5295,7 @@ export type Database = {
           id: string | null
           name: string | null
           room_number: string | null
+          status: Database["public"]["Enums"]["status_enum"] | null
           type: string | null
         }
         Relationships: []
