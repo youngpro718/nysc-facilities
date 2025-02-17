@@ -2,67 +2,36 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { InventoryItem, InventoryFormInputs } from "../types/inventoryTypes";
+import { InventoryItem, InventoryTransaction } from "../types/inventoryTypes";
 
 export const useInventory = (roomId: string) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: inventoryData, isLoading } = useQuery({
+  const { data: inventory, isLoading } = useQuery({
     queryKey: ['inventory', roomId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('inventory_items')
-        .select(`
-          *,
-          inventory_categories!category_id (
-            id,
-            name,
-            color,
-            icon
-          )
-        `)
-        .eq('storage_room_id', roomId);
-      
-      if (error) throw error;
-      
-      if (!data?.length) return [];
+        .from('inventory_items_view')
+        .select('*')
+        .eq('storage_room_id', roomId)
+        .eq('status', 'active');
 
-      return data.map(item => ({
-        id: item.id,
-        name: item.name,
-        quantity: item.quantity,
-        category_id: item.category_id,
-        description: item.description,
-        minimum_quantity: item.minimum_quantity,
-        unit: item.unit,
-        status: item.status,
-        location_details: item.location_details,
-        last_inventory_date: item.last_inventory_date,
-        reorder_point: item.reorder_point,
-        preferred_vendor: item.preferred_vendor,
-        notes: item.notes,
-        storage_room_id: item.storage_room_id,
-        category: item.inventory_categories ? {
-          id: item.inventory_categories.id,
-          name: item.inventory_categories.name,
-          color: item.inventory_categories.color,
-          icon: item.inventory_categories.icon
-        } : undefined
-      })) as InventoryItem[];
+      if (error) throw error;
+      return data as InventoryItem[];
     }
   });
 
-  const addItemMutation = useMutation({
-    mutationFn: async (params: InventoryFormInputs) => {
-      const { error } = await supabase
+  const addItem = useMutation({
+    mutationFn: async (item: Omit<InventoryItem, 'id'>) => {
+      const { data, error } = await supabase
         .from('inventory_items')
-        .insert({ 
-          ...params,
-          status: 'active'
-        });
+        .insert(item)
+        .select()
+        .single();
 
       if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory', roomId] });
@@ -71,55 +40,56 @@ export const useInventory = (roomId: string) => {
         description: "Item added successfully",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to add item",
+        description: error.message,
         variant: "destructive",
       });
-    },
+    }
   });
 
-  const updateQuantityMutation = useMutation({
-    mutationFn: async ({ id, quantity }: { id: string; quantity: number }) => {
-      // First, update the local cache optimistically
-      queryClient.setQueryData(['inventory', roomId], (oldData: InventoryItem[] | undefined) => {
-        if (!oldData) return oldData;
-        return oldData.map(item => 
-          item.id === id ? { ...item, quantity } : item
-        );
+  const updateQuantity = useMutation({
+    mutationFn: async ({ 
+      id, 
+      quantity, 
+      notes 
+    }: { 
+      id: string; 
+      quantity: number; 
+      notes?: string 
+    }) => {
+      const { data, error } = await supabase.rpc('safely_update_inventory_quantity', {
+        p_item_id: id,
+        p_new_quantity: quantity,
+        p_notes: notes || 'Quantity update'
       });
 
-      try {
-        const { error } = await supabase
-          .from('inventory_items')
-          .update({ quantity })
-          .eq('id', id)
-          .select()
-          .single();
-
-        if (error) throw error;
-      } catch (error) {
-        // If the update fails, revert the optimistic update
-        queryClient.invalidateQueries({ queryKey: ['inventory', roomId] });
-        throw error;
-      }
+      if (error) throw error;
+      return data;
     },
-    onError: (error: any) => {
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory', roomId] });
+      toast({
+        title: "Success",
+        description: "Quantity updated successfully",
+      });
+    },
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to update quantity",
+        description: error.message,
         variant: "destructive",
       });
-    },
+    }
   });
 
-  const deleteItemMutation = useMutation({
-    mutationFn: async (itemId: string) => {
+  const deleteItem = useMutation({
+    mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('inventory_items')
-        .delete()
-        .eq('id', itemId);
+        .update({ status: 'inactive' })
+        .eq('id', id);
 
       if (error) throw error;
     },
@@ -130,23 +100,23 @@ export const useInventory = (roomId: string) => {
         description: "Item deleted successfully",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to delete item",
+        description: error.message,
         variant: "destructive",
       });
-    },
+    }
   });
 
   return {
-    inventoryData,
+    inventory,
     isLoading,
-    addItem: addItemMutation.mutateAsync,
-    updateQuantity: updateQuantityMutation.mutateAsync,
-    deleteItem: deleteItemMutation.mutateAsync,
-    isAdding: addItemMutation.isPending,
-    isUpdating: updateQuantityMutation.isPending,
-    isDeleting: deleteItemMutation.isPending
+    addItem: addItem.mutateAsync,
+    updateQuantity: updateQuantity.mutateAsync,
+    deleteItem: deleteItem.mutateAsync,
+    isAddingItem: addItem.isPending,
+    isUpdatingQuantity: updateQuantity.isPending,
+    isDeletingItem: deleteItem.isPending
   };
 };
