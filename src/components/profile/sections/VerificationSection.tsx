@@ -26,6 +26,12 @@ import {
 import { AssignRoomsDialog } from "@/components/occupants/AssignRoomsDialog";
 import { AssignKeysDialog } from "@/components/occupants/AssignKeysDialog";
 
+type Profile = {
+  email: string | null;
+  first_name: string | null;
+  last_name: string | null;
+}
+
 type VerificationRequest = {
   id: string;
   user_id: string;
@@ -40,11 +46,7 @@ type VerificationRequest = {
   supporting_documents: string[] | null;
   created_at: string;
   updated_at: string;
-  profile: {
-    email: string | null;
-    first_name: string | null;
-    last_name: string | null;
-  } | null;
+  profile: Profile | null;
 };
 
 export function VerificationSection() {
@@ -55,7 +57,7 @@ export function VerificationSection() {
   const { data: requests, isLoading, refetch } = useQuery({
     queryKey: ['verification-requests'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: verificationData, error } = await supabase
         .from('verification_requests')
         .select(`
           *,
@@ -68,7 +70,13 @@ export function VerificationSection() {
         .order('submitted_at', { ascending: false });
 
       if (error) throw error;
-      return (data || []) as VerificationRequest[];
+      
+      const typedData = (verificationData || []).map(request => ({
+        ...request,
+        profile: request.profile as Profile | null
+      })) as VerificationRequest[];
+
+      return typedData;
     }
   });
 
