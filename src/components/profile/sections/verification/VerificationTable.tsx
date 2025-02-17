@@ -1,7 +1,7 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Building, Building2, Check, Key, X } from "lucide-react";
+import { Building, Check, Key, X } from "lucide-react";
 import { format } from "date-fns";
 import { StatusBadge } from "./StatusBadge";
 import {
@@ -17,21 +17,16 @@ interface Department {
   name: string;
 }
 
-interface Profile {
-  email: string | null;
-  first_name: string | null;
-  last_name: string | null;
-  department_id: string | null;
-}
-
 interface VerificationRequest {
   id: string;
   user_id: string;
-  department_id: string | null;
-  employee_id: string | null;
   status: 'pending' | 'approved' | 'rejected';
   submitted_at: string;
-  profile: Profile | null;
+  profile: {
+    email: string | null;
+    first_name: string | null;
+    last_name: string | null;
+  } | null;
 }
 
 interface VerificationTableProps {
@@ -49,12 +44,9 @@ interface VerificationTableProps {
 
 export function VerificationTable({
   requests,
-  departments,
   selectedOccupants,
-  selectedDepartment,
   onSelectAll,
   onSelectOne,
-  onDepartmentChange,
   onVerify,
   onAssignRooms,
   onAssignKeys,
@@ -73,9 +65,8 @@ export function VerificationTable({
               className="rounded border-input"
             />
           </TableHead>
-          <TableHead>Employee ID</TableHead>
           <TableHead>Name</TableHead>
-          <TableHead>Department</TableHead>
+          <TableHead>Room Assignment</TableHead>
           <TableHead>Submitted</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>Actions</TableHead>
@@ -94,7 +85,6 @@ export function VerificationTable({
                 />
               )}
             </TableCell>
-            <TableCell>{request.employee_id || '-'}</TableCell>
             <TableCell>
               {request.profile ? 
                 `${request.profile.first_name || ''} ${request.profile.last_name || ''}`.trim() || '-' 
@@ -102,24 +92,16 @@ export function VerificationTable({
             </TableCell>
             <TableCell>
               {request.status === 'pending' ? (
-                <Select
-                  value={request.department_id || ''}
-                  onValueChange={onDepartmentChange}
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => onAssignRooms(request.user_id)}
                 >
-                  <SelectTrigger className="w-[200px]">
-                    <Building className="w-4 h-4 mr-2" />
-                    <SelectValue placeholder="Select department" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {departments?.map((dept) => (
-                      <SelectItem key={dept.id} value={dept.id}>
-                        {dept.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <Building className="h-4 w-4 mr-1" />
+                  Assign Room
+                </Button>
               ) : (
-                departments?.find(d => d.id === request.department_id)?.name || '-'
+                '-'
               )}
             </TableCell>
             <TableCell>
@@ -134,7 +116,6 @@ export function VerificationTable({
                   <Button
                     size="sm"
                     onClick={() => onVerify(request.id, true)}
-                    disabled={!selectedDepartment}
                   >
                     <Check className="h-4 w-4 mr-1" />
                     Approve
@@ -156,7 +137,7 @@ export function VerificationTable({
                     variant="outline"
                     onClick={() => onAssignRooms(request.user_id)}
                   >
-                    <Building2 className="h-4 w-4 mr-1" />
+                    <Building className="h-4 w-4 mr-1" />
                     Assign Rooms
                   </Button>
                   <Button 

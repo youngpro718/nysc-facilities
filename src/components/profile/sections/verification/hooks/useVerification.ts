@@ -33,7 +33,6 @@ export interface VerificationRequest {
   id: string;
   user_id: string;
   department_id: string | null;
-  employee_id: string | null;
   status: RequestStatus;
   submitted_at: string;
   profile: Profile | null;
@@ -41,7 +40,6 @@ export interface VerificationRequest {
 
 export function useVerification() {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
-  const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
 
   const { data: departments } = useQuery({
     queryKey: ['departments'],
@@ -75,8 +73,7 @@ export function useVerification() {
         const { error: profileError } = await supabase
           .from('profiles')
           .update({
-            verification_status: 'verified',
-            department_id: selectedDepartment
+            verification_status: 'verified'
           })
           .eq('id', userId);
 
@@ -115,8 +112,7 @@ export function useVerification() {
         const { error: profileError } = await supabase
           .from('profiles')
           .update({
-            verification_status: 'verified',
-            department_id: selectedDepartment
+            verification_status: 'verified'
           })
           .in('id', selectedUsers);
 
@@ -165,7 +161,6 @@ export function useVerification() {
     id: user.id,
     user_id: user.id,
     department_id: user.department_id,
-    employee_id: null,
     status: mapVerificationStatusToRequestStatus(user.verification_status || 'pending'),
     submitted_at: user.created_at,
     profile: {
@@ -181,8 +176,6 @@ export function useVerification() {
   return {
     selectedUsers,
     setSelectedUsers,
-    selectedDepartment,
-    setSelectedDepartment,
     departments,
     users,
     isLoading,
