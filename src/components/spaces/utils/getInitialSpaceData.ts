@@ -3,9 +3,14 @@ import { EditSpaceFormData } from "../schemas/editSpaceSchema";
 
 type SpaceType = "room" | "door" | "hallway";
 
-type InitialData = Partial<EditSpaceFormData> & {
+type InitialData = {
   type?: SpaceType;
-  room_number?: string;  // Add snake_case variants
+  name?: string;
+  status?: "active" | "inactive" | "under_maintenance";
+  floorId?: string;
+  description?: string;
+  // Snake case fields from database
+  room_number?: string;
   room_type?: string;
   phone_number?: string;
   parent_room_id?: string | null;
@@ -14,6 +19,14 @@ type InitialData = Partial<EditSpaceFormData> & {
   storage_capacity?: number | null;
   storage_notes?: string;
   current_function?: string;
+  // Additional door fields
+  doorType?: string;
+  securityLevel?: string;
+  passkeyEnabled?: boolean;
+  // Additional hallway fields
+  hallwayType?: string;
+  section?: string;
+  notes?: string;
 };
 
 export const getInitialSpaceData = (
@@ -33,17 +46,17 @@ export const getInitialSpaceData = (
     return {
       ...baseValues,
       type: "room" as const,
-      roomNumber: initialData?.room_number || initialData?.roomNumber || "",
-      roomType: initialData?.room_type || initialData?.roomType || "office",
-      phoneNumber: initialData?.phone_number || initialData?.phoneNumber || "",
+      roomNumber: initialData?.room_number || "",
+      roomType: initialData?.room_type || "office",
+      phoneNumber: initialData?.phone_number || "",
       description: initialData?.description || "",
-      isStorage: initialData?.is_storage ?? initialData?.isStorage ?? false,
-      storageCapacity: initialData?.storage_capacity ?? initialData?.storageCapacity ?? null,
-      storageType: (initialData?.is_storage || initialData?.isStorage) ? 
-        (initialData?.storage_type || initialData?.storageType || "general_storage") : null,
-      storageNotes: initialData?.storage_notes || initialData?.storageNotes || "",
-      parentRoomId: initialData?.parent_room_id ?? initialData?.parentRoomId ?? null,
-      currentFunction: initialData?.current_function || initialData?.currentFunction || "",
+      isStorage: initialData?.is_storage ?? false,
+      storageCapacity: initialData?.storage_capacity ?? null,
+      storageType: initialData?.is_storage ? 
+        (initialData?.storage_type || "general_storage") : null,
+      storageNotes: initialData?.storage_notes || "",
+      parentRoomId: initialData?.parent_room_id ?? null,
+      currentFunction: initialData?.current_function || "",
     };
   }
 
@@ -51,9 +64,9 @@ export const getInitialSpaceData = (
     return {
       ...baseValues,
       type: "door" as const,
-      doorType: initialData?.type === "door" ? initialData.doorType || "standard" : "standard",
-      securityLevel: initialData?.type === "door" ? initialData.securityLevel || "standard" : "standard",
-      passkeyEnabled: initialData?.type === "door" ? initialData.passkeyEnabled || false : false,
+      doorType: initialData?.doorType || "standard",
+      securityLevel: initialData?.securityLevel || "standard",
+      passkeyEnabled: initialData?.passkeyEnabled || false,
     };
   }
 
@@ -61,9 +74,9 @@ export const getInitialSpaceData = (
     return {
       ...baseValues,
       type: "hallway" as const,
-      hallwayType: initialData?.type === "hallway" ? initialData.hallwayType || "public_main" : "public_main",
-      section: initialData?.type === "hallway" ? initialData.section || "left_wing" : "left_wing",
-      notes: initialData?.type === "hallway" ? initialData.notes || "" : "",
+      hallwayType: initialData?.hallwayType || "public_main",
+      section: initialData?.section || "left_wing",
+      notes: initialData?.notes || "",
     };
   }
 
