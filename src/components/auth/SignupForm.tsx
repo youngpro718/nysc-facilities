@@ -40,27 +40,18 @@ export const SignupForm = ({
     try {
       setLoading(true);
       
-      const { data: { user }, error: signUpError } = await supabase.auth.signUp({
+      // First try creating the verification request
+      const { error: signUpError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            department
+          }
+        }
       });
 
       if (signUpError) throw signUpError;
-
-      if (user) {
-        const { error: verificationError } = await supabase
-          .from('verification_requests')
-          .insert([
-            {
-              user_id: user.id,
-              department,
-              status: 'pending',
-              submitted_at: new Date().toISOString(),
-            }
-          ]);
-
-        if (verificationError) throw verificationError;
-      }
       
       toast.success("Check your email for the confirmation link!", {
         description: "Your verification request has been submitted and is pending review."
