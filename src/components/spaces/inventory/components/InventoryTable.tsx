@@ -26,7 +26,7 @@ export function InventoryTable({
           <TableHead>Item</TableHead>
           <TableHead>Category</TableHead>
           <TableHead className="px-[51px]">Quantity</TableHead>
-          <TableHead>Status</TableHead>
+          <TableHead className="px-[25px]">Status</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
