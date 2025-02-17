@@ -1,7 +1,5 @@
 
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import React, { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -33,19 +31,19 @@ export function EditOccupantDialog({
   occupant,
   onSuccess,
 }: EditOccupantDialogProps) {
-  const [selectedRooms, setSelectedRooms] = useState<string[]>([]);
-  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const isMobile = useIsMobile();
 
   const { data: currentAssignments, isLoading } = useOccupantAssignments(occupant?.id);
 
   const handleUpdate = async (formData: any) => {
     try {
+      setIsSubmitting(true);
       await handleOccupantUpdate({
         occupantId: occupant.id,
         formData,
-        selectedRooms,
-        selectedKeys,
+        selectedRooms: formData.rooms,
+        selectedKeys: formData.keys,
         currentAssignments,
       });
 
@@ -54,6 +52,8 @@ export function EditOccupantDialog({
       onOpenChange(false);
     } catch (error: any) {
       toast.error(error.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -72,6 +72,7 @@ export function EditOccupantDialog({
       initialData={initialData} 
       onSubmit={handleUpdate}
       onCancel={() => onOpenChange(false)}
+      isSubmitting={isSubmitting}
     />
   );
 

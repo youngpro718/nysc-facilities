@@ -13,9 +13,15 @@ interface OccupantFormProps {
   initialData?: Partial<OccupantFormData>;
   onSubmit: (data: OccupantFormData) => void;
   onCancel: () => void;
+  isSubmitting?: boolean;
 }
 
-export function OccupantForm({ initialData, onSubmit, onCancel }: OccupantFormProps) {
+export function OccupantForm({ 
+  initialData, 
+  onSubmit, 
+  onCancel,
+  isSubmitting 
+}: OccupantFormProps) {
   const form = useForm<OccupantFormData>({
     resolver: zodResolver(occupantSchema),
     defaultValues: {
@@ -49,7 +55,9 @@ export function OccupantForm({ initialData, onSubmit, onCancel }: OccupantFormPr
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit">Save Changes</Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Saving..." : "Save Changes"}
+          </Button>
         </div>
       </form>
     </Form>
