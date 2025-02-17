@@ -1,9 +1,11 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Pencil } from "lucide-react";
 import { InventoryItem } from "../types/inventoryTypes";
+
 interface InventoryTableProps {
   items: InventoryItem[];
   isLoading: boolean;
@@ -12,6 +14,7 @@ interface InventoryTableProps {
   onEditItem: (item: InventoryItem) => void;
   onDeleteItem: (id: string) => void;
 }
+
 export function InventoryTable({
   items,
   isLoading,
@@ -23,7 +26,8 @@ export function InventoryTable({
   return <Table>
       <TableHeader>
         <TableRow>
-          <TableHead className="w-[300px]">Item Details</TableHead>
+          <TableHead>Item</TableHead>
+          <TableHead>Category</TableHead>
           <TableHead>Quantity</TableHead>
           <TableHead>Status</TableHead>
           <TableHead className="text-right">Actions</TableHead>
@@ -31,16 +35,18 @@ export function InventoryTable({
       </TableHeader>
       <TableBody>
         {items?.map(item => <TableRow key={item.id}>
+            <TableCell className="font-medium">
+              {item.name}
+            </TableCell>
             <TableCell>
-              <div className="flex items-center gap-2">
-                <span className="font-medium">{item.name}</span>
-                {item.category && <Badge variant="outline" style={{
-              backgroundColor: `${item.category.color}20`,
-              borderColor: item.category.color
-            }} className="px-[76px] mx-[5px]">
-                    {item.category.name}
-                  </Badge>}
-              </div>
+              {item.category && (
+                <Badge variant="outline" style={{
+                  backgroundColor: `${item.category.color}20`,
+                  borderColor: item.category.color
+                }}>
+                  {item.category.name}
+                </Badge>
+              )}
             </TableCell>
             <TableCell>
               <div className="flex items-center gap-2">
@@ -72,10 +78,10 @@ export function InventoryTable({
                     Edit
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => {
-                if (window.confirm('Are you sure you want to delete this item?')) {
-                  onDeleteItem(item.id);
-                }
-              }}>
+                    if (window.confirm('Are you sure you want to delete this item?')) {
+                      onDeleteItem(item.id);
+                    }
+                  }}>
                     Delete
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -83,7 +89,7 @@ export function InventoryTable({
             </TableCell>
           </TableRow>)}
         {!isLoading && (!items || items.length === 0) && <TableRow>
-            <TableCell colSpan={4} className="h-24 text-center">
+            <TableCell colSpan={5} className="h-24 text-center">
               No items found
             </TableCell>
           </TableRow>}
