@@ -9,6 +9,7 @@ interface ConnectedSpace {
   type?: string;
   room_number?: string;
   room_type?: string;
+  status?: string;
 }
 
 interface SpaceConnectionData {
@@ -33,7 +34,7 @@ export function useConnectionQueries(spaceId: string, spaceType: "room" | "hallw
     queryFn: async () => {
       console.log("Fetching connections for space:", { spaceId, spaceType });
       
-      // First get the connections
+      // First get the connections with their related spaces
       const { data: connections, error } = await supabase
         .from("space_connections")
         .select(`
@@ -66,8 +67,9 @@ export function useConnectionQueries(spaceId: string, spaceType: "room" | "hallw
 
       const { data: spacesData, error: spacesError } = await supabase
         .from("spaces")
-        .select("id, name, type, room_number")
-        .in("id", spaceIds);
+        .select("id, name, type, room_number, status")
+        .in("id", spaceIds)
+        .eq("status", "active");
 
       if (spacesError) {
         console.error("Error fetching connected spaces:", spacesError);
@@ -78,6 +80,10 @@ export function useConnectionQueries(spaceId: string, spaceType: "room" | "hallw
       return connections.map((conn): SpaceConnection => {
         const connectedSpaceId = conn.from_space_id === spaceId ? conn.to_space_id : conn.from_space_id;
         const connectedSpace = spacesData?.find(space => space.id === connectedSpaceId);
+        
+        if (!connectedSpace) {
+          console.log("Warning: Connected space not found:", connectedSpaceId);
+        }
         
         return {
           id: conn.id,
