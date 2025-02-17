@@ -75,7 +75,7 @@ export function useConnectionMutations(spaceType: "room" | "hallway" | "door") {
       const insertData = {
         from_space_id: data.spaceId,
         to_space_id: toSpaceId,
-        space_type: spaceType,
+        space_type: spaceType, // Using the source space type
         connection_type: connectionTypeMap[data.connectionType],
         direction,
         position: data.position || "adjacent",
