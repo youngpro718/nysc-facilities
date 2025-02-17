@@ -46,10 +46,10 @@ export function useRoomsQuery() {
       }
 
       // Create lookup maps for the related data
-      const occupantsByRoomId = createOccupantsLookup(occupantsData);
-      const issuesByRoomId = createIssuesLookup(issuesData);
-      const historyByRoomId = createHistoryLookup(historyData);
-      const fixturesByRoomId = createFixturesLookup(fixturesData);
+      const occupantsByRoomId = createOccupantsLookup(occupantsData || []);
+      const issuesByRoomId = createIssuesLookup(issuesData || []);
+      const historyByRoomId = createHistoryLookup(historyData || []);
+      const fixturesByRoomId = createFixturesLookup(fixturesData || []);
 
       // Transform the data
       const transformedRooms = transformRoomData(

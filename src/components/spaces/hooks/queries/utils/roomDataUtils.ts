@@ -1,5 +1,7 @@
 
 export const createOccupantsLookup = (occupantsData: any[] = []): Record<string, any[]> => {
+  if (!Array.isArray(occupantsData)) return {};
+  
   return occupantsData.reduce((acc, assignment) => {
     if (!acc[assignment.room_id]) {
       acc[assignment.room_id] = [];
@@ -16,6 +18,8 @@ export const createOccupantsLookup = (occupantsData: any[] = []): Record<string,
 };
 
 export const createIssuesLookup = (issuesData: any[] = []): Record<string, any[]> => {
+  if (!Array.isArray(issuesData)) return {};
+
   return issuesData.reduce((acc, issue) => {
     if (!acc[issue.room_id]) {
       acc[issue.room_id] = [];
@@ -26,6 +30,8 @@ export const createIssuesLookup = (issuesData: any[] = []): Record<string, any[]
 };
 
 export const createHistoryLookup = (historyData: any[] = []): Record<string, any[]> => {
+  if (!Array.isArray(historyData)) return {};
+
   return historyData.reduce((acc, history) => {
     if (!acc[history.room_id]) {
       acc[history.room_id] = [];
@@ -36,6 +42,8 @@ export const createHistoryLookup = (historyData: any[] = []): Record<string, any
 };
 
 export const createFixturesLookup = (fixturesData: any[] = []): Record<string, any> => {
+  if (!Array.isArray(fixturesData)) return {};
+
   return fixturesData.reduce((acc, fixture) => {
     if (fixture.space_id) {
       acc[fixture.space_id] = fixture;
