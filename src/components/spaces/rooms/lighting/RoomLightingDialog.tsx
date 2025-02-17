@@ -1,107 +1,141 @@
 
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form } from "@/components/ui/form";
-import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
-import { RoomLightingConfig } from "@/components/lighting/types";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Form } from "@/components/ui/form";
+import { Settings2 } from "lucide-react";
+import { LightingFixture, RoomLightingConfig } from "@/components/lighting/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import { roomLightingSchema } from "./schemas/roomLightingSchema";
 import { BasicConfigSection } from "./form-sections/BasicConfigSection";
-import { ElectricalIssuesSection } from "./form-sections/ElectricalIssuesSection";
 import { AdditionalSettingsSection } from "./form-sections/AdditionalSettingsSection";
+import { ElectricalIssuesSection } from "./form-sections/ElectricalIssuesSection";
 
 interface RoomLightingDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   roomId: string;
-  initialData?: RoomLightingConfig;
+  fixture?: LightingFixture;
 }
 
-export function RoomLightingDialog({ 
-  open, 
-  onOpenChange, 
-  roomId, 
-  initialData 
-}: RoomLightingDialogProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export function RoomLightingDialog({ roomId, fixture }: RoomLightingDialogProps) {
+  const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
-
+  
   const form = useForm<RoomLightingConfig>({
-    defaultValues: initialData || {
+    resolver: zodResolver(roomLightingSchema),
+    defaultValues: fixture ? {
+      id: fixture.id,
       room_id: roomId,
-      name: `Room ${roomId} Lighting`,
-      type: "standard",
-      technology: "LED",
-      bulb_count: 1,
-      status: "functional",
+      primary_lighting: fixture.type === 'standard',
+      emergency_lighting: fixture.type === 'emergency',
+      lighting_type: fixture.type,
+      fixture_count: fixture.bulb_count,
+      last_inspection: fixture.inspection_history?.[0]?.date,
+      emergency_circuit: fixture.emergency_circuit,
+      backup_duration_minutes: fixture.emergency_duration_minutes || undefined,
+      electrical_issues: fixture.electrical_issues,
+      technology: fixture.technology || undefined,
+      status: fixture.status,
+      position: fixture.position || 'ceiling',
+      space_type: fixture.space_type || 'room',
+      name: fixture.name,
+      bulb_count: fixture.bulb_count,
+      ballast_issue: fixture.ballast_issue,
+      ballast_check_notes: fixture.ballast_check_notes,
+      maintenance_notes: fixture.maintenance_notes
+    } : {
+      room_id: roomId,
+      primary_lighting: true,
+      emergency_lighting: false,
+      lighting_type: 'standard',
+      fixture_count: 1,
+      emergency_circuit: false,
+      technology: 'LED',
+      status: 'functional',
+      position: 'ceiling',
+      space_type: 'room',
       electrical_issues: {
         short_circuit: false,
         wiring_issues: false,
         voltage_problems: false
       },
-      ballast_issue: false,
-      emergency_circuit: false,
-      maintenance_notes: "",
-      ballast_check_notes: "",
-      position: "ceiling"
+      name: '',
+      bulb_count: 1,
+      ballast_issue: false
     }
   });
 
-  const onSubmit = async (values: RoomLightingConfig) => {
-    setIsSubmitting(true);
+  const onSubmit = async (data: RoomLightingConfig) => {
     try {
-      const fixtureData = {
-        ...values,
-        space_id: roomId,
-        space_type: 'room' as const,
-        electrical_issues: JSON.stringify(values.electrical_issues) // Convert to JSON string for Supabase
-      };
+      if (fixture) {
+        const { error } = await supabase
+          .from('lighting_fixtures')
+          .update({
+            type: data.lighting_type,
+            bulb_count: data.bulb_count,
+            status: data.status,
+            technology: data.technology,
+            emergency_circuit: data.emergency_circuit,
+            electrical_issues: data.electrical_issues,
+            ballast_issue: data.ballast_issue,
+            ballast_check_notes: data.ballast_check_notes,
+            maintenance_notes: data.maintenance_notes,
+            position: data.position,
+            space_type: data.space_type
+          })
+          .eq('id', fixture.id);
 
-      const { error } = await supabase
-        .from('lighting_fixtures')
-        .upsert(fixtureData);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('lighting_fixtures')
+          .insert({
+            ...data,
+            space_id: roomId
+          });
 
-      if (error) throw error;
+        if (error) throw error;
+      }
 
-      toast.success("Lighting configuration saved successfully");
-      queryClient.invalidateQueries({ queryKey: ['room-lighting', roomId] });
-      onOpenChange(false);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to save lighting configuration");
-    } finally {
-      setIsSubmitting(false);
+      toast.success(`Lighting configuration ${fixture ? 'updated' : 'created'} successfully`);
+      queryClient.invalidateQueries({ queryKey: ['lighting-fixtures'] });
+      setOpen(false);
+    } catch (error) {
+      console.error('Error saving lighting configuration:', error);
+      toast.error('Failed to save lighting configuration');
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="icon">
+          <Settings2 className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>Configure Room Lighting</DialogTitle>
+          <DialogTitle>
+            {fixture ? 'Edit Lighting Configuration' : 'Add Lighting Configuration'}
+          </DialogTitle>
         </DialogHeader>
-
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="space-y-6">
-              <BasicConfigSection form={form} />
-              <ElectricalIssuesSection form={form} />
-              <AdditionalSettingsSection form={form} />
-            </div>
-
-            <div className="flex justify-end space-x-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                Save Changes
-              </Button>
-            </div>
+            <BasicConfigSection form={form} />
+            <AdditionalSettingsSection form={form} />
+            <ElectricalIssuesSection form={form} />
+            <Button type="submit">
+              {fixture ? 'Update Configuration' : 'Add Configuration'}
+            </Button>
           </form>
         </Form>
       </DialogContent>

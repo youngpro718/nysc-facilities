@@ -5,6 +5,7 @@ import { editLightingFormSchema, type EditLightingFormData } from "../schemas/ed
 import { LightingFixture, Space } from "../types";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { generateFixtureName } from "../schemas/lightingSchema";
 
 export function useEditLightingForm(
   fixture: LightingFixture,
@@ -58,6 +59,40 @@ export function useEditLightingForm(
   const position = form.watch('position');
   const spaceType = space?.space_type || form.watch('space_type');
 
+  const updateName = async () => {
+    if (spaceId && position && space) {
+      try {
+        const { data: sequenceData, error } = await supabase
+          .rpc('get_next_lighting_sequence', {
+            p_space_id: spaceId
+          });
+        
+        if (error) {
+          console.error('Error getting sequence:', error);
+          return;
+        }
+
+        const sequence = typeof sequenceData === 'number' ? sequenceData : 1;
+        
+        const name = generateFixtureName(
+          space.space_type,
+          space.name,
+          space.room_number,
+          position,
+          sequence
+        );
+
+        form.setValue('name', name, {
+          shouldValidate: true,
+          shouldDirty: true,
+          shouldTouch: true
+        });
+      } catch (error) {
+        console.error('Error in updateName:', error);
+      }
+    }
+  };
+
   const onSubmit = async (data: EditLightingFormData) => {
     try {
       const { error } = await supabase
@@ -78,5 +113,6 @@ export function useEditLightingForm(
   return {
     form,
     onSubmit: form.handleSubmit(onSubmit),
+    updateName
   };
 }

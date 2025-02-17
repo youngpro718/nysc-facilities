@@ -1,31 +1,8 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { SpaceConnection, Connection, Direction, Position, ConnectionStatus } from "../../connections/types/ConnectionTypes";
-
-interface ConnectedSpace {
-  id: string;
-  name: string;
-  type?: string;
-  room_number?: string;
-  room_type?: string;
-  status?: string;
-}
-
-interface SpaceConnectionData {
-  id: string;
-  from_space_id: string;
-  to_space_id: string;
-  space_type: string;
-  connection_type: string;
-  direction?: Direction;
-  position?: Position;
-  status: ConnectionStatus;
-  hallway_position?: number;
-  offset_distance?: number;
-  rooms?: ConnectedSpace;
-  hallways?: ConnectedSpace;
-  doors?: ConnectedSpace;
-}
+import { Connection, Direction, Position, ConnectionStatus } from "../../connections/types/ConnectionTypes";
+import { toast } from "sonner";
 
 export function useConnectionQueries(spaceId: string, spaceType: "room" | "hallway" | "door") {
   return useQuery({
@@ -59,63 +36,46 @@ export function useConnectionQueries(spaceId: string, spaceType: "room" | "hallw
           position,
           status,
           hallway_position,
-          offset_distance
+          offset_distance,
+          to_space:spaces!to_space_id (
+            name,
+            room_number,
+            type
+          )
         `)
         .or(`from_space_id.eq.${spaceId},to_space_id.eq.${spaceId}`)
         .eq("status", "active");
 
       if (error) {
         console.error("Error fetching space connections:", error);
+        toast.error("Failed to load connections");
         throw error;
       }
 
       if (!connections) return [];
 
-      // Get the connected spaces info
-      const spaceIds = connections.map(conn => 
-        conn.from_space_id === spaceId ? conn.to_space_id : conn.from_space_id
-      );
-
-      const { data: spacesData, error: spacesError } = await supabase
-        .from("spaces")
-        .select("id, name, type, room_number, status, subtype")
-        .in("id", spaceIds)
-        .eq("status", "active");
-
-      if (spacesError) {
-        console.error("Error fetching connected spaces:", spacesError);
-        throw spacesError;
-      }
-
-      // Map the spaces data to our connections
-      return connections.map((conn): SpaceConnection => {
+      // Transform the connections data
+      return connections.map((conn): Connection => {
         const connectedSpaceId = conn.from_space_id === spaceId ? conn.to_space_id : conn.from_space_id;
-        const connectedSpace = spacesData?.find(space => space.id === connectedSpaceId);
-        
-        if (!connectedSpace) {
-          console.log("Warning: Connected space not found:", connectedSpaceId);
-        }
-        
+        const connectedSpace = conn.to_space;
+
         return {
           id: conn.id,
           from_space_id: conn.from_space_id,
           to_space_id: conn.to_space_id,
           space_type: conn.space_type,
           connection_type: conn.connection_type,
-          direction: conn.direction,
-          position: conn.position,
-          status: conn.status,
+          direction: conn.direction as Direction,
+          position: conn.position as Position,
+          status: conn.status as ConnectionStatus,
           hallway_position: conn.hallway_position,
           offset_distance: conn.offset_distance,
-          to_space: connectedSpace ? {
-            name: connectedSpace.name,
-            room_number: connectedSpace.room_number,
-            type: connectedSpace.type
-          } : undefined
+          to_space: connectedSpace,
+          connectionType: conn.connection_type
         };
       });
     },
-    staleTime: 1000 * 60, // Cache for 1 minute
+    staleTime: 1000 * 60,
     refetchOnWindowFocus: true,
   });
 }

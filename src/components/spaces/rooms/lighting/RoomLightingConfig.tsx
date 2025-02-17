@@ -1,83 +1,111 @@
 
-import { AssignFixtureDialog } from "./AssignFixtureDialog";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { LightingFixture } from "@/components/lighting/types";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { BatteryMedium, Calendar, Check, DollarSign, Lightbulb, Settings, X } from "lucide-react";
+import { RoomLightingDialog } from "./RoomLightingDialog";
 
-interface RoomLightingSectionProps {
+interface RoomLightingConfigProps {
   roomId: string;
+  className?: string;
+  fixture?: LightingFixture;
 }
 
-export function RoomLightingSection({ roomId }: RoomLightingSectionProps) {
-  const { data: fixtures, isLoading, refetch } = useQuery({
-    queryKey: ['room-lighting', roomId],
-    queryFn: async () => {
-      console.log("Fetching lighting fixtures for room:", roomId);
-      
-      const { data: fixtureData, error } = await supabase
-        .from('lighting_fixture_details')
-        .select('*')
-        .eq('space_id', roomId)
-        .eq('space_type', 'room');
-
-      if (error) {
-        console.error('Error fetching lighting fixtures:', error);
-        throw error;
-      }
-
-      console.log("Fixture data:", fixtureData);
-
-      return (fixtureData || []).map((raw: any): LightingFixture => ({
-        id: raw.id,
-        name: raw.name,
-        type: raw.type,
-        status: raw.status,
-        building_name: raw.building_name || null,
-        floor_name: raw.floor_name || null,
-        floor_id: raw.floor_id || null,
-        zone_name: raw.zone_name || null,
-        space_id: raw.space_id || null,
-        space_type: raw.space_type as 'room' | 'hallway' | null,
-        position: raw.position || null,
-        sequence_number: raw.sequence_number || null,
-        zone_id: raw.zone_id || null,
-        space_name: raw.space_name || null,
-        room_number: raw.room_number || null,
-        emergency_circuit: raw.emergency_circuit || false,
-        technology: raw.technology || null,
-        ballast_issue: raw.ballast_issue || false,
-        bulb_count: raw.bulb_count || 1,
-        electrical_issues: typeof raw.electrical_issues === 'object' ? raw.electrical_issues : {
-          short_circuit: false,
-          wiring_issues: false,
-          voltage_problems: false
-        },
-        energy_usage_data: raw.energy_usage_data || null,
-        emergency_protocols: raw.emergency_protocols || null,
-        warranty_info: raw.warranty_info || null,
-        manufacturer_details: raw.manufacturer_details || null,
-        inspection_history: Array.isArray(raw.inspection_history) ? raw.inspection_history : [],
-        maintenance_history: Array.isArray(raw.maintenance_history) ? raw.maintenance_history : [],
-        connected_fixtures: Array.isArray(raw.connected_fixtures) ? raw.connected_fixtures : [],
-        maintenance_notes: raw.maintenance_notes || null,
-        ballast_check_notes: raw.ballast_check_notes || null,
-        backup_power_source: raw.backup_power_source || null,
-        emergency_duration_minutes: raw.emergency_duration_minutes || null,
-        created_at: raw.created_at || null,
-        updated_at: raw.updated_at || null
-      }));
+export function RoomLightingConfig({ roomId, className, fixture }: RoomLightingConfigProps) {
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'functional':
+        return 'bg-green-500';
+      case 'maintenance_needed':
+        return 'bg-yellow-500';
+      case 'non_functional':
+        return 'bg-red-500';
+      default:
+        return 'bg-gray-500';
     }
-  });
+  };
+
+  const getEmergencyBadgeColor = (isEmergency: boolean) => {
+    return isEmergency ? 'bg-red-500' : 'bg-blue-500';
+  };
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">Lighting</h3>
-        <AssignFixtureDialog 
-          roomId={roomId}
-          onAssignmentComplete={refetch}
-        />
-      </div>
-    </div>
+    <Card className={cn("relative", className)}>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg font-medium flex items-center justify-between">
+          Lighting Configuration
+          <RoomLightingDialog roomId={roomId} fixture={fixture} />
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {fixture ? (
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="secondary" className={getStatusColor(fixture.status)}>
+                {fixture.status.replace('_', ' ')}
+              </Badge>
+              <Badge variant="secondary" className={getEmergencyBadgeColor(fixture.type === 'emergency')}>
+                {fixture.type.replace('_', ' ')}
+              </Badge>
+              <Badge variant="outline" className="gap-1">
+                <Lightbulb className="h-3 w-3" />
+                {fixture.bulb_count}
+              </Badge>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  Technology
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {fixture.technology || 'Not specified'}
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-sm font-medium flex items-center gap-2">
+                  <BatteryMedium className="h-4 w-4" />
+                  Emergency Circuit
+                </p>
+                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  {fixture.emergency_circuit ? (
+                    <Check className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <X className="h-4 w-4 text-red-500" />
+                  )}
+                </p>
+              </div>
+
+              {fixture.electrical_issues && Object.entries(fixture.electrical_issues).map(([key, value]) => (
+                value && (
+                  <div key={key} className="col-span-2">
+                    <Badge variant="destructive">
+                      {key.replace('_', ' ')}
+                    </Badge>
+                  </div>
+                )
+              ))}
+            </div>
+
+            {fixture.maintenance_notes && (
+              <div className="space-y-1">
+                <p className="text-sm font-medium flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Maintenance Notes
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {fixture.maintenance_notes}
+                </p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">No lighting configuration found</p>
+        )}
+      </CardContent>
+    </Card>
   );
 }
