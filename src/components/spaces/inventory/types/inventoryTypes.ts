@@ -15,10 +15,10 @@ export interface InventoryItem {
   notes?: string;
   storage_room_id: string;
   category?: {
+    id: string;
     name: string;
     color: string;
     icon?: string;
-    description?: string;
   };
 }
 
@@ -28,7 +28,6 @@ export interface InventoryCategory {
   color: string;
   icon?: string;
   description?: string;
-  parent_category_id?: string;
 }
 
 export interface InventoryTransaction {
@@ -36,7 +35,7 @@ export interface InventoryTransaction {
   transaction_type: 'add' | 'remove' | 'transfer';
   quantity: number;
   created_at: string;
-  inventory_items?: {
+  item?: {
     id: string;
     name: string;
   };

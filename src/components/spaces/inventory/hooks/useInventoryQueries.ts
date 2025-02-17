@@ -7,6 +7,7 @@ export const useInventoryQueries = (roomId: string) => {
   const inventoryQuery = useQuery({
     queryKey: ['inventory', roomId],
     queryFn: async () => {
+      // Simplified select statement to avoid deep nesting
       const { data, error } = await supabase
         .from('inventory_items')
         .select(`
@@ -17,11 +18,12 @@ export const useInventoryQueries = (roomId: string) => {
           description,
           unit,
           status,
-          category:inventory_categories (
+          category_id,
+          category:inventory_categories!category_id (
+            id,
             name,
             color,
-            icon,
-            description
+            icon
           )
         `)
         .eq('storage_room_id', roomId)
@@ -37,7 +39,7 @@ export const useInventoryQueries = (roomId: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('inventory_categories')
-        .select('id, name, color, icon, description')
+        .select('id, name, color, icon')
         .order('name');
       
       if (error) throw error;
@@ -55,7 +57,7 @@ export const useInventoryQueries = (roomId: string) => {
           transaction_type,
           quantity,
           created_at,
-          inventory_items (
+          item:inventory_items!item_id (
             id,
             name
           )
@@ -81,11 +83,12 @@ export const useInventoryQueries = (roomId: string) => {
           description,
           unit,
           status,
-          category:inventory_categories (
+          category_id,
+          category:inventory_categories!category_id (
+            id,
             name,
             color,
-            icon,
-            description
+            icon
           )
         `)
         .eq('storage_room_id', roomId)
