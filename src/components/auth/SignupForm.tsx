@@ -3,10 +3,11 @@ import { FormEvent } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Mail, Lock, Building2, Loader2 } from "lucide-react";
+import { Mail, Lock, Building2, Loader2, User, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useNavigate } from "react-router-dom";
 
 interface SignupFormProps {
   email: string;
@@ -31,9 +32,14 @@ export const SignupForm = ({
   setLoading,
   onToggleForm,
 }: SignupFormProps) => {
+  const navigate = useNavigate();
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [title, setTitle] = useState("");
+
   const handleSignup = async (e: FormEvent) => {
     e.preventDefault();
-    if (!email || !password || !department) {
+    if (!email || !password || !department || !firstName || !lastName || !title) {
       toast.error("Please fill in all fields");
       return;
     }
@@ -46,13 +52,15 @@ export const SignupForm = ({
         password,
         options: {
           data: {
-            department
+            first_name: firstName,
+            last_name: lastName,
+            department,
+            title
           }
         }
       });
 
       if (signUpError) {
-        // Check if the error is due to existing user
         if (signUpError.message.includes("User already registered")) {
           toast.error("This email is already registered", {
             description: "Please sign in instead or use a different email address.",
@@ -66,15 +74,11 @@ export const SignupForm = ({
         throw signUpError;
       }
       
-      toast.success("Check your email for the confirmation link!", {
-        description: "Your verification request has been submitted and is pending review."
-      });
-      
-      onToggleForm();
+      // Redirect to pending verification page
+      navigate("/verification-pending");
     } catch (error: any) {
       console.error("Auth error:", error);
       
-      // Extract the error message from the response if available
       let errorMessage = "Signup failed";
       try {
         const errorBody = JSON.parse(error.body);
@@ -91,6 +95,42 @@ export const SignupForm = ({
 
   return (
     <form className="space-y-6" onSubmit={handleSignup}>
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="firstName" className="text-white">
+            First Name
+          </Label>
+          <div className="relative">
+            <User className="absolute left-3 top-2.5 h-5 w-5 text-white/50" />
+            <Input
+              id="firstName"
+              type="text"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              className="bg-white/10 border-white/20 text-white pl-10 placeholder:text-white/50"
+              placeholder="Enter your first name"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="lastName" className="text-white">
+            Last Name
+          </Label>
+          <div className="relative">
+            <Users className="absolute left-3 top-2.5 h-5 w-5 text-white/50" />
+            <Input
+              id="lastName"
+              type="text"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              className="bg-white/10 border-white/20 text-white pl-10 placeholder:text-white/50"
+              placeholder="Enter your last name"
+            />
+          </div>
+        </div>
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="email" className="text-white">
           Email
@@ -123,6 +163,23 @@ export const SignupForm = ({
             className="bg-white/10 border-white/20 text-white pl-10 placeholder:text-white/50"
             placeholder="Enter your password"
             autoComplete="new-password"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="title" className="text-white">
+          Job Title
+        </Label>
+        <div className="relative">
+          <Users className="absolute left-3 top-2.5 h-5 w-5 text-white/50" />
+          <Input
+            id="title"
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="bg-white/10 border-white/20 text-white pl-10 placeholder:text-white/50"
+            placeholder="Enter your job title"
           />
         </div>
       </div>
