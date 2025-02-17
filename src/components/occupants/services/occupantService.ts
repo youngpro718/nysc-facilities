@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { OccupantStatus } from "./schemas/occupantSchema";
 
 interface UpdateOccupantParams {
   occupantId: string;
@@ -10,8 +11,8 @@ interface UpdateOccupantParams {
     phone: string | null;
     department: string | null;
     title: string | null;
-    status?: string;
-    access_level?: string;
+    status?: OccupantStatus;
+    access_level?: "standard" | "restricted" | "elevated";
     emergency_contact?: any;
     notes?: string | null;
   };
