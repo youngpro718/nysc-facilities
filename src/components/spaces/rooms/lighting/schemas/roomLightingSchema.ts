@@ -3,7 +3,6 @@ import { z } from "zod";
 import { LightingPosition, LightingTechnology, LightingType, LightStatus } from "@/components/lighting/types";
 
 export const roomLightingSchema = z.object({
-  id: z.string().optional(),
   room_id: z.string(),
   primary_lighting: z.boolean(),
   emergency_lighting: z.boolean(),

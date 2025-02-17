@@ -20,7 +20,8 @@ export interface Connection {
     room_number?: string | null;
     type: string;
   };
-  connectionType?: ConnectionType;
+  connectionType: ConnectionType;
+  connectedSpaceName: string;
 }
 
 export interface CreateConnectionData {
