@@ -41,3 +41,23 @@ export interface InventoryTransaction {
   notes?: string;
   created_at: string;
 }
+
+export interface InventoryFormInputs {
+  name: string;
+  description?: string;
+  quantity: number;
+  minimum_quantity?: number;
+  unit?: string;
+  category_id: string;
+  location_details?: string;
+  preferred_vendor?: string;
+  notes?: string;
+}
+
+export interface BatchUpdateInput {
+  items: Array<{
+    id: string;
+    quantity: number;
+  }>;
+  notes?: string;
+}

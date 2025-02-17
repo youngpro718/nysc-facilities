@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useInventory } from "./inventory/hooks/useInventory";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,6 +42,16 @@ export function RoomInventory({ roomId }: { roomId: string }) {
     item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.category?.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleSubmit = async (data: InventoryFormInputs) => {
+    await addItem({
+      ...data,
+      storage_room_id: roomId,
+      status: 'active',
+      quantity: data.quantity || 0
+    });
+    setIsAddDialogOpen(false);
+  };
 
   return (
     <Card>
@@ -163,14 +172,7 @@ export function RoomInventory({ roomId }: { roomId: string }) {
       <AddInventoryDialog
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
-        onSubmit={async (data) => {
-          await addItem({
-            ...data,
-            storage_room_id: roomId,
-            status: 'active'
-          });
-          setIsAddDialogOpen(false);
-        }}
+        onSubmit={handleSubmit}
         isSubmitting={isAddingItem}
       />
     </Card>

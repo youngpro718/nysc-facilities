@@ -1,4 +1,3 @@
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -29,6 +28,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+interface InventoryFormInputs {
+  name: string;
+  description: string;
+  quantity: number;
+  minimum_quantity: number;
+  unit: string;
+  category_id: string;
+  location_details: string;
+  preferred_vendor: string;
+  notes: string;
+}
+
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
@@ -44,7 +55,7 @@ const formSchema = z.object({
 interface AddInventoryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: z.infer<typeof formSchema>) => Promise<void>;
+  onSubmit: (data: InventoryFormInputs) => Promise<void>;
   isSubmitting: boolean;
 }
 
@@ -54,7 +65,7 @@ export function AddInventoryDialog({
   onSubmit,
   isSubmitting,
 }: AddInventoryDialogProps) {
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<InventoryFormInputs>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",

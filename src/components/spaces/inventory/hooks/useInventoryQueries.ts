@@ -31,26 +31,7 @@ export const useInventoryQueries = (roomId: string) => {
       
       if (error) throw error;
 
-      // Transform the response to match our frontend types
-      const transformedData = data.map(item => ({
-        id: item.id,
-        name: item.name,
-        quantity: item.quantity,
-        category_id: item.category_id,
-        description: item.description,
-        minimum_quantity: item.minimum_quantity,
-        unit: item.unit,
-        status: item.status,
-        storage_room_id: item.storage_room_id,
-        category: item.inventory_categories ? {
-          id: item.inventory_categories.id,
-          name: item.inventory_categories.name,
-          color: item.inventory_categories.color,
-          icon: item.inventory_categories.icon
-        } : undefined
-      }));
-
-      return transformedData as InventoryItem[];
+      return data as InventoryItem[];
     }
   });
 
@@ -74,72 +55,20 @@ export const useInventoryQueries = (roomId: string) => {
         .from('inventory_item_transactions')
         .select(`
           id,
+          item_id,
           transaction_type,
           quantity,
-          created_at,
-          item:inventory_items!item_id (
-            id,
-            name
-          )
+          previous_quantity,
+          new_quantity,
+          performed_by,
+          notes,
+          created_at
         `)
         .order('created_at', { ascending: false })
         .limit(50);
       
       if (error) throw error;
       return data as InventoryTransaction[];
-    }
-  });
-
-  const lowStockQuery = useQuery({
-    queryKey: ['inventory-low-stock', roomId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('inventory_items')
-        .select(`
-          id,
-          name,
-          quantity,
-          minimum_quantity,
-          description,
-          unit,
-          status,
-          category_id,
-          storage_room_id,
-          inventory_categories!category_id (
-            id,
-            name,
-            color,
-            icon
-          )
-        `)
-        .eq('storage_room_id', roomId)
-        .eq('status', 'active')
-        .not('minimum_quantity', 'is', null)
-        .gte('minimum_quantity', 0)
-        .filter('quantity', 'lte', 'minimum_quantity');
-      
-      if (error) throw error;
-
-      // Transform the response to match our frontend types
-      const transformedData = data.map(item => ({
-        id: item.id,
-        name: item.name,
-        quantity: item.quantity,
-        category_id: item.category_id,
-        description: item.description,
-        minimum_quantity: item.minimum_quantity,
-        unit: item.unit,
-        status: item.status,
-        storage_room_id: item.storage_room_id,
-        category: item.inventory_categories ? {
-          id: item.inventory_categories.id,
-          name: item.inventory_categories.name,
-          color: item.inventory_categories.color,
-          icon: item.inventory_categories.icon
-        } : undefined
-      }));
-
-      return transformedData as InventoryItem[];
     }
   });
 
@@ -158,11 +87,6 @@ export const useInventoryQueries = (roomId: string) => {
       data: transactionsQuery.data ?? [],
       isLoading: transactionsQuery.isLoading,
       error: transactionsQuery.error
-    },
-    lowStock: {
-      data: lowStockQuery.data ?? [],
-      isLoading: lowStockQuery.isLoading,
-      error: lowStockQuery.error
     }
   };
 };
