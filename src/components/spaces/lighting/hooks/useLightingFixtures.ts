@@ -10,6 +10,64 @@ interface UseLightingFixturesProps {
   selectedFloor: string;
 }
 
+const transformDatabaseFixture = (raw: DatabaseLightingFixture): LightingFixture => ({
+  id: raw.id,
+  name: raw.name,
+  type: raw.type,
+  status: raw.status,
+  zone_name: raw.zone_name,
+  building_name: raw.building_name,
+  floor_name: raw.floor_name,
+  floor_id: raw.floor_id,
+  space_id: raw.space_id,
+  space_type: raw.space_type === 'room' || raw.space_type === 'hallway' ? raw.space_type : null,
+  position: raw.position,
+  sequence_number: raw.sequence_number,
+  zone_id: raw.zone_id,
+  space_name: raw.space_name,
+  room_number: raw.room_number,
+  emergency_circuit: raw.emergency_circuit ?? false,
+  technology: raw.technology,
+  ballast_issue: raw.ballast_issue ?? false,
+  bulb_count: raw.bulb_count ?? 1,
+  electrical_issues: parseJsonField(raw.electrical_issues, {
+    short_circuit: false,
+    wiring_issues: false,
+    voltage_problems: false
+  }),
+  energy_usage_data: parseJsonField(raw.energy_usage_data, {
+    daily_usage: [],
+    efficiency_rating: null,
+    last_reading: null
+  }),
+  emergency_protocols: parseJsonField(raw.emergency_protocols, {
+    emergency_contact: null,
+    backup_system: false,
+    evacuation_route: false
+  }),
+  warranty_info: parseJsonField(raw.warranty_info, {
+    start_date: null,
+    end_date: null,
+    provider: null,
+    terms: null
+  }),
+  manufacturer_details: parseJsonField(raw.manufacturer_details, {
+    name: null,
+    model: null,
+    serial_number: null,
+    support_contact: null
+  }),
+  inspection_history: parseJsonField(raw.inspection_history, []),
+  maintenance_history: parseJsonField(raw.maintenance_history, []),
+  connected_fixtures: raw.connected_fixtures || [],
+  maintenance_notes: raw.maintenance_notes,
+  ballast_check_notes: raw.ballast_check_notes,
+  backup_power_source: raw.backup_power_source,
+  emergency_duration_minutes: raw.emergency_duration_minutes,
+  created_at: raw.created_at,
+  updated_at: raw.updated_at
+});
+
 export function useLightingFixtures({ selectedBuilding, selectedFloor }: UseLightingFixturesProps) {
   return useQuery({
     queryKey: ['lighting-fixtures', selectedBuilding, selectedFloor] as const,
@@ -30,63 +88,7 @@ export function useLightingFixtures({ selectedBuilding, selectedFloor }: UseLigh
       if (error) throw error;
       if (!rawData) return [];
 
-      return (rawData as DatabaseLightingFixture[]).map((raw) => ({
-        id: raw.id,
-        name: raw.name,
-        type: raw.type,
-        status: raw.status,
-        zone_name: raw.zone_name,
-        building_name: raw.building_name,
-        floor_name: raw.floor_name,
-        floor_id: raw.floor_id,
-        space_id: raw.space_id,
-        space_type: raw.space_type === 'room' || raw.space_type === 'hallway' ? raw.space_type : null,
-        position: raw.position,
-        sequence_number: raw.sequence_number,
-        zone_id: raw.zone_id,
-        space_name: raw.space_name,
-        room_number: raw.room_number,
-        emergency_circuit: raw.emergency_circuit ?? false,
-        technology: raw.technology,
-        ballast_issue: raw.ballast_issue ?? false,
-        bulb_count: raw.bulb_count ?? 1,
-        electrical_issues: parseJsonField(raw.electrical_issues, {
-          short_circuit: false,
-          wiring_issues: false,
-          voltage_problems: false
-        }),
-        energy_usage_data: parseJsonField(raw.energy_usage_data, {
-          daily_usage: [],
-          efficiency_rating: null,
-          last_reading: null
-        }),
-        emergency_protocols: parseJsonField(raw.emergency_protocols, {
-          emergency_contact: null,
-          backup_system: false,
-          evacuation_route: false
-        }),
-        warranty_info: parseJsonField(raw.warranty_info, {
-          start_date: null,
-          end_date: null,
-          provider: null,
-          terms: null
-        }),
-        manufacturer_details: parseJsonField(raw.manufacturer_details, {
-          name: null,
-          model: null,
-          serial_number: null,
-          support_contact: null
-        }),
-        inspection_history: parseJsonField(raw.inspection_history, []),
-        maintenance_history: parseJsonField(raw.maintenance_history, []),
-        connected_fixtures: raw.connected_fixtures || [],
-        maintenance_notes: raw.maintenance_notes,
-        ballast_check_notes: raw.ballast_check_notes,
-        backup_power_source: raw.backup_power_source,
-        emergency_duration_minutes: raw.emergency_duration_minutes,
-        created_at: raw.created_at,
-        updated_at: raw.updated_at
-      }));
+      return (rawData as DatabaseLightingFixture[]).map(transformDatabaseFixture);
     }
   });
 }
