@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Room, StorageType, RoomType } from "../../rooms/types/RoomTypes";
@@ -142,60 +141,31 @@ export function useRoomsQuery() {
       }, {} as Record<string, any>);
 
       // Transform the data
-      const transformedRooms: Room[] = roomsData.map(room => {
-        const lightingFixture = fixturesByRoomId[room.id];
-        
-        return {
-          ...room,
-          lighting_fixture: lightingFixture ? {
-            id: lightingFixture.id,
-            type: lightingFixture.type,
-            status: lightingFixture.status,
-            technology: lightingFixture.technology,
-            electrical_issues: lightingFixture.electrical_issues,
-            ballast_issue: lightingFixture.ballast_issue,
-            maintenance_notes: lightingFixture.maintenance_notes
-          } : null,
-          id: room.id,
-          name: room.name,
-          room_number: room.room_number,
-          room_type: room.room_type as RoomType,
-          description: room.description || undefined,
-          status: room.status as "active" | "inactive" | "under_maintenance",
-          floor_id: room.floor_id,
-          parent_room_id: room.parent_room_id || undefined,
-          is_storage: room.is_storage,
-          storage_capacity: room.storage_capacity || null,
-          storage_type: room.storage_type ? (room.storage_type as StorageType) : null,
-          storage_notes: room.storage_notes || undefined,
-          phone_number: room.phone_number || undefined,
-          created_at: room.created_at,
-          current_function: room.current_function || undefined,
-          previous_functions: room.previous_functions || undefined,
-          function_change_date: room.function_change_date || undefined,
-          floors: room.floors ? {
-            name: room.floors.name,
-            buildings: room.floors.buildings ? {
-              id: room.floors.buildings.id,
-              name: room.floors.buildings.name
-            } : undefined
-          } : undefined,
-          parent_room: room.parent_room ? {
-            name: room.parent_room.name
-          } : undefined,
-          space_connections: [],
-          issues: (issuesByRoomId[room.id] || []).map(issue => ({
-            id: issue.id,
-            title: issue.title,
-            status: issue.status,
-            type: issue.type,
-            priority: issue.priority,
-            created_at: issue.created_at
-          })),
-          room_history: historyByRoomId[room.id] || [],
-          current_occupants: occupantsByRoomId[room.id] || []
-        };
-      });
+      const transformedRooms: Room[] = roomsData.map(room => ({
+        ...room,
+        room_type: room.room_type as RoomType,
+        storage_type: room.storage_type ? (room.storage_type as StorageType) : null,
+        lighting_fixture: fixturesByRoomId[room.id] ? {
+          id: fixturesByRoomId[room.id].id,
+          type: fixturesByRoomId[room.id].type,
+          status: fixturesByRoomId[room.id].status,
+          technology: fixturesByRoomId[room.id].technology,
+          electrical_issues: fixturesByRoomId[room.id].electrical_issues,
+          ballast_issue: fixturesByRoomId[room.id].ballast_issue,
+          maintenance_notes: fixturesByRoomId[room.id].maintenance_notes
+        } : null,
+        space_connections: [],
+        issues: (issuesByRoomId[room.id] || []).map(issue => ({
+          id: issue.id,
+          title: issue.title,
+          status: issue.status,
+          type: issue.type,
+          priority: issue.priority,
+          created_at: issue.created_at
+        })),
+        room_history: historyByRoomId[room.id] || [],
+        current_occupants: occupantsByRoomId[room.id] || []
+      }));
 
       console.log("Transformed room data:", transformedRooms);
       return transformedRooms;

@@ -42,7 +42,7 @@ export interface Room {
   phone_number?: string;
   created_at: string;
   current_function?: string;
-  previous_functions?: string[];
+  previous_functions?: any[]; // Changed from string[] to any[] to handle JSON data
   function_change_date?: string;
   floors?: {
     name: string;
