@@ -110,7 +110,7 @@ export function AssignRoomsDialog({
     queryKey: ["room-occupants", selectedRoom],
     enabled: !!selectedRoom,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: occupantsData, error } = await supabase
         .from("occupant_room_assignments")
         .select(`
           is_primary,
@@ -122,16 +122,24 @@ export function AssignRoomsDialog({
         `)
         .eq("room_id", selectedRoom);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching room occupants:', error);
+        throw error;
+      }
       
-      if (!data) return [];
+      if (!occupantsData) {
+        console.log('No occupants data found');
+        return [];
+      }
 
-      return data.map((assignment) => ({
-        id: assignment.occupant.id,
-        first_name: assignment.occupant.first_name,
-        last_name: assignment.occupant.last_name,
-        is_primary: assignment.is_primary
-      })) as CurrentOccupant[];
+      return occupantsData
+        .filter(assignment => assignment.occupant)
+        .map(assignment => ({
+          id: assignment.occupant.id,
+          first_name: assignment.occupant.first_name,
+          last_name: assignment.occupant.last_name,
+          is_primary: assignment.is_primary
+        })) as CurrentOccupant[];
     }
   });
 
