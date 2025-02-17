@@ -33,47 +33,21 @@ export function useConnectionQueries(spaceId: string, spaceType: "room" | "hallw
     queryFn: async () => {
       console.log("Fetching connections for space:", { spaceId, spaceType });
       
-      // Base fields to select for any connection type
-      let selectStatement = `
-        id,
-        from_space_id,
-        to_space_id,
-        space_type,
-        connection_type,
-        direction,
-        position,
-        status,
-        hallway_position,
-        offset_distance`;
-
-      // Add the appropriate join based on space type
-      if (spaceType === "room") {
-        selectStatement += `,
-          rooms!space_connections_to_space_id_fkey (
-            id,
-            name,
-            room_number,
-            room_type
-          )`;
-      } else if (spaceType === "hallway") {
-        selectStatement += `,
-          hallways!space_connections_to_space_id_fkey (
-            id,
-            name,
-            type
-          )`;
-      } else if (spaceType === "door") {
-        selectStatement += `,
-          doors!space_connections_to_space_id_fkey (
-            id,
-            name,
-            type
-          )`;
-      }
-
-      const { data, error } = await supabase
+      // First get the connections
+      const { data: connections, error } = await supabase
         .from("space_connections")
-        .select(selectStatement)
+        .select(`
+          id,
+          from_space_id,
+          to_space_id,
+          space_type,
+          connection_type,
+          direction,
+          position,
+          status,
+          hallway_position,
+          offset_distance
+        `)
         .or(`from_space_id.eq.${spaceId},to_space_id.eq.${spaceId}`)
         .eq("status", "active")
         .returns<SpaceConnectionData[]>();
@@ -83,26 +57,45 @@ export function useConnectionQueries(spaceId: string, spaceType: "room" | "hallw
         throw error;
       }
 
-      console.log("Space connections found:", data);
+      if (!connections) return [];
 
-      if (!data) return [];
+      // Then get the connected spaces info
+      const spaceIds = connections.map(conn => 
+        conn.from_space_id === spaceId ? conn.to_space_id : conn.from_space_id
+      );
 
-      return data.map((conn): SpaceConnection => {
-        const toSpace = conn.rooms || conn.hallways || conn.doors;
+      const { data: spacesData, error: spacesError } = await supabase
+        .from("spaces")
+        .select("id, name, type, room_number")
+        .in("id", spaceIds);
+
+      if (spacesError) {
+        console.error("Error fetching connected spaces:", spacesError);
+        throw spacesError;
+      }
+
+      // Map the spaces data to our connections
+      return connections.map((conn): SpaceConnection => {
+        const connectedSpaceId = conn.from_space_id === spaceId ? conn.to_space_id : conn.from_space_id;
+        const connectedSpace = spacesData?.find(space => space.id === connectedSpaceId);
         
         return {
           id: conn.id,
-          to_space: toSpace ? {
-            name: toSpace.name,
-            id: toSpace.id,
-            type: toSpace.type || spaceType
-          } : undefined,
-          direction: conn.direction,
+          from_space_id: conn.from_space_id,
+          to_space_id: conn.to_space_id,
+          space_type: conn.space_type,
           connection_type: conn.connection_type,
-          status: conn.status,
+          direction: conn.direction,
           position: conn.position,
+          status: conn.status,
+          metadata: {},
           hallway_position: conn.hallway_position,
-          offset_distance: conn.offset_distance
+          offset_distance: conn.offset_distance,
+          to_space: connectedSpace ? {
+            name: connectedSpace.name,
+            room_number: connectedSpace.room_number,
+            type: connectedSpace.type
+          } : undefined
         };
       });
     },
