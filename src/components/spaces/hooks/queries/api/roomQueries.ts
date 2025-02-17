@@ -37,7 +37,7 @@ export const fetchRoomsData = async () => {
 
 export const fetchRelatedRoomData = async (roomIds: string[]) => {
   return Promise.all([
-    // Fetch occupants
+    // Fetch occupants - using the correct relationship name
     supabase
       .from('occupant_room_assignments')
       .select(`
@@ -45,7 +45,7 @@ export const fetchRelatedRoomData = async (roomIds: string[]) => {
         assignment_type,
         is_primary,
         schedule,
-        occupant:occupant_id (
+        occupants!fk_occupant_room_assignments_occupant (
           first_name,
           last_name,
           title
