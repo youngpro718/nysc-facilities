@@ -52,13 +52,13 @@ export const getInitialSpaceData = (
       ...baseValues,
       type: "room" as const,
       roomNumber: initialData?.room_number || "",
-      roomType: initialData?.room_type || "office",
+      roomType: (initialData?.room_type || "office") as RoomType,
       phoneNumber: initialData?.phone_number || "",
       description: initialData?.description || "",
       isStorage: initialData?.is_storage ?? false,
       storageCapacity: initialData?.storage_capacity ?? null,
       storageType: initialData?.is_storage ? 
-        (initialData?.storage_type || "general_storage") : null,
+        (initialData?.storage_type || "general_storage" as StorageType) : null,
       storageNotes: initialData?.storage_notes || "",
       parentRoomId: initialData?.parent_room_id ?? null,
       currentFunction: initialData?.current_function || "",
@@ -69,8 +69,8 @@ export const getInitialSpaceData = (
     return {
       ...baseValues,
       type: "door" as const,
-      doorType: initialData?.doorType || "standard" as DoorType,
-      securityLevel: initialData?.securityLevel || "standard" as SecurityLevel,
+      doorType: (initialData?.doorType || "standard") as DoorType,
+      securityLevel: (initialData?.securityLevel || "standard") as SecurityLevel,
       passkeyEnabled: initialData?.passkeyEnabled || false,
     };
   }
@@ -79,8 +79,8 @@ export const getInitialSpaceData = (
     return {
       ...baseValues,
       type: "hallway" as const,
-      hallwayType: initialData?.hallwayType || "public_main" as HallwayType,
-      section: initialData?.section || "left_wing" as Section,
+      hallwayType: (initialData?.hallwayType || "public_main") as HallwayType,
+      section: (initialData?.section || "left_wing") as Section,
       notes: initialData?.notes || "",
     };
   }
