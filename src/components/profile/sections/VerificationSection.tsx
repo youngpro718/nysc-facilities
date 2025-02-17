@@ -22,11 +22,13 @@ interface Profile {
   department_id: string | null;
 }
 
-interface UserData {
+interface VerificationRequest {
   id: string;
-  department: string | null;
-  created_at: string;
-  updated_at: string;
+  user_id: string;
+  department_id: string | null;
+  employee_id: string | null;
+  status: 'pending' | 'approved' | 'rejected';
+  submitted_at: string;
   profile: Profile | null;
 }
 
@@ -70,7 +72,7 @@ export function VerificationSection() {
         `);
 
       if (error) throw error;
-      return data as UserData[];
+      return data;
     }
   });
 
@@ -124,10 +126,10 @@ export function VerificationSection() {
     user_id: user.id,
     department_id: user.profile?.department_id,
     employee_id: null,
-    status: user.profile?.verification_status || 'pending',
+    status: (user.profile?.verification_status === 'verified' ? 'approved' : user.profile?.verification_status) || 'pending',
     submitted_at: user.created_at,
     profile: user.profile
-  })) || [];
+  } as VerificationRequest)) || [];
 
   return (
     <Card>
