@@ -9,6 +9,8 @@ export interface KeyAssignment {
     name: string;
     type: string;
     is_passkey: boolean;
+    total_quantity: number;
+    available_quantity: number;
   } | null;
   occupant: {
     id: string;

@@ -43,7 +43,7 @@ export function useKeyAssignments() {
       // Let's also get a direct count from the keys table for verification
       const { data: keyData, error: keyError } = await supabase
         .from("keys")
-        .select('id, name, total_quantity, available_quantity');
+        .select("*");
 
       if (keyError) {
         console.error("Error fetching key data:", keyError);
@@ -51,6 +51,19 @@ export function useKeyAssignments() {
       }
 
       console.log("Current key quantities:", keyData);
+
+      // For each key, let's verify its assignments
+      for (const key of keyData || []) {
+        const { data: keyAssignments, error: countError } = await supabase
+          .from("key_assignments")
+          .select("id")
+          .eq("key_id", key.id)
+          .is("returned_at", null);
+
+        if (!countError) {
+          console.log(`Key ${key.name}: ${keyAssignments?.length} active assignments, available: ${key.available_quantity}, total: ${key.total_quantity}`);
+        }
+      }
 
       return assignments as unknown as KeyAssignment[];
     },
