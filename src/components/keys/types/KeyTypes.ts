@@ -5,8 +5,6 @@ export type ReturnReason = "normal_return" | "lost" | "damaged" | "other";
 
 export interface KeyFilters {
   type?: KeyType | "all_types";
-  status?: KeyStatus | "all_statuses";
-  building_id?: string | "all_buildings";
 }
 
 export interface SortOption {
