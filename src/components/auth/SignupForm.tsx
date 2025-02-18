@@ -1,3 +1,4 @@
+
 import { FormEvent, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -62,8 +63,8 @@ export const SignupForm = ({
 
   const handleSignup = async (e: FormEvent) => {
     e.preventDefault();
-    if (!email || !password || !departmentId || !firstName || !lastName || !title || !phone || !courtPosition) {
-      toast.error("Please fill in all required fields");
+    if (!email || !password || !firstName || !lastName) {
+      toast.error("Please fill in all required fields (First Name, Last Name, Email, and Password)");
       return;
     }
 
@@ -77,12 +78,12 @@ export const SignupForm = ({
           data: {
             first_name: firstName,
             last_name: lastName,
-            title,
-            phone,
-            department_id: departmentId,
-            court_position: courtPosition,
+            title: title || null,
+            phone: phone || null,
+            department_id: departmentId || null,
+            court_position: courtPosition || null,
             access_level: 'standard',
-            emergency_contact: emergencyContact
+            emergency_contact: Object.values(emergencyContact).some(Boolean) ? emergencyContact : null
           }
         }
       });
@@ -151,10 +152,10 @@ export const SignupForm = ({
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="courtPosition" className="text-white">Court Position *</Label>
-            <Select value={courtPosition} onValueChange={setCourtPosition} required>
+            <Label htmlFor="courtPosition" className="text-white">Court Position</Label>
+            <Select value={courtPosition} onValueChange={setCourtPosition}>
               <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                <SelectValue placeholder="Select your position" />
+                <SelectValue placeholder="Select your position (optional)" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="judge">Judge</SelectItem>
@@ -207,15 +208,14 @@ export const SignupForm = ({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="phone" className="text-white">Phone Number *</Label>
+            <Label htmlFor="phone" className="text-white">Phone Number</Label>
             <Input
               id="phone"
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
-              placeholder="Enter your phone number"
-              required
+              placeholder="Enter your phone number (optional)"
             />
           </div>
         </div>
@@ -228,10 +228,10 @@ export const SignupForm = ({
       children: (
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="department" className="text-white">Court *</Label>
-            <Select value={departmentId} onValueChange={setDepartmentId} required>
+            <Label htmlFor="department" className="text-white">Court</Label>
+            <Select value={departmentId} onValueChange={setDepartmentId}>
               <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                <SelectValue placeholder="Select court" />
+                <SelectValue placeholder="Select court (optional)" />
               </SelectTrigger>
               <SelectContent>
                 {departments?.map((dept) => (
@@ -243,14 +243,13 @@ export const SignupForm = ({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="title" className="text-white">Official Title *</Label>
+            <Label htmlFor="title" className="text-white">Official Title</Label>
             <Input
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
-              placeholder="Enter your official title"
-              required
+              placeholder="Enter your official title (optional)"
             />
           </div>
         </div>
@@ -263,19 +262,19 @@ export const SignupForm = ({
       children: (
         <div className="space-y-4">
           <Input
-            placeholder="Contact Name"
+            placeholder="Contact Name (optional)"
             value={emergencyContact.name}
             onChange={(e) => setEmergencyContact(prev => ({ ...prev, name: e.target.value }))}
             className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
           />
           <Input
-            placeholder="Contact Phone"
+            placeholder="Contact Phone (optional)"
             value={emergencyContact.phone}
             onChange={(e) => setEmergencyContact(prev => ({ ...prev, phone: e.target.value }))}
             className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
           />
           <Input
-            placeholder="Relationship"
+            placeholder="Relationship (optional)"
             value={emergencyContact.relationship}
             onChange={(e) => setEmergencyContact(prev => ({ ...prev, relationship: e.target.value }))}
             className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
