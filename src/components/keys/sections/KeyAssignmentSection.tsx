@@ -20,6 +20,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { toast } from "sonner";
 
 interface KeyAssignment {
   id: string;
@@ -41,7 +42,9 @@ interface KeyAssignment {
 }
 
 export function KeyAssignmentSection() {
-  const { data: assignments, isLoading } = useQuery({
+  const [isProcessing, setIsProcessing] = useState(false);
+  
+  const { data: assignments, isLoading, refetch } = useQuery({
     queryKey: ["active-key-assignments"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -72,17 +75,51 @@ export function KeyAssignmentSection() {
     },
   });
 
-  const handleReturn = async (assignmentId: string) => {
-    const { error } = await supabase
-      .from("key_assignments")
-      .update({
-        returned_at: new Date().toISOString(),
-        return_reason: "normal_return"
-      })
-      .eq("id", assignmentId);
+  const handleReturn = async (assignmentId: string, keyId: string) => {
+    if (isProcessing) return;
+    setIsProcessing(true);
 
-    if (error) {
+    try {
+      const { data: key, error: keyError } = await supabase
+        .from("keys")
+        .select("available_quantity")
+        .eq("id", keyId)
+        .single();
+
+      if (keyError) throw keyError;
+
+      // Start a transaction by using multiple operations
+      const updates = await Promise.all([
+        // Update key assignment
+        supabase
+          .from("key_assignments")
+          .update({
+            returned_at: new Date().toISOString(),
+            return_reason: "normal_return"
+          })
+          .eq("id", assignmentId),
+
+        // Update key quantity
+        supabase
+          .from("keys")
+          .update({
+            available_quantity: (key.available_quantity || 0) + 1
+          })
+          .eq("id", keyId)
+      ]);
+
+      const errors = updates.map(update => update.error).filter(Boolean);
+      if (errors.length > 0) {
+        throw new Error(errors[0]?.message);
+      }
+
+      toast.success("Key returned successfully");
+      refetch();
+    } catch (error: any) {
       console.error("Error returning key:", error);
+      toast.error(error.message || "Failed to return key");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -145,7 +182,8 @@ export function KeyAssignmentSection() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleReturn(assignment.id)}
+                    onClick={() => handleReturn(assignment.id, assignment.keys?.id || '')}
+                    disabled={isProcessing}
                   >
                     <ArrowLeftRight className="mr-2 h-4 w-4" />
                     Return Key
