@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { DeviceInfo } from "../types";
+import { toast } from "sonner";
 
 export const useSessionManagement = (isAuthPage: boolean) => {
   const navigate = useNavigate();
@@ -52,15 +53,16 @@ export const useSessionManagement = (isAuthPage: boolean) => {
           return;
         }
 
-        // Check verification status using maybeSingle() instead of single()
+        // Check profile first, before doing anything else
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('verification_status')
           .eq('id', session.user.id)
           .maybeSingle();
 
-        if (profileError || !profile) {
+        if (profileError) {
           console.error("Profile error:", profileError);
+          toast.error("Error loading user profile");
           if (!isAuthPage) {
             navigate('/auth');
           }
@@ -68,79 +70,65 @@ export const useSessionManagement = (isAuthPage: boolean) => {
           return;
         }
 
-        // Handle verification status
-        if (profile.verification_status === 'pending' && location.pathname !== '/verification-pending') {
-          navigate('/verification-pending');
-          setIsLoading(false);
-          return;
-        }
-
-        // Refresh session to ensure token is valid
-        const { error: refreshError } = await supabase.auth.refreshSession();
-        if (refreshError) {
-          console.error("Session refresh error:", refreshError);
-          if (!isAuthPage) {
-            navigate('/auth');
+        // If profile exists and verification is pending, route to pending page
+        if (profile?.verification_status === 'pending') {
+          if (location.pathname !== '/verification-pending') {
+            navigate('/verification-pending');
           }
           setIsLoading(false);
           return;
         }
 
-        const { data: roleData } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
+        // Only proceed with role check and other logic if user is verified
+        if (profile?.verification_status === 'verified') {
+          const { data: roleData } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
 
-        if (!mounted) return;
+          const userIsAdmin = roleData?.role === 'admin';
+          setIsAdmin(userIsAdmin);
 
-        const userIsAdmin = roleData?.role === 'admin';
-        setIsAdmin(userIsAdmin);
-
-        // Handle auth page redirects
-        if (isAuthPage) {
-          const targetPath = userIsAdmin ? '/' : '/dashboard';
-          if (location.pathname !== targetPath) {
-            navigate(targetPath);
+          // Handle auth page redirects
+          if (isAuthPage) {
+            navigate(userIsAdmin ? '/' : '/dashboard');
+            setIsLoading(false);
+            return;
           }
-          setIsLoading(false);
-          return;
-        }
 
-        // Handle non-auth page access
-        const currentPath = location.pathname;
-        if (!userIsAdmin && currentPath === '/') {
-          navigate('/dashboard');
-          setIsLoading(false);
-          return;
-        }
-
-        const deviceInfo = getCurrentDeviceInfo();
-
-        try {
-          const existingSession = await findExistingSession(session.user.id);
-
-          if (existingSession?.id) {
-            await supabase
-              .from('user_sessions')
-              .update({
-                last_active_at: new Date().toISOString(),
-                device_info: deviceInfo
-              })
-              .eq('id', existingSession.id);
-          } else {
-            const sessionData = {
-              user_id: session.user.id,
-              device_info: deviceInfo,
-              last_active_at: new Date().toISOString()
-            };
-
-            await supabase
-              .from('user_sessions')
-              .insert([sessionData]);
+          // Handle non-auth page access
+          if (!userIsAdmin && location.pathname === '/') {
+            navigate('/dashboard');
+            setIsLoading(false);
+            return;
           }
-        } catch (error) {
-          console.error("Session management error:", error);
+
+          // Update session info
+          try {
+            const deviceInfo = getCurrentDeviceInfo();
+            const existingSession = await findExistingSession(session.user.id);
+
+            if (existingSession?.id) {
+              await supabase
+                .from('user_sessions')
+                .update({
+                  last_active_at: new Date().toISOString(),
+                  device_info: deviceInfo
+                })
+                .eq('id', existingSession.id);
+            } else {
+              await supabase
+                .from('user_sessions')
+                .insert([{
+                  user_id: session.user.id,
+                  device_info: deviceInfo,
+                  last_active_at: new Date().toISOString()
+                }]);
+            }
+          } catch (error) {
+            console.error("Session management error:", error);
+          }
         }
 
         setIsLoading(false);
@@ -157,22 +145,27 @@ export const useSessionManagement = (isAuthPage: boolean) => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
+        // Check verification status immediately after sign in
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('verification_status')
+          .eq('id', session.user.id)
+          .maybeSingle();
+
+        if (profile?.verification_status === 'pending') {
+          navigate('/verification-pending');
+          return;
+        }
+
         const { data: roleData } = await supabase
           .from('user_roles')
           .select('role')
           .eq('user_id', session.user.id)
           .maybeSingle();
 
-        const targetPath = roleData?.role === 'admin' ? '/' : '/dashboard';
-        if (location.pathname !== targetPath) {
-          navigate(targetPath);
-        }
+        navigate(roleData?.role === 'admin' ? '/' : '/dashboard');
       } else if (event === 'SIGNED_OUT') {
-        if (location.pathname !== '/auth') {
-          navigate('/auth');
-        }
-      } else if (event === 'TOKEN_REFRESHED') {
-        console.log('Token refreshed successfully');
+        navigate('/auth');
       }
     });
 
