@@ -1,4 +1,3 @@
-
 import { FormEvent, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -83,8 +82,7 @@ export const SignupForm = ({
             department_id: departmentId || null,
             court_position: courtPosition || null,
             access_level: 'standard',
-            emergency_contact: Object.values(emergencyContact).some(Boolean) ? emergencyContact : null,
-            verification_status: 'pending'
+            emergency_contact: Object.values(emergencyContact).some(Boolean) ? emergencyContact : null
           }
         }
       });
