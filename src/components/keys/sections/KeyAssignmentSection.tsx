@@ -13,7 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { User, Key, ArrowLeftRight, Info } from "lucide-react";
+import { User, Key, ArrowLeftRight, Info, Calendar } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -88,9 +88,7 @@ export function KeyAssignmentSection() {
 
       if (keyError) throw keyError;
 
-      // Start a transaction by using multiple operations
       const updates = await Promise.all([
-        // Update key assignment
         supabase
           .from("key_assignments")
           .update({
@@ -99,7 +97,6 @@ export function KeyAssignmentSection() {
           })
           .eq("id", assignmentId),
 
-        // Update key quantity
         supabase
           .from("keys")
           .update({
@@ -176,7 +173,10 @@ export function KeyAssignmentSection() {
                 </TableCell>
                 <TableCell>{assignment.occupant?.department}</TableCell>
                 <TableCell>
-                  {format(new Date(assignment.assigned_at), "MMM d, yyyy")}
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    {format(new Date(assignment.assigned_at), "MMMM d, yyyy 'at' h:mm a")}
+                  </div>
                 </TableCell>
                 <TableCell className="text-right">
                   <Button
