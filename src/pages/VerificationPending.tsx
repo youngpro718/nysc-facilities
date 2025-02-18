@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ClipboardCheck, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { SparklesCore } from "@/components/ui/sparkles";
 
 export default function VerificationPending() {
   const navigate = useNavigate();
@@ -23,11 +24,11 @@ export default function VerificationPending() {
           .from('profiles')
           .select('verification_status')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
 
-        if (profile.verification_status === 'verified') {
+        if (profile?.verification_status === 'verified') {
           toast.success("Your account has been verified!");
           navigate("/");
         }
@@ -40,7 +41,7 @@ export default function VerificationPending() {
     checkVerificationStatus();
 
     // Subscribe to profile changes
-    const channel = supabase
+    const subscription = supabase
       .channel('profile-changes')
       .on(
         'postgres_changes',
@@ -60,7 +61,7 @@ export default function VerificationPending() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(subscription);
     };
   }, [navigate]);
 
@@ -76,11 +77,11 @@ export default function VerificationPending() {
         .from('profiles')
         .select('verification_status')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
-      if (profile.verification_status === 'verified') {
+      if (profile?.verification_status === 'verified') {
         toast.success("Your account has been verified!");
         navigate("/");
       } else {
@@ -93,7 +94,17 @@ export default function VerificationPending() {
   };
 
   return (
-    <div className="h-screen relative w-full bg-courthouse flex flex-col items-center justify-center overflow-hidden">
+    <div className="min-h-screen relative w-full bg-courthouse flex flex-col items-center justify-center overflow-hidden">
+      <SparklesCore
+        id="tsparticlesfullpage"
+        background="transparent"
+        minSize={0.6}
+        maxSize={1.4}
+        particleDensity={100}
+        className="w-full h-full absolute"
+        particleColor="#FFFFFF"
+      />
+      
       <Card className="relative z-20 w-full max-w-md p-8 bg-white/10 backdrop-blur-lg rounded-lg shadow-xl border border-white/20">
         <div className="flex flex-col items-center gap-6 text-center text-white">
           <div className="relative">

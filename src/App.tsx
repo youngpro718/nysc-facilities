@@ -13,6 +13,7 @@ import Profile from "@/pages/Profile";
 import Lighting from "@/pages/Lighting";
 import UserDashboard from "@/pages/UserDashboard";
 import AdminProfile from "@/pages/AdminProfile";
+import VerificationPending from "@/pages/VerificationPending";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -36,6 +37,7 @@ function App() {
               <Route path="profile" element={<Profile />} />
               <Route path="dashboard" element={<UserDashboard />} />
               <Route path="admin-profile" element={<AdminProfile />} />
+              <Route path="verification-pending" element={<VerificationPending />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
