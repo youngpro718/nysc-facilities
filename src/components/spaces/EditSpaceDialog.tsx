@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Pencil } from "lucide-react";
 import { toast } from "sonner";
-import { editSpaceSchema, type EditSpaceFormData } from "./schemas/editSpaceSchema";
+import { editSpaceSchema, type EditSpaceFormData } from './schemas/editSpaceSchema';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
 import { EditSpaceDialogContent } from "./EditSpaceDialogContent";
@@ -120,6 +120,10 @@ export const EditSpaceDialog = ({
     },
   });
 
+  const handleSubmit = async (data: EditSpaceFormData) => {
+    await editSpaceMutation.mutateAsync(data);
+  };
+
   return (
     <>
       {variant === "button" && (
@@ -145,7 +149,7 @@ export const EditSpaceDialog = ({
             form={form}
             type={type}
             id={id}
-            onSubmit={editSpaceMutation.mutateAsync}
+            onSubmit={handleSubmit}
             isPending={editSpaceMutation.isPending}
             onCancel={() => setOpen(false)}
           />
