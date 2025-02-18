@@ -40,6 +40,8 @@ export const useSessionManagement = (isAuthPage: boolean) => {
         .insert([{
           id: user.id,
           email: user.email,
+          first_name: user.user_metadata?.first_name || '',
+          last_name: user.user_metadata?.last_name || '',
           verification_status: 'pending',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
