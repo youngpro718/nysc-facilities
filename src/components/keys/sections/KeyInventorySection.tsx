@@ -28,7 +28,10 @@ export function KeyInventorySection() {
           status,
           total_quantity,
           available_quantity,
-          is_passkey
+          is_passkey,
+          key_scope,
+          properties,
+          location_data
         `);
 
       // Apply filters
@@ -38,12 +41,9 @@ export function KeyInventorySection() {
       if (filters.status && filters.status !== 'all_statuses') {
         query = query.eq('status', filters.status);
       }
-      if (filters.passkey) {
-        if (filters.passkey === 'passkey_only') {
-          query = query.eq('is_passkey', true);
-        } else if (filters.passkey === 'non_passkey') {
-          query = query.eq('is_passkey', false);
-        }
+      // Use location_data for building filter
+      if (filters.building_id && filters.building_id !== 'all_buildings') {
+        query = query.contains('location_data', { building_id: filters.building_id });
       }
 
       // Apply sorting
@@ -51,7 +51,11 @@ export function KeyInventorySection() {
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching keys:", error);
+        throw error;
+      }
+
       return data as KeyData[];
     },
   });
