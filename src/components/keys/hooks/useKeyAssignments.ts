@@ -40,29 +40,30 @@ export function useKeyAssignments() {
         throw assignmentError;
       }
 
-      // Let's also get a direct count from the keys table for verification
-      const { data: keyData, error: keyError } = await supabase
+      // Let's get specific details for key #31
+      const { data: keyDetails, error: keyError } = await supabase
         .from("keys")
-        .select("*");
+        .select("*")
+        .eq('name', '31')
+        .single();
 
       if (keyError) {
-        console.error("Error fetching key data:", keyError);
+        console.error("Error fetching key details:", keyError);
         throw keyError;
       }
 
-      console.log("Current key quantities:", keyData);
+      console.log("Key #31 details:", keyDetails);
 
-      // For each key, let's verify its assignments
-      for (const key of keyData || []) {
-        const { data: keyAssignments, error: countError } = await supabase
-          .from("key_assignments")
-          .select("id")
-          .eq("key_id", key.id)
-          .is("returned_at", null);
+      // Check all assignments for key #31 (including returned ones)
+      const { data: key31Assignments, error: assignmentsError } = await supabase
+        .from("key_assignments")
+        .select("*")
+        .eq('key_id', keyDetails.id);
 
-        if (!countError) {
-          console.log(`Key ${key.name}: ${keyAssignments?.length} active assignments, available: ${key.available_quantity}, total: ${key.total_quantity}`);
-        }
+      if (!assignmentsError) {
+        console.log("All assignments for key #31:", key31Assignments);
+        console.log("Active assignments count:", key31Assignments.filter(a => !a.returned_at).length);
+        console.log("Returned assignments count:", key31Assignments.filter(a => a.returned_at).length);
       }
 
       return assignments as unknown as KeyAssignment[];
