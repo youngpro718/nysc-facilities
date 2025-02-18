@@ -1,11 +1,19 @@
-import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -17,7 +25,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
@@ -28,75 +35,69 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Pencil, AlertCircle } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { KeyData, KeyType, KeyStatus } from "../types/KeyTypes";
+import { MultiSelect } from "@/components/ui/multi-select";
 
 const editKeySchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  type: z.enum(["physical_key", "elevator_pass"], {
-    required_error: "Please select a key type",
+  id: z.string(),
+  name: z.string().min(2, {
+    message: "Key name must be at least 2 characters.",
   }),
-  door_locations: z.array(z.string()).optional(),
-  status: z.enum(["available", "assigned", "lost", "decommissioned"], {
-    required_error: "Please select a status",
-  }),
+  type: z.enum(["physical_key", "elevator_pass", "room_key"]),
+  status: z.enum(["available", "assigned", "lost", "decommissioned"]),
   is_passkey: z.boolean(),
-  quantity_adjustment: z.number().optional(),
+  door_locations: z.string().array().optional(),
 });
 
 type EditKeyFormData = z.infer<typeof editKeySchema>;
 
 interface EditKeyDialogProps {
-  keyData: {
-    id: string;
-    name: string;
-    type: "physical_key" | "elevator_pass";
-    status: "available" | "assigned" | "lost" | "decommissioned";
-    is_passkey: boolean;
-    total_quantity?: number;
-    available_quantity?: number;
-  };
+  keyData: KeyData;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export default function EditKeyDialog({ keyData }: EditKeyDialogProps) {
-  const [open, setOpen] = useState(false);
-  const { toast } = useToast();
-  
+export default function EditKeyDialog({ keyData, open, onOpenChange }: EditKeyDialogProps) {
   const form = useForm<EditKeyFormData>({
     resolver: zodResolver(editKeySchema),
     defaultValues: {
+      id: keyData.id,
       name: keyData.name,
       type: keyData.type,
-      door_locations: [],
       status: keyData.status,
       is_passkey: keyData.is_passkey,
-      quantity_adjustment: 0,
     },
   });
 
-  const { data: rooms } = useQuery({
-    queryKey: ["rooms"],
+  useEffect(() => {
+    form.reset({
+      id: keyData.id,
+      name: keyData.name,
+      type: keyData.type,
+      status: keyData.status,
+      is_passkey: keyData.is_passkey,
+    });
+  }, [keyData, form]);
+
+  const { data: doors, isLoading: isLoadingDoors } = supabase.auth.user() ? useQuery({
+    queryKey: ["doors"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("rooms")
-        .select("id, name, room_number")
-        .eq("status", "active");
+        .from("doors")
+        .select("*")
+        .eq("status", "active")
+        .order("name");
 
-      if (error) {
-        toast({
-          variant: "destructive",
-          title: "Error fetching rooms",
-          description: error.message,
-        });
-        return [];
-      }
-
+      if (error) throw error;
       return data;
     },
-  });
+  }) : { data: [], isLoading: true };
 
   useEffect(() => {
     const fetchDoorLocations = async () => {
@@ -106,11 +107,7 @@ export default function EditKeyDialog({ keyData }: EditKeyDialogProps) {
         .eq("key_id", keyData.id);
 
       if (error) {
-        toast({
-          variant: "destructive",
-          title: "Error fetching door locations",
-          description: error.message,
-        });
+        toast.error("Error fetching door locations: " + error.message);
         return;
       }
 
@@ -121,10 +118,11 @@ export default function EditKeyDialog({ keyData }: EditKeyDialogProps) {
     if (open && !keyData.is_passkey) {
       fetchDoorLocations();
     }
-  }, [open, keyData.id, keyData.is_passkey, form, toast]);
+  }, [open, keyData.id, keyData.is_passkey, form]);
 
   const onSubmit = async (data: EditKeyFormData) => {
     try {
+      // Handle key update
       const { error: keyError } = await supabase
         .from("keys")
         .update({
@@ -137,85 +135,45 @@ export default function EditKeyDialog({ keyData }: EditKeyDialogProps) {
 
       if (keyError) throw keyError;
 
+      // Handle door locations if not a passkey
       if (!data.is_passkey && data.door_locations && data.door_locations.length > 0) {
-        const { error: deleteError } = await supabase
-          .from("key_door_locations_table")
+        // Delete existing locations
+        await supabase
+          .from("key_door_locations")
           .delete()
           .eq("key_id", keyData.id);
 
-        if (deleteError) throw deleteError;
+        // Insert new locations
+        const locationsToInsert = data.door_locations.map(doorId => ({
+          key_id: keyData.id,
+          door_id: doorId
+        }));
 
-        const { error: locationError } = await supabase
-          .from("key_door_locations_table")
-          .insert(
-            data.door_locations.map(door_id => ({
-              key_id: keyData.id,
-              door_id
-            }))
-          );
+        const { error: insertError } = await supabase
+          .from("key_door_locations")
+          .insert(locationsToInsert);
 
-        if (locationError) throw locationError;
+        if (insertError) throw insertError;
       }
 
-      const { error: stockError } = await supabase
-        .from("key_stock_transactions")
-        .insert({
-          key_id: keyData.id,
-          transaction_type: data.quantity_adjustment > 0 ? 'add' : 'remove',
-          quantity: Math.abs(data.quantity_adjustment),
-          reason: 'Manual adjustment',
-        });
-
-      if (stockError) throw stockError;
-
-      const { error: auditError } = await supabase
-        .from("key_audit_logs")
-        .insert([{
-          key_id: keyData.id,
-          action_type: "updated",
-          details: {
-            name: data.name,
-            type: data.type,
-            status: data.status,
-            is_passkey: data.is_passkey,
-            door_locations: data.door_locations,
-            quantity_adjustment: data.quantity_adjustment
-          }
-        }]);
-
-      if (auditError) {
-        console.error("Error logging key update:", auditError);
-      }
-
-      toast({
-        title: "Key updated successfully",
-        description: data.quantity_adjustment 
-          ? `Updated key details and adjusted quantity by ${data.quantity_adjustment}`
-          : "Updated key details",
-      });
-      setOpen(false);
+      toast.success("Key updated successfully");
+      onOpenChange(false);
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error updating key",
-        description: error.message,
-      });
+      toast.error("Error updating key: " + error.message);
     }
   };
 
-  const isPasskey = form.watch("is_passkey");
-  const quantityAdjustment = form.watch("quantity_adjustment");
-
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon">
-          <Pencil className="h-4 w-4" />
-        </Button>
+        <Button variant="outline">Edit Key</Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Edit Key</DialogTitle>
+          <DialogDescription>
+            Make changes to the key here. Click save when you're done.
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -226,122 +184,46 @@ export default function EditKeyDialog({ keyData }: EditKeyDialogProps) {
                 <FormItem>
                   <FormLabel>Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter key name" {...field} />
+                    <Input placeholder="Key Name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="type"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Type</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select key type" />
+                        <SelectValue placeholder="Select a type" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="physical_key">Physical Key</SelectItem>
                       <SelectItem value="elevator_pass">Elevator Pass</SelectItem>
+                      <SelectItem value="room_key">Room Key</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="quantity_adjustment"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Adjust Quantity</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number"
-                      placeholder="Enter quantity adjustment"
-                      {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Enter a positive number to add keys or a negative number to remove keys
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            {quantityAdjustment !== 0 && (
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  This will {quantityAdjustment > 0 ? 'add' : 'remove'} {Math.abs(quantityAdjustment)} key(s) 
-                  {quantityAdjustment > 0 ? ' to' : ' from'} the inventory
-                </AlertDescription>
-              </Alert>
-            )}
-            <FormField
-              control={form.control}
-              name="is_passkey"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                  <div className="space-y-0.5">
-                    <FormLabel>Passkey</FormLabel>
-                    <div className="text-sm text-muted-foreground">
-                      This key can be used with passkey-enabled doors
-                    </div>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            {!isPasskey && (
-              <FormField
-                control={form.control}
-                name="door_locations"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Door Location</FormLabel>
-                    <Select 
-                      onValueChange={(value) => field.onChange([value])} 
-                      value={field.value?.[0] || ""}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select door location" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {rooms?.map((room) => (
-                          <SelectItem key={room.id} value={room.id}>
-                            {room.name} ({room.room_number})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+
             <FormField
               control={form.control}
               name="status"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select key status" />
+                        <SelectValue placeholder="Select a status" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -355,9 +237,55 @@ export default function EditKeyDialog({ keyData }: EditKeyDialogProps) {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full">
-              Update Key
-            </Button>
+
+            <FormField
+              control={form.control}
+              name="is_passkey"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-md border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Passkey</FormLabel>
+                    {/* <FormDescription>
+                      Make this key a passkey.
+                    </FormDescription> */}
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            {!keyData.is_passkey && (
+              <FormField
+                control={form.control}
+                name="door_locations"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Door Locations</FormLabel>
+                    <FormControl>
+                      <MultiSelect
+                        options={doors?.data?.map((door) => ({
+                          label: door.name,
+                          value: door.id,
+                        })) || []}
+                        onChange={(values) => field.onChange(values)}
+                        value={field.value || []}
+                        isLoading={isLoadingDoors}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            <div className="flex justify-end">
+              <Button type="submit">Update Key</Button>
+            </div>
           </form>
         </Form>
       </DialogContent>
