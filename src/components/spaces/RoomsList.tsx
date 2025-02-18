@@ -9,7 +9,6 @@ import { FilterBar } from "./rooms/components/FilterBar";
 import { RoomsContent } from "./rooms/components/RoomsContent";
 import { useRoomFilters } from "./hooks/useRoomFilters";
 import { useRoomsQuery } from "./hooks/queries/useRoomsQuery";
-import type { Room } from "./rooms/types/RoomTypes";
 
 interface RoomsListProps {
   selectedBuilding: string;
@@ -37,6 +36,7 @@ const RoomsList = ({ selectedBuilding, selectedFloor }: RoomsListProps) => {
 
   const deleteRoom = useMutation({
     mutationFn: async (roomId: string) => {
+      // Check for existing connections
       const { data: connections } = await supabase
         .from('space_connections')
         .select('id')
@@ -46,15 +46,17 @@ const RoomsList = ({ selectedBuilding, selectedFloor }: RoomsListProps) => {
         throw new Error('Cannot delete room with existing connections. Please remove connections first.');
       }
 
+      // Check for assigned keys
       const { data: assignedKeys } = await supabase
         .from('keys')
         .select('id')
-        .eq('room_id', roomId);
+        .contains('location_data', { room_id: roomId });
 
       if (assignedKeys && assignedKeys.length > 0) {
         throw new Error('Cannot delete room with assigned keys. Please reassign or remove keys first.');
       }
 
+      // Check for occupants
       const { data: occupants } = await supabase
         .from('occupant_room_assignments')
         .select('id')
@@ -64,6 +66,7 @@ const RoomsList = ({ selectedBuilding, selectedFloor }: RoomsListProps) => {
         throw new Error('Cannot delete room with assigned occupants. Please reassign occupants first.');
       }
 
+      // Delete the room
       const { error } = await supabase
         .from('rooms')
         .delete()
