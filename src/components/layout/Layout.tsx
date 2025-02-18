@@ -17,12 +17,29 @@ const Layout = () => {
   const location = useLocation();
   const isLoginPage = location.pathname === '/login';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { isLoading, isAdmin } = useSessionManagement(isLoginPage);
+  const { isLoading, isAdmin, initialCheckComplete } = useSessionManagement(isLoginPage);
   const [profile, setProfile] = useState<{ first_name?: string; last_name?: string; avatar_url?: string } | null>(null);
 
   useEffect(() => {
     fetchProfile();
   }, []);
+
+  // Early return if initial check is not complete
+  if (!initialCheckComplete) {
+    return null;
+  }
+
+  // Block access to admin routes for non-admin users
+  if (!isLoginPage && !isAdmin && location.pathname === '/') {
+    navigate('/dashboard');
+    return null;
+  }
+
+  // Block access to user dashboard for admin users
+  if (!isLoginPage && isAdmin && location.pathname === '/dashboard') {
+    navigate('/');
+    return null;
+  }
 
   const fetchProfile = async () => {
     try {

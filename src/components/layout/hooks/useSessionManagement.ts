@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +10,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [initialCheckComplete, setInitialCheckComplete] = useState(false);
 
   const getCurrentDeviceInfo = (): DeviceInfo => ({
     name: navigator.userAgent.split('/')[0],
@@ -70,6 +70,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
             navigate('/login');
           }
           setIsLoading(false);
+          setInitialCheckComplete(true);
           return;
         }
 
@@ -78,12 +79,14 @@ export const useSessionManagement = (isLoginPage: boolean) => {
             navigate('/login');
           }
           setIsLoading(false);
+          setInitialCheckComplete(true);
           return;
         }
 
         // Skip other checks if signing out
         if (isSigningOut) {
           setIsLoading(false);
+          setInitialCheckComplete(true);
           return;
         }
 
@@ -104,6 +107,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
             navigate('/login');
           }
           setIsLoading(false);
+          setInitialCheckComplete(true);
           return;
         }
 
@@ -113,6 +117,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
             navigate('/verification-pending');
           }
           setIsLoading(false);
+          setInitialCheckComplete(true);
           return;
         }
 
@@ -132,6 +137,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
           if (isLoginPage) {
             navigate(userIsAdmin ? '/' : '/dashboard');
             setIsLoading(false);
+            setInitialCheckComplete(true);
             return;
           }
 
@@ -141,6 +147,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
             if (!userIsAdmin && location.pathname === '/') {
               navigate('/dashboard');
               setIsLoading(false);
+              setInitialCheckComplete(true);
               return;
             }
 
@@ -148,6 +155,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
             if (userIsAdmin && location.pathname === '/dashboard') {
               navigate('/');
               setIsLoading(false);
+              setInitialCheckComplete(true);
               return;
             }
           }
@@ -180,12 +188,14 @@ export const useSessionManagement = (isLoginPage: boolean) => {
         }
 
         setIsLoading(false);
+        setInitialCheckComplete(true);
       } catch (error) {
         console.error("Auth error:", error);
         if (!isLoginPage) {
           navigate('/login');
         }
         setIsLoading(false);
+        setInitialCheckComplete(true);
       }
     };
 
@@ -228,5 +238,5 @@ export const useSessionManagement = (isLoginPage: boolean) => {
     };
   }, [navigate, isLoginPage, location.pathname, isSigningOut]);
 
-  return { isLoading, isAdmin };
+  return { isLoading, isAdmin, initialCheckComplete };
 };
