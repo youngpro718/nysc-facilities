@@ -52,14 +52,14 @@ export const useSessionManagement = (isAuthPage: boolean) => {
           return;
         }
 
-        // Check verification status
+        // Check verification status using maybeSingle() instead of single()
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('verification_status')
           .eq('id', session.user.id)
-          .single();
+          .maybeSingle();
 
-        if (profileError) {
+        if (profileError || !profile) {
           console.error("Profile error:", profileError);
           if (!isAuthPage) {
             navigate('/auth');
