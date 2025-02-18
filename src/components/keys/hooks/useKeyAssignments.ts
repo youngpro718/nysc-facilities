@@ -7,7 +7,6 @@ export function useKeyAssignments() {
   return useQuery({
     queryKey: ["active-key-assignments"],
     queryFn: async () => {
-      // First, let's get the active assignments with detailed logging
       const { data: assignments, error: assignmentError } = await supabase
         .from("key_assignments")
         .select(`
@@ -33,42 +32,12 @@ export function useKeyAssignments() {
         .is("returned_at", null)
         .order('assigned_at', { ascending: false });
 
-      console.log("Active assignments:", assignments);
-      
       if (assignmentError) {
         console.error("Error fetching assignments:", assignmentError);
         throw assignmentError;
       }
 
-      // Let's get specific details for key #31
-      const { data: keyDetails, error: keyError } = await supabase
-        .from("keys")
-        .select("*")
-        .eq('name', '31')
-        .maybeSingle();
-
-      if (keyError) {
-        console.error("Error fetching key details:", keyError);
-        throw keyError;
-      }
-
-      // Only fetch key #31 assignments if the key exists
-      if (keyDetails) {
-        const { data: key31Assignments, error: assignmentsError } = await supabase
-          .from("key_assignments")
-          .select("*")
-          .eq('key_id', keyDetails.id);
-
-        if (!assignmentsError) {
-          console.log("All assignments for key #31:", key31Assignments);
-          console.log("Active assignments count:", key31Assignments.filter(a => !a.returned_at).length);
-          console.log("Returned assignments count:", key31Assignments.filter(a => a.returned_at).length);
-        }
-      } else {
-        console.log("Key #31 not found");
-      }
-
-      return assignments as unknown as KeyAssignment[];
+      return assignments as KeyAssignment[];
     },
   });
 }

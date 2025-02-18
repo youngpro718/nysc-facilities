@@ -22,17 +22,14 @@ export interface KeyData {
   total_quantity: number;
   available_quantity: number;
   is_passkey: boolean;
-  building?: { name: string } | null;
-  floor?: { name: string } | null;
-  door?: { name: string } | null;
-  room?: { name: string } | null;
-  key_door_locations?: { door_location: string }[];
-  key_assignments?: { id: string }[];
-  door_location?: string;
-  current_assignments?: number;
   key_scope: 'door' | 'room';
-  room_id?: string | null;
-  door_id?: string | null;
+  properties: Record<string, any>;
+  location_data: {
+    building_id?: string;
+    floor_id?: string;
+    door_id?: string;
+    room_id?: string;
+  };
 }
 
 export interface KeyFormData {
@@ -47,15 +44,4 @@ export interface KeyFormData {
   doorId?: string;
   roomId?: string;
   occupantId?: string;
-}
-
-export interface StockTransaction {
-  id: string;
-  transaction_type: 'add' | 'remove';
-  quantity: number;
-  reason?: string;
-  notes?: string;
-  created_at: string;
-  performed_by: string;
-  profiles: { username: string };
 }

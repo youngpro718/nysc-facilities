@@ -24,7 +24,6 @@ export function DeleteKeyDialog({
   onOpenChange, 
   onConfirmDelete 
 }: DeleteKeyDialogProps) {
-  // Change the check to allow deletion when available_quantity equals total_quantity
   const canDelete = keyToDelete?.available_quantity === keyToDelete?.total_quantity;
 
   return (
