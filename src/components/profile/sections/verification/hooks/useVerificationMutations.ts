@@ -33,29 +33,36 @@ export function useVerificationMutations(
 
         if (profileError) throw profileError;
 
-        // Wait for the occupant creation to complete
-        const { data: occupant, error: occupantError } = await supabase
+        // Check if occupant already exists
+        const { data: existingOccupant, error: checkError } = await supabase
           .from('occupants')
-          .insert({
-            id: userId,
-            first_name: profile.first_name,
-            last_name: profile.last_name,
-            email: profile.email,
-            department: departments?.find(d => d.id === selectedDepartment)?.name,
-            status: 'active',
-            access_level: 'standard',
-            employment_type: 'full_time',
-            start_date: new Date().toISOString().split('T')[0]
-          })
-          .select()
-          .single();
+          .select('id')
+          .eq('id', userId)
+          .maybeSingle();
 
-        if (occupantError) {
-          // Check if the error is due to the record already existing
-          if (occupantError.code === '23505') { // Unique violation
-            console.log('Occupant record already exists, continuing...');
-          } else {
-            throw occupantError;
+        if (checkError) throw checkError;
+
+        // Only create occupant if it doesn't exist
+        if (!existingOccupant) {
+          const { error: occupantError } = await supabase
+            .from('occupants')
+            .insert({
+              id: userId,
+              first_name: profile.first_name,
+              last_name: profile.last_name,
+              email: profile.email,
+              department: departments?.find(d => d.id === selectedDepartment)?.name,
+              status: 'active',
+              access_level: 'standard',
+              employment_type: 'full_time',
+              start_date: new Date().toISOString().split('T')[0]
+            });
+
+          if (occupantError) {
+            // If error is not duplicate key, throw it
+            if (occupantError.code !== '23505') {
+              throw occupantError;
+            }
           }
         }
         
