@@ -13,31 +13,19 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserRound } from "lucide-react";
 
 const Layout = () => {
-  const navigate = useNavigate();
   const location = useLocation();
   const isLoginPage = location.pathname === '/login';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isLoading, isAdmin, initialCheckComplete } = useSessionManagement(isLoginPage);
   const [profile, setProfile] = useState<{ first_name?: string; last_name?: string; avatar_url?: string } | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchProfile();
   }, []);
 
-  // Early return if initial check is not complete
-  if (!initialCheckComplete) {
-    return null;
-  }
-
-  // Block access to admin routes for non-admin users
-  if (!isLoginPage && !isAdmin && location.pathname === '/') {
-    navigate('/dashboard');
-    return null;
-  }
-
-  // Block access to user dashboard for admin users
-  if (!isLoginPage && isAdmin && location.pathname === '/dashboard') {
-    navigate('/');
+  // Don't render anything until initial auth check is complete
+  if (!initialCheckComplete || isLoading) {
     return null;
   }
 
@@ -107,10 +95,6 @@ const Layout = () => {
       setIsMobileMenuOpen(false);
     }
   };
-
-  if (isLoading) {
-    return null;
-  }
 
   return (
     <div className="min-h-screen bg-background">

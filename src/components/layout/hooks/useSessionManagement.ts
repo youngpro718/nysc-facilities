@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -64,17 +65,8 @@ export const useSessionManagement = (isLoginPage: boolean) => {
         
         if (!mounted) return;
 
-        if (error) {
+        if (error || !session) {
           console.error("Session error:", error);
-          if (!isLoginPage) {
-            navigate('/login');
-          }
-          setIsLoading(false);
-          setInitialCheckComplete(true);
-          return;
-        }
-
-        if (!session) {
           if (!isLoginPage) {
             navigate('/login');
           }
@@ -90,7 +82,17 @@ export const useSessionManagement = (isLoginPage: boolean) => {
           return;
         }
 
-        // Create profile if it doesn't exist
+        // Get user role immediately
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+
+        const userIsAdmin = roleData?.role === 'admin';
+        setIsAdmin(userIsAdmin);
+
+        // Create profile if doesn't exist
         await createProfileIfNotExists(session.user);
 
         // Check profile status
@@ -103,61 +105,41 @@ export const useSessionManagement = (isLoginPage: boolean) => {
         if (profileError) {
           console.error("Profile error:", profileError);
           toast.error("Error loading user profile");
-          if (!isLoginPage) {
-            navigate('/login');
-          }
+          navigate('/login');
           setIsLoading(false);
           setInitialCheckComplete(true);
           return;
         }
 
-        // If profile exists and verification is pending, route to pending page
+        // Handle verification pending
         if (profile?.verification_status === 'pending') {
-          if (location.pathname !== '/verification-pending') {
-            navigate('/verification-pending');
-          }
+          navigate('/verification-pending');
           setIsLoading(false);
           setInitialCheckComplete(true);
           return;
         }
 
-        // Only proceed with role check and other logic if user is verified
+        // Handle route protection based on role
         if (profile?.verification_status === 'verified') {
-          // Get user role first before allowing any navigation
-          const { data: roleData } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', session.user.id)
-            .maybeSingle();
-
-          const userIsAdmin = roleData?.role === 'admin';
-          setIsAdmin(userIsAdmin);
-
-          // Handle auth page redirects
-          if (isLoginPage) {
-            navigate(userIsAdmin ? '/' : '/dashboard');
+          // Prevent access to admin routes for non-admin users
+          if (!userIsAdmin && location.pathname === '/') {
+            navigate('/dashboard');
             setIsLoading(false);
             setInitialCheckComplete(true);
             return;
           }
 
-          // Skip route protection during sign-out
-          if (!isSigningOut) {
-            // Prevent access to admin routes for non-admin users
-            if (!userIsAdmin && location.pathname === '/') {
-              navigate('/dashboard');
-              setIsLoading(false);
-              setInitialCheckComplete(true);
-              return;
-            }
+          // Prevent access to user dashboard for admin users
+          if (userIsAdmin && location.pathname === '/dashboard') {
+            navigate('/');
+            setIsLoading(false);
+            setInitialCheckComplete(true);
+            return;
+          }
 
-            // Prevent access to user dashboard for admin users
-            if (userIsAdmin && location.pathname === '/dashboard') {
-              navigate('/');
-              setIsLoading(false);
-              setInitialCheckComplete(true);
-              return;
-            }
+          // Handle login page redirects
+          if (isLoginPage) {
+            navigate(userIsAdmin ? '/' : '/dashboard');
           }
 
           // Update session info
@@ -204,10 +186,8 @@ export const useSessionManagement = (isLoginPage: boolean) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
         setIsSigningOut(false);
-        // Create profile if it doesn't exist
         await createProfileIfNotExists(session.user);
 
-        // Check verification status immediately after sign in
         const { data: profile } = await supabase
           .from('profiles')
           .select('verification_status')
