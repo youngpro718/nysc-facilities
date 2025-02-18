@@ -2124,6 +2124,7 @@ export type Database = {
           action_type: string
           changes: Json
           created_at: string | null
+          details: Json | null
           id: string
           key_id: string | null
           metadata: Json | null
@@ -2133,6 +2134,7 @@ export type Database = {
           action_type: string
           changes?: Json
           created_at?: string | null
+          details?: Json | null
           id?: string
           key_id?: string | null
           metadata?: Json | null
@@ -2142,6 +2144,7 @@ export type Database = {
           action_type?: string
           changes?: Json
           created_at?: string | null
+          details?: Json | null
           id?: string
           key_id?: string | null
           metadata?: Json | null
@@ -2220,6 +2223,61 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "user_verification_view"
             referencedColumns: ["profile_id"]
+          },
+        ]
+      }
+      key_stock_transactions: {
+        Row: {
+          created_at: string | null
+          id: string
+          key_id: string | null
+          notes: string | null
+          performed_by: string | null
+          quantity: number
+          reason: string | null
+          transaction_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          key_id?: string | null
+          notes?: string | null
+          performed_by?: string | null
+          quantity: number
+          reason?: string | null
+          transaction_type: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          key_id?: string | null
+          notes?: string | null
+          performed_by?: string | null
+          quantity?: number
+          reason?: string | null
+          transaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "key_stock_transactions_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_assignment_stats"
+            referencedColumns: ["key_id"]
+          },
+          {
+            foreignKeyName: "key_stock_transactions_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_inventory_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_stock_transactions_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "keys"
+            referencedColumns: ["id"]
           },
         ]
       }
