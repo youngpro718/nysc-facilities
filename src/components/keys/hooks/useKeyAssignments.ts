@@ -45,7 +45,7 @@ export function useKeyAssignments() {
         .from("keys")
         .select("*")
         .eq('name', '31')
-        .single();
+        .maybeSingle(); // Changed from .single() to .maybeSingle()
 
       if (keyError) {
         console.error("Error fetching key details:", keyError);
@@ -58,9 +58,9 @@ export function useKeyAssignments() {
       const { data: key31Assignments, error: assignmentsError } = await supabase
         .from("key_assignments")
         .select("*")
-        .eq('key_id', keyDetails.id);
+        .eq('key_id', keyDetails?.id || ''); // Added optional chaining since keyDetails might be null
 
-      if (!assignmentsError) {
+      if (!assignmentsError && keyDetails) {
         console.log("All assignments for key #31:", key31Assignments);
         console.log("Active assignments count:", key31Assignments.filter(a => !a.returned_at).length);
         console.log("Returned assignments count:", key31Assignments.filter(a => a.returned_at).length);
