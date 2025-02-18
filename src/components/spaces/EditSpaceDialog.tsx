@@ -48,7 +48,6 @@ export const EditSpaceDialog = ({
     defaultValues,
   });
 
-  // Reset form when dialog opens
   useEffect(() => {
     if (open) {
       form.reset(defaultValues);
@@ -106,7 +105,6 @@ export const EditSpaceDialog = ({
         .eq('id', id);
 
       if (error) throw error;
-      return { success: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`${type}s`] });
@@ -121,7 +119,12 @@ export const EditSpaceDialog = ({
   });
 
   const handleSubmit = async (data: EditSpaceFormData) => {
-    await editSpaceMutation.mutateAsync(data);
+    try {
+      console.log("Submitting form with data:", data);
+      await editSpaceMutation.mutateAsync(data);
+    } catch (error) {
+      console.error("Form submission error:", error);
+    }
   };
 
   return (
