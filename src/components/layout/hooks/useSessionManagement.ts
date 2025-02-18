@@ -111,6 +111,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
 
         // Only proceed with role check and other logic if user is verified
         if (profile?.verification_status === 'verified') {
+          // Get user role first before allowing any navigation
           const { data: roleData } = await supabase
             .from('user_roles')
             .select('role')
@@ -127,9 +128,16 @@ export const useSessionManagement = (isLoginPage: boolean) => {
             return;
           }
 
-          // Handle non-auth page access
+          // Prevent access to admin routes for non-admin users
           if (!userIsAdmin && location.pathname === '/') {
             navigate('/dashboard');
+            setIsLoading(false);
+            return;
+          }
+
+          // Prevent access to user dashboard for admin users
+          if (userIsAdmin && location.pathname === '/dashboard') {
+            navigate('/');
             setIsLoading(false);
             return;
           }
