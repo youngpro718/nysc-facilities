@@ -30,6 +30,13 @@ export interface KeyData {
     door_id?: string;
     room_id?: string;
   };
+  key_assignments?: {
+    id: string;
+    returned_at: string | null;
+  }[];
+  active_assignments?: number;
+  returned_assignments?: number;
+  lost_count?: number;
 }
 
 export interface KeyFormData {
@@ -55,6 +62,9 @@ export interface StockTransaction {
   notes?: string;
   performed_by: string;
   created_at: string;
+  profiles?: {
+    username: string;
+  };
 }
 
 export interface ActivityLog {
@@ -64,4 +74,40 @@ export interface ActivityLog {
   performed_by: string;
   metadata: Record<string, any>;
   created_at: string;
+}
+
+export interface KeyHistoryRecord {
+  id: string;
+  key_id: string;
+  action_type: string;
+  performed_by: string;
+  changes: Record<string, any>;
+  created_at: string;
+  keys?: {
+    name: string;
+    type: KeyType;
+  };
+  profiles?: {
+    username: string;
+  };
+}
+
+export interface KeyAssignmentStats {
+  key_id: string;
+  key_name: string;
+  type: KeyType;
+  status: KeyStatus;
+  current_assignments: number;
+  current_spare_assignments: number;
+  current_holders: Array<{
+    id: string;
+    name: string;
+    department: string;
+  }>;
+}
+
+export interface KeyInventoryStats extends KeyData {
+  active_assignments: number;
+  returned_assignments: number;
+  lost_count: number;
 }
