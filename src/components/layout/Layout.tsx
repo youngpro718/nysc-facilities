@@ -47,7 +47,7 @@ const Layout = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // First, delete the user session
+        // First, delete the user session from our database
         const { data } = await supabase
           .from('user_sessions')
           .select('id')
@@ -61,11 +61,17 @@ const Layout = () => {
             .delete()
             .eq('id', data.id);
         }
-      }
 
-      // Then sign out - this will trigger the onAuthStateChange in useSessionManagement
-      await supabase.auth.signOut();
-      toast.success("Successfully signed out!");
+        // Clear all storage before signing out
+        localStorage.removeItem('app-auth');
+        sessionStorage.clear();
+        
+        // Sign out with both local and global options
+        await supabase.auth.signOut({ scope: 'local' });
+        await supabase.auth.signOut({ scope: 'global' });
+        
+        toast.success("Successfully signed out!");
+      }
     } catch (error: any) {
       console.error("Sign out error:", error);
       toast.error(error.message || "Error signing out");
