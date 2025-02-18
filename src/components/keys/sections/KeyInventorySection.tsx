@@ -20,7 +20,7 @@ export function KeyInventorySection() {
     queryKey: ["keys-inventory", filters, sort],
     queryFn: async () => {
       let query = supabase
-        .from("keys")
+        .from("key_inventory_view")
         .select(`
           id,
           name,
@@ -31,7 +31,10 @@ export function KeyInventorySection() {
           is_passkey,
           key_scope,
           properties,
-          location_data
+          location_data,
+          active_assignments,
+          returned_assignments,
+          lost_count
         `);
 
       // Apply filters

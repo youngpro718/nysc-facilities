@@ -4563,6 +4563,13 @@ export type Database = {
             columns: ["from_space_id"]
             isOneToOne: false
             referencedRelation: "key_door_locations"
+            referencedColumns: ["door_location"]
+          },
+          {
+            foreignKeyName: "space_connections_from_space_id_doors_fkey"
+            columns: ["from_space_id"]
+            isOneToOne: false
+            referencedRelation: "key_door_locations"
             referencedColumns: ["door_id"]
           },
           {
@@ -4620,6 +4627,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "doors"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_connections_to_space_id_doors_fkey"
+            columns: ["to_space_id"]
+            isOneToOne: false
+            referencedRelation: "key_door_locations"
+            referencedColumns: ["door_location"]
           },
           {
             foreignKeyName: "space_connections_to_space_id_doors_fkey"
@@ -4997,6 +5011,7 @@ export type Database = {
           building_id: string | null
           building_name: string | null
           door_id: string | null
+          door_location: string | null
           door_name: string | null
           floor_id: string | null
           floor_name: string | null

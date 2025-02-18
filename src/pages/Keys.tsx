@@ -14,7 +14,7 @@ export default function Keys() {
     queryKey: ["keys-stats"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("keys")
+        .from("key_inventory_view")
         .select(`
           id,
           name,
@@ -24,18 +24,16 @@ export default function Keys() {
           available_quantity,
           is_passkey,
           key_scope,
-          key_assignments (id)
+          properties,
+          location_data,
+          active_assignments,
+          returned_assignments,
+          lost_count
         `);
 
       if (error) throw error;
       
-      // Transform the data to ensure key_scope is correctly typed
-      return data.map(key => ({
-        ...key,
-        key_scope: key.key_scope === 'door' || key.key_scope === 'room' 
-          ? key.key_scope 
-          : 'door' // Default to 'door' if invalid value
-      })) as KeyData[];
+      return data as KeyData[];
     },
   });
 
