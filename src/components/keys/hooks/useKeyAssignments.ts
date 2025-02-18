@@ -20,7 +20,7 @@ export function useKeyAssignments() {
             type,
             is_passkey
           ),
-          occupant:occupants (
+          occupant:occupants!key_assignments_occupant_id_fkey (
             id,
             first_name,
             last_name,
