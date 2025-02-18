@@ -7,14 +7,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { KeyFilters, KeyType, SortOption } from "./types/KeyTypes";
+import type { KeyFilterOptions, KeyType, SortOption } from "./types/KeyTypes";
 
-interface KeyFilterProps {
-  onFilterChange: (filters: KeyFilters) => void;
+interface KeyFiltersProps {
+  onFilterChange: (filters: KeyFilterOptions) => void;
   onSortChange: (sort: SortOption) => void;
 }
 
-export function KeyFilters({ onFilterChange, onSortChange }: KeyFilterProps) {
+export function KeyFilters({ onFilterChange, onSortChange }: KeyFiltersProps) {
   const handleTypeChange = (value: string) => {
     onFilterChange({
       type: value as KeyType | "all_types",

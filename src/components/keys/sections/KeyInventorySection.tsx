@@ -2,9 +2,9 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { KeyData } from "../types/KeyTypes";
+import { KeyData, KeyFilterOptions, SortOption } from "../types/KeyTypes";
 import { toast } from "sonner";
-import { KeyFilters, SortOption } from "../KeyFilters";
+import { KeyFilters } from "../KeyFilters";
 import { CreateKeyDialog } from "../CreateKeyDialog";
 import { KeyInventoryHeader } from "./inventory/KeyInventoryHeader";
 import { KeyInventoryTable } from "./inventory/KeyInventoryTable";
@@ -13,7 +13,7 @@ import { DeleteKeyDialog } from "./inventory/DeleteKeyDialog";
 export function KeyInventorySection() {
   const [keyToDelete, setKeyToDelete] = useState<KeyData | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [filters, setFilters] = useState<KeyFilters>({});
+  const [filters, setFilters] = useState<KeyFilterOptions>({});
   const [sort, setSort] = useState<SortOption>({ field: 'name', direction: 'asc' });
 
   const { data: keys, isLoading, refetch } = useQuery({
@@ -41,14 +41,7 @@ export function KeyInventorySection() {
       if (filters.type && filters.type !== 'all_types') {
         query = query.eq('type', filters.type);
       }
-      if (filters.status && filters.status !== 'all_statuses') {
-        query = query.eq('status', filters.status);
-      }
-      // Use location_data for building filter
-      if (filters.building_id && filters.building_id !== 'all_buildings') {
-        query = query.contains('location_data', { building_id: filters.building_id });
-      }
-
+      
       // Apply sorting
       query = query.order(sort.field, { ascending: sort.direction === 'asc' });
 

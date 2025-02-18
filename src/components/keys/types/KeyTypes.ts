@@ -3,7 +3,7 @@ export type KeyType = "physical_key" | "elevator_pass" | "room_key";
 export type KeyStatus = "available" | "assigned" | "lost" | "decommissioned";
 export type ReturnReason = "normal_return" | "lost" | "damaged" | "other";
 
-export interface KeyFilters {
+export interface KeyFilterOptions {
   type?: KeyType | "all_types";
 }
 
