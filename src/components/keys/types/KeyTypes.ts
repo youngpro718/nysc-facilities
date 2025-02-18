@@ -45,3 +45,23 @@ export interface KeyFormData {
   roomId?: string;
   occupantId?: string;
 }
+
+export interface StockTransaction {
+  id: string;
+  key_id: string;
+  transaction_type: 'add' | 'remove' | 'adjustment';
+  quantity: number;
+  reason?: string;
+  notes?: string;
+  performed_by: string;
+  created_at: string;
+}
+
+export interface ActivityLog {
+  id: string;
+  activity_type: string;
+  action: string;
+  performed_by: string;
+  metadata: Record<string, any>;
+  created_at: string;
+}
