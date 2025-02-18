@@ -2,7 +2,7 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { useSessionManagement } from "./hooks/useSessionManagement";
 import { adminNavigation, userNavigation, getNavigationRoutes } from "./config/navigation";
@@ -14,22 +14,13 @@ import { UserRound } from "lucide-react";
 
 const Layout = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const isLoginPage = location.pathname === '/login';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isLoading, isAdmin, initialCheckComplete } = useSessionManagement(isLoginPage);
   const [profile, setProfile] = useState<{ first_name?: string; last_name?: string; avatar_url?: string } | null>(null);
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  // Don't render anything until initial auth check is complete
-  if (!initialCheckComplete || isLoading) {
-    return null;
-  }
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -46,7 +37,11 @@ const Layout = () => {
     } catch (error) {
       console.error('Error fetching profile:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
 
   const handleSignOut = async () => {
     try {
@@ -83,8 +78,6 @@ const Layout = () => {
     }
   };
 
-  const navigation = isAdmin ? adminNavigation : userNavigation;
-
   const handleNavigationChange = async (index: number | null) => {
     if (index === null) return;
     
@@ -95,6 +88,13 @@ const Layout = () => {
       setIsMobileMenuOpen(false);
     }
   };
+
+  // Don't render anything until initial auth check is complete
+  if (!initialCheckComplete || isLoading) {
+    return null;
+  }
+
+  const navigation = isAdmin ? adminNavigation : userNavigation;
 
   return (
     <div className="min-h-screen bg-background">
