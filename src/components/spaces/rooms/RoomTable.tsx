@@ -1,3 +1,4 @@
+
 import {
   Table,
   TableBody,
@@ -36,8 +37,8 @@ export function RoomTable({ rooms, onDelete }: RoomTableProps) {
             <TableRow key={room.id}>
               <TableCell>{room.name}</TableCell>
               <TableCell>{room.room_number}</TableCell>
-              <TableCell>{room.floors?.buildings?.name}</TableCell>
-              <TableCell>{room.floors?.name}</TableCell>
+              <TableCell>{room.floor?.building?.name}</TableCell>
+              <TableCell>{room.floor?.name}</TableCell>
               <TableCell>
                 <Badge variant={room.status === 'active' ? 'default' : 'destructive'}>
                   {room.status}

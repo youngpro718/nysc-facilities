@@ -32,8 +32,8 @@ export function useRoomFilters({
       const searchFields = [
         room.name.toLowerCase(),
         room.room_number.toLowerCase(),
-        room.floors?.buildings?.name?.toLowerCase() || '',
-        room.floors?.name?.toLowerCase() || '',
+        room.floor?.building?.name?.toLowerCase() || '',
+        room.floor?.name?.toLowerCase() || '',
         room.room_type.toLowerCase(),
         room.description?.toLowerCase() || ''
       ].join(' ');
@@ -42,7 +42,7 @@ export function useRoomFilters({
       const matchesStatus = statusFilter === 'all' || room.status === statusFilter;
       
       const matchesBuilding = selectedBuilding === 'all' || 
-        room.floors?.buildings?.id === selectedBuilding;
+        room.floor?.building?.id === selectedBuilding;
       
       const matchesFloor = selectedFloor === 'all' || 
         room.floor_id === selectedFloor;
@@ -72,13 +72,13 @@ export function useRoomFilters({
 
   const buildings = useMemo(() => {
     if (!rooms) return [];
-    const uniqueBuildings = new Set(rooms.map(room => room.floors?.buildings?.name).filter(Boolean));
+    const uniqueBuildings = new Set(rooms.map(room => room.floor?.building?.name).filter(Boolean));
     return Array.from(uniqueBuildings);
   }, [rooms]);
 
   const floors = useMemo(() => {
     if (!rooms) return [];
-    const uniqueFloors = new Set(rooms.map(room => room.floors?.name).filter(Boolean));
+    const uniqueFloors = new Set(rooms.map(room => room.floor?.name).filter(Boolean));
     return Array.from(uniqueFloors);
   }, [rooms]);
 

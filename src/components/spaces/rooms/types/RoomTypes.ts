@@ -1,4 +1,3 @@
-
 export enum RoomType {
   COURTROOM = "courtroom",
   JUDGES_CHAMBERS = "judges_chambers",
@@ -26,13 +25,11 @@ export enum StorageType {
   GENERAL_STORAGE = "general_storage"
 }
 
-// Simplified Building type to avoid circular references
 export interface Building {
   id: string;
   name: string;
 }
 
-// Simplified Floor type to avoid circular references
 export interface Floor {
   id: string;
   name: string;
