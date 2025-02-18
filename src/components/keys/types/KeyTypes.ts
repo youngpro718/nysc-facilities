@@ -30,9 +30,22 @@ export interface KeyData {
     door_id?: string;
     room_id?: string;
   };
-  active_assignments?: number;
-  returned_assignments?: number;
-  lost_count?: number;
+  active_assignments: number;
+  returned_assignments: number;
+  lost_count: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface KeyDoorLocation {
+  key_id: string;
+  key_name: string;
+  door_id: string;
+  door_name: string;
+  floor_id: string;
+  floor_name: string;
+  building_id: string;
+  building_name: string;
 }
 
 export interface KeyFormData {
@@ -49,62 +62,13 @@ export interface KeyFormData {
   occupantId?: string;
 }
 
-export interface StockTransaction {
-  id: string;
-  key_id: string;
-  transaction_type: 'add' | 'remove' | 'adjustment';
-  quantity: number;
-  reason?: string;
-  notes?: string;
-  performed_by: string;
-  created_at: string;
-  profiles?: {
-    username: string;
-  };
-}
-
-export interface ActivityLog {
-  id: string;
-  activity_type: string;
-  action: string;
-  performed_by: string;
-  metadata: Record<string, any>;
-  created_at: string;
-}
-
-export interface KeyHistoryRecord {
+export interface KeyAuditLog {
   id: string;
   key_id: string;
   action_type: string;
   performed_by: string;
   changes: Record<string, any>;
-  details?: Record<string, any>;
   created_at: string;
-  keys?: {
-    name: string;
-    type: KeyType;
-  };
-  profiles?: {
-    username: string;
-  };
-}
-
-export interface KeyAssignmentStats {
-  key_id: string;
-  key_name: string;
-  type: KeyType;
-  status: KeyStatus;
-  current_assignments: number;
-  current_spare_assignments: number;
-  current_holders: Array<{
-    id: string;
-    name: string;
-    department: string;
-  }>;
-}
-
-export interface KeyInventoryStats extends KeyData {
-  active_assignments: number;
-  returned_assignments: number;
-  lost_count: number;
+  username?: string;
+  email?: string;
 }

@@ -2177,6 +2177,13 @@ export type Database = {
             foreignKeyName: "key_assignments_key_id_fkey"
             columns: ["key_id"]
             isOneToOne: false
+            referencedRelation: "key_assignments_view"
+            referencedColumns: ["key_id"]
+          },
+          {
+            foreignKeyName: "key_assignments_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
             referencedRelation: "key_door_locations"
             referencedColumns: ["key_id"]
           },
@@ -2247,6 +2254,13 @@ export type Database = {
             columns: ["key_id"]
             isOneToOne: false
             referencedRelation: "key_assignment_stats"
+            referencedColumns: ["key_id"]
+          },
+          {
+            foreignKeyName: "key_audit_logs_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_assignments_view"
             referencedColumns: ["key_id"]
           },
           {
@@ -2361,6 +2375,13 @@ export type Database = {
             columns: ["key_id"]
             isOneToOne: false
             referencedRelation: "key_assignment_stats"
+            referencedColumns: ["key_id"]
+          },
+          {
+            foreignKeyName: "key_stock_transactions_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_assignments_view"
             referencedColumns: ["key_id"]
           },
           {
@@ -4563,13 +4584,6 @@ export type Database = {
             columns: ["from_space_id"]
             isOneToOne: false
             referencedRelation: "key_door_locations"
-            referencedColumns: ["door_location"]
-          },
-          {
-            foreignKeyName: "space_connections_from_space_id_doors_fkey"
-            columns: ["from_space_id"]
-            isOneToOne: false
-            referencedRelation: "key_door_locations"
             referencedColumns: ["door_id"]
           },
           {
@@ -4627,13 +4641,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "doors"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "space_connections_to_space_id_doors_fkey"
-            columns: ["to_space_id"]
-            isOneToOne: false
-            referencedRelation: "key_door_locations"
-            referencedColumns: ["door_location"]
           },
           {
             foreignKeyName: "space_connections_to_space_id_doors_fkey"
@@ -5006,12 +5013,71 @@ export type Database = {
         }
         Relationships: []
       }
+      key_assignments_view: {
+        Row: {
+          active_assignments: number | null
+          key_id: string | null
+          lost_count: number | null
+          returned_assignments: number | null
+        }
+        Relationships: []
+      }
+      key_audit_logs_view: {
+        Row: {
+          action_type: string | null
+          changes: Json | null
+          created_at: string | null
+          details: Json | null
+          email: string | null
+          id: string | null
+          key_id: string | null
+          metadata: Json | null
+          performed_by: string | null
+          username: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "key_audit_logs_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_assignment_stats"
+            referencedColumns: ["key_id"]
+          },
+          {
+            foreignKeyName: "key_audit_logs_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_assignments_view"
+            referencedColumns: ["key_id"]
+          },
+          {
+            foreignKeyName: "key_audit_logs_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_door_locations"
+            referencedColumns: ["key_id"]
+          },
+          {
+            foreignKeyName: "key_audit_logs_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_inventory_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_audit_logs_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       key_door_locations: {
         Row: {
           building_id: string | null
           building_name: string | null
           door_id: string | null
-          door_location: string | null
           door_name: string | null
           floor_id: string | null
           floor_name: string | null

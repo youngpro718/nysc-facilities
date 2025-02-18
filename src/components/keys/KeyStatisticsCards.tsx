@@ -30,7 +30,7 @@ export function KeyStatisticsCards({ keyStats, isLoading }: KeyStatisticsCardsPr
   const stats = {
     totalKeys: keyStats?.length || 0,
     totalStock: keyStats?.reduce((acc, k) => acc + (k.total_quantity || 0), 0) || 0,
-    assigned: keyStats?.reduce((acc, k) => acc + (k.key_assignments?.length || 0), 0) || 0,
+    assigned: keyStats?.reduce((acc, k) => acc + (k.active_assignments || 0), 0) || 0,
     available: keyStats?.reduce((acc, k) => acc + (k.available_quantity || 0), 0) || 0,
   };
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -12,31 +12,29 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { History, Key, User } from "lucide-react";
+import { KeyAuditLog } from "../types/KeyTypes";
 
 export function KeyHistorySection() {
   const { data: history, isLoading } = useQuery({
     queryKey: ["key-audit-history"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("key_audit_logs")
+        .from("key_audit_logs_view")
         .select(`
           id,
           action_type,
           created_at,
-          details,
-          keys:key_id (
-            name,
-            type
-          ),
-          profiles:performed_by (
-            username
-          )
+          changes,
+          key_id,
+          performed_by,
+          username,
+          email
         `)
         .order('created_at', { ascending: false })
         .limit(50);
 
       if (error) throw error;
-      return data;
+      return data as KeyAuditLog[];
     },
   });
 
@@ -52,7 +50,6 @@ export function KeyHistorySection() {
           <TableHeader>
             <TableRow>
               <TableHead>Action</TableHead>
-              <TableHead>Key</TableHead>
               <TableHead>Details</TableHead>
               <TableHead>Performed By</TableHead>
               <TableHead>Date</TableHead>
@@ -75,13 +72,7 @@ export function KeyHistorySection() {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Key className="h-4 w-4" />
-                    {log.keys?.name}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {Object.entries(log.details || {}).map(([key, value]) => (
+                  {Object.entries(log.changes || {}).map(([key, value]) => (
                     <div key={key} className="text-sm">
                       <span className="font-medium">{key}:</span> {String(value)}
                     </div>
@@ -90,7 +81,7 @@ export function KeyHistorySection() {
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4" />
-                    {log.profiles?.username || "System"}
+                    {log.username || log.email || "System"}
                   </div>
                 </TableCell>
                 <TableCell>
