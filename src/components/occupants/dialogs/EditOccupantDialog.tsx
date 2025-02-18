@@ -47,8 +47,8 @@ export function EditOccupantDialog({
       await handleOccupantUpdate({
         occupantId: occupant.id,
         formData,
-        selectedRooms: formData.rooms,
-        selectedKeys: formData.keys,
+        selectedRooms: formData.rooms || [],
+        selectedKeys: formData.keys || [],
         currentAssignments,
       });
 
