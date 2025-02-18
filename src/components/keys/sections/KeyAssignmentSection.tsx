@@ -60,7 +60,7 @@ export function KeyAssignmentSection() {
             type,
             is_passkey
           ),
-          occupant:occupants!fk_key_assignments_occupant (
+          occupant:occupants (
             id,
             first_name,
             last_name,
