@@ -16,7 +16,7 @@ interface EditSpaceDialogContentProps {
   form: UseFormReturn<EditSpaceFormData>;
   type: "room" | "door" | "hallway";
   id: string;
-  onSubmit: (data: EditSpaceFormData) => void;
+  onSubmit: (data: EditSpaceFormData) => Promise<void>;
   isPending: boolean;
   onCancel: () => void;
 }
@@ -44,11 +44,19 @@ export function EditSpaceDialogContent({
     });
   }, [form]);
 
+  const handleSubmit = async (data: EditSpaceFormData) => {
+    try {
+      await onSubmit(data);
+    } catch (error) {
+      console.error('Error submitting form:', error);
+    }
+  };
+
   return (
     <ScrollArea className="max-h-[80vh]">
       <div className="space-y-6 p-1">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
             {type === "room" && (
               <RoomFormFields 
                 form={form} 
@@ -70,7 +78,7 @@ export function EditSpaceDialogContent({
               </Button>
               <Button 
                 type="submit"
-                disabled={isPending}
+                disabled={isPending || !form.formState.isDirty}
               >
                 {isPending ? (
                   <>
