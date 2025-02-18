@@ -1,4 +1,3 @@
-
 "use client";
 import React, { useId, useEffect, useState } from "react";
 import Particles, { initParticlesEngine } from "@tsparticles/react";
@@ -31,7 +30,6 @@ export const SparklesCore = (props: ParticlesProps) => {
     particleDensity,
   } = props;
   const [init, setInit] = useState(false);
-  const [container, setContainer] = useState<Container | undefined>(undefined);
   const controls = useAnimation();
 
   useEffect(() => {
@@ -42,8 +40,7 @@ export const SparklesCore = (props: ParticlesProps) => {
     });
   }, []);
 
-  // Effect for animation after container is set
-  useEffect(() => {
+  const particlesLoaded = async (container?: Container) => {
     if (container) {
       controls.start({
         opacity: 1,
@@ -51,12 +48,6 @@ export const SparklesCore = (props: ParticlesProps) => {
           duration: 1,
         },
       });
-    }
-  }, [container, controls]);
-
-  const particlesLoaded = async (container?: Container) => {
-    if (container) {
-      setContainer(container);
     }
   };
 
