@@ -26,6 +26,19 @@ export enum StorageType {
   GENERAL_STORAGE = "general_storage"
 }
 
+// Simplified Building type to avoid circular references
+export interface Building {
+  id: string;
+  name: string;
+}
+
+// Simplified Floor type to avoid circular references
+export interface Floor {
+  id: string;
+  name: string;
+  building?: Building;
+}
+
 export interface RoomConnection {
   id: string;
   direction?: string;
@@ -34,6 +47,31 @@ export interface RoomConnection {
     name: string;
     type: string;
   };
+}
+
+export interface RoomIssue {
+  id: string;
+  title: string;
+  status: string;
+  type: string;
+  priority: string;
+  created_at: string;
+}
+
+export interface RoomOccupant {
+  first_name: string;
+  last_name: string;
+  title?: string;
+}
+
+export interface LightingFixture {
+  id: string;
+  type: string;
+  status: string;
+  technology: string;
+  electrical_issues: boolean;
+  ballast_issue: boolean;
+  maintenance_notes?: string;
 }
 
 export interface Room {
@@ -52,40 +90,13 @@ export interface Room {
   phone_number?: string;
   created_at: string;
   current_function?: string;
-  previous_functions?: any[];
   function_change_date?: string;
-  floors?: {
-    name: string;
-    buildings?: {
-      id: string;
-      name: string;
-    };
-  };
+  floor?: Floor;
   parent_room?: {
     name: string;
   };
   space_connections: RoomConnection[];
-  issues?: Array<{
-    id: string;
-    title: string;
-    status: string;
-    type: string;
-    priority: string;
-    created_at: string;
-  }>;
-  room_history?: any[];
-  current_occupants?: Array<{
-    first_name: string;
-    last_name: string;
-    title?: string;
-  }>;
-  lighting_fixture?: {
-    id: string;
-    type: string;
-    status: string;
-    technology: string;
-    electrical_issues: boolean;
-    ballast_issue: boolean;
-    maintenance_notes?: string;
-  } | null;
+  issues?: RoomIssue[];
+  current_occupants?: RoomOccupant[];
+  lighting_fixture?: LightingFixture | null;
 }

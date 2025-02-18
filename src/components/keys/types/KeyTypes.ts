@@ -12,6 +12,22 @@ export interface SortOption {
   direction: 'asc' | 'desc';
 }
 
+export interface LocationData {
+  building_id?: string;
+  floor_id?: string;
+  door_id?: string;
+  room_id?: string;
+}
+
+export interface KeyProperties {
+  notes?: string;
+  manufacturer?: string;
+  serial_number?: string;
+  purchase_date?: string;
+  warranty_expiry?: string;
+  [key: string]: any;
+}
+
 export interface KeyData {
   id: string;
   name: string;
@@ -21,30 +37,13 @@ export interface KeyData {
   available_quantity: number;
   is_passkey: boolean;
   key_scope: 'door' | 'room';
-  properties: Record<string, any>;
-  location_data: {
-    building_id?: string;
-    floor_id?: string;
-    door_id?: string;
-    room_id?: string;
-  };
+  properties: KeyProperties;
+  location_data: LocationData;
   active_assignments: number;
   returned_assignments: number;
   lost_count: number;
   created_at?: string;
   updated_at?: string;
-}
-
-export interface KeyDoorLocation {
-  id: string;
-  key_id: string;
-  key_name: string;
-  door_id: string;
-  door_name: string;
-  floor_id: string;
-  floor_name: string;
-  building_id: string;
-  building_name: string;
 }
 
 export interface KeyFormData {
@@ -81,9 +80,4 @@ export interface StockTransaction {
   notes?: string;
   performed_by?: string;
   created_at: string;
-}
-
-export interface KeyDoorLocationInsert {
-  key_id: string;
-  door_id: string;
 }
