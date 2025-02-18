@@ -10,7 +10,7 @@ import {
 import { NavigationTab } from "../types";
 
 export const adminNavigation: NavigationTab[] = [
-  { title: "Dashboard", icon: LayoutDashboard },
+  { title: "Admin Dashboard", icon: LayoutDashboard },
   { title: "Spaces", icon: Building2 },
   { title: "Occupants", icon: Users },
   { type: "separator" },

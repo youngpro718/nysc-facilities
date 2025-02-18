@@ -2,8 +2,8 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Layout from "@/components/layout/Layout";
-import Index from "@/pages/Index";
-import Auth from "@/pages/Auth";
+import AdminDashboard from "@/pages/AdminDashboard";
+import LoginPage from "@/pages/LoginPage";
 import NotFound from "@/pages/NotFound";
 import Spaces from "@/pages/Spaces";
 import Issues from "@/pages/Issues";
@@ -27,8 +27,8 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route element={<Layout />}>
-              <Route index element={<Index />} />
-              <Route path="auth" element={<Auth />} />
+              <Route index element={<AdminDashboard />} />
+              <Route path="login" element={<LoginPage />} />
               <Route path="spaces" element={<Spaces />} />
               <Route path="issues" element={<Issues />} />
               <Route path="occupants" element={<Occupants />} />

@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { EvervaultCard } from "@/components/ui/evervault-card";
 import { AuthForm } from "@/components/auth/AuthForm";
 
-const Auth = () => {
+const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
   const navigate = useNavigate();
 
@@ -60,4 +60,4 @@ const Auth = () => {
   );
 };
 
-export default Auth;
+export default LoginPage;
