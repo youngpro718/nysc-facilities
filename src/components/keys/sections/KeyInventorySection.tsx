@@ -19,41 +19,51 @@ export function KeyInventorySection() {
   const { data: keys, isLoading, refetch } = useQuery({
     queryKey: ["keys-inventory", filters, sort],
     queryFn: async () => {
-      let query = supabase
-        .from("key_inventory_view")
-        .select(`
-          id,
-          name,
-          type,
-          status,
-          total_quantity,
-          available_quantity,
-          is_passkey,
-          key_scope,
-          properties,
-          location_data,
-          active_assignments,
-          returned_assignments,
-          lost_count
-        `);
+      try {
+        let query = supabase
+          .from("key_inventory_view")
+          .select(`
+            id,
+            name,
+            type,
+            status,
+            total_quantity,
+            available_quantity,
+            is_passkey,
+            key_scope,
+            properties,
+            location_data,
+            active_assignments,
+            returned_assignments,
+            lost_count,
+            created_at,
+            updated_at
+          `);
 
-      // Apply filters
-      if (filters.type && filters.type !== 'all_types') {
-        query = query.eq('type', filters.type);
+        // Apply filters
+        if (filters.type && filters.type !== 'all_types') {
+          query = query.eq('type', filters.type);
+        }
+        
+        // Apply sorting
+        query = query.order(sort.field, { ascending: sort.direction === 'asc' });
+
+        const { data, error } = await query;
+
+        if (error) {
+          console.error("Error fetching keys:", error);
+          throw error;
+        }
+
+        return data as KeyData[];
+      } catch (error: any) {
+        console.error("Error in query:", error);
+        toast.error("Failed to fetch keys inventory");
+        return [];
       }
-      
-      // Apply sorting
-      query = query.order(sort.field, { ascending: sort.direction === 'asc' });
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error("Error fetching keys:", error);
-        throw error;
-      }
-
-      return data as KeyData[];
     },
+    retry: 1,
+    retryDelay: 1000
   });
 
   const handleDeleteKey = async () => {
@@ -76,7 +86,8 @@ export function KeyInventorySection() {
       toast.success("Key deleted successfully");
       refetch();
     } catch (error: any) {
-      toast.error("Error deleting key: " + error.message);
+      console.error("Error deleting key:", error);
+      toast.error("Error deleting key: " + (error.message || "Unknown error"));
     } finally {
       setKeyToDelete(null);
     }
