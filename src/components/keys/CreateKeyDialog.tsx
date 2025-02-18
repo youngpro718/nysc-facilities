@@ -40,14 +40,16 @@ export function CreateKeyDialog({
           name: data.name,
           type: data.type,
           is_passkey: data.isPasskey,
-          door_id: data.isPasskey ? null : (data.keyScope === 'door' ? data.doorId : null),
-          room_id: data.isPasskey ? null : (data.keyScope === 'room' ? data.roomId : null),
-          building_id: data.buildingId || null,
-          floor_id: data.isPasskey ? null : data.floorId,
           total_quantity: totalQuantity,
           available_quantity: totalQuantity,
           key_scope: data.keyScope,
-          status: "available"
+          status: "available",
+          location_data: {
+            building_id: data.buildingId || null,
+            floor_id: data.isPasskey ? null : data.floorId,
+            door_id: data.isPasskey ? null : (data.keyScope === 'door' ? data.doorId : null),
+            room_id: data.isPasskey ? null : (data.keyScope === 'room' ? data.roomId : null)
+          }
         })
         .select()
         .single();
