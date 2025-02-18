@@ -128,7 +128,10 @@ export default function VerificationPending() {
             <Button
               variant="ghost"
               className="text-white hover:bg-white/10"
-              onClick={() => navigate("/auth")}
+              onClick={() => {
+                supabase.auth.signOut();
+                navigate("/auth");
+              }}
             >
               Return to Login
             </Button>
