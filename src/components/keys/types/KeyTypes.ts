@@ -30,10 +30,6 @@ export interface KeyData {
     door_id?: string;
     room_id?: string;
   };
-  key_assignments?: {
-    id: string;
-    returned_at: string | null;
-  }[];
   active_assignments?: number;
   returned_assignments?: number;
   lost_count?: number;
@@ -82,6 +78,7 @@ export interface KeyHistoryRecord {
   action_type: string;
   performed_by: string;
   changes: Record<string, any>;
+  details?: Record<string, any>;
   created_at: string;
   keys?: {
     name: string;
