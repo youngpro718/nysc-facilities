@@ -3,7 +3,7 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { BuildingsGrid } from "@/components/dashboard/BuildingsGrid";
 import { useDashboardData } from "@/hooks/useDashboardData";
 
-const Index = () => {
+const AdminDashboard = () => {
   const {
     buildings,
     buildingsLoading,
@@ -26,4 +26,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default AdminDashboard;
