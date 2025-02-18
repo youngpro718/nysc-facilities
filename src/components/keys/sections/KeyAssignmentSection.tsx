@@ -70,10 +70,16 @@ export function KeyAssignmentSection() {
         .is("returned_at", null)
         .order('assigned_at', { ascending: false });
 
-      if (error) throw error;
+      console.log("Fetched assignments data:", data);
+      if (error) {
+        console.error("Error fetching assignments:", error);
+        throw error;
+      }
       return data as unknown as KeyAssignment[];
     },
   });
+
+  console.log("Current assignments:", assignments);
 
   const getOccupantFullName = (occupant: KeyAssignment['occupant']) => {
     if (!occupant) return 'Unknown';
