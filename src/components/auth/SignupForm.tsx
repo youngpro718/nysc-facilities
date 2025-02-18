@@ -1,4 +1,3 @@
-
 import { FormEvent, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -71,7 +70,7 @@ export const SignupForm = ({
     try {
       setLoading(true);
       
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -100,6 +99,27 @@ export const SignupForm = ({
           return;
         }
         throw signUpError;
+      }
+
+      try {
+        // Send welcome email to user
+        await supabase.functions.invoke('send-verification-email', {
+          body: { 
+            type: 'welcome',
+            userId: signUpData.user!.id
+          }
+        });
+
+        // Notify admins
+        await supabase.functions.invoke('send-verification-email', {
+          body: { 
+            type: 'admin_notification',
+            userId: signUpData.user!.id
+          }
+        });
+      } catch (emailError) {
+        console.error('Error sending notification emails:', emailError);
+        // Don't throw here as signup was successful
       }
       
       navigate("/verification-pending");
