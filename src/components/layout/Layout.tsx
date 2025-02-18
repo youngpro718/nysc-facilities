@@ -15,9 +15,9 @@ import { UserRound } from "lucide-react";
 const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const isAuthPage = location.pathname === '/auth';
+  const isLoginPage = location.pathname === '/login';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { isLoading, isAdmin } = useSessionManagement(isAuthPage);
+  const { isLoading, isAdmin } = useSessionManagement(isLoginPage);
   const [profile, setProfile] = useState<{ first_name?: string; last_name?: string; avatar_url?: string } | null>(null);
 
   useEffect(() => {
@@ -64,7 +64,7 @@ const Layout = () => {
 
       await supabase.auth.signOut();
       toast.success("Successfully signed out!");
-      navigate('/auth');
+      navigate('/login');
     } catch (error: any) {
       console.error("Sign out error:", error);
       toast.error(error.message || "Error signing out");
@@ -90,7 +90,7 @@ const Layout = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {!isAuthPage && (
+      {!isLoginPage && (
         <header className="bg-card shadow sticky top-0 z-50">
           <div className="mx-auto px-4">
             <div className="flex h-16 items-center justify-between">
@@ -105,7 +105,7 @@ const Layout = () => {
 
               <div className="flex items-center gap-4">
                 {/* Profile Section */}
-                {!isAuthPage && (
+                {!isLoginPage && (
                   <div className="flex items-center gap-3">
                     <div className="hidden md:flex flex-col items-end">
                       <span className="text-sm font-medium">
@@ -157,3 +157,4 @@ const Layout = () => {
 };
 
 export default Layout;
+

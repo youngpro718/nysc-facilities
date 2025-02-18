@@ -16,7 +16,7 @@ export default function VerificationPending() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-          navigate("/auth");
+          navigate("/login");
           return;
         }
 
@@ -69,7 +69,7 @@ export default function VerificationPending() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        navigate("/auth");
+        navigate("/login");
         return;
       }
 
@@ -130,7 +130,7 @@ export default function VerificationPending() {
               className="text-white hover:bg-white/10"
               onClick={() => {
                 supabase.auth.signOut();
-                navigate("/auth");
+                navigate("/login");
               }}
             >
               Return to Login
@@ -141,3 +141,4 @@ export default function VerificationPending() {
     </div>
   );
 };
+
