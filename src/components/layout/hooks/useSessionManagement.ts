@@ -27,6 +27,31 @@ export const useSessionManagement = (isAuthPage: boolean) => {
     return data;
   };
 
+  const createProfileIfNotExists = async (user: any) => {
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (!existingProfile) {
+      const { error: createError } = await supabase
+        .from('profiles')
+        .insert([{
+          id: user.id,
+          email: user.email,
+          verification_status: 'pending',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }]);
+
+      if (createError) {
+        console.error("Error creating profile:", createError);
+        throw createError;
+      }
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
 
@@ -53,7 +78,10 @@ export const useSessionManagement = (isAuthPage: boolean) => {
           return;
         }
 
-        // Check profile first, before doing anything else
+        // Create profile if it doesn't exist
+        await createProfileIfNotExists(session.user);
+
+        // Check profile status
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('verification_status')
@@ -145,6 +173,9 @@ export const useSessionManagement = (isAuthPage: boolean) => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
+        // Create profile if it doesn't exist
+        await createProfileIfNotExists(session.user);
+
         // Check verification status immediately after sign in
         const { data: profile } = await supabase
           .from('profiles')
