@@ -47,6 +47,7 @@ const Layout = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        // First, delete the user session
         const { data } = await supabase
           .from('user_sessions')
           .select('id')
@@ -62,9 +63,9 @@ const Layout = () => {
         }
       }
 
+      // Then sign out - this will trigger the onAuthStateChange in useSessionManagement
       await supabase.auth.signOut();
       toast.success("Successfully signed out!");
-      navigate('/login');
     } catch (error: any) {
       console.error("Sign out error:", error);
       toast.error(error.message || "Error signing out");
@@ -157,4 +158,3 @@ const Layout = () => {
 };
 
 export default Layout;
-

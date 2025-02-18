@@ -10,6 +10,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
   const location = useLocation();
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const getCurrentDeviceInfo = (): DeviceInfo => ({
     name: navigator.userAgent.split('/')[0],
@@ -80,6 +81,12 @@ export const useSessionManagement = (isLoginPage: boolean) => {
           return;
         }
 
+        // Skip other checks if signing out
+        if (isSigningOut) {
+          setIsLoading(false);
+          return;
+        }
+
         // Create profile if it doesn't exist
         await createProfileIfNotExists(session.user);
 
@@ -128,18 +135,21 @@ export const useSessionManagement = (isLoginPage: boolean) => {
             return;
           }
 
-          // Prevent access to admin routes for non-admin users
-          if (!userIsAdmin && location.pathname === '/') {
-            navigate('/dashboard');
-            setIsLoading(false);
-            return;
-          }
+          // Skip route protection during sign-out
+          if (!isSigningOut) {
+            // Prevent access to admin routes for non-admin users
+            if (!userIsAdmin && location.pathname === '/') {
+              navigate('/dashboard');
+              setIsLoading(false);
+              return;
+            }
 
-          // Prevent access to user dashboard for admin users
-          if (userIsAdmin && location.pathname === '/dashboard') {
-            navigate('/');
-            setIsLoading(false);
-            return;
+            // Prevent access to user dashboard for admin users
+            if (userIsAdmin && location.pathname === '/dashboard') {
+              navigate('/');
+              setIsLoading(false);
+              return;
+            }
           }
 
           // Update session info
@@ -183,6 +193,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
+        setIsSigningOut(false);
         // Create profile if it doesn't exist
         await createProfileIfNotExists(session.user);
 
@@ -206,6 +217,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
 
         navigate(roleData?.role === 'admin' ? '/' : '/dashboard');
       } else if (event === 'SIGNED_OUT') {
+        setIsSigningOut(true);
         navigate('/login');
       }
     });
@@ -214,7 +226,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate, isLoginPage, location.pathname]);
+  }, [navigate, isLoginPage, location.pathname, isSigningOut]);
 
   return { isLoading, isAdmin };
 };
