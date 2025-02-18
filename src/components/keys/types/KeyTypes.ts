@@ -38,6 +38,7 @@ export interface KeyData {
 }
 
 export interface KeyDoorLocation {
+  id: string;
   key_id: string;
   key_name: string;
   door_id: string;
@@ -71,4 +72,20 @@ export interface KeyAuditLog {
   created_at: string;
   username?: string;
   email?: string;
+}
+
+export interface StockTransaction {
+  id: string;
+  key_id: string;
+  quantity: number;
+  transaction_type: 'add' | 'remove' | 'adjustment';
+  reason?: string;
+  notes?: string;
+  performed_by?: string;
+  created_at: string;
+}
+
+export interface KeyDoorLocationInsert {
+  key_id: string;
+  door_id: string;
 }

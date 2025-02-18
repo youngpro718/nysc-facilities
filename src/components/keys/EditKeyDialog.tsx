@@ -102,7 +102,7 @@ export default function EditKeyDialog({ keyData }: EditKeyDialogProps) {
     const fetchDoorLocations = async () => {
       const { data, error } = await supabase
         .from("key_door_locations")
-        .select("door_location")
+        .select("door_id")
         .eq("key_id", keyData.id);
 
       if (error) {
@@ -114,7 +114,7 @@ export default function EditKeyDialog({ keyData }: EditKeyDialogProps) {
         return;
       }
 
-      const locations = data.map(d => d.door_location);
+      const locations = data.map(d => d.door_id);
       form.setValue("door_locations", locations);
     };
 
@@ -125,7 +125,6 @@ export default function EditKeyDialog({ keyData }: EditKeyDialogProps) {
 
   const onSubmit = async (data: EditKeyFormData) => {
     try {
-      // Update key details
       const { error: keyError } = await supabase
         .from("keys")
         .update({
@@ -138,44 +137,37 @@ export default function EditKeyDialog({ keyData }: EditKeyDialogProps) {
 
       if (keyError) throw keyError;
 
-      // Handle quantity adjustment if provided
-      if (data.quantity_adjustment && data.quantity_adjustment !== 0) {
-        const { error: stockError } = await supabase
-          .from("key_stock_transactions")
-          .insert({
-            key_id: keyData.id,
-            transaction_type: data.quantity_adjustment > 0 ? 'add' : 'remove',
-            quantity: Math.abs(data.quantity_adjustment),
-            reason: 'Manual adjustment',
-          });
-
-        if (stockError) throw stockError;
-      }
-
-      // Handle door locations only if not a passkey
       if (!data.is_passkey && data.door_locations && data.door_locations.length > 0) {
-        // Delete existing door locations
         const { error: deleteError } = await supabase
-          .from("key_door_locations")
+          .from("key_door_locations_table")
           .delete()
           .eq("key_id", keyData.id);
 
         if (deleteError) throw deleteError;
 
-        // Insert new door locations
         const { error: locationError } = await supabase
-          .from("key_door_locations")
+          .from("key_door_locations_table")
           .insert(
-            data.door_locations.map(location => ({
+            data.door_locations.map(door_id => ({
               key_id: keyData.id,
-              door_location: location,
+              door_id
             }))
           );
 
         if (locationError) throw locationError;
       }
 
-      // Log the edit in audit logs
+      const { error: stockError } = await supabase
+        .from("key_stock_transactions")
+        .insert({
+          key_id: keyData.id,
+          transaction_type: data.quantity_adjustment > 0 ? 'add' : 'remove',
+          quantity: Math.abs(data.quantity_adjustment),
+          reason: 'Manual adjustment',
+        });
+
+      if (stockError) throw stockError;
+
       const { error: auditError } = await supabase
         .from("key_audit_logs")
         .insert([{

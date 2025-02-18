@@ -1,43 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { KeyData } from "./types/KeyTypes";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-interface KeyInventoryData {
-  id: string;
-  key_id: string;
-  quantity: number | null;
-  expected_quantity: number | null;
-  discrepancy_notes: string | null;
-  created_at: string;
-  updated_at: string;
-  last_audit_date: string | null;
-  last_audited_by: string | null;
-  profiles: {
-    username: string | null;
-  } | null;
-}
-
-interface KeyInventoryProps {
-  keyId: string;
-}
-
-export function KeyInventory({ keyId }: KeyInventoryProps) {
-  const { data: inventoryItems } = useQuery({
-    queryKey: ['key-inventory', keyId],
+export function KeyInventory() {
+  const { data: keys, isLoading } = useQuery({
+    queryKey: ["keys-inventory"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('key_inventory')
-        .select(`
-          *,
-          profiles:last_audited_by (
-            username
-          )
-        `)
-        .eq('key_id', keyId);
+        .from("key_inventory_view")
+        .select("*");
 
       if (error) throw error;
-      return data as KeyInventoryData[];
+      return data as KeyData[];
     },
   });
 
@@ -56,7 +32,7 @@ export function KeyInventory({ keyId }: KeyInventoryProps) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {inventoryItems?.map((item) => (
+          {keys?.map((item) => (
             <TableRow key={item.id}>
               <TableCell>{item.id}</TableCell>
               <TableCell>{item.key_id}</TableCell>
