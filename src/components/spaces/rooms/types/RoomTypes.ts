@@ -26,6 +26,16 @@ export enum StorageType {
   GENERAL_STORAGE = "general_storage"
 }
 
+export interface RoomConnection {
+  id: string;
+  direction?: string;
+  to_space?: {
+    id: string;
+    name: string;
+    type: string;
+  };
+}
+
 export interface Room {
   id: string;
   name: string;
@@ -42,7 +52,7 @@ export interface Room {
   phone_number?: string;
   created_at: string;
   current_function?: string;
-  previous_functions?: any[]; // Changed from string[] to any[] to handle JSON data
+  previous_functions?: any[];
   function_change_date?: string;
   floors?: {
     name: string;
@@ -78,14 +88,4 @@ export interface Room {
     ballast_issue: boolean;
     maintenance_notes?: string;
   } | null;
-}
-
-export interface RoomConnection {
-  id: string;
-  direction?: string;
-  to_space?: {
-    id: string;
-    name: string;
-    type: string;
-  };
 }

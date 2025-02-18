@@ -1,6 +1,6 @@
 
 import { useMemo } from 'react';
-import { Room } from '../rooms/types/RoomTypes';
+import type { Room } from '../rooms/types/RoomTypes';
 
 interface UseRoomFiltersProps {
   rooms: Room[] | undefined;
@@ -11,6 +11,12 @@ interface UseRoomFiltersProps {
   selectedFloor: string;
 }
 
+interface RoomFiltersResult {
+  filteredAndSortedRooms: Room[];
+  buildings: string[];
+  floors: string[];
+}
+
 export function useRoomFilters({
   rooms,
   searchQuery,
@@ -18,7 +24,7 @@ export function useRoomFilters({
   statusFilter,
   selectedBuilding,
   selectedFloor,
-}: UseRoomFiltersProps) {
+}: UseRoomFiltersProps): RoomFiltersResult {
   const filteredAndSortedRooms = useMemo(() => {
     if (!rooms) return [];
     
@@ -35,23 +41,11 @@ export function useRoomFilters({
       const matchesSearch = searchFields.includes(searchQuery.toLowerCase());
       const matchesStatus = statusFilter === 'all' || room.status === statusFilter;
       
-      // Building filter logic - compare building_id from the floor's building
       const matchesBuilding = selectedBuilding === 'all' || 
         room.floors?.buildings?.id === selectedBuilding;
       
-      // Floor filter logic - compare floor_id directly
       const matchesFloor = selectedFloor === 'all' || 
         room.floor_id === selectedFloor;
-
-      // Debug logs to help identify filtering issues
-      console.log('Room:', room.name, {
-        buildingId: room.floors?.buildings?.id,
-        floorId: room.floor_id,
-        selectedBuilding,
-        selectedFloor,
-        matchesBuilding,
-        matchesFloor
-      });
 
       return matchesSearch && matchesStatus && matchesBuilding && matchesFloor;
     });
