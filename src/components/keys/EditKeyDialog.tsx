@@ -1,3 +1,12 @@
+
+import React, { useEffect } from 'react';
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { KeyData, KeyType, KeyStatus } from "./types/KeyTypes";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,7 +18,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -36,13 +44,6 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { KeyData, KeyType, KeyStatus } from "../types/KeyTypes";
-import { MultiSelect } from "@/components/ui/multi-select";
 
 const editKeySchema = z.object({
   id: z.string(),
@@ -52,7 +53,7 @@ const editKeySchema = z.object({
   type: z.enum(["physical_key", "elevator_pass", "room_key"]),
   status: z.enum(["available", "assigned", "lost", "decommissioned"]),
   is_passkey: z.boolean(),
-  door_locations: z.string().array().optional(),
+  door_locations: z.array(z.string()).optional(),
 });
 
 type EditKeyFormData = z.infer<typeof editKeySchema>;
@@ -75,17 +76,7 @@ export default function EditKeyDialog({ keyData, open, onOpenChange }: EditKeyDi
     },
   });
 
-  useEffect(() => {
-    form.reset({
-      id: keyData.id,
-      name: keyData.name,
-      type: keyData.type,
-      status: keyData.status,
-      is_passkey: keyData.is_passkey,
-    });
-  }, [keyData, form]);
-
-  const { data: doors, isLoading: isLoadingDoors } = supabase.auth.user() ? useQuery({
+  const { data: doors = [], isLoading: isLoadingDoors } = useQuery({
     queryKey: ["doors"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -97,7 +88,8 @@ export default function EditKeyDialog({ keyData, open, onOpenChange }: EditKeyDi
       if (error) throw error;
       return data;
     },
-  }) : { data: [], isLoading: true };
+    enabled: !keyData.is_passkey, // Only fetch if not a passkey
+  });
 
   useEffect(() => {
     const fetchDoorLocations = async () => {
@@ -138,10 +130,12 @@ export default function EditKeyDialog({ keyData, open, onOpenChange }: EditKeyDi
       // Handle door locations if not a passkey
       if (!data.is_passkey && data.door_locations && data.door_locations.length > 0) {
         // Delete existing locations
-        await supabase
-          .from("key_door_locations")
+        const { error: deleteError } = await supabase
+          .from("key_door_locations_table")
           .delete()
           .eq("key_id", keyData.id);
+
+        if (deleteError) throw deleteError;
 
         // Insert new locations
         const locationsToInsert = data.door_locations.map(doorId => ({
@@ -149,11 +143,11 @@ export default function EditKeyDialog({ keyData, open, onOpenChange }: EditKeyDi
           door_id: doorId
         }));
 
-        const { error: insertError } = await supabase
-          .from("key_door_locations")
+        const { error: locationError } = await supabase
+          .from("key_door_locations_table")
           .insert(locationsToInsert);
 
-        if (insertError) throw insertError;
+        if (locationError) throw locationError;
       }
 
       toast.success("Key updated successfully");
@@ -165,9 +159,6 @@ export default function EditKeyDialog({ keyData, open, onOpenChange }: EditKeyDi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        <Button variant="outline">Edit Key</Button>
-      </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Edit Key</DialogTitle>
@@ -245,9 +236,6 @@ export default function EditKeyDialog({ keyData, open, onOpenChange }: EditKeyDi
                 <FormItem className="flex flex-row items-center justify-between rounded-md border p-4">
                   <div className="space-y-0.5">
                     <FormLabel className="text-base">Passkey</FormLabel>
-                    {/* <FormDescription>
-                      Make this key a passkey.
-                    </FormDescription> */}
                   </div>
                   <FormControl>
                     <Switch
@@ -268,12 +256,12 @@ export default function EditKeyDialog({ keyData, open, onOpenChange }: EditKeyDi
                     <FormLabel>Door Locations</FormLabel>
                     <FormControl>
                       <MultiSelect
-                        options={doors?.data?.map((door) => ({
+                        options={doors?.map((door) => ({
                           label: door.name,
                           value: door.id,
                         })) || []}
                         onChange={(values) => field.onChange(values)}
-                        value={field.value || []}
+                        selected={field.value || []}
                         isLoading={isLoadingDoors}
                       />
                     </FormControl>
@@ -284,7 +272,27 @@ export default function EditKeyDialog({ keyData, open, onOpenChange }: EditKeyDi
             )}
 
             <div className="flex justify-end">
-              <Button type="submit">Update Key</Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <button className="px-4 py-2 bg-primary text-white rounded-md">
+                    Update Key
+                  </button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action will update the key information. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={form.handleSubmit(onSubmit)}>
+                      Continue
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </form>
         </Form>
