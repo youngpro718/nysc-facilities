@@ -24,14 +24,15 @@ export function DeleteKeyDialog({
   onOpenChange, 
   onConfirmDelete 
 }: DeleteKeyDialogProps) {
-  const hasActiveAssignments = keyToDelete?.total_quantity !== keyToDelete?.available_quantity;
+  // Change the check to allow deletion when available_quantity equals total_quantity
+  const canDelete = keyToDelete?.available_quantity === keyToDelete?.total_quantity;
 
   return (
     <AlertDialog open={!!keyToDelete} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Key</AlertDialogTitle>
-          {hasActiveAssignments ? (
+          {!canDelete ? (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
@@ -47,7 +48,7 @@ export function DeleteKeyDialog({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          {!hasActiveAssignments && (
+          {canDelete && (
             <AlertDialogAction onClick={onConfirmDelete}>Delete</AlertDialogAction>
           )}
         </AlertDialogFooter>
