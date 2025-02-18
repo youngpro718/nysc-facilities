@@ -45,25 +45,27 @@ export function useKeyAssignments() {
         .from("keys")
         .select("*")
         .eq('name', '31')
-        .maybeSingle(); // Changed from .single() to .maybeSingle()
+        .maybeSingle();
 
       if (keyError) {
         console.error("Error fetching key details:", keyError);
         throw keyError;
       }
 
-      console.log("Key #31 details:", keyDetails);
+      // Only fetch key #31 assignments if the key exists
+      if (keyDetails) {
+        const { data: key31Assignments, error: assignmentsError } = await supabase
+          .from("key_assignments")
+          .select("*")
+          .eq('key_id', keyDetails.id);
 
-      // Check all assignments for key #31 (including returned ones)
-      const { data: key31Assignments, error: assignmentsError } = await supabase
-        .from("key_assignments")
-        .select("*")
-        .eq('key_id', keyDetails?.id || ''); // Added optional chaining since keyDetails might be null
-
-      if (!assignmentsError && keyDetails) {
-        console.log("All assignments for key #31:", key31Assignments);
-        console.log("Active assignments count:", key31Assignments.filter(a => !a.returned_at).length);
-        console.log("Returned assignments count:", key31Assignments.filter(a => a.returned_at).length);
+        if (!assignmentsError) {
+          console.log("All assignments for key #31:", key31Assignments);
+          console.log("Active assignments count:", key31Assignments.filter(a => !a.returned_at).length);
+          console.log("Returned assignments count:", key31Assignments.filter(a => a.returned_at).length);
+        }
+      } else {
+        console.log("Key #31 not found");
       }
 
       return assignments as unknown as KeyAssignment[];
