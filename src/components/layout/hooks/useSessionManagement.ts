@@ -52,6 +52,29 @@ export const useSessionManagement = (isAuthPage: boolean) => {
           return;
         }
 
+        // Check verification status
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('verification_status')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profileError) {
+          console.error("Profile error:", profileError);
+          if (!isAuthPage) {
+            navigate('/auth');
+          }
+          setIsLoading(false);
+          return;
+        }
+
+        // Handle verification status
+        if (profile.verification_status === 'pending' && location.pathname !== '/verification-pending') {
+          navigate('/verification-pending');
+          setIsLoading(false);
+          return;
+        }
+
         // Refresh session to ensure token is valid
         const { error: refreshError } = await supabase.auth.refreshSession();
         if (refreshError) {
@@ -149,7 +172,6 @@ export const useSessionManagement = (isAuthPage: boolean) => {
           navigate('/auth');
         }
       } else if (event === 'TOKEN_REFRESHED') {
-        // Handle successful token refresh
         console.log('Token refreshed successfully');
       }
     });

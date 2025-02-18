@@ -39,14 +39,32 @@ export const LoginForm = ({
     try {
       setLoading(true);
       
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (signInError) throw signInError;
 
-      navigate("/", { replace: true });
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user found");
+
+      // Check verification status
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('verification_status')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      if (profile.verification_status === 'pending') {
+        navigate("/verification-pending");
+      } else {
+        navigate("/");
+      }
+
       toast.success("Welcome back!", {
         description: "You've successfully signed in."
       });
