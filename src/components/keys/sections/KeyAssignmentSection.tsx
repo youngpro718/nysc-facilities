@@ -75,6 +75,11 @@ export function KeyAssignmentSection() {
     },
   });
 
+  const getOccupantFullName = (occupant: KeyAssignment['occupant']) => {
+    if (!occupant) return 'Unknown';
+    return `${occupant.first_name} ${occupant.last_name}`;
+  };
+
   const handleReturn = async (assignmentId: string, keyId: string) => {
     if (isProcessing) return;
     setIsProcessing(true);
@@ -110,7 +115,7 @@ export function KeyAssignmentSection() {
         throw new Error(errors[0]?.message);
       }
 
-      toast.success("Key returned successfully");
+      toast.success(`Key returned successfully by ${getOccupantFullName(assignments?.find(a => a.id === assignmentId)?.occupant)}`);
       refetch();
     } catch (error: any) {
       console.error("Error returning key:", error);
@@ -168,7 +173,7 @@ export function KeyAssignmentSection() {
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4" />
-                    {assignment.occupant?.first_name} {assignment.occupant?.last_name}
+                    {getOccupantFullName(assignment.occupant)}
                   </div>
                 </TableCell>
                 <TableCell>{assignment.occupant?.department}</TableCell>
