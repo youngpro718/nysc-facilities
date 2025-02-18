@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { DeviceInfo } from "../types";
 import { toast } from "sonner";
 
-export const useSessionManagement = (isAuthPage: boolean) => {
+export const useSessionManagement = (isLoginPage: boolean) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isLoading, setIsLoading] = useState(true);
@@ -65,16 +65,16 @@ export const useSessionManagement = (isAuthPage: boolean) => {
 
         if (error) {
           console.error("Session error:", error);
-          if (!isAuthPage) {
-            navigate('/auth');
+          if (!isLoginPage) {
+            navigate('/login');
           }
           setIsLoading(false);
           return;
         }
 
         if (!session) {
-          if (!isAuthPage) {
-            navigate('/auth');
+          if (!isLoginPage) {
+            navigate('/login');
           }
           setIsLoading(false);
           return;
@@ -93,8 +93,8 @@ export const useSessionManagement = (isAuthPage: boolean) => {
         if (profileError) {
           console.error("Profile error:", profileError);
           toast.error("Error loading user profile");
-          if (!isAuthPage) {
-            navigate('/auth');
+          if (!isLoginPage) {
+            navigate('/login');
           }
           setIsLoading(false);
           return;
@@ -121,7 +121,7 @@ export const useSessionManagement = (isAuthPage: boolean) => {
           setIsAdmin(userIsAdmin);
 
           // Handle auth page redirects
-          if (isAuthPage) {
+          if (isLoginPage) {
             navigate(userIsAdmin ? '/' : '/dashboard');
             setIsLoading(false);
             return;
@@ -164,8 +164,8 @@ export const useSessionManagement = (isAuthPage: boolean) => {
         setIsLoading(false);
       } catch (error) {
         console.error("Auth error:", error);
-        if (!isAuthPage) {
-          navigate('/auth');
+        if (!isLoginPage) {
+          navigate('/login');
         }
         setIsLoading(false);
       }
@@ -198,7 +198,7 @@ export const useSessionManagement = (isAuthPage: boolean) => {
 
         navigate(roleData?.role === 'admin' ? '/' : '/dashboard');
       } else if (event === 'SIGNED_OUT') {
-        navigate('/auth');
+        navigate('/login');
       }
     });
 
@@ -206,7 +206,7 @@ export const useSessionManagement = (isAuthPage: boolean) => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate, isAuthPage, location.pathname]);
+  }, [navigate, isLoginPage, location.pathname]);
 
   return { isLoading, isAdmin };
 };
