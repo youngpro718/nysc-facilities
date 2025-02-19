@@ -40,9 +40,19 @@ export function OccupantForm({
     },
   });
 
+  const handleFormSubmit = async (data: OccupantFormData) => {
+    try {
+      console.log("Form submitting with data:", data);
+      await onSubmit(data);
+    } catch (error) {
+      console.error("Form submission error:", error);
+      // Error handling is done in the parent component
+    }
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
         <ScrollArea className="h-[calc(100vh-12rem)] pr-4">
           <div className="space-y-6">
             <PersonalInfoFields form={form} />
@@ -52,10 +62,18 @@ export function OccupantForm({
         </ScrollArea>
 
         <div className="flex justify-end gap-2 pt-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={onCancel}
+            disabled={isSubmitting}
+          >
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button 
+            type="submit" 
+            disabled={isSubmitting}
+          >
             {isSubmitting ? "Saving..." : "Save Changes"}
           </Button>
         </div>
