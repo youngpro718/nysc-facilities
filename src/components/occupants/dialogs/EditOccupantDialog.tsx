@@ -48,8 +48,8 @@ export function EditOccupantDialog({
         occupantId: occupant.id,
         formData: {
           ...formData,
-          status: formData.status || occupant.status,
-          access_level: formData.access_level || 'standard',
+          status: formData.status || "active",
+          access_level: formData.access_level || "standard",
         },
         selectedRooms: formData.rooms || [],
         selectedKeys: formData.keys || [],
@@ -71,8 +71,21 @@ export function EditOccupantDialog({
     return null;
   }
 
-  // Ensure access_level is one of the allowed values
-  const safeAccessLevel = (occupant.access_level as "standard" | "restricted" | "elevated") || "standard";
+  // Validate and transform the access_level to ensure it matches our schema
+  const validateAccessLevel = (level?: string): "standard" | "restricted" | "elevated" => {
+    if (level && ["standard", "restricted", "elevated"].includes(level)) {
+      return level as "standard" | "restricted" | "elevated";
+    }
+    return "standard";
+  };
+
+  // Validate and transform the status to ensure it matches our schema
+  const validateStatus = (status?: string): OccupantStatus => {
+    if (status && ["active", "inactive", "on_leave", "terminated"].includes(status)) {
+      return status as OccupantStatus;
+    }
+    return "active";
+  };
 
   const initialData = {
     first_name: occupant.first_name,
@@ -81,14 +94,14 @@ export function EditOccupantDialog({
     phone: occupant.phone,
     department: occupant.department,
     title: occupant.title,
-    status: occupant.status as OccupantStatus,
+    status: validateStatus(occupant.status),
     employment_type: occupant.employment_type || null,
     supervisor_id: occupant.supervisor_id || null,
     hire_date: occupant.hire_date || null,
     termination_date: occupant.termination_date || null,
     rooms: currentAssignments?.rooms || [],
     keys: currentAssignments?.keys || [],
-    access_level: safeAccessLevel,
+    access_level: validateAccessLevel(occupant.access_level),
     emergency_contact: occupant.emergency_contact || null,
     notes: occupant.notes || null,
   };

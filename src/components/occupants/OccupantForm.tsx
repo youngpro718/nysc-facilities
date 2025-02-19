@@ -8,6 +8,7 @@ import { occupantSchema, type OccupantFormData } from "./schemas/occupantSchema"
 import { PersonalInfoFields } from "./form-sections/PersonalInfoFields";
 import { WorkInfoFields } from "./form-sections/WorkInfoFields";
 import { AssignmentFields } from "./form-sections/AssignmentFields";
+import { StatusAccessFields } from "./form-sections/StatusAccessFields";
 
 interface OccupantFormProps {
   initialData?: Partial<OccupantFormData>;
@@ -37,6 +38,10 @@ export function OccupantForm({
       access_level: initialData?.access_level || "standard",
       emergency_contact: initialData?.emergency_contact || null,
       notes: initialData?.notes || null,
+      employment_type: initialData?.employment_type || null,
+      supervisor_id: initialData?.supervisor_id || null,
+      hire_date: initialData?.hire_date || null,
+      termination_date: initialData?.termination_date || null,
     },
   });
 
@@ -46,7 +51,6 @@ export function OccupantForm({
       await onSubmit(data);
     } catch (error) {
       console.error("Form submission error:", error);
-      // Error handling is done in the parent component
     }
   };
 
@@ -57,6 +61,7 @@ export function OccupantForm({
           <div className="space-y-6">
             <PersonalInfoFields form={form} />
             <WorkInfoFields form={form} />
+            <StatusAccessFields form={form} />
             <AssignmentFields form={form} />
           </div>
         </ScrollArea>
