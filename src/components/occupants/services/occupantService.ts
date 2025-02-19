@@ -1,148 +1,110 @@
 
+import { OccupantFormData } from "../schemas/occupantSchema";
 import { supabase } from "@/integrations/supabase/client";
-import { OccupantStatus } from "../schemas/occupantSchema";
+import type { OccupantAssignments } from "../types/occupantTypes";
 
 interface UpdateOccupantParams {
   occupantId: string;
-  formData: {
-    first_name: string;
-    last_name: string;
-    email: string | null;
-    phone: string | null;
-    department: string | null;
-    title: string | null;
-    status?: OccupantStatus;
-    access_level?: "standard" | "restricted" | "elevated";
-    emergency_contact?: any;
-    notes?: string | null;
-  };
+  formData: OccupantFormData;
   selectedRooms: string[];
   selectedKeys: string[];
-  currentAssignments: {
-    rooms: string[];
-    keys: string[];
-  } | null;
+  currentAssignments?: OccupantAssignments;
 }
 
-export async function handleOccupantUpdate({
+export const handleOccupantUpdate = async ({
   occupantId,
   formData,
   selectedRooms,
   selectedKeys,
   currentAssignments,
-}: UpdateOccupantParams) {
+}: UpdateOccupantParams) => {
+  if (!occupantId) {
+    throw new Error("Occupant ID is required");
+  }
+
+  // Prepare the occupant data for update
+  const updateData = {
+    first_name: formData.first_name,
+    last_name: formData.last_name,
+    email: formData.email,
+    phone: formData.phone,
+    department: formData.department,
+    title: formData.title,
+    status: formData.status,
+    employment_type: formData.employment_type,
+    supervisor_id: formData.supervisor_id,
+    hire_date: formData.hire_date,
+    termination_date: formData.termination_date,
+    access_level: formData.access_level,
+    emergency_contact: formData.emergency_contact,
+    notes: formData.notes,
+    updated_at: new Date().toISOString(),
+  };
+
   try {
-    // Update occupant details
-    const { error: occupantError } = await supabase
+    // Update occupant data
+    const { error: updateError } = await supabase
       .from('occupants')
-      .update({
-        first_name: formData.first_name,
-        last_name: formData.last_name,
-        email: formData.email,
-        phone: formData.phone,
-        department: formData.department,
-        title: formData.title,
-        status: formData.status,
-        access_level: formData.access_level,
-        emergency_contact: formData.emergency_contact,
-        notes: formData.notes,
-      })
+      .update(updateData)
       .eq('id', occupantId);
 
-    if (occupantError) throw occupantError;
+    if (updateError) throw updateError;
 
     // Handle room assignments
-    const currentRooms = new Set(currentAssignments?.rooms || []);
-    const newRooms = new Set(selectedRooms);
-
-    // Remove old room assignments
-    const roomsToRemove = [...currentRooms].filter(x => !newRooms.has(x));
-    if (roomsToRemove.length > 0) {
-      const { error: removeRoomError } = await supabase
-        .from('occupant_room_assignments')
+    if (selectedRooms) {
+      // Remove existing room assignments
+      const { error: deleteRoomsError } = await supabase
+        .from('room_assignments')
         .delete()
-        .eq('occupant_id', occupantId)
-        .in('room_id', roomsToRemove);
+        .eq('occupant_id', occupantId);
 
-      if (removeRoomError) throw removeRoomError;
-    }
+      if (deleteRoomsError) throw deleteRoomsError;
 
-    // Add new room assignments
-    const roomsToAdd = [...newRooms].filter(x => !currentRooms.has(x));
-    if (roomsToAdd.length > 0) {
-      const { error: addRoomError } = await supabase
-        .from('occupant_room_assignments')
-        .insert(roomsToAdd.map(roomId => ({
+      // Add new room assignments
+      if (selectedRooms.length > 0) {
+        const roomAssignments = selectedRooms.map(roomId => ({
           occupant_id: occupantId,
           room_id: roomId,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })));
+          assigned_at: new Date().toISOString(),
+        }));
 
-      if (addRoomError) throw addRoomError;
+        const { error: insertRoomsError } = await supabase
+          .from('room_assignments')
+          .insert(roomAssignments);
+
+        if (insertRoomsError) throw insertRoomsError;
+      }
     }
 
     // Handle key assignments
-    const currentKeys = new Set(currentAssignments?.keys || []);
-    const newKeys = new Set(selectedKeys);
-
-    // Return old keys
-    const keysToRemove = [...currentKeys].filter(x => !newKeys.has(x));
-    if (keysToRemove.length > 0) {
-      const { error: removeKeyError } = await supabase
+    if (selectedKeys) {
+      // Remove existing key assignments
+      const { error: deleteKeysError } = await supabase
         .from('key_assignments')
-        .update({ 
-          returned_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('occupant_id', occupantId)
-        .in('key_id', keysToRemove)
-        .is('returned_at', null);
+        .delete()
+        .eq('occupant_id', occupantId);
 
-      if (removeKeyError) throw removeKeyError;
+      if (deleteKeysError) throw deleteKeysError;
 
-      // Update keys status
-      const { error: keyUpdateError } = await supabase
-        .from('keys')
-        .update({ 
-          status: 'available',
-          updated_at: new Date().toISOString()
-        })
-        .in('id', keysToRemove);
-
-      if (keyUpdateError) throw keyUpdateError;
-    }
-
-    // Assign new keys
-    const keysToAdd = [...newKeys].filter(x => !currentKeys.has(x));
-    if (keysToAdd.length > 0) {
-      const { error: addKeyError } = await supabase
-        .from('key_assignments')
-        .insert(keysToAdd.map(keyId => ({
-          key_id: keyId,
+      // Add new key assignments
+      if (selectedKeys.length > 0) {
+        const keyAssignments = selectedKeys.map(keyId => ({
           occupant_id: occupantId,
+          key_id: keyId,
           assigned_at: new Date().toISOString(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })));
+        }));
 
-      if (addKeyError) throw addKeyError;
+        const { error: insertKeysError } = await supabase
+          .from('key_assignments')
+          .insert(keyAssignments);
 
-      // Update keys status
-      const { error: keyUpdateError } = await supabase
-        .from('keys')
-        .update({ 
-          status: 'assigned',
-          updated_at: new Date().toISOString()
-        })
-        .in('id', keysToAdd);
-
-      if (keyUpdateError) throw keyUpdateError;
+        if (insertKeysError) throw insertKeysError;
+      }
     }
 
     return { success: true };
   } catch (error) {
-    console.error("Error updating occupant:", error);
+    console.error('Error updating occupant:', error);
     throw error;
   }
-}
+};
