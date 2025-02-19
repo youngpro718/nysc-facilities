@@ -31,18 +31,13 @@ export async function handleOccupantUpdate({
   selectedKeys,
   currentAssignments,
 }: UpdateOccupantParams) {
-  console.log("Starting occupant update with:", {
-    occupantId,
-    formData,
-    selectedRooms,
-    selectedKeys,
-    currentAssignments
-  });
+  // Start a Supabase transaction
+  const { error: transactionError } = await supabase.rpc('begin');
+  if (transactionError) throw transactionError;
 
   try {
-    // Update occupant details first
-    console.log("Updating occupant details...");
-    const { data: updatedOccupant, error: occupantError } = await supabase
+    // Update occupant details
+    const { error: occupantError } = await supabase
       .from('occupants')
       .update({
         first_name: formData.first_name,
@@ -56,23 +51,16 @@ export async function handleOccupantUpdate({
         emergency_contact: formData.emergency_contact,
         notes: formData.notes,
       })
-      .eq('id', occupantId)
-      .select();
+      .eq('id', occupantId);
 
-    console.log("Occupant update result:", { updatedOccupant, occupantError });
-    if (occupantError) {
-      console.error("Error updating occupant:", occupantError);
-      throw new Error(`Error updating occupant: ${occupantError.message}`);
-    }
+    if (occupantError) throw occupantError;
 
     // Handle room assignments
     const currentRooms = new Set(currentAssignments?.rooms || []);
     const newRooms = new Set(selectedRooms);
 
-    // Rooms to remove
+    // Remove old room assignments
     const roomsToRemove = [...currentRooms].filter(x => !newRooms.has(x));
-    console.log("Rooms to remove:", roomsToRemove);
-    
     if (roomsToRemove.length > 0) {
       const { error: removeRoomError } = await supabase
         .from('occupant_room_assignments')
@@ -80,71 +68,57 @@ export async function handleOccupantUpdate({
         .eq('occupant_id', occupantId)
         .in('room_id', roomsToRemove);
 
-      console.log("Remove rooms result:", { removeRoomError });
-      if (removeRoomError) {
-        console.error("Error removing room assignments:", removeRoomError);
-        throw new Error(`Error removing room assignments: ${removeRoomError.message}`);
-      }
+      if (removeRoomError) throw removeRoomError;
     }
 
-    // Rooms to add
+    // Add new room assignments
     const roomsToAdd = [...newRooms].filter(x => !currentRooms.has(x));
-    console.log("Rooms to add:", roomsToAdd);
-    
     if (roomsToAdd.length > 0) {
       const { error: addRoomError } = await supabase
         .from('occupant_room_assignments')
         .insert(roomsToAdd.map(roomId => ({
           occupant_id: occupantId,
           room_id: roomId,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         })));
 
-      console.log("Add rooms result:", { addRoomError });
-      if (addRoomError) {
-        console.error("Error adding room assignments:", addRoomError);
-        throw new Error(`Error adding room assignments: ${addRoomError.message}`);
-      }
+      if (addRoomError) throw addRoomError;
     }
 
     // Handle key assignments
     const currentKeys = new Set(currentAssignments?.keys || []);
     const newKeys = new Set(selectedKeys);
 
-    // Keys to remove
+    // Return old keys
     const keysToRemove = [...currentKeys].filter(x => !newKeys.has(x));
-    console.log("Keys to remove:", keysToRemove);
-    
     if (keysToRemove.length > 0) {
       const { error: removeKeyError } = await supabase
         .from('key_assignments')
-        .update({ returned_at: new Date().toISOString() })
+        .update({ 
+          returned_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
         .eq('occupant_id', occupantId)
         .in('key_id', keysToRemove)
         .is('returned_at', null);
 
-      console.log("Remove keys result:", { removeKeyError });
-      if (removeKeyError) {
-        console.error("Error removing key assignments:", removeKeyError);
-        throw new Error(`Error removing key assignments: ${removeKeyError.message}`);
-      }
+      if (removeKeyError) throw removeKeyError;
 
-      // Update keys status to available
+      // Update keys status
       const { error: keyUpdateError } = await supabase
         .from('keys')
-        .update({ status: 'available' })
+        .update({ 
+          status: 'available',
+          updated_at: new Date().toISOString()
+        })
         .in('id', keysToRemove);
 
-      console.log("Update removed keys status result:", { keyUpdateError });
-      if (keyUpdateError) {
-        console.error("Error updating key status:", keyUpdateError);
-        throw new Error(`Error updating key status: ${keyUpdateError.message}`);
-      }
+      if (keyUpdateError) throw keyUpdateError;
     }
 
-    // Keys to add
+    // Assign new keys
     const keysToAdd = [...newKeys].filter(x => !currentKeys.has(x));
-    console.log("Keys to add:", keysToAdd);
-    
     if (keysToAdd.length > 0) {
       const { error: addKeyError } = await supabase
         .from('key_assignments')
@@ -152,31 +126,32 @@ export async function handleOccupantUpdate({
           key_id: keyId,
           occupant_id: occupantId,
           assigned_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         })));
 
-      console.log("Add keys result:", { addKeyError });
-      if (addKeyError) {
-        console.error("Error adding key assignments:", addKeyError);
-        throw new Error(`Error adding key assignments: ${addKeyError.message}`);
-      }
+      if (addKeyError) throw addKeyError;
 
-      // Update keys status to assigned 
+      // Update keys status
       const { error: keyUpdateError } = await supabase
         .from('keys')
-        .update({ status: 'assigned' })
+        .update({ 
+          status: 'assigned',
+          updated_at: new Date().toISOString()
+        })
         .in('id', keysToAdd);
 
-      console.log("Update added keys status result:", { keyUpdateError });
-      if (keyUpdateError) {
-        console.error("Error updating key status:", keyUpdateError);
-        throw new Error(`Error updating key status: ${keyUpdateError.message}`);
-      }
+      if (keyUpdateError) throw keyUpdateError;
     }
 
-    console.log("Occupant update completed successfully");
-    return updatedOccupant;
+    // Commit transaction
+    const { error: commitError } = await supabase.rpc('commit');
+    if (commitError) throw commitError;
+
+    return { success: true };
   } catch (error) {
-    console.error("Occupant update failed:", error);
+    // Rollback on error
+    await supabase.rpc('rollback');
     throw error;
   }
 }
