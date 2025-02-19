@@ -46,7 +46,11 @@ export function EditOccupantDialog({
       setIsSubmitting(true);
       await handleOccupantUpdate({
         occupantId: occupant.id,
-        formData,
+        formData: {
+          ...formData,
+          status: formData.status || occupant.status,
+          access_level: formData.access_level || 'standard',
+        },
         selectedRooms: formData.rooms || [],
         selectedKeys: formData.keys || [],
         currentAssignments,
@@ -67,16 +71,19 @@ export function EditOccupantDialog({
     return null;
   }
 
-  const initialData = occupant ? {
+  const initialData = {
     ...occupant,
-    status: occupant.status as OccupantStatus || "active",
+    status: occupant.status as OccupantStatus,
     rooms: currentAssignments?.rooms || [],
     keys: currentAssignments?.keys || [],
-  } : undefined;
+    access_level: occupant.access_level || 'standard',
+    emergency_contact: occupant.emergency_contact || null,
+    notes: occupant.notes || null,
+  };
 
   const content = (
     <OccupantForm 
-      initialData={initialData} 
+      initialData={initialData}
       onSubmit={handleUpdate}
       onCancel={() => onOpenChange(false)}
       isSubmitting={isSubmitting}

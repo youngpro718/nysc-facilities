@@ -8,23 +8,26 @@ export type Occupant = {
   phone: string | null;
   department: string | null;
   title: string | null;
-  status: string | null;
+  status: string;
+  employment_type?: string | null;
+  supervisor_id?: string | null;
+  hire_date?: string | null;
+  termination_date?: string | null;
+  emergency_contact?: {
+    name: string | null;
+    phone: string | null;
+    relationship: string | null;
+    alternate_phone: string | null;
+    email: string | null;
+  } | null;
+  notes?: string | null;
+  access_level?: string;
   room_count?: number;
   key_count?: number;
 };
 
 // Extended type for occupant details
-export type OccupantDetails = {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string | null;
-  phone: string | null;
-  department: string | null;
-  title: string | null;
-  status: string;
-  room_count?: number;
-  key_count?: number;
+export type OccupantDetails = Occupant & {
   rooms?: RoomDetails;
 };
 
@@ -43,17 +46,7 @@ export interface RoomDetails {
   };
 }
 
-export type OccupantQueryResponse = {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string | null;
-  phone: string | null;
-  department: string | null;
-  title: string | null;
-  status: string;
-  room_count: number;
-  key_count: number;
+export type OccupantQueryResponse = Occupant & {
   rooms: RoomDetails[];
 };
 
