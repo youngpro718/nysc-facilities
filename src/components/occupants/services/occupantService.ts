@@ -40,7 +40,8 @@ export async function handleOccupantUpdate({
   });
 
   try {
-    // Update occupant details
+    // Update occupant details first
+    console.log("Updating occupant details...");
     const { data: updatedOccupant, error: occupantError } = await supabase
       .from('occupants')
       .update({
@@ -59,9 +60,12 @@ export async function handleOccupantUpdate({
       .select();
 
     console.log("Occupant update result:", { updatedOccupant, occupantError });
-    if (occupantError) throw new Error(`Error updating occupant: ${occupantError.message}`);
+    if (occupantError) {
+      console.error("Error updating occupant:", occupantError);
+      throw new Error(`Error updating occupant: ${occupantError.message}`);
+    }
 
-    // Update room assignments
+    // Handle room assignments
     const currentRooms = new Set(currentAssignments?.rooms || []);
     const newRooms = new Set(selectedRooms);
 
@@ -77,7 +81,10 @@ export async function handleOccupantUpdate({
         .in('room_id', roomsToRemove);
 
       console.log("Remove rooms result:", { removeRoomError });
-      if (removeRoomError) throw new Error(`Error removing room assignments: ${removeRoomError.message}`);
+      if (removeRoomError) {
+        console.error("Error removing room assignments:", removeRoomError);
+        throw new Error(`Error removing room assignments: ${removeRoomError.message}`);
+      }
     }
 
     // Rooms to add
@@ -93,10 +100,13 @@ export async function handleOccupantUpdate({
         })));
 
       console.log("Add rooms result:", { addRoomError });
-      if (addRoomError) throw new Error(`Error adding room assignments: ${addRoomError.message}`);
+      if (addRoomError) {
+        console.error("Error adding room assignments:", addRoomError);
+        throw new Error(`Error adding room assignments: ${addRoomError.message}`);
+      }
     }
 
-    // Update key assignments
+    // Handle key assignments
     const currentKeys = new Set(currentAssignments?.keys || []);
     const newKeys = new Set(selectedKeys);
 
@@ -113,7 +123,10 @@ export async function handleOccupantUpdate({
         .is('returned_at', null);
 
       console.log("Remove keys result:", { removeKeyError });
-      if (removeKeyError) throw new Error(`Error removing key assignments: ${removeKeyError.message}`);
+      if (removeKeyError) {
+        console.error("Error removing key assignments:", removeKeyError);
+        throw new Error(`Error removing key assignments: ${removeKeyError.message}`);
+      }
 
       // Update keys status to available
       const { error: keyUpdateError } = await supabase
@@ -122,7 +135,10 @@ export async function handleOccupantUpdate({
         .in('id', keysToRemove);
 
       console.log("Update removed keys status result:", { keyUpdateError });
-      if (keyUpdateError) throw new Error(`Error updating key status: ${keyUpdateError.message}`);
+      if (keyUpdateError) {
+        console.error("Error updating key status:", keyUpdateError);
+        throw new Error(`Error updating key status: ${keyUpdateError.message}`);
+      }
     }
 
     // Keys to add
@@ -139,17 +155,26 @@ export async function handleOccupantUpdate({
         })));
 
       console.log("Add keys result:", { addKeyError });
-      if (addKeyError) throw new Error(`Error adding key assignments: ${addKeyError.message}`);
+      if (addKeyError) {
+        console.error("Error adding key assignments:", addKeyError);
+        throw new Error(`Error adding key assignments: ${addKeyError.message}`);
+      }
 
-      // Update keys status to assigned
+      // Update keys status to assigned 
       const { error: keyUpdateError } = await supabase
         .from('keys')
         .update({ status: 'assigned' })
         .in('id', keysToAdd);
 
       console.log("Update added keys status result:", { keyUpdateError });
-      if (keyUpdateError) throw new Error(`Error updating key status: ${keyUpdateError.message}`);
+      if (keyUpdateError) {
+        console.error("Error updating key status:", keyUpdateError);
+        throw new Error(`Error updating key status: ${keyUpdateError.message}`);
+      }
     }
+
+    console.log("Occupant update completed successfully");
+    return updatedOccupant;
   } catch (error) {
     console.error("Occupant update failed:", error);
     throw error;
