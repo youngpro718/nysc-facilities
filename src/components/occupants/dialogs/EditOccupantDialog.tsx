@@ -71,12 +71,24 @@ export function EditOccupantDialog({
     return null;
   }
 
+  // Ensure access_level is one of the allowed values
+  const safeAccessLevel = (occupant.access_level as "standard" | "restricted" | "elevated") || "standard";
+
   const initialData = {
-    ...occupant,
+    first_name: occupant.first_name,
+    last_name: occupant.last_name,
+    email: occupant.email,
+    phone: occupant.phone,
+    department: occupant.department,
+    title: occupant.title,
     status: occupant.status as OccupantStatus,
+    employment_type: occupant.employment_type || null,
+    supervisor_id: occupant.supervisor_id || null,
+    hire_date: occupant.hire_date || null,
+    termination_date: occupant.termination_date || null,
     rooms: currentAssignments?.rooms || [],
     keys: currentAssignments?.keys || [],
-    access_level: occupant.access_level || 'standard',
+    access_level: safeAccessLevel,
     emergency_contact: occupant.emergency_contact || null,
     notes: occupant.notes || null,
   };
