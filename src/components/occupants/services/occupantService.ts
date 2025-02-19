@@ -31,10 +31,6 @@ export async function handleOccupantUpdate({
   selectedKeys,
   currentAssignments,
 }: UpdateOccupantParams) {
-  // Start a Supabase transaction
-  const { error: transactionError } = await supabase.rpc('begin');
-  if (transactionError) throw transactionError;
-
   try {
     // Update occupant details
     const { error: occupantError } = await supabase
@@ -144,14 +140,9 @@ export async function handleOccupantUpdate({
       if (keyUpdateError) throw keyUpdateError;
     }
 
-    // Commit transaction
-    const { error: commitError } = await supabase.rpc('commit');
-    if (commitError) throw commitError;
-
     return { success: true };
   } catch (error) {
-    // Rollback on error
-    await supabase.rpc('rollback');
+    console.error("Error updating occupant:", error);
     throw error;
   }
 }
