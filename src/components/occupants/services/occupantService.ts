@@ -54,7 +54,7 @@ export const handleOccupantUpdate = async ({
     if (selectedRooms) {
       // Remove existing room assignments
       const { error: deleteRoomsError } = await supabase
-        .from('room_assignments')
+        .from('occupant_room_assignments')
         .delete()
         .eq('occupant_id', occupantId);
 
@@ -69,7 +69,7 @@ export const handleOccupantUpdate = async ({
         }));
 
         const { error: insertRoomsError } = await supabase
-          .from('room_assignments')
+          .from('occupant_room_assignments')
           .insert(roomAssignments);
 
         if (insertRoomsError) throw insertRoomsError;

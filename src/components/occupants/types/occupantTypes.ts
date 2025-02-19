@@ -50,6 +50,11 @@ export type OccupantQueryResponse = Occupant & {
   rooms: RoomDetails[];
 };
 
+export interface OccupantAssignments {
+  rooms: string[];
+  keys: string[];
+}
+
 export interface SupabaseError {
   message: string;
   code?: string;
