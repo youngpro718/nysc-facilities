@@ -19,6 +19,13 @@ export function SpaceCard<T extends { id: string; name: string; status: string; 
   renderContent,
   type
 }: SpaceCardProps<T>) {
+  const initialData = {
+    id: item.id,
+    name: item.name,
+    status: item.status as StatusEnum,
+    floorId: item.floor_id,
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -33,18 +40,13 @@ export function SpaceCard<T extends { id: string; name: string; status: string; 
         <div className="space-y-2">
           {renderContent?.(item)}
           <div className="flex gap-2 mt-4">
-            <EditSpaceDialog
-              id={item.id}
-              type={type}
-              initialData={{
-                name: item.name,
-                type,
-                status: item.status === "active" ? StatusEnum.ACTIVE : 
-                       item.status === "inactive" ? StatusEnum.INACTIVE : 
-                       StatusEnum.UNDER_MAINTENANCE,
-                floorId: item.floor_id,
-              }}
-            />
+            {type === "room" && (
+              <EditSpaceDialog
+                id={item.id}
+                type="room"
+                initialData={initialData}
+              />
+            )}
             <Button
               variant="destructive"
               size="sm"

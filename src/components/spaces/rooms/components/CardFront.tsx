@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2, Phone, Users, Building2 } from "lucide-react";
 import { EditSpaceDialog } from "../../EditSpaceDialog";
 import { Room } from "../types/RoomTypes";
-import { StatusEnum } from "../types/roomEnums";
+import { StatusEnum, RoomTypeEnum } from "../types/roomEnums";
 import { LightingStatusIndicator } from "./LightingStatusIndicator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRoomOccupants } from "../../hooks/useRoomOccupants";
@@ -23,16 +23,16 @@ export function CardFront({ room, onDelete }: CardFrontProps) {
     name: room.name,
     floorId: room.floor_id,
     roomNumber: room.room_number,
-    roomType: room.room_type,
+    roomType: room.room_type as RoomTypeEnum, // Cast to correct enum type
     status: room.status as StatusEnum,
-    description: room.description,
-    phoneNumber: room.phone_number,
+    description: room.description || "",
+    phoneNumber: room.phone_number || "",
     isStorage: room.is_storage,
     storageCapacity: room.storage_capacity,
-    storageType: room.storage_type,
-    storageNotes: room.storage_notes,
-    parentRoomId: room.parent_room_id,
-    currentFunction: room.current_function,
+    storageType: room.storage_type as StorageTypeEnum, // Cast to correct enum type
+    storageNotes: room.storage_notes || "",
+    parentRoomId: room.parent_room_id || null,
+    currentFunction: room.current_function || "",
   };
 
   return (

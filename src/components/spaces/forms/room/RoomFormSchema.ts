@@ -3,6 +3,7 @@ import { z } from "zod";
 import { RoomTypeEnum, StorageTypeEnum, StatusEnum } from "../../rooms/types/roomEnums";
 
 export const roomFormSchema = z.object({
+  id: z.string().uuid().optional(), // Add id field
   name: z.string().min(1, "Name is required"),
   roomNumber: z.string().min(1, "Room number is required"),
   roomType: z.nativeEnum(RoomTypeEnum, {
