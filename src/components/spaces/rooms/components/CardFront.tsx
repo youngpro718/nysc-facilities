@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,12 +40,12 @@ export function CardFront({ room, onDelete }: CardFrontProps) {
                        StatusEnum.UNDER_MAINTENANCE,
                 floorId: room.floor_id,
                 roomNumber: room.room_number,
-                roomType: room.room_type as RoomTypeEnum,
+                roomType: (room.room_type as unknown) as RoomTypeEnum,
                 phoneNumber: room.phone_number || "",
                 description: room.description || "",
                 isStorage: room.is_storage,
                 storageCapacity: room.storage_capacity,
-                storageType: room.storage_type as StorageTypeEnum,
+                storageType: (room.storage_type as unknown) as StorageTypeEnum,
                 storageNotes: room.storage_notes || "",
                 parentRoomId: room.parent_room_id || null,
                 currentFunction: room.current_function || "",
