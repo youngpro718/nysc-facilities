@@ -7,7 +7,7 @@ type InitialSpaceData = Partial<EditSpaceFormData>;
 export const getInitialDoorData = (floorId: string): InitialSpaceData => ({
   type: "door",
   floorId,
-  status: "active",
+  status: StatusEnum.ACTIVE,
   doorType: "standard",
   securityLevel: "standard",
   passkeyEnabled: false,
@@ -19,7 +19,7 @@ export const getInitialDoorData = (floorId: string): InitialSpaceData => ({
 export const getInitialHallwayData = (floorId: string): InitialSpaceData => ({
   type: "hallway",
   floorId,
-  status: "active",
+  status: StatusEnum.ACTIVE,
   hallwayType: "public_main",
   section: "connector",
   position: { x: 0, y: 0 },
@@ -30,7 +30,7 @@ export const getInitialHallwayData = (floorId: string): InitialSpaceData => ({
 export const getInitialRoomData = (floorId: string): InitialSpaceData => ({
   type: "room",
   floorId,
-  status: "active",
+  status: StatusEnum.ACTIVE,
   roomType: RoomTypeEnum.OFFICE,
   isStorage: false,
   position: { x: 0, y: 0 },
@@ -50,6 +50,3 @@ export const getSpaceData = (type: "room" | "door" | "hallway", floorId: string)
       throw new Error(`Unknown space type: ${type}`);
   }
 };
-
-export const getStorageTypes = () => Object.values(StorageTypeEnum);
-export const getRoomTypes = () => Object.values(RoomTypeEnum);

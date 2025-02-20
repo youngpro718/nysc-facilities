@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -16,6 +17,7 @@ import { CreateSpaceFormFields } from "./CreateSpaceFormFields";
 import { createSpace } from "./services/createSpace";
 import { CreateSpaceFormData, createSpaceSchema } from "./schemas/createSpaceSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { RoomTypeEnum, StatusEnum } from "./rooms/types/roomEnums";
 
 export function CreateSpaceDialog() {
   const [open, setOpen] = useState(false);
@@ -27,8 +29,8 @@ export function CreateSpaceDialog() {
     defaultValues: {
       name: "",
       type: "room",
-      status: "active",
-      roomType: "office",
+      status: StatusEnum.ACTIVE,
+      roomType: RoomTypeEnum.OFFICE,
       currentFunction: "office",
       description: "",
       isStorage: false,
