@@ -8,10 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RoomTypeEnum } from "../../rooms/types/roomEnums";
 import { EditSpaceFormData } from "../../schemas/editSpaceSchema";
 
-type RoomForm = Extract<EditSpaceFormData, { type: "room" }>;
+type RoomFormData = Extract<EditSpaceFormData, { type: "room" }>;
 
 interface BasicRoomFieldsProps {
-  form: UseFormReturn<RoomForm>;
+  form: UseFormReturn<RoomFormData>;
 }
 
 export function BasicRoomFields({ form }: BasicRoomFieldsProps) {
