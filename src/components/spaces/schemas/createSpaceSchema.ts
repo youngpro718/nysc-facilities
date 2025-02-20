@@ -6,6 +6,14 @@ import { RoomTypeEnum, StorageTypeEnum, StatusEnum } from "../rooms/types/roomEn
 const directionEnum = z.enum(["north", "south", "east", "west", "adjacent"]);
 export type Direction = z.infer<typeof directionEnum>;
 
+export const StorageCapacityEnum = {
+  SMALL: 'small',
+  MEDIUM: 'medium',
+  LARGE: 'large'
+} as const;
+
+export type StorageCapacityType = typeof StorageCapacityEnum[keyof typeof StorageCapacityEnum];
+
 const maintenanceStatusEnum = z.enum(["functional", "needs_repair", "under_maintenance"]);
 const emergencyRouteEnum = z.enum(["primary", "secondary", "not_designated"]);
 const trafficFlowEnum = z.enum(["one_way", "two_way"]);
@@ -74,7 +82,7 @@ const roomSchema = baseSpaceSchema.extend({
   roomType: z.nativeEnum(RoomTypeEnum),
   parentRoomId: z.string().uuid("Invalid parent room ID").nullable().optional(),
   isStorage: z.boolean().default(false),
-  storageCapacity: z.number().nullable().optional(),
+  storageCapacity: z.enum([StorageCapacityEnum.SMALL, StorageCapacityEnum.MEDIUM, StorageCapacityEnum.LARGE]).nullable().optional(),
   storageType: z.nativeEnum(StorageTypeEnum).nullable().optional(),
   storageNotes: z.string().nullable().optional(),
   currentFunction: z.string().optional(),

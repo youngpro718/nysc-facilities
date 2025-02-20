@@ -1,8 +1,7 @@
 
 import { z } from "zod";
 import { RoomTypeEnum, StorageTypeEnum, StatusEnum } from "../../rooms/types/roomEnums";
-
-export type StorageCapacityType = 'small' | 'medium' | 'large';
+import { StorageCapacityEnum, type StorageCapacityType } from "../../schemas/createSpaceSchema";
 
 export const roomFormSchema = z.object({
   id: z.string().uuid().optional(),
@@ -18,7 +17,11 @@ export const roomFormSchema = z.object({
   phoneNumber: z.string().optional(),
   isStorage: z.boolean().default(false),
   storageType: z.nativeEnum(StorageTypeEnum).nullable().optional(),
-  storageCapacity: z.enum(['small', 'medium', 'large']).nullable().optional(),
+  storageCapacity: z.enum([
+    StorageCapacityEnum.SMALL,
+    StorageCapacityEnum.MEDIUM,
+    StorageCapacityEnum.LARGE
+  ]).nullable().optional(),
   storageNotes: z.string().optional(),
   parentRoomId: z.string().uuid().nullable().optional(),
   floorId: z.string().uuid("Invalid floor ID"),

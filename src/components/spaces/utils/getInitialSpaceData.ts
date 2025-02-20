@@ -1,6 +1,7 @@
 
 import { EditSpaceFormData, CreateSpaceFormData } from "../schemas/editSpaceSchema";
 import { RoomTypeEnum, StorageTypeEnum, StatusEnum } from "../rooms/types/roomEnums";
+import { StorageCapacityEnum } from "../schemas/createSpaceSchema";
 
 type InitialSpaceData = Partial<EditSpaceFormData>;
 
@@ -33,6 +34,7 @@ export const getInitialRoomData = (floorId: string): InitialSpaceData => ({
   status: StatusEnum.ACTIVE,
   roomType: RoomTypeEnum.OFFICE,
   isStorage: false,
+  storageCapacity: null,
   position: { x: 0, y: 0 },
   size: { width: 150, height: 100 },
   rotation: 0,
@@ -50,3 +52,7 @@ export const getSpaceData = (type: "room" | "door" | "hallway", floorId: string)
       throw new Error(`Unknown space type: ${type}`);
   }
 };
+
+export const getStorageTypes = () => Object.values(StorageTypeEnum);
+export const getRoomTypes = () => Object.values(RoomTypeEnum);
+export const getStorageCapacities = () => Object.values(StorageCapacityEnum);
