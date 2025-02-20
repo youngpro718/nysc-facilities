@@ -1,6 +1,6 @@
+
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -39,7 +39,6 @@ export function StorageFields({ form }: StorageFieldsProps) {
                 onCheckedChange={(checked) => {
                   field.onChange(checked);
                   if (!checked) {
-                    // Reset storage-related fields when disabling storage
                     form.setValue("storageType", null);
                     form.setValue("storageCapacity", null);
                     form.setValue("storageNotes", null);
@@ -90,17 +89,24 @@ export function StorageFields({ form }: StorageFieldsProps) {
             name="storageCapacity"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Storage Capacity (cubic feet)</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    placeholder="Enter storage capacity"
-                    {...field}
-                    onChange={e => field.onChange(parseFloat(e.target.value))}
-                  />
-                </FormControl>
+                <FormLabel>Storage Size</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  value={field.value || undefined}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select storage size" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="small">Small</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="large">Large</SelectItem>
+                  </SelectContent>
+                </Select>
                 <FormDescription>
-                  Maximum storage capacity in cubic feet
+                  Approximate size of the storage space
                 </FormDescription>
                 <FormMessage />
               </FormItem>

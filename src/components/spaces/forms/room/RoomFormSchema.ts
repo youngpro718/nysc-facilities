@@ -3,7 +3,7 @@ import { z } from "zod";
 import { RoomTypeEnum, StorageTypeEnum, StatusEnum } from "../../rooms/types/roomEnums";
 
 export const roomFormSchema = z.object({
-  id: z.string().uuid().optional(), // Add id field
+  id: z.string().uuid().optional(),
   name: z.string().min(1, "Name is required"),
   roomNumber: z.string().min(1, "Room number is required"),
   roomType: z.nativeEnum(RoomTypeEnum, {
@@ -16,7 +16,7 @@ export const roomFormSchema = z.object({
   phoneNumber: z.string().optional(),
   isStorage: z.boolean().default(false),
   storageType: z.nativeEnum(StorageTypeEnum).nullable().optional(),
-  storageCapacity: z.number().nullable().optional(),
+  storageCapacity: z.enum(['small', 'medium', 'large']).nullable().optional(),
   storageNotes: z.string().optional(),
   parentRoomId: z.string().uuid().nullable().optional(),
   floorId: z.string().uuid("Invalid floor ID"),
