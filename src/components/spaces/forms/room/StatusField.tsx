@@ -18,7 +18,7 @@ export function StatusField({ form }: StatusFieldProps) {
         <FormItem>
           <FormLabel>Status</FormLabel>
           <Select 
-            onValueChange={field.onChange} 
+            onValueChange={(value: StatusEnum) => field.onChange(value)} 
             value={field.value}
           >
             <FormControl>

@@ -1,3 +1,4 @@
+
 import { z } from "zod";
 import { RoomTypeEnum, StorageTypeEnum, StatusEnum } from "../rooms/types/roomEnums";
 
@@ -5,7 +6,7 @@ const baseSpaceSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1, "Name is required"),
   floorId: z.string().uuid("Invalid floor ID"),
-  status: z.nativeEnum(StatusEnum).default(StatusEnum.ACTIVE),
+  status: z.nativeEnum(StatusEnum),
 });
 
 const positionSchema = z.object({
