@@ -18,11 +18,24 @@ interface CardFrontProps {
 export function CardFront({ room, onDelete }: CardFrontProps) {
   const { data: occupants, isLoading: isLoadingOccupants } = useRoomOccupants(room.id);
 
+  const getStatusEnum = (status: string): StatusEnum => {
+    switch (status) {
+      case "active":
+        return StatusEnum.ACTIVE;
+      case "inactive":
+        return StatusEnum.INACTIVE;
+      case "under_maintenance":
+        return StatusEnum.UNDER_MAINTENANCE;
+      default:
+        return StatusEnum.ACTIVE;
+    }
+  };
+
   const initialData = {
     id: room.id,
     name: room.name,
     type: "room" as const,
-    status: room.status,
+    status: getStatusEnum(room.status),
     floorId: room.floor_id,
     roomNumber: room.room_number,
     roomType: (room.room_type as unknown) as RoomTypeEnum,
