@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -64,8 +63,8 @@ export function EditSpaceDialog({
         status: data.status,
         description: data.description,
         is_storage: data.isStorage,
-        storage_capacity: data.storageCapacity,
         storage_type: data.isStorage ? data.storageType : null,
+        storage_capacity: data.storageCapacity,
         storage_notes: data.storageNotes,
         parent_room_id: data.parentRoomId,
         current_function: data.currentFunction,

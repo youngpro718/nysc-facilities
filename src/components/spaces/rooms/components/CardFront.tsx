@@ -33,6 +33,21 @@ export function CardFront({ room, onDelete }: CardFrontProps) {
       : null;
   };
 
+  // Convert storage capacity to the new string enum type
+  const getStorageCapacity = (capacity: any): "small" | "medium" | "large" | null => {
+    if (!capacity) return null;
+    if (typeof capacity === "string" && ["small", "medium", "large"].includes(capacity)) {
+      return capacity as "small" | "medium" | "large";
+    }
+    // If it's a number, convert to size category based on value
+    if (typeof capacity === "number") {
+      if (capacity <= 100) return "small";
+      if (capacity <= 300) return "medium";
+      return "large";
+    }
+    return null;
+  };
+
   const initialData = {
     id: room.id,
     name: room.name,
@@ -43,7 +58,7 @@ export function CardFront({ room, onDelete }: CardFrontProps) {
     description: room.description || "",
     phoneNumber: room.phone_number || "",
     isStorage: room.is_storage,
-    storageCapacity: room.storage_capacity,
+    storageCapacity: getStorageCapacity(room.storage_capacity),
     storageType: getStorageType(room.storage_type),
     storageNotes: room.storage_notes || "",
     parentRoomId: room.parent_room_id || null,
