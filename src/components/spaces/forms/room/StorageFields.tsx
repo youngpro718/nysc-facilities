@@ -4,10 +4,10 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescripti
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { EditSpaceFormData } from "../../schemas/editSpaceSchema";
+import { type RoomFormData } from "./RoomFormSchema";
 
 interface StorageFieldsProps {
-  form: UseFormReturn<EditSpaceFormData>;
+  form: UseFormReturn<RoomFormData>;
 }
 
 export function StorageFields({ form }: StorageFieldsProps) {
