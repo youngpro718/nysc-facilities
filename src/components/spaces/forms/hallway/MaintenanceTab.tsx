@@ -1,18 +1,36 @@
 
 import { UseFormReturn } from "react-hook-form";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Plus, Trash2 } from "lucide-react";
 import { EditSpaceFormData } from "../../schemas/editSpaceSchema";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Plus, Trash2 } from "lucide-react";
 
 interface MaintenanceTabProps {
   form: UseFormReturn<EditSpaceFormData>;
 }
 
 export function MaintenanceTab({ form }: MaintenanceTabProps) {
+  const maintenanceSchedule = form.watch("maintenanceSchedule") || [];
+
+  const handleAddSchedule = () => {
+    const currentSchedule = form.getValues("maintenanceSchedule") || [];
+    form.setValue("maintenanceSchedule", [
+      ...currentSchedule,
+      { date: "", type: "routine", status: "scheduled", assignedTo: "" }
+    ]);
+  };
+
+  const handleRemoveSchedule = (index: number) => {
+    const currentSchedule = form.getValues("maintenanceSchedule") || [];
+    form.setValue(
+      "maintenanceSchedule",
+      currentSchedule.filter((_, i) => i !== index)
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -25,7 +43,7 @@ export function MaintenanceTab({ form }: MaintenanceTabProps) {
       <div className="space-y-4">
         <FormField
           control={form.control}
-          name="maintenance_priority"
+          name="maintenancePriority"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Maintenance Priority</FormLabel>
@@ -41,9 +59,6 @@ export function MaintenanceTab({ form }: MaintenanceTabProps) {
                   <SelectItem value="high">High</SelectItem>
                 </SelectContent>
               </Select>
-              <FormDescription>
-                Set the maintenance priority level
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -51,33 +66,29 @@ export function MaintenanceTab({ form }: MaintenanceTabProps) {
 
         <FormField
           control={form.control}
-          name="maintenance_notes"
+          name="maintenanceNotes"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Maintenance Notes</FormLabel>
               <FormControl>
                 <Textarea 
-                  placeholder="Enter maintenance notes" 
+                  placeholder="Enter maintenance notes"
+                  {...field}
                   value={field.value || ""}
-                  onChange={(e) => field.onChange(e.target.value)}
                 />
               </FormControl>
-              <FormDescription>
-                Notes about maintenance requirements or history
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
 
         <div className="space-y-4">
-          <h4 className="text-sm font-medium">Maintenance Schedule</h4>
-          {form.watch("maintenance_schedule")?.map((_, index) => (
-            <div key={index} className="flex gap-4 items-start">
+          {maintenanceSchedule.map((_, index) => (
+            <div key={index} className="flex gap-4 items-start p-4 border rounded-md">
               <div className="flex-1 space-y-4">
                 <FormField
                   control={form.control}
-                  name={`maintenance_schedule.${index}.date`}
+                  name={`maintenanceSchedule.${index}.date`}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Date</FormLabel>
@@ -88,9 +99,10 @@ export function MaintenanceTab({ form }: MaintenanceTabProps) {
                     </FormItem>
                   )}
                 />
+
                 <FormField
                   control={form.control}
-                  name={`maintenance_schedule.${index}.type`}
+                  name={`maintenanceSchedule.${index}.type`}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Type</FormLabel>
@@ -110,9 +122,10 @@ export function MaintenanceTab({ form }: MaintenanceTabProps) {
                     </FormItem>
                   )}
                 />
+
                 <FormField
                   control={form.control}
-                  name={`maintenance_schedule.${index}.status`}
+                  name={`maintenanceSchedule.${index}.status`}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Status</FormLabel>
@@ -132,9 +145,10 @@ export function MaintenanceTab({ form }: MaintenanceTabProps) {
                     </FormItem>
                   )}
                 />
+
                 <FormField
                   control={form.control}
-                  name={`maintenance_schedule.${index}.assigned_to`}
+                  name={`maintenanceSchedule.${index}.assignedTo`}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Assigned To</FormLabel>
@@ -150,13 +164,7 @@ export function MaintenanceTab({ form }: MaintenanceTabProps) {
                 type="button"
                 variant="destructive"
                 size="icon"
-                onClick={() => {
-                  const schedule = form.getValues("maintenance_schedule");
-                  form.setValue(
-                    "maintenance_schedule",
-                    schedule.filter((_, i) => i !== index)
-                  );
-                }}
+                onClick={() => handleRemoveSchedule(index)}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -165,13 +173,7 @@ export function MaintenanceTab({ form }: MaintenanceTabProps) {
           <Button
             type="button"
             variant="outline"
-            onClick={() => {
-              const schedule = form.getValues("maintenance_schedule") || [];
-              form.setValue("maintenance_schedule", [
-                ...schedule,
-                { date: "", type: "routine", status: "scheduled", assigned_to: "" }
-              ]);
-            }}
+            onClick={handleAddSchedule}
           >
             <Plus className="h-4 w-4 mr-2" />
             Add Maintenance Schedule

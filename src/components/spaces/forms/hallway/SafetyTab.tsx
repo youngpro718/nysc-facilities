@@ -1,6 +1,6 @@
 
 import { UseFormReturn } from "react-hook-form";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EditSpaceFormData } from "../../schemas/editSpaceSchema";
 
@@ -21,14 +21,14 @@ export function SafetyTab({ form }: SafetyTabProps) {
       <div className="space-y-4">
         <FormField
           control={form.control}
-          name="traffic_flow"
+          name="trafficFlow"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Traffic Flow</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select traffic flow" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -37,9 +37,6 @@ export function SafetyTab({ form }: SafetyTabProps) {
                   <SelectItem value="restricted">Restricted</SelectItem>
                 </SelectContent>
               </Select>
-              <FormDescription>
-                Define the traffic flow pattern for this hallway
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -54,7 +51,7 @@ export function SafetyTab({ form }: SafetyTabProps) {
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select accessibility level" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -64,35 +61,6 @@ export function SafetyTab({ form }: SafetyTabProps) {
                   <SelectItem value="restricted">Restricted</SelectItem>
                 </SelectContent>
               </Select>
-              <FormDescription>
-                Specify the accessibility level of this hallway
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="security_level"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Security Level</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="standard">Standard</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="restricted">Restricted</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormDescription>
-                Set the security level for this hallway
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}

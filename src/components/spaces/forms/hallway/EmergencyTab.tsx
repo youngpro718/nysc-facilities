@@ -5,26 +5,29 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2 } from "lucide-react";
-import { EditSpaceFormData, EmergencyExit } from "../../schemas/editSpaceSchema";
-import { addArrayItem, getArrayFieldValue, removeArrayItem } from "../utils/formArrayHelpers";
+import { EditSpaceFormData } from "../../schemas/editSpaceSchema";
 
 interface EmergencyTabProps {
   form: UseFormReturn<EditSpaceFormData>;
 }
 
 export function EmergencyTab({ form }: EmergencyTabProps) {
-  const emergencyExits = getArrayFieldValue<EmergencyExit[]>(form, "emergencyExits");
+  const emergencyExits = form.watch("emergencyExits") || [];
 
   const handleAddExit = () => {
-    addArrayItem<EmergencyExit>(form, "emergencyExits", {
-      location: "",
-      type: "",
-      notes: ""
-    });
+    const currentExits = form.getValues("emergencyExits") || [];
+    form.setValue("emergencyExits", [
+      ...currentExits,
+      { location: "", type: "", notes: "" }
+    ]);
   };
 
   const handleRemoveExit = (index: number) => {
-    removeArrayItem(form, "emergencyExits", index);
+    const currentExits = form.getValues("emergencyExits") || [];
+    form.setValue(
+      "emergencyExits",
+      currentExits.filter((_, i) => i !== index)
+    );
   };
 
   return (
@@ -66,7 +69,7 @@ export function EmergencyTab({ form }: EmergencyTabProps) {
               <div className="flex-1 space-y-4">
                 <FormField
                   control={form.control}
-                  name={`emergencyExits.${index}.location` as const}
+                  name={`emergencyExits.${index}.location`}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Location</FormLabel>
@@ -80,7 +83,7 @@ export function EmergencyTab({ form }: EmergencyTabProps) {
 
                 <FormField
                   control={form.control}
-                  name={`emergencyExits.${index}.type` as const}
+                  name={`emergencyExits.${index}.type`}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Type</FormLabel>
@@ -94,7 +97,7 @@ export function EmergencyTab({ form }: EmergencyTabProps) {
 
                 <FormField
                   control={form.control}
-                  name={`emergencyExits.${index}.notes` as const}
+                  name={`emergencyExits.${index}.notes`}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Notes</FormLabel>

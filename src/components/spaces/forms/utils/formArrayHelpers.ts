@@ -1,41 +1,37 @@
 
 import { Path, UseFormReturn } from "react-hook-form";
-import { EditSpaceFormData, MaintenanceScheduleItem, EmergencyExit } from "../../schemas/editSpaceSchema";
+import { EditSpaceFormData } from "../../schemas/editSpaceSchema";
 
-type ArrayFieldName = keyof {
-  [K in keyof EditSpaceFormData as EditSpaceFormData[K] extends any[] ? K : never]: EditSpaceFormData[K]
-};
-
-export function getArrayFieldValue<T extends MaintenanceScheduleItem[] | EmergencyExit[]>(
+export function getArrayFieldValue<T>(
   form: UseFormReturn<EditSpaceFormData>,
-  field: ArrayFieldName
-): T {
+  field: keyof EditSpaceFormData
+): T[] {
   const value = form.watch(field as Path<EditSpaceFormData>);
-  return (Array.isArray(value) ? value : []) as T;
+  return (Array.isArray(value) ? value : []) as T[];
 }
 
-export function updateArrayField<T extends MaintenanceScheduleItem[] | EmergencyExit[]>(
+export function updateArrayField<T>(
   form: UseFormReturn<EditSpaceFormData>,
-  field: ArrayFieldName,
-  newValue: T
+  field: keyof EditSpaceFormData,
+  newValue: T[]
 ) {
   form.setValue(field as Path<EditSpaceFormData>, newValue);
 }
 
-export function addArrayItem<T extends MaintenanceScheduleItem | EmergencyExit>(
+export function addArrayItem<T>(
   form: UseFormReturn<EditSpaceFormData>,
-  field: ArrayFieldName,
+  field: keyof EditSpaceFormData,
   item: T
 ) {
-  const currentValue = getArrayFieldValue(form, field);
+  const currentValue = getArrayFieldValue<T>(form, field);
   updateArrayField(form, field, [...currentValue, item]);
 }
 
-export function removeArrayItem(
+export function removeArrayItem<T>(
   form: UseFormReturn<EditSpaceFormData>,
-  field: ArrayFieldName,
+  field: keyof EditSpaceFormData,
   index: number
 ) {
-  const currentValue = getArrayFieldValue(form, field);
+  const currentValue = getArrayFieldValue<T>(form, field);
   updateArrayField(form, field, currentValue.filter((_, i) => i !== index));
 }
