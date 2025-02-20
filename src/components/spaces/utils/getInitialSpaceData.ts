@@ -1,6 +1,6 @@
 
 import { EditSpaceFormData } from "../schemas/editSpaceSchema";
-import { RoomType, StorageType } from "../rooms/types/RoomTypes";
+import { RoomTypeEnum, StorageTypeEnum, StatusEnum } from "../rooms/types/roomEnums";
 
 type SpaceType = "room" | "door" | "hallway";
 type SecurityLevel = "standard" | "restricted" | "high_security";
@@ -8,21 +8,21 @@ type DoorType = "standard" | "emergency" | "secure" | "maintenance";
 type HallwayType = "public_main" | "private";
 type Section = "left_wing" | "right_wing" | "connector";
 
-const VALID_ROOM_TYPES = Object.values(RoomType);
-const VALID_STORAGE_TYPES = Object.values(StorageType);
+const VALID_ROOM_TYPES = Object.values(RoomTypeEnum);
+const VALID_STORAGE_TYPES = Object.values(StorageTypeEnum);
 
 type InitialData = {
   type?: SpaceType;
   name?: string;
-  status?: "active" | "inactive" | "under_maintenance";
+  status?: StatusEnum;
   floorId?: string;
   description?: string;
   room_number?: string;
-  room_type?: RoomType;
+  room_type?: RoomTypeEnum;
   phone_number?: string;
   parent_room_id?: string | null;
   is_storage?: boolean;
-  storage_type?: StorageType | null;
+  storage_type?: StorageTypeEnum | null;
   storage_capacity?: number | null;
   storage_notes?: string;
   current_function?: string;
@@ -34,12 +34,12 @@ type InitialData = {
   notes?: string;
 };
 
-const getDefaultRoomType = (type?: RoomType): RoomType => {
-  return (type && VALID_ROOM_TYPES.includes(type)) ? type : RoomType.OFFICE;
+const getDefaultRoomType = (type?: RoomTypeEnum): RoomTypeEnum => {
+  return (type && VALID_ROOM_TYPES.includes(type)) ? type : RoomTypeEnum.OFFICE;
 };
 
-const getDefaultStorageType = (type?: StorageType | null): StorageType => {
-  return (type && VALID_STORAGE_TYPES.includes(type)) ? type : StorageType.GENERAL_STORAGE;
+const getDefaultStorageType = (type?: StorageTypeEnum | null): StorageTypeEnum => {
+  return (type && VALID_STORAGE_TYPES.includes(type)) ? type : StorageTypeEnum.GENERAL_STORAGE;
 };
 
 const getDefaultDoorType = (type?: DoorType): DoorType => {
@@ -71,7 +71,7 @@ export const getInitialSpaceData = (
     id,
     type,
     name: initialData?.name || "",
-    status: initialData?.status || "active",
+    status: initialData?.status || StatusEnum.ACTIVE,
     floorId: initialData?.floorId || "",
   };
 
@@ -92,6 +92,9 @@ export const getInitialSpaceData = (
       storageNotes: initialData?.storage_notes || "",
       parentRoomId: initialData?.parent_room_id ?? null,
       currentFunction: initialData?.current_function || "",
+      position: { x: 0, y: 0 },
+      size: { width: 150, height: 100 },
+      rotation: 0
     };
   }
 
@@ -105,6 +108,19 @@ export const getInitialSpaceData = (
       doorType,
       securityLevel,
       passkeyEnabled: initialData?.passkeyEnabled ?? false,
+      hardwareStatus: {
+        hinges: "functional",
+        doorknob: "functional",
+        lock: "functional",
+        frame: "functional"
+      },
+      componentIssues: {
+        closer: [],
+        hinges: [],
+        doorknob: [],
+        lock: [],
+        frame: []
+      }
     };
   }
 
@@ -118,6 +134,12 @@ export const getInitialSpaceData = (
       hallwayType,
       section,
       notes: initialData?.notes || "",
+      traffic_flow: "two_way",
+      accessibility: "fully_accessible",
+      emergency_route: "not_designated",
+      security_level: "standard",
+      emergency_exits: [],
+      maintenance_schedule: []
     };
   }
 

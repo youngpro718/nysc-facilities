@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { EditSpaceDialog } from "../../EditSpaceDialog";
+import { StatusEnum } from "../../rooms/types/roomEnums";
 
 interface SpaceRowProps<T> {
   item: T;
@@ -27,7 +28,7 @@ export function SpaceRow<T extends { id: string; name: string; status: string; f
           <TableCell>{item.name}</TableCell>
           <TableCell>{type}</TableCell>
           <TableCell>
-            <Badge variant={item.status === 'active' ? 'default' : 'destructive'}>
+            <Badge variant={item.status === StatusEnum.ACTIVE ? 'default' : 'destructive'}>
               {item.status}
             </Badge>
           </TableCell>
@@ -40,9 +41,9 @@ export function SpaceRow<T extends { id: string; name: string; status: string; f
           initialData={{
             name: item.name,
             type,
-            status: item.status === "active" ? "active" : 
-                   item.status === "inactive" ? "inactive" : 
-                   "under_maintenance" as const,
+            status: item.status === "active" ? StatusEnum.ACTIVE : 
+                   item.status === "inactive" ? StatusEnum.INACTIVE : 
+                   StatusEnum.UNDER_MAINTENANCE,
             floorId: item.floor_id,
           }}
         />
