@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trash2, Phone, Users, Building2 } from "lucide-react";
+import { Trash2, Phone, Users, Building2, Pencil } from "lucide-react";
 import { EditSpaceDialog } from "../../EditSpaceDialog";
 import { Room } from "../types/RoomTypes";
 import { StatusEnum, RoomTypeEnum, StorageTypeEnum } from "../types/roomEnums";
@@ -32,6 +32,7 @@ export function CardFront({ room, onDelete }: CardFrontProps) {
             <EditSpaceDialog
               id={room.id}
               type="room"
+              variant="button"
               initialData={{
                 name: room.name,
                 type: "room",
