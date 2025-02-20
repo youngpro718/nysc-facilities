@@ -8,26 +8,18 @@ const baseSpaceSchema = z.object({
   floorId: z.string().uuid("Invalid floor ID"),
   status: z.nativeEnum(StatusEnum),
   description: z.string().optional(),
+  position: z.object({
+    x: z.number(),
+    y: z.number()
+  }).default({ x: 0, y: 0 }),
+  size: z.object({
+    width: z.number(),
+    height: z.number()
+  }).default({ width: 150, height: 100 }),
+  rotation: z.number().default(0),
 });
 
-const positionSchema = z.object({
-  x: z.number(),
-  y: z.number()
-}).default({ x: 0, y: 0 });
-
-const sizeSchema = z.object({
-  width: z.number(),
-  height: z.number()
-}).default({ width: 150, height: 100 });
-
-const maintenanceHistorySchema = z.object({
-  date: z.string(),
-  workPerformed: z.string(),
-  result: z.enum(["fixed", "needs_followup", "needs_replacement"]),
-  notes: z.string().optional()
-});
-
-export const roomSchema = baseSpaceSchema.extend({
+const roomSchema = baseSpaceSchema.extend({
   type: z.literal("room"),
   roomNumber: z.string().min(1, "Room number is required"),
   phoneNumber: z.string().optional(),
@@ -38,9 +30,6 @@ export const roomSchema = baseSpaceSchema.extend({
   storageType: z.nativeEnum(StorageTypeEnum).nullable().optional(),
   storageNotes: z.string().nullable().optional(),
   currentFunction: z.string().optional(),
-  position: positionSchema,
-  size: sizeSchema,
-  rotation: z.number().default(0),
 });
 
 const doorSchema = baseSpaceSchema.extend({
@@ -49,26 +38,23 @@ const doorSchema = baseSpaceSchema.extend({
   isTransitionDoor: z.boolean().default(false),
   hasClosingIssue: z.boolean().default(false),
   hasHandleIssue: z.boolean().default(false),
+  windPressureIssues: z.boolean().default(false),
   issueNotes: z.string().optional(),
-  statusHistory: z.array(z.object({
-    status: z.string(),
-    changed_at: z.string(),
-    notes: z.string().optional()
-  })).optional(),
-  maintenanceHistory: z.array(maintenanceHistorySchema).optional(),
-  position: positionSchema,
-  size: sizeSchema,
-  rotation: z.number().default(0),
-  // Additional fields for security and maintenance
   closerStatus: z.enum(["functioning", "needs_adjustment", "not_working"]).optional(),
   securityLevel: z.enum(["standard", "restricted", "high_security"]).optional(),
   passkeyEnabled: z.boolean().default(false),
   maintenanceNotes: z.string().optional(),
   nextMaintenanceDate: z.string().optional(),
-  componentIssues: z.array(z.object({
-    component: z.string(),
-    issue: z.string(),
-    severity: z.string()
+  maintenanceHistory: z.array(z.object({
+    date: z.string(),
+    workPerformed: z.string(),
+    result: z.enum(["fixed", "needs_followup", "needs_replacement"]),
+    notes: z.string().optional()
+  })).optional(),
+  statusHistory: z.array(z.object({
+    status: z.string(),
+    changedAt: z.string(),
+    notes: z.string().optional()
   })).optional(),
   hardwareStatus: z.object({
     hinges: z.enum(["functional", "needs_repair", "needs_replacement"]).optional(),
@@ -85,22 +71,18 @@ const hallwaySchema = baseSpaceSchema.extend({
   trafficFlow: z.enum(["one_way", "two_way", "restricted"]).default("two_way"),
   accessibility: z.enum(["fully_accessible", "limited_access", "stairs_only", "restricted"]).default("fully_accessible"),
   emergencyRoute: z.enum(["primary", "secondary", "not_designated"]).default("not_designated"),
-  position: positionSchema,
-  size: sizeSchema,
-  rotation: z.number().default(0),
-  notes: z.string().optional(),
   maintenancePriority: z.enum(["low", "medium", "high"]).optional(),
   maintenanceNotes: z.string().optional(),
-  emergencyExits: z.array(z.object({
-    location: z.string(),
-    type: z.string(),
-    notes: z.string().optional()
-  })).optional(),
   maintenanceSchedule: z.array(z.object({
     date: z.string(),
     type: z.string(),
     status: z.string(),
-    assigned_to: z.string().optional()
+    assignedTo: z.string().optional()
+  })).optional(),
+  emergencyExits: z.array(z.object({
+    location: z.string(),
+    type: z.string(),
+    notes: z.string().optional()
   })).optional(),
 });
 
