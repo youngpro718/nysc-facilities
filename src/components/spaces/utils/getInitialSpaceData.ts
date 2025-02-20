@@ -1,50 +1,36 @@
 
-import { DoorFormData, HallwayFormData, RoomFormData, EditSpaceFormData } from "../schemas/editSpaceSchema";
+import { EditSpaceFormData, CreateSpaceFormData } from "../schemas/editSpaceSchema";
 import { RoomTypeEnum, StorageTypeEnum, StatusEnum } from "../rooms/types/roomEnums";
 
-export const getInitialDoorData = (floorId: string): Partial<DoorFormData> => ({
+type InitialSpaceData = Partial<EditSpaceFormData>;
+
+export const getInitialDoorData = (floorId: string): InitialSpaceData => ({
   type: "door",
   floorId,
-  status: StatusEnum.ACTIVE,
+  status: "active",
   doorType: "standard",
-  isTransitionDoor: false,
-  hasClosingIssue: false,
-  hasHandleIssue: false,
-  windPressureIssues: false,
+  securityLevel: "standard",
+  passkeyEnabled: false,
   position: { x: 0, y: 0 },
   size: { width: 150, height: 100 },
-  rotation: 0,
-  passkeyEnabled: false,
-  maintenanceHistory: [],
-  hardwareStatus: {
-    hinges: "functional",
-    doorknob: "functional",
-    lock: "functional",
-    frame: "functional"
-  }
+  rotation: 0
 });
 
-export const getInitialHallwayData = (floorId: string): Partial<HallwayFormData> => ({
+export const getInitialHallwayData = (floorId: string): InitialSpaceData => ({
   type: "hallway",
   floorId,
-  status: StatusEnum.ACTIVE,
+  status: "active",
   hallwayType: "public_main",
   section: "connector",
-  trafficFlow: "two_way",
-  accessibility: "fully_accessible",
-  emergencyRoute: "not_designated",
   position: { x: 0, y: 0 },
   size: { width: 150, height: 100 },
-  rotation: 0,
-  maintenancePriority: "low",
-  emergencyExits: [],
-  maintenanceSchedule: []
+  rotation: 0
 });
 
-export const getInitialRoomData = (floorId: string): Partial<RoomFormData> => ({
+export const getInitialRoomData = (floorId: string): InitialSpaceData => ({
   type: "room",
   floorId,
-  status: StatusEnum.ACTIVE,
+  status: "active",
   roomType: RoomTypeEnum.OFFICE,
   isStorage: false,
   position: { x: 0, y: 0 },
@@ -52,38 +38,14 @@ export const getInitialRoomData = (floorId: string): Partial<RoomFormData> => ({
   rotation: 0,
 });
 
-export const getSpaceData = (type: string, floorId: string): Partial<EditSpaceFormData> => {
+export const getSpaceData = (type: "room" | "door" | "hallway", floorId: string): InitialSpaceData => {
   switch (type) {
     case "room":
-      return {
-        ...getInitialRoomData(floorId),
-        roomType: RoomTypeEnum.OFFICE,
-        isStorage: false,
-        position: { x: 0, y: 0 },
-        size: { width: 150, height: 100 },
-        rotation: 0,
-      };
+      return getInitialRoomData(floorId);
     case "door":
-      return {
-        ...getInitialDoorData(floorId),
-        doorType: "standard",
-        isTransitionDoor: false,
-        position: { x: 0, y: 0 },
-        size: { width: 50, height: 100 },
-        rotation: 0,
-      };
+      return getInitialDoorData(floorId);
     case "hallway":
-      return {
-        ...getInitialHallwayData(floorId),
-        hallwayType: "public_main",
-        section: "connector",
-        trafficFlow: "two_way",
-        accessibility: "fully_accessible",
-        emergencyRoute: "not_designated",
-        position: { x: 0, y: 0 },
-        size: { width: 150, height: 100 },
-        rotation: 0,
-      };
+      return getInitialHallwayData(floorId);
     default:
       throw new Error(`Unknown space type: ${type}`);
   }
