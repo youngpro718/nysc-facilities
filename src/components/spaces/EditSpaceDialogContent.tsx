@@ -59,7 +59,7 @@ export function EditSpaceDialogContent({
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
             {type === "room" && (
               <RoomFormFields 
-                form={form as unknown as UseFormReturn<RoomFormData>} 
+                form={form as unknown as UseFormReturn<RoomFormData>}
                 floorId={form.getValues("floorId")} 
               />
             )}

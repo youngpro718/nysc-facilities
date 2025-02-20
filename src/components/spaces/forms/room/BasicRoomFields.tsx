@@ -4,12 +4,12 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescripti
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { EditSpaceFormData } from "../../schemas/editSpaceSchema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RoomTypeEnum } from "../../rooms/types/roomEnums";
+import { RoomFormData } from "../../schemas/editSpaceSchema";
 
 interface BasicRoomFieldsProps {
-  form: UseFormReturn<Extract<EditSpaceFormData, { type: "room" }>>;
+  form: UseFormReturn<RoomFormData>;
 }
 
 export function BasicRoomFields({ form }: BasicRoomFieldsProps) {
