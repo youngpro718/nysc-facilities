@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { RoomTypeEnum, StorageTypeEnum, StatusEnum } from "../rooms/types/roomEnums";
 
@@ -27,7 +26,7 @@ export const roomSchema = baseSpaceSchema.extend({
   description: z.string().optional(),
   parentRoomId: z.string().uuid("Invalid parent room ID").nullable().optional(),
   isStorage: z.boolean().default(false),
-  storageCapacity: z.number().nullable().optional(),
+  storageCapacity: z.enum(['small', 'medium', 'large']).nullable().optional(),
   storageType: z.nativeEnum(StorageTypeEnum).nullable().optional(),
   storageNotes: z.string().nullable().optional(),
   currentFunction: z.string().optional(),
