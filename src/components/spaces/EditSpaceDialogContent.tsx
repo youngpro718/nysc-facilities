@@ -12,8 +12,6 @@ import { SpaceConnectionManager } from "./SpaceConnectionManager";
 import { EditSpaceFormData } from "./schemas/editSpaceSchema";
 import { Separator } from "@/components/ui/separator";
 
-type RoomFormData = Extract<EditSpaceFormData, { type: "room" }>;
-
 interface EditSpaceDialogContentProps {
   form: UseFormReturn<EditSpaceFormData>;
   type: "room" | "door" | "hallway";
@@ -61,7 +59,7 @@ export function EditSpaceDialogContent({
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
             {type === "room" && (
               <RoomFormFields 
-                form={form as UseFormReturn<RoomFormData>}
+                form={form}
                 floorId={form.getValues("floorId")} 
               />
             )}

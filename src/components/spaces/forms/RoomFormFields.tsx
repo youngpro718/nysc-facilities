@@ -6,10 +6,8 @@ import { ParentRoomField } from "./room/ParentRoomField";
 import { StorageFields } from "./room/StorageFields";
 import { StatusField } from "./room/StatusField";
 
-type RoomFormData = Extract<EditSpaceFormData, { type: "room" }>;
-
 interface RoomFormFieldsProps {
-  form: UseFormReturn<RoomFormData>;
+  form: UseFormReturn<EditSpaceFormData>;
   floorId: string;
 }
 
