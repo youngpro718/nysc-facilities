@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -121,12 +122,16 @@ export function EditSpaceDialog({
               Make changes to your room. Click update when you're done.
             </DialogDescription>
           </DialogHeader>
-          <RoomFormContent
-            form={form}
-            onSubmit={handleSubmit}
-            isPending={editSpaceMutation.isPending}
-            onCancel={() => setOpen(false)}
-          />
+          <ScrollArea className="max-h-[80vh] overflow-y-auto">
+            <div className="p-1">
+              <RoomFormContent
+                form={form}
+                onSubmit={handleSubmit}
+                isPending={editSpaceMutation.isPending}
+                onCancel={() => setOpen(false)}
+              />
+            </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </>
