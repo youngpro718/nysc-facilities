@@ -4,39 +4,37 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescripti
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { RoomTypeEnum, StatusEnum } from "../../rooms/types/roomEnums";
+import { type RoomFormData } from "./RoomFormSchema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { RoomTypeEnum } from "../../rooms/types/roomEnums";
-import { EditSpaceFormData } from "../../schemas/editSpaceSchema";
 
 interface BasicRoomFieldsProps {
-  form: UseFormReturn<EditSpaceFormData>;
+  form: UseFormReturn<RoomFormData>;
 }
 
 export function BasicRoomFields({ form }: BasicRoomFieldsProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg font-medium">Basic Information</CardTitle>
+        <CardTitle>Basic Information</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Name</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter room name" {...field} />
-              </FormControl>
-              <FormDescription>
-                A descriptive name for the room
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
         <div className="grid gap-4 md:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter room name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           <FormField
             control={form.control}
             name="roomNumber"
@@ -46,9 +44,35 @@ export function BasicRoomFields({ form }: BasicRoomFieldsProps) {
                 <FormControl>
                   <Input placeholder="e.g. 101A" {...field} />
                 </FormControl>
-                <FormDescription>
-                  The official room number
-                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="roomType"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Room Type</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select room type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {Object.entries(RoomTypeEnum).map(([key, value]) => (
+                      <SelectItem key={value} value={value}>
+                        {key.split('_').map(word => 
+                          word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                        ).join(' ')}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
@@ -56,20 +80,24 @@ export function BasicRoomFields({ form }: BasicRoomFieldsProps) {
 
           <FormField
             control={form.control}
-            name="phoneNumber"
+            name="status"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Phone Number</FormLabel>
-                <FormControl>
-                  <Input 
-                    placeholder="e.g. (555) 123-4567" 
-                    {...field} 
-                    value={field.value || ''}
-                  />
-                </FormControl>
-                <FormDescription>
-                  Contact number for this room
-                </FormDescription>
+                <FormLabel>Status</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {Object.values(StatusEnum).map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
@@ -78,29 +106,17 @@ export function BasicRoomFields({ form }: BasicRoomFieldsProps) {
 
         <FormField
           control={form.control}
-          name="roomType"
+          name="phoneNumber"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Room Type</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select room type" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {Object.entries(RoomTypeEnum).map(([key, value]) => (
-                    <SelectItem key={value} value={value}>
-                      {key.split('_').map(word => 
-                        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-                      ).join(' ')}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormDescription>
-                The primary function or purpose of this room
-              </FormDescription>
+              <FormLabel>Phone Number</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="e.g. (555) 123-4567" 
+                  {...field} 
+                  value={field.value || ''} 
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -116,14 +132,32 @@ export function BasicRoomFields({ form }: BasicRoomFieldsProps) {
                 <Textarea 
                   placeholder="Enter room description" 
                   {...field} 
-                  value={field.value || ''}
+                  value={field.value || ''} 
                   className="min-h-[100px]"
                 />
               </FormControl>
-              <FormDescription>
-                Additional details about the room's features or purpose
-              </FormDescription>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="isStorage"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <FormLabel>Storage Room</FormLabel>
+                <FormDescription>
+                  Enable if this room is used for storage purposes
+                </FormDescription>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
             </FormItem>
           )}
         />

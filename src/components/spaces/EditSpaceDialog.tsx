@@ -12,57 +12,51 @@ import {
 } from "@/components/ui/dialog";
 import { Pencil } from "lucide-react";
 import { toast } from "sonner";
-import { editSpaceSchema, type EditSpaceFormData } from './schemas/editSpaceSchema';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
-import { EditSpaceDialogContent } from "./EditSpaceDialogContent";
-import { getInitialSpaceData } from "./utils/getInitialSpaceData";
+import { RoomFormContent } from "./forms/room/RoomFormContent";
+import { roomFormSchema, type RoomFormData } from "./forms/room/RoomFormSchema";
 
 interface EditSpaceDialogProps {
   id: string;
-  type: "room" | "door" | "hallway";
-  initialData?: Partial<EditSpaceFormData>;
+  type: "room";
+  initialData?: Partial<RoomFormData>;
   open?: boolean;
   setOpen?: (open: boolean) => void;
   variant?: "button" | "custom";
   onSpaceUpdated?: () => void;
 }
 
-export const EditSpaceDialog = ({
+export function EditSpaceDialog({
   id,
-  type,
   initialData,
   open: controlledOpen,
   setOpen: controlledSetOpen,
   variant = "button",
   onSpaceUpdated,
-}: EditSpaceDialogProps) => {
+}: EditSpaceDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen ?? internalOpen;
   const setOpen = controlledSetOpen ?? setInternalOpen;
 
-  const defaultValues = getInitialSpaceData(id, type, initialData);
-
-  const form = useForm<EditSpaceFormData>({
-    resolver: zodResolver(editSpaceSchema),
-    defaultValues,
+  const form = useForm<RoomFormData>({
+    resolver: zodResolver(roomFormSchema),
+    defaultValues: initialData,
   });
 
   useEffect(() => {
     if (open) {
-      form.reset(defaultValues);
+      form.reset(initialData);
     }
-  }, [open, form, defaultValues]);
+  }, [open, form, initialData]);
 
   const queryClient = useQueryClient();
-  
+
   const editSpaceMutation = useMutation({
-    mutationFn: async (data: EditSpaceFormData) => {
-      console.log("Updating space with data:", data);
+    mutationFn: async (data: RoomFormData) => {
+      console.log("Updating room with data:", data);
       
-      let query;
-      
-      const updateData = data.type === "room" ? {
+      const updateData = {
         name: data.name,
         room_number: data.roomNumber,
         room_type: data.roomType,
@@ -76,49 +70,28 @@ export const EditSpaceDialog = ({
         current_function: data.currentFunction,
         phone_number: data.phoneNumber,
         floor_id: data.floorId,
-      } : data.type === "door" ? {
-        name: data.name,
-        type: data.doorType,
-        status: data.status,
-        security_level: data.securityLevel,
-        passkey_enabled: data.passkeyEnabled,
-        floor_id: data.floorId,
-      } : {
-        name: data.name,
-        type: data.hallwayType,
-        section: data.section,
-        status: data.status,
-        notes: data.notes,
-        floor_id: data.floorId,
       };
 
-      if (data.type === "room") {
-        query = supabase.from("rooms");
-      } else if (data.type === "door") {
-        query = supabase.from("doors");
-      } else {
-        query = supabase.from("hallways");
-      }
-
-      const { error } = await query
+      const { error } = await supabase
+        .from("rooms")
         .update(updateData)
         .eq('id', id);
 
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`${type}s`] });
-      toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} updated successfully`);
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      toast.success("Room updated successfully");
       setOpen(false);
       if (onSpaceUpdated) onSpaceUpdated();
     },
     onError: (error) => {
       console.error("Update error:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to update space");
+      toast.error(error instanceof Error ? error.message : "Failed to update room");
     },
   });
 
-  const handleSubmit = async (data: EditSpaceFormData) => {
+  const handleSubmit = async (data: RoomFormData) => {
     try {
       console.log("Submitting form with data:", data);
       await editSpaceMutation.mutateAsync(data);
@@ -143,15 +116,13 @@ export const EditSpaceDialog = ({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Edit {type}</DialogTitle>
+            <DialogTitle>Edit Room</DialogTitle>
             <DialogDescription>
-              Make changes to your {type}. Click update when you're done.
+              Make changes to your room. Click update when you're done.
             </DialogDescription>
           </DialogHeader>
-          <EditSpaceDialogContent
+          <RoomFormContent
             form={form}
-            type={type}
-            id={id}
             onSubmit={handleSubmit}
             isPending={editSpaceMutation.isPending}
             onCancel={() => setOpen(false)}
@@ -160,4 +131,4 @@ export const EditSpaceDialog = ({
       </Dialog>
     </>
   );
-};
+}

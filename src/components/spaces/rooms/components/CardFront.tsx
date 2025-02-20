@@ -2,10 +2,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trash2, Phone, Users, Building2, Pencil } from "lucide-react";
+import { Trash2, Phone, Users, Building2 } from "lucide-react";
 import { EditSpaceDialog } from "../../EditSpaceDialog";
 import { Room } from "../types/RoomTypes";
-import { StatusEnum, RoomTypeEnum, StorageTypeEnum } from "../types/roomEnums";
+import { StatusEnum } from "../types/roomEnums";
 import { LightingStatusIndicator } from "./LightingStatusIndicator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRoomOccupants } from "../../hooks/useRoomOccupants";
@@ -18,38 +18,21 @@ interface CardFrontProps {
 export function CardFront({ room, onDelete }: CardFrontProps) {
   const { data: occupants, isLoading: isLoadingOccupants } = useRoomOccupants(room.id);
 
-  const getStatusEnum = (status: string): StatusEnum => {
-    switch (status) {
-      case "active":
-        return StatusEnum.ACTIVE;
-      case "inactive":
-        return StatusEnum.INACTIVE;
-      case "under_maintenance":
-        return StatusEnum.UNDER_MAINTENANCE;
-      default:
-        return StatusEnum.ACTIVE;
-    }
-  };
-
   const initialData = {
     id: room.id,
     name: room.name,
-    type: "room" as const,
-    status: getStatusEnum(room.status),
     floorId: room.floor_id,
     roomNumber: room.room_number,
-    roomType: (room.room_type as unknown) as RoomTypeEnum,
-    phoneNumber: room.phone_number || "",
-    description: room.description || "",
+    roomType: room.room_type,
+    status: room.status as StatusEnum,
+    description: room.description,
+    phoneNumber: room.phone_number,
     isStorage: room.is_storage,
     storageCapacity: room.storage_capacity,
-    storageType: (room.storage_type as unknown) as StorageTypeEnum,
-    storageNotes: room.storage_notes || "",
-    parentRoomId: room.parent_room_id || null,
-    currentFunction: room.current_function || "",
-    position: { x: 0, y: 0 },
-    size: { width: 150, height: 100 },
-    rotation: 0
+    storageType: room.storage_type,
+    storageNotes: room.storage_notes,
+    parentRoomId: room.parent_room_id,
+    currentFunction: room.current_function,
   };
 
   return (
