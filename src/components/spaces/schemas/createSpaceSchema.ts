@@ -18,7 +18,12 @@ const baseSpaceSchema = z.object({
   name: z.string().min(1, "Name is required"),
   floorId: z.string().uuid("Invalid floor ID"),
   status: z.enum(["active", "inactive", "under_maintenance"]).default("active"),
-  connections: connectionSchema.optional(),
+  connections: z.object({
+    toSpaceId: z.string().uuid("Invalid space ID").optional(),
+    connectionType: z.enum(["door", "hallway", "direct"]).optional(),
+    direction: directionEnum.optional(),
+  }).optional(),
+  description: z.string().optional(),
 });
 
 const roomSchema = baseSpaceSchema.extend({
@@ -42,7 +47,6 @@ const roomSchema = baseSpaceSchema.extend({
     "it_room",
     "utility_room"
   ]),
-  description: z.string().optional(),
   parentRoomId: z.string().uuid("Invalid parent room ID").nullable().optional(),
   isStorage: z.boolean().default(false),
   storageCapacity: z.number().nullable().optional(),
@@ -55,10 +59,6 @@ const hallwaySchema = baseSpaceSchema.extend({
   type: z.literal("hallway"),
   section: z.enum(["left_wing", "right_wing", "connector"]),
   hallwayType: z.enum(["public_main", "private"]),
-  notes: z.string().optional(),
-  maintenance_priority: z.string().optional(),
-  maintenance_notes: z.string().optional(),
-  description: z.string().optional(),
 });
 
 const doorSchema = baseSpaceSchema.extend({
@@ -66,9 +66,6 @@ const doorSchema = baseSpaceSchema.extend({
   doorType: z.enum(["standard", "emergency", "secure", "maintenance"]),
   securityLevel: z.enum(["standard", "restricted", "high_security"]).default("standard"),
   passkeyEnabled: z.boolean().default(false),
-  is_hallway_connection: z.boolean().default(false),
-  connected_hallway_id: z.string().uuid("Invalid hallway ID").nullable().optional(),
-  problematic_room_id: z.string().uuid("Invalid room ID").nullable().optional(),
 });
 
 export const createSpaceSchema = z.discriminatedUnion("type", [
