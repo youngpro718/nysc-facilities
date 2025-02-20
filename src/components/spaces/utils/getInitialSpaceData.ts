@@ -10,11 +10,11 @@ export const getInitialDoorData = (floorId: string): Partial<DoorFormData> => ({
   isTransitionDoor: false,
   hasClosingIssue: false,
   hasHandleIssue: false,
+  windPressureIssues: false,
   position: { x: 0, y: 0 },
   size: { width: 150, height: 100 },
   rotation: 0,
   passkeyEnabled: false,
-  componentIssues: [],
   maintenanceHistory: [],
   hardwareStatus: {
     hinges: "functional",

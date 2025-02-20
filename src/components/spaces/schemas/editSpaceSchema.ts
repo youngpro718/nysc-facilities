@@ -50,12 +50,12 @@ const doorSchema = baseSpaceSchema.extend({
     workPerformed: z.string(),
     result: z.enum(["fixed", "needs_followup", "needs_replacement"]),
     notes: z.string().optional()
-  })).optional(),
+  })).optional().default([]),
   statusHistory: z.array(z.object({
     status: z.string(),
     changedAt: z.string(),
     notes: z.string().optional()
-  })).optional(),
+  })).optional().default([]),
   hardwareStatus: z.object({
     hinges: z.enum(["functional", "needs_repair", "needs_replacement"]).optional(),
     doorknob: z.enum(["functional", "needs_repair", "needs_replacement"]).optional(),
@@ -78,12 +78,12 @@ const hallwaySchema = baseSpaceSchema.extend({
     type: z.string(),
     status: z.string(),
     assignedTo: z.string().optional()
-  })).optional(),
+  })).optional().default([]),
   emergencyExits: z.array(z.object({
     location: z.string(),
     type: z.string(),
     notes: z.string().optional()
-  })).optional(),
+  })).optional().default([]),
 });
 
 export const editSpaceSchema = z.discriminatedUnion("type", [
