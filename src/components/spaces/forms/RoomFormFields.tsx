@@ -7,7 +7,7 @@ import { StorageFields } from "./room/StorageFields";
 import { StatusField } from "./room/StatusField";
 
 interface RoomFormFieldsProps {
-  form: UseFormReturn<EditSpaceFormData>;
+  form: UseFormReturn<EditSpaceFormData & { type: "room" }>;
   floorId: string;
 }
 

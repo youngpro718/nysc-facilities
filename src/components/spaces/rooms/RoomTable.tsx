@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { EditSpaceDialog } from "../EditSpaceDialog";
 import { Room } from "./types/RoomTypes";
+import { StatusEnum } from "./types/roomEnums";
 
 interface RoomTableProps {
   rooms: Room[];
@@ -40,7 +41,7 @@ export function RoomTable({ rooms, onDelete }: RoomTableProps) {
               <TableCell>{room.floor?.building?.name}</TableCell>
               <TableCell>{room.floor?.name}</TableCell>
               <TableCell>
-                <Badge variant={room.status === 'active' ? 'default' : 'destructive'}>
+                <Badge variant={room.status === StatusEnum.ACTIVE ? 'default' : 'destructive'}>
                   {room.status}
                 </Badge>
               </TableCell>
@@ -52,7 +53,9 @@ export function RoomTable({ rooms, onDelete }: RoomTableProps) {
                     initialData={{
                       name: room.name,
                       type: "room",
-                      status: room.status,
+                      status: room.status === "active" ? StatusEnum.ACTIVE : 
+                             room.status === "inactive" ? StatusEnum.INACTIVE : 
+                             StatusEnum.UNDER_MAINTENANCE,
                       floorId: room.floor_id,
                     }}
                   />

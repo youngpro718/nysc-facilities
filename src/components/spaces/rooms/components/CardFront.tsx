@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2, Phone, Users, Building2 } from "lucide-react";
 import { EditSpaceDialog } from "../../EditSpaceDialog";
 import { Room } from "../types/RoomTypes";
+import { StatusEnum } from "../types/roomEnums";
 import { LightingStatusIndicator } from "./LightingStatusIndicator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRoomOccupants } from "../../hooks/useRoomOccupants";
@@ -23,7 +24,7 @@ export function CardFront({ room, onDelete }: CardFrontProps) {
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span>{room.name}</span>
-            <Badge variant={room.status === 'active' ? 'default' : 'destructive'}>
+            <Badge variant={room.status === StatusEnum.ACTIVE ? 'default' : 'destructive'}>
               {room.status}
             </Badge>
           </div>
@@ -34,7 +35,9 @@ export function CardFront({ room, onDelete }: CardFrontProps) {
               initialData={{
                 name: room.name,
                 type: "room",
-                status: room.status,
+                status: room.status === "active" ? StatusEnum.ACTIVE : 
+                       room.status === "inactive" ? StatusEnum.INACTIVE : 
+                       StatusEnum.UNDER_MAINTENANCE,
                 floorId: room.floor_id,
               }}
             />
