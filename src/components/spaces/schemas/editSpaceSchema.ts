@@ -7,6 +7,7 @@ const baseSpaceSchema = z.object({
   name: z.string().min(1, "Name is required"),
   floorId: z.string().uuid("Invalid floor ID"),
   status: z.nativeEnum(StatusEnum),
+  description: z.string().optional(),
 });
 
 const positionSchema = z.object({
@@ -19,12 +20,18 @@ const sizeSchema = z.object({
   height: z.number()
 }).default({ width: 150, height: 100 });
 
+const maintenanceHistorySchema = z.object({
+  date: z.string(),
+  workPerformed: z.string(),
+  result: z.enum(["fixed", "needs_followup", "needs_replacement"]),
+  notes: z.string().optional()
+});
+
 export const roomSchema = baseSpaceSchema.extend({
   type: z.literal("room"),
   roomNumber: z.string().min(1, "Room number is required"),
   phoneNumber: z.string().optional(),
   roomType: z.nativeEnum(RoomTypeEnum),
-  description: z.string().optional(),
   parentRoomId: z.string().uuid("Invalid parent room ID").nullable().optional(),
   isStorage: z.boolean().default(false),
   storageCapacity: z.enum(['small', 'medium', 'large']).nullable().optional(),
@@ -43,15 +50,22 @@ const doorSchema = baseSpaceSchema.extend({
   hasClosingIssue: z.boolean().default(false),
   hasHandleIssue: z.boolean().default(false),
   issueNotes: z.string().optional(),
-  maintenanceHistory: z.array(z.object({
-    date: z.string(),
-    workPerformed: z.string(),
-    result: z.enum(["fixed", "needs_followup", "needs_replacement"]),
-    notes: z.string().optional()
-  })).optional(),
+  maintenanceHistory: z.array(maintenanceHistorySchema).optional(),
   position: positionSchema,
   size: sizeSchema,
   rotation: z.number().default(0),
+  // Additional fields for security and maintenance
+  closerStatus: z.enum(["functioning", "needs_adjustment", "not_working"]).optional(),
+  securityLevel: z.enum(["standard", "restricted", "high_security"]).optional(),
+  passkeyEnabled: z.boolean().default(false),
+  maintenanceNotes: z.string().optional(),
+  nextMaintenanceDate: z.string().optional(),
+  hardwareStatus: z.object({
+    hinges: z.enum(["functional", "needs_repair", "needs_replacement"]).optional(),
+    doorknob: z.enum(["functional", "needs_repair", "needs_replacement"]).optional(),
+    lock: z.enum(["functional", "needs_repair", "needs_replacement"]).optional(),
+    frame: z.enum(["functional", "needs_repair", "needs_replacement"]).optional(),
+  }).optional(),
 });
 
 const hallwaySchema = baseSpaceSchema.extend({
@@ -64,6 +78,19 @@ const hallwaySchema = baseSpaceSchema.extend({
   position: positionSchema,
   size: sizeSchema,
   rotation: z.number().default(0),
+  maintenancePriority: z.enum(["low", "medium", "high"]).optional(),
+  maintenanceNotes: z.string().optional(),
+  emergencyExits: z.array(z.object({
+    location: z.string(),
+    type: z.string(),
+    notes: z.string().optional()
+  })).optional(),
+  maintenanceSchedule: z.array(z.object({
+    date: z.string(),
+    type: z.string(),
+    status: z.string(),
+    assigned_to: z.string().optional()
+  })).optional(),
 });
 
 export const editSpaceSchema = z.discriminatedUnion("type", [

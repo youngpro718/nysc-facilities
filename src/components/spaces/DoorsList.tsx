@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -10,7 +9,7 @@ import { ListView } from "./views/ListView";
 import { Badge } from "@/components/ui/badge";
 import { TableCell } from "@/components/ui/table";
 import { format } from "date-fns";
-import { AlertTriangle, Tool, ArrowLeftRight } from "lucide-react";
+import { AlertTriangle, Wrench, ArrowLeftRight } from "lucide-react";
 
 interface DoorsListProps {
   selectedBuilding: string;
@@ -124,7 +123,7 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
             <ArrowLeftRight className="h-4 w-4 text-blue-500" />
           )}
           {(door.has_closing_issue || door.has_handle_issue) && (
-            <Tool className="h-4 w-4 text-yellow-500" />
+            <Wrench className="h-4 w-4 text-yellow-500" />
           )}
           {door.type === 'emergency' && (
             <AlertTriangle className="h-4 w-4 text-red-500" />
@@ -167,7 +166,7 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
     <TableCell key="name">{door.name}</TableCell>,
     <TableCell key="type" className="flex items-center gap-2">
       {door.is_transition_door && <ArrowLeftRight className="h-4 w-4 text-blue-500" />}
-      {(door.has_closing_issue || door.has_handle_issue) && <Tool className="h-4 w-4 text-yellow-500" />}
+      {(door.has_closing_issue || door.has_handle_issue) && <Wrench className="h-4 w-4 text-yellow-500" />}
       {door.type}
     </TableCell>,
     <TableCell key="status">
