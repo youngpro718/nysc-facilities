@@ -29,7 +29,6 @@ export function EditSpaceDialogContent({
   isPending,
   onCancel,
 }: EditSpaceDialogContentProps) {
-  // Reset form with initial values when they change
   useEffect(() => {
     if (form.formState.isDirty) return;
     const currentValues = form.getValues();
@@ -52,14 +51,19 @@ export function EditSpaceDialogContent({
     }
   };
 
+  // Type guard to check if the form is for a room
+  const isRoomForm = (form: UseFormReturn<EditSpaceFormData>): form is UseFormReturn<RoomFormData> => {
+    return form.getValues("type") === "room";
+  };
+
   return (
     <ScrollArea className="max-h-[80vh]">
       <div className="space-y-6 p-1">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            {type === "room" && (
+            {type === "room" && isRoomForm(form) && (
               <RoomFormFields 
-                form={form as unknown as UseFormReturn<RoomFormData>}
+                form={form}
                 floorId={form.getValues("floorId")} 
               />
             )}
