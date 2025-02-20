@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { RoomTypeEnum, StorageTypeEnum, StatusEnum } from "../rooms/types/roomEnums";
 
@@ -19,7 +18,7 @@ const sizeSchema = z.object({
   height: z.number()
 }).default({ width: 150, height: 100 });
 
-const roomSchema = baseSpaceSchema.extend({
+export const roomSchema = baseSpaceSchema.extend({
   type: z.literal("room"),
   roomNumber: z.string().min(1, "Room number is required"),
   phoneNumber: z.string().optional(),
@@ -34,31 +33,6 @@ const roomSchema = baseSpaceSchema.extend({
   position: positionSchema,
   size: sizeSchema,
   rotation: z.number().default(0),
-});
-
-const hallwaySchema = baseSpaceSchema.extend({
-  type: z.literal("hallway"),
-  section: z.enum(["left_wing", "right_wing", "connector"]),
-  hallwayType: z.enum(["public_main", "private"]),
-  notes: z.string().optional(),
-  maintenance_priority: z.string().optional(),
-  maintenance_notes: z.string().optional(),
-  description: z.string().optional(),
-  traffic_flow: z.enum(["one_way", "two_way", "restricted"]).default("two_way"),
-  accessibility: z.enum(["fully_accessible", "limited_access", "stairs_only", "restricted"]).default("fully_accessible"),
-  emergency_route: z.enum(["primary", "secondary", "not_designated"]).default("not_designated"),
-  security_level: z.enum(["standard", "high", "restricted"]).default("standard"),
-  emergency_exits: z.array(z.object({
-    location: z.string(),
-    type: z.string(),
-    notes: z.string().optional()
-  })).default([]),
-  maintenance_schedule: z.array(z.object({
-    date: z.string(),
-    type: z.string(),
-    status: z.string(),
-    assigned_to: z.string().optional()
-  })).default([])
 });
 
 const doorSchema = baseSpaceSchema.extend({
@@ -130,6 +104,31 @@ const doorSchema = baseSpaceSchema.extend({
   }).optional()
 });
 
+const hallwaySchema = baseSpaceSchema.extend({
+  type: z.literal("hallway"),
+  section: z.enum(["left_wing", "right_wing", "connector"]),
+  hallwayType: z.enum(["public_main", "private"]),
+  notes: z.string().optional(),
+  maintenance_priority: z.string().optional(),
+  maintenance_notes: z.string().optional(),
+  description: z.string().optional(),
+  traffic_flow: z.enum(["one_way", "two_way", "restricted"]).default("two_way"),
+  accessibility: z.enum(["fully_accessible", "limited_access", "stairs_only", "restricted"]).default("fully_accessible"),
+  emergency_route: z.enum(["primary", "secondary", "not_designated"]).default("not_designated"),
+  security_level: z.enum(["standard", "high", "restricted"]).default("standard"),
+  emergency_exits: z.array(z.object({
+    location: z.string(),
+    type: z.string(),
+    notes: z.string().optional()
+  })).default([]),
+  maintenance_schedule: z.array(z.object({
+    date: z.string(),
+    type: z.string(),
+    status: z.string(),
+    assigned_to: z.string().optional()
+  })).default([])
+});
+
 export const editSpaceSchema = z.discriminatedUnion("type", [
   roomSchema,
   hallwaySchema,
@@ -137,3 +136,6 @@ export const editSpaceSchema = z.discriminatedUnion("type", [
 ]);
 
 export type EditSpaceFormData = z.infer<typeof editSpaceSchema>;
+export type RoomFormData = z.infer<typeof roomSchema>;
+export type DoorFormData = z.infer<typeof doorSchema>;
+export type HallwayFormData = z.infer<typeof hallwaySchema>;
