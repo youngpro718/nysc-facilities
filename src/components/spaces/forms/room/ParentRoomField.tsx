@@ -3,11 +3,10 @@ import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { CreateSpaceFormData } from "../../schemas/createSpaceSchema";
 import { EditSpaceFormData } from "../../schemas/editSpaceSchema";
 
 interface ParentRoomFieldProps {
-  form: UseFormReturn<CreateSpaceFormData | EditSpaceFormData>;
+  form: UseFormReturn<EditSpaceFormData>;
   floorId: string;
   currentRoomId?: string;
 }

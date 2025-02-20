@@ -1,6 +1,6 @@
 
 import { UseFormReturn } from "react-hook-form";
-import { EditSpaceFormData, RoomFormData } from "../schemas/editSpaceSchema";
+import { EditSpaceFormData } from "../schemas/editSpaceSchema";
 import { BasicRoomFields } from "./room/BasicRoomFields";
 import { ParentRoomField } from "./room/ParentRoomField";
 import { StorageFields } from "./room/StorageFields";
@@ -14,22 +14,19 @@ interface RoomFormFieldsProps {
 export function RoomFormFields({ form, floorId }: RoomFormFieldsProps) {
   const currentRoomId = form.getValues("id");
 
-  // Type assertion to handle room-specific form fields
-  const roomForm = form as UseFormReturn<RoomFormData>;
-
   return (
     <div className="space-y-6">
-      <BasicRoomFields form={roomForm} />
+      <BasicRoomFields form={form} />
       
       <ParentRoomField 
-        form={roomForm} 
+        form={form} 
         floorId={floorId} 
         currentRoomId={currentRoomId} 
       />
       
-      <StorageFields form={roomForm} />
+      <StorageFields form={form} />
       
-      <StatusField form={roomForm} />
+      <StatusField form={form} />
     </div>
   );
 }
