@@ -4,36 +4,17 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { CreateSpaceFormData } from "../../schemas/createSpaceSchema";
+import { ConnectionFields } from "./ConnectionFields";
 
 interface CreateHallwayFieldsProps {
   form: UseFormReturn<CreateSpaceFormData>;
 }
 
 export function CreateHallwayFields({ form }: CreateHallwayFieldsProps) {
+  const floorId = form.watch("floorId");
+
   return (
     <div className="space-y-4">
-      <FormField
-        control={form.control}
-        name="hallwayType"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Hallway Type</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value}>
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                <SelectItem value="public_main">Public Main</SelectItem>
-                <SelectItem value="private">Private</SelectItem>
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
       <FormField
         control={form.control}
         name="section"
@@ -43,7 +24,7 @@ export function CreateHallwayFields({ form }: CreateHallwayFieldsProps) {
             <Select onValueChange={field.onChange} value={field.value}>
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select section" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
@@ -59,37 +40,19 @@ export function CreateHallwayFields({ form }: CreateHallwayFieldsProps) {
 
       <FormField
         control={form.control}
-        name="description"
+        name="hallwayType"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Description</FormLabel>
-            <FormControl>
-              <Textarea 
-                placeholder="Enter a detailed description of the hallway"
-                {...field}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={form.control}
-        name="maintenance_priority"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Maintenance Priority</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value || "low"}>
+            <FormLabel>Hallway Type</FormLabel>
+            <Select onValueChange={field.onChange} value={field.value}>
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select hallway type" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="low">Low</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="public_main">Public Main</SelectItem>
+                <SelectItem value="private">Private</SelectItem>
               </SelectContent>
             </Select>
             <FormMessage />
@@ -99,38 +62,22 @@ export function CreateHallwayFields({ form }: CreateHallwayFieldsProps) {
 
       <FormField
         control={form.control}
-        name="maintenance_notes"
+        name="description"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Maintenance Notes</FormLabel>
+            <FormLabel>Description</FormLabel>
             <FormControl>
-              <Textarea 
-                placeholder="Enter any maintenance-related notes"
-                value={field.value || ""}
-                onChange={(e) => field.onChange(e.target.value)}
-              />
+              <Textarea placeholder="Enter description" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
 
-      <FormField
-        control={form.control}
-        name="notes"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Notes</FormLabel>
-            <FormControl>
-              <Textarea 
-                placeholder="Any additional notes about the hallway"
-                {...field}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+      <div className="border-t pt-4 mt-4">
+        <h3 className="text-lg font-medium mb-4">Space Connections</h3>
+        {floorId && <ConnectionFields form={form} floorId={floorId} />}
+      </div>
     </div>
   );
 }
