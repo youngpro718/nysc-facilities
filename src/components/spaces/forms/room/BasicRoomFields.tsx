@@ -1,3 +1,4 @@
+
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -5,10 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RoomTypeEnum } from "../../rooms/types/roomEnums";
-import { EditSpaceFormData } from "../../schemas/editSpaceSchema";
+import { RoomFormData } from "../../schemas/editSpaceSchema";
 
 interface BasicRoomFieldsProps {
-  form: UseFormReturn<EditSpaceFormData>;
+  form: UseFormReturn<RoomFormData>;
 }
 
 export function BasicRoomFields({ form }: BasicRoomFieldsProps) {
