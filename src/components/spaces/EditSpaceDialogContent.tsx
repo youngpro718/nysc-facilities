@@ -9,7 +9,7 @@ import { RoomFormFields } from "./forms/RoomFormFields";
 import { DoorFormFields } from "./forms/DoorFormFields";
 import { HallwayFormFields } from "./forms/HallwayFormFields";
 import { SpaceConnectionManager } from "./SpaceConnectionManager";
-import { EditSpaceFormData, RoomFormData } from "./schemas/editSpaceSchema";
+import { EditSpaceFormData } from "./schemas/editSpaceSchema";
 import { Separator } from "@/components/ui/separator";
 
 interface EditSpaceDialogContentProps {
@@ -51,17 +51,12 @@ export function EditSpaceDialogContent({
     }
   };
 
-  // Type guard to check if the form is for a room
-  const isRoomForm = (form: UseFormReturn<EditSpaceFormData>): form is UseFormReturn<RoomFormData> => {
-    return form.getValues("type") === "room";
-  };
-
   return (
     <ScrollArea className="max-h-[80vh]">
       <div className="space-y-6 p-1">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            {type === "room" && isRoomForm(form) && (
+            {type === "room" && (
               <RoomFormFields 
                 form={form}
                 floorId={form.getValues("floorId")} 

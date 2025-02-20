@@ -2,11 +2,11 @@
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RoomFormData } from "../../schemas/editSpaceSchema";
+import { EditSpaceFormData } from "../../schemas/editSpaceSchema";
 import { StatusEnum } from "../../rooms/types/roomEnums";
 
 interface StatusFieldProps {
-  form: UseFormReturn<RoomFormData>;
+  form: UseFormReturn<EditSpaceFormData>;
 }
 
 export function StatusField({ form }: StatusFieldProps) {
