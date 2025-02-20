@@ -18,6 +18,27 @@ interface CardFrontProps {
 export function CardFront({ room, onDelete }: CardFrontProps) {
   const { data: occupants, isLoading: isLoadingOccupants } = useRoomOccupants(room.id);
 
+  const initialData = {
+    id: room.id,
+    name: room.name,
+    type: "room" as const,
+    status: room.status,
+    floorId: room.floor_id,
+    roomNumber: room.room_number,
+    roomType: (room.room_type as unknown) as RoomTypeEnum,
+    phoneNumber: room.phone_number || "",
+    description: room.description || "",
+    isStorage: room.is_storage,
+    storageCapacity: room.storage_capacity,
+    storageType: (room.storage_type as unknown) as StorageTypeEnum,
+    storageNotes: room.storage_notes || "",
+    parentRoomId: room.parent_room_id || null,
+    currentFunction: room.current_function || "",
+    position: { x: 0, y: 0 },
+    size: { width: 150, height: 100 },
+    rotation: 0
+  };
+
   return (
     <Card className="absolute w-full h-full backface-hidden">
       <CardHeader>
@@ -33,24 +54,7 @@ export function CardFront({ room, onDelete }: CardFrontProps) {
               id={room.id}
               type="room"
               variant="button"
-              initialData={{
-                name: room.name,
-                type: "room",
-                status: room.status === "active" ? StatusEnum.ACTIVE : 
-                       room.status === "inactive" ? StatusEnum.INACTIVE : 
-                       StatusEnum.UNDER_MAINTENANCE,
-                floorId: room.floor_id,
-                roomNumber: room.room_number,
-                roomType: (room.room_type as unknown) as RoomTypeEnum,
-                phoneNumber: room.phone_number || "",
-                description: room.description || "",
-                isStorage: room.is_storage,
-                storageCapacity: room.storage_capacity,
-                storageType: (room.storage_type as unknown) as StorageTypeEnum,
-                storageNotes: room.storage_notes || "",
-                parentRoomId: room.parent_room_id || null,
-                currentFunction: room.current_function || "",
-              }}
+              initialData={initialData}
             />
             <Button
               variant="destructive"
