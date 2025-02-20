@@ -1,6 +1,44 @@
+import { DoorFormData, HallwayFormData, RoomFormData } from "../schemas/editSpaceSchema";
+import { StatusEnum } from "../rooms/types/roomEnums";
 
-import { EditSpaceFormData } from "../schemas/editSpaceSchema";
-import { RoomTypeEnum, StorageTypeEnum, StatusEnum } from "../rooms/types/roomEnums";
+export const getInitialDoorData = (floorId: string): Partial<DoorFormData> => ({
+  type: "door",
+  floorId,
+  status: StatusEnum.ACTIVE,
+  doorType: "standard",
+  isTransitionDoor: false,
+  hasClosingIssue: false,
+  hasHandleIssue: false,
+  position: { x: 0, y: 0 },
+  size: { width: 150, height: 100 },
+  rotation: 0,
+  passkeyEnabled: false,
+  componentIssues: [],
+  maintenanceHistory: [],
+  hardwareStatus: {
+    hinges: "functional",
+    doorknob: "functional",
+    lock: "functional",
+    frame: "functional"
+  }
+});
+
+export const getInitialHallwayData = (floorId: string): Partial<HallwayFormData> => ({
+  type: "hallway",
+  floorId,
+  status: StatusEnum.ACTIVE,
+  hallwayType: "public_main",
+  section: "connector",
+  trafficFlow: "two_way",
+  accessibility: "fully_accessible",
+  emergencyRoute: "not_designated",
+  position: { x: 0, y: 0 },
+  size: { width: 150, height: 100 },
+  rotation: 0,
+  maintenancePriority: "low",
+  emergencyExits: [],
+  maintenanceSchedule: []
+});
 
 type SpaceType = "room" | "door" | "hallway";
 type SecurityLevel = "standard" | "restricted" | "high_security";

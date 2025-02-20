@@ -50,6 +50,11 @@ const doorSchema = baseSpaceSchema.extend({
   hasClosingIssue: z.boolean().default(false),
   hasHandleIssue: z.boolean().default(false),
   issueNotes: z.string().optional(),
+  statusHistory: z.array(z.object({
+    status: z.string(),
+    changed_at: z.string(),
+    notes: z.string().optional()
+  })).optional(),
   maintenanceHistory: z.array(maintenanceHistorySchema).optional(),
   position: positionSchema,
   size: sizeSchema,
@@ -60,6 +65,11 @@ const doorSchema = baseSpaceSchema.extend({
   passkeyEnabled: z.boolean().default(false),
   maintenanceNotes: z.string().optional(),
   nextMaintenanceDate: z.string().optional(),
+  componentIssues: z.array(z.object({
+    component: z.string(),
+    issue: z.string(),
+    severity: z.string()
+  })).optional(),
   hardwareStatus: z.object({
     hinges: z.enum(["functional", "needs_repair", "needs_replacement"]).optional(),
     doorknob: z.enum(["functional", "needs_repair", "needs_replacement"]).optional(),
@@ -78,6 +88,7 @@ const hallwaySchema = baseSpaceSchema.extend({
   position: positionSchema,
   size: sizeSchema,
   rotation: z.number().default(0),
+  notes: z.string().optional(),
   maintenancePriority: z.enum(["low", "medium", "high"]).optional(),
   maintenanceNotes: z.string().optional(),
   emergencyExits: z.array(z.object({
