@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { EditSpaceFormData } from "../../schemas/editSpaceSchema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RoomTypeEnum } from "../../rooms/types/roomEnums";
 
 interface BasicRoomFieldsProps {
   form: UseFormReturn<EditSpaceFormData>;
@@ -88,21 +89,13 @@ export function BasicRoomFields({ form }: BasicRoomFieldsProps) {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="courtroom">Courtroom</SelectItem>
-                  <SelectItem value="judges_chambers">Judge's Chambers</SelectItem>
-                  <SelectItem value="jury_room">Jury Room</SelectItem>
-                  <SelectItem value="conference_room">Conference Room</SelectItem>
-                  <SelectItem value="office">Office</SelectItem>
-                  <SelectItem value="filing_room">Filing Room</SelectItem>
-                  <SelectItem value="male_locker_room">Male Locker Room</SelectItem>
-                  <SelectItem value="female_locker_room">Female Locker Room</SelectItem>
-                  <SelectItem value="robing_room">Robing Room</SelectItem>
-                  <SelectItem value="stake_holder">Stake Holder</SelectItem>
-                  <SelectItem value="records_room">Records Room</SelectItem>
-                  <SelectItem value="administrative_office">Administrative Office</SelectItem>
-                  <SelectItem value="break_room">Break Room</SelectItem>
-                  <SelectItem value="it_room">IT Room</SelectItem>
-                  <SelectItem value="utility_room">Utility Room</SelectItem>
+                  {Object.entries(RoomTypeEnum).map(([key, value]) => (
+                    <SelectItem key={value} value={value}>
+                      {key.split('_').map(word => 
+                        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                      ).join(' ')}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <FormDescription>

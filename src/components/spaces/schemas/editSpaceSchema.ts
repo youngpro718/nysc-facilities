@@ -1,50 +1,39 @@
 
 import { z } from "zod";
+import { RoomTypeEnum, StorageTypeEnum, StatusEnum } from "../rooms/types/roomEnums";
 
 const baseSpaceSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1, "Name is required"),
   floorId: z.string().uuid("Invalid floor ID"),
-  status: z.enum(["active", "inactive", "under_maintenance"]).default("active"),
+  status: z.nativeEnum(StatusEnum).default(StatusEnum.ACTIVE),
 });
 
-const storageTypeEnum = z.enum([
-  "file_storage",
-  "equipment_storage",
-  "supply_storage",
-  "evidence_storage",
-  "record_storage",
-  "general_storage"
-]);
+const positionSchema = z.object({
+  x: z.number(),
+  y: z.number()
+}).default({ x: 0, y: 0 });
+
+const sizeSchema = z.object({
+  width: z.number(),
+  height: z.number()
+}).default({ width: 150, height: 100 });
 
 const roomSchema = baseSpaceSchema.extend({
   type: z.literal("room"),
   roomNumber: z.string().min(1, "Room number is required"),
   phoneNumber: z.string().optional(),
-  roomType: z.enum([
-    "courtroom",
-    "judges_chambers",
-    "jury_room",
-    "conference_room",
-    "office",
-    "filing_room",
-    "male_locker_room",
-    "female_locker_room",
-    "robing_room",
-    "stake_holder",
-    "records_room",
-    "administrative_office",
-    "break_room",
-    "it_room",
-    "utility_room"
-  ]),
+  roomType: z.nativeEnum(RoomTypeEnum),
   description: z.string().optional(),
   parentRoomId: z.string().uuid("Invalid parent room ID").nullable().optional(),
   isStorage: z.boolean().default(false),
   storageCapacity: z.number().nullable().optional(),
-  storageType: z.union([storageTypeEnum, z.null()]).optional(),
+  storageType: z.nativeEnum(StorageTypeEnum).nullable().optional(),
   storageNotes: z.string().nullable().optional(),
   currentFunction: z.string().optional(),
+  position: positionSchema,
+  size: sizeSchema,
+  rotation: z.number().default(0),
 });
 
 const hallwaySchema = baseSpaceSchema.extend({
