@@ -1,5 +1,6 @@
 
 import { z } from "zod";
+import { connectionSchema } from "./connectionSchema";
 
 const directionEnum = z.enum(["north", "south", "east", "west", "adjacent"]);
 export type Direction = z.infer<typeof directionEnum>;
@@ -17,6 +18,7 @@ const baseSpaceSchema = z.object({
   name: z.string().min(1, "Name is required"),
   floorId: z.string().uuid("Invalid floor ID"),
   status: z.enum(["active", "inactive", "under_maintenance"]).default("active"),
+  connections: connectionSchema.optional(),
 });
 
 const roomSchema = baseSpaceSchema.extend({

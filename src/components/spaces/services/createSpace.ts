@@ -67,5 +67,22 @@ export async function createSpace(data: CreateSpaceFormData) {
     if (doorError) throw doorError;
   }
 
+  // Create space connection if specified
+  if (data.connections?.toSpaceId) {
+    const { error: connectionError } = await supabase
+      .from('space_connections')
+      .insert([{
+        from_space_id: space.id,
+        to_space_id: data.connections.toSpaceId,
+        space_type: data.type,
+        connection_type: data.connections.connectionType,
+        direction: data.connections.direction,
+        status: 'active',
+        connection_status: 'active'
+      }]);
+
+    if (connectionError) throw connectionError;
+  }
+
   return space;
 }

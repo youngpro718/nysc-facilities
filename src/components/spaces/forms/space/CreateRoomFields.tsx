@@ -13,6 +13,7 @@ import { useState } from "react";
 import { RoomType, StorageType } from "../../rooms/types/RoomTypes";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { ConnectionFields } from "./ConnectionFields";
 
 const roomTypes: { value: RoomType; label: string }[] = [
   { value: RoomType.COURTROOM, label: "Courtroom" },
@@ -303,6 +304,11 @@ export function CreateRoomFields({ form, floorId }: CreateRoomFieldsProps) {
           />
         </div>
       )}
+
+      <div className="border-t pt-4 mt-4">
+        <h3 className="text-lg font-medium mb-4">Space Connections</h3>
+        <ConnectionFields form={form} floorId={floorId} />
+      </div>
     </div>
   );
 }
