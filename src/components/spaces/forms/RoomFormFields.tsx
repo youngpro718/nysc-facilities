@@ -1,13 +1,15 @@
 
 import { UseFormReturn } from "react-hook-form";
-import { RoomFormData } from "../schemas/editSpaceSchema";
+import { EditSpaceFormData } from "../schemas/editSpaceSchema";
 import { BasicRoomFields } from "./room/BasicRoomFields";
 import { ParentRoomField } from "./room/ParentRoomField";
 import { StorageFields } from "./room/StorageFields";
 import { StatusField } from "./room/StatusField";
 
+type RoomForm = Extract<EditSpaceFormData, { type: "room" }>;
+
 interface RoomFormFieldsProps {
-  form: UseFormReturn<RoomFormData>;
+  form: UseFormReturn<RoomForm>;
   floorId: string;
 }
 

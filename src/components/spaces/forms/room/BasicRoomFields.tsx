@@ -6,10 +6,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RoomTypeEnum } from "../../rooms/types/roomEnums";
-import { RoomFormData } from "../../schemas/editSpaceSchema";
+import { EditSpaceFormData } from "../../schemas/editSpaceSchema";
+
+type RoomForm = Extract<EditSpaceFormData, { type: "room" }>;
 
 interface BasicRoomFieldsProps {
-  form: UseFormReturn<RoomFormData>;
+  form: UseFormReturn<RoomForm>;
 }
 
 export function BasicRoomFields({ form }: BasicRoomFieldsProps) {
