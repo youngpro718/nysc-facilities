@@ -42,6 +42,14 @@ const getDefaultStorageType = (type?: StorageTypeEnum | null): StorageTypeEnum =
   return (type && VALID_STORAGE_TYPES.includes(type)) ? type : StorageTypeEnum.GENERAL_STORAGE;
 };
 
+// New helper function to convert numeric capacity to string enum
+const getStorageCapacity = (capacity?: number | null): "small" | "medium" | "large" | null => {
+  if (capacity === null || capacity === undefined) return null;
+  if (capacity <= 100) return "small";
+  if (capacity <= 200) return "medium";
+  return "large";
+};
+
 const getDefaultDoorType = (type?: DoorType): DoorType => {
   const validTypes: DoorType[] = ["standard", "emergency", "secure", "maintenance"];
   return (type && validTypes.includes(type)) ? type : "standard";
@@ -87,7 +95,7 @@ export const getInitialSpaceData = (
       phoneNumber: initialData?.phone_number || "",
       description: initialData?.description || "",
       isStorage: initialData?.is_storage ?? false,
-      storageCapacity: initialData?.storage_capacity ?? null,
+      storageCapacity: getStorageCapacity(initialData?.storage_capacity),
       storageType: initialData?.is_storage ? storageType : null,
       storageNotes: initialData?.storage_notes || "",
       parentRoomId: initialData?.parent_room_id ?? null,
