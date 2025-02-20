@@ -39,6 +39,19 @@ export function CardFront({ room, onDelete }: CardFrontProps) {
                        room.status === "inactive" ? StatusEnum.INACTIVE : 
                        StatusEnum.UNDER_MAINTENANCE,
                 floorId: room.floor_id,
+                roomNumber: room.room_number,
+                roomType: room.room_type,
+                phoneNumber: room.phone_number || "",
+                description: room.description || "",
+                isStorage: room.is_storage,
+                storageCapacity: room.storage_capacity,
+                storageType: room.storage_type,
+                storageNotes: room.storage_notes || "",
+                parentRoomId: room.parent_room_id || null,
+                currentFunction: room.current_function || "",
+                position: room.position || { x: 0, y: 0 },
+                size: room.size || { width: 150, height: 100 },
+                rotation: room.rotation || 0
               }}
             />
             <Button
