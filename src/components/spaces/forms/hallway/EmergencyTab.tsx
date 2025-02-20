@@ -1,17 +1,32 @@
 
 import { UseFormReturn } from "react-hook-form";
+import { Button } from "@/components/ui/button";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 import { Plus, Trash2 } from "lucide-react";
-import { EditSpaceFormData } from "../../schemas/editSpaceSchema";
+import { FormSpace, EmergencyExit } from "../types/formTypes";
+import { addArrayItem, getArrayFieldValue, removeArrayItem } from "../utils/formArrayHelpers";
 
 interface EmergencyTabProps {
-  form: UseFormReturn<EditSpaceFormData>;
+  form: UseFormReturn<FormSpace>;
 }
 
 export function EmergencyTab({ form }: EmergencyTabProps) {
+  const emergencyExits = getArrayFieldValue<EmergencyExit[]>(form, "emergencyExits");
+
+  const handleAddExit = () => {
+    addArrayItem<EmergencyExit[]>(form, "emergencyExits", {
+      location: "",
+      type: "",
+      notes: ""
+    });
+  };
+
+  const handleRemoveExit = (index: number) => {
+    removeArrayItem<EmergencyExit[]>(form, "emergencyExits", index);
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -24,7 +39,7 @@ export function EmergencyTab({ form }: EmergencyTabProps) {
       <div className="space-y-4">
         <FormField
           control={form.control}
-          name="emergency_route"
+          name="emergencyRoute"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Emergency Route</FormLabel>
@@ -47,17 +62,17 @@ export function EmergencyTab({ form }: EmergencyTabProps) {
 
         <div className="space-y-4">
           <h4 className="text-sm font-medium">Emergency Exits</h4>
-          {form.watch("emergency_exits")?.map((_, index) => (
+          {emergencyExits.map((exit, index) => (
             <div key={index} className="flex gap-4 items-start">
               <div className="flex-1 space-y-4">
                 <FormField
                   control={form.control}
-                  name={`emergency_exits.${index}.location`}
+                  name={`emergencyExits.${index}.location` as const}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Location</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Exit location" />
+                        <Input placeholder="Exit location" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -65,12 +80,12 @@ export function EmergencyTab({ form }: EmergencyTabProps) {
                 />
                 <FormField
                   control={form.control}
-                  name={`emergency_exits.${index}.type`}
+                  name={`emergencyExits.${index}.type` as const}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Type</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Exit type" />
+                        <Input placeholder="Exit type" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -78,12 +93,12 @@ export function EmergencyTab({ form }: EmergencyTabProps) {
                 />
                 <FormField
                   control={form.control}
-                  name={`emergency_exits.${index}.notes`}
+                  name={`emergencyExits.${index}.notes` as const}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Notes</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Additional notes" />
+                        <Input placeholder="Additional notes" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -94,10 +109,7 @@ export function EmergencyTab({ form }: EmergencyTabProps) {
                 type="button"
                 variant="destructive"
                 size="icon"
-                onClick={() => {
-                  const exits = form.getValues("emergency_exits");
-                  form.setValue("emergency_exits", exits.filter((_, i) => i !== index));
-                }}
+                onClick={() => handleRemoveExit(index)}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -106,13 +118,7 @@ export function EmergencyTab({ form }: EmergencyTabProps) {
           <Button
             type="button"
             variant="outline"
-            onClick={() => {
-              const exits = form.getValues("emergency_exits") || [];
-              form.setValue("emergency_exits", [
-                ...exits,
-                { location: "", type: "", notes: "" }
-              ]);
-            }}
+            onClick={handleAddExit}
           >
             <Plus className="h-4 w-4 mr-2" />
             Add Emergency Exit

@@ -1,16 +1,38 @@
 
-import { UseFormReturn, Path, PathValue } from "react-hook-form";
+import { UseFormReturn } from "react-hook-form";
+import { FormSpace } from "../types/formTypes";
 
-export const getFormArray = <T>(form: UseFormReturn<T>, field: Path<T>) => {
+export const getArrayFieldValue = <T extends any[]>(
+  form: UseFormReturn<FormSpace>,
+  field: keyof FormSpace,
+  defaultValue: T = [] as unknown as T
+): T => {
   const value = form.watch(field);
-  return Array.isArray(value) ? value : [];
+  return Array.isArray(value) ? value : defaultValue;
 };
 
-export const updateFormArray = <T>(
-  form: UseFormReturn<T>,
-  field: Path<T>,
-  callback: (array: any[]) => any[]
+export const updateArrayField = <T extends any[]>(
+  form: UseFormReturn<FormSpace>,
+  field: keyof FormSpace,
+  newValue: T
 ) => {
-  const currentArray = getFormArray(form, field);
-  form.setValue(field, callback(currentArray) as PathValue<T, Path<T>>);
+  form.setValue(field, newValue as any);
+};
+
+export const addArrayItem = <T extends any[]>(
+  form: UseFormReturn<FormSpace>,
+  field: keyof FormSpace,
+  item: T[number]
+) => {
+  const currentValue = getArrayFieldValue<T>(form, field);
+  updateArrayField(form, field, [...currentValue, item]);
+};
+
+export const removeArrayItem = <T extends any[]>(
+  form: UseFormReturn<FormSpace>,
+  field: keyof FormSpace,
+  index: number
+) => {
+  const currentValue = getArrayFieldValue<T>(form, field);
+  updateArrayField(form, field, currentValue.filter((_, i) => i !== index));
 };
