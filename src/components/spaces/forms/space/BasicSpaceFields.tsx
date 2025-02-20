@@ -22,29 +22,36 @@ export function BasicSpaceFields({ form }: BasicSpaceFieldsProps) {
   const [isFloorOpen, setIsFloorOpen] = useState(false);
   const [selectedBuildingId, setSelectedBuildingId] = useState<string | null>(null);
 
-  const { data: buildings } = useQuery({
+  const { data: buildings, isLoading: buildingsLoading } = useQuery({
     queryKey: ["buildings"],
     queryFn: async () => {
+      console.log("Fetching buildings...");
       const { data, error } = await supabase
         .from("buildings")
         .select("*")
         .eq('status', 'active')
         .order('name');
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching buildings:", error);
+        throw error;
+      }
+      console.log("Buildings fetched:", data);
       return data;
     }
   });
 
-  const { data: floors } = useQuery({
+  const { data: floors, isLoading: floorsLoading } = useQuery({
     queryKey: ["floors", selectedBuildingId],
     queryFn: async () => {
+      console.log("Fetching floors for building:", selectedBuildingId);
       const query = supabase
         .from("floors")
         .select(`
           id,
           name,
           floor_number,
+          building_id,
           buildings (
             id,
             name
@@ -57,18 +64,47 @@ export function BasicSpaceFields({ form }: BasicSpaceFieldsProps) {
       }
       
       const { data, error } = await query.order('floor_number');
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching floors:", error);
+        throw error;
+      }
+      console.log("Floors fetched:", data);
       return data;
     },
     enabled: true
   });
 
-  const handleBuildingSelect = (buildingId: string) => {
-    setSelectedBuildingId(buildingId);
-    // Clear floor selection when building changes
-    form.setValue('floorId', '');
-    setBuildingOpen(false);
+  const handleBuildingSelect = (buildingName: string) => {
+    console.log("Building selected:", buildingName);
+    const building = buildings?.find(b => b.name.toLowerCase() === buildingName.toLowerCase());
+    console.log("Found building:", building);
+    
+    if (building) {
+      setSelectedBuildingId(building.id);
+      form.setValue('floorId', '');
+      setBuildingOpen(false);
+    }
   };
+
+  const handleFloorSelect = (floorValue: string) => {
+    console.log("Floor selection value:", floorValue);
+    const floor = floors?.find(f => 
+      `${f.name} ${f.floor_number}`.toLowerCase() === floorValue.toLowerCase()
+    );
+    console.log("Found floor:", floor);
+
+    if (floor) {
+      form.setValue("floorId", floor.id);
+      setIsFloorOpen(false);
+    }
+  };
+
+  console.log("Current state:", {
+    selectedBuildingId,
+    buildings,
+    floors,
+    currentFloorId: form.watch('floorId')
+  });
 
   return (
     <div className="space-y-4">
@@ -120,11 +156,15 @@ export function BasicSpaceFields({ form }: BasicSpaceFieldsProps) {
               aria-expanded={isBuildingOpen}
               className="w-full justify-between"
             >
-              <span className={cn("truncate", !selectedBuildingId && "text-muted-foreground")}>
-                {selectedBuildingId
-                  ? buildings?.find(b => b.id === selectedBuildingId)?.name
-                  : "Select a building"}
-              </span>
+              {buildingsLoading ? (
+                <span className="text-muted-foreground">Loading buildings...</span>
+              ) : (
+                <span className={cn("truncate", !selectedBuildingId && "text-muted-foreground")}>
+                  {selectedBuildingId
+                    ? buildings?.find(b => b.id === selectedBuildingId)?.name
+                    : "Select a building"}
+                </span>
+              )}
               <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
@@ -137,13 +177,16 @@ export function BasicSpaceFields({ form }: BasicSpaceFieldsProps) {
                   {buildings?.map((building) => (
                     <CommandItem
                       key={building.id}
-                      value={building.name.toLowerCase()}
-                      onSelect={() => handleBuildingSelect(building.id)}
+                      value={building.name}
+                      onSelect={handleBuildingSelect}
                     >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          selectedBuildingId === building.id ? "opacity-100" : "opacity-0"
+                        )}
+                      />
                       {building.name}
-                      {selectedBuildingId === building.id && (
-                        <Check className="ml-auto h-4 w-4" />
-                      )}
                     </CommandItem>
                   ))}
                 </CommandGroup>
@@ -169,13 +212,17 @@ export function BasicSpaceFields({ form }: BasicSpaceFieldsProps) {
                   className="w-full justify-between"
                   disabled={!selectedBuildingId}
                 >
-                  <span className={cn("truncate", !field.value && "text-muted-foreground")}>
-                    {field.value
-                      ? floors?.find(f => f.id === field.value)
-                        ? `Floor ${floors.find(f => f.id === field.value)?.floor_number} (${floors.find(f => f.id === field.value)?.name})`
-                        : "Select a floor"
-                      : "Select a floor"}
-                  </span>
+                  {floorsLoading ? (
+                    <span className="text-muted-foreground">Loading floors...</span>
+                  ) : (
+                    <span className={cn("truncate", !field.value && "text-muted-foreground")}>
+                      {field.value
+                        ? floors?.find(f => f.id === field.value)
+                          ? `Floor ${floors.find(f => f.id === field.value)?.floor_number} (${floors.find(f => f.id === field.value)?.name})`
+                          : "Select a floor"
+                        : "Select a floor"}
+                    </span>
+                  )}
                   <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
@@ -188,16 +235,16 @@ export function BasicSpaceFields({ form }: BasicSpaceFieldsProps) {
                       {floors?.map((floor) => (
                         <CommandItem
                           key={floor.id}
-                          value={`${floor.name} ${floor.floor_number}`.toLowerCase()}
-                          onSelect={() => {
-                            form.setValue("floorId", floor.id);
-                            setIsFloorOpen(false);
-                          }}
+                          value={`${floor.name} ${floor.floor_number}`}
+                          onSelect={handleFloorSelect}
                         >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              field.value === floor.id ? "opacity-100" : "opacity-0"
+                            )}
+                          />
                           Floor {floor.floor_number} ({floor.name})
-                          {field.value === floor.id && (
-                            <Check className="ml-auto h-4 w-4" />
-                          )}
                         </CommandItem>
                       ))}
                     </CommandGroup>
