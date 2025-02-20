@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2, Phone, Users, Building2 } from "lucide-react";
 import { EditSpaceDialog } from "../../EditSpaceDialog";
 import { Room } from "../types/RoomTypes";
-import { StatusEnum, RoomTypeEnum } from "../types/roomEnums";
+import { StatusEnum, RoomTypeEnum, StorageTypeEnum } from "../types/roomEnums";
 import { LightingStatusIndicator } from "./LightingStatusIndicator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRoomOccupants } from "../../hooks/useRoomOccupants";
@@ -18,18 +18,33 @@ interface CardFrontProps {
 export function CardFront({ room, onDelete }: CardFrontProps) {
   const { data: occupants, isLoading: isLoadingOccupants } = useRoomOccupants(room.id);
 
+  // Convert room type to RoomTypeEnum safely
+  const getRoomType = (type: string): RoomTypeEnum => {
+    return Object.values(RoomTypeEnum).includes(type as RoomTypeEnum) 
+      ? type as RoomTypeEnum 
+      : RoomTypeEnum.OFFICE; // Default fallback
+  };
+
+  // Convert storage type to StorageTypeEnum safely
+  const getStorageType = (type: string | null): StorageTypeEnum | null => {
+    if (!type) return null;
+    return Object.values(StorageTypeEnum).includes(type as StorageTypeEnum)
+      ? type as StorageTypeEnum
+      : null;
+  };
+
   const initialData = {
     id: room.id,
     name: room.name,
     floorId: room.floor_id,
     roomNumber: room.room_number,
-    roomType: room.room_type as RoomTypeEnum, // Cast to correct enum type
+    roomType: getRoomType(room.room_type),
     status: room.status as StatusEnum,
     description: room.description || "",
     phoneNumber: room.phone_number || "",
     isStorage: room.is_storage,
     storageCapacity: room.storage_capacity,
-    storageType: room.storage_type as StorageTypeEnum, // Cast to correct enum type
+    storageType: getStorageType(room.storage_type),
     storageNotes: room.storage_notes || "",
     parentRoomId: room.parent_room_id || null,
     currentFunction: room.current_function || "",

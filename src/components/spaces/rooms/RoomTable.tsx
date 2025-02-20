@@ -51,11 +51,9 @@ export function RoomTable({ rooms, onDelete }: RoomTableProps) {
                     id={room.id}
                     type="room"
                     initialData={{
+                      id: room.id,
                       name: room.name,
-                      type: "room",
-                      status: room.status === "active" ? StatusEnum.ACTIVE : 
-                             room.status === "inactive" ? StatusEnum.INACTIVE : 
-                             StatusEnum.UNDER_MAINTENANCE,
+                      status: room.status as StatusEnum,
                       floorId: room.floor_id,
                     }}
                   />

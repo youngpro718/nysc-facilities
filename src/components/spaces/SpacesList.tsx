@@ -1,15 +1,15 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { SpaceListFilters } from "./SpaceListFilters";
 import { ViewToggle } from "./ViewToggle";
 import { CreateSpaceDialog } from "./CreateSpaceDialog";
 import { EditSpaceDialog } from "./EditSpaceDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { StatusEnum } from "./rooms/types/roomEnums";
+import { SpaceListFilters } from "./SpaceListFilters";
 
 export const SpacesList = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -46,21 +46,6 @@ export const SpacesList = () => {
     },
   });
 
-  const getSpaceImage = (space: any) => {
-    const activeIssue = space.issues?.find(
-      (issue: any) => 
-        issue.status !== 'resolved' && 
-        issue.photos && 
-        issue.photos.length > 0
-    );
-
-    if (activeIssue?.photos?.[0]) {
-      return activeIssue.photos[0];
-    }
-
-    return '/placeholder.svg';
-  };
-
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -91,62 +76,52 @@ export const SpacesList = () => {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {spaces?.map((space: any) => (
-          <Card key={space.id} className="overflow-hidden">
-            <AspectRatio ratio={16/9}>
-              <img
-                src={getSpaceImage(space)}
-                alt={space.name}
-                className="object-cover w-full h-full"
+          <div key={space.id} className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">{space.name}</h3>
+              <Badge variant={space.status === StatusEnum.ACTIVE ? 'default' : 'destructive'}>
+                {space.status}
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {space.floors?.buildings?.name} &gt; {space.floors?.name}
+            </p>
+            <div className="flex items-center gap-2">
+              <EditSpaceDialog 
+                id={space.id}
+                type="room"
+                initialData={{
+                  id: space.id,
+                  name: space.name,
+                  status: space.status as StatusEnum,
+                  floorId: space.floor_id,
+                }}
               />
-            </AspectRatio>
-            <CardHeader className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">{space.name}</h3>
-                <Badge variant={space.status === 'active' ? 'default' : 'destructive'}>
-                  {space.status}
-                </Badge>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {space.floors?.buildings?.name} &gt; {space.floors?.name}
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <EditSpaceDialog 
-                  id={space.id}
-                  type="room"
-                  initialData={{
-                    name: space.name,
-                    type: "room",
-                    status: space.status,
-                    floorId: space.floor_id,
-                  }}
-                />
-                <Button
-                  variant="outline"
-                  onClick={async () => {
-                    try {
-                      const { error } = await supabase
-                        .from('rooms')
-                        .delete()
-                        .eq('id', space.id);
-                      
-                      if (error) throw error;
-                      
-                      toast.success("Space deleted successfully");
-                      refetch();
-                    } catch (error: any) {
-                      toast.error(error.message);
-                    }
-                  }}
-                >
-                  Delete
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    const { error } = await supabase
+                      .from('rooms')
+                      .delete()
+                      .eq('id', space.id);
+                    
+                    if (error) throw error;
+                    
+                    toast.success("Space deleted successfully");
+                    refetch();
+                  } catch (error: any) {
+                    toast.error(error.message);
+                  }
+                }}
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
         ))}
       </div>
     </div>
   );
-};
+}
