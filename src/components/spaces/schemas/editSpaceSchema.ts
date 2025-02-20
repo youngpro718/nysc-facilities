@@ -2,6 +2,19 @@
 import { z } from "zod";
 import { RoomTypeEnum, StorageTypeEnum, StatusEnum } from "../rooms/types/roomEnums";
 
+const maintenanceScheduleItemSchema = z.object({
+  date: z.string(),
+  type: z.string(),
+  status: z.string(),
+  assignedTo: z.string().optional()
+});
+
+const emergencyExitSchema = z.object({
+  location: z.string(),
+  type: z.string(),
+  notes: z.string().optional()
+});
+
 const baseSpaceSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1, "Name is required"),
@@ -73,17 +86,8 @@ const hallwaySchema = baseSpaceSchema.extend({
   emergencyRoute: z.enum(["primary", "secondary", "not_designated"]).default("not_designated"),
   maintenancePriority: z.enum(["low", "medium", "high"]).optional(),
   maintenanceNotes: z.string().optional(),
-  maintenanceSchedule: z.array(z.object({
-    date: z.string(),
-    type: z.string(),
-    status: z.string(),
-    assignedTo: z.string().optional()
-  })).optional().default([]),
-  emergencyExits: z.array(z.object({
-    location: z.string(),
-    type: z.string(),
-    notes: z.string().optional()
-  })).optional().default([]),
+  maintenanceSchedule: z.array(maintenanceScheduleItemSchema).optional().default([]),
+  emergencyExits: z.array(emergencyExitSchema).optional().default([]),
 });
 
 export const editSpaceSchema = z.discriminatedUnion("type", [
@@ -96,3 +100,5 @@ export type EditSpaceFormData = z.infer<typeof editSpaceSchema>;
 export type RoomFormData = z.infer<typeof roomSchema>;
 export type DoorFormData = z.infer<typeof doorSchema>;
 export type HallwayFormData = z.infer<typeof hallwaySchema>;
+export type MaintenanceScheduleItem = z.infer<typeof maintenanceScheduleItemSchema>;
+export type EmergencyExit = z.infer<typeof emergencyExitSchema>;
