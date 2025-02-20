@@ -10,7 +10,7 @@ import { ListView } from "./views/ListView";
 import { Badge } from "@/components/ui/badge";
 import { TableCell } from "@/components/ui/table";
 import { format } from "date-fns";
-import { Clock, Lock, AlertTriangle } from "lucide-react";
+import { AlertTriangle, Tool, ArrowLeftRight } from "lucide-react";
 
 interface DoorsListProps {
   selectedBuilding: string;
@@ -22,23 +22,15 @@ type Door = {
   name: string;
   type: "standard" | "emergency" | "secure" | "maintenance";
   status: string;
-  security_level: string;
   floor: { id: string; } | null;
   floor_id: string;
   created_at: string;
   updated_at: string;
-  passkey_enabled: boolean;
-  next_maintenance_date: string | null;
-  last_maintenance_date: string | null;
-  maintenance_history: any[];
-  status_history: any[];
-  security_config: {
-    access_levels: string[];
-    restricted_times: any[];
-    emergency_contacts: any[];
-    emergency_override: boolean;
-  };
-}
+  is_transition_door: boolean;
+  has_closing_issue: boolean;
+  has_handle_issue: boolean;
+  issue_notes: string | null;
+};
 
 const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
   const { toast } = useToast();
@@ -73,6 +65,21 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
     },
     enabled: true
   });
+
+  const groupedDoors = useMemo(() => {
+    if (!doors) return { transition: [], problem: [], standard: [] };
+    
+    return doors.reduce((acc, door) => {
+      if (door.is_transition_door) {
+        acc.transition.push(door);
+      } else if (door.has_closing_issue || door.has_handle_issue) {
+        acc.problem.push(door);
+      } else {
+        acc.standard.push(door);
+      }
+      return acc;
+    }, { transition: [], problem: [], standard: [] } as Record<string, Door[]>);
+  }, [doors]);
 
   const filteredDoors = useMemo(() => 
     filterSpaces(doors, searchQuery, statusFilter),
@@ -113,39 +120,44 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
     <>
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          {door.type === 'secure' && <Lock className="h-4 w-4 text-yellow-500" />}
-          {door.type === 'emergency' && <AlertTriangle className="h-4 w-4 text-red-500" />}
+          {door.is_transition_door && (
+            <ArrowLeftRight className="h-4 w-4 text-blue-500" />
+          )}
+          {(door.has_closing_issue || door.has_handle_issue) && (
+            <Tool className="h-4 w-4 text-yellow-500" />
+          )}
+          {door.type === 'emergency' && (
+            <AlertTriangle className="h-4 w-4 text-red-500" />
+          )}
           <p className="text-sm text-muted-foreground">Type: {door.type}</p>
         </div>
         
-        <p className="text-sm text-muted-foreground">
-          Security Level: {door.security_level}
-        </p>
-        
-        {door.passkey_enabled && (
-          <Badge variant="outline" className="text-xs">
-            Passkey Enabled
+        {door.is_transition_door && (
+          <Badge variant="outline" className="bg-blue-50">
+            Transition Door
           </Badge>
         )}
 
-        {door.next_maintenance_date && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Clock className="h-4 w-4" />
-            Next Maintenance: {format(new Date(door.next_maintenance_date), "PPP")}
+        {(door.has_closing_issue || door.has_handle_issue) && (
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-yellow-700">Issues:</p>
+            {door.has_closing_issue && (
+              <Badge variant="outline" className="bg-yellow-50">
+                Closing Issue
+              </Badge>
+            )}
+            {door.has_handle_issue && (
+              <Badge variant="outline" className="bg-yellow-50">
+                Handle Issue
+              </Badge>
+            )}
           </div>
         )}
 
-        {door.security_config?.access_levels?.length > 0 && (
-          <div className="mt-2">
-            <p className="text-xs font-medium">Access Levels:</p>
-            <div className="flex flex-wrap gap-1 mt-1">
-              {door.security_config.access_levels.map((level) => (
-                <Badge key={level} variant="secondary" className="text-xs">
-                  {level}
-                </Badge>
-              ))}
-            </div>
-          </div>
+        {door.issue_notes && (
+          <p className="text-sm text-muted-foreground mt-2">
+            Notes: {door.issue_notes}
+          </p>
         )}
       </div>
     </>
@@ -154,24 +166,23 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
   const renderDoorRow = (door: Door) => [
     <TableCell key="name">{door.name}</TableCell>,
     <TableCell key="type" className="flex items-center gap-2">
-      {door.type === 'secure' && <Lock className="h-4 w-4 text-yellow-500" />}
-      {door.type === 'emergency' && <AlertTriangle className="h-4 w-4 text-red-500" />}
+      {door.is_transition_door && <ArrowLeftRight className="h-4 w-4 text-blue-500" />}
+      {(door.has_closing_issue || door.has_handle_issue) && <Tool className="h-4 w-4 text-yellow-500" />}
       {door.type}
     </TableCell>,
-    <TableCell key="security">{door.security_level}</TableCell>,
     <TableCell key="status">
       <Badge variant={door.status === 'active' ? 'default' : 'destructive'}>
         {door.status}
       </Badge>
     </TableCell>,
-    <TableCell key="maintenance">
-      {door.next_maintenance_date ? (
-        <div className="flex items-center gap-2">
-          <Clock className="h-4 w-4" />
-          {format(new Date(door.next_maintenance_date), "PPP")}
+    <TableCell key="issues">
+      {(door.has_closing_issue || door.has_handle_issue) ? (
+        <div className="space-x-2">
+          {door.has_closing_issue && <Badge variant="outline">Closing</Badge>}
+          {door.has_handle_issue && <Badge variant="outline">Handle</Badge>}
         </div>
       ) : (
-        "Not scheduled"
+        <span className="text-muted-foreground">No issues</span>
       )}
     </TableCell>
   ];
@@ -189,22 +200,71 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
         onViewChange={setView}
       />
 
-      {isLoading ? null : (
-        view === 'grid' ? (
-          <GridView
-            items={sortedDoors}
-            onDelete={(id) => deleteDoor.mutate(id)}
-            renderItemContent={renderDoorContent}
-            type="door"
-          />
-        ) : (
-          <ListView
-            items={sortedDoors}
-            onDelete={(id) => deleteDoor.mutate(id)}
-            renderRow={renderDoorRow}
-            type="door"
-          />
-        )
+      {isLoading ? (
+        <div className="text-center py-4">Loading doors...</div>
+      ) : (
+        <>
+          {groupedDoors.transition.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Transition Doors</h3>
+              {view === 'grid' ? (
+                <GridView
+                  items={groupedDoors.transition}
+                  onDelete={(id) => deleteDoor.mutate(id)}
+                  renderItemContent={renderDoorContent}
+                  type="door"
+                />
+              ) : (
+                <ListView
+                  items={groupedDoors.transition}
+                  onDelete={(id) => deleteDoor.mutate(id)}
+                  renderRow={renderDoorRow}
+                  type="door"
+                />
+              )}
+            </div>
+          )}
+
+          {groupedDoors.problem.length > 0 && (
+            <div className="space-y-4 mt-8">
+              <h3 className="text-lg font-semibold">Problem Doors</h3>
+              {view === 'grid' ? (
+                <GridView
+                  items={groupedDoors.problem}
+                  onDelete={(id) => deleteDoor.mutate(id)}
+                  renderItemContent={renderDoorContent}
+                  type="door"
+                />
+              ) : (
+                <ListView
+                  items={groupedDoors.problem}
+                  onDelete={(id) => deleteDoor.mutate(id)}
+                  renderRow={renderDoorRow}
+                  type="door"
+                />
+              )}
+            </div>
+          )}
+
+          <div className="space-y-4 mt-8">
+            <h3 className="text-lg font-semibold">Standard Doors</h3>
+            {view === 'grid' ? (
+              <GridView
+                items={groupedDoors.standard}
+                onDelete={(id) => deleteDoor.mutate(id)}
+                renderItemContent={renderDoorContent}
+                type="door"
+              />
+            ) : (
+              <ListView
+                items={groupedDoors.standard}
+                onDelete={(id) => deleteDoor.mutate(id)}
+                renderRow={renderDoorRow}
+                type="door"
+              />
+            )}
+          </div>
+        </>
       )}
     </div>
   );

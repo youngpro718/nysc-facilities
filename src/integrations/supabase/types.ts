@@ -381,6 +381,96 @@ export type Database = {
         }
         Relationships: []
       }
+      door_issues: {
+        Row: {
+          description: string | null
+          door_id: string | null
+          id: string
+          issue_type: string
+          maintenance_notes: string | null
+          reported_at: string | null
+          resolved_at: string | null
+          status: string
+        }
+        Insert: {
+          description?: string | null
+          door_id?: string | null
+          id?: string
+          issue_type: string
+          maintenance_notes?: string | null
+          reported_at?: string | null
+          resolved_at?: string | null
+          status: string
+        }
+        Update: {
+          description?: string | null
+          door_id?: string | null
+          id?: string
+          issue_type?: string
+          maintenance_notes?: string | null
+          reported_at?: string | null
+          resolved_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "door_issues_door_id_fkey"
+            columns: ["door_id"]
+            isOneToOne: false
+            referencedRelation: "doors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "door_issues_door_id_fkey"
+            columns: ["door_id"]
+            isOneToOne: false
+            referencedRelation: "key_door_locations"
+            referencedColumns: ["door_id"]
+          },
+        ]
+      }
+      door_maintenance_log: {
+        Row: {
+          door_id: string | null
+          id: string
+          maintenance_date: string | null
+          notes: string | null
+          result: string
+          work_performed: string
+        }
+        Insert: {
+          door_id?: string | null
+          id?: string
+          maintenance_date?: string | null
+          notes?: string | null
+          result: string
+          work_performed: string
+        }
+        Update: {
+          door_id?: string | null
+          id?: string
+          maintenance_date?: string | null
+          notes?: string | null
+          result?: string
+          work_performed?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "door_maintenance_log_door_id_fkey"
+            columns: ["door_id"]
+            isOneToOne: false
+            referencedRelation: "doors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "door_maintenance_log_door_id_fkey"
+            columns: ["door_id"]
+            isOneToOne: false
+            referencedRelation: "key_door_locations"
+            referencedColumns: ["door_id"]
+          },
+        ]
+      }
       door_properties: {
         Row: {
           closer_status:
@@ -437,17 +527,18 @@ export type Database = {
       }
       doors: {
         Row: {
-          access_log: Json[] | null
           closer_status:
             | Database["public"]["Enums"]["door_closer_status_enum"]
             | null
           component_issues: Json | null
           created_at: string | null
-          emergency_protocol: Json | null
           floor_id: string
           hardware_status: Json | null
+          has_closing_issue: boolean | null
+          has_handle_issue: boolean | null
           id: string
-          inspection_checklist: Json | null
+          is_transition_door: boolean | null
+          issue_notes: string | null
           last_hardware_check: string | null
           last_maintenance_date: string | null
           maintenance_history: Json[] | null
@@ -456,27 +547,26 @@ export type Database = {
           next_maintenance_date: string | null
           passkey_enabled: boolean | null
           position: Json | null
-          security_config: Json | null
           security_level: string | null
           size: Json | null
           status: Database["public"]["Enums"]["status_enum"]
           status_history: Json[] | null
           type: Database["public"]["Enums"]["door_type_enum"]
           updated_at: string | null
-          wind_pressure_issues: boolean | null
         }
         Insert: {
-          access_log?: Json[] | null
           closer_status?:
             | Database["public"]["Enums"]["door_closer_status_enum"]
             | null
           component_issues?: Json | null
           created_at?: string | null
-          emergency_protocol?: Json | null
           floor_id: string
           hardware_status?: Json | null
+          has_closing_issue?: boolean | null
+          has_handle_issue?: boolean | null
           id?: string
-          inspection_checklist?: Json | null
+          is_transition_door?: boolean | null
+          issue_notes?: string | null
           last_hardware_check?: string | null
           last_maintenance_date?: string | null
           maintenance_history?: Json[] | null
@@ -485,27 +575,26 @@ export type Database = {
           next_maintenance_date?: string | null
           passkey_enabled?: boolean | null
           position?: Json | null
-          security_config?: Json | null
           security_level?: string | null
           size?: Json | null
           status?: Database["public"]["Enums"]["status_enum"]
           status_history?: Json[] | null
           type: Database["public"]["Enums"]["door_type_enum"]
           updated_at?: string | null
-          wind_pressure_issues?: boolean | null
         }
         Update: {
-          access_log?: Json[] | null
           closer_status?:
             | Database["public"]["Enums"]["door_closer_status_enum"]
             | null
           component_issues?: Json | null
           created_at?: string | null
-          emergency_protocol?: Json | null
           floor_id?: string
           hardware_status?: Json | null
+          has_closing_issue?: boolean | null
+          has_handle_issue?: boolean | null
           id?: string
-          inspection_checklist?: Json | null
+          is_transition_door?: boolean | null
+          issue_notes?: string | null
           last_hardware_check?: string | null
           last_maintenance_date?: string | null
           maintenance_history?: Json[] | null
@@ -514,14 +603,12 @@ export type Database = {
           next_maintenance_date?: string | null
           passkey_enabled?: boolean | null
           position?: Json | null
-          security_config?: Json | null
           security_level?: string | null
           size?: Json | null
           status?: Database["public"]["Enums"]["status_enum"]
           status_history?: Json[] | null
           type?: Database["public"]["Enums"]["door_type_enum"]
           updated_at?: string | null
-          wind_pressure_issues?: boolean | null
         }
         Relationships: [
           {
@@ -4560,6 +4647,7 @@ export type Database = {
       space_connections: {
         Row: {
           access_requirements: Json | null
+          connected_door_id: string | null
           connection_status: string | null
           connection_type: string
           created_at: string | null
@@ -4570,6 +4658,7 @@ export type Database = {
           hallway_position: number | null
           id: string
           is_emergency_exit: boolean | null
+          is_transition_point: boolean | null
           last_modified: string | null
           metadata: Json | null
           offset_distance: number | null
@@ -4581,6 +4670,7 @@ export type Database = {
         }
         Insert: {
           access_requirements?: Json | null
+          connected_door_id?: string | null
           connection_status?: string | null
           connection_type: string
           created_at?: string | null
@@ -4591,6 +4681,7 @@ export type Database = {
           hallway_position?: number | null
           id?: string
           is_emergency_exit?: boolean | null
+          is_transition_point?: boolean | null
           last_modified?: string | null
           metadata?: Json | null
           offset_distance?: number | null
@@ -4602,6 +4693,7 @@ export type Database = {
         }
         Update: {
           access_requirements?: Json | null
+          connected_door_id?: string | null
           connection_status?: string | null
           connection_type?: string
           created_at?: string | null
@@ -4612,6 +4704,7 @@ export type Database = {
           hallway_position?: number | null
           id?: string
           is_emergency_exit?: boolean | null
+          is_transition_point?: boolean | null
           last_modified?: string | null
           metadata?: Json | null
           offset_distance?: number | null
@@ -4622,6 +4715,20 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "space_connections_connected_door_id_fkey"
+            columns: ["connected_door_id"]
+            isOneToOne: false
+            referencedRelation: "doors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_connections_connected_door_id_fkey"
+            columns: ["connected_door_id"]
+            isOneToOne: false
+            referencedRelation: "key_door_locations"
+            referencedColumns: ["door_id"]
+          },
           {
             foreignKeyName: "space_connections_floor_id_fkey"
             columns: ["floor_id"]
@@ -5967,7 +6074,7 @@ export type Database = {
         | "restricted"
       hallway_section_enum: "left_wing" | "right_wing" | "connector"
       hallway_traffic_flow_enum: "one_way" | "two_way" | "restricted"
-      hallway_type_enum: "public_main" | "private"
+      hallway_type_enum: "public_main" | "private" | "private_main"
       issue_priority_enum: "low" | "medium" | "high"
       issue_resolution_type:
         | "fixed"
