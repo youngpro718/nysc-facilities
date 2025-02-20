@@ -26,6 +26,7 @@ import { toast } from "sonner";
 const connectionSchema = z.object({
   fromSpaceId: z.string().uuid(),
   toSpaceId: z.string().uuid(),
+  fromSpaceType: z.string(),
   connectionType: z.enum(["door", "hallway", "direct"]),
   direction: z.enum(["north", "south", "east", "west", "adjacent"]),
 });
@@ -58,6 +59,15 @@ export function SpaceConnectionForm({ floorId, onComplete }: SpaceConnectionForm
     },
   });
 
+  // When source space is selected, update its type
+  const handleFromSpaceChange = (spaceId: string) => {
+    const space = spaces?.find(s => s.id === spaceId);
+    if (space) {
+      form.setValue("fromSpaceId", spaceId);
+      form.setValue("fromSpaceType", space.type);
+    }
+  };
+
   async function onSubmit(data: ConnectionFormData) {
     try {
       setLoading(true);
@@ -67,9 +77,11 @@ export function SpaceConnectionForm({ floorId, onComplete }: SpaceConnectionForm
         .insert({
           from_space_id: data.fromSpaceId,
           to_space_id: data.toSpaceId,
+          space_type: data.fromSpaceType,
           connection_type: data.connectionType,
           direction: data.direction,
-          status: "active"
+          status: "active",
+          connection_status: "active"
         });
 
       if (error) throw error;
@@ -94,7 +106,7 @@ export function SpaceConnectionForm({ floorId, onComplete }: SpaceConnectionForm
           render={({ field }) => (
             <FormItem>
               <FormLabel>From Space</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select onValueChange={handleFromSpaceChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select source space" />
