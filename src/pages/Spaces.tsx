@@ -4,7 +4,6 @@ import SpacesTabs from "@/components/spaces/SpacesTabs";
 import { CreateSpaceDialog } from "@/components/spaces/CreateSpaceDialog";
 import { BuildingFloorNav } from "@/components/spaces/navigation/BuildingFloorNav";
 import { SpacesBreadcrumb } from "@/components/spaces/navigation/SpacesBreadcrumb";
-import { ConnectionDialog } from "@/components/spaces/connections/ConnectionDialog";
 
 const Spaces = () => {
   const [selectedBuilding, setSelectedBuilding] = useState<string>("all");
@@ -23,9 +22,6 @@ const Spaces = () => {
           <SpacesBreadcrumb buildingId={selectedBuilding} floorId={selectedFloor} />
         </div>
         <div className="flex gap-2">
-          {selectedFloor !== "all" && (
-            <ConnectionDialog floorId={selectedFloor} />
-          )}
           <CreateSpaceDialog />
         </div>
       </div>
