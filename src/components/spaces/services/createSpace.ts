@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { CreateSpaceFormData } from "../schemas/createSpaceSchema";
+import { RoomTypeEnum, StorageTypeEnum } from "../rooms/types/roomEnums";
 
 export async function createSpace(data: CreateSpaceFormData) {
   console.log('Creating space with data:', data);
@@ -27,14 +28,14 @@ export async function createSpace(data: CreateSpaceFormData) {
   if (spaceError) throw spaceError;
 
   if (data.type === 'room') {
-    // Type guard to narrow down the type
-    const roomData = data as { 
+    // Type guard to narrow down the type with correct enum types
+    const roomData = data as {
       type: 'room';
-      roomType: string;
+      roomType: RoomTypeEnum;
       phoneNumber?: string;
       currentFunction?: string;
       isStorage?: boolean;
-      storageType?: string | null;
+      storageType?: StorageTypeEnum | null;
       storageCapacity?: number | null;
       parentRoomId?: string | null;
     };
@@ -52,7 +53,7 @@ export async function createSpace(data: CreateSpaceFormData) {
 
     const { error: roomError } = await supabase
       .from('room_properties')
-      .insert([roomProperties]);
+      .insert(roomProperties);
 
     if (roomError) throw roomError;
   }
