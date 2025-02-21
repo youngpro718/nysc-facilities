@@ -2,9 +2,6 @@
 import { z } from "zod";
 import { RoomTypeEnum, StorageTypeEnum, StatusEnum } from "../../rooms/types/roomEnums";
 
-// Import the StorageCapacityEnum directly from createSpaceSchema
-import { StorageCapacityEnum } from "../../schemas/createSpaceSchema";
-
 export const roomFormSchema = z.object({
   id: z.string().uuid().optional(),
   name: z.string().min(1, "Name is required"),

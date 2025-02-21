@@ -60,7 +60,7 @@ const roomSchema = baseSpaceSchema.extend({
   isStorage: z.boolean().optional(),
   phoneNumber: z.string().optional(),
   storageType: z.nativeEnum(StorageTypeEnum).nullable(),
-  storageCapacity: z.number().nullable(), // Changed to number
+  storageCapacity: z.number().nullable(), // This must be a number
   storageNotes: z.string().optional(),
   parentRoomId: z.string().nullable()
 });
@@ -90,7 +90,7 @@ const doorSchema = baseSpaceSchema.extend({
   hardwareStatus: hardwareStatusSchema.optional(),
   nextMaintenanceDate: z.string().optional(), // Changed from z.date() to z.string()
   maintenanceNotes: z.string().optional(),
-  statusHistory: z.array(z.any()).optional() // Add statusHistory field
+  statusHistory: z.array(z.any()).optional()
 });
 
 export const createSpaceSchema = z.discriminatedUnion("type", [
