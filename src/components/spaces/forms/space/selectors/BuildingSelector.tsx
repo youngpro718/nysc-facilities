@@ -9,15 +9,15 @@ import { Check, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface BuildingSelectorProps {
-  selectedBuildingId: string | null;
-  onBuildingSelect: (buildingId: string) => void;
+  value: string;
+  onSelect: (value: string) => void;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
 export function BuildingSelector({ 
-  selectedBuildingId, 
-  onBuildingSelect, 
+  value, 
+  onSelect, 
   isOpen, 
   onOpenChange 
 }: BuildingSelectorProps) {
@@ -40,13 +40,7 @@ export function BuildingSelector({
     }
   });
 
-  // Handle direct building selection by ID
-  const handleBuildingSelect = (buildingId: string) => {
-    console.log("Building selected:", buildingId);
-    onBuildingSelect(buildingId);
-  };
-
-  const selectedBuilding = buildings?.find(b => b.id === selectedBuildingId);
+  const selectedBuilding = buildings?.find(b => b.id === value);
 
   return (
     <FormItem>
@@ -68,7 +62,7 @@ export function BuildingSelector({
             ) : (
               <span className={cn(
                 "truncate",
-                !selectedBuildingId && "text-muted-foreground",
+                !value && "text-muted-foreground",
                 error && "text-red-500"
               )}>
                 {selectedBuilding?.name || "Select a building"}
@@ -90,12 +84,15 @@ export function BuildingSelector({
                   <CommandItem
                     key={building.id}
                     value={building.id}
-                    onSelect={() => handleBuildingSelect(building.id)}
+                    onSelect={() => {
+                      onSelect(building.id);
+                      onOpenChange(false);
+                    }}
                   >
                     <Check
                       className={cn(
                         "mr-2 h-4 w-4",
-                        selectedBuildingId === building.id ? "opacity-100" : "opacity-0"
+                        value === building.id ? "opacity-100" : "opacity-0"
                       )}
                     />
                     {building.name}

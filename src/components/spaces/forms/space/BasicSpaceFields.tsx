@@ -17,12 +17,6 @@ export function BasicSpaceFields({ form }: BasicSpaceFieldsProps) {
   const [isFloorOpen, setIsFloorOpen] = useState(false);
   const selectedBuildingId = form.watch('buildingId');
 
-  const handleBuildingSelect = (buildingId: string) => {
-    form.setValue('buildingId', buildingId);
-    form.setValue('floorId', '');
-    setBuildingOpen(false);
-  };
-
   return (
     <div className="space-y-4">
       <SpaceTypeSelector form={form} />
@@ -44,10 +38,10 @@ export function BasicSpaceFields({ form }: BasicSpaceFieldsProps) {
       <FormField
         control={form.control}
         name="buildingId"
-        render={() => (
+        render={({ field }) => (
           <BuildingSelector
-            selectedBuildingId={selectedBuildingId}
-            onBuildingSelect={handleBuildingSelect}
+            value={field.value}
+            onSelect={field.onChange}
             isOpen={isBuildingOpen}
             onOpenChange={setBuildingOpen}
           />
@@ -63,4 +57,3 @@ export function BasicSpaceFields({ form }: BasicSpaceFieldsProps) {
     </div>
   );
 }
-
