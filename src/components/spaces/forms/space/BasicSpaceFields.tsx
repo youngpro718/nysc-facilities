@@ -2,19 +2,16 @@
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { CreateSpaceFormData } from "../../schemas/createSpaceSchema";
-import { useState } from "react";
 import { SpaceTypeSelector } from "./selectors/SpaceTypeSelector";
 import { BuildingSelector } from "./selectors/BuildingSelector";
 import { FloorSelector } from "./selectors/FloorSelector";
+import { CreateSpaceFormData } from "../../schemas/createSpaceSchema";
 
 interface BasicSpaceFieldsProps {
   form: UseFormReturn<CreateSpaceFormData>;
 }
 
 export function BasicSpaceFields({ form }: BasicSpaceFieldsProps) {
-  const [isBuildingOpen, setBuildingOpen] = useState(false);
-  const [isFloorOpen, setIsFloorOpen] = useState(false);
   const selectedBuildingId = form.watch('buildingId');
 
   return (
@@ -35,24 +32,11 @@ export function BasicSpaceFields({ form }: BasicSpaceFieldsProps) {
         )}
       />
 
-      <FormField
-        control={form.control}
-        name="buildingId"
-        render={({ field }) => (
-          <BuildingSelector
-            value={field.value}
-            onSelect={field.onChange}
-            isOpen={isBuildingOpen}
-            onOpenChange={setBuildingOpen}
-          />
-        )}
-      />
+      <BuildingSelector form={form} />
 
-      <FloorSelector
+      <FloorSelector 
         form={form}
         selectedBuildingId={selectedBuildingId}
-        isOpen={isFloorOpen}
-        onOpenChange={setIsFloorOpen}
       />
     </div>
   );

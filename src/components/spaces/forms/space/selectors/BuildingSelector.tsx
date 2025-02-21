@@ -3,9 +3,11 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/comp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { UseFormReturn } from "react-hook-form";
+import { CreateSpaceFormData } from "../../../schemas/createSpaceSchema";
 
 interface BuildingSelectorProps {
-  form: any;  // Using any temporarily for brevity, should be properly typed
+  form: UseFormReturn<CreateSpaceFormData>;
 }
 
 export function BuildingSelector({ form }: BuildingSelectorProps) {
