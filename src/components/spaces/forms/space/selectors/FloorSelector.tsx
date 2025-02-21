@@ -17,16 +17,10 @@ interface FloorSelectorProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function FloorSelector({ 
-  form, 
-  selectedBuildingId, 
-  isOpen, 
-  onOpenChange 
-}: FloorSelectorProps) {
-  const { data: floors, isLoading: floorsLoading } = useQuery({
+export function FloorSelector({ form, selectedBuildingId, isOpen, onOpenChange }: FloorSelectorProps) {
+  const { data: floors, isLoading } = useQuery({
     queryKey: ["floors", selectedBuildingId],
     queryFn: async () => {
-      console.log("Fetching floors for building:", selectedBuildingId);
       const query = supabase
         .from("floors")
         .select(`
@@ -46,78 +40,78 @@ export function FloorSelector({
       }
       
       const { data, error } = await query.order('floor_number');
-      if (error) {
-        console.error("Error fetching floors:", error);
-        throw error;
-      }
-      console.log("Floors fetched:", data);
+      if (error) throw error;
       return data;
     },
-    enabled: true
+    enabled: !!selectedBuildingId
   });
-
-  const handleFloorSelect = (floorValue: string) => {
-    console.log("Floor selection value:", floorValue);
-    const floor = floors?.find(f => 
-      `${f.name} ${f.floor_number}`.toLowerCase() === floorValue.toLowerCase()
-    );
-    console.log("Found floor:", floor);
-
-    if (floor) {
-      form.setValue("floorId", floor.id);
-      onOpenChange(false);
-    }
-  };
 
   return (
     <FormField
       control={form.control}
       name="floorId"
       render={({ field }) => (
-        <FormItem>
+        <FormItem className="flex flex-col">
           <FormLabel>Floor</FormLabel>
           <Popover open={isOpen} onOpenChange={onOpenChange}>
             <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={isOpen}
-                className="w-full justify-between"
-                disabled={!selectedBuildingId}
-              >
-                {floorsLoading ? (
-                  <span className="text-muted-foreground">Loading floors...</span>
-                ) : (
-                  <span className={cn("truncate", !field.value && "text-muted-foreground")}>
-                    {field.value
+              <FormControl>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={isOpen}
+                  disabled={!selectedBuildingId}
+                  className={cn(
+                    "w-full justify-between bg-background",
+                    !field.value && "text-muted-foreground"
+                  )}
+                >
+                  {isLoading ? (
+                    "Loading floors..."
+                  ) : (
+                    field.value
                       ? floors?.find(f => f.id === field.value)
                         ? `Floor ${floors.find(f => f.id === field.value)?.floor_number} (${floors.find(f => f.id === field.value)?.name})`
                         : "Select a floor"
-                      : "Select a floor"}
-                  </span>
-                )}
-                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
+                      : "Select a floor"
+                  )}
+                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </FormControl>
             </PopoverTrigger>
-            <PopoverContent className="w-[400px] p-0">
-              <Command>
-                <CommandInput placeholder="Search floors..." />
+            <PopoverContent 
+              className="w-[400px] p-0" 
+              align="start"
+              side="bottom"
+              sideOffset={5}
+            >
+              <Command className="w-full">
+                <CommandInput 
+                  placeholder="Search floors..." 
+                  className="h-9"
+                />
                 <CommandList>
-                  <CommandEmpty>No floor found.</CommandEmpty>
+                  <CommandEmpty>No floors found.</CommandEmpty>
                   <CommandGroup>
                     {floors?.map((floor) => (
                       <CommandItem
                         key={floor.id}
-                        value={`${floor.name} ${floor.floor_number}`}
-                        onSelect={handleFloorSelect}
+                        value={floor.id}
+                        className="cursor-pointer"
+                        onSelect={() => {
+                          form.setValue("floorId", floor.id);
+                          onOpenChange(false);
+                        }}
                       >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            field.value === floor.id ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        Floor {floor.floor_number} ({floor.name})
+                        <div className="flex items-center gap-2">
+                          <Check
+                            className={cn(
+                              "h-4 w-4",
+                              field.value === floor.id ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          <span>Floor {floor.floor_number} ({floor.name})</span>
+                        </div>
                       </CommandItem>
                     ))}
                   </CommandGroup>

@@ -15,27 +15,17 @@ interface BuildingSelectorProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function BuildingSelector({ 
-  value, 
-  onSelect, 
-  isOpen, 
-  onOpenChange 
-}: BuildingSelectorProps) {
-  const { data: buildings, isLoading: buildingsLoading, error } = useQuery({
+export function BuildingSelector({ value, onSelect, isOpen, onOpenChange }: BuildingSelectorProps) {
+  const { data: buildings, isLoading } = useQuery({
     queryKey: ["buildings"],
     queryFn: async () => {
-      console.log("Fetching buildings...");
       const { data, error } = await supabase
         .from("buildings")
         .select("*")
         .eq('status', 'active')
         .order('name');
       
-      if (error) {
-        console.error("Error fetching buildings:", error);
-        throw error;
-      }
-      console.log("Buildings fetched:", data);
+      if (error) throw error;
       return data;
     }
   });
@@ -43,7 +33,7 @@ export function BuildingSelector({
   const selectedBuilding = buildings?.find(b => b.id === value);
 
   return (
-    <FormItem>
+    <FormItem className="flex flex-col">
       <FormLabel>Building</FormLabel>
       <Popover open={isOpen} onOpenChange={onOpenChange}>
         <PopoverTrigger asChild>
@@ -53,29 +43,28 @@ export function BuildingSelector({
             aria-expanded={isOpen}
             aria-label="Select a building"
             className={cn(
-              "w-full justify-between",
-              error ? "border-red-500" : ""
+              "w-full justify-between bg-background",
+              !value && "text-muted-foreground"
             )}
           >
-            {buildingsLoading ? (
-              <span className="text-muted-foreground">Loading buildings...</span>
+            {isLoading ? (
+              "Loading buildings..."
             ) : (
-              <span className={cn(
-                "truncate",
-                !value && "text-muted-foreground",
-                error && "text-red-500"
-              )}>
-                {selectedBuilding?.name || "Select a building"}
-              </span>
+              selectedBuilding?.name || "Select a building"
             )}
             <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[400px] p-0">
-          <Command>
+        <PopoverContent 
+          className="w-[400px] p-0" 
+          align="start"
+          side="bottom"
+          sideOffset={5}
+        >
+          <Command className="w-full">
             <CommandInput 
-              placeholder="Search buildings..."
-              aria-label="Search buildings" 
+              placeholder="Search buildings..." 
+              className="h-9"
             />
             <CommandList>
               <CommandEmpty>No buildings found.</CommandEmpty>
@@ -84,18 +73,21 @@ export function BuildingSelector({
                   <CommandItem
                     key={building.id}
                     value={building.id}
+                    className="cursor-pointer"
                     onSelect={() => {
                       onSelect(building.id);
                       onOpenChange(false);
                     }}
                   >
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4",
-                        value === building.id ? "opacity-100" : "opacity-0"
-                      )}
-                    />
-                    {building.name}
+                    <div className="flex items-center gap-2">
+                      <Check
+                        className={cn(
+                          "h-4 w-4",
+                          value === building.id ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      <span>{building.name}</span>
+                    </div>
                   </CommandItem>
                 ))}
               </CommandGroup>
@@ -103,11 +95,6 @@ export function BuildingSelector({
           </Command>
         </PopoverContent>
       </Popover>
-      {error && (
-        <p className="text-sm text-red-500 mt-1">
-          Error loading buildings. Please try again.
-        </p>
-      )}
     </FormItem>
   );
 }
