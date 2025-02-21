@@ -41,6 +41,12 @@ export function BuildingSelector({
   });
 
   const selectedBuilding = buildings?.find(b => b.id === value);
+  
+  const handleSelect = (buildingId: string) => {
+    console.log("Building selected:", buildingId);
+    onSelect(buildingId);
+    onOpenChange(false);
+  };
 
   return (
     <FormItem>
@@ -56,6 +62,7 @@ export function BuildingSelector({
             aria-expanded={isOpen}
             aria-label="Select a building"
             aria-describedby="building-selector-description"
+            aria-controls="building-selector-content"
             className={cn(
               "w-full justify-between",
               error ? "border-red-500" : ""
@@ -79,6 +86,7 @@ export function BuildingSelector({
           className="w-[400px] p-0" 
           sideOffset={4}
           align="start"
+          id="building-selector-content"
           style={{ 
             zIndex: 50,
             backgroundColor: 'var(--popover)',
@@ -97,11 +105,14 @@ export function BuildingSelector({
                   <CommandItem
                     key={building.id}
                     value={building.id}
-                    onSelect={() => {
-                      onSelect(building.id);
-                      onOpenChange(false);
+                    onSelect={() => handleSelect(building.id)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleSelect(building.id);
                     }}
-                    className="cursor-pointer"
+                    className="cursor-pointer transition-colors"
+                    aria-selected={value === building.id}
                   >
                     <Check
                       className={cn(
@@ -125,4 +136,3 @@ export function BuildingSelector({
     </FormItem>
   );
 }
-
