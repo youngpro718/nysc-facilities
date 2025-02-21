@@ -21,7 +21,7 @@ export function BuildingSelector({
   isOpen, 
   onOpenChange 
 }: BuildingSelectorProps) {
-  const { data: buildings, isLoading: buildingsLoading } = useQuery({
+  const { data: buildings, isLoading: buildingsLoading, error } = useQuery({
     queryKey: ["buildings"],
     queryFn: async () => {
       console.log("Fetching buildings...");
@@ -40,15 +40,13 @@ export function BuildingSelector({
     }
   });
 
-  const handleBuildingSelect = (buildingName: string) => {
-    console.log("Building selected:", buildingName);
-    const building = buildings?.find(b => b.name.toLowerCase() === buildingName.toLowerCase());
-    console.log("Found building:", building);
-    
-    if (building) {
-      onBuildingSelect(building.id);
-    }
+  // Handle direct building selection by ID
+  const handleBuildingSelect = (buildingId: string) => {
+    console.log("Building selected:", buildingId);
+    onBuildingSelect(buildingId);
   };
+
+  const selectedBuilding = buildings?.find(b => b.id === selectedBuildingId);
 
   return (
     <FormItem>
@@ -59,15 +57,21 @@ export function BuildingSelector({
             variant="outline"
             role="combobox"
             aria-expanded={isOpen}
-            className="w-full justify-between"
+            aria-label="Select a building"
+            className={cn(
+              "w-full justify-between",
+              error ? "border-red-500" : ""
+            )}
           >
             {buildingsLoading ? (
               <span className="text-muted-foreground">Loading buildings...</span>
             ) : (
-              <span className={cn("truncate", !selectedBuildingId && "text-muted-foreground")}>
-                {selectedBuildingId
-                  ? buildings?.find(b => b.id === selectedBuildingId)?.name
-                  : "Select a building"}
+              <span className={cn(
+                "truncate",
+                !selectedBuildingId && "text-muted-foreground",
+                error && "text-red-500"
+              )}>
+                {selectedBuilding?.name || "Select a building"}
               </span>
             )}
             <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -75,15 +79,18 @@ export function BuildingSelector({
         </PopoverTrigger>
         <PopoverContent className="w-[400px] p-0">
           <Command>
-            <CommandInput placeholder="Search buildings..." />
+            <CommandInput 
+              placeholder="Search buildings..."
+              aria-label="Search buildings" 
+            />
             <CommandList>
-              <CommandEmpty>No building found.</CommandEmpty>
+              <CommandEmpty>No buildings found.</CommandEmpty>
               <CommandGroup>
                 {buildings?.map((building) => (
                   <CommandItem
                     key={building.id}
-                    value={building.name}
-                    onSelect={handleBuildingSelect}
+                    value={building.id}
+                    onSelect={() => handleBuildingSelect(building.id)}
                   >
                     <Check
                       className={cn(
@@ -99,6 +106,11 @@ export function BuildingSelector({
           </Command>
         </PopoverContent>
       </Popover>
+      {error && (
+        <p className="text-sm text-red-500 mt-1">
+          Error loading buildings. Please try again.
+        </p>
+      )}
     </FormItem>
   );
 }
