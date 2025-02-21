@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { FormItem, FormLabel, FormDescription } from "@/components/ui/form";
+import { FormItem, FormLabel } from "@/components/ui/form";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
@@ -42,18 +42,9 @@ export function BuildingSelector({
 
   const selectedBuilding = buildings?.find(b => b.id === value);
 
-  const handleSelect = (buildingId: string) => {
-    console.log("Building selected:", buildingId);
-    onSelect(buildingId);
-    onOpenChange(false);
-  };
-
   return (
     <FormItem>
       <FormLabel>Building</FormLabel>
-      <FormDescription id="building-selector-description">
-        Select a building from the available options
-      </FormDescription>
       <Popover open={isOpen} onOpenChange={onOpenChange}>
         <PopoverTrigger asChild>
           <Button
@@ -61,8 +52,6 @@ export function BuildingSelector({
             role="combobox"
             aria-expanded={isOpen}
             aria-label="Select a building"
-            aria-describedby="building-selector-description"
-            aria-controls="building-selector-content"
             className={cn(
               "w-full justify-between",
               error ? "border-red-500" : ""
@@ -82,17 +71,7 @@ export function BuildingSelector({
             <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent 
-          className="w-[400px] p-0" 
-          sideOffset={4}
-          align="start"
-          id="building-selector-content"
-          style={{ 
-            zIndex: 50,
-            backgroundColor: 'var(--popover)',
-            boxShadow: 'var(--shadow)'
-          }}
-        >
+        <PopoverContent className="w-[400px] p-0">
           <Command>
             <CommandInput 
               placeholder="Search buildings..."
@@ -105,14 +84,10 @@ export function BuildingSelector({
                   <CommandItem
                     key={building.id}
                     value={building.id}
-                    onSelect={() => handleSelect(building.id)}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleSelect(building.id);
+                    onSelect={() => {
+                      onSelect(building.id);
+                      onOpenChange(false);
                     }}
-                    className="cursor-pointer"
-                    aria-selected={value === building.id}
                   >
                     <Check
                       className={cn(
