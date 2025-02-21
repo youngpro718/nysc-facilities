@@ -4,7 +4,7 @@ import { RoomTypeEnum, StorageTypeEnum, StatusEnum } from "../../rooms/types/roo
 import { StorageCapacityEnum } from "../../schemas/createSpaceSchema";
 
 export { StorageCapacityEnum };
-export type StorageCapacityType = z.infer<typeof z.nativeEnum(StorageCapacityEnum)>;
+export type StorageCapacityType = z.infer<typeof StorageCapacityEnum>;
 
 export const roomFormSchema = z.object({
   id: z.string().uuid().optional(),
@@ -25,3 +25,4 @@ export const roomFormSchema = z.object({
 });
 
 export type RoomFormData = z.infer<typeof roomFormSchema>;
+
