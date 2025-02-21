@@ -1,27 +1,34 @@
 
 import { UseFormReturn } from "react-hook-form";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
+import {
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { type RoomFormData } from "./RoomFormSchema";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { StorageTypeEnum } from "../../rooms/types/roomEnums";
+import { CreateSpaceFormData } from "../../schemas/createSpaceSchema";
 
 interface StorageFieldsProps {
-  form: UseFormReturn<RoomFormData>;
+  form: UseFormReturn<CreateSpaceFormData>;
 }
 
 export function StorageFields({ form }: StorageFieldsProps) {
   const isStorage = form.watch("isStorage");
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium">Storage Configuration</h3>
-        <p className="text-sm text-muted-foreground">
-          Configure storage-related settings if this room is used for storage.
-        </p>
-      </div>
-
+    <div className="space-y-4">
       <FormField
         control={form.control}
         name="isStorage"
@@ -30,20 +37,13 @@ export function StorageFields({ form }: StorageFieldsProps) {
             <div className="space-y-0.5">
               <FormLabel className="text-base">Storage Room</FormLabel>
               <FormDescription>
-                Enable if this room is used for storage purposes
+                Designate this room as a storage space
               </FormDescription>
             </div>
             <FormControl>
               <Switch
                 checked={field.value}
-                onCheckedChange={(checked) => {
-                  field.onChange(checked);
-                  if (!checked) {
-                    form.setValue("storageType", null);
-                    form.setValue("storageCapacity", null);
-                    form.setValue("storageNotes", null);
-                  }
-                }}
+                onCheckedChange={field.onChange}
               />
             </FormControl>
           </FormItem>
@@ -51,16 +51,16 @@ export function StorageFields({ form }: StorageFieldsProps) {
       />
 
       {isStorage && (
-        <div className="space-y-4 border-l-2 border-muted pl-4">
+        <>
           <FormField
             control={form.control}
             name="storageType"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Storage Type</FormLabel>
-                <Select 
-                  onValueChange={field.onChange} 
-                  value={field.value || undefined}
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value || undefined}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -68,17 +68,13 @@ export function StorageFields({ form }: StorageFieldsProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="file_storage">File Storage</SelectItem>
-                    <SelectItem value="equipment_storage">Equipment Storage</SelectItem>
-                    <SelectItem value="supply_storage">Supply Storage</SelectItem>
-                    <SelectItem value="evidence_storage">Evidence Storage</SelectItem>
-                    <SelectItem value="record_storage">Record Storage</SelectItem>
-                    <SelectItem value="general_storage">General Storage</SelectItem>
+                    {Object.values(StorageTypeEnum).map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-                <FormDescription>
-                  Select the primary type of items stored in this room
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -89,50 +85,20 @@ export function StorageFields({ form }: StorageFieldsProps) {
             name="storageCapacity"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Storage Size</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  value={field.value || undefined}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select storage size" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="small">Small</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="large">Large</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  Approximate size of the storage space
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="storageNotes"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Storage Notes</FormLabel>
+                <FormLabel>Storage Capacity (cubic feet)</FormLabel>
                 <FormControl>
-                  <Textarea 
-                    placeholder="Enter any additional storage-related notes"
+                  <Input
+                    type="number"
                     {...field}
+                    onChange={(e) => field.onChange(Number(e.target.value))}
+                    value={field.value || ''}
                   />
                 </FormControl>
-                <FormDescription>
-                  Special requirements or notes about storage usage
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
-        </div>
+        </>
       )}
     </div>
   );

@@ -2,10 +2,6 @@
 import { z } from "zod";
 import { RoomTypeEnum, StatusEnum, StorageTypeEnum } from "../rooms/types/roomEnums";
 
-// Define common enums
-export const StorageCapacityEnum = z.enum(["small", "medium", "large"]);
-export type StorageCapacityType = z.infer<typeof StorageCapacityEnum>;
-
 // Define connection schema
 const connectionSchema = z.object({
   toSpaceId: z.string().optional(),
@@ -23,7 +19,7 @@ const hardwareStatusSchema = z.object({
 
 // Define maintenance schedule entry schema
 const maintenanceScheduleEntrySchema = z.object({
-  date: z.date(),
+  date: z.string(), // Changed from z.date() to z.string()
   type: z.string(),
   status: z.string(),
   assignedTo: z.string().optional()
@@ -36,10 +32,9 @@ const emergencyExitSchema = z.object({
   notes: z.string().optional()
 });
 
-// Base schema
+// Base schema for all space types
 const baseSpaceSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  type: z.enum(["room", "hallway", "door"]),
   buildingId: z.string().min(1, "Building is required"),
   floorId: z.string().min(1, "Floor is required"),
   status: z.nativeEnum(StatusEnum),
@@ -56,20 +51,23 @@ const baseSpaceSchema = z.object({
   connections: connectionSchema.optional()
 });
 
-// Door-specific schema
-const doorSchema = z.object({
-  doorType: z.string().optional(),
-  securityLevel: z.string().optional(),
-  passkeyEnabled: z.boolean().optional(),
-  closerStatus: z.string().optional(),
-  windPressureIssues: z.boolean().optional(),
-  hardwareStatus: hardwareStatusSchema.optional(),
-  nextMaintenanceDate: z.date().optional(),
-  maintenanceNotes: z.string().optional(),
+// Room-specific schema
+const roomSchema = baseSpaceSchema.extend({
+  type: z.literal("room"),
+  roomType: z.nativeEnum(RoomTypeEnum),
+  roomNumber: z.string().optional(),
+  currentFunction: z.string().optional(),
+  isStorage: z.boolean().optional(),
+  phoneNumber: z.string().optional(),
+  storageType: z.nativeEnum(StorageTypeEnum).nullable(),
+  storageCapacity: z.number().nullable(), // Changed to number
+  storageNotes: z.string().optional(),
+  parentRoomId: z.string().nullable()
 });
 
 // Hallway-specific schema
-const hallwaySchema = z.object({
+const hallwaySchema = baseSpaceSchema.extend({
+  type: z.literal("hallway"),
   hallwayType: z.string().optional(),
   section: z.string().optional(),
   maintenanceSchedule: z.array(maintenanceScheduleEntrySchema).optional(),
@@ -78,28 +76,27 @@ const hallwaySchema = z.object({
   maintenanceNotes: z.string().optional(),
   emergencyRoute: z.string().optional(),
   accessibility: z.string().optional(),
-  trafficFlow: z.string().optional(),
+  trafficFlow: z.string().optional()
 });
 
-// Room-specific schema
-const roomFields = z.object({
-  roomType: z.nativeEnum(RoomTypeEnum),
-  currentFunction: z.string().optional(),
-  isStorage: z.boolean().optional(),
-  roomNumber: z.string().optional(),
-  parentRoomId: z.string().nullable(),
-  storageType: z.nativeEnum(StorageTypeEnum).nullable(),
-  storageNotes: z.string().optional(),
-  phoneNumber: z.string().optional(),
-  storageCapacity: z.number().nullable(),
+// Door-specific schema
+const doorSchema = baseSpaceSchema.extend({
+  type: z.literal("door"),
+  doorType: z.string().optional(),
+  securityLevel: z.string().optional(),
+  passkeyEnabled: z.boolean().optional(),
+  closerStatus: z.string().optional(),
+  windPressureIssues: z.boolean().optional(),
+  hardwareStatus: hardwareStatusSchema.optional(),
+  nextMaintenanceDate: z.string().optional(), // Changed from z.date() to z.string()
+  maintenanceNotes: z.string().optional(),
+  statusHistory: z.array(z.any()).optional() // Add statusHistory field
 });
 
-// Create the discriminated union
 export const createSpaceSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("room") }).merge(baseSpaceSchema).merge(roomFields),
-  z.object({ type: z.literal("hallway") }).merge(baseSpaceSchema).merge(hallwaySchema),
-  z.object({ type: z.literal("door") }).merge(baseSpaceSchema).merge(doorSchema)
+  roomSchema,
+  hallwaySchema,
+  doorSchema
 ]);
 
 export type CreateSpaceFormData = z.infer<typeof createSpaceSchema>;
-

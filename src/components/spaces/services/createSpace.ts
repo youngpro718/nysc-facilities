@@ -27,15 +27,16 @@ export async function createSpace(data: CreateSpaceFormData) {
   if (spaceError) throw spaceError;
 
   if (data.type === 'room') {
+    const roomData = data as Extract<CreateSpaceFormData, { type: "room" }>;
     const roomProperties = {
       space_id: space.id,
-      room_type: data.roomType,
-      phone_number: data.phoneNumber,
-      current_function: data.currentFunction,
-      is_storage: data.isStorage || false,
-      storage_type: data.isStorage ? data.storageType : null,
-      storage_capacity: data.storageCapacity,
-      parent_room_id: data.parentRoomId,
+      room_type: roomData.roomType,
+      phone_number: roomData.phoneNumber,
+      current_function: roomData.currentFunction,
+      is_storage: roomData.isStorage || false,
+      storage_type: roomData.isStorage ? roomData.storageType : null,
+      storage_capacity: roomData.storageCapacity,
+      parent_room_id: roomData.parentRoomId,
     };
 
     const { error: roomError } = await supabase
@@ -64,4 +65,3 @@ export async function createSpace(data: CreateSpaceFormData) {
 
   return space;
 }
-
