@@ -42,6 +42,12 @@ export function BuildingSelector({
 
   const selectedBuilding = buildings?.find(b => b.id === value);
 
+  const handleSelect = (buildingId: string) => {
+    console.log("Building selected:", buildingId);
+    onSelect(buildingId);
+    onOpenChange(false);
+  };
+
   return (
     <FormItem>
       <FormLabel>Building</FormLabel>
@@ -98,12 +104,15 @@ export function BuildingSelector({
                 {buildings?.map((building) => (
                   <CommandItem
                     key={building.id}
-                    value={building.name}
-                    onSelect={() => {
-                      console.log("Building selected via onSelect:", building.id);
-                      onSelect(building.id);
-                      onOpenChange(false);
+                    value={building.id}
+                    onSelect={() => handleSelect(building.id)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleSelect(building.id);
                     }}
+                    className="cursor-pointer"
+                    aria-selected={value === building.id}
                   >
                     <Check
                       className={cn(
@@ -127,4 +136,3 @@ export function BuildingSelector({
     </FormItem>
   );
 }
-
