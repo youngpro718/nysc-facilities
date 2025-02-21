@@ -1,12 +1,11 @@
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -16,7 +15,7 @@ import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
 import { RoomFormContent } from "./forms/room/RoomFormContent";
-import { roomFormSchema, type RoomFormData, type StorageCapacityType } from "./forms/room/RoomFormSchema";
+import { roomFormSchema, type RoomFormData } from "./forms/room/RoomFormSchema";
 
 interface EditSpaceDialogProps {
   id: string;
@@ -46,7 +45,7 @@ export function EditSpaceDialog({
   });
 
   useEffect(() => {
-    if (open) {
+    if (open && initialData) {
       form.reset(initialData);
     }
   }, [open, form, initialData]);
@@ -55,18 +54,7 @@ export function EditSpaceDialog({
 
   const editSpaceMutation = useMutation({
     mutationFn: async (data: RoomFormData) => {
-      console.log("Updating room with data:", data);
-      
-      // Convert string capacity to number for database storage
-      let numericCapacity: number | null = null;
-      if (data.storageCapacity) {
-        switch(data.storageCapacity) {
-          case 'small': numericCapacity = 100; break;
-          case 'medium': numericCapacity = 200; break;
-          case 'large': numericCapacity = 300; break;
-        }
-      }
-      
+      // Convert form data to database structure
       const updateData = {
         name: data.name,
         room_number: data.roomNumber,
@@ -75,7 +63,7 @@ export function EditSpaceDialog({
         description: data.description,
         is_storage: data.isStorage,
         storage_type: data.isStorage ? data.storageType : null,
-        storage_capacity: numericCapacity,
+        storage_capacity: data.storageCapacity,
         storage_notes: data.storageNotes,
         parent_room_id: data.parentRoomId,
         current_function: data.currentFunction,
@@ -89,6 +77,8 @@ export function EditSpaceDialog({
         .eq('id', id);
 
       if (error) throw error;
+      
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
@@ -103,12 +93,7 @@ export function EditSpaceDialog({
   });
 
   const handleSubmit = async (data: RoomFormData) => {
-    try {
-      console.log("Submitting form with data:", data);
-      await editSpaceMutation.mutateAsync(data);
-    } catch (error) {
-      console.error("Form submission error:", error);
-    }
+    await editSpaceMutation.mutateAsync(data);
   };
 
   return (
@@ -128,9 +113,6 @@ export function EditSpaceDialog({
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Room</DialogTitle>
-            <DialogDescription>
-              Make changes to your room. Click update when you're done.
-            </DialogDescription>
           </DialogHeader>
           <ScrollArea className="max-h-[80vh] overflow-y-auto">
             <div className="p-1">
