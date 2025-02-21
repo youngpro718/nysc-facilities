@@ -22,7 +22,6 @@ export async function createSpace(data: CreateSpaceFormData) {
     type: data.type,
     floor_id: data.floorId,
     status: data.status,
-    room_number: data.type === 'room' ? (data as any).roomNumber : null,
     position: data.position || { x: 0, y: 0 },
     size: data.type === 'door' ? 
       { width: 60, height: 20 } : 
@@ -38,18 +37,16 @@ export async function createSpace(data: CreateSpaceFormData) {
 
   if (spaceError) throw spaceError;
 
-  // Add type-specific properties
   if (data.type === 'room') {
-    const roomData = data as Extract<CreateSpaceFormData, { type: 'room' }>;
     const roomProperties = {
       space_id: space.id,
-      room_type: roomData.roomType,
-      phone_number: roomData.phoneNumber,
-      current_function: roomData.currentFunction,
-      is_storage: roomData.isStorage,
-      storage_type: roomData.isStorage ? roomData.storageType : null,
-      storage_capacity: roomData.isStorage ? getNumericCapacity(roomData.storageCapacity) : null,
-      parent_room_id: roomData.parentRoomId,
+      room_type: (data as any).roomType,
+      phone_number: (data as any).phoneNumber,
+      current_function: (data as any).currentFunction,
+      is_storage: (data as any).isStorage || false,
+      storage_type: (data as any).isStorage ? (data as any).storageType : null,
+      storage_capacity: (data as any).isStorage ? parseFloat((data as any).storageCapacity) || null : null,
+      parent_room_id: (data as any).parentRoomId,
     };
 
     const { error: roomError } = await supabase
@@ -78,4 +75,3 @@ export async function createSpace(data: CreateSpaceFormData) {
 
   return space;
 }
-
