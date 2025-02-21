@@ -2,17 +2,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { CreateSpaceFormData } from "../schemas/createSpaceSchema";
 
-// Helper function to convert storage capacity string to number
-const getNumericCapacity = (capacity: string | null): number | null => {
-  if (!capacity) return null;
-  switch(capacity) {
-    case 'small': return 100;
-    case 'medium': return 200;
-    case 'large': return 300;
-    default: return null;
-  }
-};
-
 export async function createSpace(data: CreateSpaceFormData) {
   console.log('Creating space with data:', data);
   
@@ -40,13 +29,13 @@ export async function createSpace(data: CreateSpaceFormData) {
   if (data.type === 'room') {
     const roomProperties = {
       space_id: space.id,
-      room_type: (data as any).roomType,
-      phone_number: (data as any).phoneNumber,
-      current_function: (data as any).currentFunction,
-      is_storage: (data as any).isStorage || false,
-      storage_type: (data as any).isStorage ? (data as any).storageType : null,
-      storage_capacity: (data as any).isStorage ? parseFloat((data as any).storageCapacity) || null : null,
-      parent_room_id: (data as any).parentRoomId,
+      room_type: data.roomType,
+      phone_number: data.phoneNumber,
+      current_function: data.currentFunction,
+      is_storage: data.isStorage || false,
+      storage_type: data.isStorage ? data.storageType : null,
+      storage_capacity: data.storageCapacity,
+      parent_room_id: data.parentRoomId,
     };
 
     const { error: roomError } = await supabase
@@ -57,7 +46,7 @@ export async function createSpace(data: CreateSpaceFormData) {
   }
 
   // Create space connection if specified
-  if ('connections' in data && data.connections?.toSpaceId) {
+  if (data.connections) {
     const { error: connectionError } = await supabase
       .from('space_connections')
       .insert([{
@@ -75,3 +64,4 @@ export async function createSpace(data: CreateSpaceFormData) {
 
   return space;
 }
+
