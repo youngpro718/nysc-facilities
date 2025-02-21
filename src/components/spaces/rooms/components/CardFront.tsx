@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,7 +21,7 @@ export function CardFront({ room, onDelete }: CardFrontProps) {
   const getRoomType = (type: string): RoomTypeEnum => {
     return Object.values(RoomTypeEnum).includes(type as RoomTypeEnum) 
       ? type as RoomTypeEnum 
-      : RoomTypeEnum.OFFICE; // Default fallback
+      : RoomTypeEnum.OFFICE;
   };
 
   // Convert storage type to StorageTypeEnum safely
@@ -33,18 +32,10 @@ export function CardFront({ room, onDelete }: CardFrontProps) {
       : null;
   };
 
-  // Convert storage capacity to the new string enum type
-  const getStorageCapacity = (capacity: any): "small" | "medium" | "large" | null => {
+  // Convert storage capacity to number
+  const getStorageCapacity = (capacity: any): number | null => {
+    if (typeof capacity === 'number') return capacity;
     if (!capacity) return null;
-    if (typeof capacity === "string" && ["small", "medium", "large"].includes(capacity)) {
-      return capacity as "small" | "medium" | "large";
-    }
-    // If it's a number, convert to size category based on value
-    if (typeof capacity === "number") {
-      if (capacity <= 100) return "small";
-      if (capacity <= 300) return "medium";
-      return "large";
-    }
     return null;
   };
 

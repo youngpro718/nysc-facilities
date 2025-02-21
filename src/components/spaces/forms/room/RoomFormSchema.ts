@@ -12,7 +12,7 @@ export const roomFormSchema = z.object({
   phoneNumber: z.string().optional(),
   isStorage: z.boolean().default(false),
   storageType: z.nativeEnum(StorageTypeEnum).nullable(),
-  storageCapacity: z.number().nullable(), // Changed to number to match database
+  storageCapacity: z.number().nullable(),
   storageNotes: z.string().optional(),
   parentRoomId: z.string().uuid().nullable(),
   floorId: z.string().uuid(),
