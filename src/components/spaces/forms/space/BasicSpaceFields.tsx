@@ -15,10 +15,10 @@ interface BasicSpaceFieldsProps {
 export function BasicSpaceFields({ form }: BasicSpaceFieldsProps) {
   const [isBuildingOpen, setBuildingOpen] = useState(false);
   const [isFloorOpen, setIsFloorOpen] = useState(false);
-  const [selectedBuildingId, setSelectedBuildingId] = useState<string | null>(null);
+  const selectedBuildingId = form.watch('buildingId');
 
   const handleBuildingSelect = (buildingId: string) => {
-    setSelectedBuildingId(buildingId);
+    form.setValue('buildingId', buildingId);
     form.setValue('floorId', '');
     setBuildingOpen(false);
   };
@@ -41,11 +41,17 @@ export function BasicSpaceFields({ form }: BasicSpaceFieldsProps) {
         )}
       />
 
-      <BuildingSelector
-        selectedBuildingId={selectedBuildingId}
-        onBuildingSelect={handleBuildingSelect}
-        isOpen={isBuildingOpen}
-        onOpenChange={setBuildingOpen}
+      <FormField
+        control={form.control}
+        name="buildingId"
+        render={() => (
+          <BuildingSelector
+            selectedBuildingId={selectedBuildingId}
+            onBuildingSelect={handleBuildingSelect}
+            isOpen={isBuildingOpen}
+            onOpenChange={setBuildingOpen}
+          />
+        )}
       />
 
       <FloorSelector
@@ -57,3 +63,4 @@ export function BasicSpaceFields({ form }: BasicSpaceFieldsProps) {
     </div>
   );
 }
+

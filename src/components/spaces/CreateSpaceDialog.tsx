@@ -29,6 +29,7 @@ export function CreateSpaceDialog() {
     defaultValues: {
       name: "",
       type: "room",
+      buildingId: "",
       status: StatusEnum.ACTIVE,
       roomType: RoomTypeEnum.OFFICE,
       currentFunction: "office",
