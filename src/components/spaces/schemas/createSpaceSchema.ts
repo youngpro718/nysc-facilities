@@ -1,17 +1,11 @@
 
 import { z } from "zod";
-import { RoomTypeEnum, StatusEnum } from "../rooms/types/roomEnums";
+import { RoomTypeEnum, StatusEnum, StorageTypeEnum } from "../rooms/types/roomEnums";
 
 // Define common enums
-export enum StorageCapacityEnum {
-  SMALL = "small",
-  MEDIUM = "medium",
-  LARGE = "large"
-}
+export const StorageCapacityEnum = z.enum(["small", "medium", "large"]);
 
-export type StorageCapacityType = z.infer<typeof storageCapacitySchema>;
-
-export const storageCapacitySchema = z.nativeEnum(StorageCapacityEnum);
+export type StorageCapacityType = z.infer<typeof StorageCapacityEnum>;
 
 // Define base schema for common fields
 const baseSpaceSchema = z.object({
@@ -32,6 +26,13 @@ const baseSpaceSchema = z.object({
   rotation: z.number().optional()
 });
 
+// Connection schema
+const connectionSchema = z.object({
+  toSpaceId: z.string().optional(),
+  connectionType: z.enum(["door", "hallway", "direct"]).optional(),
+  direction: z.enum(["north", "south", "east", "west", "adjacent"]).optional(),
+});
+
 // Room-specific fields
 const roomFields = z.object({
   roomType: z.nativeEnum(RoomTypeEnum),
@@ -39,49 +40,29 @@ const roomFields = z.object({
   isStorage: z.boolean().optional(),
   roomNumber: z.string().optional(),
   parentRoomId: z.string().nullable(),
-  storageCapacity: storageCapacitySchema.nullable(),
-  storageType: z.string().nullable(),
+  storageCapacity: StorageCapacityEnum.nullable(),
+  storageType: z.nativeEnum(StorageTypeEnum).nullable(),
   storageNotes: z.string().optional(),
   phoneNumber: z.string().optional(),
+  connections: connectionSchema.optional(),
 });
 
 // Hallway-specific fields
 const hallwayFields = z.object({
   section: z.string().optional(),
   trafficFlow: z.enum(['one_way', 'two_way']).optional(),
-  hallwayType: z.string().optional(),
   accessibility: z.enum(['fully_accessible', 'partially_accessible', 'not_accessible']).optional(),
-  maintenanceSchedule: z.array(z.object({
-    date: z.string(),
-    type: z.string(),
-    status: z.string(),
-    assignedTo: z.string().optional(),
-  })).optional(),
   maintenanceNotes: z.string().optional(),
   maintenancePriority: z.string().optional(),
   emergencyRoute: z.string().optional(),
-  emergencyExits: z.array(z.object({
-    location: z.string(),
-    type: z.string(),
-    notes: z.string().optional(),
-  })).optional(),
+  connections: connectionSchema.optional(),
 });
 
 // Door-specific fields
 const doorFields = z.object({
-  doorType: z.string().optional(),
   securityLevel: z.string().optional(),
   passkeyEnabled: z.boolean().optional(),
-  closerStatus: z.string().optional(),
-  windPressureIssues: z.boolean().optional(),
-  hardwareStatus: z.object({
-    frame: z.string(),
-    hinges: z.string(),
-    doorknob: z.string(),
-    lock: z.string(),
-  }).optional(),
-  maintenanceNotes: z.string().optional(),
-  nextMaintenanceDate: z.string().optional(),
+  connections: connectionSchema.optional(),
 });
 
 // Create discriminated union based on type
@@ -94,3 +75,4 @@ export const createSpaceSchema = baseSpaceSchema.and(
 );
 
 export type CreateSpaceFormData = z.infer<typeof createSpaceSchema>;
+
