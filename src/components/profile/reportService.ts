@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { PostgrestFilterBuilder } from "@supabase/postgrest-js";
 import pdfMake from "pdfmake/build/pdfmake";
-import { Content, TDocumentDefinitions } from "pdfmake/interfaces";
+import { Content, TDocumentDefinitions, TableCell } from "pdfmake/interfaces";
 
 interface ReportProgress {
   status: 'pending' | 'generating' | 'completed' | 'error';
@@ -319,21 +319,25 @@ export async function fetchIssueReport(
         ...issues
           .filter(issue => issue.status !== 'resolved')
           .map(issue => ({
+            layout: 'noBorders',
             table: {
               widths: ['*'],
-              body: [
-                [{ text: issue.title, style: 'issueTitle' }],
-                [{
-                  ul: [
-                    `Type: ${issue.type}`,
-                    `Priority: ${issue.priority}`,
-                    `Status: ${issue.status}`,
-                    `Location: ${[issue.building_name, issue.floor_name, issue.room_name].filter(Boolean).join(' > ')}`,
-                    `Created: ${format(new Date(issue.created_at), 'PP')}`,
-                    issue.due_date ? `Due: ${format(new Date(issue.due_date), 'PP')}` : null
-                  ].filter(Boolean)
-                }]
-              ]
+              body: [[
+                {
+                  text: issue.title,
+                  style: 'issueTitle'
+                }
+              ],
+              [{
+                ul: [
+                  `Type: ${issue.type}`,
+                  `Priority: ${issue.priority}`,
+                  `Status: ${issue.status}`,
+                  `Location: ${[issue.building_name, issue.floor_name, issue.room_name].filter(Boolean).join(' > ')}`,
+                  `Created: ${format(new Date(issue.created_at), 'PP')}`,
+                  issue.due_date ? `Due: ${format(new Date(issue.due_date), 'PP')}` : null
+                ].filter(Boolean)
+              }]]
             },
             margin: [0, 0, 0, 10]
           }))
@@ -468,27 +472,44 @@ function calculateResolutionStats(issues: IssueReportDetail[]) {
 
 export async function fetchFloorplanReportData(progressCallback: ReportCallback = () => {}) {
   try {
-    const { data, error } = await supabase.from('buildings').select(`
-      id,
-      name,
-      floors:floors(
+    const { data, error } = await supabase
+      .from('buildings')
+      .select(`
         id,
         name,
-        rooms:rooms(
+        floors:floors(
           id,
           name,
-          type,
-          status,
-          maintenance_history,
-          next_maintenance_date
+          rooms:rooms(
+            id,
+            name,
+            room_type,
+            status,
+            maintenance_history,
+            next_maintenance_date
+          )
         )
-      )
-    `);
+      `);
 
     if (error) throw error;
     if (!data) throw new Error('No data found');
 
-    const transformedData = data as FloorplanReportData[];
+    const transformedData: FloorplanReportData[] = data.map(building => ({
+      id: building.id,
+      name: building.name,
+      floors: building.floors?.map(floor => ({
+        id: floor.id,
+        name: floor.name,
+        rooms: (floor.rooms || []).map(room => ({
+          id: room.id,
+          name: room.name,
+          type: room.room_type || 'unknown',
+          status: room.status || 'unknown',
+          maintenance_history: room.maintenance_history || [],
+          next_maintenance_date: room.next_maintenance_date
+        }))
+      })) || []
+    }));
 
     const docDefinition: TDocumentDefinitions = {
       content: [
@@ -507,7 +528,7 @@ export async function fetchFloorplanReportData(progressCallback: ReportCallback 
             { text: '\n' }
           ]).flat()
         ]).flat()
-      ] as Content[],
+      ],
       styles: {
         header: { fontSize: 18, bold: true, margin: [0, 0, 0, 10] },
         subheader: { fontSize: 14, bold: true, margin: [0, 0, 0, 5] },
