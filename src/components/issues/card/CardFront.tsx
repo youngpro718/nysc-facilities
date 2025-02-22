@@ -48,7 +48,7 @@ export function CardFront({ issue, onMarkAsSeen }: CardFrontProps) {
             buildingName={issue.buildings?.name}
             floorName={issue.floors?.name}
             roomName={issue.rooms?.name}
-            assigned_to={issue.assignee_id || 'Unassigned'}
+            assigned_to={issue.assigned_to || 'Unassigned'}
           />
 
           <div className="prose prose-sm max-w-none">
@@ -63,3 +63,4 @@ export function CardFront({ issue, onMarkAsSeen }: CardFrontProps) {
     </Card>
   );
 }
+

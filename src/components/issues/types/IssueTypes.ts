@@ -69,5 +69,15 @@ export interface Issue {
   resolution_date?: string;
 }
 
+export interface Comment {
+  id: string;
+  issue_id: string;
+  content: string;
+  author_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // Adding IssueType as an alias for compatibility
 export type IssueType = Issue;
+
