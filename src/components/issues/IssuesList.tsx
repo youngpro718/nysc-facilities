@@ -1,11 +1,10 @@
 
 import { useState } from "react";
-import { IssueListContent } from "./components/IssueListContent";
-import { IssueDialogManager } from "./components/IssueDialogManager";
 import { useDialogManager } from "@/hooks/useDialogManager";
 import { IssueFiltersType } from "./types/FilterTypes";
 import { IssueStats } from "./components/IssueStats";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { IssueDialogManager } from "./components/IssueDialogManager";
+import { IssueTabs } from "./tabs/IssueTabs";
 
 export const IssuesList = () => {
   const { dialogState, openDialog, closeDialog } = useDialogManager();
@@ -34,42 +33,17 @@ export const IssuesList = () => {
     <>
       <IssueStats />
       
-      <Tabs 
-        value={activeTab} 
-        onValueChange={(value) => handleTabChange(value as 'active' | 'historical')}
-        className="w-full"
-      >
-        <TabsList>
-          <TabsTrigger value="active">Active Issues</TabsTrigger>
-          <TabsTrigger value="historical">Historical Issues</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="active" className="space-y-4">
-          <IssueListContent
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-            filters={filters}
-            setFilters={setFilters}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            activeTab={activeTab}
-            openDialog={openDialog}
-          />
-        </TabsContent>
-
-        <TabsContent value="historical" className="space-y-4">
-          <IssueListContent
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-            filters={filters}
-            setFilters={setFilters}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            activeTab={activeTab}
-            openDialog={openDialog}
-          />
-        </TabsContent>
-      </Tabs>
+      <IssueTabs
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        filters={filters}
+        setFilters={setFilters}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        openDialog={openDialog}
+      />
 
       <IssueDialogManager 
         dialogState={dialogState}
