@@ -91,7 +91,7 @@ export const createParticleConfig = ({
         enable: false,
         rotate: { x: 3000, y: 3000 },
       },
-      center: { x: 50, y: 50, mode: "percent", radius: 0 },
+      center: { x: 50, y: 50, mode: "percent" as "percent", radius: 0 },
       decay: 0,
       distance: {},
       direction: "none",

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -40,16 +39,16 @@ export default function UserDashboard() {
         .channel('room-assignments-changes')
         .on(
           'postgres_changes',
-          { 
-            event: '*', 
-            schema: 'public', 
+          {
+            event: '*',
+            schema: 'public',
             table: 'occupant_room_assignments',
             filter: async () => {
               const { data: { session } } = await supabase.auth.getSession();
               return `occupant_id=eq.${session?.user?.id}`;
             }
           },
-          (payload) => {
+          (payload: any) => {
             console.log('Room assignment update received:', payload);
             checkUserRoleAndFetchData();
           }
