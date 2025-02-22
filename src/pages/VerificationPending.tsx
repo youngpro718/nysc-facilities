@@ -7,7 +7,6 @@ import { ClipboardCheck, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SparklesCore } from "@/components/ui/sparkles";
-import { delay } from "@/utils/timing";
 
 export default function VerificationPending() {
   const navigate = useNavigate();
@@ -17,7 +16,7 @@ export default function VerificationPending() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-          navigate("/login", { replace: true });
+          navigate("/login");
           return;
         }
 
@@ -31,8 +30,7 @@ export default function VerificationPending() {
 
         if (profile?.verification_status === 'verified') {
           toast.success("Your account has been verified!");
-          await delay(100);
-          navigate("/", { replace: true });
+          navigate("/");
         }
       } catch (error) {
         console.error("Error checking verification status:", error);
@@ -53,11 +51,10 @@ export default function VerificationPending() {
           table: 'profiles',
           filter: `id=eq.${supabase.auth.getUser().then(({ data }) => data.user?.id)}`
         },
-        async (payload) => {
+        (payload) => {
           if (payload.new.verification_status === 'verified') {
             toast.success("Your account has been verified!");
-            await delay(100);
-            navigate("/", { replace: true });
+            navigate("/");
           }
         }
       )
@@ -72,7 +69,7 @@ export default function VerificationPending() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        navigate("/login", { replace: true });
+        navigate("/login");
         return;
       }
 
@@ -86,25 +83,13 @@ export default function VerificationPending() {
 
       if (profile?.verification_status === 'verified') {
         toast.success("Your account has been verified!");
-        await delay(100);
-        navigate("/", { replace: true });
+        navigate("/");
       } else {
         toast.info("Your account is still pending verification");
       }
     } catch (error) {
       console.error("Error checking status:", error);
       toast.error("Failed to check verification status");
-    }
-  };
-
-  const handleSignOut = async () => {
-    try {
-      await supabase.auth.signOut();
-      await delay(100);
-      navigate("/login", { replace: true });
-    } catch (error) {
-      console.error("Error signing out:", error);
-      toast.error("Failed to sign out");
     }
   };
 
@@ -143,7 +128,10 @@ export default function VerificationPending() {
             <Button
               variant="ghost"
               className="text-white hover:bg-white/10"
-              onClick={handleSignOut}
+              onClick={() => {
+                supabase.auth.signOut();
+                navigate("/login");
+              }}
             >
               Return to Login
             </Button>
@@ -152,4 +140,5 @@ export default function VerificationPending() {
       </Card>
     </div>
   );
-}
+};
+

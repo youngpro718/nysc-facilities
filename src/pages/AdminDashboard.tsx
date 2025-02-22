@@ -1,8 +1,7 @@
 
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { BuildingsGrid } from "@/components/dashboard/BuildingsGrid";
-import { useAdminDashboardData } from "@/hooks/useAdminDashboardData";
-import { useEffect } from "react";
+import { useDashboardData } from "@/hooks/useDashboardData";
 
 const AdminDashboard = () => {
   const {
@@ -11,12 +10,7 @@ const AdminDashboard = () => {
     issues,
     activities,
     handleMarkAsSeen,
-    fetchAdminData
-  } = useAdminDashboardData();
-
-  useEffect(() => {
-    fetchAdminData();
-  }, []);
+  } = useDashboardData();
 
   return (
     <div className="space-y-8">

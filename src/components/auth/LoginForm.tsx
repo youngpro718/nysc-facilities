@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Mail, Lock, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { delay } from "@/utils/timing";
 
 interface LoginFormProps {
   email: string;
@@ -47,12 +46,8 @@ export const LoginForm = ({
 
       if (signInError) throw signInError;
 
-      // Add a small delay to ensure auth state is updated
-      await delay(100);
-
       // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No user found");
 
       // Check verification status
@@ -65,9 +60,9 @@ export const LoginForm = ({
       if (profileError) throw profileError;
 
       if (profile.verification_status === 'pending') {
-        navigate("/verification-pending", { replace: true });
+        navigate("/verification-pending");
       } else {
-        navigate("/", { replace: true });
+        navigate("/");
       }
 
       toast.success("Welcome back!", {

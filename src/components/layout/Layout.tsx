@@ -31,22 +31,23 @@ const Layout = () => {
         .eq('id', user.id)
         .single();
 
-      setProfile(profileData);
+      if (profileData) {
+        setProfile(profileData);
+      }
     } catch (error) {
       console.error('Error fetching profile:', error);
     }
   }, []);
 
   useEffect(() => {
-    if (!isLoginPage && initialCheckComplete && !isLoading) {
-      fetchProfile();
-    }
-  }, [fetchProfile, isLoginPage, initialCheckComplete, isLoading]);
+    fetchProfile();
+  }, [fetchProfile]);
 
   const handleSignOut = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        // First, delete the user session from our database
         const { data } = await supabase
           .from('user_sessions')
           .select('id')
@@ -61,9 +62,11 @@ const Layout = () => {
             .eq('id', data.id);
         }
 
+        // Clear all storage before signing out
         localStorage.removeItem('app-auth');
         sessionStorage.clear();
         
+        // Sign out with both local and global options
         await supabase.auth.signOut({ scope: 'local' });
         await supabase.auth.signOut({ scope: 'global' });
         
