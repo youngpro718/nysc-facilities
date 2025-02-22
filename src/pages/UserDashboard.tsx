@@ -9,6 +9,7 @@ import { AssignedRoomsCard } from "@/components/dashboard/AssignedRoomsCard";
 import { AssignedKeysCard } from "@/components/dashboard/AssignedKeysCard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { toast } from "sonner";
 import type { RoomData, KeyData, UserAssignment, UserIssue } from "@/types/dashboard";
 
 interface UserProfile {
@@ -31,80 +32,90 @@ export default function UserDashboard() {
   const isMobile = useIsMobile();
 
   useEffect(() => {
+    setupRealtimeSubscriptions();
     checkUserRoleAndFetchData();
-
-    // Set up real-time subscriptions
-    const channels = [
-      supabase
-        .channel('room-assignments-changes')
-        .on(
-          'postgres_changes',
-          { 
-            event: '*', 
-            schema: 'public', 
-            table: 'occupant_room_assignments',
-            filter: `occupant_id=eq.${supabase.auth.user()?.id}`
-          },
-          (payload) => {
-            console.log('Room assignment update received:', payload);
-            checkUserRoleAndFetchData();
-          }
-        )
-        .subscribe(),
-
-      supabase
-        .channel('issues-changes')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'issues' },
-          (payload) => {
-            console.log('Issues update received:', payload);
-            checkUserRoleAndFetchData();
-          }
-        )
-        .subscribe(),
-
-      supabase
-        .channel('keys-changes')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'key_assignments' },
-          (payload) => {
-            console.log('Keys update received:', payload);
-            checkUserRoleAndFetchData();
-          }
-        )
-        .subscribe(),
-
-      supabase
-        .channel('hallways-changes')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'hallways' },
-          (payload) => {
-            console.log('Hallways update received:', payload);
-            checkUserRoleAndFetchData();
-          }
-        )
-        .subscribe(),
-
-      supabase
-        .channel('doors-changes')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'doors' },
-          (payload) => {
-            console.log('Doors update received:', payload);
-            checkUserRoleAndFetchData();
-          }
-        )
-        .subscribe(),
-    ];
-
-    return () => {
-      channels.forEach(channel => supabase.removeChannel(channel));
-    };
   }, []);
+
+  const setupRealtimeSubscriptions = async () => {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) {
+        console.error('Error getting user:', userError);
+        return;
+      }
+
+      if (!user) {
+        console.log('No user found, skipping subscriptions');
+        return;
+      }
+
+      console.log('Setting up realtime subscriptions for user:', user.id);
+
+      const channels = [
+        supabase
+          .channel('room-assignments-changes')
+          .on(
+            'postgres_changes',
+            { 
+              event: '*', 
+              schema: 'public', 
+              table: 'occupant_room_assignments',
+              filter: `occupant_id=eq.${user.id}`
+            },
+            (payload) => {
+              console.log('Room assignment update received:', payload);
+              checkUserRoleAndFetchData();
+            }
+          )
+          .subscribe(),
+
+        supabase
+          .channel('issues-changes')
+          .on(
+            'postgres_changes',
+            { 
+              event: '*', 
+              schema: 'public', 
+              table: 'issues',
+              filter: `created_by=eq.${user.id}`
+            },
+            (payload) => {
+              console.log('Issues update received:', payload);
+              checkUserRoleAndFetchData();
+            }
+          )
+          .subscribe(),
+
+        supabase
+          .channel('key-assignments-changes')
+          .on(
+            'postgres_changes',
+            { 
+              event: '*', 
+              schema: 'public', 
+              table: 'key_assignments',
+              filter: `occupant_id=eq.${user.id}`
+            },
+            (payload) => {
+              console.log('Keys update received:', payload);
+              checkUserRoleAndFetchData();
+            }
+          )
+          .subscribe()
+      ];
+
+      return () => {
+        console.log('Cleaning up realtime subscriptions');
+        channels.forEach(channel => {
+          supabase.removeChannel(channel);
+        });
+      };
+    } catch (error) {
+      console.error('Error setting up realtime subscriptions:', error);
+      toast.error('Failed to set up real-time updates');
+    }
+  };
 
   const checkUserRoleAndFetchData = async () => {
     try {
@@ -114,7 +125,8 @@ export default function UserDashboard() {
         return;
       }
 
-      // Fetch user profile
+      console.log('Fetching data for user:', user.id);
+
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('username, first_name, last_name, title, avatar_url')
@@ -123,11 +135,11 @@ export default function UserDashboard() {
 
       if (profileError) {
         console.error('Error fetching profile:', profileError);
+        toast.error('Failed to load profile information');
       } else {
         setProfile(profileData || {});
       }
 
-      // Check if user is admin
       const { data: roleData, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
@@ -147,7 +159,6 @@ export default function UserDashboard() {
         }
       }
 
-      // Fetch assigned rooms
       const { data: roomsData, error: roomsError } = await supabase
         .from('occupant_room_assignments')
         .select('id, assigned_at, rooms:rooms(name)')
@@ -155,8 +166,10 @@ export default function UserDashboard() {
 
       if (roomsError) {
         console.error('Error fetching rooms:', roomsError);
+        toast.error('Failed to load assigned rooms');
         setAssignedRooms([]);
       } else {
+        console.log('Received rooms data:', roomsData);
         const typedRoomsData = roomsData as RoomData[];
         const processedRooms: UserAssignment[] = typedRoomsData.map(room => ({
           id: room.id,
@@ -166,7 +179,6 @@ export default function UserDashboard() {
         setAssignedRooms(processedRooms);
       }
 
-      // Fetch assigned keys
       const { data: keysData, error: keysError } = await supabase
         .from('key_assignments')
         .select('id, assigned_at, keys:keys(name)')
@@ -175,8 +187,10 @@ export default function UserDashboard() {
 
       if (keysError) {
         console.error('Error fetching keys:', keysError);
+        toast.error('Failed to load assigned keys');
         setAssignedKeys([]);
       } else {
+        console.log('Received keys data:', keysData);
         const typedKeysData = keysData as KeyData[];
         const processedKeys: UserAssignment[] = typedKeysData.map(key => ({
           id: key.id,
@@ -186,7 +200,6 @@ export default function UserDashboard() {
         setAssignedKeys(processedKeys);
       }
 
-      // Fetch user's reported issues
       const { data: issuesData, error: issuesError } = await supabase
         .from('issues')
         .select('id, title, status, created_at, priority, rooms:rooms(name)')
@@ -195,13 +208,16 @@ export default function UserDashboard() {
 
       if (issuesError) {
         console.error('Error fetching issues:', issuesError);
+        toast.error('Failed to load reported issues');
         setUserIssues([]);
       } else {
+        console.log('Received issues data:', issuesData);
         setUserIssues(issuesData || []);
       }
 
     } catch (error) {
       console.error('Error fetching user data:', error);
+      toast.error('Failed to load dashboard data');
     } finally {
       setIsLoading(false);
     }
