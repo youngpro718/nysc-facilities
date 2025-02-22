@@ -46,7 +46,7 @@ export interface Issue {
   created_at: string;
   updated_at: string;
   seen: boolean;
-  assignee_id?: string;
+  assigned_to?: 'DCAS' | 'OCA' | 'Self' | 'Outside_Vendor';
   last_status_change?: string;
   last_updated_by?: string;
   tags?: string[];
@@ -67,17 +67,6 @@ export interface Issue {
   resolution_notes?: string;
   resolved_by?: string;
   resolution_date?: string;
-}
-
-export interface Comment {
-  id: string;
-  issue_id: string;
-  content: string;
-  author_id: string;
-  created_at: string;
-  updated_at: string;
-  attachments: string[];
-  mentions: string[];
 }
 
 // Adding IssueType as an alias for compatibility
