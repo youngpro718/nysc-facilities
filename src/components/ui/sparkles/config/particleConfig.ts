@@ -63,7 +63,7 @@ export const createParticleConfig = ({
       },
       enable: false,
       maxSpeed: 50,
-      mode: "bounce",
+      mode: "bounce" as "bounce" | "absorb" | "destroy",
       overlap: {
         enable: true,
         retries: 0,

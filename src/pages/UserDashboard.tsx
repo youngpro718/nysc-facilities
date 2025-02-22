@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -43,7 +44,10 @@ export default function UserDashboard() {
             event: '*', 
             schema: 'public', 
             table: 'occupant_room_assignments',
-            filter: `occupant_id=eq.${supabase.auth.user()?.id}`
+            filter: async () => {
+              const { data: { session } } = await supabase.auth.getSession();
+              return `occupant_id=eq.${session?.user?.id}`;
+            }
           },
           (payload) => {
             console.log('Room assignment update received:', payload);
@@ -108,8 +112,8 @@ export default function UserDashboard() {
 
   const checkUserRoleAndFetchData = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
         navigate('/auth');
         return;
       }
@@ -118,7 +122,7 @@ export default function UserDashboard() {
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('username, first_name, last_name, title, avatar_url')
-        .eq('id', user.id)
+        .eq('id', session.user.id)
         .single();
 
       if (profileError) {
@@ -131,7 +135,7 @@ export default function UserDashboard() {
       const { data: roleData, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', user.id)
+        .eq('user_id', session.user.id)
         .maybeSingle();
 
       if (roleError) {
@@ -151,7 +155,7 @@ export default function UserDashboard() {
       const { data: roomsData, error: roomsError } = await supabase
         .from('occupant_room_assignments')
         .select('id, assigned_at, rooms:rooms(name)')
-        .eq('occupant_id', user.id);
+        .eq('occupant_id', session.user.id);
 
       if (roomsError) {
         console.error('Error fetching rooms:', roomsError);
@@ -170,7 +174,7 @@ export default function UserDashboard() {
       const { data: keysData, error: keysError } = await supabase
         .from('key_assignments')
         .select('id, assigned_at, keys:keys(name)')
-        .eq('occupant_id', user.id)
+        .eq('occupant_id', session.user.id)
         .is('returned_at', null);
 
       if (keysError) {
@@ -190,7 +194,7 @@ export default function UserDashboard() {
       const { data: issuesData, error: issuesError } = await supabase
         .from('issues')
         .select('id, title, status, created_at, priority, rooms:rooms(name)')
-        .eq('created_by', user.id)
+        .eq('created_by', session.user.id)
         .order('created_at', { ascending: false });
 
       if (issuesError) {
