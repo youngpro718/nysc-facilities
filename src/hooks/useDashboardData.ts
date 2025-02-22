@@ -81,7 +81,8 @@ export const useDashboardData = () => {
         return;
       }
 
-      const transformedBuildings = data.map(building => ({
+      // Map the data to match our expected types
+      const transformedBuildings: Building[] = data.map(building => ({
         id: building.id,
         name: building.name,
         address: building.address,
@@ -96,10 +97,7 @@ export const useDashboardData = () => {
             lighting_fixtures: room.lighting_fixtures?.map(fixture => ({
               id: fixture.id,
               bulb_count: fixture.bulb_count,
-              // Explicitly map the status to match our type definition
-              status: fixture.status === 'functional' || fixture.status === 'working' 
-                ? 'working' 
-                : 'not_working'
+              status: (fixture.status === 'functional') ? 'working' : 'not_working'
             }))
           }))
         }))
