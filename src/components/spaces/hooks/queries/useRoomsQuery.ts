@@ -1,6 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
-import type { Room } from "../../rooms/types/RoomTypes";
+import { Room } from "../../rooms/types/RoomTypes";
 import { useToast } from "@/hooks/use-toast";
 import { fetchRoomsData, fetchRelatedRoomData } from "./api/roomQueries";
 import { transformRoomData } from "./transformers/roomTransformers";
@@ -20,7 +20,7 @@ export function useRoomsQuery({ buildingId, floorId }: UseRoomsQueryProps = {}) 
   const { toast } = useToast();
 
   return useQuery({
-    queryKey: ['rooms', buildingId, floorId],
+    queryKey: ['rooms', buildingId, floorId], // Include filters in query key
     queryFn: async () => {
       console.log("Fetching rooms data with filters:", { buildingId, floorId });
       
@@ -36,7 +36,7 @@ export function useRoomsQuery({ buildingId, floorId }: UseRoomsQueryProps = {}) 
         throw roomsError;
       }
 
-      if (!roomsData || roomsData.length === 0) return [];
+      if (!roomsData) return [];
 
       // Fetch additional data in parallel
       const [
