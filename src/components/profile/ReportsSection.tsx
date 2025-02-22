@@ -12,10 +12,15 @@ import {
   fetchKeyReport,
   fetchRoomReport,
   fetchIssueReport,
-  fetchFullDatabaseReport,
-  downloadReport 
-} from "./reportService";
-import { ReportTemplate, ScheduledReport, fetchReportTemplates, fetchScheduledReports, createReportTemplate, scheduleReport } from "./reportUtils";
+  fetchFullDatabaseReport
+} from "./reports/reportService";
+import { ReportTemplate, ScheduledReport, ReportProgress } from "./reports/types";
+import { 
+  fetchReportTemplates, 
+  fetchScheduledReports, 
+  createReportTemplate, 
+  scheduleReport 
+} from "./reports/reportUtils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";

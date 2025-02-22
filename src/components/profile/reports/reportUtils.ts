@@ -1,10 +1,10 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { ReportTemplate, ScheduledReport, ReportCallback } from "./types";
 import { PostgrestFilterBuilder } from "@supabase/postgrest-js";
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 import { TDocumentDefinitions } from "pdfmake/interfaces";
+import { ReportTemplate, ScheduledReport, ReportCallback } from "./types";
 
 export async function fetchDataWithProgress<T>(
   queryBuilder: PostgrestFilterBuilder<any, any, T[]>,
@@ -49,7 +49,9 @@ export async function fetchDataWithProgress<T>(
 
 export async function downloadPdf(docDefinition: TDocumentDefinitions, filename: string) {
   try {
-    pdfMake.vfs = pdfFonts.pdfMake.vfs;
+    if (pdfFonts.pdfMake && pdfFonts.pdfMake.vfs) {
+      pdfMake.vfs = pdfFonts.pdfMake.vfs;
+    }
 
     const pdfDocGenerator = pdfMake.createPdf(docDefinition);
 
@@ -67,7 +69,7 @@ export async function downloadPdf(docDefinition: TDocumentDefinitions, filename:
   }
 }
 
-export async function fetchReportTemplates(): Promise<ReportTemplate[]> {
+export async function fetchReportTemplates() {
   const { data, error } = await supabase
     .from('report_templates')
     .select('*')
@@ -81,7 +83,7 @@ export async function fetchReportTemplates(): Promise<ReportTemplate[]> {
   }));
 }
 
-export async function createReportTemplate(template: Omit<ReportTemplate, 'id' | 'created_at'>): Promise<ReportTemplate> {
+export async function createReportTemplate(template: Omit<ReportTemplate, 'id' | 'created_at'>) {
   const { data, error } = await supabase
     .from('report_templates')
     .insert(template)
@@ -96,7 +98,7 @@ export async function createReportTemplate(template: Omit<ReportTemplate, 'id' |
   };
 }
 
-export async function fetchScheduledReports(): Promise<ScheduledReport[]> {
+export async function fetchScheduledReports() {
   const { data, error } = await supabase
     .from('scheduled_reports')
     .select('*')
@@ -111,7 +113,7 @@ export async function fetchScheduledReports(): Promise<ScheduledReport[]> {
   }));
 }
 
-export async function scheduleReport(report: Omit<ScheduledReport, 'id'>): Promise<ScheduledReport> {
+export async function scheduleReport(report: Omit<ScheduledReport, 'id'>) {
   const { data, error } = await supabase
     .from('scheduled_reports')
     .insert(report)
@@ -126,3 +128,7 @@ export async function scheduleReport(report: Omit<ScheduledReport, 'id'>): Promi
                typeof data.recipients === 'string' ? JSON.parse(data.recipients) : []
   };
 }
+
+// Re-export types from types.ts
+export type { ReportTemplate, ScheduledReport } from './types';
+
