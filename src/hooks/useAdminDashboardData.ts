@@ -13,7 +13,7 @@ export const useAdminDashboardData = () => {
     try {
       setBuildingsLoading(true);
       
-      // Fetch buildings with complete hierarchy
+      // Fetch buildings with floors only first
       const { data: buildingsData, error: buildingsError } = await supabase
         .from('buildings')
         .select(`
@@ -26,23 +26,7 @@ export const useAdminDashboardData = () => {
           building_floors (
             id,
             name,
-            floor_number,
-            rooms (
-              id,
-              name,
-              room_number,
-              status,
-              room_type,
-              lighting_fixtures (
-                id,
-                name,
-                type,
-                status,
-                technology,
-                electrical_issues,
-                ballast_issue
-              )
-            )
+            floor_number
           )
         `);
 
