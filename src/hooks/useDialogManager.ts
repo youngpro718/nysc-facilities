@@ -20,7 +20,12 @@ export function useDialogManager() {
   };
 
   const closeDialog = () => {
-    setDialogState({ type: null, isOpen: false });
+    // Ensure we clean up the entire state
+    setDialogState({
+      type: null,
+      isOpen: false,
+      data: undefined
+    });
   };
 
   return {
@@ -29,3 +34,4 @@ export function useDialogManager() {
     closeDialog,
   };
 }
+

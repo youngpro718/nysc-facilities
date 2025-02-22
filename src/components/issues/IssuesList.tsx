@@ -62,10 +62,13 @@ export const IssuesList = () => {
   };
 
   const handleResolutionSuccess = () => {
-    closeDialog();
-    toast({
-      title: "Issue resolved",
-      description: "The issue has been successfully resolved.",
+    // Queue the state updates properly
+    Promise.resolve().then(() => {
+      closeDialog();
+      toast({
+        title: "Issue resolved",
+        description: "The issue has been successfully resolved.",
+      });
     });
   };
 
@@ -75,6 +78,13 @@ export const IssuesList = () => {
       ...prev,
       ...newFilters
     }));
+  };
+
+  const handleSheetOpenChange = (open: boolean) => {
+    if (!open) {
+      // Clean up dialog state properly when sheet is closed
+      closeDialog();
+    }
   };
 
   return (
@@ -111,7 +121,10 @@ export const IssuesList = () => {
       )}
 
       {dialogState.type === 'issueDetails' && (
-        <Sheet open={dialogState.isOpen} onOpenChange={closeDialog}>
+        <Sheet 
+          open={dialogState.isOpen} 
+          onOpenChange={handleSheetOpenChange}
+        >
           <SheetContent side="right" className="w-full sm:w-3/4 md:w-2/3 lg:w-1/2">
             <IssueDetails 
               issueId={dialogState.data?.issueId} 
@@ -122,7 +135,10 @@ export const IssuesList = () => {
       )}
 
       {dialogState.type === 'resolution' && (
-        <Sheet open={dialogState.isOpen} onOpenChange={closeDialog}>
+        <Sheet 
+          open={dialogState.isOpen} 
+          onOpenChange={handleSheetOpenChange}
+        >
           <SheetContent>
             <SheetHeader>
               <SheetTitle>Resolve Issue</SheetTitle>
@@ -138,3 +154,4 @@ export const IssuesList = () => {
     </>
   );
 };
+
