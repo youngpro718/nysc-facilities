@@ -1,3 +1,4 @@
+
 export interface RoomData {
   id: string;
   assigned_at: string;
@@ -38,4 +39,31 @@ export interface UserProfile {
   last_name?: string;
   title?: string;
   avatar_url?: string;
+}
+
+// New types for admin dashboard
+export interface Building {
+  id: string;
+  name: string;
+  status: string;
+  address: string;
+}
+
+export interface Activity {
+  id: string;
+  action: string;
+  performed_by?: string;
+  created_at: string;
+  metadata?: {
+    building_id: string;
+    [key: string]: any;
+  };
+}
+
+export interface AdminDashboardData {
+  buildings: Building[];
+  buildingsLoading: boolean;
+  issues: UserIssue[];
+  activities: Activity[];
+  handleMarkAsSeen: (id: string) => void;
 }
