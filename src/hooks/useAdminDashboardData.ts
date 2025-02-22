@@ -13,7 +13,7 @@ export const useAdminDashboardData = () => {
     try {
       setBuildingsLoading(true);
       
-      // Fetch buildings with floors only first
+      // Fetch complete building hierarchy
       const { data: buildingsData, error: buildingsError } = await supabase
         .from('buildings')
         .select(`
@@ -26,7 +26,23 @@ export const useAdminDashboardData = () => {
           building_floors (
             id,
             name,
-            floor_number
+            floor_number,
+            rooms (
+              id,
+              name,
+              room_number,
+              status,
+              room_type,
+              lighting_fixtures (
+                id,
+                name,
+                type,
+                status,
+                technology,
+                electrical_issues,
+                ballast_issue
+              )
+            )
           )
         `);
 
@@ -42,7 +58,7 @@ export const useAdminDashboardData = () => {
         setBuildings(typedBuildings);
       }
 
-      // Fetch only unseen issues with related data
+      // Fetch only unseen issues with photos
       const { data: issuesData, error: issuesError } = await supabase
         .from('issues')
         .select(`
@@ -68,6 +84,7 @@ export const useAdminDashboardData = () => {
           )
         `)
         .eq('seen', false)
+        .not('photos', 'eq', '{}')
         .order('created_at', { ascending: false });
 
       if (issuesError) {
@@ -151,3 +168,4 @@ export const useAdminDashboardData = () => {
     fetchAdminData
   };
 };
+
