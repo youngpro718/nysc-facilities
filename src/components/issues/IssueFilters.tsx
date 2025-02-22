@@ -9,7 +9,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 
 interface IssueFiltersProps {
-  onFilterChange: (filters: IssueFiltersType) => void;
+  onFilterChange: (filters: Partial<IssueFiltersType>) => void;
   onSortChange: (sort: SortOption) => void;
   onGroupingChange: (grouping: GroupingOption) => void;
   viewMode: ViewMode;
@@ -27,11 +27,14 @@ export const IssueFilters = ({
   // Initialize filters from URL params on mount
   useEffect(() => {
     const filters: Partial<IssueFiltersType> = {};
+    const validKeys: Array<keyof IssueFiltersType> = ['type', 'status', 'priority', 'assigned_to', 'lightingType', 'fixtureStatus', 'electricalIssue'];
+    
     searchParams.forEach((value, key) => {
-      if (Object.keys(filters).includes(key)) {
+      if (validKeys.includes(key as keyof IssueFiltersType)) {
         filters[key as keyof IssueFiltersType] = value;
       }
     });
+    
     if (Object.keys(filters).length > 0) {
       onFilterChange(filters);
     }

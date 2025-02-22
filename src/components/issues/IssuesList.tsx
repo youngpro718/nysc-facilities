@@ -198,7 +198,7 @@ export const IssuesList = () => {
         }
         
         if (electricalIssue && electricalIssue !== 'all_electrical_issues') {
-          query = query.contains('lighting_details->detected_issues', { [electricalIssue]: true });
+          query = query.contains('lighting_details->detected_issues', [electricalIssue]);
         }
       }
 
