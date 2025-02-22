@@ -29,7 +29,7 @@ export const IssueFilters = ({
     const filters: Partial<IssueFiltersType> = {};
     searchParams.forEach((value, key) => {
       if (isValidFilterKey(key)) {
-        filters[key] = value;
+        filters[key as keyof IssueFiltersType] = value as any;
       }
     });
     
@@ -39,7 +39,8 @@ export const IssueFilters = ({
   }, []);
 
   const isValidFilterKey = (key: string): key is keyof IssueFiltersType => {
-    return ['type', 'status', 'priority', 'assigned_to', 'lightingType', 'fixtureStatus', 'electricalIssue'].includes(key);
+    return ['type', 'status', 'priority', 'assigned_to', 'lightingType', 'fixtureStatus', 'electricalIssue',
+            'hasOverdue', 'sortBy', 'order', 'assignedToMe'].includes(key);
   };
 
   const handleTypeChange = (type: string) => {
@@ -51,8 +52,10 @@ export const IssueFilters = ({
     // Update URL params
     const updatedParams = new URLSearchParams(searchParams);
     Object.entries(newFilters).forEach(([key, value]) => {
-      if (value && !value.includes('all_')) {
+      if (value && typeof value === 'string' && !value.includes('all_')) {
         updatedParams.set(key, value);
+      } else if (typeof value === 'boolean') {
+        updatedParams.set(key, value.toString());
       } else {
         updatedParams.delete(key);
       }

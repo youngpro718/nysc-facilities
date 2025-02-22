@@ -172,11 +172,11 @@ export const IssuesList = () => {
         query = query.eq('type', typeFilter);
       }
       
-      if (statusFilter && statusFilter !== 'all_statuses') {
+      if (statusFilter && statusFilter !== 'all_statuses' && isValidIssueStatus(statusFilter)) {
         query = query.eq('status', statusFilter);
       }
       
-      if (priorityFilter && priorityFilter !== 'all_priorities') {
+      if (priorityFilter && priorityFilter !== 'all_priorities' && isValidIssuePriority(priorityFilter)) {
         query = query.eq('priority', priorityFilter);
       }
 

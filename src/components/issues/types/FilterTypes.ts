@@ -10,9 +10,12 @@ export type IssueFilters = {
   lightingType?: "standard" | "emergency" | "motion_sensor" | "all_lighting_types";
   fixtureStatus?: "functional" | "maintenance_needed" | "non_functional" | "pending_maintenance" | "scheduled_replacement" | "all_fixture_statuses";
   electricalIssue?: "short_circuit" | "wiring_issues" | "voltage_problems" | "ballast_issue" | "all_electrical_issues";
+  hasOverdue?: boolean;
+  sortBy?: string;
+  order?: 'asc' | 'desc';
+  assignedToMe?: boolean;
 };
 
-// Alias IssueFilters as IssueFiltersType for consistency
 export type IssueFiltersType = IssueFilters;
 
 export type SortOption = {
