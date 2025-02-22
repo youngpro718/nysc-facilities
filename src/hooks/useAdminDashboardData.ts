@@ -69,10 +69,10 @@ export const useAdminDashboardData = () => {
           activity_type: activity.activity_type,
           performed_by: activity.performed_by,
           created_at: activity.created_at,
-          metadata: {
-            building_id: activity.metadata?.building_id || '',
-            ...activity.metadata
-          }
+          metadata: typeof activity.metadata === 'object' ? {
+            building_id: activity.metadata?.building_id as string || '',
+            ...(activity.metadata as Record<string, any>)
+          } : { building_id: '' }
         }));
         setActivities(typedActivities);
       }

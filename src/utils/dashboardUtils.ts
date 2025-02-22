@@ -16,7 +16,7 @@ export interface Building {
   id: string;
   name: string;
   address: string;
-  status: 'active' | 'maintenance';
+  status: 'active' | 'inactive' | 'under_maintenance';
   floors?: Floor[];
 }
 

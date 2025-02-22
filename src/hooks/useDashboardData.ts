@@ -94,7 +94,17 @@ export const useDashboardData = () => {
       // Fetch user's reported issues
       const { data: issuesData, error: issuesError } = await supabase
         .from('issues')
-        .select('id, title, status, created_at, priority, rooms:rooms(name)')
+        .select(`
+          id, 
+          title, 
+          description,
+          status,
+          created_at,
+          priority,
+          building_id,
+          seen,
+          rooms:rooms(name)
+        `)
         .eq('created_by', session.user.id)
         .order('created_at', { ascending: false });
 
@@ -122,4 +132,3 @@ export const useDashboardData = () => {
     checkUserRoleAndFetchData
   };
 };
-
