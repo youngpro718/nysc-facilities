@@ -339,7 +339,6 @@ export async function fetchIssueReport(
         ...issues
           .filter(issue => issue.status !== 'resolved')
           .map(issue => ({
-            layout: 'noBorders',
             table: {
               widths: ['*'],
               body: [[
@@ -359,7 +358,8 @@ export async function fetchIssueReport(
                 ].filter(Boolean)
               }]]
             },
-            margin: [0, 0, 0, 10]
+            layout: 'noBorders',
+            margin: [0, 0, 0, 10] as [number, number, number, number]
           }))
       ],
       styles: {
@@ -541,7 +541,6 @@ export async function fetchFloorplanReportData(progressCallback: ReportCallback 
         ...(building.floors || []).map(floor => [
           { text: floor.name, style: 'floorHeader' },
           {
-            style: 'roomList',
             table: {
               widths: ['*'],
               body: floor.rooms.map(room => [[
@@ -553,7 +552,7 @@ export async function fetchFloorplanReportData(progressCallback: ReportCallback 
             },
             layout: 'noBorders',
             margin: [10, 0, 0, 0] as [number, number, number, number]
-          } as Content,
+          },
           { text: '\n' }
         ]).flat()
       ]).flat()
