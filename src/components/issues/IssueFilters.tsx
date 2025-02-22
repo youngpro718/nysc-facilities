@@ -24,6 +24,19 @@ export const IssueFilters = ({
   const [showLightingFilters, setShowLightingFilters] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
+  // Initialize filters from URL params on mount
+  useEffect(() => {
+    const filters: Partial<IssueFiltersType> = {};
+    searchParams.forEach((value, key) => {
+      if (Object.keys(filters).includes(key)) {
+        filters[key as keyof IssueFiltersType] = value;
+      }
+    });
+    if (Object.keys(filters).length > 0) {
+      onFilterChange(filters);
+    }
+  }, []);
+
   const handleTypeChange = (type: string) => {
     setShowLightingFilters(type === 'LIGHTING');
     updateFilters({ type });
@@ -33,8 +46,10 @@ export const IssueFilters = ({
     // Update URL params
     const updatedParams = new URLSearchParams(searchParams);
     Object.entries(newFilters).forEach(([key, value]) => {
-      if (value !== undefined) {
-        // Convert any non-string values to strings
+      if (value !== undefined && value !== 'all_types' && value !== 'all_statuses' 
+          && value !== 'all_priorities' && value !== 'all_assignments'
+          && value !== 'all_lighting_types' && value !== 'all_fixture_statuses'
+          && value !== 'all_electrical_issues') {
         updatedParams.set(key, String(value));
       } else {
         updatedParams.delete(key);

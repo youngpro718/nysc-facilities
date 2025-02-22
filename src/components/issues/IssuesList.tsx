@@ -163,20 +163,43 @@ export const IssuesList = () => {
         .order('created_at', { ascending: false });
 
       const urlParams = new URLSearchParams(window.location.search);
-      const typeFilter = urlParams.get('type') || 'all_types';
-      const statusFilter = urlParams.get('status') || 'all_statuses';
-      const priorityFilter = urlParams.get('priority') || 'all_priorities';
-
-      if (typeFilter !== 'all_types') {
+      
+      const typeFilter = urlParams.get('type');
+      if (typeFilter && typeFilter !== 'all_types') {
         query = query.eq('type', typeFilter);
       }
       
-      if (statusFilter !== 'all_statuses' && isValidIssueStatus(statusFilter)) {
+      const statusFilter = urlParams.get('status');
+      if (statusFilter && statusFilter !== 'all_statuses' && isValidIssueStatus(statusFilter)) {
         query = query.eq('status', statusFilter);
       }
       
-      if (priorityFilter !== 'all_priorities' && isValidIssuePriority(priorityFilter)) {
+      const priorityFilter = urlParams.get('priority');
+      if (priorityFilter && priorityFilter !== 'all_priorities' && isValidIssuePriority(priorityFilter)) {
         query = query.eq('priority', priorityFilter);
+      }
+
+      const assignmentFilter = urlParams.get('assigned_to');
+      if (assignmentFilter && assignmentFilter !== 'all_assignments') {
+        query = query.eq('assigned_to', assignmentFilter);
+      }
+
+      if (typeFilter === 'LIGHTING') {
+        const lightingType = urlParams.get('lightingType');
+        const fixtureStatus = urlParams.get('fixtureStatus');
+        const electricalIssue = urlParams.get('electricalIssue');
+
+        if (lightingType && lightingType !== 'all_lighting_types') {
+          query = query.contains('lighting_details', { fixture_type: lightingType });
+        }
+        
+        if (fixtureStatus && fixtureStatus !== 'all_fixture_statuses') {
+          query = query.contains('lighting_details', { fixture_status: fixtureStatus });
+        }
+        
+        if (electricalIssue && electricalIssue !== 'all_electrical_issues') {
+          query = query.contains('lighting_details->detected_issues', { [electricalIssue]: true });
+        }
       }
 
       const { data, error } = await query;
