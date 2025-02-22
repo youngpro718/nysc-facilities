@@ -5,16 +5,14 @@ import { Issue } from "../../types/IssueTypes";
 import { DatabaseIssue, transformIssue } from "../../utils/IssueTransformers";
 import { isValidStatus, isValidPriority } from "../../utils/typeGuards";
 import { PostgrestFilterBuilder } from "@supabase/postgrest-js";
-import { useSearchParams } from "react-router-dom";
+import { IssueFiltersType } from "../../types/FilterTypes";
 
 type IssueQueryResponse = DatabaseIssue[];
 type IssueQueryBuilder = PostgrestFilterBuilder<any, any, IssueQueryResponse>;
 
-export const useIssueList = () => {
-  const [searchParams] = useSearchParams();
-
+export const useIssueList = (filters: IssueFiltersType) => {
   return useQuery({
-    queryKey: ['issues', Object.fromEntries(searchParams.entries())],
+    queryKey: ['issues', filters],
     queryFn: async () => {
       let query: IssueQueryBuilder = supabase
         .from('issues')
@@ -42,48 +40,39 @@ export const useIssueList = () => {
         `)
         .order('created_at', { ascending: false });
 
-      const typeFilter = searchParams.get('type');
-      const statusFilter = searchParams.get('status');
-      const priorityFilter = searchParams.get('priority');
-      const assignmentFilter = searchParams.get('assigned_to');
-
-      if (typeFilter && typeFilter !== 'all_types') {
-        query = query.eq('type', typeFilter);
+      if (filters.type && filters.type !== 'all_types') {
+        query = query.eq('type', filters.type);
       }
       
-      if (statusFilter && statusFilter !== 'all_statuses') {
-        const validStatus = isValidStatus(statusFilter) ? statusFilter : undefined;
+      if (filters.status && filters.status !== 'all_statuses') {
+        const validStatus = isValidStatus(filters.status) ? filters.status : undefined;
         if (validStatus) {
           query = query.eq('status', validStatus);
         }
       }
       
-      if (priorityFilter && priorityFilter !== 'all_priorities') {
-        const validPriority = isValidPriority(priorityFilter) ? priorityFilter : undefined;
+      if (filters.priority && filters.priority !== 'all_priorities') {
+        const validPriority = isValidPriority(filters.priority) ? filters.priority : undefined;
         if (validPriority) {
           query = query.eq('priority', validPriority);
         }
       }
 
-      if (assignmentFilter && assignmentFilter !== 'all_assignments') {
-        query = query.eq('assigned_to', assignmentFilter);
+      if (filters.assigned_to && filters.assigned_to !== 'all_assignments') {
+        query = query.eq('assigned_to', filters.assigned_to);
       }
 
-      if (typeFilter === 'LIGHTING') {
-        const lightingType = searchParams.get('lightingType');
-        const fixtureStatus = searchParams.get('fixtureStatus');
-        const electricalIssue = searchParams.get('electricalIssue');
-
-        if (lightingType && lightingType !== 'all_lighting_types') {
-          query = query.contains('lighting_details', { fixture_type: lightingType });
+      if (filters.type === 'LIGHTING') {
+        if (filters.lightingType && filters.lightingType !== 'all_lighting_types') {
+          query = query.contains('lighting_details', { fixture_type: filters.lightingType });
         }
         
-        if (fixtureStatus && fixtureStatus !== 'all_fixture_statuses') {
-          query = query.contains('lighting_details', { fixture_status: fixtureStatus });
+        if (filters.fixtureStatus && filters.fixtureStatus !== 'all_fixture_statuses') {
+          query = query.contains('lighting_details', { fixture_status: filters.fixtureStatus });
         }
         
-        if (electricalIssue && electricalIssue !== 'all_electrical_issues') {
-          query = query.contains('lighting_details->detected_issues', [electricalIssue]);
+        if (filters.electricalIssue && filters.electricalIssue !== 'all_electrical_issues') {
+          query = query.contains('lighting_details->detected_issues', [filters.electricalIssue]);
         }
       }
 

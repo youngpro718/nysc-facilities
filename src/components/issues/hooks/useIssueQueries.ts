@@ -1,9 +1,11 @@
 
 import { useIssueList } from "./queries/useIssueList";
 import { useIssueMutations } from "./mutations/useIssueMutations";
+import { useIssueFilters } from "./useIssueFilters";
 
 export const useIssueQueries = () => {
-  const { data: issues, isLoading } = useIssueList();
+  const { filters } = useIssueFilters();
+  const { data: issues, isLoading } = useIssueList(filters);
   const { updateIssueMutation, deleteIssueMutation } = useIssueMutations();
 
   return {
@@ -13,3 +15,4 @@ export const useIssueQueries = () => {
     deleteIssueMutation,
   };
 };
+
