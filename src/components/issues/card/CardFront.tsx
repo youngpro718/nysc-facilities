@@ -26,19 +26,19 @@ export function CardFront({ issue, onMarkAsSeen }: CardFrontProps) {
       }}
     >
       <div className="absolute inset-0 bg-card">
-        <CardHeader className="p-4">
-          <CardTitle className="flex items-center justify-between gap-4 text-lg">
-            <div className="flex items-center gap-2">
-              <span className="truncate font-medium">{issue.title}</span>
+        <CardHeader className="p-3">
+          <CardTitle className="flex items-start justify-between gap-2">
+            <div className="flex items-start gap-2 min-w-0">
+              <span className="text-base font-medium leading-tight line-clamp-2">{issue.title}</span>
               {issue.photos && issue.photos.length > 0 && (
-                <Badge variant="secondary" className="shrink-0">
+                <Badge variant="secondary" className="shrink-0 mt-0.5">
                   {issue.photos.length} photos
                 </Badge>
               )}
             </div>
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-4 pt-0 space-y-4">
+        <CardContent className="p-3 space-y-3">
           <IssueBadges
             status={issue.status}
             priority={issue.priority}
@@ -48,7 +48,7 @@ export function CardFront({ issue, onMarkAsSeen }: CardFrontProps) {
           />
           
           <div className="prose prose-sm max-w-none">
-            <p className="text-muted-foreground line-clamp-2 text-sm">{issue.description}</p>
+            <p className="text-muted-foreground line-clamp-3 text-sm leading-normal">{issue.description}</p>
           </div>
 
           <IssueMetadata
@@ -61,7 +61,7 @@ export function CardFront({ issue, onMarkAsSeen }: CardFrontProps) {
             assigned_to={issue.assigned_to || 'Unassigned'}
           />
 
-          <div className="absolute bottom-4 left-4 text-xs text-muted-foreground/80">
+          <div className="absolute bottom-3 left-3 text-xs text-muted-foreground/80">
             Created {format(new Date(issue.created_at), 'MMM d, yyyy')}
           </div>
         </CardContent>
@@ -69,3 +69,4 @@ export function CardFront({ issue, onMarkAsSeen }: CardFrontProps) {
     </Card>
   );
 }
+
