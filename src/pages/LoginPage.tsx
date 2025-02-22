@@ -9,16 +9,21 @@ import { AuthForm } from "@/components/auth/AuthForm";
 
 const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [hasCheckedSession, setHasCheckedSession] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     // Check if user is already logged in
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && !hasCheckedSession) {
+        setHasCheckedSession(true);
         navigate("/", { replace: true });
       }
-    });
-  }, [navigate]);
+    };
+
+    checkSession();
+  }, [navigate, hasCheckedSession]);
 
   return (
     <div className="h-screen relative w-full bg-courthouse flex flex-col items-center justify-center overflow-hidden">
@@ -61,3 +66,4 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
+
