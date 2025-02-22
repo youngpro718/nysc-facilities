@@ -22,7 +22,7 @@ export const useIssueFilters = () => {
   useEffect(() => {
     const newParams = new URLSearchParams(searchParams);
     Object.entries(filters).forEach(([key, value]) => {
-      if (value && !value.includes('all_')) {
+      if (value && typeof value === 'string' && !value.startsWith('all_')) {
         newParams.set(key, value);
       } else {
         newParams.delete(key);

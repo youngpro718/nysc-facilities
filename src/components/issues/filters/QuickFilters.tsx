@@ -2,13 +2,13 @@
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Clock, Timer, User } from "lucide-react";
 import { useIssueFilters } from "../hooks/useIssueFilters";
-import { IssueFilters } from "../types/FilterTypes";
+import { IssueFiltersType } from "../types/FilterTypes";
 
 export const QuickFilters = () => {
   const { setFilters } = useIssueFilters();
 
-  const handleFilterChange = (newFilters: Partial<IssueFilters>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
+  const handleFilterChange = (newFilters: Partial<IssueFiltersType>) => {
+    setFilters(newFilters);
   };
 
   const quickFilters = [
@@ -20,17 +20,17 @@ export const QuickFilters = () => {
     {
       label: "Overdue",
       icon: <Clock className="h-4 w-4" />,
-      onClick: () => handleFilterChange({ status: "open", hasOverdue: true })
+      onClick: () => handleFilterChange({ status: "open" })
     },
     {
       label: "Recent",
       icon: <Timer className="h-4 w-4" />,
-      onClick: () => handleFilterChange({ sortBy: "created_at", order: "desc" })
+      onClick: () => handleFilterChange({ type: "all_types" })
     },
     {
       label: "My Issues",
       icon: <User className="h-4 w-4" />,
-      onClick: () => handleFilterChange({ assignedToMe: true })
+      onClick: () => handleFilterChange({ assigned_to: "Self" })
     }
   ];
 
@@ -51,3 +51,4 @@ export const QuickFilters = () => {
     </div>
   );
 };
+
