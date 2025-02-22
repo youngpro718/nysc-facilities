@@ -12,24 +12,12 @@ const LoginPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    let isMounted = true;
-    
-    const checkSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session && isMounted) {
-          navigate("/", { replace: true });
-        }
-      } catch (error) {
-        console.error("Error checking session:", error);
+    // Check if user is already logged in
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        navigate("/", { replace: true });
       }
-    };
-
-    checkSession();
-
-    return () => {
-      isMounted = false;
-    };
+    });
   }, [navigate]);
 
   return (

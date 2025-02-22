@@ -1,6 +1,5 @@
 
 import { LogOut } from "lucide-react";
-import { memo } from "react";
 import { ExpandableTabs } from "@/components/ui/expandable-tabs";
 import { NavigationTab } from "../types";
 
@@ -10,7 +9,7 @@ interface DesktopNavigationProps {
   onSignOut: () => void;
 }
 
-export const DesktopNavigation = memo(({
+export const DesktopNavigation = ({
   navigation,
   onNavigationChange,
   onSignOut
@@ -30,6 +29,4 @@ export const DesktopNavigation = memo(({
       </button>
     </nav>
   );
-});
-
-DesktopNavigation.displayName = "DesktopNavigation";
+};

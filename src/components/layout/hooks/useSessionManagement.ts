@@ -1,10 +1,9 @@
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { DeviceInfo } from "../types";
 import { toast } from "sonner";
-import { debounce } from "lodash";
 
 export const useSessionManagement = (isLoginPage: boolean) => {
   const navigate = useNavigate();
@@ -13,17 +12,14 @@ export const useSessionManagement = (isLoginPage: boolean) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [initialCheckComplete, setInitialCheckComplete] = useState(false);
-  const lastCheckTimestamp = useRef(0);
-  const navigationTimeout = useRef<NodeJS.Timeout>();
-  const isNavigating = useRef(false);
 
-  const getCurrentDeviceInfo = useCallback((): DeviceInfo => ({
+  const getCurrentDeviceInfo = (): DeviceInfo => ({
     name: navigator.userAgent.split('/')[0],
     platform: navigator.platform,
     language: navigator.language,
-  }), []);
+  });
 
-  const findExistingSession = useCallback(async (userId: string) => {
+  const findExistingSession = async (userId: string) => {
     const { data } = await supabase
       .from('user_sessions')
       .select('id')
@@ -31,9 +27,9 @@ export const useSessionManagement = (isLoginPage: boolean) => {
       .limit(1)
       .maybeSingle();
     return data;
-  }, []);
+  };
 
-  const createProfileIfNotExists = useCallback(async (user: any) => {
+  const createProfileIfNotExists = async (user: any) => {
     const { data: existingProfile } = await supabase
       .from('profiles')
       .select('id')
@@ -58,54 +54,35 @@ export const useSessionManagement = (isLoginPage: boolean) => {
         throw createError;
       }
     }
-  }, []);
-
-  // Debounced navigation handler to prevent rapid consecutive navigations
-  const handleNavigation = useCallback(
-    debounce((path: string) => {
-      if (isNavigating.current || path === location.pathname) {
-        return;
-      }
-      isNavigating.current = true;
-      navigate(path, { replace: true });
-      setTimeout(() => {
-        isNavigating.current = false;
-      }, 500);
-    }, 300),
-    [navigate, location.pathname]
-  );
+  };
 
   useEffect(() => {
     let mounted = true;
-    const MIN_CHECK_INTERVAL = 2000; // Increased minimum time between checks to 2 seconds
 
     const checkSession = async () => {
       try {
-        const now = Date.now();
-        if (now - lastCheckTimestamp.current < MIN_CHECK_INTERVAL) {
-          return;
-        }
-        lastCheckTimestamp.current = now;
-
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (!mounted) return;
 
         if (error || !session) {
-          if (!isLoginPage && mounted) {
-            handleNavigation('/login');
+          console.error("Session error:", error);
+          if (!isLoginPage) {
+            navigate('/login');
           }
           setIsLoading(false);
           setInitialCheckComplete(true);
           return;
         }
 
+        // Skip other checks if signing out
         if (isSigningOut) {
           setIsLoading(false);
           setInitialCheckComplete(true);
           return;
         }
 
+        // Get user role immediately
         const { data: roleData } = await supabase
           .from('user_roles')
           .select('role')
@@ -115,8 +92,10 @@ export const useSessionManagement = (isLoginPage: boolean) => {
         const userIsAdmin = roleData?.role === 'admin';
         setIsAdmin(userIsAdmin);
 
+        // Create profile if doesn't exist
         await createProfileIfNotExists(session.user);
 
+        // Check profile status
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('verification_status')
@@ -126,55 +105,67 @@ export const useSessionManagement = (isLoginPage: boolean) => {
         if (profileError) {
           console.error("Profile error:", profileError);
           toast.error("Error loading user profile");
-          handleNavigation('/login');
+          navigate('/login');
           setIsLoading(false);
           setInitialCheckComplete(true);
           return;
         }
 
+        // Handle verification pending
         if (profile?.verification_status === 'pending') {
-          handleNavigation('/verification-pending');
+          navigate('/verification-pending');
           setIsLoading(false);
           setInitialCheckComplete(true);
           return;
         }
 
+        // Handle route protection based on role
         if (profile?.verification_status === 'verified') {
-          // Consolidate navigation logic to prevent redundant navigations
-          let targetPath = location.pathname;
-          
+          // Prevent access to admin routes for non-admin users
+          if (!userIsAdmin && location.pathname === '/') {
+            navigate('/dashboard');
+            setIsLoading(false);
+            setInitialCheckComplete(true);
+            return;
+          }
+
+          // Prevent access to user dashboard for admin users
+          if (userIsAdmin && location.pathname === '/dashboard') {
+            navigate('/');
+            setIsLoading(false);
+            setInitialCheckComplete(true);
+            return;
+          }
+
+          // Handle login page redirects
           if (isLoginPage) {
-            targetPath = userIsAdmin ? '/' : '/dashboard';
-          } else if (!userIsAdmin && location.pathname === '/') {
-            targetPath = '/dashboard';
-          } else if (userIsAdmin && location.pathname === '/dashboard') {
-            targetPath = '/';
+            navigate(userIsAdmin ? '/' : '/dashboard');
           }
 
-          if (targetPath !== location.pathname) {
-            handleNavigation(targetPath);
-          }
+          // Update session info
+          try {
+            const deviceInfo = getCurrentDeviceInfo();
+            const existingSession = await findExistingSession(session.user.id);
 
-          // Update device info and session
-          const deviceInfo = getCurrentDeviceInfo();
-          const existingSession = await findExistingSession(session.user.id);
-
-          if (existingSession?.id) {
-            await supabase
-              .from('user_sessions')
-              .update({
-                last_active_at: new Date().toISOString(),
-                device_info: deviceInfo
-              })
-              .eq('id', existingSession.id);
-          } else {
-            await supabase
-              .from('user_sessions')
-              .insert([{
-                user_id: session.user.id,
-                device_info: deviceInfo,
-                last_active_at: new Date().toISOString()
-              }]);
+            if (existingSession?.id) {
+              await supabase
+                .from('user_sessions')
+                .update({
+                  last_active_at: new Date().toISOString(),
+                  device_info: deviceInfo
+                })
+                .eq('id', existingSession.id);
+            } else {
+              await supabase
+                .from('user_sessions')
+                .insert([{
+                  user_id: session.user.id,
+                  device_info: deviceInfo,
+                  last_active_at: new Date().toISOString()
+                }]);
+            }
+          } catch (error) {
+            console.error("Session management error:", error);
           }
         }
 
@@ -182,8 +173,8 @@ export const useSessionManagement = (isLoginPage: boolean) => {
         setInitialCheckComplete(true);
       } catch (error) {
         console.error("Auth error:", error);
-        if (!isLoginPage && mounted) {
-          handleNavigation('/login');
+        if (!isLoginPage) {
+          navigate('/login');
         }
         setIsLoading(false);
         setInitialCheckComplete(true);
@@ -204,7 +195,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
           .maybeSingle();
 
         if (profile?.verification_status === 'pending') {
-          handleNavigation('/verification-pending');
+          navigate('/verification-pending');
           return;
         }
 
@@ -214,22 +205,18 @@ export const useSessionManagement = (isLoginPage: boolean) => {
           .eq('user_id', session.user.id)
           .maybeSingle();
 
-        handleNavigation(roleData?.role === 'admin' ? '/' : '/dashboard');
+        navigate(roleData?.role === 'admin' ? '/' : '/dashboard');
       } else if (event === 'SIGNED_OUT') {
         setIsSigningOut(true);
-        handleNavigation('/login');
+        navigate('/login');
       }
     });
 
     return () => {
       mounted = false;
-      if (navigationTimeout.current) {
-        clearTimeout(navigationTimeout.current);
-      }
-      handleNavigation.cancel();
       subscription.unsubscribe();
     };
-  }, [navigate, isLoginPage, location.pathname, isSigningOut, createProfileIfNotExists, getCurrentDeviceInfo, findExistingSession, handleNavigation]);
+  }, [navigate, isLoginPage, location.pathname, isSigningOut]);
 
   return { isLoading, isAdmin, initialCheckComplete };
 };
