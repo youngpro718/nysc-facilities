@@ -29,7 +29,11 @@ export const IssueFilters = ({
     const filters: Partial<IssueFiltersType> = {};
     searchParams.forEach((value, key) => {
       if (isValidFilterKey(key)) {
-        filters[key as keyof IssueFiltersType] = value as any;
+        if (key === 'hasOverdue' || key === 'assignedToMe') {
+          filters[key] = value === 'true';
+        } else {
+          filters[key] = value;
+        }
       }
     });
     
