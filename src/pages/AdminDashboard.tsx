@@ -1,7 +1,8 @@
-
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { BuildingsGrid } from "@/components/dashboard/BuildingsGrid";
 import { useDashboardData } from "@/hooks/useDashboardData";
+import { useEffect } from "react";
+import { Loader2 } from "lucide-react";
 
 const AdminDashboard = () => {
   const {
@@ -10,7 +11,32 @@ const AdminDashboard = () => {
     issues,
     activities,
     handleMarkAsSeen,
+    checkUserRoleAndFetchData,
+    isLoading
   } = useDashboardData();
+
+  useEffect(() => {
+    checkUserRoleAndFetchData();
+  }, [checkUserRoleAndFetchData]);
+
+  if (isLoading || buildingsLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!buildings || buildings.length === 0) {
+    return (
+      <div className="space-y-8">
+        <DashboardHeader />
+        <div className="flex flex-col items-center justify-center min-h-[400px] text-muted-foreground">
+          <p>No buildings found</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">

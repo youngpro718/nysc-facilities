@@ -1,9 +1,19 @@
 import { AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+interface Issue {
+  id: string;
+  title: string;
+  description: string;
+  created_at: string;
+  seen: boolean;
+  photos?: string[];
+}
 
 interface BuildingIssuesProps {
-  issues: any[];
+  issues: Issue[];
   onMarkAsSeen: (issueId: string) => void;
 }
 
@@ -12,49 +22,62 @@ export const BuildingIssues = ({ issues, onMarkAsSeen }: BuildingIssuesProps) =>
 
   return (
     <div className="space-y-4">
-      <h4 className="flex items-center gap-2 font-medium">
-        <AlertCircle className="h-4 w-4 text-yellow-500" />
-        Recent Issues
-      </h4>
-      <div className="grid gap-4">
-        {issues.map((issue) => (
-          <div
-            key={issue.id}
-            className="group relative overflow-hidden rounded-lg border bg-card p-4 transition-all hover:bg-accent"
-          >
-            <div className="mb-4 flex justify-between">
-              <div>
-                <h5 className="font-medium">{issue.title}</h5>
-                <p className="text-sm text-muted-foreground">{issue.description}</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Created: {format(new Date(issue.created_at), "MMM d, yyyy")}
-                </p>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onMarkAsSeen(issue.id)}
-                className="shrink-0 hover:bg-yellow-50 hover:text-yellow-600 hover:border-yellow-200"
-              >
-                Mark as seen
-              </Button>
-            </div>
-            {issue.photos && issue.photos.length > 0 && (
-              <div className="grid grid-cols-2 gap-2">
-                {issue.photos.map((photo: string, photoIndex: number) => (
-                  <div key={photoIndex} className="relative aspect-video overflow-hidden rounded-md">
-                    <img
-                      src={photo}
-                      alt={`Issue photo ${photoIndex + 1}`}
-                      className="absolute inset-0 h-full w-full object-cover transition-transform group-hover:scale-105"
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
+      <div className="flex items-center justify-between">
+        <h4 className="flex items-center gap-2 font-medium">
+          <AlertCircle className="h-4 w-4 text-red-500" />
+          Active Issues
+        </h4>
+        <Badge variant="destructive" className="text-xs">
+          {issues.length} {issues.length === 1 ? 'Issue' : 'Issues'}
+        </Badge>
       </div>
+      <ScrollArea className="h-[200px] pr-4">
+        <div className="space-y-2">
+          {issues.map((issue) => (
+            <div
+              key={issue.id}
+              className="group relative rounded-lg border bg-card p-3 transition-colors hover:bg-accent"
+              onClick={() => !issue.seen && onMarkAsSeen(issue.id)}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium">{issue.title}</p>
+                    {!issue.seen && (
+                      <Badge variant="default" className="text-[10px]">New</Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground line-clamp-2">
+                    {issue.description}
+                  </p>
+                  {issue.photos && issue.photos.length > 0 && (
+                    <div className="flex items-center gap-1">
+                      <div className="flex -space-x-2">
+                        {issue.photos.slice(0, 3).map((photo, index) => (
+                          <img
+                            key={index}
+                            src={photo}
+                            alt={`Issue photo ${index + 1}`}
+                            className="h-6 w-6 rounded-full border-2 border-background object-cover"
+                          />
+                        ))}
+                      </div>
+                      {issue.photos.length > 3 && (
+                        <span className="text-xs text-muted-foreground">
+                          +{issue.photos.length - 3} more
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <span className="shrink-0 text-xs text-muted-foreground">
+                  {format(new Date(issue.created_at), "MMM d, h:mm a")}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
     </div>
   );
-};
+}; 

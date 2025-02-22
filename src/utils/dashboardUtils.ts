@@ -1,14 +1,19 @@
-
-export interface RoomLightingStatus {
-  working_fixtures: number;
-  total_fixtures: number;
+export interface LightingFixture {
+  id: string;
+  bulb_count: number;
+  status: 'working' | 'not_working';
 }
 
 export interface Room {
-  room_lighting_status?: RoomLightingStatus[];
+  id: string;
+  name: string;
+  lighting_fixtures?: LightingFixture[];
 }
 
 export interface Floor {
+  id: string;
+  name: string;
+  floor_number: number;
   rooms?: Room[];
 }
 
@@ -35,29 +40,20 @@ export const calculateBuildingStats = (building: Building): BuildingStats => {
       0
     ) || 0;
 
-  const workingFixtures =
-    building.floors?.reduce(
-      (acc, floor) =>
-        acc +
-        (floor.rooms?.reduce(
-          (roomAcc, room) =>
-            roomAcc + (room.room_lighting_status?.[0]?.working_fixtures || 0),
-          0
-        ) || 0),
-      0
-    ) || 0;
+  let workingFixtures = 0;
+  let totalFixtures = 0;
 
-  const totalFixtures =
-    building.floors?.reduce(
-      (acc, floor) =>
-        acc +
-        (floor.rooms?.reduce(
-          (roomAcc, room) =>
-            roomAcc + (room.room_lighting_status?.[0]?.total_fixtures || 0),
-          0
-        ) || 0),
-      0
-    ) || 0;
+  building.floors?.forEach(floor => {
+    floor.rooms?.forEach(room => {
+      room.lighting_fixtures?.forEach(fixture => {
+        const fixtureCount = fixture.bulb_count || 0;
+        totalFixtures += fixtureCount;
+        if (fixture.status === 'working') {
+          workingFixtures += fixtureCount;
+        }
+      });
+    });
+  });
 
   return {
     floorCount,
