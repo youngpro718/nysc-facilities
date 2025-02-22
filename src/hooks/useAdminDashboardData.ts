@@ -13,7 +13,7 @@ export const useAdminDashboardData = () => {
     try {
       setBuildingsLoading(true);
       
-      // Fetch buildings with floors and new_spaces (including lighting fixtures)
+      // Fetch buildings with correct relationships
       const { data: buildingsData, error: buildingsError } = await supabase
         .from('buildings')
         .select(`
@@ -26,23 +26,7 @@ export const useAdminDashboardData = () => {
           floors (
             id,
             name,
-            floor_number,
-            new_spaces (
-              id,
-              name,
-              room_number,
-              type,
-              status,
-              lighting_fixtures:lighting_fixtures (
-                id,
-                name,
-                type,
-                status,
-                technology,
-                electrical_issues,
-                maintenance_notes
-              )
-            )
+            floor_number
           )
         `)
         .eq('status', 'active')
@@ -51,8 +35,54 @@ export const useAdminDashboardData = () => {
       if (buildingsError) {
         console.error('Error fetching buildings:', buildingsError);
       } else {
-        console.log('Buildings data:', buildingsData);
-        setBuildings(buildingsData || []);
+        // If we have buildings, fetch spaces and fixtures for each building
+        if (buildingsData) {
+          const buildingsWithDetails = await Promise.all(
+            buildingsData.map(async (building) => {
+              const floorIds = building.floors?.map(f => f.id) || [];
+              
+              // Fetch spaces for each floor
+              const { data: spacesData } = await supabase
+                .from('new_spaces')
+                .select(`
+                  id,
+                  name,
+                  type,
+                  room_number,
+                  status,
+                  floor_id
+                `)
+                .in('floor_id', floorIds);
+
+              // Fetch lighting fixtures for the spaces
+              const spaceIds = spacesData?.map(s => s.id) || [];
+              const { data: fixturesData } = await supabase
+                .from('lighting_fixtures')
+                .select('*')
+                .in('space_id', spaceIds);
+
+              // Map spaces to their floors with fixtures
+              const floorsWithSpaces = building.floors?.map(floor => ({
+                ...floor,
+                new_spaces: (spacesData || [])
+                  .filter(space => space.floor_id === floor.id)
+                  .map(space => ({
+                    ...space,
+                    lighting_fixtures: (fixturesData || [])
+                      .filter(fixture => fixture.space_id === space.id)
+                  }))
+              }));
+
+              return {
+                ...building,
+                floors: floorsWithSpaces
+              };
+            })
+          );
+
+          console.log('Processed building data:', buildingsWithDetails);
+          setBuildings(buildingsWithDetails);
+        }
       }
 
       // Fetch only unseen issues that have photos
@@ -90,8 +120,6 @@ export const useAdminDashboardData = () => {
         console.error('Error fetching issues:', issuesError);
       } else {
         console.log('Issues data:', issuesData);
-        
-        // Transform the issues data to match UserIssue type
         const transformedIssues = (issuesData || []).map(issue => ({
           ...issue,
           rooms: issue.new_spaces ? {
@@ -102,7 +130,6 @@ export const useAdminDashboardData = () => {
           buildings: issue.buildings || null,
           floors: issue.floors || null
         }));
-        
         setIssues(transformedIssues);
       }
 
@@ -125,7 +152,6 @@ export const useAdminDashboardData = () => {
       } else {
         const typedActivities: Activity[] = (activitiesData || []).map(activity => {
           let metadata = { building_id: '' };
-          
           if (activity.metadata && typeof activity.metadata === 'object' && !Array.isArray(activity.metadata)) {
             const metadataObj = activity.metadata as Record<string, unknown>;
             metadata = {
@@ -133,7 +159,6 @@ export const useAdminDashboardData = () => {
               ...metadataObj
             };
           }
-          
           return {
             id: activity.id,
             action: activity.action,
