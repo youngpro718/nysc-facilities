@@ -5,7 +5,7 @@ import { typeOptions, statusOptions, priorityOptions, assignmentOptions } from "
 import { IssueFilters } from "../types/FilterTypes";
 
 interface TypeFiltersProps {
-  onFilterChange: (filters: IssueFilters) => void;
+  onFilterChange: (filters: Partial<IssueFilters>) => void;
 }
 
 export const TypeFilters = ({ onFilterChange }: TypeFiltersProps) => {
@@ -26,7 +26,7 @@ export const TypeFilters = ({ onFilterChange }: TypeFiltersProps) => {
       />
       <FilterSelect
         placeholder="Filter by priority"
-        onValueChange={(value) => onFilterChange({ priority: value })}
+        onValueChange={(value) => onFilterChange({ priority: value as IssueFilters['priority'] })}
         options={priorityOptions}
         fullWidth
       />

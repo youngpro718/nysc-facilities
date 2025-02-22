@@ -15,19 +15,31 @@ export const LightingFilters = ({ onFilterChange, showLightingFilters }: Lightin
     <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto border-t pt-4 mt-4">
       <FilterSelect
         placeholder="Lighting type"
-        onValueChange={(value) => onFilterChange({ lightingType: value })}
+        onValueChange={(value) => 
+          onFilterChange({ 
+            lightingType: value as IssueFilters['lightingType'] 
+          })
+        }
         options={lightingTypeOptions}
         fullWidth
       />
       <FilterSelect
         placeholder="Fixture status"
-        onValueChange={(value) => onFilterChange({ fixtureStatus: value })}
+        onValueChange={(value) => 
+          onFilterChange({ 
+            fixtureStatus: value as IssueFilters['fixtureStatus'] 
+          })
+        }
         options={fixtureStatusOptions}
         fullWidth
       />
       <FilterSelect
         placeholder="Electrical issue"
-        onValueChange={(value) => onFilterChange({ electricalIssue: value })}
+        onValueChange={(value) => 
+          onFilterChange({ 
+            electricalIssue: value as IssueFilters['electricalIssue'] 
+          })
+        }
         options={electricalIssueOptions}
         fullWidth
       />

@@ -34,7 +34,8 @@ export const IssueFilters = ({
     
     searchParams.forEach((value, key) => {
       if (validKeys.includes(key as ValidFilterKey)) {
-        filters[key as ValidFilterKey] = value as any;
+        // Cast the value based on the key type
+        filters[key as ValidFilterKey] = value as IssueFiltersType[ValidFilterKey];
       }
     });
     

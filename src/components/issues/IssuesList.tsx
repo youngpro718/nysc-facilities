@@ -133,9 +133,10 @@ export const IssuesList = () => {
   const isMobile = useIsMobile();
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
-  const { data: issues, isLoading } = useQuery({
+  const issueQuery = useQuery({
     queryKey: ['issues'],
     queryFn: async () => {
+      const urlParams = new URLSearchParams(window.location.search);
       let query = supabase
         .from('issues')
         .select(`
@@ -162,24 +163,23 @@ export const IssuesList = () => {
         `)
         .order('created_at', { ascending: false });
 
-      const urlParams = new URLSearchParams(window.location.search);
-      
       const typeFilter = urlParams.get('type');
+      const statusFilter = urlParams.get('status');
+      const priorityFilter = urlParams.get('priority');
+      const assignmentFilter = urlParams.get('assigned_to');
+
       if (typeFilter && typeFilter !== 'all_types') {
         query = query.eq('type', typeFilter);
       }
       
-      const statusFilter = urlParams.get('status');
       if (statusFilter && statusFilter !== 'all_statuses' && isValidIssueStatus(statusFilter)) {
         query = query.eq('status', statusFilter);
       }
       
-      const priorityFilter = urlParams.get('priority');
       if (priorityFilter && priorityFilter !== 'all_priorities' && isValidIssuePriority(priorityFilter)) {
         query = query.eq('priority', priorityFilter);
       }
 
-      const assignmentFilter = urlParams.get('assigned_to');
       if (assignmentFilter && assignmentFilter !== 'all_assignments') {
         query = query.eq('assigned_to', assignmentFilter);
       }
