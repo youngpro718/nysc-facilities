@@ -468,34 +468,34 @@ function calculateResolutionStats(issues: IssueReportDetail[]) {
 
 export async function fetchFloorplanReportData(progressCallback: ReportCallback = () => {}) {
   try {
-    const data = await fetchDataWithProgress<FloorplanReportData[]>(
-      supabase.from('buildings').select(`
+    const { data, error } = await supabase.from('buildings').select(`
+      id,
+      name,
+      floors:floors(
         id,
         name,
-        floors:floors(
+        rooms:rooms(
           id,
           name,
-          rooms:rooms(
-            id,
-            name,
-            type,
-            status,
-            maintenance_history,
-            next_maintenance_date
-          )
+          type,
+          status,
+          maintenance_history,
+          next_maintenance_date
         )
-      `),
-      progressCallback,
-      0,
-      100
-    );
+      )
+    `);
+
+    if (error) throw error;
+    if (!data) throw new Error('No data found');
+
+    const transformedData = data as FloorplanReportData[];
 
     const docDefinition: TDocumentDefinitions = {
       content: [
         { text: 'Floorplan Report', style: 'header' },
         { text: `Generated on ${format(new Date(), 'PPpp')}`, style: 'subheader' },
         { text: '\n' },
-        ...data.map(building => [
+        ...transformedData.map(building => [
           { text: building.name, style: 'buildingHeader' },
           ...(building.floors || []).map(floor => [
             { text: floor.name, style: 'floorHeader' },
@@ -507,7 +507,7 @@ export async function fetchFloorplanReportData(progressCallback: ReportCallback 
             { text: '\n' }
           ]).flat()
         ]).flat()
-      ],
+      ] as Content[],
       styles: {
         header: { fontSize: 18, bold: true, margin: [0, 0, 0, 10] },
         subheader: { fontSize: 14, bold: true, margin: [0, 0, 0, 5] },
@@ -517,7 +517,7 @@ export async function fetchFloorplanReportData(progressCallback: ReportCallback 
     };
 
     downloadPdf(docDefinition, `floorplan_report_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.pdf`);
-    return data;
+    return transformedData;
   } catch (error) {
     console.error('Error fetching floorplan report data:', error);
     throw error;
