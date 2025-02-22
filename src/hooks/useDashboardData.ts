@@ -54,10 +54,10 @@ export const useDashboardData = () => {
           id,
           name,
           floor_number,
-          rooms:building_rooms (
+          rooms!floor_id (
             id,
             room_number,
-            room_lighting_status:room_lighting_fixtures (
+            room_lighting_status!inner (
               working_fixtures,
               total_fixtures
             )
