@@ -13,7 +13,7 @@ export const useAdminDashboardData = () => {
     try {
       setBuildingsLoading(true);
       
-      // Fetch buildings with floors and their details
+      // Fetch buildings with floors, rooms, and lighting fixtures
       const { data: buildingsData, error: buildingsError } = await supabase
         .from('buildings')
         .select(`
@@ -27,10 +27,11 @@ export const useAdminDashboardData = () => {
             id,
             name,
             floor_number,
-            rooms:spaces (
-              id,
+            rooms:new_spaces (
+              id, 
               name,
               room_number,
+              type,
               status,
               lighting_fixtures (
                 id,
@@ -47,6 +48,7 @@ export const useAdminDashboardData = () => {
       if (buildingsError) {
         console.error('Error fetching buildings:', buildingsError);
       } else {
+        console.log('Buildings data:', buildingsData); // For debugging
         setBuildings(buildingsData || []);
       }
 
@@ -63,7 +65,8 @@ export const useAdminDashboardData = () => {
           building_id,
           seen,
           photos,
-          rooms (
+          room_id,
+          rooms:new_spaces (
             id,
             name,
             room_number
@@ -83,6 +86,7 @@ export const useAdminDashboardData = () => {
       if (issuesError) {
         console.error('Error fetching issues:', issuesError);
       } else {
+        console.log('Issues data:', issuesData); // For debugging
         setIssues(issuesData || []);
       }
 
@@ -103,7 +107,6 @@ export const useAdminDashboardData = () => {
       if (activitiesError) {
         console.error('Error fetching activities:', activitiesError);
       } else {
-        // Transform activity data to match our type
         const typedActivities: Activity[] = (activitiesData || []).map(activity => {
           let metadata = { building_id: '' };
           
@@ -144,7 +147,6 @@ export const useAdminDashboardData = () => {
       if (error) {
         console.error('Error marking issue as seen:', error);
       } else {
-        // Update local state to remove the issue that was marked as seen
         setIssues(prev => prev.filter(issue => issue.id !== id));
       }
     } catch (error) {
