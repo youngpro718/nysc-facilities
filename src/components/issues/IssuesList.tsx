@@ -17,15 +17,17 @@ import { useIssueQueries } from "./hooks/useIssueQueries";
 import { IssueFiltersType } from "./types/FilterTypes";
 import { useDialogManager } from "@/hooks/useDialogManager";
 import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const IssuesList = () => {
   const { toast } = useToast();
   const { dialogState, openDialog, closeDialog } = useDialogManager();
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  const [activeTab, setActiveTab] = useState<'active' | 'historical'>('active');
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<IssueFiltersType>({
     type: 'all_types',
-    status: 'all_statuses',
+    status: activeTab === 'active' ? 'all_statuses' : 'resolved',
     priority: 'all_priorities',
     assigned_to: 'all_assignments',
     lightingType: 'all_lighting_types',
@@ -38,7 +40,21 @@ export const IssuesList = () => {
     isLoading,
     updateIssueMutation,
     deleteIssueMutation,
-  } = useIssueQueries({ filters, searchQuery });
+  } = useIssueQueries({ 
+    filters: {
+      ...filters,
+      status: activeTab === 'historical' ? 'resolved' : filters.status
+    }, 
+    searchQuery 
+  });
+
+  const handleTabChange = (tab: 'active' | 'historical') => {
+    setActiveTab(tab);
+    setFilters(prev => ({
+      ...prev,
+      status: tab === 'historical' ? 'resolved' : 'all_statuses'
+    }));
+  };
 
   const handleStatusChange = (id: string, newStatus: IssueStatus) => {
     if (newStatus === 'resolved') {
@@ -84,38 +100,70 @@ export const IssuesList = () => {
     }
   };
 
-  return (
-    <>
-      <IssueListHeader 
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        filters={filters}
-        setFilters={handleFilterChange}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-      />
-
-      {isLoading ? (
+  const renderContent = () => {
+    if (isLoading) {
+      return (
         <div className="flex items-center justify-center min-h-[200px]">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
-      ) : !issues || issues.length === 0 ? (
+      );
+    }
+
+    if (!issues || issues.length === 0) {
+      return (
         <div className="flex flex-col items-center justify-center min-h-[200px] text-muted-foreground">
           <p>No issues found</p>
         </div>
-      ) : viewMode === 'cards' ? (
-        <CardView
-          issues={issues}
-          onIssueSelect={(id) => openDialog('issueDetails', { issueId: id })}
-        />
-      ) : (
-        <TableView
-          issues={issues}
-          onIssueSelect={(id) => openDialog('issueDetails', { issueId: id })}
-          onStatusChange={handleStatusChange}
-          onDelete={handleDelete}
-        />
-      )}
+      );
+    }
+
+    return viewMode === 'cards' ? (
+      <CardView
+        issues={issues}
+        onIssueSelect={(id) => openDialog('issueDetails', { issueId: id })}
+      />
+    ) : (
+      <TableView
+        issues={issues}
+        onIssueSelect={(id) => openDialog('issueDetails', { issueId: id })}
+        onStatusChange={handleStatusChange}
+        onDelete={handleDelete}
+      />
+    );
+  };
+
+  return (
+    <>
+      <Tabs value={activeTab} onValueChange={(value) => handleTabChange(value as 'active' | 'historical')} className="w-full">
+        <TabsList>
+          <TabsTrigger value="active">Active Issues</TabsTrigger>
+          <TabsTrigger value="historical">Historical Issues</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="active" className="space-y-4">
+          <IssueListHeader 
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            filters={filters}
+            setFilters={handleFilterChange}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+          />
+          {renderContent()}
+        </TabsContent>
+
+        <TabsContent value="historical" className="space-y-4">
+          <IssueListHeader 
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            filters={filters}
+            setFilters={handleFilterChange}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+          />
+          {renderContent()}
+        </TabsContent>
+      </Tabs>
 
       {dialogState.type === 'issueDetails' && (
         <Sheet 
