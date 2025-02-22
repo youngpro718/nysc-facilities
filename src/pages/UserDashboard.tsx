@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -35,72 +34,75 @@ export default function UserDashboard() {
     checkUserRoleAndFetchData();
 
     // Set up real-time subscriptions
-    const issuesChannel = supabase
-      .channel('issues-changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'issues' },
-        (payload) => {
-          console.log('Issues update received:', payload);
-          checkUserRoleAndFetchData();
-        }
-      )
-      .subscribe();
+    const channels = [
+      supabase
+        .channel('room-assignments-changes')
+        .on(
+          'postgres_changes',
+          { 
+            event: '*', 
+            schema: 'public', 
+            table: 'occupant_room_assignments',
+            filter: `occupant_id=eq.${supabase.auth.user()?.id}`
+          },
+          (payload) => {
+            console.log('Room assignment update received:', payload);
+            checkUserRoleAndFetchData();
+          }
+        )
+        .subscribe(),
 
-    const roomsChannel = supabase
-      .channel('rooms-changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'occupant_room_assignments' },
-        (payload) => {
-          console.log('Rooms update received:', payload);
-          checkUserRoleAndFetchData();
-        }
-      )
-      .subscribe();
+      supabase
+        .channel('issues-changes')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'issues' },
+          (payload) => {
+            console.log('Issues update received:', payload);
+            checkUserRoleAndFetchData();
+          }
+        )
+        .subscribe(),
 
-    const keysChannel = supabase
-      .channel('keys-changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'key_assignments' },
-        (payload) => {
-          console.log('Keys update received:', payload);
-          checkUserRoleAndFetchData();
-        }
-      )
-      .subscribe();
+      supabase
+        .channel('keys-changes')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'key_assignments' },
+          (payload) => {
+            console.log('Keys update received:', payload);
+            checkUserRoleAndFetchData();
+          }
+        )
+        .subscribe(),
 
-    const hallwaysChannel = supabase
-      .channel('hallways-changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'hallways' },
-        (payload) => {
-          console.log('Hallways update received:', payload);
-          checkUserRoleAndFetchData();
-        }
-      )
-      .subscribe();
+      supabase
+        .channel('hallways-changes')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'hallways' },
+          (payload) => {
+            console.log('Hallways update received:', payload);
+            checkUserRoleAndFetchData();
+          }
+        )
+        .subscribe(),
 
-    const doorsChannel = supabase
-      .channel('doors-changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'doors' },
-        (payload) => {
-          console.log('Doors update received:', payload);
-          checkUserRoleAndFetchData();
-        }
-      )
-      .subscribe();
+      supabase
+        .channel('doors-changes')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'doors' },
+          (payload) => {
+            console.log('Doors update received:', payload);
+            checkUserRoleAndFetchData();
+          }
+        )
+        .subscribe(),
+    ];
 
     return () => {
-      supabase.removeChannel(issuesChannel);
-      supabase.removeChannel(roomsChannel);
-      supabase.removeChannel(keysChannel);
-      supabase.removeChannel(hallwaysChannel);
-      supabase.removeChannel(doorsChannel);
+      channels.forEach(channel => supabase.removeChannel(channel));
     };
   }, []);
 
