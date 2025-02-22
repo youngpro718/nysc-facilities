@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { IssueStatus } from "./types/IssueTypes";
@@ -19,6 +18,7 @@ import { useDialogManager } from "@/hooks/useDialogManager";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IssueStats } from "./components/IssueStats";
+import _ from "lodash";
 
 export const IssuesList = () => {
   const { toast } = useToast();
@@ -48,6 +48,16 @@ export const IssuesList = () => {
     }, 
     searchQuery 
   });
+
+  const handleFilterChange = useMemo(() => 
+    _.debounce((newFilters: Partial<IssueFiltersType>) => {
+      setFilters(prev => ({
+        ...prev,
+        ...newFilters
+      }));
+    }, 300),
+    []
+  );
 
   const handleTabChange = (tab: 'active' | 'historical') => {
     setActiveTab(tab);
@@ -86,13 +96,6 @@ export const IssuesList = () => {
         },
       });
     }
-  };
-
-  const handleFilterChange = (newFilters: Partial<IssueFiltersType>) => {
-    setFilters(prev => ({
-      ...prev,
-      ...newFilters
-    }));
   };
 
   const handleSheetOpenChange = (open: boolean) => {
@@ -137,7 +140,11 @@ export const IssuesList = () => {
     <>
       <IssueStats />
       
-      <Tabs value={activeTab} onValueChange={(value) => handleTabChange(value as 'active' | 'historical')} className="w-full">
+      <Tabs 
+        value={activeTab} 
+        onValueChange={(value) => handleTabChange(value as 'active' | 'historical')}
+        className="w-full"
+      >
         <TabsList>
           <TabsTrigger value="active">Active Issues</TabsTrigger>
           <TabsTrigger value="historical">Historical Issues</TabsTrigger>
