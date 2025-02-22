@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { PostgrestFilterBuilder } from "@supabase/postgrest-js";
@@ -474,6 +475,23 @@ function calculateResolutionStats(issues: IssueReportDetail[]) {
 
 export async function fetchFloorplanReportData(progressCallback: ReportCallback = () => {}) {
   try {
+    interface BuildingFloorplanData {
+      id: string;
+      name: string;
+      floors: {
+        id: string;
+        name: string;
+        rooms: {
+          id: string;
+          name: string;
+          room_type: string;
+          status: string;
+          maintenance_history: any[];
+          next_maintenance_date: string | null;
+        }[] | null;
+      }[] | null;
+    }
+
     const { data, error } = await supabase
       .from('buildings')
       .select(`
@@ -491,29 +509,13 @@ export async function fetchFloorplanReportData(progressCallback: ReportCallback 
             next_maintenance_date
           )
         )
-      `);
+      `)
+      .returns<BuildingFloorplanData[]>();
 
     if (error) throw error;
     if (!data) throw new Error('No data found');
 
-    interface RawFloorplanData {
-      id: string;
-      name: string;
-      floors: Array<{
-        id: string;
-        name: string;
-        rooms: Array<{
-          id: string;
-          name: string;
-          room_type: string;
-          status: string;
-          maintenance_history: any[];
-          next_maintenance_date: string | null;
-        }> | null;
-      }> | null;
-    }
-
-    const transformedData: FloorplanReportData[] = (data as RawFloorplanData[]).map(building => ({
+    const transformedData: FloorplanReportData[] = data.map(building => ({
       id: building.id,
       name: building.name,
       floors: (building.floors || []).map(floor => ({
@@ -539,9 +541,15 @@ export async function fetchFloorplanReportData(progressCallback: ReportCallback 
         ...(building.floors || []).map(floor => [
           { text: floor.name, style: 'floorHeader' },
           {
-            text: (floor.rooms || []).map(room => 
-              `${room.name} - ${room.type} (${room.status})`
-            ).join('\n')
+            table: {
+              widths: ['*'],
+              body: [
+                ...floor.rooms.map(room => [[
+                  { text: `${room.name} - ${room.type} (${room.status})` }
+                ]])
+              ]
+            },
+            layout: 'noBorders'
           },
           { text: '\n' }
         ]).flat()
