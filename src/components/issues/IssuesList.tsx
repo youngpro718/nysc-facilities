@@ -1,17 +1,9 @@
 
 import { useState } from "react";
 import { IssueListContent } from "./components/IssueListContent";
-import { IssueDetails } from "./details/IssueDetails";
-import { ResolutionForm } from "./forms/ResolutionForm";
-import { useIssueQueries } from "./hooks/useIssueQueries";
-import { IssueFiltersType } from "./types/FilterTypes";
+import { IssueDialogManager } from "./components/IssueDialogManager";
 import { useDialogManager } from "@/hooks/useDialogManager";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { IssueFiltersType } from "./types/FilterTypes";
 import { IssueStats } from "./components/IssueStats";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -36,12 +28,6 @@ export const IssuesList = () => {
       ...prev,
       status: tab === 'historical' ? 'resolved' : 'all_statuses'
     }));
-  };
-
-  const handleSheetOpenChange = (open: boolean) => {
-    if (!open) {
-      closeDialog();
-    }
   };
 
   return (
@@ -85,37 +71,10 @@ export const IssuesList = () => {
         </TabsContent>
       </Tabs>
 
-      {dialogState.type === 'issueDetails' && (
-        <Sheet 
-          open={dialogState.isOpen} 
-          onOpenChange={handleSheetOpenChange}
-        >
-          <SheetContent side="right" className="w-full sm:w-3/4 md:w-2/3 lg:w-1/2">
-            <IssueDetails 
-              issueId={dialogState.data?.issueId} 
-              onClose={closeDialog}
-            />
-          </SheetContent>
-        </Sheet>
-      )}
-
-      {dialogState.type === 'resolution' && (
-        <Sheet 
-          open={dialogState.isOpen} 
-          onOpenChange={handleSheetOpenChange}
-        >
-          <SheetContent>
-            <SheetHeader>
-              <SheetTitle>Resolve Issue</SheetTitle>
-            </SheetHeader>
-            <ResolutionForm
-              issueId={dialogState.data?.issueId}
-              onSuccess={closeDialog}
-              onCancel={closeDialog}
-            />
-          </SheetContent>
-        </Sheet>
-      )}
+      <IssueDialogManager 
+        dialogState={dialogState}
+        onClose={closeDialog}
+      />
     </>
   );
 };

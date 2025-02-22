@@ -39,15 +39,12 @@ export const IssueListContent = ({
     deleteIssueMutation,
   } = useIssueQueries({ filters, searchQuery });
 
-  const handleFilterChange = useMemo(() => 
-    _.debounce((newFilters: Partial<IssueFiltersType>) => {
-      setFilters(prev => ({
-        ...prev,
-        ...newFilters
-      }));
-    }, 300),
-    []
-  );
+  const handleFilterChange = (newFilters: Partial<IssueFiltersType>) => {
+    setFilters({
+      ...filters,
+      ...newFilters
+    });
+  };
 
   const handleStatusChange = (id: string, newStatus: IssueStatus) => {
     if (newStatus === 'resolved') {
