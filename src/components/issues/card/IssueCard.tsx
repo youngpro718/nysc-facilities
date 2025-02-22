@@ -15,15 +15,15 @@ export function IssueCard({ issue, onMarkAsSeen }: IssueCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
 
   return (
-    <div className="relative w-full h-[320px] perspective-1000 group">
+    <div className="relative w-full h-[320px] perspective-1000">
       <div 
-        className={`relative w-full h-full transition-transform duration-500 transform-style-3d hover:scale-[1.02] ${isFlipped ? 'rotate-y-180' : ''}`}
+        className={`relative w-full h-full transition-transform duration-500 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}
       >
         <div className="absolute bottom-4 right-4 z-10">
           <Button
             variant="outline"
             size="icon"
-            className="opacity-0 group-hover:opacity-100 transition-opacity"
+            className="transition-opacity"
             onClick={(e) => {
               e.stopPropagation();
               setIsFlipped(!isFlipped);
