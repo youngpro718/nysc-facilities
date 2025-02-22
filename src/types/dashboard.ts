@@ -1,4 +1,3 @@
-
 export interface RoomData {
   id: string;
   assigned_at: string;
@@ -31,4 +30,12 @@ export interface UserIssue {
   rooms?: {
     name: string;
   } | null;
+}
+
+export interface UserProfile {
+  username?: string;
+  first_name?: string;
+  last_name?: string;
+  title?: string;
+  avatar_url?: string;
 }

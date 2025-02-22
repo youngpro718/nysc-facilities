@@ -1,131 +1,125 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { Issue, Activity } from "@/components/dashboard/BuildingsGrid";
-import { Building } from "@/utils/dashboardUtils";
+import { useNavigate } from "react-router-dom";
+import type { UserProfile, UserAssignment, UserIssue } from "@/types/dashboard";
 
-interface DashboardData {
-  buildings: Building[];
-  buildingsLoading: boolean;
-  issues: Issue[];
-  activities: Activity[];
-  handleMarkAsSeen: (issueId: string) => void;
-}
+export const useDashboardData = () => {
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [assignedRooms, setAssignedRooms] = useState<UserAssignment[]>([]);
+  const [assignedKeys, setAssignedKeys] = useState<UserAssignment[]>([]);
+  const [userIssues, setUserIssues] = useState<UserIssue[]>([]);
+  const [profile, setProfile] = useState<UserProfile>({});
+  const navigate = useNavigate();
 
-export const useDashboardData = (): DashboardData => {
-  const { data: buildings, isLoading: buildingsLoading } = useQuery({
-    queryKey: ["buildings"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("buildings")
-        .select(`
-          *,
-          floors (
-            id,
-            rooms (
-              id,
-              room_number,
-              name
-            )
-          )
-        `);
-
-      if (error) throw error;
-
-      // Fetch lighting status for all rooms
-      const roomIds = data?.flatMap(building => 
-        building.floors?.flatMap(floor => 
-          floor.rooms?.map(room => room.id)
-        )
-      ).filter(Boolean) || [];
-
-      const { data: lightingData, error: lightingError } = await supabase
-        .from("room_lighting_status")
-        .select("*")
-        .in("room_id", roomIds);
-
-      if (lightingError) throw lightingError;
-
-      // Map lighting data to buildings and normalize status values
-      return data.map(building => ({
-        ...building,
-        // Map database status to interface status
-        status: building.status === "under_maintenance" ? "maintenance" :
-                building.status === "inactive" ? "active" : 
-                building.status as "active" | "maintenance",
-        floors: building.floors?.map(floor => ({
-          ...floor,
-          rooms: floor.rooms?.map(room => ({
-            ...room,
-            room_lighting_status: [
-              lightingData?.find(status => status.room_id === room.id) || {
-                working_fixtures: 0,
-                non_working_fixtures: 0,
-                total_fixtures: 0
-              }
-            ]
-          }))
-        })) || []
-      }));
-    },
-  });
-
-  const { data: issues, refetch: refetchIssues } = useQuery({
-    queryKey: ["issues"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("issues")
-        .select("*")
-        .eq("seen", false)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data as Issue[];
-    },
-  });
-
-  const { data: activities } = useQuery({
-    queryKey: ["activities"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("user_activity_history")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      
-      // Transform the data to match the Activity interface
-      return (data || []).map(activity => ({
-        id: crypto.randomUUID(), // Generate an ID since it's required by the interface
-        action: activity.action || "",
-        performed_by: activity.performed_by || "",
-        created_at: activity.created_at || "",
-        metadata: activity.metadata as { building_id: string; [key: string]: any } || {}
-      })) as Activity[];
-    },
-  });
-
-  const handleMarkAsSeen = async (issueId: string) => {
+  const checkUserRoleAndFetchData = async () => {
     try {
-      const { error } = await supabase
-        .from("issues")
-        .update({ seen: true })
-        .eq("id", issueId);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        navigate('/auth');
+        return;
+      }
 
-      if (error) throw error;
+      // Fetch user profile
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('username, first_name, last_name, title, avatar_url')
+        .eq('id', session.user.id)
+        .single();
 
-      toast.success("Issue marked as seen");
-      refetchIssues();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to mark issue as seen");
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+      } else {
+        setProfile(profileData || {});
+      }
+
+      // Check if user is admin
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+
+      if (roleError) {
+        console.error('Error fetching user role:', roleError);
+        setIsAdmin(false);
+      } else {
+        const userIsAdmin = roleData?.role === 'admin';
+        setIsAdmin(userIsAdmin);
+
+        if (userIsAdmin) {
+          navigate('/');
+          return;
+        }
+      }
+
+      // Fetch assigned rooms
+      const { data: roomsData, error: roomsError } = await supabase
+        .from('occupant_room_assignments')
+        .select('id, assigned_at, rooms:rooms(name)')
+        .eq('occupant_id', session.user.id);
+
+      if (roomsError) {
+        console.error('Error fetching rooms:', roomsError);
+        setAssignedRooms([]);
+      } else {
+        const processedRooms: UserAssignment[] = roomsData.map(room => ({
+          id: room.id,
+          room_name: room.rooms?.name || undefined,
+          assigned_at: room.assigned_at
+        }));
+        setAssignedRooms(processedRooms);
+      }
+
+      // Fetch assigned keys
+      const { data: keysData, error: keysError } = await supabase
+        .from('key_assignments')
+        .select('id, assigned_at, keys:keys(name)')
+        .eq('occupant_id', session.user.id)
+        .is('returned_at', null);
+
+      if (keysError) {
+        console.error('Error fetching keys:', keysError);
+        setAssignedKeys([]);
+      } else {
+        const processedKeys: UserAssignment[] = keysData.map(key => ({
+          id: key.id,
+          key_name: key.keys?.name || undefined,
+          assigned_at: key.assigned_at
+        }));
+        setAssignedKeys(processedKeys);
+      }
+
+      // Fetch user's reported issues
+      const { data: issuesData, error: issuesError } = await supabase
+        .from('issues')
+        .select('id, title, status, created_at, priority, rooms:rooms(name)')
+        .eq('created_by', session.user.id)
+        .order('created_at', { ascending: false });
+
+      if (issuesError) {
+        console.error('Error fetching issues:', issuesError);
+        setUserIssues([]);
+      } else {
+        setUserIssues(issuesData || []);
+      }
+
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return {
-    buildings: buildings || [],
-    buildingsLoading,
-    issues: issues || [],
-    activities: activities || [],
-    handleMarkAsSeen,
+    isAdmin,
+    isLoading,
+    assignedRooms,
+    assignedKeys,
+    userIssues,
+    profile,
+    checkUserRoleAndFetchData
   };
 };
+
