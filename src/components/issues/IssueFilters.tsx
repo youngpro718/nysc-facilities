@@ -34,7 +34,8 @@ export const IssueFilters = ({
     const updatedParams = new URLSearchParams(searchParams);
     Object.entries(newFilters).forEach(([key, value]) => {
       if (value !== undefined) {
-        updatedParams.set(key, value);
+        // Convert any non-string values to strings
+        updatedParams.set(key, String(value));
       } else {
         updatedParams.delete(key);
       }
