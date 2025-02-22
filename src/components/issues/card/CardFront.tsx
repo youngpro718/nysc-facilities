@@ -5,6 +5,7 @@ import { Issue } from "../types/IssueTypes";
 import { IssueBadges } from "./IssueBadges";
 import { IssueMetadata } from "./IssueMetadata";
 import { format } from "date-fns";
+import { getPriorityGradient } from "./utils/cardStyles";
 
 interface CardFrontProps {
   issue: Issue;
@@ -18,21 +19,26 @@ export function CardFront({ issue, onMarkAsSeen }: CardFrontProps) {
     : 'No due date set';
 
   return (
-    <Card className="absolute w-full h-full backface-hidden">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="truncate">{issue.title}</span>
-            {issue.photos && issue.photos.length > 0 && (
-              <Badge variant="secondary" className="shrink-0">
-                {issue.photos.length} photos
-              </Badge>
-            )}
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
+    <Card 
+      className="absolute w-full h-full backface-hidden overflow-hidden transition-all duration-300"
+      style={{
+        background: getPriorityGradient(issue.priority)
+      }}
+    >
+      <div className="absolute inset-0 bg-card/90 backdrop-blur-[2px]">
+        <CardHeader className="p-4">
+          <CardTitle className="flex items-center justify-between gap-4 text-lg">
+            <div className="flex items-center gap-2">
+              <span className="truncate font-medium">{issue.title}</span>
+              {issue.photos && issue.photos.length > 0 && (
+                <Badge variant="secondary" className="shrink-0">
+                  {issue.photos.length} photos
+                </Badge>
+              )}
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 pt-0 space-y-4">
           <IssueBadges
             status={issue.status}
             priority={issue.priority}
@@ -41,6 +47,10 @@ export function CardFront({ issue, onMarkAsSeen }: CardFrontProps) {
             onMarkAsSeen={() => onMarkAsSeen?.(issue.id)}
           />
           
+          <div className="prose prose-sm max-w-none">
+            <p className="text-muted-foreground line-clamp-2 text-sm">{issue.description}</p>
+          </div>
+
           <IssueMetadata
             timeRemaining={timeRemaining}
             dueDate={issue.due_date}
@@ -51,16 +61,11 @@ export function CardFront({ issue, onMarkAsSeen }: CardFrontProps) {
             assigned_to={issue.assigned_to || 'Unassigned'}
           />
 
-          <div className="prose prose-sm max-w-none">
-            <p className="text-muted-foreground line-clamp-3">{issue.description}</p>
-          </div>
-
-          <div className="absolute bottom-16 left-6 text-sm text-muted-foreground">
+          <div className="absolute bottom-4 left-4 text-xs text-muted-foreground/80">
             Created {format(new Date(issue.created_at), 'MMM d, yyyy')}
           </div>
-        </div>
-      </CardContent>
+        </CardContent>
+      </div>
     </Card>
   );
 }
-

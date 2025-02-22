@@ -12,10 +12,10 @@ interface CardBackProps {
 export function CardBack({ issue }: CardBackProps) {
   return (
     <Card className="absolute w-full h-full backface-hidden rotate-y-180">
-      <CardHeader className="flex-none">
-        <CardTitle>Issue Details</CardTitle>
+      <CardHeader className="flex-none p-4">
+        <CardTitle className="text-lg">Issue Details</CardTitle>
       </CardHeader>
-      <ScrollArea className="h-[calc(100%-5rem)] px-6">
+      <ScrollArea className="h-[calc(100%-5rem)] px-4">
         <div className="space-y-4 pb-6">
           {issue.resolution_notes && (
             <div className="space-y-1">
@@ -34,7 +34,7 @@ export function CardBack({ issue }: CardBackProps) {
           )}
 
           {issue.resolution_date && (
-            <div className="mt-4 text-sm text-muted-foreground">
+            <div className="mt-4 text-xs text-muted-foreground">
               Resolved on {format(new Date(issue.resolution_date), 'MMM d, yyyy')}
             </div>
           )}
