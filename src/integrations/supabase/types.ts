@@ -2007,7 +2007,7 @@ export type Database = {
           status: Database["public"]["Enums"]["issue_status_enum"] | null
           tags: string[] | null
           title: string
-          type: string
+          type: Database["public"]["Enums"]["standardized_issue_type"]
           updated_at: string | null
         }
         Insert: {
@@ -2040,7 +2040,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["issue_status_enum"] | null
           tags?: string[] | null
           title: string
-          type?: string
+          type?: Database["public"]["Enums"]["standardized_issue_type"]
           updated_at?: string | null
         }
         Update: {
@@ -2073,7 +2073,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["issue_status_enum"] | null
           tags?: string[] | null
           title?: string
-          type?: string
+          type?: Database["public"]["Enums"]["standardized_issue_type"]
           updated_at?: string | null
         }
         Relationships: [
@@ -5791,7 +5791,9 @@ export type Database = {
           avg_resolution_hours: number | null
           issue_types: Json | null
           last_issue_date: string | null
-          most_common_issue: string | null
+          most_common_issue:
+            | Database["public"]["Enums"]["standardized_issue_type"]
+            | null
           open_issues: number | null
           resolved_issues: number | null
           room_id: string | null
@@ -6152,6 +6154,26 @@ export type Database = {
         | "laboratory"
         | "conference"
       security_level_enum: "standard" | "restricted" | "high_security"
+      standardized_issue_type:
+        | "ACCESS_REQUEST"
+        | "BUILDING_SYSTEMS"
+        | "CEILING"
+        | "CLEANING_REQUEST"
+        | "CLIMATE_CONTROL"
+        | "DOOR"
+        | "ELECTRICAL_NEEDS"
+        | "EMERGENCY"
+        | "EXTERIOR_FACADE"
+        | "FLAGPOLE_FLAG"
+        | "FLOORING"
+        | "GENERAL_REQUESTS"
+        | "LEAK"
+        | "LIGHTING"
+        | "LOCK"
+        | "PLUMBING_NEEDS"
+        | "RESTROOM_REPAIR"
+        | "SIGNAGE"
+        | "WINDOW"
       status_enum: "active" | "inactive" | "under_maintenance"
       user_role: "admin" | "standard"
       verification_status_enum: "pending" | "verified" | "rejected"
