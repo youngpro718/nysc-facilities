@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -42,7 +41,6 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import { IssueCard } from "./card/IssueCard";
 import { getTypeColor, getStatusColor, getPriorityColor } from "./utils/issueStyles";
 
-// Define base types for database response
 type DatabaseIssue = {
   id: string;
   title: string;
@@ -62,11 +60,10 @@ type DatabaseIssue = {
     type: string;
     status: string;
     position: string;
-    electrical_issues: any; // Handle JSON type from Supabase
+    electrical_issues: any;
   } | null;
 };
 
-// Type guard functions
 function isValidFixtureType(value: string | null): value is FixtureType {
   return value === 'standard' || value === 'emergency' || value === 'motion_sensor';
 }
@@ -165,7 +162,6 @@ export const IssuesList = () => {
         `)
         .order('created_at', { ascending: false });
 
-      // Apply filters from URL or state
       const urlParams = new URLSearchParams(window.location.search);
       const typeFilter = urlParams.get('type') || 'all_types';
       const statusFilter = urlParams.get('status') || 'all_statuses';
@@ -175,11 +171,11 @@ export const IssuesList = () => {
         query = query.eq('type', typeFilter);
       }
       
-      if (statusFilter !== 'all_statuses') {
+      if (statusFilter !== 'all_statuses' && isValidIssueStatus(statusFilter)) {
         query = query.eq('status', statusFilter);
       }
       
-      if (priorityFilter !== 'all_priorities') {
+      if (priorityFilter !== 'all_priorities' && isValidIssuePriority(priorityFilter)) {
         query = query.eq('priority', priorityFilter);
       }
 

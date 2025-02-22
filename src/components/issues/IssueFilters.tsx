@@ -33,7 +33,7 @@ export const IssueFilters = ({
     // Update URL params
     const updatedParams = new URLSearchParams(searchParams);
     Object.entries(newFilters).forEach(([key, value]) => {
-      if (value) {
+      if (value !== undefined) {
         updatedParams.set(key, value);
       } else {
         updatedParams.delete(key);
