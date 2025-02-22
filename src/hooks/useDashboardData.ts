@@ -1,27 +1,9 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import type { UserProfile, UserAssignment, UserIssue } from "@/types/dashboard";
 import type { Building } from "@/utils/dashboardUtils";
-
-// Define Activity type based on our new table structure
-interface Activity {
-  id: string;
-  created_at: string;
-  building_id: string;
-  type: string;
-  description: string;
-  performed_by: string;
-}
-
-interface Issue {
-  id: string;
-  title: string;
-  status: string;
-  created_at: string;
-  seen: boolean;
-}
+import type { Issue, Activity } from "@/components/dashboard/BuildingsGrid";
 
 export const useDashboardData = () => {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -45,7 +27,6 @@ export const useDashboardData = () => {
 
       if (error) throw error;
 
-      // Update local state
       setIssues(prevIssues =>
         prevIssues.map(issue =>
           issue.id === issueId ? { ...issue, seen: true } : issue
@@ -66,11 +47,14 @@ export const useDashboardData = () => {
           name,
           address,
           status,
-          floors:building_floors(
+          floors:building_floors (
             id,
-            rooms:building_rooms(
+            name,
+            floor_number,
+            rooms:building_rooms (
               id,
-              room_lighting_status:room_lighting_fixtures(
+              room_number,
+              room_lighting_status:room_lighting_fixtures (
                 working_fixtures,
                 total_fixtures
               )
@@ -92,7 +76,7 @@ export const useDashboardData = () => {
       // Fetch issues
       const { data: issuesData, error: issuesError } = await supabase
         .from('issues')
-        .select('id, title, status, created_at, seen')
+        .select('id, title, description, building_id, photos, created_at, seen')
         .order('created_at', { ascending: false });
 
       if (issuesError) throw issuesError;
@@ -101,11 +85,19 @@ export const useDashboardData = () => {
       // Fetch activities
       const { data: activitiesData, error: activitiesError } = await supabase
         .from('building_activities')
-        .select('id, created_at, building_id, type, description, performed_by')
+        .select('id, description as action, performed_by, created_at, type, building_id')
         .order('created_at', { ascending: false });
 
       if (activitiesError) throw activitiesError;
-      setActivities(activitiesData || []);
+      setActivities(
+        (activitiesData || []).map(activity => ({
+          ...activity,
+          metadata: {
+            building_id: activity.building_id,
+            type: activity.type
+          }
+        }))
+      );
     } catch (error) {
       console.error('Error fetching issues and activities:', error);
     }
