@@ -542,6 +542,7 @@ export async function fetchFloorplanReportData(progressCallback: ReportCallback 
           { text: floor.name, style: 'floorHeader' },
           {
             table: {
+              headerRows: 0,
               widths: ['*'],
               body: floor.rooms.map(room => [[
                 { text: `${room.name} - ${room.type} (${room.status})`, style: 'roomItem' }
