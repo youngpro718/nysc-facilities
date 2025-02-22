@@ -125,7 +125,7 @@ export async function generateRoomReport() {
           ]
         },
         { text: '\n' }
-      ])) as Content[]
+      ])).flat() as Content[]
     ],
     styles: {
       header: { fontSize: 18, bold: true, margin: [0, 0, 0, 10] },
@@ -315,20 +315,23 @@ export async function fetchIssueReport(
         ...issues
           .filter(issue => issue.status !== 'resolved')
           .map(issue => ({
-            stack: [
-              { text: issue.title, style: 'issueTitle' },
-              {
-                ul: [
-                  `Type: ${issue.type}`,
-                  `Priority: ${issue.priority}`,
-                  `Status: ${issue.status}`,
-                  `Location: ${[issue.building_name, issue.floor_name, issue.room_name].filter(Boolean).join(' > ')}`,
-                  `Created: ${format(new Date(issue.created_at), 'PP')}`,
-                  issue.due_date ? `Due: ${format(new Date(issue.due_date), 'PP')}` : null
-                ].filter(Boolean)
-              },
-              { text: '\n' }
-            ]
+            table: {
+              widths: ['*'],
+              body: [
+                [{ text: issue.title, style: 'issueTitle' }],
+                [{
+                  ul: [
+                    `Type: ${issue.type}`,
+                    `Priority: ${issue.priority}`,
+                    `Status: ${issue.status}`,
+                    `Location: ${[issue.building_name, issue.floor_name, issue.room_name].filter(Boolean).join(' > ')}`,
+                    `Created: ${format(new Date(issue.created_at), 'PP')}`,
+                    issue.due_date ? `Due: ${format(new Date(issue.due_date), 'PP')}` : null
+                  ].filter(Boolean)
+                }]
+              ]
+            },
+            margin: [0, 0, 0, 10]
           }))
       ],
       styles: {
@@ -463,10 +466,19 @@ export async function fetchFloorplanReportData(progressCallback: ReportCallback 
   try {
     const data = await fetchDataWithProgress<FloorplanReportData>(
       supabase.from('buildings').select(`
-        *,
+        id,
+        name,
         floors:floors(
-          *,
-          rooms:rooms(*)
+          id,
+          name,
+          rooms:rooms(
+            id,
+            name,
+            type,
+            status,
+            maintenance_history,
+            next_maintenance_date
+          )
         )
       `),
       progressCallback,
@@ -489,8 +501,8 @@ export async function fetchFloorplanReportData(progressCallback: ReportCallback 
               )
             },
             { text: '\n' }
-          ]).flat() as Content[]
-        ]).flat()
+          ]).flat()
+        ]).flat() as Content[]
       ],
       styles: {
         header: { fontSize: 18, bold: true, margin: [0, 0, 0, 10] },
