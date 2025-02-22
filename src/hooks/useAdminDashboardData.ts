@@ -48,7 +48,7 @@ export const useAdminDashboardData = () => {
       if (buildingsError) {
         console.error('Error fetching buildings:', buildingsError);
       } else {
-        console.log('Buildings data:', buildingsData); // For debugging
+        console.log('Buildings data:', buildingsData);
         setBuildings(buildingsData || []);
       }
 
@@ -66,7 +66,7 @@ export const useAdminDashboardData = () => {
           seen,
           photos,
           room_id,
-          rooms:new_spaces (
+          rooms:new_spaces!room_id (
             id,
             name,
             room_number
@@ -86,8 +86,17 @@ export const useAdminDashboardData = () => {
       if (issuesError) {
         console.error('Error fetching issues:', issuesError);
       } else {
-        console.log('Issues data:', issuesData); // For debugging
-        setIssues(issuesData || []);
+        console.log('Issues data:', issuesData);
+        
+        // Transform the issues data to match UserIssue type
+        const transformedIssues = (issuesData || []).map(issue => ({
+          ...issue,
+          rooms: issue.rooms || null, // Handle potential null case
+          buildings: issue.buildings || null,
+          floors: issue.floors || null
+        }));
+        
+        setIssues(transformedIssues);
       }
 
       // Fetch recent activities
