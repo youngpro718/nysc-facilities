@@ -10,9 +10,9 @@ import { IssueFiltersType } from "../../types/FilterTypes";
 type IssueQueryResponse = DatabaseIssue[];
 type IssueQueryBuilder = PostgrestFilterBuilder<any, any, IssueQueryResponse>;
 
-export const useIssueList = (filters: IssueFiltersType) => {
+export const useIssueList = (filters: IssueFiltersType, searchQuery: string) => {
   return useQuery({
-    queryKey: ['issues', filters],
+    queryKey: ['issues', filters, searchQuery],
     queryFn: async () => {
       let query: IssueQueryBuilder = supabase
         .from('issues')
@@ -39,6 +39,11 @@ export const useIssueList = (filters: IssueFiltersType) => {
           )
         `)
         .order('created_at', { ascending: false });
+
+      // Handle search query
+      if (searchQuery) {
+        query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
+      }
 
       if (filters.type && filters.type !== 'all_types') {
         query = query.eq('type', filters.type);
@@ -84,4 +89,3 @@ export const useIssueList = (filters: IssueFiltersType) => {
     }
   });
 };
-

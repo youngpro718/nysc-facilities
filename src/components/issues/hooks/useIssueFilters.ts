@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { IssueFiltersType, SortOption, GroupingOption, ViewMode } from "../types/FilterTypes";
+import { IssueFiltersType, SortOption, ViewMode } from "../types/FilterTypes";
 
 export const useIssueFilters = () => {
   const [filters, setFilters] = useState<IssueFiltersType>({
@@ -13,19 +13,18 @@ export const useIssueFilters = () => {
     electricalIssue: 'all_electrical_issues'
   });
   
+  const [searchQuery, setSearchQuery] = useState('');
   const [sort, setSort] = useState<SortOption>({ field: 'created_at', direction: 'desc' });
-  const [grouping, setGrouping] = useState<GroupingOption>('none');
   const [viewMode, setViewMode] = useState<ViewMode>('table');
 
   return {
     filters,
     setFilters,
+    searchQuery,
+    setSearchQuery,
     sort,
     setSort,
-    grouping,
-    setGrouping,
     viewMode,
     setViewMode
   };
 };
-

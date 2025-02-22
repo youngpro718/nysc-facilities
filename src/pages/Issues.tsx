@@ -4,8 +4,6 @@ import { Button } from "@/components/ui/button";
 import { QuickIssueForm } from "@/components/issues/QuickIssueForm";
 import { useState } from "react";
 import { IssuesList } from "@/components/issues/IssuesList";
-import { TypeFilters } from "@/components/issues/filters/TypeFilters";
-import { SortAndGroupFilters } from "@/components/issues/filters/SortAndGroupFilters";
 import { IssueFilters } from "@/components/issues/IssueFilters";
 import { useIssueFilters } from "@/components/issues/hooks/useIssueFilters";
 
@@ -14,10 +12,8 @@ const Issues = () => {
   const { 
     filters, 
     setFilters, 
-    sort, 
-    setSort, 
-    grouping, 
-    setGrouping, 
+    searchQuery,
+    setSearchQuery,
     viewMode 
   } = useIssueFilters();
   
@@ -38,8 +34,8 @@ const Issues = () => {
           <div className="space-y-6">
             <IssueFilters
               onFilterChange={setFilters}
-              onSortChange={setSort}
-              onGroupingChange={setGrouping}
+              onSearchChange={setSearchQuery}
+              searchQuery={searchQuery}
               viewMode={viewMode}
             />
             <div className="overflow-y-auto -mx-4 sm:mx-0 px-4 sm:px-0">
