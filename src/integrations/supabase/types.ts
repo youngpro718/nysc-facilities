@@ -1946,6 +1946,13 @@ export type Database = {
             foreignKeyName: "issue_history_issue_id_fkey"
             columns: ["issue_id"]
             isOneToOne: false
+            referencedRelation: "issue_report_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "issue_history_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
             referencedRelation: "issues"
             referencedColumns: ["id"]
           },
@@ -5293,6 +5300,46 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      issue_report_details: {
+        Row: {
+          assignee_email: string | null
+          assignee_first_name: string | null
+          assignee_last_name: string | null
+          building_name: string | null
+          created_at: string | null
+          creator_email: string | null
+          creator_first_name: string | null
+          creator_last_name: string | null
+          description: string | null
+          due_date: string | null
+          floor_name: string | null
+          id: string | null
+          impact_level: string | null
+          lighting_details: Json | null
+          maintenance_requirements: Json | null
+          photos: string[] | null
+          priority: Database["public"]["Enums"]["issue_priority_enum"] | null
+          recurring_pattern: Json | null
+          resolution_date: string | null
+          resolution_notes: string | null
+          resolution_type:
+            | Database["public"]["Enums"]["issue_resolution_type"]
+            | null
+          resolved_by: string | null
+          resolver_email: string | null
+          resolver_first_name: string | null
+          resolver_last_name: string | null
+          room_name: string | null
+          room_number: string | null
+          status: Database["public"]["Enums"]["issue_status_enum"] | null
+          tags: string[] | null
+          timeline_events: Json | null
+          title: string | null
+          type: Database["public"]["Enums"]["standardized_issue_type"] | null
+          updated_at: string | null
+        }
+        Relationships: []
       }
       key_assignment_stats: {
         Row: {

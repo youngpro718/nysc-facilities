@@ -102,6 +102,35 @@ interface FormattedIssueReport {
   sections: IssueReportSection[];
 }
 
+interface IssueReportDetail {
+  id: string;
+  title: string;
+  description: string | null;
+  type: string;
+  status: string;
+  priority: string;
+  created_at: string;
+  updated_at: string;
+  photos: string[] | null;
+  due_date: string | null;
+  resolution_type: string | null;
+  resolution_notes: string | null;
+  resolution_date: string | null;
+  impact_level: string | null;
+  tags: string[] | null;
+  building_name: string | null;
+  floor_name: string | null;
+  room_name: string | null;
+  room_number: string | null;
+  assignee_first_name: string | null;
+  assignee_last_name: string | null;
+  assignee_email: string | null;
+  timeline_events: any[] | null;
+  lighting_details: Record<string, any> | null;
+  recurring_pattern: Record<string, any> | null;
+  maintenance_requirements: Record<string, any> | null;
+}
+
 export async function fetchIssueReport(
   progressCallback: ReportCallback = () => {}
 ): Promise<FormattedIssueReport> {
@@ -112,11 +141,11 @@ export async function fetchIssueReport(
       message: 'Initializing issue report generation...'
     });
 
-    // Fetch detailed issue data
+    // Fetch detailed issue data from the new view
     const { data: issues, error } = await supabase
       .from('issue_report_details')
       .select('*')
-      .order('created_at', { ascending: false });
+      .returns<IssueReportDetail[]>();
 
     if (error) {
       progressCallback({
@@ -125,6 +154,10 @@ export async function fetchIssueReport(
         message: `Error fetching issues: ${error.message}`
       });
       throw error;
+    }
+
+    if (!issues) {
+      throw new Error('No issue data found');
     }
 
     progressCallback({
@@ -177,7 +210,7 @@ export async function fetchIssueReport(
   }
 }
 
-function calculateIssueMetrics(issues: any[]): IssueReportMetrics {
+function calculateIssueMetrics(issues: IssueReportDetail[]): IssueReportMetrics {
   const now = new Date();
   const metrics: IssueReportMetrics = {
     total_issues: issues.length,
@@ -211,7 +244,7 @@ function calculateIssueMetrics(issues: any[]): IssueReportMetrics {
   return metrics;
 }
 
-function organizeIssueSections(issues: any[]): IssueReportSection[] {
+function organizeIssueSections(issues: IssueReportDetail[]): IssueReportSection[] {
   const sections: IssueReportSection[] = [
     {
       title: "Overview",
@@ -241,8 +274,8 @@ function organizeIssueSections(issues: any[]): IssueReportSection[] {
   return sections;
 }
 
-function groupIssuesByLocation(issues: any[]): Record<string, any[]> {
-  const locationGroups: Record<string, any[]> = {};
+function groupIssuesByLocation(issues: IssueReportDetail[]): Record<string, IssueReportDetail[]> {
+  const locationGroups: Record<string, IssueReportDetail[]> = {};
 
   issues.forEach(issue => {
     const location = [
@@ -260,11 +293,11 @@ function groupIssuesByLocation(issues: any[]): Record<string, any[]> {
   return locationGroups;
 }
 
-function calculateResolutionStats(issues: any[]) {
+function calculateResolutionStats(issues: IssueReportDetail[]) {
   const resolvedIssues = issues.filter(i => i.status === 'resolved');
   const resolutionTimes = resolvedIssues.map(issue => {
     const created = new Date(issue.created_at);
-    const resolved = new Date(issue.resolution_date);
+    const resolved = new Date(issue.resolution_date || '');
     return resolved.getTime() - created.getTime();
   });
 
@@ -273,7 +306,8 @@ function calculateResolutionStats(issues: any[]) {
     average_time: resolutionTimes.length ? 
       Math.round(resolutionTimes.reduce((a, b) => a + b, 0) / resolutionTimes.length) : 0,
     resolution_types: resolvedIssues.reduce((acc: Record<string, number>, issue) => {
-      acc[issue.resolution_type] = (acc[issue.resolution_type] || 0) + 1;
+      const type = issue.resolution_type || 'unspecified';
+      acc[type] = (acc[type] || 0) + 1;
       return acc;
     }, {})
   };
