@@ -13,7 +13,7 @@ export const useAdminDashboardData = () => {
     try {
       setBuildingsLoading(true);
       
-      // Fetch buildings with floors, rooms, and lighting fixtures
+      // Fetch buildings with floors, rooms, and lighting fixtures 
       const { data: buildingsData, error: buildingsError } = await supabase
         .from('buildings')
         .select(`
