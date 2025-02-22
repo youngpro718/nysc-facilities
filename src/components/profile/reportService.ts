@@ -1,6 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { PostgrestFilterBuilder } from "@supabase/postgrest-js";
+import pdfMake from "pdfmake/build/pdfmake";
+import { Content, TDocumentDefinitions } from "pdfmake/interfaces";
 
 interface ReportProgress {
   status: 'pending' | 'generating' | 'completed' | 'error';
@@ -51,12 +53,44 @@ async function fetchDataWithProgress<T>(
   return data as T;
 }
 
+function downloadPdf(docDefinition: TDocumentDefinitions, fileName: string) {
+  pdfMake.createPdf(docDefinition).download(fileName);
+}
+
 export async function generateRoomReport() {
   const { data, error } = await supabase
     .from("room_health_overview")
     .select("*");
 
   if (error) throw error;
+  
+  const docDefinition: TDocumentDefinitions = {
+    content: [
+      { text: 'Room Health Overview Report', style: 'header' },
+      { text: `Generated on ${format(new Date(), 'PPpp')}`, style: 'subheader' },
+      { text: '\n' },
+      ...data.map(room => ([
+        { text: `Room: ${room.room_name || 'N/A'}`, style: 'roomHeader' },
+        {
+          ul: [
+            `Building: ${room.building_name || 'N/A'}`,
+            `Floor: ${room.floor_name || 'N/A'}`,
+            `Status: ${room.status || 'N/A'}`,
+            `Occupancy: ${room.occupancy_status || 'N/A'}`,
+            `Last Inspection: ${room.last_inspection_date ? format(new Date(room.last_inspection_date), 'PP') : 'N/A'}`
+          ]
+        },
+        { text: '\n' }
+      ])).flat()
+    ],
+    styles: {
+      header: { fontSize: 18, bold: true, margin: [0, 0, 0, 10] },
+      subheader: { fontSize: 14, bold: true, margin: [0, 0, 0, 5] },
+      roomHeader: { fontSize: 14, bold: true, margin: [0, 10, 0, 5] }
+    }
+  };
+
+  downloadPdf(docDefinition, `room_report_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.pdf`);
   return data;
 }
 
@@ -73,6 +107,37 @@ export async function generateKeyInventoryReport() {
     `);
 
   if (error) throw error;
+
+  const docDefinition: TDocumentDefinitions = {
+    content: [
+      { text: 'Key Inventory Report', style: 'header' },
+      { text: `Generated on ${format(new Date(), 'PPpp')}`, style: 'subheader' },
+      { text: '\n' },
+      {
+        table: {
+          headerRows: 1,
+          widths: ['*', 'auto', 'auto', 'auto', 'auto', 'auto'],
+          body: [
+            ['Type', 'Total', 'Available', 'Active', 'Returned', 'Lost'],
+            ...stats.map(row => [
+              row.type,
+              row.total_quantity.toString(),
+              row.available_quantity.toString(),
+              row.active_assignments.toString(),
+              row.returned_assignments.toString(),
+              row.lost_count.toString()
+            ])
+          ]
+        }
+      }
+    ],
+    styles: {
+      header: { fontSize: 18, bold: true, margin: [0, 0, 0, 10] },
+      subheader: { fontSize: 14, bold: true, margin: [0, 0, 0, 5] }
+    }
+  };
+
+  downloadPdf(docDefinition, `key_inventory_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.pdf`);
   return stats;
 }
 
@@ -165,28 +230,72 @@ export async function fetchIssueReport(
     });
 
     const metrics = calculateIssueMetrics(issues);
-
-    progressCallback({
-      status: 'generating',
-      progress: 60,
-      message: 'Organizing report sections...'
-    });
-
     const sections = organizeIssueSections(issues);
 
     progressCallback({
       status: 'generating',
       progress: 90,
-      message: 'Finalizing report structure...'
+      message: 'Generating PDF report...'
     });
 
-    const report: FormattedIssueReport = {
-      metadata: {
-        generated_at: new Date().toISOString(),
-      },
-      metrics,
-      sections
+    const docDefinition: TDocumentDefinitions = {
+      content: [
+        { text: 'Issue Report', style: 'header' },
+        { text: `Generated on ${format(new Date(), 'PPpp')}`, style: 'subheader' },
+        { text: '\n' },
+        { text: 'Summary', style: 'sectionHeader' },
+        {
+          ul: [
+            `Total Issues: ${metrics.total_issues}`,
+            `Open Issues: ${metrics.open_issues}`,
+            `Resolved Issues: ${metrics.resolved_issues}`,
+            `Overdue Issues: ${metrics.overdue_issues}`
+          ]
+        },
+        { text: '\n' },
+        { text: 'Priority Distribution', style: 'sectionHeader' },
+        {
+          ul: Object.entries(metrics.priority_distribution).map(
+            ([priority, count]) => `${priority}: ${count}`
+          )
+        },
+        { text: '\n' },
+        { text: 'Status Distribution', style: 'sectionHeader' },
+        {
+          ul: Object.entries(metrics.status_distribution).map(
+            ([status, count]) => `${status}: ${count}`
+          )
+        },
+        { text: '\n' },
+        { text: 'Open Issues', style: 'sectionHeader' },
+        ...issues
+          .filter(issue => issue.status !== 'resolved')
+          .map(issue => ({
+            stack: [
+              { text: issue.title, style: 'issueTitle' },
+              {
+                ul: [
+                  `Type: ${issue.type}`,
+                  `Priority: ${issue.priority}`,
+                  `Status: ${issue.status}`,
+                  `Location: ${[issue.building_name, issue.floor_name, issue.room_name].filter(Boolean).join(' > ')}`,
+                  `Created: ${format(new Date(issue.created_at), 'PP')}`,
+                  issue.due_date ? `Due: ${format(new Date(issue.due_date), 'PP')}` : null
+                ].filter(Boolean)
+              },
+              { text: '\n' }
+            ]
+          }))
+      ],
+      styles: {
+        header: { fontSize: 18, bold: true, margin: [0, 0, 0, 10] },
+        subheader: { fontSize: 14, bold: true, margin: [0, 0, 0, 5] },
+        sectionHeader: { fontSize: 14, bold: true, margin: [0, 10, 0, 5] },
+        issueTitle: { fontSize: 12, bold: true, margin: [0, 5, 0, 3] }
+      }
     };
+
+    downloadPdf(docDefinition, `issue_report_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.pdf`);
 
     progressCallback({
       status: 'completed',
@@ -194,7 +303,7 @@ export async function fetchIssueReport(
       message: 'Issue report generated successfully'
     });
 
-    return report;
+    return { metadata: { generated_at: new Date().toISOString() }, metrics, sections };
   } catch (error) {
     console.error('Error in fetchIssueReport:', error);
     progressCallback({
@@ -308,17 +417,47 @@ function calculateResolutionStats(issues: IssueReportDetail[]) {
 
 export async function fetchFloorplanReportData(progressCallback: ReportCallback = () => {}) {
   try {
-    const query = supabase
-      .from('buildings')
-      .select(`
+    const data = await fetchDataWithProgress(
+      supabase.from('buildings').select(`
         *,
         floors:floors(
           *,
           rooms:rooms(*)
         )
-      `);
+      `),
+      progressCallback,
+      0,
+      100
+    );
 
-    return await fetchDataWithProgress(query, progressCallback, 0, 100);
+    const docDefinition: TDocumentDefinitions = {
+      content: [
+        { text: 'Floorplan Report', style: 'header' },
+        { text: `Generated on ${format(new Date(), 'PPpp')}`, style: 'subheader' },
+        { text: '\n' },
+        ...data.map(building => [
+          { text: building.name, style: 'buildingHeader' },
+          ...(building.floors || []).map(floor => [
+            { text: floor.name, style: 'floorHeader' },
+            {
+              ul: (floor.rooms || []).map(room => 
+                `${room.name} - ${room.type} (${room.status})`
+              )
+            },
+            { text: '\n' }
+          ]).flat()
+        ]).flat()
+      ],
+      styles: {
+        header: { fontSize: 18, bold: true, margin: [0, 0, 0, 10] },
+        subheader: { fontSize: 14, bold: true, margin: [0, 0, 0, 5] },
+        buildingHeader: { fontSize: 16, bold: true, margin: [0, 10, 0, 5] },
+        floorHeader: { fontSize: 14, bold: true, margin: [0, 5, 0, 5] }
+      }
+    };
+
+    downloadPdf(docDefinition, `floorplan_report_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.pdf`);
+    return data;
   } catch (error) {
     console.error('Error fetching floorplan report data:', error);
     throw error;
@@ -327,15 +466,49 @@ export async function fetchFloorplanReportData(progressCallback: ReportCallback 
 
 export async function fetchLightingReport(progressCallback: ReportCallback = () => {}) {
   try {
-    const query = supabase
-      .from('lighting_fixtures')
-      .select(`
+    const data = await fetchDataWithProgress(
+      supabase.from('lighting_fixtures').select(`
         *,
         rooms:rooms(*),
         maintenance_history:maintenance_history(*)
-      `);
+      `),
+      progressCallback,
+      0,
+      100
+    );
 
-    return await fetchDataWithProgress(query, progressCallback, 0, 100);
+    const docDefinition: TDocumentDefinitions = {
+      content: [
+        { text: 'Lighting Fixtures Report', style: 'header' },
+        { text: `Generated on ${format(new Date(), 'PPpp')}`, style: 'subheader' },
+        { text: '\n' },
+        {
+          table: {
+            headerRows: 1,
+            widths: ['*', 'auto', 'auto', 'auto', 'auto'],
+            body: [
+              ['Location', 'Type', 'Status', 'Last Maintenance', 'Next Due'],
+              ...data.map(fixture => [
+                fixture.rooms?.name || 'N/A',
+                fixture.type,
+                fixture.status,
+                fixture.maintenance_history?.[0]?.date ? 
+                  format(new Date(fixture.maintenance_history[0].date), 'PP') : 'N/A',
+                fixture.next_maintenance_date ? 
+                  format(new Date(fixture.next_maintenance_date), 'PP') : 'N/A'
+              ])
+            ]
+          }
+        }
+      ],
+      styles: {
+        header: { fontSize: 18, bold: true, margin: [0, 0, 0, 10] },
+        subheader: { fontSize: 14, bold: true, margin: [0, 0, 0, 5] }
+      }
+    };
+
+    downloadPdf(docDefinition, `lighting_report_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.pdf`);
+    return data;
   } catch (error) {
     console.error('Error fetching lighting report data:', error);
     throw error;
@@ -455,15 +628,19 @@ export async function fetchFullDatabaseReport(progressCallback: ReportCallback =
 
 export function downloadReport(data: any, type: string) {
   const timestamp = format(new Date(), 'yyyy-MM-dd_HH-mm');
-  const fileName = `${type}_report_${timestamp}.json`;
-  const jsonString = JSON.stringify(data, null, 2);
-  const blob = new Blob([jsonString], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  const docDefinition: TDocumentDefinitions = {
+    content: [
+      { text: `${type.charAt(0).toUpperCase() + type.slice(1)} Report`, style: 'header' },
+      { text: `Generated on ${format(new Date(), 'PPpp')}`, style: 'subheader' },
+      { text: '\n' },
+      { text: JSON.stringify(data, null, 2), style: 'code' }
+    ],
+    styles: {
+      header: { fontSize: 18, bold: true, margin: [0, 0, 0, 10] },
+      subheader: { fontSize: 14, bold: true, margin: [0, 0, 0, 5] },
+      code: { font: 'Courier', fontSize: 10 }
+    }
+  };
+
+  downloadPdf(docDefinition, `${type}_report_${timestamp}.pdf`);
 }
