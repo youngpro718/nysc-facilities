@@ -4,13 +4,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { Issue } from "../../types/IssueTypes";
 import { DatabaseIssue, transformIssue } from "../../utils/IssueTransformers";
 import { isValidStatus, isValidPriority } from "../../utils/typeGuards";
+import { PostgrestFilterBuilder } from "@supabase/postgrest-js";
+
+type IssueQueryResponse = DatabaseIssue[];
+type IssueQueryBuilder = PostgrestFilterBuilder<any, any, IssueQueryResponse>;
 
 export const useIssueList = () => {
   return useQuery({
     queryKey: ['issues'],
     queryFn: async () => {
       const urlParams = new URLSearchParams(window.location.search);
-      let query = supabase
+      let query: IssueQueryBuilder = supabase
         .from('issues')
         .select(`
           id,
@@ -85,7 +89,7 @@ export const useIssueList = () => {
 
       if (error) throw error;
       
-      return (queryData || []).map((item) => transformIssue(item as DatabaseIssue));
+      return (queryData || []).map((item) => transformIssue(item as DatabaseIssue)) as Issue[];
     }
   });
 };
