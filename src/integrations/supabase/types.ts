@@ -4543,7 +4543,9 @@ export type Database = {
           id: string
           is_storage: boolean | null
           last_inventory_check: string | null
+          maintenance_history: Json[] | null
           name: string
+          next_maintenance_date: string | null
           parent_room_id: string | null
           phone_number: string | null
           position: Json | null
@@ -4569,7 +4571,9 @@ export type Database = {
           id?: string
           is_storage?: boolean | null
           last_inventory_check?: string | null
+          maintenance_history?: Json[] | null
           name: string
+          next_maintenance_date?: string | null
           parent_room_id?: string | null
           phone_number?: string | null
           position?: Json | null
@@ -4595,7 +4599,9 @@ export type Database = {
           id?: string
           is_storage?: boolean | null
           last_inventory_check?: string | null
+          maintenance_history?: Json[] | null
           name?: string
+          next_maintenance_date?: string | null
           parent_room_id?: string | null
           phone_number?: string | null
           position?: Json | null

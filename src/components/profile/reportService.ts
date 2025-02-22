@@ -129,7 +129,7 @@ export async function generateRoomReport() {
           ]
         },
         { text: '\n' }
-      ])).flat() as Content[]
+      ])).flat()
     ],
     styles: {
       header: { fontSize: 18, bold: true, margin: [0, 0, 0, 10] },
@@ -483,7 +483,7 @@ export async function fetchFloorplanReportData(progressCallback: ReportCallback 
           rooms:rooms(
             id,
             name,
-            room_type,
+            type,
             status,
             maintenance_history,
             next_maintenance_date
@@ -497,18 +497,18 @@ export async function fetchFloorplanReportData(progressCallback: ReportCallback 
     const transformedData: FloorplanReportData[] = data.map(building => ({
       id: building.id,
       name: building.name,
-      floors: building.floors?.map(floor => ({
+      floors: (building.floors || []).map(floor => ({
         id: floor.id,
         name: floor.name,
         rooms: (floor.rooms || []).map(room => ({
           id: room.id,
           name: room.name,
-          type: room.room_type || 'unknown',
+          type: room.type || 'unknown',
           status: room.status || 'unknown',
           maintenance_history: room.maintenance_history || [],
           next_maintenance_date: room.next_maintenance_date
         }))
-      })) || []
+      }))
     }));
 
     const docDefinition: TDocumentDefinitions = {
