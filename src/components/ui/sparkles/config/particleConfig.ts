@@ -1,5 +1,5 @@
 
-import type { SingleOrMultiple } from "@tsparticles/engine";
+import type { SingleOrMultiple, RecursivePartial, IOptions, MoveDirection } from "@tsparticles/engine";
 
 export interface ParticleConfigOptions {
   background?: string;
@@ -17,7 +17,7 @@ export const createParticleConfig = ({
   maxSize = 3,
   speed = 4,
   particleDensity = 120,
-}: ParticleConfigOptions = {}) => ({
+}: ParticleConfigOptions = {}): RecursivePartial<IOptions> => ({
   background: {
     color: {
       value: background,
@@ -91,10 +91,10 @@ export const createParticleConfig = ({
         enable: false,
         rotate: { x: 3000, y: 3000 },
       },
-      center: { x: 50, y: 50, mode: "percent" as "percent", radius: 0 },
+      center: { x: 50, y: 50, mode: "percent" as const, radius: 0 },
       decay: 0,
       distance: {},
-      direction: "none",
+      direction: "none" as MoveDirection,
       drift: 0,
       enable: true,
       gravity: {
@@ -109,7 +109,7 @@ export const createParticleConfig = ({
         enable: false,
         options: {},
       },
-      outModes: { default: "out" },
+      outModes: { default: "out" as const },
       random: false,
       size: false,
       speed: {
@@ -136,7 +136,7 @@ export const createParticleConfig = ({
         height: 400,
       },
       limit: {
-        mode: "delete",
+        mode: "delete" as const,
         value: 0,
       },
       value: particleDensity,
@@ -153,9 +153,9 @@ export const createParticleConfig = ({
         decay: 0,
         delay: 0,
         sync: false,
-        mode: "auto",
-        startValue: "random",
-        destroy: "none",
+        mode: "auto" as const,
+        startValue: "random" as const,
+        destroy: "none" as const,
       },
     },
     reduceDuplicates: false,
@@ -169,7 +169,7 @@ export const createParticleConfig = ({
       close: true,
       fill: true,
       options: {},
-      type: "circle",
+      type: "circle" as const,
     },
     size: {
       value: {
@@ -183,9 +183,9 @@ export const createParticleConfig = ({
         decay: 0,
         delay: 0,
         sync: false,
-        mode: "auto",
-        startValue: "random",
-        destroy: "none",
+        mode: "auto" as const,
+        startValue: "random" as const,
+        destroy: "none" as const,
       },
     },
     stroke: {
@@ -218,7 +218,7 @@ export const createParticleConfig = ({
         enable: false,
         value: 0,
       },
-      mode: "vertical",
+      mode: "vertical" as const,
       speed: 25,
     },
     rotate: {
@@ -229,7 +229,7 @@ export const createParticleConfig = ({
         decay: 0,
         sync: false,
       },
-      direction: "clockwise",
+      direction: "clockwise" as const,
       path: false,
     },
     orbit: {

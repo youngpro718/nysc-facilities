@@ -10,6 +10,7 @@ import { AssignedKeysCard } from "@/components/dashboard/AssignedKeysCard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import type { RoomData, KeyData, UserAssignment, UserIssue } from "@/types/dashboard";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 
 interface UserProfile {
   username?: string;
@@ -34,7 +35,7 @@ export default function UserDashboard() {
     checkUserRoleAndFetchData();
 
     // Set up real-time subscriptions
-    const channels = [
+    const channels: RealtimeChannel[] = [
       supabase
         .channel('room-assignments-changes')
         .on(
@@ -43,10 +44,7 @@ export default function UserDashboard() {
             event: '*',
             schema: 'public',
             table: 'occupant_room_assignments',
-            filter: async () => {
-              const { data: { session } } = await supabase.auth.getSession();
-              return `occupant_id=eq.${session?.user?.id}`;
-            }
+            filter: `occupant_id=eq.${supabase.auth.getUser()?.data?.user?.id}`
           },
           (payload: any) => {
             console.log('Room assignment update received:', payload);
