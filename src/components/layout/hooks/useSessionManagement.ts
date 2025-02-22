@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { DeviceInfo } from "../types";
 import { toast } from "sonner";
+import { debounce } from "lodash";
 
 export const useSessionManagement = (isLoginPage: boolean) => {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
   const [initialCheckComplete, setInitialCheckComplete] = useState(false);
   const lastCheckTimestamp = useRef(0);
   const navigationTimeout = useRef<NodeJS.Timeout>();
+  const isNavigating = useRef(false);
 
   const getCurrentDeviceInfo = useCallback((): DeviceInfo => ({
     name: navigator.userAgent.split('/')[0],
@@ -58,19 +60,24 @@ export const useSessionManagement = (isLoginPage: boolean) => {
     }
   }, []);
 
-  const handleNavigation = useCallback((path: string) => {
-    if (navigationTimeout.current) {
-      clearTimeout(navigationTimeout.current);
-    }
-    
-    navigationTimeout.current = setTimeout(() => {
+  // Debounced navigation handler to prevent rapid consecutive navigations
+  const handleNavigation = useCallback(
+    debounce((path: string) => {
+      if (isNavigating.current || path === location.pathname) {
+        return;
+      }
+      isNavigating.current = true;
       navigate(path, { replace: true });
-    }, 100);
-  }, [navigate]);
+      setTimeout(() => {
+        isNavigating.current = false;
+      }, 500);
+    }, 300),
+    [navigate, location.pathname]
+  );
 
   useEffect(() => {
     let mounted = true;
-    const MIN_CHECK_INTERVAL = 1000; // Minimum time between checks in ms
+    const MIN_CHECK_INTERVAL = 2000; // Increased minimum time between checks to 2 seconds
 
     const checkSession = async () => {
       try {
@@ -133,24 +140,22 @@ export const useSessionManagement = (isLoginPage: boolean) => {
         }
 
         if (profile?.verification_status === 'verified') {
-          if (!userIsAdmin && location.pathname === '/') {
-            handleNavigation('/dashboard');
-            setIsLoading(false);
-            setInitialCheckComplete(true);
-            return;
-          }
-
-          if (userIsAdmin && location.pathname === '/dashboard') {
-            handleNavigation('/');
-            setIsLoading(false);
-            setInitialCheckComplete(true);
-            return;
-          }
-
+          // Consolidate navigation logic to prevent redundant navigations
+          let targetPath = location.pathname;
+          
           if (isLoginPage) {
-            handleNavigation(userIsAdmin ? '/' : '/dashboard');
+            targetPath = userIsAdmin ? '/' : '/dashboard';
+          } else if (!userIsAdmin && location.pathname === '/') {
+            targetPath = '/dashboard';
+          } else if (userIsAdmin && location.pathname === '/dashboard') {
+            targetPath = '/';
           }
 
+          if (targetPath !== location.pathname) {
+            handleNavigation(targetPath);
+          }
+
+          // Update device info and session
           const deviceInfo = getCurrentDeviceInfo();
           const existingSession = await findExistingSession(session.user.id);
 
@@ -221,6 +226,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
       if (navigationTimeout.current) {
         clearTimeout(navigationTimeout.current);
       }
+      handleNavigation.cancel();
       subscription.unsubscribe();
     };
   }, [navigate, isLoginPage, location.pathname, isSigningOut, createProfileIfNotExists, getCurrentDeviceInfo, findExistingSession, handleNavigation]);
