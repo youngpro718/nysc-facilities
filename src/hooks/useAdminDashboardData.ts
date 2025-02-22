@@ -13,7 +13,7 @@ export const useAdminDashboardData = () => {
     try {
       setBuildingsLoading(true);
       
-      // Fetch buildings
+      // Fetch buildings with complete hierarchy
       const { data: buildingsData, error: buildingsError } = await supabase
         .from('buildings')
         .select(`
@@ -26,7 +26,23 @@ export const useAdminDashboardData = () => {
           building_floors (
             id,
             name,
-            floor_number
+            floor_number,
+            rooms (
+              id,
+              name,
+              room_number,
+              status,
+              room_type,
+              lighting_fixtures (
+                id,
+                name,
+                type,
+                status,
+                technology,
+                electrical_issues,
+                ballast_issue
+              )
+            )
           )
         `);
 
@@ -42,7 +58,7 @@ export const useAdminDashboardData = () => {
         setBuildings(typedBuildings);
       }
 
-      // Fetch issues with related room data and photos
+      // Fetch only unseen issues with related data
       const { data: issuesData, error: issuesError } = await supabase
         .from('issues')
         .select(`
@@ -67,6 +83,7 @@ export const useAdminDashboardData = () => {
             name
           )
         `)
+        .eq('seen', false)
         .order('created_at', { ascending: false });
 
       if (issuesError) {
@@ -75,7 +92,7 @@ export const useAdminDashboardData = () => {
         setIssues(issuesData || []);
       }
 
-      // Fetch activities
+      // Fetch recent activities
       const { data: activitiesData, error: activitiesError } = await supabase
         .from('user_activity_history')
         .select(`
@@ -132,6 +149,9 @@ export const useAdminDashboardData = () => {
 
       if (error) {
         console.error('Error marking issue as seen:', error);
+      } else {
+        // Remove the marked issue from the local state
+        setIssues(prevIssues => prevIssues.filter(issue => issue.id !== id));
       }
     } catch (error) {
       console.error('Error marking issue as seen:', error);
