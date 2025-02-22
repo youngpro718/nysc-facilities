@@ -8,19 +8,25 @@ import { CreateSpaceFormData } from "../../../schemas/createSpaceSchema";
 
 interface BuildingSelectorProps {
   form: UseFormReturn<CreateSpaceFormData>;
+  onBuildingChange?: (buildingId: string) => void;
 }
 
-export function BuildingSelector({ form }: BuildingSelectorProps) {
+export function BuildingSelector({ form, onBuildingChange }: BuildingSelectorProps) {
   const { data: buildings, isLoading } = useQuery({
     queryKey: ["buildings"],
     queryFn: async () => {
+      console.log("Fetching buildings...");
       const { data, error } = await supabase
         .from("buildings")
         .select("*")
         .eq('status', 'active')
         .order('name');
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching buildings:", error);
+        throw error;
+      }
+      console.log("Fetched buildings:", data);
       return data;
     }
   });
@@ -34,7 +40,10 @@ export function BuildingSelector({ form }: BuildingSelectorProps) {
           <FormLabel>Building</FormLabel>
           <Select
             disabled={isLoading}
-            onValueChange={field.onChange}
+            onValueChange={(value) => {
+              field.onChange(value);
+              onBuildingChange?.(value);
+            }}
             value={field.value || ""}
             defaultValue={field.value || ""}
           >

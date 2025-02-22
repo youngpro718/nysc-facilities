@@ -15,6 +15,7 @@ export function FloorSelector({ form, selectedBuildingId }: FloorSelectorProps) 
   const { data: floors, isLoading } = useQuery({
     queryKey: ["floors", selectedBuildingId],
     queryFn: async () => {
+      console.log("Fetching floors for building:", selectedBuildingId);
       const query = supabase
         .from("floors")
         .select(`
@@ -34,7 +35,12 @@ export function FloorSelector({ form, selectedBuildingId }: FloorSelectorProps) 
       }
       
       const { data, error } = await query.order('floor_number');
-      if (error) throw error;
+      
+      if (error) {
+        console.error("Error fetching floors:", error);
+        throw error;
+      }
+      console.log("Fetched floors:", data);
       return data;
     },
     enabled: !!selectedBuildingId

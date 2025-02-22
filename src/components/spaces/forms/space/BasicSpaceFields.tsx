@@ -12,7 +12,14 @@ interface BasicSpaceFieldsProps {
 }
 
 export function BasicSpaceFields({ form }: BasicSpaceFieldsProps) {
+  // Get selected building ID
   const selectedBuildingId = form.watch('buildingId');
+
+  // Reset floor when building changes
+  const handleBuildingChange = (buildingId: string) => {
+    form.setValue('buildingId', buildingId);
+    form.setValue('floorId', ''); // Reset floor selection when building changes
+  };
 
   return (
     <div className="space-y-4">
@@ -32,7 +39,7 @@ export function BasicSpaceFields({ form }: BasicSpaceFieldsProps) {
         )}
       />
 
-      <BuildingSelector form={form} />
+      <BuildingSelector form={form} onBuildingChange={handleBuildingChange} />
 
       <FloorSelector 
         form={form}
