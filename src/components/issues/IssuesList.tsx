@@ -132,9 +132,7 @@ export const IssuesList = () => {
   const isMobile = useIsMobile();
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
-  type QueryResult = DatabaseIssue[];
-
-  const { data: issues, isLoading } = useQuery({
+  const { data: issues, isLoading } = useQuery<Issue[]>({
     queryKey: ['issues'],
     queryFn: async () => {
       const urlParams = new URLSearchParams(window.location.search);
@@ -207,8 +205,7 @@ export const IssuesList = () => {
 
       if (error) throw error;
       
-      const typedData = (queryData || []) as QueryResult;
-      return typedData.map(transformIssue);
+      return (queryData || []).map((item) => transformIssue(item as DatabaseIssue));
     }
   });
 
