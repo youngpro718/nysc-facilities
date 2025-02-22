@@ -1,4 +1,6 @@
 
+import { useState } from "react";
+
 type DialogType = "issueDetails" | "resolution" | "deletion";
 
 export interface DialogState {
