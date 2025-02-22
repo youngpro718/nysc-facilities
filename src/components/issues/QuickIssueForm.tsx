@@ -1,17 +1,9 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage
-} from "@/components/ui/form";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
@@ -20,7 +12,7 @@ import { AlertTriangle } from "lucide-react";
 import { IssuePhotoForm } from "./wizard/IssuePhotoForm";
 import { usePhotoUpload } from "./hooks/usePhotoUpload";
 import { FormData } from "./types/formTypes";
-import { IssueType } from "./constants/issueTypes";
+import { StandardizedIssueType } from "./constants/issueTypes";
 import { IssueTypeField } from "./form-sections/IssueTypeField";
 import { ProblemTypeField } from "./form-sections/ProblemTypeField";
 import { DescriptionField } from "./form-sections/DescriptionField";
@@ -28,7 +20,7 @@ import { LocationFields } from "./form-sections/LocationFields";
 
 export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
   const [isManualTitle, setIsManualTitle] = useState(false);
-  const [selectedIssueType, setSelectedIssueType] = useState<IssueType | null>(null);
+  const [selectedIssueType, setSelectedIssueType] = useState<StandardizedIssueType | null>(null);
   const { uploading, selectedPhotos, handlePhotoUpload, setSelectedPhotos } = usePhotoUpload();
   const queryClient = useQueryClient();
 
@@ -43,7 +35,6 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
 
   const createIssueMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      // Format the date to ISO string if it exists
       const formattedDueDate = data.due_date ? new Date(data.due_date).toISOString() : null;
       
       const { error } = await supabase
@@ -51,7 +42,7 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
         .insert({
           title: data.title,
           description: data.description,
-          type: data.issue_type,
+          type: data.issue_type as StandardizedIssueType,
           priority: data.priority,
           status: 'open',
           building_id: data.building_id,
@@ -98,11 +89,9 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
     setSelectedPhotos(prev => prev.filter((_, i) => i !== index));
   };
 
-  // Watch for issue type changes to suggest priority
   const watchIssueType = form.watch('issue_type');
   if (watchIssueType && watchIssueType !== selectedIssueType) {
     setSelectedIssueType(watchIssueType);
-    // Suggest priority based on issue type
     if (watchIssueType === 'HVAC' || watchIssueType === 'Power') {
       form.setValue('priority', 'high');
     }
@@ -228,3 +217,5 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
     </Form>
   );
 }
+
+export default QuickIssueForm;
