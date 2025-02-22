@@ -12,31 +12,28 @@ export async function fetchFullDatabaseReport(progressCallback: ReportCallback =
     message: 'Starting database export...'
   });
 
-  // Get list of public tables
-  const { data: tables } = await supabase
-    .from('information_schema_tables')
-    .select('table_name')
-    .eq('table_schema', 'public');
-
-  if (!tables) throw new Error('No tables found');
+  // Instead of querying information_schema directly, we'll use a predefined list of public tables
+  const publicTables = [
+    'buildings', 'floors', 'rooms', 'lighting_fixtures', 'issues', 'occupants'
+  ];
 
   const exportData: Record<string, any[]> = {};
   let currentProgress = 0;
-  const progressPerTable = 100 / tables.length;
+  const progressPerTable = 100 / publicTables.length;
 
   // Export data from each table
-  for (const { table_name } of tables) {
+  for (const tableName of publicTables) {
     progressCallback({
       status: 'generating',
       progress: currentProgress,
-      message: `Exporting table: ${table_name}`
+      message: `Exporting table: ${tableName}`
     });
 
     const { data } = await supabase
-      .from(table_name)
+      .from(tableName)
       .select('*');
 
-    exportData[table_name] = data || [];
+    exportData[tableName] = data || [];
     currentProgress += progressPerTable;
   }
 

@@ -1,14 +1,10 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
+import { ReportTemplate, ScheduledReport } from "./types";
 import { PostgrestFilterBuilder } from "@supabase/postgrest-js";
-import pdfMake from "pdfmake/build/pdfmake";
-import { TDocumentDefinitions } from "pdfmake/interfaces";
-import { ReportCallback, ReportProgress } from "./types";
 
 export async function fetchDataWithProgress<T>(
-  queryBuilder: PostgrestFilterBuilder<any, any, any>,
-  progressCallback: ReportCallback,
+  queryBuilder: PostgrestFilterBuilder<any, any, T[]>,
+  progressCallback: (progress: { status: string; progress: number; message?: string }) => void,
   startProgress: number,
   endProgress: number
 ): Promise<T[]> {
@@ -44,14 +40,70 @@ export async function fetchDataWithProgress<T>(
     message: 'Data fetched successfully'
   });
 
-  return data as T[];
+  return data;
 }
 
-export function downloadPdf(docDefinition: TDocumentDefinitions, fileName: string) {
-  pdfMake.createPdf(docDefinition).download(fileName);
+export async function downloadPdf(docDefinition: any, filename: string) {
+  try {
+    const pdfMake = await import("pdfmake/build/pdfmake");
+    const pdfFonts = await import("pdfmake/build/vfs_fonts");
+
+    pdfMake.setFonts(pdfFonts.pdfMake.vfs);
+
+    const pdfDocGenerator = pdfMake.createPdf(docDefinition);
+
+    pdfDocGenerator.getBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+  } catch (error) {
+    console.error("Failed to download PDF:", error);
+  }
 }
 
-export function getFormattedTimestamp() {
-  return format(new Date(), 'yyyy-MM-dd_HH-mm');
+export async function fetchReportTemplates(): Promise<ReportTemplate[]> {
+  const { data, error } = await supabase
+    .from('report_templates')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data || [];
 }
 
+export async function createReportTemplate(template: Omit<ReportTemplate, 'id' | 'created_at'>): Promise<ReportTemplate> {
+  const { data, error } = await supabase
+    .from('report_templates')
+    .insert(template)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchScheduledReports(): Promise<ScheduledReport[]> {
+  const { data, error } = await supabase
+    .from('scheduled_reports')
+    .select('*')
+    .order('next_run_at', { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function scheduleReport(report: Omit<ScheduledReport, 'id'>): Promise<ScheduledReport> {
+  const { data, error } = await supabase
+    .from('scheduled_reports')
+    .insert(report)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
