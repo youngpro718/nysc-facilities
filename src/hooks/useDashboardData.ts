@@ -3,15 +3,96 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import type { UserProfile, UserAssignment, UserIssue } from "@/types/dashboard";
+import type { Building } from "@/utils/dashboardUtils";
+import type { Issue, Activity } from "@/components/dashboard/BuildingsGrid";
 
 export const useDashboardData = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [buildings, setBuildings] = useState<Building[]>([]);
+  const [buildingsLoading, setBuildingsLoading] = useState(true);
+  const [issues, setIssues] = useState<Issue[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [assignedRooms, setAssignedRooms] = useState<UserAssignment[]>([]);
   const [assignedKeys, setAssignedKeys] = useState<UserAssignment[]>([]);
   const [userIssues, setUserIssues] = useState<UserIssue[]>([]);
   const [profile, setProfile] = useState<UserProfile>({});
   const navigate = useNavigate();
+
+  const handleMarkAsSeen = async (issueId: string) => {
+    try {
+      const { error } = await supabase
+        .from('issues')
+        .update({ seen: true })
+        .eq('id', issueId);
+
+      if (error) throw error;
+
+      // Update local state
+      setIssues(prevIssues =>
+        prevIssues.map(issue =>
+          issue.id === issueId ? { ...issue, seen: true } : issue
+        )
+      );
+    } catch (error) {
+      console.error('Error marking issue as seen:', error);
+    }
+  };
+
+  const fetchBuildings = async (userId: string) => {
+    try {
+      setBuildingsLoading(true);
+      const { data, error } = await supabase
+        .from('buildings')
+        .select(`
+          id,
+          name,
+          address,
+          status,
+          floors:building_floors(
+            id,
+            rooms:building_rooms(
+              id,
+              room_lighting_status:room_lighting_fixtures(
+                working_fixtures,
+                total_fixtures
+              )
+            )
+          )
+        `);
+
+      if (error) throw error;
+      setBuildings(data || []);
+    } catch (error) {
+      console.error('Error fetching buildings:', error);
+    } finally {
+      setBuildingsLoading(false);
+    }
+  };
+
+  const fetchIssuesAndActivities = async (userId: string) => {
+    try {
+      // Fetch issues
+      const { data: issuesData, error: issuesError } = await supabase
+        .from('issues')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (issuesError) throw issuesError;
+      setIssues(issuesData || []);
+
+      // Fetch activities
+      const { data: activitiesData, error: activitiesError } = await supabase
+        .from('building_activities')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (activitiesError) throw activitiesError;
+      setActivities(activitiesData || []);
+    } catch (error) {
+      console.error('Error fetching issues and activities:', error);
+    }
+  };
 
   const checkUserRoleAndFetchData = async () => {
     try {
@@ -21,7 +102,7 @@ export const useDashboardData = () => {
         return;
       }
 
-      // Fetch user profile
+      // Fetch user profile and check role
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('username, first_name, last_name, title, avatar_url')
@@ -49,7 +130,13 @@ export const useDashboardData = () => {
         setIsAdmin(userIsAdmin);
 
         if (userIsAdmin) {
-          navigate('/');
+          // Fetch admin-specific data
+          await Promise.all([
+            fetchBuildings(session.user.id),
+            fetchIssuesAndActivities(session.user.id)
+          ]);
+        } else {
+          navigate('/dashboard');
           return;
         }
       }
@@ -115,11 +202,15 @@ export const useDashboardData = () => {
   return {
     isAdmin,
     isLoading,
+    buildings,
+    buildingsLoading,
+    issues,
+    activities,
     assignedRooms,
     assignedKeys,
     userIssues,
     profile,
+    handleMarkAsSeen,
     checkUserRoleAndFetchData
   };
 };
-
