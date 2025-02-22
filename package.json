@@ -51,6 +51,7 @@
     "@tsparticles/engine": "^3.8.1",
     "@tsparticles/react": "^3.0.0",
     "@tsparticles/slim": "^3.8.1",
+    "@types/pdfmake": "^0.2.9",
     "@types/three": "^0.173.0",
     "class-variance-authority": "^0.7.1",
     "classnames": "^2.5.1",

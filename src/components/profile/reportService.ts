@@ -10,6 +10,32 @@ interface ReportProgress {
   message?: string;
 }
 
+interface RoomHealthData {
+  room_name: string;
+  room_number: string;
+  building_name: string;
+  floor_name: string;
+  status: string;
+  occupancy_status: string;
+  last_inspection_date: string | null;
+  health_score: number;
+  maintenance_compliance_score: number;
+  open_issues_count: number;
+  critical_issues_count: number;
+  active_critical_issues: number;
+  active_recurring_issues: number;
+  next_maintenance_due: string | null;
+}
+
+interface KeyInventoryData {
+  type: string;
+  total_quantity: number;
+  available_quantity: number;
+  active_assignments: number;
+  returned_assignments: number;
+  lost_count: number;
+}
+
 type ReportCallback = (progress: ReportProgress) => void;
 
 async function fetchDataWithProgress<T>(
@@ -17,7 +43,7 @@ async function fetchDataWithProgress<T>(
   progressCallback: ReportCallback,
   startProgress: number,
   endProgress: number
-): Promise<T> {
+): Promise<T[]> {
   progressCallback({
     status: 'generating',
     progress: startProgress,
@@ -50,7 +76,7 @@ async function fetchDataWithProgress<T>(
     message: 'Data fetched successfully'
   });
 
-  return data as T;
+  return data as T[];
 }
 
 function downloadPdf(docDefinition: TDocumentDefinitions, fileName: string) {
@@ -58,18 +84,19 @@ function downloadPdf(docDefinition: TDocumentDefinitions, fileName: string) {
 }
 
 export async function generateRoomReport() {
-  const { data, error } = await supabase
+  const { data: roomData } = await supabase
     .from("room_health_overview")
-    .select("*");
+    .select("*")
+    .returns<RoomHealthData[]>();
 
-  if (error) throw error;
+  if (!roomData) throw new Error('No room data found');
   
   const docDefinition: TDocumentDefinitions = {
     content: [
       { text: 'Room Health Overview Report', style: 'header' },
       { text: `Generated on ${format(new Date(), 'PPpp')}`, style: 'subheader' },
       { text: '\n' },
-      ...data.map(room => ([
+      ...roomData.map(room => ([
         { text: `Room: ${room.room_name || 'N/A'}`, style: 'roomHeader' },
         {
           ul: [
@@ -91,7 +118,7 @@ export async function generateRoomReport() {
   };
 
   downloadPdf(docDefinition, `room_report_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.pdf`);
-  return data;
+  return roomData;
 }
 
 export async function generateKeyInventoryReport() {
@@ -417,7 +444,7 @@ function calculateResolutionStats(issues: IssueReportDetail[]) {
 
 export async function fetchFloorplanReportData(progressCallback: ReportCallback = () => {}) {
   try {
-    const data = await fetchDataWithProgress(
+    const data = await fetchDataWithProgress<FloorplanReportData>(
       supabase.from('buildings').select(`
         *,
         floors:floors(
