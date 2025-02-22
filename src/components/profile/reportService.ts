@@ -77,6 +77,208 @@ export async function generateKeyInventoryReport() {
   return stats;
 }
 
+interface IssueReportSection {
+  title: string;
+  data: any;
+}
+
+interface IssueReportMetrics {
+  total_issues: number;
+  open_issues: number;
+  resolved_issues: number;
+  overdue_issues: number;
+  avg_resolution_time?: string;
+  priority_distribution: Record<string, number>;
+  status_distribution: Record<string, number>;
+}
+
+interface FormattedIssueReport {
+  metadata: {
+    generated_at: string;
+    generated_by?: string;
+    report_period?: string;
+  };
+  metrics: IssueReportMetrics;
+  sections: IssueReportSection[];
+}
+
+export async function fetchIssueReport(
+  progressCallback: ReportCallback = () => {}
+): Promise<FormattedIssueReport> {
+  try {
+    progressCallback({
+      status: 'generating',
+      progress: 0,
+      message: 'Initializing issue report generation...'
+    });
+
+    // Fetch detailed issue data
+    const { data: issues, error } = await supabase
+      .from('issue_report_details')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      progressCallback({
+        status: 'error',
+        progress: 0,
+        message: `Error fetching issues: ${error.message}`
+      });
+      throw error;
+    }
+
+    progressCallback({
+      status: 'generating',
+      progress: 30,
+      message: 'Processing issue data...'
+    });
+
+    // Calculate metrics
+    const metrics = calculateIssueMetrics(issues);
+
+    progressCallback({
+      status: 'generating',
+      progress: 60,
+      message: 'Organizing report sections...'
+    });
+
+    // Organize data into sections
+    const sections = organizeIssueSections(issues);
+
+    progressCallback({
+      status: 'generating',
+      progress: 90,
+      message: 'Finalizing report structure...'
+    });
+
+    const report: FormattedIssueReport = {
+      metadata: {
+        generated_at: new Date().toISOString(),
+      },
+      metrics,
+      sections
+    };
+
+    progressCallback({
+      status: 'completed',
+      progress: 100,
+      message: 'Issue report generated successfully'
+    });
+
+    return report;
+  } catch (error) {
+    console.error('Error in fetchIssueReport:', error);
+    progressCallback({
+      status: 'error',
+      progress: 0,
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
+    });
+    throw error;
+  }
+}
+
+function calculateIssueMetrics(issues: any[]): IssueReportMetrics {
+  const now = new Date();
+  const metrics: IssueReportMetrics = {
+    total_issues: issues.length,
+    open_issues: 0,
+    resolved_issues: 0,
+    overdue_issues: 0,
+    priority_distribution: {},
+    status_distribution: {}
+  };
+
+  issues.forEach(issue => {
+    // Status counts
+    metrics.status_distribution[issue.status] = 
+      (metrics.status_distribution[issue.status] || 0) + 1;
+
+    // Priority distribution
+    metrics.priority_distribution[issue.priority] = 
+      (metrics.priority_distribution[issue.priority] || 0) + 1;
+
+    // Open vs Resolved
+    if (issue.status === 'resolved') {
+      metrics.resolved_issues++;
+    } else {
+      metrics.open_issues++;
+      if (issue.due_date && new Date(issue.due_date) < now) {
+        metrics.overdue_issues++;
+      }
+    }
+  });
+
+  return metrics;
+}
+
+function organizeIssueSections(issues: any[]): IssueReportSection[] {
+  const sections: IssueReportSection[] = [
+    {
+      title: "Overview",
+      data: {
+        open_issues: issues.filter(i => i.status !== 'resolved'),
+        resolved_issues: issues.filter(i => i.status === 'resolved')
+      }
+    },
+    {
+      title: "High Priority Issues",
+      data: issues.filter(i => i.priority === 'high')
+    },
+    {
+      title: "Issues by Location",
+      data: groupIssuesByLocation(issues)
+    },
+    {
+      title: "Maintenance Issues",
+      data: issues.filter(i => i.type === 'MAINTENANCE')
+    },
+    {
+      title: "Resolution Statistics",
+      data: calculateResolutionStats(issues)
+    }
+  ];
+
+  return sections;
+}
+
+function groupIssuesByLocation(issues: any[]): Record<string, any[]> {
+  const locationGroups: Record<string, any[]> = {};
+
+  issues.forEach(issue => {
+    const location = [
+      issue.building_name,
+      issue.floor_name,
+      issue.room_name
+    ].filter(Boolean).join(" > ");
+
+    if (!locationGroups[location]) {
+      locationGroups[location] = [];
+    }
+    locationGroups[location].push(issue);
+  });
+
+  return locationGroups;
+}
+
+function calculateResolutionStats(issues: any[]) {
+  const resolvedIssues = issues.filter(i => i.status === 'resolved');
+  const resolutionTimes = resolvedIssues.map(issue => {
+    const created = new Date(issue.created_at);
+    const resolved = new Date(issue.resolution_date);
+    return resolved.getTime() - created.getTime();
+  });
+
+  return {
+    total_resolved: resolvedIssues.length,
+    average_time: resolutionTimes.length ? 
+      Math.round(resolutionTimes.reduce((a, b) => a + b, 0) / resolutionTimes.length) : 0,
+    resolution_types: resolvedIssues.reduce((acc: Record<string, number>, issue) => {
+      acc[issue.resolution_type] = (acc[issue.resolution_type] || 0) + 1;
+      return acc;
+    }, {})
+  };
+}
+
 export async function fetchFloorplanReportData(progressCallback: ReportCallback = () => {}) {
   try {
     const query = supabase
@@ -165,212 +367,6 @@ export async function fetchRoomReport(progressCallback: ReportCallback = () => {
     return await fetchDataWithProgress(query, progressCallback, 0, 100);
   } catch (error) {
     console.error('Error fetching room report data:', error);
-    throw error;
-  }
-}
-
-type DbIssue = Database['public']['Tables']['issues']['Row'];
-type DbProfile = Database['public']['Tables']['profiles']['Row'];
-type DbRoom = Database['public']['Tables']['rooms']['Row'];
-type DbFloor = Database['public']['Tables']['floors']['Row'];
-type DbBuilding = Database['public']['Tables']['buildings']['Row'];
-type DbIssueHistory = Database['public']['Tables']['issue_history']['Row'];
-
-interface IssueWithRelations extends Omit<DbIssue, 'room' | 'assignee' | 'timeline'> {
-  room?: {
-    id: DbRoom['id'];
-    name: DbRoom['name'];
-    floor?: {
-      id: DbFloor['id'];
-      name: DbFloor['name'];
-      building?: {
-        id: DbBuilding['id'];
-        name: DbBuilding['name'];
-      };
-    };
-  };
-  assignee?: {
-    id: DbProfile['id'];
-    first_name: DbProfile['first_name'];
-    last_name: DbProfile['last_name'];
-    email: DbProfile['email'];
-  };
-  timeline?: DbIssueHistory[];
-}
-
-interface ProcessedIssue extends IssueWithRelations {
-  location: string;
-  assignee_name: string;
-}
-
-interface IssueReport {
-  generated_at: string;
-  total_issues: number;
-  status_summary: Record<string, number>;
-  priority_summary: Record<string, number>;
-  issues: ProcessedIssue[];
-}
-
-export async function fetchIssueReport(progressCallback: ReportCallback = () => {}) {
-  try {
-    progressCallback({
-      status: 'generating',
-      progress: 0,
-      message: 'Preparing to fetch issue data...'
-    });
-
-    // First, check if we can connect to the database
-    const { data: testConnection, error: connectionError } = await supabase
-      .from('issues')
-      .select('count', { count: 'exact', head: true });
-
-    if (connectionError) {
-      console.error('Database connection error:', connectionError);
-      progressCallback({
-        status: 'error',
-        progress: 0,
-        message: `Database connection failed: ${connectionError.message}`
-      });
-      throw connectionError;
-    }
-
-    progressCallback({
-      status: 'generating',
-      progress: 20,
-      message: 'Connected to database, fetching issues...'
-    });
-
-    // Fetch issues with related data
-    const { data: issues, error: issuesError } = await supabase
-      .from('issues')
-      .select(`
-        id,
-        title,
-        description,
-        type,
-        status,
-        priority,
-        created_at,
-        updated_at,
-        due_date,
-        assignee_id,
-        building_id,
-        floor_id,
-        room_id,
-        photos,
-        room:rooms(
-          id,
-          name,
-          floor:floors(
-            id,
-            name,
-            building:buildings(
-              id,
-              name
-            )
-          )
-        ),
-        assignee:profiles(
-          id,
-          first_name,
-          last_name,
-          email
-        ),
-        timeline:issue_history(
-          id,
-          action,
-          performed_by,
-          performed_at,
-          details
-        )
-      `)
-      .order('created_at', { ascending: false });
-
-    if (issuesError) {
-      console.error('Error fetching issues:', issuesError);
-      progressCallback({
-        status: 'error',
-        progress: 40,
-        message: `Failed to fetch issues: ${issuesError.message}`
-      });
-      throw issuesError;
-    }
-
-    if (!issues || issues.length === 0) {
-      progressCallback({
-        status: 'completed',
-        progress: 100,
-        message: 'No issues found in the database'
-      });
-      return {
-        generated_at: new Date().toISOString(),
-        total_issues: 0,
-        status_summary: {},
-        priority_summary: {},
-        issues: []
-      } as IssueReport;
-    }
-
-    progressCallback({
-      status: 'generating',
-      progress: 60,
-      message: 'Processing issue data...'
-    });
-
-    // Transform the data to ensure all fields are properly formatted
-    const processedIssues = (issues as unknown as IssueWithRelations[]).map(issue => ({
-      ...issue,
-      // Add computed fields
-      location: [
-        issue.room?.floor?.building?.name,
-        issue.room?.floor?.name,
-        issue.room?.name
-      ].filter(Boolean).join(' > '),
-      assignee_name: issue.assignee ? 
-        `${issue.assignee.first_name} ${issue.assignee.last_name}` : 
-        'Unassigned',
-      // Ensure arrays are properly initialized
-      photos: Array.isArray(issue.photos) ? issue.photos : [],
-      timeline: Array.isArray(issue.timeline) ? issue.timeline : []
-    })) as ProcessedIssue[];
-
-    progressCallback({
-      status: 'generating',
-      progress: 80,
-      message: 'Formatting report data...'
-    });
-
-    // Add report metadata
-    const reportData: IssueReport = {
-      generated_at: new Date().toISOString(),
-      total_issues: processedIssues.length,
-      status_summary: processedIssues.reduce((acc, issue) => {
-        const status = issue.status || 'unknown';
-        acc[status] = (acc[status] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>),
-      priority_summary: processedIssues.reduce((acc, issue) => {
-        const priority = issue.priority || 'unknown';
-        acc[priority] = (acc[priority] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>),
-      issues: processedIssues
-    };
-
-    progressCallback({
-      status: 'completed',
-      progress: 100,
-      message: `Successfully processed ${processedIssues.length} issues`
-    });
-
-    return reportData;
-  } catch (error) {
-    console.error('Error in fetchIssueReport:', error);
-    progressCallback({
-      status: 'error',
-      progress: 0,
-      message: error instanceof Error ? error.message : 'An unknown error occurred'
-    });
     throw error;
   }
 }
