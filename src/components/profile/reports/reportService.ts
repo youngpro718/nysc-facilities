@@ -1,10 +1,10 @@
 
-export { generateRoomReport as fetchRoomReport } from './reports/roomReport';
-export { generateKeyInventoryReport as fetchKeyReport } from './reports/keyReport';
-export { fetchIssueReport } from './reports/issueReport';
-export { fetchFloorplanReportData } from './reports/floorplanReport';
-export { fetchLightingReport } from './reports/lightingReport';
-export { fetchOccupantReport } from './reports/occupantReport';
-export { fetchFullDatabaseReport } from './reports/databaseReport';
-export { downloadPdf as downloadReport } from './reports/reportUtils';
-export type { ReportProgress, ReportCallback } from './reports/types';
+export { generateRoomReport as fetchRoomReport } from './roomReport';
+export { generateKeyInventoryReport as fetchKeyReport } from './keyReport';
+export { fetchIssueReport } from './issueReport';
+export { fetchFloorplanReportData } from './floorplanReport';
+export { fetchLightingReport } from './lightingReport';
+export { fetchOccupantReport } from './occupantReport';
+export { fetchFullDatabaseReport } from './databaseReport';
+export { downloadPdf as downloadReport } from './reportUtils';
+export type { ReportProgress, ReportCallback } from './types';

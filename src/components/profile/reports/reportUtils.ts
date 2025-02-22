@@ -50,8 +50,8 @@ export async function fetchDataWithProgress<T>(
 export async function downloadPdf(docDefinition: TDocumentDefinitions, filename: string) {
   try {
     // Set virtual file system for fonts
-    if (typeof window !== 'undefined' && pdfFonts) {
-      pdfMake.vfs = pdfFonts;
+    if (typeof window !== 'undefined' && pdfFonts && pdfFonts.pdfMake) {
+      pdfMake.vfs = pdfFonts.pdfMake.vfs;
     }
 
     const pdfDocGenerator = pdfMake.createPdf(docDefinition);
@@ -131,4 +131,4 @@ export async function scheduleReport(report: Omit<ScheduledReport, 'id'>) {
 }
 
 // Re-export types from types.ts
-export type { ReportTemplate, ScheduledReport } from './types';
+export type { ReportTemplate, ScheduledReport };

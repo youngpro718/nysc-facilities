@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -20,9 +19,9 @@ import {
   fetchScheduledReports, 
   createReportTemplate, 
   scheduleReport,
-  downloadPdf
+  downloadReport 
 } from "./reports/reportUtils";
-import { ReportTemplate, ScheduledReport, ReportProgress } from "./reports/types";
+import type { ReportTemplate, ScheduledReport, ReportProgress } from "./reports/types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -114,14 +113,13 @@ export function ReportsSection() {
           throw new Error('Invalid report type');
       }
 
-      await downloadPdf(reportData, `${type}-report.pdf`);
+      await downloadReport(reportData, `${type}-report.pdf`);
 
       toast({
         title: "Report Generated Successfully",
         description: `Your ${type} report has been downloaded.`,
       });
 
-      // Clear progress after a delay
       setTimeout(() => {
         setReportProgress(prev => {
           const newProgress = { ...prev };
