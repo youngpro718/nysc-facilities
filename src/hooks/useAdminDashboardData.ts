@@ -66,7 +66,7 @@ export const useAdminDashboardData = () => {
           seen,
           photos,
           room_id,
-          rooms:new_spaces!room_id (
+          spaces:new_spaces (
             id,
             name,
             room_number
@@ -91,7 +91,11 @@ export const useAdminDashboardData = () => {
         // Transform the issues data to match UserIssue type
         const transformedIssues = (issuesData || []).map(issue => ({
           ...issue,
-          rooms: issue.rooms || null, // Handle potential null case
+          rooms: issue.spaces ? {
+            id: issue.spaces.id,
+            name: issue.spaces.name,
+            room_number: issue.spaces.room_number
+          } : null,
           buildings: issue.buildings || null,
           floors: issue.floors || null
         }));
@@ -172,3 +176,4 @@ export const useAdminDashboardData = () => {
     fetchAdminData
   };
 };
+
