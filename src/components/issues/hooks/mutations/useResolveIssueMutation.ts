@@ -2,7 +2,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ResolutionType } from "../../types/IssueTypes";
-import { toast } from "sonner";
 
 interface ResolveIssueData {
   id: string;
@@ -29,7 +28,11 @@ export const useResolveIssueMutation = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['issues'] });
+      // Batch invalidate queries
+      queryClient.invalidateQueries({ 
+        queryKey: ['issues'],
+        exact: false 
+      });
     }
   });
 };
