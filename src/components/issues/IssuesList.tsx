@@ -41,7 +41,7 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import { IssueCard } from "./card/IssueCard";
 import { getTypeColor, getStatusColor, getPriorityColor } from "./utils/issueStyles";
 
-type DatabaseIssue = {
+interface DatabaseIssue {
   id: string;
   title: string;
   description: string;
@@ -62,7 +62,7 @@ type DatabaseIssue = {
     position: string;
     electrical_issues: any;
   } | null;
-};
+}
 
 const isValidFixtureType = (value: string | null): value is FixtureType => {
   return ['standard', 'emergency', 'motion_sensor'].includes(value || '');
@@ -132,7 +132,9 @@ export const IssuesList = () => {
   const isMobile = useIsMobile();
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
-  const { data: issues, isLoading } = useQuery<Issue[]>({
+  type QueryResult = DatabaseIssue[];
+
+  const { data: issues, isLoading } = useQuery({
     queryKey: ['issues'],
     queryFn: async () => {
       const urlParams = new URLSearchParams(window.location.search);
@@ -204,7 +206,9 @@ export const IssuesList = () => {
       const { data: queryData, error } = await query;
 
       if (error) throw error;
-      return (queryData || []).map(item => transformIssue(item as DatabaseIssue));
+      
+      const typedData = (queryData || []) as QueryResult;
+      return typedData.map(transformIssue);
     }
   });
 
