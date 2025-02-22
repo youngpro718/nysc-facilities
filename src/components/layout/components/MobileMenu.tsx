@@ -1,4 +1,5 @@
 
+import { memo } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Menu, X, LogOut } from "lucide-react";
@@ -13,7 +14,7 @@ interface MobileMenuProps {
   onSignOut: () => void;
 }
 
-export const MobileMenu = ({
+export const MobileMenu = memo(({
   isOpen,
   onOpenChange,
   navigation,
@@ -61,4 +62,6 @@ export const MobileMenu = ({
       </SheetContent>
     </Sheet>
   );
-};
+});
+
+MobileMenu.displayName = "MobileMenu";

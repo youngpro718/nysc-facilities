@@ -2,7 +2,7 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { useSessionManagement } from "./hooks/useSessionManagement";
 import { adminNavigation, userNavigation, getNavigationRoutes } from "./config/navigation";
@@ -78,23 +78,23 @@ const Layout = () => {
     }
   };
 
-  const handleNavigationChange = async (index: number | null) => {
+  const navigation = useMemo(() => isAdmin ? adminNavigation : userNavigation, [isAdmin]);
+  const routes = useMemo(() => getNavigationRoutes(isAdmin), [isAdmin]);
+
+  const handleNavigationChange = useCallback(async (index: number | null) => {
     if (index === null) return;
     
-    const routes = getNavigationRoutes(isAdmin);
     const route = routes[index];
     if (route) {
       navigate(route);
       setIsMobileMenuOpen(false);
     }
-  };
+  }, [navigate, routes]);
 
   // Don't render anything until initial auth check is complete
   if (!initialCheckComplete || isLoading) {
     return null;
   }
-
-  const navigation = isAdmin ? adminNavigation : userNavigation;
 
   return (
     <div className="min-h-screen bg-background">
