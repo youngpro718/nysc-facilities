@@ -330,6 +330,55 @@ export type Database = {
           },
         ]
       }
+      building_floors: {
+        Row: {
+          building_id: string
+          created_at: string | null
+          floor_number: number
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          building_id: string
+          created_at?: string | null
+          floor_number: number
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          building_id?: string
+          created_at?: string | null
+          floor_number?: number
+          id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "building_floors_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "building_floors_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "key_door_locations"
+            referencedColumns: ["building_id"]
+          },
+          {
+            foreignKeyName: "building_floors_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "lighting_assignments"
+            referencedColumns: ["building_id"]
+          },
+        ]
+      }
       buildings: {
         Row: {
           address: string
@@ -2053,6 +2102,7 @@ export type Database = {
           resolved_by: string | null
           room_id: string | null
           seen: boolean | null
+          space_id: string | null
           status: Database["public"]["Enums"]["issue_status_enum"] | null
           tags: string[] | null
           title: string
@@ -2086,6 +2136,7 @@ export type Database = {
           resolved_by?: string | null
           room_id?: string | null
           seen?: boolean | null
+          space_id?: string | null
           status?: Database["public"]["Enums"]["issue_status_enum"] | null
           tags?: string[] | null
           title: string
@@ -2119,6 +2170,7 @@ export type Database = {
           resolved_by?: string | null
           room_id?: string | null
           seen?: boolean | null
+          space_id?: string | null
           status?: Database["public"]["Enums"]["issue_status_enum"] | null
           tags?: string[] | null
           title?: string
@@ -2257,6 +2309,20 @@ export type Database = {
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "issues_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "new_spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "issues_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
             referencedColumns: ["id"]
           },
         ]

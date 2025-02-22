@@ -6,19 +6,35 @@ import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { EvervaultCard } from "@/components/ui/evervault-card";
 import { AuthForm } from "@/components/auth/AuthForm";
+import { delay } from "@/utils/timing";
 
 const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [isChecking, setIsChecking] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     // Check if user is already logged in
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        navigate("/", { replace: true });
+    const checkAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          await delay(100); // Small delay to ensure auth state is stable
+          navigate("/", { replace: true });
+        }
+      } catch (error) {
+        console.error("Auth check error:", error);
+      } finally {
+        setIsChecking(false);
       }
-    });
+    };
+
+    checkAuth();
   }, [navigate]);
+
+  if (isChecking) {
+    return null;
+  }
 
   return (
     <div className="h-screen relative w-full bg-courthouse flex flex-col items-center justify-center overflow-hidden">
