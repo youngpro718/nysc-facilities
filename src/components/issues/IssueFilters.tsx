@@ -22,20 +22,19 @@ export const IssueFilters = ({
   viewMode 
 }: IssueFiltersProps) => {
   const [showLightingFilters, setShowLightingFilters] = useState(false);
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
 
-  // Initialize filters from URL params on mount
+  // Initialize filters from URL params on mount and when URL params change
   useEffect(() => {
     const filters: Partial<IssueFiltersType> = {};
     searchParams.forEach((value, key) => {
       if (isValidFilterKey(key)) {
         switch (key) {
-          case 'hasOverdue':
-          case 'assignedToMe':
-            filters[key] = value === 'true';
-            break;
           case 'type':
-            if (isValidType(value)) filters.type = value;
+            if (isValidType(value)) {
+              filters.type = value;
+              setShowLightingFilters(value === 'LIGHTING');
+            }
             break;
           case 'status':
             if (isValidStatus(value)) filters.status = value;
@@ -64,13 +63,12 @@ export const IssueFilters = ({
     if (Object.keys(filters).length > 0) {
       onFilterChange(filters);
     }
-  }, []);
+  }, [searchParams, onFilterChange]);
 
   const isValidFilterKey = (key: string): key is keyof IssueFiltersType => {
     return [
       'type', 'status', 'priority', 'assigned_to', 
-      'lightingType', 'fixtureStatus', 'electricalIssue',
-      'hasOverdue', 'sortBy', 'order', 'assignedToMe'
+      'lightingType', 'fixtureStatus', 'electricalIssue'
     ].includes(key);
   };
 
@@ -116,20 +114,6 @@ export const IssueFilters = ({
   };
 
   const updateFilters = (newFilters: Partial<IssueFiltersType>) => {
-    // Update URL params
-    const updatedParams = new URLSearchParams(searchParams);
-    Object.entries(newFilters).forEach(([key, value]) => {
-      if (value && typeof value === 'string' && !value.includes('all_')) {
-        updatedParams.set(key, value);
-      } else if (typeof value === 'boolean') {
-        updatedParams.set(key, value.toString());
-      } else {
-        updatedParams.delete(key);
-      }
-    });
-    setSearchParams(updatedParams);
-
-    // Call the filter change handler
     onFilterChange(newFilters);
   };
 

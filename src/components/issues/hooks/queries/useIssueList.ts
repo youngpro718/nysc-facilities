@@ -5,15 +5,17 @@ import { Issue } from "../../types/IssueTypes";
 import { DatabaseIssue, transformIssue } from "../../utils/IssueTransformers";
 import { isValidStatus, isValidPriority } from "../../utils/typeGuards";
 import { PostgrestFilterBuilder } from "@supabase/postgrest-js";
+import { useSearchParams } from "react-router-dom";
 
 type IssueQueryResponse = DatabaseIssue[];
 type IssueQueryBuilder = PostgrestFilterBuilder<any, any, IssueQueryResponse>;
 
 export const useIssueList = () => {
+  const [searchParams] = useSearchParams();
+
   return useQuery({
-    queryKey: ['issues'],
+    queryKey: ['issues', Object.fromEntries(searchParams.entries())],
     queryFn: async () => {
-      const urlParams = new URLSearchParams(window.location.search);
       let query: IssueQueryBuilder = supabase
         .from('issues')
         .select(`
@@ -40,10 +42,10 @@ export const useIssueList = () => {
         `)
         .order('created_at', { ascending: false });
 
-      const typeFilter = urlParams.get('type');
-      const statusFilter = urlParams.get('status');
-      const priorityFilter = urlParams.get('priority');
-      const assignmentFilter = urlParams.get('assigned_to');
+      const typeFilter = searchParams.get('type');
+      const statusFilter = searchParams.get('status');
+      const priorityFilter = searchParams.get('priority');
+      const assignmentFilter = searchParams.get('assigned_to');
 
       if (typeFilter && typeFilter !== 'all_types') {
         query = query.eq('type', typeFilter);
@@ -68,9 +70,9 @@ export const useIssueList = () => {
       }
 
       if (typeFilter === 'LIGHTING') {
-        const lightingType = urlParams.get('lightingType');
-        const fixtureStatus = urlParams.get('fixtureStatus');
-        const electricalIssue = urlParams.get('electricalIssue');
+        const lightingType = searchParams.get('lightingType');
+        const fixtureStatus = searchParams.get('fixtureStatus');
+        const electricalIssue = searchParams.get('electricalIssue');
 
         if (lightingType && lightingType !== 'all_lighting_types') {
           query = query.contains('lighting_details', { fixture_type: lightingType });
@@ -93,3 +95,4 @@ export const useIssueList = () => {
     }
   });
 };
+
