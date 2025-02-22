@@ -41,7 +41,7 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import { IssueCard } from "./card/IssueCard";
 import { getTypeColor, getStatusColor, getPriorityColor } from "./utils/issueStyles";
 
-type DatabaseIssue = {
+interface DatabaseIssue {
   id: string;
   title: string;
   description: string;
@@ -62,29 +62,26 @@ type DatabaseIssue = {
     position: string;
     electrical_issues: any;
   } | null;
-};
+}
 
 function isValidFixtureType(value: string | null): value is FixtureType {
   return value === 'standard' || value === 'emergency' || value === 'motion_sensor';
 }
 
 function isValidFixtureStatus(value: string | null): value is FixtureStatus {
-  return value === 'functional' || value === 'maintenance_needed' || 
-         value === 'non_functional' || value === 'pending_maintenance' || 
-         value === 'scheduled_replacement';
+  return ['functional', 'maintenance_needed', 'non_functional', 'pending_maintenance', 'scheduled_replacement'].includes(value || '');
 }
 
 function isValidFixturePosition(value: string | null): value is FixturePosition {
-  return value === 'ceiling' || value === 'wall' || value === 'floor' || 
-         value === 'desk' || value === 'recessed';
+  return ['ceiling', 'wall', 'floor', 'desk', 'recessed'].includes(value || '');
 }
 
 function isValidIssueStatus(value: string | null): value is IssueStatus {
-  return value === 'open' || value === 'in_progress' || value === 'resolved';
+  return ['open', 'in_progress', 'resolved'].includes(value || '');
 }
 
 function isValidIssuePriority(value: string | null): value is IssuePriority {
-  return value === 'high' || value === 'medium' || value === 'low';
+  return ['high', 'medium', 'low'].includes(value || '');
 }
 
 function transformFixture(fixtureData: DatabaseIssue['lighting_fixtures']): LightingFixture | null {
@@ -108,7 +105,7 @@ function transformFixture(fixtureData: DatabaseIssue['lighting_fixtures']): Ligh
 function transformIssue(dbIssue: DatabaseIssue): Issue {
   const fixture = dbIssue.lighting_fixtures ? transformFixture(dbIssue.lighting_fixtures) : null;
   
-  return {
+  const transformedIssue: Issue = {
     id: dbIssue.id,
     title: dbIssue.title,
     description: dbIssue.description,
@@ -124,6 +121,8 @@ function transformIssue(dbIssue: DatabaseIssue): Issue {
     rooms: dbIssue.rooms,
     lighting_fixtures: fixture ? [fixture] : []
   };
+
+  return transformedIssue;
 }
 
 export const IssuesList = () => {

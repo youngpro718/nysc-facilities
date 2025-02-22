@@ -29,10 +29,34 @@ export const IssueFilters = ({
     const filters: Partial<IssueFiltersType> = {};
     searchParams.forEach((value, key) => {
       if (isValidFilterKey(key)) {
-        if (key === 'hasOverdue' || key === 'assignedToMe') {
-          filters[key] = value === 'true';
-        } else {
-          filters[key] = value;
+        switch (key) {
+          case 'hasOverdue':
+          case 'assignedToMe':
+            filters[key] = value === 'true';
+            break;
+          case 'type':
+            if (isValidType(value)) filters.type = value;
+            break;
+          case 'status':
+            if (isValidStatus(value)) filters.status = value;
+            break;
+          case 'priority':
+            if (isValidPriority(value)) filters.priority = value;
+            break;
+          case 'assigned_to':
+            if (isValidAssignment(value)) filters.assigned_to = value;
+            break;
+          case 'lightingType':
+            if (isValidLightingType(value)) filters.lightingType = value;
+            break;
+          case 'fixtureStatus':
+            if (isValidFixtureStatus(value)) filters.fixtureStatus = value;
+            break;
+          case 'electricalIssue':
+            if (isValidElectricalIssue(value)) filters.electricalIssue = value;
+            break;
+          default:
+            break;
         }
       }
     });
@@ -43,13 +67,52 @@ export const IssueFilters = ({
   }, []);
 
   const isValidFilterKey = (key: string): key is keyof IssueFiltersType => {
-    return ['type', 'status', 'priority', 'assigned_to', 'lightingType', 'fixtureStatus', 'electricalIssue',
-            'hasOverdue', 'sortBy', 'order', 'assignedToMe'].includes(key);
+    return [
+      'type', 'status', 'priority', 'assigned_to', 
+      'lightingType', 'fixtureStatus', 'electricalIssue',
+      'hasOverdue', 'sortBy', 'order', 'assignedToMe'
+    ].includes(key);
+  };
+
+  const isValidType = (value: string): value is IssueFiltersType['type'] => {
+    return value === 'all_types' || [
+      'ACCESS_REQUEST', 'BUILDING_SYSTEMS', 'CEILING', 'CLEANING_REQUEST',
+      'CLIMATE_CONTROL', 'DOOR', 'ELECTRICAL_NEEDS', 'EMERGENCY',
+      'EXTERIOR_FACADE', 'FLAGPOLE_FLAG', 'FLOORING', 'GENERAL_REQUESTS',
+      'LEAK', 'LIGHTING', 'LOCK', 'PLUMBING_NEEDS', 'RESTROOM_REPAIR',
+      'SIGNAGE', 'WINDOW'
+    ].includes(value);
+  };
+
+  const isValidStatus = (value: string): value is IssueFiltersType['status'] => {
+    return ['open', 'in_progress', 'resolved', 'all_statuses'].includes(value);
+  };
+
+  const isValidPriority = (value: string): value is IssueFiltersType['priority'] => {
+    return ['high', 'medium', 'low', 'all_priorities'].includes(value);
+  };
+
+  const isValidAssignment = (value: string): value is IssueFiltersType['assigned_to'] => {
+    return ['DCAS', 'OCA', 'Self', 'Outside_Vendor', 'all_assignments'].includes(value);
+  };
+
+  const isValidLightingType = (value: string): value is IssueFiltersType['lightingType'] => {
+    return ['standard', 'emergency', 'motion_sensor', 'all_lighting_types'].includes(value);
+  };
+
+  const isValidFixtureStatus = (value: string): value is IssueFiltersType['fixtureStatus'] => {
+    return ['functional', 'maintenance_needed', 'non_functional', 'pending_maintenance', 'scheduled_replacement', 'all_fixture_statuses'].includes(value);
+  };
+
+  const isValidElectricalIssue = (value: string): value is IssueFiltersType['electricalIssue'] => {
+    return ['short_circuit', 'wiring_issues', 'voltage_problems', 'ballast_issue', 'all_electrical_issues'].includes(value);
   };
 
   const handleTypeChange = (type: string) => {
     setShowLightingFilters(type === 'LIGHTING');
-    updateFilters({ type: type as IssueFiltersType['type'] });
+    if (isValidType(type)) {
+      updateFilters({ type });
+    }
   };
 
   const updateFilters = (newFilters: Partial<IssueFiltersType>) => {
@@ -100,3 +163,4 @@ export const IssueFilters = ({
     </div>
   );
 };
+
