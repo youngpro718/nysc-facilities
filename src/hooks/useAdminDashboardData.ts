@@ -13,7 +13,7 @@ export const useAdminDashboardData = () => {
     try {
       setBuildingsLoading(true);
       
-      // Fetch buildings with floors and their relationships
+      // Fetch buildings with floors and spaces (including lighting fixtures)
       const { data: buildingsData, error: buildingsError } = await supabase
         .from('buildings')
         .select(`
@@ -23,16 +23,15 @@ export const useAdminDashboardData = () => {
           status,
           created_at,
           updated_at,
-          building_floors:floors (
+          floors (
             id,
             name,
             floor_number,
-            rooms:new_spaces (
-              id, 
+            new_spaces (
+              id,
               name,
               room_number,
               type,
-              status,
               lighting_fixtures (
                 id,
                 name,
