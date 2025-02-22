@@ -1,17 +1,20 @@
 
 export type IssueFilters = {
-  type?: string;
+  type?: 'all_types' | 'ACCESS_REQUEST' | 'BUILDING_SYSTEMS' | 'CEILING' | 'CLEANING_REQUEST' | 
+        'CLIMATE_CONTROL' | 'DOOR' | 'ELECTRICAL_NEEDS' | 'EMERGENCY' | 'EXTERIOR_FACADE' | 
+        'FLAGPOLE_FLAG' | 'FLOORING' | 'GENERAL_REQUESTS' | 'LEAK' | 'LIGHTING' | 'LOCK' | 
+        'PLUMBING_NEEDS' | 'RESTROOM_REPAIR' | 'SIGNAGE' | 'WINDOW';
   status?: "open" | "in_progress" | "resolved" | "all_statuses";
-  priority?: string;
+  priority?: "high" | "medium" | "low" | "all_priorities";
   assigned_to?: "DCAS" | "OCA" | "Self" | "Outside_Vendor" | "all_assignments";
   hasOverdue?: boolean;
   sortBy?: string;
   order?: 'asc' | 'desc';
   assignedToMe?: boolean;
   // Lighting-specific filters
-  lightingType?: string;
-  fixtureStatus?: string;
-  electricalIssue?: string;
+  lightingType?: "standard" | "emergency" | "motion_sensor" | "all_lighting_types";
+  fixtureStatus?: "functional" | "maintenance_needed" | "non_functional" | "pending_maintenance" | "scheduled_replacement" | "all_fixture_statuses";
+  electricalIssue?: "short_circuit" | "wiring_issues" | "voltage_problems" | "ballast_issue" | "all_electrical_issues";
 };
 
 // Alias IssueFilters as IssueFiltersType for consistency

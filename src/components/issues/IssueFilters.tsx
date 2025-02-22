@@ -27,11 +27,14 @@ export const IssueFilters = ({
   // Initialize filters from URL params on mount
   useEffect(() => {
     const filters: Partial<IssueFiltersType> = {};
-    const validKeys = ['type', 'status', 'priority', 'assigned_to', 'lightingType', 'fixtureStatus', 'electricalIssue'] as const;
+    
+    // Define valid keys and their corresponding types
+    type ValidFilterKey = keyof IssueFiltersType;
+    const validKeys: ValidFilterKey[] = ['type', 'status', 'priority', 'assigned_to', 'lightingType', 'fixtureStatus', 'electricalIssue'];
     
     searchParams.forEach((value, key) => {
-      if (validKeys.includes(key as typeof validKeys[number])) {
-        filters[key as keyof IssueFiltersType] = value;
+      if (validKeys.includes(key as ValidFilterKey)) {
+        filters[key as ValidFilterKey] = value as any;
       }
     });
     
@@ -42,7 +45,7 @@ export const IssueFilters = ({
 
   const handleTypeChange = (type: string) => {
     setShowLightingFilters(type === 'LIGHTING');
-    updateFilters({ type });
+    updateFilters({ type: type as IssueFiltersType['type'] });
   };
 
   const updateFilters = (newFilters: Partial<IssueFiltersType>) => {

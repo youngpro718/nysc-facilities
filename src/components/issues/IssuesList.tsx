@@ -205,7 +205,7 @@ export const IssuesList = () => {
       const { data, error } = await query;
 
       if (error) throw error;
-      return (data || []).map((item) => transformIssue(item as DatabaseIssue));
+      return data ? data.map(item => transformIssue(item as DatabaseIssue)) : [];
     }
   });
 
