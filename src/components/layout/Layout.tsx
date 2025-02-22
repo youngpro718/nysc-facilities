@@ -1,4 +1,3 @@
-
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -47,7 +46,6 @@ const Layout = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // First, delete the user session from our database
         const { data } = await supabase
           .from('user_sessions')
           .select('id')
@@ -62,11 +60,9 @@ const Layout = () => {
             .eq('id', data.id);
         }
 
-        // Clear all storage before signing out
         localStorage.removeItem('app-auth');
         sessionStorage.clear();
         
-        // Sign out with both local and global options
         await supabase.auth.signOut({ scope: 'local' });
         await supabase.auth.signOut({ scope: 'global' });
         
@@ -81,17 +77,16 @@ const Layout = () => {
   const navigation = useMemo(() => isAdmin ? adminNavigation : userNavigation, [isAdmin]);
   const routes = useMemo(() => getNavigationRoutes(isAdmin), [isAdmin]);
 
-  const handleNavigationChange = useCallback(async (index: number | null) => {
+  const handleNavigationChange = useCallback((index: number | null) => {
     if (index === null) return;
     
     const route = routes[index];
     if (route) {
-      navigate(route);
+      navigate(route, { replace: true });
       setIsMobileMenuOpen(false);
     }
   }, [navigate, routes]);
 
-  // Don't render anything until initial auth check is complete
   if (!initialCheckComplete || isLoading) {
     return null;
   }
@@ -112,7 +107,6 @@ const Layout = () => {
               </div>
 
               <div className="flex items-center gap-4">
-                {/* Profile Section */}
                 {!isLoginPage && (
                   <div className="flex items-center gap-3">
                     <div className="hidden md:flex flex-col items-end">
@@ -132,7 +126,6 @@ const Layout = () => {
                   </div>
                 )}
                 
-                {/* Mobile Menu */}
                 <div className="md:hidden">
                   <MobileMenu
                     isOpen={isMobileMenuOpen}
@@ -143,7 +136,6 @@ const Layout = () => {
                   />
                 </div>
 
-                {/* Desktop Navigation */}
                 <DesktopNavigation
                   navigation={navigation}
                   onNavigationChange={handleNavigationChange}

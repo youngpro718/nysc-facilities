@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { DeviceInfo } from "../types";
@@ -12,14 +12,16 @@ export const useSessionManagement = (isLoginPage: boolean) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [initialCheckComplete, setInitialCheckComplete] = useState(false);
+  const lastCheckTimestamp = useRef(0);
+  const navigationTimeout = useRef<NodeJS.Timeout>();
 
-  const getCurrentDeviceInfo = (): DeviceInfo => ({
+  const getCurrentDeviceInfo = useCallback((): DeviceInfo => ({
     name: navigator.userAgent.split('/')[0],
     platform: navigator.platform,
     language: navigator.language,
-  });
+  }), []);
 
-  const findExistingSession = async (userId: string) => {
+  const findExistingSession = useCallback(async (userId: string) => {
     const { data } = await supabase
       .from('user_sessions')
       .select('id')
@@ -27,9 +29,9 @@ export const useSessionManagement = (isLoginPage: boolean) => {
       .limit(1)
       .maybeSingle();
     return data;
-  };
+  }, []);
 
-  const createProfileIfNotExists = async (user: any) => {
+  const createProfileIfNotExists = useCallback(async (user: any) => {
     const { data: existingProfile } = await supabase
       .from('profiles')
       .select('id')
@@ -54,35 +56,49 @@ export const useSessionManagement = (isLoginPage: boolean) => {
         throw createError;
       }
     }
-  };
+  }, []);
+
+  const handleNavigation = useCallback((path: string) => {
+    if (navigationTimeout.current) {
+      clearTimeout(navigationTimeout.current);
+    }
+    
+    navigationTimeout.current = setTimeout(() => {
+      navigate(path, { replace: true });
+    }, 100);
+  }, [navigate]);
 
   useEffect(() => {
     let mounted = true;
+    const MIN_CHECK_INTERVAL = 1000; // Minimum time between checks in ms
 
     const checkSession = async () => {
       try {
+        const now = Date.now();
+        if (now - lastCheckTimestamp.current < MIN_CHECK_INTERVAL) {
+          return;
+        }
+        lastCheckTimestamp.current = now;
+
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (!mounted) return;
 
         if (error || !session) {
-          console.error("Session error:", error);
-          if (!isLoginPage) {
-            navigate('/login');
+          if (!isLoginPage && mounted) {
+            handleNavigation('/login');
           }
           setIsLoading(false);
           setInitialCheckComplete(true);
           return;
         }
 
-        // Skip other checks if signing out
         if (isSigningOut) {
           setIsLoading(false);
           setInitialCheckComplete(true);
           return;
         }
 
-        // Get user role immediately
         const { data: roleData } = await supabase
           .from('user_roles')
           .select('role')
@@ -92,10 +108,8 @@ export const useSessionManagement = (isLoginPage: boolean) => {
         const userIsAdmin = roleData?.role === 'admin';
         setIsAdmin(userIsAdmin);
 
-        // Create profile if doesn't exist
         await createProfileIfNotExists(session.user);
 
-        // Check profile status
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('verification_status')
@@ -105,67 +119,57 @@ export const useSessionManagement = (isLoginPage: boolean) => {
         if (profileError) {
           console.error("Profile error:", profileError);
           toast.error("Error loading user profile");
-          navigate('/login');
+          handleNavigation('/login');
           setIsLoading(false);
           setInitialCheckComplete(true);
           return;
         }
 
-        // Handle verification pending
         if (profile?.verification_status === 'pending') {
-          navigate('/verification-pending');
+          handleNavigation('/verification-pending');
           setIsLoading(false);
           setInitialCheckComplete(true);
           return;
         }
 
-        // Handle route protection based on role
         if (profile?.verification_status === 'verified') {
-          // Prevent access to admin routes for non-admin users
           if (!userIsAdmin && location.pathname === '/') {
-            navigate('/dashboard');
+            handleNavigation('/dashboard');
             setIsLoading(false);
             setInitialCheckComplete(true);
             return;
           }
 
-          // Prevent access to user dashboard for admin users
           if (userIsAdmin && location.pathname === '/dashboard') {
-            navigate('/');
+            handleNavigation('/');
             setIsLoading(false);
             setInitialCheckComplete(true);
             return;
           }
 
-          // Handle login page redirects
           if (isLoginPage) {
-            navigate(userIsAdmin ? '/' : '/dashboard');
+            handleNavigation(userIsAdmin ? '/' : '/dashboard');
           }
 
-          // Update session info
-          try {
-            const deviceInfo = getCurrentDeviceInfo();
-            const existingSession = await findExistingSession(session.user.id);
+          const deviceInfo = getCurrentDeviceInfo();
+          const existingSession = await findExistingSession(session.user.id);
 
-            if (existingSession?.id) {
-              await supabase
-                .from('user_sessions')
-                .update({
-                  last_active_at: new Date().toISOString(),
-                  device_info: deviceInfo
-                })
-                .eq('id', existingSession.id);
-            } else {
-              await supabase
-                .from('user_sessions')
-                .insert([{
-                  user_id: session.user.id,
-                  device_info: deviceInfo,
-                  last_active_at: new Date().toISOString()
-                }]);
-            }
-          } catch (error) {
-            console.error("Session management error:", error);
+          if (existingSession?.id) {
+            await supabase
+              .from('user_sessions')
+              .update({
+                last_active_at: new Date().toISOString(),
+                device_info: deviceInfo
+              })
+              .eq('id', existingSession.id);
+          } else {
+            await supabase
+              .from('user_sessions')
+              .insert([{
+                user_id: session.user.id,
+                device_info: deviceInfo,
+                last_active_at: new Date().toISOString()
+              }]);
           }
         }
 
@@ -173,8 +177,8 @@ export const useSessionManagement = (isLoginPage: boolean) => {
         setInitialCheckComplete(true);
       } catch (error) {
         console.error("Auth error:", error);
-        if (!isLoginPage) {
-          navigate('/login');
+        if (!isLoginPage && mounted) {
+          handleNavigation('/login');
         }
         setIsLoading(false);
         setInitialCheckComplete(true);
@@ -195,7 +199,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
           .maybeSingle();
 
         if (profile?.verification_status === 'pending') {
-          navigate('/verification-pending');
+          handleNavigation('/verification-pending');
           return;
         }
 
@@ -205,18 +209,21 @@ export const useSessionManagement = (isLoginPage: boolean) => {
           .eq('user_id', session.user.id)
           .maybeSingle();
 
-        navigate(roleData?.role === 'admin' ? '/' : '/dashboard');
+        handleNavigation(roleData?.role === 'admin' ? '/' : '/dashboard');
       } else if (event === 'SIGNED_OUT') {
         setIsSigningOut(true);
-        navigate('/login');
+        handleNavigation('/login');
       }
     });
 
     return () => {
       mounted = false;
+      if (navigationTimeout.current) {
+        clearTimeout(navigationTimeout.current);
+      }
       subscription.unsubscribe();
     };
-  }, [navigate, isLoginPage, location.pathname, isSigningOut]);
+  }, [navigate, isLoginPage, location.pathname, isSigningOut, createProfileIfNotExists, getCurrentDeviceInfo, findExistingSession, handleNavigation]);
 
   return { isLoading, isAdmin, initialCheckComplete };
 };
