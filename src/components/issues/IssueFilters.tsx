@@ -27,10 +27,10 @@ export const IssueFilters = ({
   // Initialize filters from URL params on mount
   useEffect(() => {
     const filters: Partial<IssueFiltersType> = {};
-    const validKeys: Array<keyof IssueFiltersType> = ['type', 'status', 'priority', 'assigned_to', 'lightingType', 'fixtureStatus', 'electricalIssue'];
+    const validKeys = ['type', 'status', 'priority', 'assigned_to', 'lightingType', 'fixtureStatus', 'electricalIssue'] as const;
     
     searchParams.forEach((value, key) => {
-      if (validKeys.includes(key as keyof IssueFiltersType)) {
+      if (validKeys.includes(key as typeof validKeys[number])) {
         filters[key as keyof IssueFiltersType] = value;
       }
     });

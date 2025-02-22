@@ -8,7 +8,7 @@ export type IssueFilters = {
   sortBy?: string;
   order?: 'asc' | 'desc';
   assignedToMe?: boolean;
-  // New lighting-specific filters
+  // Lighting-specific filters
   lightingType?: string;
   fixtureStatus?: string;
   electricalIssue?: string;
