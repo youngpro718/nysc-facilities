@@ -59,7 +59,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
 
   useEffect(() => {
     let mounted = true;
-    let authSubscription: any = null;
+    let authSubscription: { data: { subscription: any } } | null = null;
 
     const checkSession = async () => {
       try {
@@ -186,7 +186,8 @@ export const useSessionManagement = (isLoginPage: boolean) => {
 
     checkSession();
 
-    authSubscription = supabase.auth.onAuthStateChange(async (event, session) => {
+    // Subscribe to auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
         setIsSigningOut(false);
         await createProfileIfNotExists(session.user);
@@ -216,10 +217,13 @@ export const useSessionManagement = (isLoginPage: boolean) => {
       }
     });
 
+    // Store subscription reference
+    authSubscription = { data: { subscription } };
+
     return () => {
       mounted = false;
-      if (authSubscription) {
-        authSubscription.unsubscribe();
+      if (authSubscription?.data?.subscription) {
+        authSubscription.data.subscription.unsubscribe();
       }
     };
   }, [navigate, isLoginPage, location.pathname, isSigningOut]);
