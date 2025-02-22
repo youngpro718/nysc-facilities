@@ -1,9 +1,7 @@
 
-import { useState } from "react";
-
 type DialogType = "issueDetails" | "resolution" | "deletion";
 
-interface DialogState {
+export interface DialogState {
   type: DialogType | null;
   isOpen: boolean;
   data?: any;
