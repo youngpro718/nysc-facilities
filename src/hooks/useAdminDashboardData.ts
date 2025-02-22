@@ -63,17 +63,26 @@ export const useAdminDashboardData = () => {
         console.error('Error fetching activities:', activitiesError);
       } else {
         // Ensure activity data matches our type
-        const typedActivities: Activity[] = (activitiesData || []).map(activity => ({
-          id: activity.id,
-          action: activity.action,
-          activity_type: activity.activity_type,
-          performed_by: activity.performed_by,
-          created_at: activity.created_at,
-          metadata: typeof activity.metadata === 'object' ? {
-            building_id: activity.metadata?.building_id as string || '',
-            ...(activity.metadata as Record<string, any>)
-          } : { building_id: '' }
-        }));
+        const typedActivities: Activity[] = (activitiesData || []).map(activity => {
+          let metadata = { building_id: '' };
+          
+          if (activity.metadata && typeof activity.metadata === 'object' && !Array.isArray(activity.metadata)) {
+            const metadataObj = activity.metadata as Record<string, unknown>;
+            metadata = {
+              building_id: (metadataObj.building_id as string) || '',
+              ...metadataObj
+            };
+          }
+          
+          return {
+            id: activity.id,
+            action: activity.action,
+            activity_type: activity.activity_type,
+            performed_by: activity.performed_by,
+            created_at: activity.created_at,
+            metadata
+          };
+        });
         setActivities(typedActivities);
       }
 
