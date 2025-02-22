@@ -25,7 +25,7 @@ export function CardFront({ issue, onMarkAsSeen }: CardFrontProps) {
         background: getPriorityGradient(issue.priority)
       }}
     >
-      <div className="absolute inset-0 bg-card/90 backdrop-blur-[2px]">
+      <div className="absolute inset-0 bg-card">
         <CardHeader className="p-4">
           <CardTitle className="flex items-center justify-between gap-4 text-lg">
             <div className="flex items-center gap-2">

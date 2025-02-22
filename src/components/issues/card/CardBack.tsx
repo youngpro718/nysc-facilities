@@ -13,7 +13,7 @@ interface CardBackProps {
 
 export function CardBack({ issue }: CardBackProps) {
   return (
-    <Card className="absolute w-full h-full backface-hidden rotate-y-180 bg-card/95 backdrop-blur-[2px]">
+    <Card className="absolute w-full h-full backface-hidden rotate-y-180 bg-card">
       <CardHeader className="flex-none p-4">
         <CardTitle className="text-lg flex items-center gap-2">
           <Info className="h-5 w-5" />
@@ -29,7 +29,7 @@ export function CardBack({ issue }: CardBackProps) {
                 <Settings className="h-4 w-4" />
                 Resolution Notes
               </div>
-              <div className="bg-muted/50 rounded-lg p-3">
+              <div className="bg-muted rounded-lg p-3">
                 <p className="text-sm text-muted-foreground break-words">
                   {issue.resolution_notes}
                 </p>
@@ -48,7 +48,7 @@ export function CardBack({ issue }: CardBackProps) {
               <Database className="h-4 w-4" />
               Technical Details
             </div>
-            <div className="bg-muted/50 rounded-lg p-3">
+            <div className="bg-muted rounded-lg p-3">
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground">Type</p>
@@ -73,7 +73,7 @@ export function CardBack({ issue }: CardBackProps) {
                 <Lightbulb className="h-4 w-4" />
                 Lighting Information
               </div>
-              <div className="bg-muted/50 rounded-lg p-3">
+              <div className="bg-muted rounded-lg p-3">
                 <p className="text-sm text-muted-foreground">
                   Status: {issue.lighting_details.fixture_status}
                 </p>
@@ -112,7 +112,7 @@ export function CardBack({ issue }: CardBackProps) {
               <History className="h-4 w-4" />
               History
             </div>
-            <div className="bg-muted/50 rounded-lg p-3">
+            <div className="bg-muted rounded-lg p-3">
               <p className="text-xs text-muted-foreground">
                 Created on {format(new Date(issue.created_at), 'MMM d, yyyy')}
               </p>
