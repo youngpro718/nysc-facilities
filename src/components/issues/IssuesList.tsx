@@ -41,7 +41,7 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import { IssueCard } from "./card/IssueCard";
 import { getTypeColor, getStatusColor, getPriorityColor } from "./utils/issueStyles";
 
-interface DatabaseIssue {
+type DatabaseIssue = {
   id: string;
   title: string;
   description: string;
@@ -62,36 +62,36 @@ interface DatabaseIssue {
     position: string;
     electrical_issues: any;
   } | null;
-}
+};
 
-function isValidFixtureType(value: string | null): value is FixtureType {
+const isValidFixtureType = (value: string | null): value is FixtureType => {
   return value === 'standard' || value === 'emergency' || value === 'motion_sensor';
-}
+};
 
-function isValidFixtureStatus(value: string | null): value is FixtureStatus {
+const isValidFixtureStatus = (value: string | null): value is FixtureStatus => {
   return ['functional', 'maintenance_needed', 'non_functional', 'pending_maintenance', 'scheduled_replacement'].includes(value || '');
-}
+};
 
-function isValidFixturePosition(value: string | null): value is FixturePosition {
+const isValidFixturePosition = (value: string | null): value is FixturePosition => {
   return ['ceiling', 'wall', 'floor', 'desk', 'recessed'].includes(value || '');
-}
+};
 
-function isValidIssueStatus(value: string | null): value is IssueStatus {
+const isValidIssueStatus = (value: string | null): value is IssueStatus => {
   return ['open', 'in_progress', 'resolved'].includes(value || '');
-}
+};
 
-function isValidIssuePriority(value: string | null): value is IssuePriority {
+const isValidIssuePriority = (value: string | null): value is IssuePriority => {
   return ['high', 'medium', 'low'].includes(value || '');
-}
+};
 
-function transformFixture(fixtureData: DatabaseIssue['lighting_fixtures']): LightingFixture | null {
+const transformFixture = (fixtureData: DatabaseIssue['lighting_fixtures']): LightingFixture | null => {
   if (!fixtureData) return null;
 
-  if (!isValidFixtureType(fixtureData.type) || 
-      !isValidFixtureStatus(fixtureData.status) ||
-      !isValidFixturePosition(fixtureData.position)) {
-    return null;
-  }
+  const isValid = isValidFixtureType(fixtureData.type) && 
+                 isValidFixtureStatus(fixtureData.status) &&
+                 isValidFixturePosition(fixtureData.position);
+
+  if (!isValid) return null;
 
   return {
     name: fixtureData.name,
@@ -100,12 +100,12 @@ function transformFixture(fixtureData: DatabaseIssue['lighting_fixtures']): Ligh
     position: fixtureData.position,
     electrical_issues: fixtureData.electrical_issues || {}
   };
-}
+};
 
-function transformIssue(dbIssue: DatabaseIssue): Issue {
+const transformIssue = (dbIssue: DatabaseIssue): Issue => {
   const fixture = dbIssue.lighting_fixtures ? transformFixture(dbIssue.lighting_fixtures) : null;
   
-  const transformedIssue: Issue = {
+  return {
     id: dbIssue.id,
     title: dbIssue.title,
     description: dbIssue.description,
@@ -121,9 +121,7 @@ function transformIssue(dbIssue: DatabaseIssue): Issue {
     rooms: dbIssue.rooms,
     lighting_fixtures: fixture ? [fixture] : []
   };
-
-  return transformedIssue;
-}
+};
 
 export const IssuesList = () => {
   const queryClient = useQueryClient();
@@ -201,10 +199,10 @@ export const IssuesList = () => {
         }
       }
 
-      const { data, error } = await query;
+      const { data: queryData, error } = await query;
 
       if (error) throw error;
-      return data ? data.map(item => transformIssue(item as DatabaseIssue)) : [];
+      return (queryData || []).map((item) => transformIssue(item as DatabaseIssue));
     }
   });
 
