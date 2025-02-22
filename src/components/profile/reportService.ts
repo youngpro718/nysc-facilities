@@ -1,9 +1,8 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { PostgrestFilterBuilder } from "@supabase/postgrest-js";
 import pdfMake from "pdfmake/build/pdfmake";
-import { Content, TDocumentDefinitions, ContentTable } from "pdfmake/interfaces";
+import { Content, TDocumentDefinitions, TableCell } from "pdfmake/interfaces";
 
 interface ReportProgress {
   status: 'pending' | 'generating' | 'completed' | 'error';
@@ -179,7 +178,8 @@ export async function generateKeyInventoryReport() {
               row.lost_count.toString()
             ])
           ]
-        }
+        },
+        layout: 'lightHorizontalLines'
       }
     ],
     styles: {
@@ -525,7 +525,7 @@ export async function fetchFloorplanReportData(progressCallback: ReportCallback 
           id: room.id,
           name: room.name,
           type: room.room_type,
-          status: room.status || 'unknown',
+          status: room.status,
           maintenance_history: room.maintenance_history || [],
           next_maintenance_date: room.next_maintenance_date
         }))
@@ -541,16 +541,18 @@ export async function fetchFloorplanReportData(progressCallback: ReportCallback 
         ...(building.floors || []).map(floor => [
           { text: floor.name, style: 'floorHeader' },
           {
+            style: 'roomList',
             table: {
               widths: ['*'],
-              body: [
-                ...floor.rooms.map(room => [[
-                  { text: `${room.name} - ${room.type} (${room.status})` }
-                ]])
-              ]
+              body: floor.rooms.map(room => [[
+                {
+                  text: `${room.name} - ${room.type} (${room.status})`,
+                  style: 'roomItem'
+                }
+              ]])
             },
             layout: 'noBorders'
-          },
+          } as Content,
           { text: '\n' }
         ]).flat()
       ]).flat()
@@ -562,7 +564,9 @@ export async function fetchFloorplanReportData(progressCallback: ReportCallback 
         header: { fontSize: 18, bold: true, margin: [0, 0, 0, 10] },
         subheader: { fontSize: 14, bold: true, margin: [0, 0, 0, 5] },
         buildingHeader: { fontSize: 16, bold: true, margin: [0, 10, 0, 5] },
-        floorHeader: { fontSize: 14, bold: true, margin: [0, 5, 0, 5] }
+        floorHeader: { fontSize: 14, bold: true, margin: [0, 5, 0, 5] },
+        roomList: { margin: [10, 0, 0, 0] },
+        roomItem: { fontSize: 12 }
       }
     };
 
