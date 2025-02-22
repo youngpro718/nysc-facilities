@@ -13,7 +13,7 @@ export const useAdminDashboardData = () => {
     try {
       setBuildingsLoading(true);
       
-      // Fetch buildings with floors and spaces (including lighting fixtures)
+      // Fetch buildings with floors and new_spaces (including lighting fixtures)
       const { data: buildingsData, error: buildingsError } = await supabase
         .from('buildings')
         .select(`
@@ -32,11 +32,15 @@ export const useAdminDashboardData = () => {
               name,
               room_number,
               type,
-              lighting_fixtures (
+              status,
+              lighting_fixtures:lighting_fixtures (
                 id,
                 name,
                 type,
-                status
+                status,
+                technology,
+                electrical_issues,
+                maintenance_notes
               )
             )
           )
@@ -175,4 +179,3 @@ export const useAdminDashboardData = () => {
     fetchAdminData
   };
 };
-
