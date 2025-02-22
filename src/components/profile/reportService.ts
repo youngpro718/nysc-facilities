@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { PostgrestFilterBuilder } from "@supabase/postgrest-js";
 import pdfMake from "pdfmake/build/pdfmake";
-import { Content, TDocumentDefinitions, TableCell } from "pdfmake/interfaces";
+import { Content, TDocumentDefinitions, ContentTable } from "pdfmake/interfaces";
 
 interface ReportProgress {
   status: 'pending' | 'generating' | 'completed' | 'error';
@@ -112,25 +112,27 @@ export async function generateRoomReport() {
 
   if (!roomData) throw new Error('No room data found');
   
+  const content: Content[] = [
+    { text: 'Room Health Overview Report', style: 'header' },
+    { text: `Generated on ${format(new Date(), 'PPpp')}`, style: 'subheader' },
+    { text: '\n' },
+    ...roomData.map(room => ([
+      { text: `Room: ${room.room_name || 'N/A'}`, style: 'roomHeader' },
+      {
+        text: [
+          `Building: ${room.building_name || 'N/A'}\n`,
+          `Floor: ${room.floor_name || 'N/A'}\n`,
+          `Status: ${room.status || 'N/A'}\n`,
+          `Occupancy: ${room.occupancy_status || 'N/A'}\n`,
+          `Last Inspection: ${room.last_inspection_date ? format(new Date(room.last_inspection_date), 'PP') : 'N/A'}`
+        ]
+      },
+      { text: '\n' }
+    ])).flat()
+  ];
+
   const docDefinition: TDocumentDefinitions = {
-    content: [
-      { text: 'Room Health Overview Report', style: 'header' },
-      { text: `Generated on ${format(new Date(), 'PPpp')}`, style: 'subheader' },
-      { text: '\n' },
-      ...roomData.map(room => ([
-        { text: `Room: ${room.room_name || 'N/A'}`, style: 'roomHeader' },
-        {
-          ul: [
-            `Building: ${room.building_name || 'N/A'}`,
-            `Floor: ${room.floor_name || 'N/A'}`,
-            `Status: ${room.status || 'N/A'}`,
-            `Occupancy: ${room.occupancy_status || 'N/A'}`,
-            `Last Inspection: ${room.last_inspection_date ? format(new Date(room.last_inspection_date), 'PP') : 'N/A'}`
-          ]
-        },
-        { text: '\n' }
-      ])).flat()
-    ],
+    content,
     styles: {
       header: { fontSize: 18, bold: true, margin: [0, 0, 0, 10] },
       subheader: { fontSize: 14, bold: true, margin: [0, 0, 0, 5] },
@@ -483,7 +485,7 @@ export async function fetchFloorplanReportData(progressCallback: ReportCallback 
           rooms:rooms(
             id,
             name,
-            type,
+            room_type,
             status,
             maintenance_history,
             next_maintenance_date
@@ -494,7 +496,24 @@ export async function fetchFloorplanReportData(progressCallback: ReportCallback 
     if (error) throw error;
     if (!data) throw new Error('No data found');
 
-    const transformedData: FloorplanReportData[] = data.map(building => ({
+    interface RawFloorplanData {
+      id: string;
+      name: string;
+      floors: Array<{
+        id: string;
+        name: string;
+        rooms: Array<{
+          id: string;
+          name: string;
+          room_type: string;
+          status: string;
+          maintenance_history: any[];
+          next_maintenance_date: string | null;
+        }> | null;
+      }> | null;
+    }
+
+    const transformedData: FloorplanReportData[] = (data as RawFloorplanData[]).map(building => ({
       id: building.id,
       name: building.name,
       floors: (building.floors || []).map(floor => ({
@@ -503,7 +522,7 @@ export async function fetchFloorplanReportData(progressCallback: ReportCallback 
         rooms: (floor.rooms || []).map(room => ({
           id: room.id,
           name: room.name,
-          type: room.type || 'unknown',
+          type: room.room_type,
           status: room.status || 'unknown',
           maintenance_history: room.maintenance_history || [],
           next_maintenance_date: room.next_maintenance_date
@@ -511,24 +530,26 @@ export async function fetchFloorplanReportData(progressCallback: ReportCallback 
       }))
     }));
 
-    const docDefinition: TDocumentDefinitions = {
-      content: [
-        { text: 'Floorplan Report', style: 'header' },
-        { text: `Generated on ${format(new Date(), 'PPpp')}`, style: 'subheader' },
-        { text: '\n' },
-        ...transformedData.map(building => [
-          { text: building.name, style: 'buildingHeader' },
-          ...(building.floors || []).map(floor => [
-            { text: floor.name, style: 'floorHeader' },
-            {
-              ul: (floor.rooms || []).map(room => 
-                `${room.name} - ${room.type} (${room.status})`
-              )
-            },
-            { text: '\n' }
-          ]).flat()
+    const docContent: Content[] = [
+      { text: 'Floorplan Report', style: 'header' },
+      { text: `Generated on ${format(new Date(), 'PPpp')}`, style: 'subheader' },
+      { text: '\n' },
+      ...transformedData.map(building => [
+        { text: building.name, style: 'buildingHeader' },
+        ...(building.floors || []).map(floor => [
+          { text: floor.name, style: 'floorHeader' },
+          {
+            text: (floor.rooms || []).map(room => 
+              `${room.name} - ${room.type} (${room.status})`
+            ).join('\n')
+          },
+          { text: '\n' }
         ]).flat()
-      ],
+      ]).flat()
+    ];
+
+    const docDefinition: TDocumentDefinitions = {
+      content: docContent,
       styles: {
         header: { fontSize: 18, bold: true, margin: [0, 0, 0, 10] },
         subheader: { fontSize: 14, bold: true, margin: [0, 0, 0, 5] },
