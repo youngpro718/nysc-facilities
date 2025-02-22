@@ -24,7 +24,8 @@ export const useAdminDashboardData = () => {
         // Ensure status is correctly typed
         const typedBuildings: Building[] = (buildingsData || []).map(building => ({
           ...building,
-          status: building.status === 'maintenance' ? 'maintenance' : 'active'
+          status: building.status === 'under_maintenance' ? 'under_maintenance' : 
+                 building.status === 'inactive' ? 'inactive' : 'active'
         }));
         setBuildings(typedBuildings);
       }
@@ -68,7 +69,10 @@ export const useAdminDashboardData = () => {
           activity_type: activity.activity_type,
           performed_by: activity.performed_by,
           created_at: activity.created_at,
-          metadata: activity.metadata as Record<string, any>
+          metadata: {
+            building_id: activity.metadata?.building_id || '',
+            ...activity.metadata
+          }
         }));
         setActivities(typedActivities);
       }

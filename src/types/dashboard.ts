@@ -26,9 +26,9 @@ export interface UserIssue {
   id: string;
   title: string;
   description: string;
-  status: string;
+  status: "open" | "in_progress" | "resolved";
   created_at: string;
-  priority: string;
+  priority: "low" | "medium" | "high";
   building_id: string;
   seen: boolean;
   rooms?: {
@@ -48,7 +48,7 @@ export interface UserProfile {
 export interface Building {
   id: string;
   name: string;
-  status: 'active' | 'maintenance';
+  status: "active" | "inactive" | "under_maintenance";
   address: string;
 }
 
@@ -58,7 +58,10 @@ export interface Activity {
   activity_type?: string;
   performed_by?: string;
   created_at: string;
-  metadata?: Record<string, any>;
+  metadata?: {
+    building_id: string;
+    [key: string]: any;
+  };
 }
 
 export interface AdminDashboardData {
