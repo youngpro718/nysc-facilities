@@ -1,6 +1,7 @@
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { FileText, Lightbulb, User, Key, DoorOpen, Bug, Database, Clock, BookTemplate, Loader2 } from "lucide-react";
 import { useState } from "react";
@@ -14,13 +15,14 @@ import {
   fetchIssueReport,
   fetchFullDatabaseReport
 } from "./reports/reportService";
-import { ReportTemplate, ScheduledReport, ReportProgress } from "./reports/types";
 import { 
   fetchReportTemplates, 
   fetchScheduledReports, 
   createReportTemplate, 
-  scheduleReport 
+  scheduleReport,
+  downloadPdf
 } from "./reports/reportUtils";
+import { ReportTemplate, ScheduledReport, ReportProgress } from "./reports/types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -112,7 +114,7 @@ export function ReportsSection() {
           throw new Error('Invalid report type');
       }
 
-      downloadReport(reportData, type);
+      await downloadPdf(reportData, `${type}-report.pdf`);
 
       toast({
         title: "Report Generated Successfully",
