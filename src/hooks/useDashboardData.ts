@@ -72,30 +72,38 @@ export const useDashboardData = () => {
         if (!building) return acc;
 
         const existingBuilding = acc.find(b => b.id === building.id);
+        
+        // Type guard to ensure rooms is an array
+        const floorRooms = Array.isArray(floor.rooms) ? floor.rooms : [];
+        
+        const floorData = {
+          id: floor.id,
+          name: floor.name,
+          floor_number: floor.floor_number,
+          rooms: floorRooms.map(room => ({
+            ...room,
+            room_lighting_status: Array.isArray(room.room_lighting_status) 
+              ? room.room_lighting_status 
+              : []
+          }))
+        };
+
         if (existingBuilding) {
-          existingBuilding.floors?.push({
-            id: floor.id,
-            name: floor.name,
-            floor_number: floor.floor_number,
-            rooms: floor.rooms || []
-          });
+          existingBuilding.floors = existingBuilding.floors || [];
+          existingBuilding.floors.push(floorData);
           return acc;
         }
 
         return [...acc, {
           ...building,
-          floors: [{
-            id: floor.id,
-            name: floor.name,
-            floor_number: floor.floor_number,
-            rooms: floor.rooms || []
-          }]
+          floors: [floorData]
         }];
       }, []);
 
       setBuildings(transformedData || []);
     } catch (error) {
       console.error('Error fetching buildings:', error);
+      setBuildings([]); // Set empty array in case of error
     } finally {
       setBuildingsLoading(false);
     }
