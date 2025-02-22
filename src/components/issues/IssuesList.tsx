@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { Issue, IssueStatus } from "./types/IssueTypes";
+import { Issue, IssueStatus, IssuePriority } from "./types/IssueTypes";
 import { useState } from "react";
 import { IssueDetails } from "./details/IssueDetails";
 import {
@@ -17,6 +17,16 @@ import { TableView } from "./views/TableView";
 import { CardView } from "./views/CardView";
 import { IssueListHeader } from "./components/IssueListHeader";
 import { DatabaseIssue, transformIssue } from "./utils/IssueTransformers";
+
+// Helper function to validate status
+const isValidStatus = (status: string | null): status is IssueStatus => {
+  return status === 'open' || status === 'in_progress' || status === 'resolved';
+};
+
+// Helper function to validate priority
+const isValidPriority = (priority: string | null): priority is IssuePriority => {
+  return priority === 'low' || priority === 'medium' || priority === 'high';
+};
 
 export const IssuesList = () => {
   const queryClient = useQueryClient();
@@ -64,11 +74,17 @@ export const IssuesList = () => {
       }
       
       if (statusFilter && statusFilter !== 'all_statuses') {
-        query = query.eq('status', statusFilter);
+        const validStatus = isValidStatus(statusFilter) ? statusFilter : undefined;
+        if (validStatus) {
+          query = query.eq('status', validStatus);
+        }
       }
       
       if (priorityFilter && priorityFilter !== 'all_priorities') {
-        query = query.eq('priority', priorityFilter);
+        const validPriority = isValidPriority(priorityFilter) ? priorityFilter : undefined;
+        if (validPriority) {
+          query = query.eq('priority', validPriority);
+        }
       }
 
       if (assignmentFilter && assignmentFilter !== 'all_assignments') {
