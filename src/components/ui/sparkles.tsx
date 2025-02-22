@@ -29,11 +29,8 @@ export const SparklesCore = (props: ParticlesProps) => {
     particleColor,
     particleDensity,
   } = props;
-
   const [init, setInit] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const controls = useAnimation();
-  const generatedId = useId();
 
   useEffect(() => {
     initParticlesEngine(async (engine) => {
@@ -43,14 +40,9 @@ export const SparklesCore = (props: ParticlesProps) => {
     });
   }, []);
 
-  useEffect(() => {
-    setMounted(true);
-    return () => setMounted(false);
-  }, []);
-
   const particlesLoaded = async (container?: Container) => {
-    if (container && mounted) {
-      await controls.start({
+    if (container) {
+      controls.start({
         opacity: 1,
         transition: {
           duration: 1,
@@ -58,6 +50,8 @@ export const SparklesCore = (props: ParticlesProps) => {
       });
     }
   };
+
+  const generatedId = useId();
 
   return (
     <motion.div 
