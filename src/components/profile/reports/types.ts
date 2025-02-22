@@ -40,7 +40,6 @@ export interface DatabaseTable {
 
 export type QueryBuilder<T> = PostgrestFilterBuilder<any, any, T[]>;
 
-// New types for report templates and scheduling
 export interface ReportTemplate {
   id: string;
   name: string;
@@ -48,12 +47,14 @@ export interface ReportTemplate {
   config: Record<string, any>;
   is_public: boolean;
   created_at?: string;
+  updated_at?: string;
+  created_by?: string;
 }
 
 export interface ScheduledReport {
   id: string;
   name: string;
-  template_id?: string;
+  template_id: string;
   schedule: string;
   next_run_at?: string;
   last_run_at?: string;
@@ -96,6 +97,8 @@ export interface IssueReportDetail {
   floor_name?: string;
   room_name?: string;
   due_date?: string;
+  resolution_date?: string;
+  resolution_type?: string;
 }
 
 export interface IssueReportMetrics {
@@ -119,4 +122,3 @@ export interface FormattedIssueReport {
   metrics: IssueReportMetrics;
   sections: IssueReportSection[];
 }
-

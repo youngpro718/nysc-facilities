@@ -1,10 +1,14 @@
+
 import { supabase } from "@/integrations/supabase/client";
-import { ReportTemplate, ScheduledReport } from "./types";
+import { ReportTemplate, ScheduledReport, ReportCallback } from "./types";
 import { PostgrestFilterBuilder } from "@supabase/postgrest-js";
+import pdfMake from "pdfmake/build/pdfmake";
+import pdfFonts from "pdfmake/build/vfs_fonts";
+import { TDocumentDefinitions } from "pdfmake/interfaces";
 
 export async function fetchDataWithProgress<T>(
   queryBuilder: PostgrestFilterBuilder<any, any, T[]>,
-  progressCallback: (progress: { status: string; progress: number; message?: string }) => void,
+  progressCallback: ReportCallback,
   startProgress: number,
   endProgress: number
 ): Promise<T[]> {
@@ -43,12 +47,9 @@ export async function fetchDataWithProgress<T>(
   return data;
 }
 
-export async function downloadPdf(docDefinition: any, filename: string) {
+export async function downloadPdf(docDefinition: TDocumentDefinitions, filename: string) {
   try {
-    const pdfMake = await import("pdfmake/build/pdfmake");
-    const pdfFonts = await import("pdfmake/build/vfs_fonts");
-
-    pdfMake.setFonts(pdfFonts.pdfMake.vfs);
+    pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
     const pdfDocGenerator = pdfMake.createPdf(docDefinition);
 
@@ -73,7 +74,11 @@ export async function fetchReportTemplates(): Promise<ReportTemplate[]> {
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return data || [];
+  
+  return (data || []).map(template => ({
+    ...template,
+    config: typeof template.config === 'string' ? JSON.parse(template.config) : template.config
+  }));
 }
 
 export async function createReportTemplate(template: Omit<ReportTemplate, 'id' | 'created_at'>): Promise<ReportTemplate> {
@@ -84,7 +89,11 @@ export async function createReportTemplate(template: Omit<ReportTemplate, 'id' |
     .single();
 
   if (error) throw error;
-  return data;
+  
+  return {
+    ...data,
+    config: typeof data.config === 'string' ? JSON.parse(data.config) : data.config
+  };
 }
 
 export async function fetchScheduledReports(): Promise<ScheduledReport[]> {
@@ -94,7 +103,12 @@ export async function fetchScheduledReports(): Promise<ScheduledReport[]> {
     .order('next_run_at', { ascending: true });
 
   if (error) throw error;
-  return data || [];
+  
+  return (data || []).map(report => ({
+    ...report,
+    recipients: Array.isArray(report.recipients) ? report.recipients : 
+               typeof report.recipients === 'string' ? JSON.parse(report.recipients) : []
+  }));
 }
 
 export async function scheduleReport(report: Omit<ScheduledReport, 'id'>): Promise<ScheduledReport> {
@@ -105,5 +119,10 @@ export async function scheduleReport(report: Omit<ScheduledReport, 'id'>): Promi
     .single();
 
   if (error) throw error;
-  return data;
+  
+  return {
+    ...data,
+    recipients: Array.isArray(data.recipients) ? data.recipients : 
+               typeof data.recipients === 'string' ? JSON.parse(data.recipients) : []
+  };
 }

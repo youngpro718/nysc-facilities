@@ -2,8 +2,19 @@
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { TDocumentDefinitions, Content } from "pdfmake/interfaces";
-import { ReportCallback, DatabaseTable } from "./types";
+import { ReportCallback } from "./types";
 import { downloadPdf } from "./reportUtils";
+
+const ALLOWED_TABLES = [
+  'buildings',
+  'floors',
+  'rooms',
+  'lighting_fixtures',
+  'issues',
+  'occupants'
+] as const;
+
+type AllowedTable = typeof ALLOWED_TABLES[number];
 
 export async function fetchFullDatabaseReport(progressCallback: ReportCallback = () => {}) {
   progressCallback({
@@ -12,17 +23,12 @@ export async function fetchFullDatabaseReport(progressCallback: ReportCallback =
     message: 'Starting database export...'
   });
 
-  // Instead of querying information_schema directly, we'll use a predefined list of public tables
-  const publicTables = [
-    'buildings', 'floors', 'rooms', 'lighting_fixtures', 'issues', 'occupants'
-  ];
-
   const exportData: Record<string, any[]> = {};
   let currentProgress = 0;
-  const progressPerTable = 100 / publicTables.length;
+  const progressPerTable = 100 / ALLOWED_TABLES.length;
 
   // Export data from each table
-  for (const tableName of publicTables) {
+  for (const tableName of ALLOWED_TABLES) {
     progressCallback({
       status: 'generating',
       progress: currentProgress,
