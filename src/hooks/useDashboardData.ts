@@ -4,7 +4,24 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import type { UserProfile, UserAssignment, UserIssue } from "@/types/dashboard";
 import type { Building } from "@/utils/dashboardUtils";
-import type { Issue, Activity } from "@/components/dashboard/BuildingsGrid";
+
+// Define Activity type based on our new table structure
+interface Activity {
+  id: string;
+  created_at: string;
+  building_id: string;
+  type: string;
+  description: string;
+  performed_by: string;
+}
+
+interface Issue {
+  id: string;
+  title: string;
+  status: string;
+  created_at: string;
+  seen: boolean;
+}
 
 export const useDashboardData = () => {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -75,7 +92,7 @@ export const useDashboardData = () => {
       // Fetch issues
       const { data: issuesData, error: issuesError } = await supabase
         .from('issues')
-        .select('*')
+        .select('id, title, status, created_at, seen')
         .order('created_at', { ascending: false });
 
       if (issuesError) throw issuesError;
@@ -84,7 +101,7 @@ export const useDashboardData = () => {
       // Fetch activities
       const { data: activitiesData, error: activitiesError } = await supabase
         .from('building_activities')
-        .select('*')
+        .select('id, created_at, building_id, type, description, performed_by')
         .order('created_at', { ascending: false });
 
       if (activitiesError) throw activitiesError;
