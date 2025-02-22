@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
@@ -37,10 +38,10 @@ export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
 
   // Apply building filter if specified
   if (buildingId && buildingId !== 'all') {
-    query = query.eq('floors.building_id', buildingId);
+    query = query.eq('floors.buildings.id', buildingId);
   }
 
-  // Apply floor filter if specified
+  // Apply floor filter if specified (only if explicitly selected)
   if (floorId && floorId !== 'all') {
     query = query.eq('floor_id', floorId);
   }
