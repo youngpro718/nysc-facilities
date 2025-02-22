@@ -4,7 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { IssuePhotos } from "../card/IssuePhotos";
+import { IssuePhotoGrid } from "../card/IssuePhotoGrid";
 import { IssueComments } from "../card/IssueComments";
 import { toast } from "sonner";
 import { EditIssueForm } from "../forms/EditIssueForm";
@@ -132,7 +132,7 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
                     value="photos"
                     className="animate-in slide-in-from-right-1"
                   >
-                    <IssuePhotos photos={issue.photos || []} />
+                    <IssuePhotoGrid photos={issue.photos || []} />
                   </TabsContent>
 
                   <TabsContent 
@@ -150,3 +150,4 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
     </Dialog>
   );
 };
+
