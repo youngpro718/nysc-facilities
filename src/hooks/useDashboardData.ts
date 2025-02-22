@@ -3,147 +3,15 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import type { UserProfile, UserAssignment, UserIssue } from "@/types/dashboard";
-import type { Building } from "@/utils/dashboardUtils";
-import type { Issue, Activity } from "@/components/dashboard/BuildingsGrid";
 
 export const useDashboardData = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [buildings, setBuildings] = useState<Building[]>([]);
-  const [buildingsLoading, setBuildingsLoading] = useState(true);
-  const [issues, setIssues] = useState<Issue[]>([]);
-  const [activities, setActivities] = useState<Activity[]>([]);
   const [assignedRooms, setAssignedRooms] = useState<UserAssignment[]>([]);
   const [assignedKeys, setAssignedKeys] = useState<UserAssignment[]>([]);
   const [userIssues, setUserIssues] = useState<UserIssue[]>([]);
   const [profile, setProfile] = useState<UserProfile>({});
   const navigate = useNavigate();
-
-  const handleMarkAsSeen = async (issueId: string) => {
-    try {
-      const { error } = await supabase
-        .from('issues')
-        .update({ seen: true })
-        .eq('id', issueId);
-
-      if (error) throw error;
-
-      setIssues(prevIssues =>
-        prevIssues.map(issue =>
-          issue.id === issueId ? { ...issue, seen: true } : issue
-        )
-      );
-    } catch (error) {
-      console.error('Error marking issue as seen:', error);
-    }
-  };
-
-  const fetchBuildings = async (userId: string) => {
-    try {
-      setBuildingsLoading(true);
-
-      const { data, error } = await supabase
-        .from('building_floors')
-        .select(`
-          buildings (
-            id,
-            name,
-            address,
-            status
-          ),
-          id,
-          name,
-          floor_number,
-          rooms!floor_id (
-            id,
-            room_number,
-            room_lighting_status!inner (
-              working_fixtures,
-              total_fixtures
-            )
-          )
-        `);
-
-      if (error) throw error;
-
-      // Transform the data to match our Building type
-      const transformedData = data?.reduce<Building[]>((acc, floor) => {
-        const building = floor.buildings;
-        if (!building) return acc;
-
-        const existingBuilding = acc.find(b => b.id === building.id);
-        
-        // Type guard to ensure rooms is an array
-        const floorRooms = Array.isArray(floor.rooms) ? floor.rooms : [];
-        
-        const floorData = {
-          id: floor.id,
-          name: floor.name,
-          floor_number: floor.floor_number,
-          rooms: floorRooms.map(room => ({
-            ...room,
-            room_lighting_status: Array.isArray(room.room_lighting_status) 
-              ? room.room_lighting_status 
-              : []
-          }))
-        };
-
-        if (existingBuilding) {
-          existingBuilding.floors = existingBuilding.floors || [];
-          existingBuilding.floors.push(floorData);
-          return acc;
-        }
-
-        return [...acc, {
-          ...building,
-          floors: [floorData]
-        }];
-      }, []);
-
-      setBuildings(transformedData || []);
-    } catch (error) {
-      console.error('Error fetching buildings:', error);
-      setBuildings([]); // Set empty array in case of error
-    } finally {
-      setBuildingsLoading(false);
-    }
-  };
-
-  const fetchIssuesAndActivities = async (userId: string) => {
-    try {
-      // Fetch issues
-      const { data: issuesData, error: issuesError } = await supabase
-        .from('issues')
-        .select('id, title, description, building_id, photos, created_at, seen')
-        .order('created_at', { ascending: false });
-
-      if (issuesError) throw issuesError;
-      setIssues(issuesData || []);
-
-      // Fetch activities
-      const { data: activitiesData, error: activitiesError } = await supabase
-        .from('building_activities')
-        .select('id, description, performed_by, created_at, type, building_id')
-        .order('created_at', { ascending: false });
-
-      if (activitiesError) throw activitiesError;
-
-      const transformedActivities: Activity[] = (activitiesData || []).map(activity => ({
-        id: activity.id,
-        action: activity.description,
-        performed_by: activity.performed_by,
-        created_at: activity.created_at,
-        metadata: {
-          building_id: activity.building_id,
-          type: activity.type
-        }
-      }));
-
-      setActivities(transformedActivities);
-    } catch (error) {
-      console.error('Error fetching issues and activities:', error);
-    }
-  };
 
   const checkUserRoleAndFetchData = async () => {
     try {
@@ -153,7 +21,7 @@ export const useDashboardData = () => {
         return;
       }
 
-      // Fetch user profile and check role
+      // Fetch user profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('username, first_name, last_name, title, avatar_url')
@@ -181,13 +49,7 @@ export const useDashboardData = () => {
         setIsAdmin(userIsAdmin);
 
         if (userIsAdmin) {
-          // Fetch admin-specific data
-          await Promise.all([
-            fetchBuildings(session.user.id),
-            fetchIssuesAndActivities(session.user.id)
-          ]);
-        } else {
-          navigate('/dashboard');
+          navigate('/');
           return;
         }
       }
@@ -232,7 +94,17 @@ export const useDashboardData = () => {
       // Fetch user's reported issues
       const { data: issuesData, error: issuesError } = await supabase
         .from('issues')
-        .select('id, title, status, created_at, priority, rooms:rooms(name)')
+        .select(`
+          id, 
+          title, 
+          description,
+          status,
+          created_at,
+          priority,
+          building_id,
+          seen,
+          rooms:rooms(name)
+        `)
         .eq('created_by', session.user.id)
         .order('created_at', { ascending: false });
 
@@ -253,15 +125,10 @@ export const useDashboardData = () => {
   return {
     isAdmin,
     isLoading,
-    buildings,
-    buildingsLoading,
-    issues,
-    activities,
     assignedRooms,
     assignedKeys,
     userIssues,
     profile,
-    handleMarkAsSeen,
     checkUserRoleAndFetchData
   };
 };
