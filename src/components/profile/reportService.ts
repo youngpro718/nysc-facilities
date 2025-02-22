@@ -551,7 +551,8 @@ export async function fetchFloorplanReportData(progressCallback: ReportCallback 
                 }
               ]])
             },
-            layout: 'noBorders'
+            layout: 'noBorders',
+            margin: [10, 0, 0, 0] as [number, number, number, number]
           } as Content,
           { text: '\n' }
         ]).flat()
@@ -565,7 +566,7 @@ export async function fetchFloorplanReportData(progressCallback: ReportCallback 
         subheader: { fontSize: 14, bold: true, margin: [0, 0, 0, 5] },
         buildingHeader: { fontSize: 16, bold: true, margin: [0, 10, 0, 5] },
         floorHeader: { fontSize: 14, bold: true, margin: [0, 5, 0, 5] },
-        roomList: { margin: [10, 0, 0, 0] },
+        roomList: { margin: [10, 0, 0, 0] as [number, number, number, number] },
         roomItem: { fontSize: 12 }
       }
     };
