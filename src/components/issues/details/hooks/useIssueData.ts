@@ -29,6 +29,11 @@ export const useIssueData = (issueId: string | null) => {
 
       if (error) throw error;
 
+      // Helper function to safely check object properties
+      const getJsonObject = (json: unknown): Record<string, any> => {
+        return typeof json === 'object' && json !== null ? json : {};
+      };
+
       // Transform the data to match our Issue type
       const transformedData: Issue = {
         ...data,
@@ -40,31 +45,23 @@ export const useIssueData = (issueId: string | null) => {
           electrical_issues: fixture.electrical_issues || {}
         })) : [],
         recurring_pattern: {
-          is_recurring: typeof data.recurring_pattern === 'object' && data.recurring_pattern ? 
-            Boolean(data.recurring_pattern.is_recurring) : false,
-          frequency: typeof data.recurring_pattern === 'object' && data.recurring_pattern ? 
-            data.recurring_pattern.frequency : undefined,
-          pattern_confidence: typeof data.recurring_pattern === 'object' && data.recurring_pattern ? 
-            data.recurring_pattern.pattern_confidence : undefined
+          is_recurring: Boolean(getJsonObject(data.recurring_pattern).is_recurring),
+          frequency: getJsonObject(data.recurring_pattern).frequency,
+          pattern_confidence: getJsonObject(data.recurring_pattern).pattern_confidence
         },
         maintenance_requirements: {
-          scheduled: typeof data.maintenance_requirements === 'object' && data.maintenance_requirements ? 
-            Boolean(data.maintenance_requirements.scheduled) : false,
-          frequency: typeof data.maintenance_requirements === 'object' && data.maintenance_requirements ? 
-            data.maintenance_requirements.frequency : undefined,
-          next_due: typeof data.maintenance_requirements === 'object' && data.maintenance_requirements ? 
-            data.maintenance_requirements.next_due : undefined
+          scheduled: Boolean(getJsonObject(data.maintenance_requirements).scheduled),
+          frequency: getJsonObject(data.maintenance_requirements).frequency,
+          next_due: getJsonObject(data.maintenance_requirements).next_due
         },
-        lighting_details: typeof data.lighting_details === 'object' && data.lighting_details ? {
-          fixture_status: data.lighting_details.fixture_status,
-          detected_issues: Array.isArray(data.lighting_details.detected_issues) ? 
-            data.lighting_details.detected_issues : [],
-          maintenance_history: Array.isArray(data.lighting_details.maintenance_history) ? 
-            data.lighting_details.maintenance_history : []
-        } : {
-          fixture_status: undefined,
-          detected_issues: [],
-          maintenance_history: []
+        lighting_details: {
+          fixture_status: getJsonObject(data.lighting_details).fixture_status,
+          detected_issues: Array.isArray(getJsonObject(data.lighting_details).detected_issues) 
+            ? getJsonObject(data.lighting_details).detected_issues 
+            : [],
+          maintenance_history: Array.isArray(getJsonObject(data.lighting_details).maintenance_history) 
+            ? getJsonObject(data.lighting_details).maintenance_history 
+            : []
         }
       };
 
