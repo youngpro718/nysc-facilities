@@ -44,7 +44,11 @@ export function useIssueList(filters: IssueFilters, searchQuery?: string) {
 
         if (filters.status && filters.status !== 'all_statuses') {
           console.log('Applying status filter:', filters.status);
-          query = query.eq('status', filters.status);
+          if (Array.isArray(filters.status)) {
+            query = query.in('status', filters.status);
+          } else {
+            query = query.eq('status', filters.status);
+          }
         }
 
         if (filters.priority && filters.priority !== 'all_priorities') {

@@ -4,7 +4,7 @@ export type IssueFilters = {
         'CLIMATE_CONTROL' | 'DOOR' | 'ELECTRICAL_NEEDS' | 'EMERGENCY' | 'EXTERIOR_FACADE' | 
         'FLAGPOLE_FLAG' | 'FLOORING' | 'GENERAL_REQUESTS' | 'LEAK' | 'LIGHTING' | 'LOCK' | 
         'PLUMBING_NEEDS' | 'RESTROOM_REPAIR' | 'SIGNAGE' | 'WINDOW';
-  status?: "open" | "in_progress" | "resolved" | "all_statuses";
+  status?: "open" | "in_progress" | "resolved" | "all_statuses" | ["open", "in_progress"];
   priority?: "high" | "medium" | "low" | "all_priorities";
   assigned_to?: "DCAS" | "OCA" | "Self" | "Outside_Vendor" | "all_assignments";
   lightingType?: "standard" | "emergency" | "motion_sensor" | "all_lighting_types";
