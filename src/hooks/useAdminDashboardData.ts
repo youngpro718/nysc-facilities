@@ -13,38 +13,10 @@ export const useAdminDashboardData = () => {
     try {
       setBuildingsLoading(true);
       
-      // Fetch complete building hierarchy
+      // Fetch buildings
       const { data: buildingsData, error: buildingsError } = await supabase
         .from('buildings')
-        .select(`
-          id,
-          name,
-          address,
-          status,
-          created_at,
-          updated_at,
-          building_floors (
-            id,
-            name,
-            floor_number,
-            rooms (
-              id,
-              name,
-              room_number,
-              status,
-              room_type,
-              lighting_fixtures (
-                id,
-                name,
-                type,
-                status,
-                technology,
-                electrical_issues,
-                ballast_issue
-              )
-            )
-          )
-        `);
+        .select('*');
 
       if (buildingsError) {
         console.error('Error fetching buildings:', buildingsError);
@@ -58,7 +30,7 @@ export const useAdminDashboardData = () => {
         setBuildings(typedBuildings);
       }
 
-      // Fetch only unseen issues with photos
+      // Fetch issues
       const { data: issuesData, error: issuesError } = await supabase
         .from('issues')
         .select(`
@@ -70,21 +42,8 @@ export const useAdminDashboardData = () => {
           priority,
           building_id,
           seen,
-          photos,
-          rooms (
-            id,
-            name,
-            room_number
-          ),
-          buildings (
-            name
-          ),
-          floors (
-            name
-          )
+          rooms (name)
         `)
-        .eq('seen', false)
-        .not('photos', 'eq', '{}')
         .order('created_at', { ascending: false });
 
       if (issuesError) {
@@ -93,17 +52,10 @@ export const useAdminDashboardData = () => {
         setIssues(issuesData || []);
       }
 
-      // Fetch recent activities
+      // Fetch activities
       const { data: activitiesData, error: activitiesError } = await supabase
         .from('user_activity_history')
-        .select(`
-          id,
-          action,
-          activity_type,
-          performed_by,
-          created_at,
-          metadata
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(50);
 
@@ -150,9 +102,6 @@ export const useAdminDashboardData = () => {
 
       if (error) {
         console.error('Error marking issue as seen:', error);
-      } else {
-        // Remove the marked issue from the local state
-        setIssues(prevIssues => prevIssues.filter(issue => issue.id !== id));
       }
     } catch (error) {
       console.error('Error marking issue as seen:', error);
@@ -168,4 +117,3 @@ export const useAdminDashboardData = () => {
     fetchAdminData
   };
 };
-

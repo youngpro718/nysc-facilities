@@ -31,16 +31,7 @@ export interface UserIssue {
   priority: "low" | "medium" | "high";
   building_id: string;
   seen: boolean;
-  photos?: string[];
   rooms?: {
-    id: string;
-    name: string;
-    room_number: string;
-  } | null;
-  buildings?: {
-    name: string;
-  } | null;
-  floors?: {
     name: string;
   } | null;
 }
@@ -53,18 +44,12 @@ export interface UserProfile {
   avatar_url?: string;
 }
 
+// New types for admin dashboard
 export interface Building {
   id: string;
   name: string;
   status: "active" | "inactive" | "under_maintenance";
   address: string;
-  created_at: string;
-  updated_at: string;
-  building_floors?: {
-    id: string;
-    name: string;
-    floor_number: number;
-  }[];
 }
 
 export interface Activity {

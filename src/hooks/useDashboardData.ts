@@ -103,10 +103,7 @@ export const useDashboardData = () => {
           priority,
           building_id,
           seen,
-          photos,
-          rooms(id, name, room_number),
-          buildings(name),
-          floors(name)
+          rooms:rooms(name)
         `)
         .eq('created_by', session.user.id)
         .order('created_at', { ascending: false });
@@ -135,4 +132,3 @@ export const useDashboardData = () => {
     checkUserRoleAndFetchData
   };
 };
-

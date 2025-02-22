@@ -11,10 +11,10 @@ export const useSessionManagement = (isLoginPage: boolean) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [initialCheckComplete, setInitialCheckComplete] = useState(false);
+  const mountedRef = useRef(false);
 
   // Session check control
   const sessionCheckInProgressRef = useRef(false);
-  const navigationTimeoutRef = useRef<NodeJS.Timeout>();
   const lastNavigationPath = useRef<string>("");
   const lastNavigationTime = useRef<number>(0);
 
@@ -26,6 +26,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
 
   const safeNavigate = (path: string) => {
     if (
+      !mountedRef.current ||
       path === location.pathname || 
       path === lastNavigationPath.current ||
       Date.now() - lastNavigationTime.current < 300
@@ -71,9 +72,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
   };
 
   const handleSessionCheck = async () => {
-    // Prevent concurrent session checks
-    if (sessionCheckInProgressRef.current) {
-      console.log("Session check already in progress, skipping...");
+    if (!mountedRef.current || sessionCheckInProgressRef.current) {
       return;
     }
 
@@ -85,7 +84,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
 
       if (!session) {
         console.log("No session found");
-        if (!isLoginPage) {
+        if (!isLoginPage && mountedRef.current) {
           safeNavigate('/login');
         }
         return;
@@ -101,7 +100,9 @@ export const useSessionManagement = (isLoginPage: boolean) => {
       if (roleError) throw roleError;
 
       const userIsAdmin = roleData?.role === 'admin';
-      setIsAdmin(userIsAdmin);
+      if (mountedRef.current) {
+        setIsAdmin(userIsAdmin);
+      }
 
       // Check profile status
       const { data: profile, error: profileError } = await supabase
@@ -112,12 +113,12 @@ export const useSessionManagement = (isLoginPage: boolean) => {
 
       if (profileError) throw profileError;
 
-      if (profile?.verification_status === 'pending') {
+      if (profile?.verification_status === 'pending' && mountedRef.current) {
         safeNavigate('/verification-pending');
         return;
       }
 
-      if (profile?.verification_status === 'verified') {
+      if (profile?.verification_status === 'verified' && mountedRef.current) {
         const currentPath = location.pathname;
         const shouldRedirect = (
           (!userIsAdmin && currentPath === '/') ||
@@ -133,19 +134,23 @@ export const useSessionManagement = (isLoginPage: boolean) => {
       }
     } catch (error: any) {
       console.error("Session check error:", error);
-      toast.error("Session verification failed. Please try logging in again.");
-      if (!isLoginPage) {
-        safeNavigate('/login');
+      if (mountedRef.current) {
+        toast.error("Session verification failed. Please try logging in again.");
+        if (!isLoginPage) {
+          safeNavigate('/login');
+        }
       }
     } finally {
       sessionCheckInProgressRef.current = false;
-      setIsLoading(false);
-      setInitialCheckComplete(true);
+      if (mountedRef.current) {
+        setIsLoading(false);
+        setInitialCheckComplete(true);
+      }
     }
   };
 
   useEffect(() => {
-    let mounted = true;
+    mountedRef.current = true;
     let authSubscription: { data: { subscription: any } } | null = null;
 
     const initializeSession = async () => {
@@ -158,7 +163,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event);
       
-      if (!mounted) return;
+      if (!mountedRef.current) return;
 
       if (event === 'SIGNED_IN' && session) {
         try {
@@ -168,7 +173,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
             .eq('id', session.user.id)
             .maybeSingle();
 
-          if (profile?.verification_status === 'pending') {
+          if (profile?.verification_status === 'pending' && mountedRef.current) {
             safeNavigate('/verification-pending');
             return;
           }
@@ -179,12 +184,16 @@ export const useSessionManagement = (isLoginPage: boolean) => {
             .eq('user_id', session.user.id)
             .maybeSingle();
 
-          safeNavigate(roleData?.role === 'admin' ? '/' : '/dashboard');
+          if (mountedRef.current) {
+            safeNavigate(roleData?.role === 'admin' ? '/' : '/dashboard');
+          }
         } catch (error) {
           console.error("Error handling sign in:", error);
-          toast.error("Error setting up your session. Please try again.");
+          if (mountedRef.current) {
+            toast.error("Error setting up your session. Please try again.");
+          }
         }
-      } else if (event === 'SIGNED_OUT') {
+      } else if (event === 'SIGNED_OUT' && mountedRef.current) {
         safeNavigate('/login');
       }
     });
@@ -193,11 +202,8 @@ export const useSessionManagement = (isLoginPage: boolean) => {
     authSubscription = { data: { subscription } };
 
     return () => {
-      mounted = false;
+      mountedRef.current = false;
       sessionCheckInProgressRef.current = false;
-      if (navigationTimeoutRef.current) {
-        clearTimeout(navigationTimeoutRef.current);
-      }
       if (authSubscription?.data?.subscription) {
         authSubscription.data.subscription.unsubscribe();
       }
