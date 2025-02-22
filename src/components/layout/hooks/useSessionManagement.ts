@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { DeviceInfo } from "../types";
@@ -13,6 +13,8 @@ export const useSessionManagement = (isLoginPage: boolean) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [initialCheckComplete, setInitialCheckComplete] = useState(false);
+  const navigationDebounceRef = useRef<NodeJS.Timeout>();
+  const lastNavigationRef = useRef<string>('');
 
   const getCurrentDeviceInfo = (): DeviceInfo => ({
     name: navigator.userAgent.split('/')[0],
@@ -57,6 +59,22 @@ export const useSessionManagement = (isLoginPage: boolean) => {
     }
   };
 
+  const safeNavigate = (path: string) => {
+    if (navigationDebounceRef.current) {
+      clearTimeout(navigationDebounceRef.current);
+    }
+
+    // Don't navigate if we're already on that path
+    if (lastNavigationRef.current === path || location.pathname === path) {
+      return;
+    }
+
+    navigationDebounceRef.current = setTimeout(() => {
+      lastNavigationRef.current = path;
+      navigate(path, { replace: true });
+    }, 100);
+  };
+
   useEffect(() => {
     let mounted = true;
     let authSubscription: { data: { subscription: any } } | null = null;
@@ -64,7 +82,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
     const checkSession = async () => {
       try {
         if (isLoading) {
-          await delay(100); // Add a small delay to prevent race conditions
+          await delay(100);
         }
 
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -73,7 +91,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
 
         if (error || !session) {
           if (!isLoginPage) {
-            navigate('/login', { replace: true });
+            safeNavigate('/login');
           }
           setIsLoading(false);
           setInitialCheckComplete(true);
@@ -87,7 +105,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
           return;
         }
 
-        // Get user role immediately
+        // Get user role
         const { data: roleData } = await supabase
           .from('user_roles')
           .select('role')
@@ -97,7 +115,6 @@ export const useSessionManagement = (isLoginPage: boolean) => {
         const userIsAdmin = roleData?.role === 'admin';
         setIsAdmin(userIsAdmin);
 
-        // Create profile if doesn't exist
         await createProfileIfNotExists(session.user);
 
         // Check profile status
@@ -110,39 +127,27 @@ export const useSessionManagement = (isLoginPage: boolean) => {
         if (profileError) {
           console.error("Profile error:", profileError);
           toast.error("Error loading user profile");
-          navigate('/login', { replace: true });
+          safeNavigate('/login');
           setIsLoading(false);
           setInitialCheckComplete(true);
           return;
         }
 
-        // Handle verification pending
         if (profile?.verification_status === 'pending') {
-          navigate('/verification-pending', { replace: true });
+          safeNavigate('/verification-pending');
           setIsLoading(false);
           setInitialCheckComplete(true);
           return;
         }
 
-        // Handle route protection based on role
         if (profile?.verification_status === 'verified') {
+          // Handle route protection based on role
           if (!userIsAdmin && location.pathname === '/') {
-            navigate('/dashboard', { replace: true });
-            setIsLoading(false);
-            setInitialCheckComplete(true);
-            return;
-          }
-
-          if (userIsAdmin && location.pathname === '/dashboard') {
-            navigate('/', { replace: true });
-            setIsLoading(false);
-            setInitialCheckComplete(true);
-            return;
-          }
-
-          // Handle login page redirects
-          if (isLoginPage) {
-            navigate(userIsAdmin ? '/' : '/dashboard', { replace: true });
+            safeNavigate('/dashboard');
+          } else if (userIsAdmin && location.pathname === '/dashboard') {
+            safeNavigate('/');
+          } else if (isLoginPage) {
+            safeNavigate(userIsAdmin ? '/' : '/dashboard');
           }
 
           // Update session info
@@ -177,7 +182,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
       } catch (error) {
         console.error("Auth error:", error);
         if (!isLoginPage) {
-          navigate('/login', { replace: true });
+          safeNavigate('/login');
         }
         setIsLoading(false);
         setInitialCheckComplete(true);
@@ -199,7 +204,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
           .maybeSingle();
 
         if (profile?.verification_status === 'pending') {
-          navigate('/verification-pending', { replace: true });
+          safeNavigate('/verification-pending');
           return;
         }
 
@@ -210,10 +215,10 @@ export const useSessionManagement = (isLoginPage: boolean) => {
           .maybeSingle();
 
         await delay(100);
-        navigate(roleData?.role === 'admin' ? '/' : '/dashboard', { replace: true });
+        safeNavigate(roleData?.role === 'admin' ? '/' : '/dashboard');
       } else if (event === 'SIGNED_OUT') {
         setIsSigningOut(true);
-        navigate('/login', { replace: true });
+        safeNavigate('/login');
       }
     });
 
@@ -222,6 +227,9 @@ export const useSessionManagement = (isLoginPage: boolean) => {
 
     return () => {
       mounted = false;
+      if (navigationDebounceRef.current) {
+        clearTimeout(navigationDebounceRef.current);
+      }
       if (authSubscription?.data?.subscription) {
         authSubscription.data.subscription.unsubscribe();
       }
@@ -230,3 +238,4 @@ export const useSessionManagement = (isLoginPage: boolean) => {
 
   return { isLoading, isAdmin, initialCheckComplete };
 };
+
