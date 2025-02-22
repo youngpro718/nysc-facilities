@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, Lightbulb, User, Key, DoorOpen, Bug, Database, Clock, BookTemplate } from "lucide-react";
+import { FileText, Lightbulb, User, Key, DoorOpen, Bug, Database, Clock, BookTemplate, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
 import { 
@@ -13,13 +13,20 @@ import {
   fetchRoomReport,
   fetchIssueReport,
   fetchFullDatabaseReport,
-  generateFullReport, 
   downloadReport 
 } from "./reportService";
 import { ReportTemplate, ScheduledReport, fetchReportTemplates, fetchScheduledReports, createReportTemplate, scheduleReport } from "./reportUtils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
+
+interface ReportProgress {
+  status: 'pending' | 'generating' | 'completed' | 'error';
+  progress: number;
+  message?: string;
+}
 
 export function ReportsSection() {
   const { toast } = useToast();
@@ -29,6 +36,7 @@ export function ReportsSection() {
   const [scheduledReports, setScheduledReports] = useState<ScheduledReport[]>([]);
   const [newTemplateName, setNewTemplateName] = useState("");
   const [newTemplateDesc, setNewTemplateDesc] = useState("");
+  const [reportProgress, setReportProgress] = useState<Record<string, ReportProgress>>({});
 
   const loadTemplates = async () => {
     try {
@@ -60,29 +68,40 @@ export function ReportsSection() {
 
   const handleGenerateReport = async (type: string) => {
     try {
+      setReportProgress(prev => ({
+        ...prev,
+        [type]: { status: 'pending', progress: 0 }
+      }));
+
       let reportData;
+      const progressCallback = (progress: ReportProgress) => {
+        setReportProgress(prev => ({
+          ...prev,
+          [type]: progress
+        }));
+      };
       
       switch (type) {
         case 'floorplan':
-          reportData = await fetchFloorplanReportData();
+          reportData = await fetchFloorplanReportData(progressCallback);
           break;
         case 'lighting':
-          reportData = await fetchLightingReport();
+          reportData = await fetchLightingReport(progressCallback);
           break;
         case 'occupant':
-          reportData = await fetchOccupantReport();
+          reportData = await fetchOccupantReport(progressCallback);
           break;
         case 'key':
-          reportData = await fetchKeyReport();
+          reportData = await fetchKeyReport(progressCallback);
           break;
         case 'room':
-          reportData = await fetchRoomReport();
+          reportData = await fetchRoomReport(progressCallback);
           break;
         case 'issue':
-          reportData = await fetchIssueReport();
+          reportData = await fetchIssueReport(progressCallback);
           break;
         case 'database':
-          reportData = await fetchFullDatabaseReport();
+          reportData = await fetchFullDatabaseReport(progressCallback);
           break;
         default:
           throw new Error('Invalid report type');
@@ -94,8 +113,21 @@ export function ReportsSection() {
         title: "Report Generated Successfully",
         description: `Your ${type} report has been downloaded.`,
       });
+
+      // Clear progress after a delay
+      setTimeout(() => {
+        setReportProgress(prev => {
+          const newProgress = { ...prev };
+          delete newProgress[type];
+          return newProgress;
+        });
+      }, 3000);
     } catch (error) {
       console.error('Report generation error:', error);
+      setReportProgress(prev => ({
+        ...prev,
+        [type]: { status: 'error', progress: 0, message: 'Failed to generate report' }
+      }));
       toast({
         title: "Report Generation Failed",
         description: "There was an error generating the report.",
@@ -204,25 +236,57 @@ export function ReportsSection() {
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        {reports.map((report) => (
-          <div key={report.type} className="space-y-2">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <report.icon className="h-5 w-5" />
-              {report.title}
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              {report.description}
-            </p>
-            <Button
-              onClick={() => handleGenerateReport(report.type)}
-              className="flex items-center gap-2"
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {reports.map((report) => {
+          const progress = reportProgress[report.type];
+          const isGenerating = progress?.status === 'generating';
+          const isError = progress?.status === 'error';
+          
+          return (
+            <div 
+              key={report.type} 
+              className={cn(
+                "space-y-2 p-4 rounded-lg border",
+                isGenerating && "bg-muted/50",
+                isError && "bg-destructive/10 border-destructive/50"
+              )}
             >
-              <FileText className="h-4 w-4" />
-              Generate Report
-            </Button>
-          </div>
-        ))}
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <report.icon className="h-5 w-5" />
+                {report.title}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {report.description}
+              </p>
+              {progress && (
+                <div className="space-y-2">
+                  <Progress value={progress.progress} />
+                  {progress.message && (
+                    <p className="text-xs text-muted-foreground">{progress.message}</p>
+                  )}
+                </div>
+              )}
+              <Button
+                onClick={() => handleGenerateReport(report.type)}
+                disabled={isGenerating}
+                className="w-full"
+                variant={isError ? "destructive" : "default"}
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="mr-2 h-4 w-4" />
+                    {isError ? "Retry" : "Generate Report"}
+                  </>
+                )}
+              </Button>
+            </div>
+          );
+        })}
       </div>
 
       <Dialog open={showTemplates} onOpenChange={setShowTemplates}>
