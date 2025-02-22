@@ -3,6 +3,7 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Loader2 } from "lucide-react";
 import {
   Form,
   FormControl,
@@ -18,9 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { ResolutionType } from "../types/IssueTypes";
+import { useResolveIssueMutation } from "../hooks/mutations/useResolveIssueMutation";
 
 interface ResolutionFormProps {
   issueId: string;
@@ -49,26 +49,25 @@ export function ResolutionForm({ issueId, onSuccess, onCancel }: ResolutionFormP
     },
   });
 
+  const resolveMutation = useResolveIssueMutation();
+
   const onSubmit = async (data: ResolutionFormData) => {
-    try {
-      const { error } = await supabase
-        .from("issues")
-        .update({
-          status: "resolved",
-          resolution_type: data.resolution_type,
-          resolution_notes: data.resolution_notes,
-          resolution_date: new Date().toISOString(),
-          resolved_by: (await supabase.auth.getUser()).data.user?.id,
-        })
-        .eq("id", issueId);
-
-      if (error) throw error;
-
-      toast.success("Issue resolved successfully");
-      onSuccess?.();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to resolve issue");
-    }
+    resolveMutation.mutate(
+      { 
+        id: issueId, 
+        resolution_type: data.resolution_type, 
+        resolution_notes: data.resolution_notes 
+      },
+      {
+        onSuccess: () => {
+          onSuccess?.();
+          toast.success("Issue resolved successfully");
+        },
+        onError: (error: Error) => {
+          toast.error(error.message || "Failed to resolve issue");
+        },
+      }
+    );
   };
 
   return (
@@ -119,11 +118,28 @@ export function ResolutionForm({ issueId, onSuccess, onCancel }: ResolutionFormP
 
         <div className="flex justify-end gap-3 pt-4">
           {onCancel && (
-            <Button type="button" variant="outline" onClick={onCancel}>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onCancel}
+              disabled={resolveMutation.isPending}
+            >
               Cancel
             </Button>
           )}
-          <Button type="submit">Resolve Issue</Button>
+          <Button 
+            type="submit"
+            disabled={resolveMutation.isPending}
+          >
+            {resolveMutation.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Resolving...
+              </>
+            ) : (
+              'Resolve Issue'
+            )}
+          </Button>
         </div>
       </form>
     </Form>

@@ -44,7 +44,17 @@ export const IssuesList = () => {
     if (newStatus === 'resolved') {
       openDialog('resolution', { issueId: id });
     } else {
-      updateIssueMutation.mutate({ id, status: newStatus });
+      updateIssueMutation.mutate(
+        { id, status: newStatus },
+        {
+          onSuccess: () => {
+            toast({
+              title: "Status updated",
+              description: `Issue status changed to ${newStatus}`,
+            });
+          },
+        }
+      );
     }
   };
 
@@ -61,19 +71,7 @@ export const IssuesList = () => {
     }
   };
 
-  const handleResolutionSuccess = () => {
-    // Queue the state updates properly
-    Promise.resolve().then(() => {
-      closeDialog();
-      toast({
-        title: "Issue resolved",
-        description: "The issue has been successfully resolved.",
-      });
-    });
-  };
-
   const handleFilterChange = (newFilters: Partial<IssueFiltersType>) => {
-    console.log("Updating filters with:", newFilters);
     setFilters(prev => ({
       ...prev,
       ...newFilters
@@ -82,7 +80,6 @@ export const IssuesList = () => {
 
   const handleSheetOpenChange = (open: boolean) => {
     if (!open) {
-      // Clean up dialog state properly when sheet is closed
       closeDialog();
     }
   };
@@ -145,7 +142,7 @@ export const IssuesList = () => {
             </SheetHeader>
             <ResolutionForm
               issueId={dialogState.data?.issueId}
-              onSuccess={handleResolutionSuccess}
+              onSuccess={closeDialog}
               onCancel={closeDialog}
             />
           </SheetContent>
@@ -154,4 +151,3 @@ export const IssuesList = () => {
     </>
   );
 };
-
