@@ -1,36 +1,54 @@
-
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Clock, Timer, User } from "lucide-react";
-import { useIssueFilters } from "../hooks/useIssueFilters";
 import { IssueFiltersType } from "../types/FilterTypes";
 
-export const QuickFilters = () => {
-  const { setFilters } = useIssueFilters();
+interface QuickFiltersProps {
+  onFilterChange: (filters: Partial<IssueFiltersType>) => void;
+}
 
-  const handleFilterChange = (newFilters: Partial<IssueFiltersType>) => {
-    setFilters(newFilters);
+const defaultFilters: IssueFiltersType = {
+  type: 'all_types',
+  status: 'all_statuses',
+  priority: 'all_priorities',
+  assigned_to: 'all_assignments',
+  lightingType: 'all_lighting_types',
+  fixtureStatus: 'all_fixture_statuses',
+  electricalIssue: 'all_electrical_issues'
+};
+
+export const QuickFilters = ({ onFilterChange }: QuickFiltersProps) => {
+  const applyQuickFilter = (filter: Partial<IssueFiltersType>) => {
+    // Reset all filters to default and then apply the new filter
+    onFilterChange({
+      ...defaultFilters,
+      ...filter
+    });
   };
 
   const quickFilters = [
     {
       label: "Critical",
       icon: <AlertCircle className="h-4 w-4" />,
-      onClick: () => handleFilterChange({ priority: "high" })
+      onClick: () => applyQuickFilter({ priority: "high" })
     },
     {
       label: "Overdue",
       icon: <Clock className="h-4 w-4" />,
-      onClick: () => handleFilterChange({ status: "open" })
+      onClick: () => applyQuickFilter({ hasOverdue: true })
     },
     {
       label: "Recent",
       icon: <Timer className="h-4 w-4" />,
-      onClick: () => handleFilterChange({ type: "all_types" })
+      onClick: () => applyQuickFilter({
+        type: "all_types",
+        sortBy: "created_at",
+        order: "desc"
+      })
     },
     {
       label: "My Issues",
       icon: <User className="h-4 w-4" />,
-      onClick: () => handleFilterChange({ assigned_to: "Self" })
+      onClick: () => applyQuickFilter({ assignedToMe: true })
     }
   ];
 
