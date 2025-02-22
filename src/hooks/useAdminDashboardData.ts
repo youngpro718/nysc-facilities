@@ -16,7 +16,19 @@ export const useAdminDashboardData = () => {
       // Fetch buildings
       const { data: buildingsData, error: buildingsError } = await supabase
         .from('buildings')
-        .select('*');
+        .select(`
+          id,
+          name,
+          address,
+          status,
+          created_at,
+          updated_at,
+          building_floors (
+            id,
+            name,
+            floor_number
+          )
+        `);
 
       if (buildingsError) {
         console.error('Error fetching buildings:', buildingsError);
@@ -30,7 +42,7 @@ export const useAdminDashboardData = () => {
         setBuildings(typedBuildings);
       }
 
-      // Fetch issues
+      // Fetch issues with related room data and photos
       const { data: issuesData, error: issuesError } = await supabase
         .from('issues')
         .select(`
@@ -42,7 +54,18 @@ export const useAdminDashboardData = () => {
           priority,
           building_id,
           seen,
-          rooms (name)
+          photos,
+          rooms (
+            id,
+            name,
+            room_number
+          ),
+          buildings (
+            name
+          ),
+          floors (
+            name
+          )
         `)
         .order('created_at', { ascending: false });
 
@@ -55,7 +78,14 @@ export const useAdminDashboardData = () => {
       // Fetch activities
       const { data: activitiesData, error: activitiesError } = await supabase
         .from('user_activity_history')
-        .select('*')
+        .select(`
+          id,
+          action,
+          activity_type,
+          performed_by,
+          created_at,
+          metadata
+        `)
         .order('created_at', { ascending: false })
         .limit(50);
 
