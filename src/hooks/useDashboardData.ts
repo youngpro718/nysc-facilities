@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -40,30 +41,59 @@ export const useDashboardData = () => {
   const fetchBuildings = async (userId: string) => {
     try {
       setBuildingsLoading(true);
+
       const { data, error } = await supabase
-        .from('buildings')
+        .from('building_floors')
         .select(`
-          id,
-          name,
-          address,
-          status,
-          floors:building_floors (
+          buildings (
             id,
             name,
-            floor_number,
-            rooms:building_rooms (
-              id,
-              room_number,
-              room_lighting_status:room_lighting_fixtures (
-                working_fixtures,
-                total_fixtures
-              )
+            address,
+            status
+          ),
+          id,
+          name,
+          floor_number,
+          rooms:building_rooms (
+            id,
+            room_number,
+            room_lighting_status:room_lighting_fixtures (
+              working_fixtures,
+              total_fixtures
             )
           )
         `);
 
       if (error) throw error;
-      setBuildings(data || []);
+
+      // Transform the data to match our Building type
+      const transformedData = data?.reduce<Building[]>((acc, floor) => {
+        const building = floor.buildings;
+        if (!building) return acc;
+
+        const existingBuilding = acc.find(b => b.id === building.id);
+        if (existingBuilding) {
+          existingBuilding.floors?.push({
+            id: floor.id,
+            name: floor.name,
+            floor_number: floor.floor_number,
+            rooms: floor.rooms || []
+          });
+          return acc;
+        }
+
+        return [...acc, {
+          ...building,
+          floors: [{
+            id: floor.id,
+            name: floor.name,
+            floor_number: floor.floor_number,
+            rooms: floor.rooms || []
+          }]
+        }];
+      }, []);
+
+      setBuildings(transformedData || []);
     } catch (error) {
       console.error('Error fetching buildings:', error);
     } finally {
@@ -85,19 +115,23 @@ export const useDashboardData = () => {
       // Fetch activities
       const { data: activitiesData, error: activitiesError } = await supabase
         .from('building_activities')
-        .select('id, description as action, performed_by, created_at, type, building_id')
+        .select('id, description, performed_by, created_at, type, building_id')
         .order('created_at', { ascending: false });
 
       if (activitiesError) throw activitiesError;
-      setActivities(
-        (activitiesData || []).map(activity => ({
-          ...activity,
-          metadata: {
-            building_id: activity.building_id,
-            type: activity.type
-          }
-        }))
-      );
+
+      const transformedActivities: Activity[] = (activitiesData || []).map(activity => ({
+        id: activity.id,
+        action: activity.description,
+        performed_by: activity.performed_by,
+        created_at: activity.created_at,
+        metadata: {
+          building_id: activity.building_id,
+          type: activity.type
+        }
+      }));
+
+      setActivities(transformedActivities);
     } catch (error) {
       console.error('Error fetching issues and activities:', error);
     }
