@@ -65,7 +65,7 @@ type DatabaseIssue = {
 };
 
 const isValidFixtureType = (value: string | null): value is FixtureType => {
-  return value === 'standard' || value === 'emergency' || value === 'motion_sensor';
+  return ['standard', 'emergency', 'motion_sensor'].includes(value || '');
 };
 
 const isValidFixtureStatus = (value: string | null): value is FixtureStatus => {
@@ -87,17 +87,19 @@ const isValidIssuePriority = (value: string | null): value is IssuePriority => {
 const transformFixture = (fixtureData: DatabaseIssue['lighting_fixtures']): LightingFixture | null => {
   if (!fixtureData) return null;
 
-  const isValid = isValidFixtureType(fixtureData.type) && 
-                 isValidFixtureStatus(fixtureData.status) &&
-                 isValidFixturePosition(fixtureData.position);
+  const type = fixtureData.type as FixtureType;
+  const status = fixtureData.status as FixtureStatus;
+  const position = fixtureData.position as FixturePosition;
 
-  if (!isValid) return null;
+  if (!isValidFixtureType(type) || !isValidFixtureStatus(status) || !isValidFixturePosition(position)) {
+    return null;
+  }
 
   return {
     name: fixtureData.name,
-    type: fixtureData.type,
-    status: fixtureData.status,
-    position: fixtureData.position,
+    type,
+    status,
+    position,
     electrical_issues: fixtureData.electrical_issues || {}
   };
 };
@@ -130,7 +132,7 @@ export const IssuesList = () => {
   const isMobile = useIsMobile();
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
-  const { data: issues, isLoading } = useQuery({
+  const { data: issues, isLoading } = useQuery<Issue[]>({
     queryKey: ['issues'],
     queryFn: async () => {
       const urlParams = new URLSearchParams(window.location.search);
@@ -202,7 +204,7 @@ export const IssuesList = () => {
       const { data: queryData, error } = await query;
 
       if (error) throw error;
-      return (queryData || []).map((item) => transformIssue(item as DatabaseIssue));
+      return (queryData || []).map(item => transformIssue(item as DatabaseIssue));
     }
   });
 
