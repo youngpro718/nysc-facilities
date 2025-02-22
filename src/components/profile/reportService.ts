@@ -51,6 +51,23 @@ interface FloorPlanFloorData {
   rooms: FloorPlanRoomData[];
 }
 
+interface BuildingFloorplanData {
+  id: string;
+  name: string;
+  floors: {
+    id: string;
+    name: string;
+    rooms: {
+      id: string;
+      name: string;
+      room_type: string;
+      status: string;
+      maintenance_history: any[];
+      next_maintenance_date: string | null;
+    }[] | null;
+  }[] | null;
+}
+
 interface FloorplanReportData {
   id: string;
   name: string;
@@ -475,23 +492,6 @@ function calculateResolutionStats(issues: IssueReportDetail[]) {
 
 export async function fetchFloorplanReportData(progressCallback: ReportCallback = () => {}) {
   try {
-    interface BuildingFloorplanData {
-      id: string;
-      name: string;
-      floors: {
-        id: string;
-        name: string;
-        rooms: {
-          id: string;
-          name: string;
-          room_type: string;
-          status: string;
-          maintenance_history: any[];
-          next_maintenance_date: string | null;
-        }[] | null;
-      }[] | null;
-    }
-
     const { data, error } = await supabase
       .from('buildings')
       .select(`
