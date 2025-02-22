@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -173,11 +172,11 @@ export const IssuesList = () => {
         query = query.eq('type', typeFilter);
       }
       
-      if (statusFilter && statusFilter !== 'all_statuses' && isValidIssueStatus(statusFilter)) {
+      if (statusFilter && statusFilter !== 'all_statuses') {
         query = query.eq('status', statusFilter);
       }
       
-      if (priorityFilter && priorityFilter !== 'all_priorities' && isValidIssuePriority(priorityFilter)) {
+      if (priorityFilter && priorityFilter !== 'all_priorities') {
         query = query.eq('priority', priorityFilter);
       }
 
@@ -426,4 +425,3 @@ export const IssuesList = () => {
     </>
   );
 };
-

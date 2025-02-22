@@ -7,11 +7,6 @@ export type IssueFilters = {
   status?: "open" | "in_progress" | "resolved" | "all_statuses";
   priority?: "high" | "medium" | "low" | "all_priorities";
   assigned_to?: "DCAS" | "OCA" | "Self" | "Outside_Vendor" | "all_assignments";
-  hasOverdue?: boolean;
-  sortBy?: string;
-  order?: 'asc' | 'desc';
-  assignedToMe?: boolean;
-  // Lighting-specific filters
   lightingType?: "standard" | "emergency" | "motion_sensor" | "all_lighting_types";
   fixtureStatus?: "functional" | "maintenance_needed" | "non_functional" | "pending_maintenance" | "scheduled_replacement" | "all_fixture_statuses";
   electricalIssue?: "short_circuit" | "wiring_issues" | "voltage_problems" | "ballast_issue" | "all_electrical_issues";

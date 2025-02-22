@@ -27,15 +27,9 @@ export const IssueFilters = ({
   // Initialize filters from URL params on mount
   useEffect(() => {
     const filters: Partial<IssueFiltersType> = {};
-    
-    // Define valid keys and their corresponding types
-    type ValidFilterKey = keyof IssueFiltersType;
-    const validKeys: ValidFilterKey[] = ['type', 'status', 'priority', 'assigned_to', 'lightingType', 'fixtureStatus', 'electricalIssue'];
-    
     searchParams.forEach((value, key) => {
-      if (validKeys.includes(key as ValidFilterKey)) {
-        // Cast the value based on the key type
-        filters[key as ValidFilterKey] = value as IssueFiltersType[ValidFilterKey];
+      if (isValidFilterKey(key)) {
+        filters[key] = value;
       }
     });
     
@@ -43,6 +37,10 @@ export const IssueFilters = ({
       onFilterChange(filters);
     }
   }, []);
+
+  const isValidFilterKey = (key: string): key is keyof IssueFiltersType => {
+    return ['type', 'status', 'priority', 'assigned_to', 'lightingType', 'fixtureStatus', 'electricalIssue'].includes(key);
+  };
 
   const handleTypeChange = (type: string) => {
     setShowLightingFilters(type === 'LIGHTING');
@@ -53,11 +51,8 @@ export const IssueFilters = ({
     // Update URL params
     const updatedParams = new URLSearchParams(searchParams);
     Object.entries(newFilters).forEach(([key, value]) => {
-      if (value !== undefined && value !== 'all_types' && value !== 'all_statuses' 
-          && value !== 'all_priorities' && value !== 'all_assignments'
-          && value !== 'all_lighting_types' && value !== 'all_fixture_statuses'
-          && value !== 'all_electrical_issues') {
-        updatedParams.set(key, String(value));
+      if (value && !value.includes('all_')) {
+        updatedParams.set(key, value);
       } else {
         updatedParams.delete(key);
       }
@@ -98,5 +93,3 @@ export const IssueFilters = ({
     </div>
   );
 };
-
-export type { IssueFiltersType, SortOption, GroupingOption };
