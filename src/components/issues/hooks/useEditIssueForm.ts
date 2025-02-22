@@ -1,3 +1,4 @@
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -18,6 +19,23 @@ const editIssueSchema = z.object({
   resolution_type: z.enum(["fixed", "replaced", "maintenance_performed", "no_action_needed", "deferred", "other"] as const).optional(),
   resolution_notes: z.string().optional(),
   assigned_to: z.enum(["DCAS", "OCA", "Self", "Outside_Vendor"] as const).optional(),
+  impact_level: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  recurring_pattern: z.object({
+    is_recurring: z.boolean().default(false),
+    frequency: z.string().optional(),
+    pattern_confidence: z.number().optional(),
+  }).optional(),
+  maintenance_requirements: z.object({
+    scheduled: z.boolean().default(false),
+    frequency: z.string().optional(),
+    next_due: z.string().optional(),
+  }).optional(),
+  lighting_details: z.object({
+    fixture_status: z.string().optional(),
+    detected_issues: z.array(z.string()).optional(),
+    maintenance_history: z.array(z.any()).optional(),
+  }).optional(),
 });
 
 export const useEditIssueForm = (issue: Issue, onClose: () => void) => {
@@ -45,6 +63,15 @@ export const useEditIssueForm = (issue: Issue, onClose: () => void) => {
       resolution_type: issue.resolution_type || undefined,
       resolution_notes: issue.resolution_notes || '',
       assigned_to: issue.assigned_to || undefined,
+      impact_level: issue.impact_level || undefined,
+      tags: issue.tags || [],
+      recurring_pattern: issue.recurring_pattern || {
+        is_recurring: false,
+      },
+      maintenance_requirements: issue.maintenance_requirements || {
+        scheduled: false,
+      },
+      lighting_details: issue.lighting_details,
     },
   });
 
@@ -64,15 +91,15 @@ export const useEditIssueForm = (issue: Issue, onClose: () => void) => {
         }
       }
 
-      console.log('Submitting with due date:', formattedDueDate);
+      const updateData = {
+        ...values,
+        due_date: formattedDueDate,
+        resolution_date: isResolved ? new Date().toISOString() : null,
+      };
 
       const { error } = await supabase
         .from('issues')
-        .update({
-          ...values,
-          due_date: formattedDueDate,
-          resolution_date: isResolved ? new Date().toISOString() : null,
-        })
+        .update(updateData)
         .eq('id', issue.id);
 
       if (error) throw error;

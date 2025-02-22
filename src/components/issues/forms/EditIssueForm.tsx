@@ -10,8 +10,10 @@ import { IssuePhotoForm } from "../wizard/IssuePhotoForm";
 import { useEditIssueForm } from "../hooks/useEditIssueForm";
 import { DateFields } from "../form-sections/DateFields";
 import { FormButtons } from "../form-sections/FormButtons";
+import { AdvancedFields } from "../form-sections/AdvancedFields";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface EditIssueFormProps {
   issue: Issue;
@@ -43,41 +45,50 @@ export function EditIssueForm({ issue, onClose, onSave }: EditIssueFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={handleSubmit} className="space-y-6">
-        <motion.div 
-          className="space-y-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          <BasicIssueFields form={form} />
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <AssigneeField form={form} />
-            <StatusAndPriorityFields form={form} />
-          </div>
+        <Tabs defaultValue="basic" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="basic">Basic Info</TabsTrigger>
+            <TabsTrigger value="details">Details</TabsTrigger>
+            <TabsTrigger value="advanced">Advanced</TabsTrigger>
+          </TabsList>
 
-          <DateFields form={form} />
+          <TabsContent value="basic" className="space-y-6">
+            <BasicIssueFields form={form} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <AssigneeField form={form} />
+              <StatusAndPriorityFields form={form} />
+            </div>
+            <DateFields form={form} />
+          </TabsContent>
 
-          <AnimatePresence>
-            {isResolved && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <ResolutionFields form={form} />
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <TabsContent value="details">
+            <div className="space-y-6">
+              <AnimatePresence>
+                {isResolved && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <ResolutionFields form={form} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-          <IssuePhotoForm
-            selectedPhotos={selectedPhotos}
-            uploading={uploading}
-            onPhotoUpload={handlePhotoUpload}
-            onPhotoRemove={handlePhotoRemove}
-          />
-        </motion.div>
+              <IssuePhotoForm
+                selectedPhotos={selectedPhotos}
+                uploading={uploading}
+                onPhotoUpload={handlePhotoUpload}
+                onPhotoRemove={handlePhotoRemove}
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="advanced">
+            <AdvancedFields form={form} />
+          </TabsContent>
+        </Tabs>
 
         <FormButtons 
           onClose={onClose}
@@ -87,4 +98,3 @@ export function EditIssueForm({ issue, onClose, onSave }: EditIssueFormProps) {
     </Form>
   );
 }
-
