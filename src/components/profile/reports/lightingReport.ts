@@ -2,11 +2,11 @@
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { TDocumentDefinitions } from "pdfmake/interfaces";
-import { ReportCallback } from "./types";
+import { ReportCallback, LightingFixture } from "./types";
 import { downloadPdf, fetchDataWithProgress } from "./reportUtils";
 
 export async function fetchLightingReport(progressCallback: ReportCallback = () => {}) {
-  const data = await fetchDataWithProgress(
+  const data = await fetchDataWithProgress<LightingFixture>(
     supabase
       .from('lighting_fixtures')
       .select(`

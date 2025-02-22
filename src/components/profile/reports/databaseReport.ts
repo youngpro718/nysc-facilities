@@ -1,8 +1,8 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
-import { TDocumentDefinitions } from "pdfmake/interfaces";
-import { ReportCallback } from "./types";
+import { TDocumentDefinitions, Content } from "pdfmake/interfaces";
+import { ReportCallback, DatabaseTable } from "./types";
 import { downloadPdf } from "./reportUtils";
 
 export async function fetchFullDatabaseReport(progressCallback: ReportCallback = () => {}) {
@@ -12,9 +12,9 @@ export async function fetchFullDatabaseReport(progressCallback: ReportCallback =
     message: 'Starting database export...'
   });
 
-  // Get tables list
+  // Get list of public tables
   const { data: tables } = await supabase
-    .from('information_schema.tables')
+    .from('information_schema_tables')
     .select('table_name')
     .eq('table_schema', 'public');
 
@@ -40,29 +40,38 @@ export async function fetchFullDatabaseReport(progressCallback: ReportCallback =
     currentProgress += progressPerTable;
   }
 
+  const content: Content[] = [
+    { text: 'Full Database Export', style: 'header' },
+    { text: `Generated on ${format(new Date(), 'PPpp')}`, style: 'subheader' }
+  ];
+
+  // Add table data to content
+  Object.entries(exportData).forEach(([tableName, data]) => {
+    content.push({ text: `\nTable: ${tableName}`, style: 'tableHeader' });
+    if (data.length > 0) {
+      content.push({
+        table: {
+          headerRows: 1,
+          widths: Array(Object.keys(data[0]).length).fill('*'),
+          body: [
+            Object.keys(data[0]),
+            ...data.map(row => Object.values(row))
+          ]
+        },
+        layout: 'lightHorizontalLines'
+      });
+    } else {
+      content.push({ text: 'No data', style: 'tableContent' });
+    }
+  });
+
   const docDefinition: TDocumentDefinitions = {
-    content: [
-      { text: 'Full Database Export', style: 'header' },
-      { text: `Generated on ${format(new Date(), 'PPpp')}`, style: 'subheader' },
-      ...Object.entries(exportData).map(([tableName, data]) => [
-        { text: `\nTable: ${tableName}`, style: 'tableHeader' },
-        {
-          table: {
-            headerRows: 1,
-            widths: data[0] ? Array(Object.keys(data[0]).length).fill('*') : ['*'],
-            body: [
-              data[0] ? Object.keys(data[0]) : ['No data'],
-              ...data.map(row => Object.values(row))
-            ]
-          },
-          layout: 'lightHorizontalLines'
-        }
-      ]).flat()
-    ],
+    content,
     styles: {
       header: { fontSize: 18, bold: true, margin: [0, 0, 0, 10] },
       subheader: { fontSize: 14, bold: true, margin: [0, 0, 0, 5] },
-      tableHeader: { fontSize: 14, bold: true, margin: [0, 10, 0, 5] }
+      tableHeader: { fontSize: 14, bold: true, margin: [0, 10, 0, 5] },
+      tableContent: { fontSize: 12, margin: [0, 5, 0, 5] }
     }
   };
 

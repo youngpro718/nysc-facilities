@@ -1,65 +1,44 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { PostgrestFilterBuilder } from "@supabase/postgrest-js";
+import { ReportCallback } from "./reports/types";
 
-export interface ReportTemplate {
-  id: string;
-  name: string;
-  description: string | null;
-  config: any;
-  created_at: string;
-  is_public: boolean;
-}
+export async function fetchDataWithProgress<T>(
+  queryBuilder: PostgrestFilterBuilder<any, any, T[]>,
+  progressCallback: ReportCallback,
+  startProgress: number,
+  endProgress: number
+): Promise<T[]> {
+  progressCallback({
+    status: 'generating',
+    progress: startProgress,
+    message: 'Fetching data...'
+  });
 
-export interface ScheduledReport {
-  id: string;
-  template_id: string;
-  name: string;
-  schedule: string;
-  last_run_at: string | null;
-  next_run_at: string | null;
-  recipients: string[];
-  config: any;
-  status: string;
-}
+  const { data, error } = await queryBuilder;
 
-export async function fetchReportTemplates() {
-  const { data, error } = await supabase
-    .from('report_templates')
-    .select('*')
-    .order('created_at', { ascending: false });
+  if (error) {
+    progressCallback({
+      status: 'error',
+      progress: startProgress,
+      message: `Error: ${error.message}`
+    });
+    throw error;
+  }
 
-  if (error) throw error;
-  return data;
-}
+  if (!data) {
+    progressCallback({
+      status: 'error',
+      progress: startProgress,
+      message: 'No data found'
+    });
+    throw new Error('No data found');
+  }
 
-export async function fetchScheduledReports() {
-  const { data, error } = await supabase
-    .from('scheduled_reports')
-    .select('*')
-    .order('next_run_at', { ascending: true });
+  progressCallback({
+    status: 'generating',
+    progress: endProgress,
+    message: 'Data fetched successfully'
+  });
 
-  if (error) throw error;
-  return data as ScheduledReport[];
-}
-
-export async function createReportTemplate(template: Pick<ReportTemplate, 'name' | 'description' | 'config' | 'is_public'>) {
-  const { data, error } = await supabase
-    .from('report_templates')
-    .insert([template])
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
-export async function scheduleReport(report: Pick<ScheduledReport, 'name' | 'schedule' | 'template_id' | 'recipients' | 'config'>) {
-  const { data, error } = await supabase
-    .from('scheduled_reports')
-    .insert([report])
-    .select()
-    .single();
-
-  if (error) throw error;
   return data;
 }
