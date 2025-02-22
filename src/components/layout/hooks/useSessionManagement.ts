@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { DeviceInfo } from "../types";
 import { toast } from "sonner";
+import { delay } from "@/utils/timing";
 
 export const useSessionManagement = (isLoginPage: boolean) => {
   const navigate = useNavigate();
@@ -58,17 +59,21 @@ export const useSessionManagement = (isLoginPage: boolean) => {
 
   useEffect(() => {
     let mounted = true;
+    let authSubscription: any = null;
 
     const checkSession = async () => {
       try {
+        if (isLoading) {
+          await delay(100); // Add a small delay to prevent race conditions
+        }
+
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (!mounted) return;
 
         if (error || !session) {
-          console.error("Session error:", error);
           if (!isLoginPage) {
-            navigate('/login');
+            navigate('/login', { replace: true });
           }
           setIsLoading(false);
           setInitialCheckComplete(true);
@@ -105,7 +110,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
         if (profileError) {
           console.error("Profile error:", profileError);
           toast.error("Error loading user profile");
-          navigate('/login');
+          navigate('/login', { replace: true });
           setIsLoading(false);
           setInitialCheckComplete(true);
           return;
@@ -113,7 +118,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
 
         // Handle verification pending
         if (profile?.verification_status === 'pending') {
-          navigate('/verification-pending');
+          navigate('/verification-pending', { replace: true });
           setIsLoading(false);
           setInitialCheckComplete(true);
           return;
@@ -121,17 +126,15 @@ export const useSessionManagement = (isLoginPage: boolean) => {
 
         // Handle route protection based on role
         if (profile?.verification_status === 'verified') {
-          // Prevent access to admin routes for non-admin users
           if (!userIsAdmin && location.pathname === '/') {
-            navigate('/dashboard');
+            navigate('/dashboard', { replace: true });
             setIsLoading(false);
             setInitialCheckComplete(true);
             return;
           }
 
-          // Prevent access to user dashboard for admin users
           if (userIsAdmin && location.pathname === '/dashboard') {
-            navigate('/');
+            navigate('/', { replace: true });
             setIsLoading(false);
             setInitialCheckComplete(true);
             return;
@@ -139,7 +142,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
 
           // Handle login page redirects
           if (isLoginPage) {
-            navigate(userIsAdmin ? '/' : '/dashboard');
+            navigate(userIsAdmin ? '/' : '/dashboard', { replace: true });
           }
 
           // Update session info
@@ -174,7 +177,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
       } catch (error) {
         console.error("Auth error:", error);
         if (!isLoginPage) {
-          navigate('/login');
+          navigate('/login', { replace: true });
         }
         setIsLoading(false);
         setInitialCheckComplete(true);
@@ -183,7 +186,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
 
     checkSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    authSubscription = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
         setIsSigningOut(false);
         await createProfileIfNotExists(session.user);
@@ -195,7 +198,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
           .maybeSingle();
 
         if (profile?.verification_status === 'pending') {
-          navigate('/verification-pending');
+          navigate('/verification-pending', { replace: true });
           return;
         }
 
@@ -205,16 +208,19 @@ export const useSessionManagement = (isLoginPage: boolean) => {
           .eq('user_id', session.user.id)
           .maybeSingle();
 
-        navigate(roleData?.role === 'admin' ? '/' : '/dashboard');
+        await delay(100);
+        navigate(roleData?.role === 'admin' ? '/' : '/dashboard', { replace: true });
       } else if (event === 'SIGNED_OUT') {
         setIsSigningOut(true);
-        navigate('/login');
+        navigate('/login', { replace: true });
       }
     });
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
+      if (authSubscription) {
+        authSubscription.unsubscribe();
+      }
     };
   }, [navigate, isLoginPage, location.pathname, isSigningOut]);
 
