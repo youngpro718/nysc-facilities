@@ -18,6 +18,7 @@ import { IssueFiltersType } from "./types/FilterTypes";
 import { useDialogManager } from "@/hooks/useDialogManager";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { IssueStats } from "./components/IssueStats";
 
 export const IssuesList = () => {
   const { toast } = useToast();
@@ -134,6 +135,8 @@ export const IssuesList = () => {
 
   return (
     <>
+      <IssueStats />
+      
       <Tabs value={activeTab} onValueChange={(value) => handleTabChange(value as 'active' | 'historical')} className="w-full">
         <TabsList>
           <TabsTrigger value="active">Active Issues</TabsTrigger>
