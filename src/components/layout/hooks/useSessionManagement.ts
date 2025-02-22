@@ -6,6 +6,10 @@ import { DeviceInfo } from "../types";
 import { toast } from "sonner";
 import { delay } from "@/utils/timing";
 
+// Maximum number of retries for session checks
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second between retries
+
 export const useSessionManagement = (isLoginPage: boolean) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -13,6 +17,10 @@ export const useSessionManagement = (isLoginPage: boolean) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [initialCheckComplete, setInitialCheckComplete] = useState(false);
+
+  // Session check control
+  const sessionCheckInProgressRef = useRef(false);
+  const retryCountRef = useRef(0);
   const navigationTimeoutRef = useRef<NodeJS.Timeout>();
   const lastNavigationPathRef = useRef<string>('');
   const lastNavigationTimeRef = useRef<number>(0);
@@ -24,39 +32,46 @@ export const useSessionManagement = (isLoginPage: boolean) => {
   });
 
   const findExistingSession = async (userId: string) => {
-    const { data } = await supabase
-      .from('user_sessions')
-      .select('id')
-      .eq('user_id', userId)
-      .limit(1)
-      .maybeSingle();
-    return data;
+    try {
+      const { data } = await supabase
+        .from('user_sessions')
+        .select('id')
+        .eq('user_id', userId)
+        .limit(1)
+        .maybeSingle();
+      return data;
+    } catch (error) {
+      console.error("Error finding existing session:", error);
+      return null;
+    }
   };
 
   const createProfileIfNotExists = async (user: any) => {
-    const { data: existingProfile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('id', user.id)
-      .maybeSingle();
-
-    if (!existingProfile) {
-      const { error: createError } = await supabase
+    try {
+      const { data: existingProfile } = await supabase
         .from('profiles')
-        .insert([{
-          id: user.id,
-          email: user.email,
-          first_name: user.user_metadata?.first_name || '',
-          last_name: user.user_metadata?.last_name || '',
-          verification_status: 'pending',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }]);
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle();
 
-      if (createError) {
-        console.error("Error creating profile:", createError);
-        throw createError;
+      if (!existingProfile) {
+        const { error: createError } = await supabase
+          .from('profiles')
+          .insert([{
+            id: user.id,
+            email: user.email,
+            first_name: user.user_metadata?.first_name || '',
+            last_name: user.user_metadata?.last_name || '',
+            verification_status: 'pending',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }]);
+
+        if (createError) throw createError;
       }
+    } catch (error) {
+      console.error("Error in profile creation:", error);
+      throw error;
     }
   };
 
@@ -67,8 +82,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
 
     const now = Date.now();
     const timeSinceLastNavigation = now - lastNavigationTimeRef.current;
-
-    // If we're trying to navigate too quickly, wait a bit
+    
     if (timeSinceLastNavigation < 300) {
       if (navigationTimeoutRef.current) {
         clearTimeout(navigationTimeoutRef.current);
@@ -79,7 +93,6 @@ export const useSessionManagement = (isLoginPage: boolean) => {
         lastNavigationTimeRef.current = Date.now();
         navigate(path, { replace: true });
       }, 300);
-      
       return;
     }
 
@@ -88,150 +101,175 @@ export const useSessionManagement = (isLoginPage: boolean) => {
     navigate(path, { replace: true });
   };
 
+  const handleSessionCheck = async () => {
+    if (sessionCheckInProgressRef.current) {
+      console.log("Session check already in progress, skipping...");
+      return;
+    }
+
+    try {
+      sessionCheckInProgressRef.current = true;
+      console.log("Starting session check...");
+
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) throw error;
+
+      if (!session) {
+        console.log("No session found");
+        if (!isLoginPage) {
+          safeNavigate('/login');
+        }
+        return;
+      }
+
+      console.log("Session found, checking user status...");
+
+      // Skip other checks if signing out
+      if (isSigningOut) {
+        console.log("User is signing out, skipping further checks");
+        return;
+      }
+
+      // Get user role
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+
+      if (roleError) throw roleError;
+
+      const userIsAdmin = roleData?.role === 'admin';
+      setIsAdmin(userIsAdmin);
+
+      // Ensure profile exists
+      await createProfileIfNotExists(session.user);
+
+      // Check profile status
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('verification_status')
+        .eq('id', session.user.id)
+        .maybeSingle();
+
+      if (profileError) throw profileError;
+
+      console.log("Profile status:", profile?.verification_status);
+
+      if (profile?.verification_status === 'pending') {
+        safeNavigate('/verification-pending');
+        return;
+      }
+
+      if (profile?.verification_status === 'verified') {
+        const currentPath = location.pathname;
+        const shouldRedirect = (
+          (!userIsAdmin && currentPath === '/') ||
+          (userIsAdmin && currentPath === '/dashboard') ||
+          (isLoginPage)
+        );
+
+        if (shouldRedirect) {
+          console.log("Redirecting user based on role...");
+          safeNavigate(userIsAdmin ? '/' : '/dashboard');
+        }
+
+        // Update session info
+        try {
+          const deviceInfo = getCurrentDeviceInfo();
+          const existingSession = await findExistingSession(session.user.id);
+
+          if (existingSession?.id) {
+            await supabase
+              .from('user_sessions')
+              .update({
+                last_active_at: new Date().toISOString(),
+                device_info: deviceInfo
+              })
+              .eq('id', existingSession.id);
+          } else {
+            await supabase
+              .from('user_sessions')
+              .insert([{
+                user_id: session.user.id,
+                device_info: deviceInfo,
+                last_active_at: new Date().toISOString()
+              }]);
+          }
+        } catch (error) {
+          console.error("Session management error:", error);
+        }
+      }
+
+      retryCountRef.current = 0; // Reset retry count on success
+    } catch (error) {
+      console.error("Session check error:", error);
+      retryCountRef.current++;
+
+      if (retryCountRef.current <= MAX_RETRIES) {
+        console.log(`Retry attempt ${retryCountRef.current} of ${MAX_RETRIES}...`);
+        await delay(RETRY_DELAY);
+        await handleSessionCheck();
+      } else {
+        console.log("Max retries reached, redirecting to login...");
+        toast.error("Session verification failed. Please try logging in again.");
+        if (!isLoginPage) {
+          safeNavigate('/login');
+        }
+      }
+    } finally {
+      sessionCheckInProgressRef.current = false;
+      setIsLoading(false);
+      setInitialCheckComplete(true);
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
     let authSubscription: { data: { subscription: any } } | null = null;
 
-    const checkSession = async () => {
-      try {
-        if (isLoading) {
-          await delay(100);
-        }
-
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (!mounted) return;
-
-        if (error || !session) {
-          if (!isLoginPage) {
-            safeNavigate('/login');
-          }
-          setIsLoading(false);
-          setInitialCheckComplete(true);
-          return;
-        }
-
-        // Skip other checks if signing out
-        if (isSigningOut) {
-          setIsLoading(false);
-          setInitialCheckComplete(true);
-          return;
-        }
-
-        // Get user role
-        const { data: roleData } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-
-        const userIsAdmin = roleData?.role === 'admin';
-        setIsAdmin(userIsAdmin);
-
-        await createProfileIfNotExists(session.user);
-
-        // Check profile status
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('verification_status')
-          .eq('id', session.user.id)
-          .maybeSingle();
-
-        if (profileError) {
-          console.error("Profile error:", profileError);
-          toast.error("Error loading user profile");
-          safeNavigate('/login');
-          setIsLoading(false);
-          setInitialCheckComplete(true);
-          return;
-        }
-
-        if (profile?.verification_status === 'pending') {
-          safeNavigate('/verification-pending');
-          setIsLoading(false);
-          setInitialCheckComplete(true);
-          return;
-        }
-
-        if (profile?.verification_status === 'verified') {
-          // Handle route protection based on role
-          const currentPath = location.pathname;
-          const shouldRedirect = (
-            (!userIsAdmin && currentPath === '/') ||
-            (userIsAdmin && currentPath === '/dashboard') ||
-            (isLoginPage)
-          );
-
-          if (shouldRedirect) {
-            safeNavigate(userIsAdmin ? '/' : '/dashboard');
-          }
-
-          // Update session info
-          try {
-            const deviceInfo = getCurrentDeviceInfo();
-            const existingSession = await findExistingSession(session.user.id);
-
-            if (existingSession?.id) {
-              await supabase
-                .from('user_sessions')
-                .update({
-                  last_active_at: new Date().toISOString(),
-                  device_info: deviceInfo
-                })
-                .eq('id', existingSession.id);
-            } else {
-              await supabase
-                .from('user_sessions')
-                .insert([{
-                  user_id: session.user.id,
-                  device_info: deviceInfo,
-                  last_active_at: new Date().toISOString()
-                }]);
-            }
-          } catch (error) {
-            console.error("Session management error:", error);
-          }
-        }
-
-        setIsLoading(false);
-        setInitialCheckComplete(true);
-      } catch (error) {
-        console.error("Auth error:", error);
-        if (!isLoginPage) {
-          safeNavigate('/login');
-        }
-        setIsLoading(false);
-        setInitialCheckComplete(true);
+    const initializeSession = async () => {
+      if (isLoading) {
+        await delay(100);
       }
+      await handleSessionCheck();
     };
 
-    checkSession();
+    initializeSession();
 
     // Subscribe to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event);
+      
       if (event === 'SIGNED_IN' && session) {
         setIsSigningOut(false);
-        await createProfileIfNotExists(session.user);
+        try {
+          await createProfileIfNotExists(session.user);
 
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('verification_status')
-          .eq('id', session.user.id)
-          .maybeSingle();
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('verification_status')
+            .eq('id', session.user.id)
+            .maybeSingle();
 
-        if (profile?.verification_status === 'pending') {
-          safeNavigate('/verification-pending');
-          return;
+          if (profile?.verification_status === 'pending') {
+            safeNavigate('/verification-pending');
+            return;
+          }
+
+          const { data: roleData } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+
+          await delay(100);
+          safeNavigate(roleData?.role === 'admin' ? '/' : '/dashboard');
+        } catch (error) {
+          console.error("Error handling sign in:", error);
+          toast.error("Error setting up your session. Please try again.");
         }
-
-        const { data: roleData } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-
-        await delay(100);
-        safeNavigate(roleData?.role === 'admin' ? '/' : '/dashboard');
       } else if (event === 'SIGNED_OUT') {
         setIsSigningOut(true);
         safeNavigate('/login');
@@ -243,6 +281,7 @@ export const useSessionManagement = (isLoginPage: boolean) => {
 
     return () => {
       mounted = false;
+      sessionCheckInProgressRef.current = false;
       if (navigationTimeoutRef.current) {
         clearTimeout(navigationTimeoutRef.current);
       }
@@ -254,3 +293,4 @@ export const useSessionManagement = (isLoginPage: boolean) => {
 
   return { isLoading, isAdmin, initialCheckComplete };
 };
+
