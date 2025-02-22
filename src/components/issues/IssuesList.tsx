@@ -1,23 +1,26 @@
+
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { IssueStatus } from "./types/IssueTypes";
 import { IssueDetails } from "./details/IssueDetails";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { ResolutionForm } from "./forms/ResolutionForm";
 import { TableView } from "./views/TableView";
 import { CardView } from "./views/CardView";
 import { IssueListHeader } from "./components/IssueListHeader";
 import { useIssueQueries } from "./hooks/useIssueQueries";
 import { IssueFiltersType } from "./types/FilterTypes";
+import { useDialogManager } from "@/hooks/useDialogManager";
+import { useToast } from "@/hooks/use-toast";
 
 export const IssuesList = () => {
-  const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
-  const [showResolutionForm, setShowResolutionForm] = useState(false);
+  const { toast } = useToast();
+  const { dialogState, openDialog, closeDialog } = useDialogManager();
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<IssueFiltersType>({
@@ -37,15 +40,9 @@ export const IssuesList = () => {
     deleteIssueMutation,
   } = useIssueQueries({ filters, searchQuery });
 
-  console.log("IssuesList render - filters:", filters);
-  console.log("IssuesList render - searchQuery:", searchQuery);
-  console.log("IssuesList render - issues:", issues);
-  console.log("IssuesList render - isLoading:", isLoading);
-
   const handleStatusChange = (id: string, newStatus: IssueStatus) => {
     if (newStatus === 'resolved') {
-      setSelectedIssueId(id);
-      setShowResolutionForm(true);
+      openDialog('resolution', { issueId: id });
     } else {
       updateIssueMutation.mutate({ id, status: newStatus });
     }
@@ -53,13 +50,23 @@ export const IssuesList = () => {
 
   const handleDelete = (id: string) => {
     if (window.confirm("Are you sure you want to delete this issue?")) {
-      deleteIssueMutation.mutate(id);
+      deleteIssueMutation.mutate(id, {
+        onSuccess: () => {
+          toast({
+            title: "Issue deleted",
+            description: "The issue has been successfully deleted.",
+          });
+        },
+      });
     }
   };
 
   const handleResolutionSuccess = () => {
-    setShowResolutionForm(false);
-    setSelectedIssueId(null);
+    closeDialog();
+    toast({
+      title: "Issue resolved",
+      description: "The issue has been successfully resolved.",
+    });
   };
 
   const handleFilterChange = (newFilters: Partial<IssueFiltersType>) => {
@@ -92,36 +99,42 @@ export const IssuesList = () => {
       ) : viewMode === 'cards' ? (
         <CardView
           issues={issues}
-          onIssueSelect={setSelectedIssueId}
+          onIssueSelect={(id) => openDialog('issueDetails', { issueId: id })}
         />
       ) : (
         <TableView
           issues={issues}
-          onIssueSelect={setSelectedIssueId}
+          onIssueSelect={(id) => openDialog('issueDetails', { issueId: id })}
           onStatusChange={handleStatusChange}
           onDelete={handleDelete}
         />
       )}
 
-      <IssueDetails 
-        issueId={selectedIssueId} 
-        onClose={() => setSelectedIssueId(null)} 
-      />
-
-      <Dialog open={showResolutionForm} onOpenChange={setShowResolutionForm}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Resolve Issue</DialogTitle>
-          </DialogHeader>
-          {selectedIssueId && (
-            <ResolutionForm
-              issueId={selectedIssueId}
-              onSuccess={handleResolutionSuccess}
-              onCancel={() => setShowResolutionForm(false)}
+      {dialogState.type === 'issueDetails' && (
+        <Sheet open={dialogState.isOpen} onOpenChange={closeDialog}>
+          <SheetContent side="right" className="w-full sm:w-3/4 md:w-2/3 lg:w-1/2">
+            <IssueDetails 
+              issueId={dialogState.data?.issueId} 
+              onClose={closeDialog}
             />
-          )}
-        </DialogContent>
-      </Dialog>
+          </SheetContent>
+        </Sheet>
+      )}
+
+      {dialogState.type === 'resolution' && (
+        <Sheet open={dialogState.isOpen} onOpenChange={closeDialog}>
+          <SheetContent>
+            <SheetHeader>
+              <SheetTitle>Resolve Issue</SheetTitle>
+            </SheetHeader>
+            <ResolutionForm
+              issueId={dialogState.data?.issueId}
+              onSuccess={handleResolutionSuccess}
+              onCancel={closeDialog}
+            />
+          </SheetContent>
+        </Sheet>
+      )}
     </>
   );
 };
