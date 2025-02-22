@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -95,7 +96,10 @@ export const useDashboardData = () => {
             lighting_fixtures: room.lighting_fixtures?.map(fixture => ({
               id: fixture.id,
               bulb_count: fixture.bulb_count,
-              status: fixture.status === 'functional' ? 'working' : 'not_working'
+              // Explicitly map the status to match our type definition
+              status: fixture.status === 'functional' || fixture.status === 'working' 
+                ? 'working' 
+                : 'not_working'
             }))
           }))
         }))
