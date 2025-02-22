@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -23,20 +22,22 @@ const RoomsList = ({ selectedBuilding, selectedFloor }: RoomsListProps) => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [view, setView] = useState<"grid" | "list">("grid");
 
-  const { data: rooms, isLoading, error, refetch } = useRoomsQuery();
+  const { data: rooms, isLoading, error, refetch } = useRoomsQuery({
+    buildingId: selectedBuilding === 'all' ? undefined : selectedBuilding,
+    floorId: selectedFloor === 'all' ? undefined : selectedFloor,
+  });
   
   const { filteredAndSortedRooms } = useRoomFilters({
     rooms,
     searchQuery,
     sortBy,
     statusFilter,
-    selectedBuilding,
-    selectedFloor,
+    selectedBuilding: 'all',
+    selectedFloor: 'all',
   });
 
   const deleteRoom = useMutation({
     mutationFn: async (roomId: string) => {
-      // Check for existing connections
       const { data: connections } = await supabase
         .from('space_connections')
         .select('id')
@@ -46,7 +47,6 @@ const RoomsList = ({ selectedBuilding, selectedFloor }: RoomsListProps) => {
         throw new Error('Cannot delete room with existing connections. Please remove connections first.');
       }
 
-      // Check for assigned keys
       const { data: assignedKeys } = await supabase
         .from('keys')
         .select('id')
@@ -56,7 +56,6 @@ const RoomsList = ({ selectedBuilding, selectedFloor }: RoomsListProps) => {
         throw new Error('Cannot delete room with assigned keys. Please reassign or remove keys first.');
       }
 
-      // Check for occupants
       const { data: occupants } = await supabase
         .from('occupant_room_assignments')
         .select('id')
@@ -66,7 +65,6 @@ const RoomsList = ({ selectedBuilding, selectedFloor }: RoomsListProps) => {
         throw new Error('Cannot delete room with assigned occupants. Please reassign occupants first.');
       }
 
-      // Delete the room
       const { error } = await supabase
         .from('rooms')
         .delete()

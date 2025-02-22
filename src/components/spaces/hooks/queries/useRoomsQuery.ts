@@ -11,15 +11,20 @@ import {
   createFixturesLookup 
 } from "./utils/roomDataUtils";
 
-export function useRoomsQuery() {
+interface UseRoomsQueryProps {
+  buildingId?: string;
+  floorId?: string;
+}
+
+export function useRoomsQuery({ buildingId, floorId }: UseRoomsQueryProps = {}) {
   const { toast } = useToast();
 
   return useQuery({
-    queryKey: ['rooms'],
+    queryKey: ['rooms', buildingId, floorId], // Include filters in query key
     queryFn: async () => {
-      console.log("Fetching rooms data...");
+      console.log("Fetching rooms data with filters:", { buildingId, floorId });
       
-      const { data: roomsData, error: roomsError } = await fetchRoomsData();
+      const { data: roomsData, error: roomsError } = await fetchRoomsData(buildingId, floorId);
 
       if (roomsError) {
         console.error('Error fetching rooms:', roomsError);

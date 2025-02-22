@@ -1,8 +1,9 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
-export const fetchRoomsData = async () => {
-  return await supabase
+export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
+  console.log("Fetching rooms with filters:", { buildingId, floorId });
+  
+  let query = supabase
     .from('rooms')
     .select(`
       id,
@@ -33,6 +34,18 @@ export const fetchRoomsData = async () => {
         name
       )
     `);
+
+  // Apply building filter if specified
+  if (buildingId && buildingId !== 'all') {
+    query = query.eq('floors.building_id', buildingId);
+  }
+
+  // Apply floor filter if specified
+  if (floorId && floorId !== 'all') {
+    query = query.eq('floor_id', floorId);
+  }
+
+  return query;
 };
 
 export const fetchRelatedRoomData = async (roomIds: string[]) => {
