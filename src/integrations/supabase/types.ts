@@ -281,6 +281,55 @@ export type Database = {
           },
         ]
       }
+      building_activities: {
+        Row: {
+          building_id: string | null
+          created_at: string | null
+          description: string
+          id: string
+          performed_by: string | null
+          type: string
+        }
+        Insert: {
+          building_id?: string | null
+          created_at?: string | null
+          description: string
+          id?: string
+          performed_by?: string | null
+          type: string
+        }
+        Update: {
+          building_id?: string | null
+          created_at?: string | null
+          description?: string
+          id?: string
+          performed_by?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "building_activities_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "building_activities_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "key_door_locations"
+            referencedColumns: ["building_id"]
+          },
+          {
+            foreignKeyName: "building_activities_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "lighting_assignments"
+            referencedColumns: ["building_id"]
+          },
+        ]
+      }
       buildings: {
         Row: {
           address: string
