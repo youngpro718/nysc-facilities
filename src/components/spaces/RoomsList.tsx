@@ -23,8 +23,8 @@ const RoomsList = ({ selectedBuilding, selectedFloor }: RoomsListProps) => {
   const [view, setView] = useState<"grid" | "list">("grid");
 
   const { data: rooms, isLoading, error, refetch } = useRoomsQuery({
-    buildingId: selectedBuilding === 'all' ? undefined : selectedBuilding,
-    floorId: selectedFloor === 'all' ? undefined : selectedFloor,
+    buildingId: selectedBuilding,
+    floorId: selectedFloor,
   });
   
   const { filteredAndSortedRooms } = useRoomFilters({
@@ -32,8 +32,8 @@ const RoomsList = ({ selectedBuilding, selectedFloor }: RoomsListProps) => {
     searchQuery,
     sortBy,
     statusFilter,
-    selectedBuilding: 'all',
-    selectedFloor: 'all',
+    selectedBuilding,
+    selectedFloor,
   });
 
   const deleteRoom = useMutation({

@@ -24,9 +24,10 @@ export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
       current_function,
       previous_functions,
       function_change_date,
-      floors:floor_id (
+      floors!inner (
+        id,
         name,
-        buildings:building_id (
+        buildings!inner (
           id,
           name
         )
@@ -41,12 +42,19 @@ export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
     query = query.eq('floors.buildings.id', buildingId);
   }
 
-  // Apply floor filter if specified (only if explicitly selected)
+  // Apply floor filter if specified
   if (floorId && floorId !== 'all') {
     query = query.eq('floor_id', floorId);
   }
 
-  return query;
+  const { data, error } = await query;
+  
+  if (error) {
+    console.error('Error fetching rooms:', error);
+    throw error;
+  }
+
+  return { data, error };
 };
 
 export const fetchRelatedRoomData = async (roomIds: string[]) => {
