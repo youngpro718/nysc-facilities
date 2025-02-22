@@ -66,7 +66,7 @@ export const useAdminDashboardData = () => {
           seen,
           photos,
           space_id,
-          spaces:new_spaces (
+          new_spaces (
             id,
             name,
             room_number
@@ -91,10 +91,10 @@ export const useAdminDashboardData = () => {
         // Transform the issues data to match UserIssue type
         const transformedIssues = (issuesData || []).map(issue => ({
           ...issue,
-          rooms: issue.spaces ? {
-            id: issue.spaces.id,
-            name: issue.spaces.name,
-            room_number: issue.spaces.room_number
+          rooms: issue.new_spaces ? {
+            id: issue.new_spaces.id,
+            name: issue.new_spaces.name,
+            room_number: issue.new_spaces.room_number
           } : null,
           buildings: issue.buildings || null,
           floors: issue.floors || null
