@@ -544,15 +544,12 @@ export async function fetchFloorplanReportData(progressCallback: ReportCallback 
             table: {
               widths: ['*'],
               body: floor.rooms.map(room => [[
-                {
-                  text: `${room.name} - ${room.type} (${room.status})`,
-                  style: 'roomItem'
-                }
+                { text: `${room.name} - ${room.type} (${room.status})`, style: 'roomItem' }
               ]])
-            },
+            } as { widths: string[]; body: TableCell[][] },
             layout: 'noBorders',
             margin: [10, 0, 0, 0] as [number, number, number, number]
-          },
+          } as Content,
           { text: '\n' }
         ]).flat()
       ]).flat()
