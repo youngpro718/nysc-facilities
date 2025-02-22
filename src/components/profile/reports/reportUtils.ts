@@ -49,11 +49,7 @@ export async function fetchDataWithProgress<T>(
 
 export async function downloadPdf(docDefinition: TDocumentDefinitions, filename: string) {
   try {
-    // Set virtual file system for fonts
-    if (typeof window !== 'undefined' && pdfFonts && pdfFonts.pdfMake) {
-      pdfMake.vfs = pdfFonts.pdfMake.vfs;
-    }
-
+    pdfMake.vfs = pdfFonts.pdfMake?.vfs;
     const pdfDocGenerator = pdfMake.createPdf(docDefinition);
 
     pdfDocGenerator.getBlob((blob) => {
@@ -70,7 +66,7 @@ export async function downloadPdf(docDefinition: TDocumentDefinitions, filename:
   }
 }
 
-export async function fetchReportTemplates() {
+export async function fetchReportTemplates(): Promise<ReportTemplate[]> {
   const { data, error } = await supabase
     .from('report_templates')
     .select('*')
@@ -99,7 +95,7 @@ export async function createReportTemplate(template: Omit<ReportTemplate, 'id' |
   };
 }
 
-export async function fetchScheduledReports() {
+export async function fetchScheduledReports(): Promise<ScheduledReport[]> {
   const { data, error } = await supabase
     .from('scheduled_reports')
     .select('*')
@@ -130,5 +126,6 @@ export async function scheduleReport(report: Omit<ScheduledReport, 'id'>) {
   };
 }
 
-// Re-export types from types.ts
+export { downloadPdf as downloadReport };
 export type { ReportTemplate, ScheduledReport };
+

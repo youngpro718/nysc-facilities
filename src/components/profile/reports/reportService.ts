@@ -8,3 +8,4 @@ export { fetchOccupantReport } from './occupantReport';
 export { fetchFullDatabaseReport } from './databaseReport';
 export { downloadPdf as downloadReport } from './reportUtils';
 export type { ReportProgress, ReportCallback } from './types';
+
