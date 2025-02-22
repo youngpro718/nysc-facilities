@@ -36,14 +36,10 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['issues', issueId] });
-      toast.success("Issue marked as seen", {
-        description: "The issue has been marked as viewed"
-      });
+      toast.success("Issue marked as seen");
     },
     onError: () => {
-      toast.error("Failed to mark issue as seen", {
-        description: "Please try again later"
-      });
+      toast.error("Failed to mark issue as seen");
     }
   });
 
@@ -58,8 +54,11 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
   }
 
   const handleEditClose = () => {
-    setIsEditing(false);
-    queryClient.invalidateQueries({ queryKey: ['issues'] });
+    const confirmed = window.confirm("Are you sure you want to discard your changes?");
+    if (confirmed) {
+      setIsEditing(false);
+      queryClient.invalidateQueries({ queryKey: ['issues'] });
+    }
   };
 
   return (
@@ -71,12 +70,17 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
               title="Edit Issue"
               status={issue.status}
               onEdit={handleEditClose}
+              isEditing={true}
             />
             <ScrollArea className="flex-1 px-1">
               <div className="pr-4">
                 <EditIssueForm 
                   issue={issue} 
-                  onClose={handleEditClose} 
+                  onClose={() => setIsEditing(false)} 
+                  onSave={() => {
+                    setIsEditing(false);
+                    toast.success("Issue updated successfully");
+                  }}
                 />
               </div>
             </ScrollArea>
@@ -87,6 +91,7 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
               title={issue.title}
               status={issue.status}
               onEdit={() => setIsEditing(true)}
+              isEditing={false}
             />
             <ScrollArea className="flex-1">
               <div className="space-y-6 p-6">

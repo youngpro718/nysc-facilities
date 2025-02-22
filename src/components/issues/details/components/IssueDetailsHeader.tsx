@@ -9,9 +9,10 @@ interface IssueDetailsHeaderProps {
   title: string;
   status: IssueStatus;
   onEdit: () => void;
+  isEditing: boolean;
 }
 
-export const IssueDetailsHeader = ({ title, status, onEdit }: IssueDetailsHeaderProps) => {
+export const IssueDetailsHeader = ({ title, status, onEdit, isEditing }: IssueDetailsHeaderProps) => {
   return (
     <DialogHeader className="px-6 pt-6">
       <DialogTitle className="flex items-center justify-between">
@@ -23,8 +24,14 @@ export const IssueDetailsHeader = ({ title, status, onEdit }: IssueDetailsHeader
             onClick={onEdit}
             className="h-8 w-8 flex-shrink-0"
           >
-            <Pencil className="h-4 w-4" />
-            <span className="sr-only">Edit issue</span>
+            {isEditing ? (
+              <X className="h-4 w-4" />
+            ) : (
+              <Pencil className="h-4 w-4" />
+            )}
+            <span className="sr-only">
+              {isEditing ? "Cancel edit" : "Edit issue"}
+            </span>
           </Button>
         </div>
         <div className="flex items-center gap-2">
