@@ -6,6 +6,7 @@ import { IssueFilters as IssueFiltersType, SortOption, GroupingOption, ViewMode 
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 
 interface IssueFiltersProps {
   onFilterChange: (filters: IssueFiltersType) => void;
@@ -21,12 +22,27 @@ export const IssueFilters = ({
   viewMode 
 }: IssueFiltersProps) => {
   const [showLightingFilters, setShowLightingFilters] = useState(false);
-  const [currentType, setCurrentType] = useState<string>('all_types');
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const handleTypeChange = (type: string) => {
-    setCurrentType(type);
     setShowLightingFilters(type === 'LIGHTING');
-    onFilterChange({ type });
+    updateFilters({ type });
+  };
+
+  const updateFilters = (newFilters: Partial<IssueFiltersType>) => {
+    // Update URL params
+    const updatedParams = new URLSearchParams(searchParams);
+    Object.entries(newFilters).forEach(([key, value]) => {
+      if (value) {
+        updatedParams.set(key, value);
+      } else {
+        updatedParams.delete(key);
+      }
+    });
+    setSearchParams(updatedParams);
+
+    // Call the filter change handler
+    onFilterChange(newFilters);
   };
 
   return (
@@ -38,7 +54,7 @@ export const IssueFilters = ({
               if (filters.type) {
                 handleTypeChange(filters.type);
               } else {
-                onFilterChange(filters);
+                updateFilters(filters);
               }
             }} 
           />
@@ -53,7 +69,7 @@ export const IssueFilters = ({
         )}
       </div>
       <LightingFilters 
-        onFilterChange={onFilterChange}
+        onFilterChange={updateFilters}
         showLightingFilters={showLightingFilters}
       />
     </div>

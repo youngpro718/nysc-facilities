@@ -139,7 +139,7 @@ export const IssuesList = () => {
   const { data: issues, isLoading } = useQuery({
     queryKey: ['issues'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('issues')
         .select(`
           id,
@@ -164,6 +164,26 @@ export const IssuesList = () => {
           )
         `)
         .order('created_at', { ascending: false });
+
+      // Apply filters from URL or state
+      const urlParams = new URLSearchParams(window.location.search);
+      const typeFilter = urlParams.get('type') || 'all_types';
+      const statusFilter = urlParams.get('status') || 'all_statuses';
+      const priorityFilter = urlParams.get('priority') || 'all_priorities';
+
+      if (typeFilter !== 'all_types') {
+        query = query.eq('type', typeFilter);
+      }
+      
+      if (statusFilter !== 'all_statuses') {
+        query = query.eq('status', statusFilter);
+      }
+      
+      if (priorityFilter !== 'all_priorities') {
+        query = query.eq('priority', priorityFilter);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       return (data || []).map((item) => transformIssue(item as DatabaseIssue));
