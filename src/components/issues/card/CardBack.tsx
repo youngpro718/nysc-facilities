@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Issue } from "../types/IssueTypes";
 import { format } from "date-fns";
-import { IssuePhotos } from "./IssuePhotos";
+import { IssuePhotoGrid } from "./IssuePhotoGrid";
 import { Info, Settings, History, Camera, Database, Lightbulb } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -102,7 +102,7 @@ export function CardBack({ issue }: CardBackProps) {
                 <Camera className="h-4 w-4" />
                 Photos
               </div>
-              <IssuePhotos photos={issue.photos} />
+              <IssuePhotoGrid photos={issue.photos} />
             </div>
           )}
 
