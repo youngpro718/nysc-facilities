@@ -65,7 +65,7 @@ export const useAdminDashboardData = () => {
           building_id,
           seen,
           photos,
-          room_id,
+          space_id,
           spaces:new_spaces (
             id,
             name,
@@ -176,4 +176,3 @@ export const useAdminDashboardData = () => {
     fetchAdminData
   };
 };
-
