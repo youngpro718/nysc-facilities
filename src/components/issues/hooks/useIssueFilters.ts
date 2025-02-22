@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { IssueFiltersType, SortOption, GroupingOption, ViewMode } from "../types/FilterTypes";
 
@@ -18,18 +18,25 @@ export const useIssueFilters = () => {
   const [grouping, setGrouping] = useState<GroupingOption>('none');
   const [viewMode, setViewMode] = useState<ViewMode>('table');
 
-  // Update URL when filters change
-  useEffect(() => {
-    const newParams = new URLSearchParams(searchParams);
-    Object.entries(filters).forEach(([key, value]) => {
+  // Memoize the update function to prevent unnecessary re-renders
+  const updateSearchParams = useCallback((currentFilters: IssueFiltersType) => {
+    const newParams = new URLSearchParams();
+    Object.entries(currentFilters).forEach(([key, value]) => {
       if (value && typeof value === 'string' && !value.startsWith('all_')) {
         newParams.set(key, value);
-      } else {
-        newParams.delete(key);
       }
     });
     setSearchParams(newParams, { replace: true });
-  }, [filters, setSearchParams]);
+  }, [setSearchParams]);
+
+  // Debounced effect for URL updates
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      updateSearchParams(filters);
+    }, 500); // 500ms debounce delay
+
+    return () => clearTimeout(timeoutId);
+  }, [filters, updateSearchParams]);
 
   // Handle filter updates
   const updateFilters = (newFilters: Partial<IssueFiltersType>) => {
@@ -47,4 +54,3 @@ export const useIssueFilters = () => {
     setViewMode
   };
 };
-
