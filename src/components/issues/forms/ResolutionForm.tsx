@@ -53,22 +53,30 @@ export function ResolutionForm({ issueId, onSuccess, onCancel }: ResolutionFormP
   const resolveMutation = useResolveIssueMutation();
 
   const onSubmit = async (data: ResolutionFormData) => {
-    resolveMutation.mutate(
-      { 
-        id: issueId, 
-        resolution_type: data.resolution_type, 
-        resolution_notes: data.resolution_notes 
-      },
-      {
-        onSuccess: () => {
-          onSuccess?.();
-          toast.success("Issue resolved successfully");
+    try {
+      await resolveMutation.mutateAsync(
+        { 
+          id: issueId, 
+          resolution_type: data.resolution_type, 
+          resolution_notes: data.resolution_notes 
         },
-        onError: (error: Error) => {
-          toast.error(error.message || "Failed to resolve issue");
-        },
-      }
-    );
+        {
+          onSuccess: () => {
+            toast.success("Issue resolved successfully");
+            // Ensure we're fully unmounted before triggering parent updates
+            setTimeout(() => {
+              onSuccess?.();
+            }, 0);
+          },
+          onError: (error: Error) => {
+            toast.error(error.message || "Failed to resolve issue");
+          },
+        }
+      );
+    } catch (error) {
+      // Error is already handled in onError callback
+      console.error("Resolution error:", error);
+    }
   };
 
   return (
