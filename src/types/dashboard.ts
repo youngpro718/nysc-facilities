@@ -25,9 +25,12 @@ export interface UserAssignment {
 export interface UserIssue {
   id: string;
   title: string;
+  description: string;
   status: string;
   created_at: string;
   priority: string;
+  building_id: string;
+  seen: boolean;
   rooms?: {
     name: string;
   } | null;
@@ -45,19 +48,17 @@ export interface UserProfile {
 export interface Building {
   id: string;
   name: string;
-  status: string;
+  status: 'active' | 'maintenance';
   address: string;
 }
 
 export interface Activity {
   id: string;
   action: string;
+  activity_type?: string;
   performed_by?: string;
   created_at: string;
-  metadata?: {
-    building_id: string;
-    [key: string]: any;
-  };
+  metadata?: Record<string, any>;
 }
 
 export interface AdminDashboardData {

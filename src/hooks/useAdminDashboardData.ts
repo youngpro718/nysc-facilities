@@ -21,7 +21,12 @@ export const useAdminDashboardData = () => {
       if (buildingsError) {
         console.error('Error fetching buildings:', buildingsError);
       } else {
-        setBuildings(buildingsData || []);
+        // Ensure status is correctly typed
+        const typedBuildings: Building[] = (buildingsData || []).map(building => ({
+          ...building,
+          status: building.status === 'maintenance' ? 'maintenance' : 'active'
+        }));
+        setBuildings(typedBuildings);
       }
 
       // Fetch issues
@@ -30,9 +35,12 @@ export const useAdminDashboardData = () => {
         .select(`
           id,
           title,
+          description,
           status,
           created_at,
           priority,
+          building_id,
+          seen,
           rooms (name)
         `)
         .order('created_at', { ascending: false });
@@ -53,7 +61,16 @@ export const useAdminDashboardData = () => {
       if (activitiesError) {
         console.error('Error fetching activities:', activitiesError);
       } else {
-        setActivities(activitiesData || []);
+        // Ensure activity data matches our type
+        const typedActivities: Activity[] = (activitiesData || []).map(activity => ({
+          id: activity.id,
+          action: activity.action,
+          activity_type: activity.activity_type,
+          performed_by: activity.performed_by,
+          created_at: activity.created_at,
+          metadata: activity.metadata as Record<string, any>
+        }));
+        setActivities(typedActivities);
       }
 
     } catch (error) {
