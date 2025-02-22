@@ -13,8 +13,9 @@ export const useSessionManagement = (isLoginPage: boolean) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [initialCheckComplete, setInitialCheckComplete] = useState(false);
-  const navigationDebounceRef = useRef<NodeJS.Timeout>();
-  const lastNavigationRef = useRef<string>('');
+  const navigationTimeoutRef = useRef<NodeJS.Timeout>();
+  const lastNavigationPathRef = useRef<string>('');
+  const lastNavigationTimeRef = useRef<number>(0);
 
   const getCurrentDeviceInfo = (): DeviceInfo => ({
     name: navigator.userAgent.split('/')[0],
@@ -60,19 +61,31 @@ export const useSessionManagement = (isLoginPage: boolean) => {
   };
 
   const safeNavigate = (path: string) => {
-    if (navigationDebounceRef.current) {
-      clearTimeout(navigationDebounceRef.current);
-    }
-
-    // Don't navigate if we're already on that path
-    if (lastNavigationRef.current === path || location.pathname === path) {
+    if (path === location.pathname || path === lastNavigationPathRef.current) {
       return;
     }
 
-    navigationDebounceRef.current = setTimeout(() => {
-      lastNavigationRef.current = path;
-      navigate(path, { replace: true });
-    }, 100);
+    const now = Date.now();
+    const timeSinceLastNavigation = now - lastNavigationTimeRef.current;
+
+    // If we're trying to navigate too quickly, wait a bit
+    if (timeSinceLastNavigation < 300) {
+      if (navigationTimeoutRef.current) {
+        clearTimeout(navigationTimeoutRef.current);
+      }
+
+      navigationTimeoutRef.current = setTimeout(() => {
+        lastNavigationPathRef.current = path;
+        lastNavigationTimeRef.current = Date.now();
+        navigate(path, { replace: true });
+      }, 300);
+      
+      return;
+    }
+
+    lastNavigationPathRef.current = path;
+    lastNavigationTimeRef.current = now;
+    navigate(path, { replace: true });
   };
 
   useEffect(() => {
@@ -142,11 +155,14 @@ export const useSessionManagement = (isLoginPage: boolean) => {
 
         if (profile?.verification_status === 'verified') {
           // Handle route protection based on role
-          if (!userIsAdmin && location.pathname === '/') {
-            safeNavigate('/dashboard');
-          } else if (userIsAdmin && location.pathname === '/dashboard') {
-            safeNavigate('/');
-          } else if (isLoginPage) {
+          const currentPath = location.pathname;
+          const shouldRedirect = (
+            (!userIsAdmin && currentPath === '/') ||
+            (userIsAdmin && currentPath === '/dashboard') ||
+            (isLoginPage)
+          );
+
+          if (shouldRedirect) {
             safeNavigate(userIsAdmin ? '/' : '/dashboard');
           }
 
@@ -227,8 +243,8 @@ export const useSessionManagement = (isLoginPage: boolean) => {
 
     return () => {
       mounted = false;
-      if (navigationDebounceRef.current) {
-        clearTimeout(navigationDebounceRef.current);
+      if (navigationTimeoutRef.current) {
+        clearTimeout(navigationTimeoutRef.current);
       }
       if (authSubscription?.data?.subscription) {
         authSubscription.data.subscription.unsubscribe();
@@ -238,4 +254,3 @@ export const useSessionManagement = (isLoginPage: boolean) => {
 
   return { isLoading, isAdmin, initialCheckComplete };
 };
-
