@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -133,7 +134,7 @@ export const IssuesList = () => {
   const isMobile = useIsMobile();
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
-  const issueQuery = useQuery({
+  const { data: issues, isLoading } = useQuery({
     queryKey: ['issues'],
     queryFn: async () => {
       const urlParams = new URLSearchParams(window.location.search);
@@ -425,3 +426,4 @@ export const IssuesList = () => {
     </>
   );
 };
+
