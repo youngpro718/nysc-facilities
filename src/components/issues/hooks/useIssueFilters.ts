@@ -17,6 +17,9 @@ export const useIssueFilters = () => {
   const [sort, setSort] = useState<SortOption>({ field: 'created_at', direction: 'desc' });
   const [viewMode, setViewMode] = useState<ViewMode>('table');
 
+  console.log("Current filters state:", filters);
+  console.log("Current search query:", searchQuery);
+
   return {
     filters,
     setFilters,

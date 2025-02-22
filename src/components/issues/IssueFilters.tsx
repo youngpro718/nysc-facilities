@@ -22,6 +22,7 @@ export const IssueFilters = ({
   const [showLightingFilters, setShowLightingFilters] = useState(false);
 
   const handleTypeChange = (type: string) => {
+    console.log("Type filter changed to:", type);
     setShowLightingFilters(type === 'LIGHTING');
     if (isValidType(type)) {
       updateFilters({ type });
@@ -29,6 +30,7 @@ export const IssueFilters = ({
   };
 
   const updateFilters = (newFilters: Partial<IssueFiltersType>) => {
+    console.log("Updating filters with:", newFilters);
     onFilterChange(newFilters);
   };
 
