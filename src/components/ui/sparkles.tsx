@@ -1,4 +1,3 @@
-
 "use client";
 import React, { useId, useEffect, useState } from "react";
 import Particles, { initParticlesEngine } from "@tsparticles/react";
@@ -30,9 +29,11 @@ export const SparklesCore = (props: ParticlesProps) => {
     particleColor,
     particleDensity,
   } = props;
+
   const [init, setInit] = useState(false);
-  const [container, setContainer] = useState<Container | undefined>();
+  const [mounted, setMounted] = useState(false);
   const controls = useAnimation();
+  const generatedId = useId();
 
   useEffect(() => {
     initParticlesEngine(async (engine) => {
@@ -43,23 +44,20 @@ export const SparklesCore = (props: ParticlesProps) => {
   }, []);
 
   useEffect(() => {
-    if (container) {
-      controls.start({
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  const particlesLoaded = async (container?: Container) => {
+    if (container && mounted) {
+      await controls.start({
         opacity: 1,
         transition: {
           duration: 1,
         },
       });
     }
-  }, [container, controls]);
-
-  const particlesLoaded = async (container?: Container) => {
-    if (container) {
-      setContainer(container);
-    }
   };
-
-  const generatedId = useId();
 
   return (
     <motion.div 
