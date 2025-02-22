@@ -27,6 +27,9 @@ export const IssuesList = () => {
     deleteIssueMutation,
   } = useIssueQueries();
 
+  console.log("IssuesList render - issues:", issues);
+  console.log("IssuesList render - isLoading:", isLoading);
+
   const handleStatusChange = (id: string, newStatus: IssueStatus) => {
     if (newStatus === 'resolved') {
       setSelectedIssueId(id);
