@@ -7,13 +7,13 @@ export type StandardizedIssueType = 'ACCESS_REQUEST' | 'BUILDING_SYSTEMS' | 'CEI
 export type IssuePriority = 'low' | 'medium' | 'high';
 
 export const ISSUE_TYPES: StandardizedIssueType[] = [
-  'DOOR',
-  'PLUMBING_NEEDS',
-  'CLIMATE_CONTROL',
   'ACCESS_REQUEST',
+  'BUILDING_SYSTEMS',
+  'CLIMATE_CONTROL',
   'CLEANING_REQUEST',
+  'ELECTRICAL_NEEDS',
   'GENERAL_REQUESTS',
-  'OTHER'
+  'PLUMBING_NEEDS'
 ] as const;
 
 export const PROBLEM_TYPES: Record<StandardizedIssueType, string[]> = {
@@ -37,3 +37,4 @@ export const PROBLEM_TYPES: Record<StandardizedIssueType, string[]> = {
   'SIGNAGE': ['New', 'Repair', 'Update', 'Remove'],
   'WINDOW': ['Broken', 'Seal', 'Lock', 'Screen']
 };
+

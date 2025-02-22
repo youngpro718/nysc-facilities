@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -92,7 +93,8 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
   const watchIssueType = form.watch('issue_type');
   if (watchIssueType && watchIssueType !== selectedIssueType) {
     setSelectedIssueType(watchIssueType);
-    if (watchIssueType === 'HVAC' || watchIssueType === 'Power') {
+    // Set high priority for critical systems
+    if (watchIssueType === 'BUILDING_SYSTEMS' || watchIssueType === 'ELECTRICAL_NEEDS') {
       form.setValue('priority', 'high');
     }
   }
