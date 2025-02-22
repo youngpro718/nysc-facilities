@@ -36,21 +36,25 @@ interface KeyInventoryData {
   lost_count: number;
 }
 
+interface FloorPlanRoomData {
+  id: string;
+  name: string;
+  type: string;
+  status: string;
+  maintenance_history: any[];
+  next_maintenance_date: string | null;
+}
+
+interface FloorPlanFloorData {
+  id: string;
+  name: string;
+  rooms: FloorPlanRoomData[];
+}
+
 interface FloorplanReportData {
   id: string;
   name: string;
-  floors: {
-    id: string;
-    name: string;
-    rooms: {
-      id: string;
-      name: string;
-      type: string;
-      status: string;
-      maintenance_history: any[];
-      next_maintenance_date: string | null;
-    }[];
-  }[];
+  floors: FloorPlanFloorData[];
 }
 
 type ReportCallback = (progress: ReportProgress) => void;
@@ -464,7 +468,7 @@ function calculateResolutionStats(issues: IssueReportDetail[]) {
 
 export async function fetchFloorplanReportData(progressCallback: ReportCallback = () => {}) {
   try {
-    const data = await fetchDataWithProgress<FloorplanReportData>(
+    const data = await fetchDataWithProgress<FloorplanReportData[]>(
       supabase.from('buildings').select(`
         id,
         name,
@@ -502,7 +506,7 @@ export async function fetchFloorplanReportData(progressCallback: ReportCallback 
             },
             { text: '\n' }
           ]).flat()
-        ]).flat() as Content[]
+        ]).flat()
       ],
       styles: {
         header: { fontSize: 18, bold: true, margin: [0, 0, 0, 10] },
