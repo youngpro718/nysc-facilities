@@ -13,9 +13,9 @@ export const useIssueQueries = ({ filters, searchQuery }: UseIssueQueriesProps) 
   // Ensure resolved issues only appear in historical tab
   const adjustedFilters = {
     ...filters,
-    status: filters.status === 'all_statuses' && filters.status !== 'resolved' 
-      ? ['open', 'in_progress'] // For active tab with all_statuses, only show non-resolved
-      : filters.status // For other cases (historical tab or specific status), use as is
+    status: filters.status === 'all_statuses' 
+      ? ['open', 'in_progress'] as ["open", "in_progress"] // Explicitly type the array
+      : filters.status
   };
 
   const { data: queryResponse, isLoading, error } = useIssueList(adjustedFilters, searchQuery);
@@ -38,3 +38,4 @@ export const useIssueQueries = ({ filters, searchQuery }: UseIssueQueriesProps) 
     deleteIssueMutation,
   };
 };
+

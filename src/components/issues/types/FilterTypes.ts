@@ -26,3 +26,4 @@ export type SortOption = {
 export type GroupingOption = 'none' | 'building' | 'floor';
 
 export type ViewMode = 'cards' | 'table' | 'kanban' | 'timeline';
+
