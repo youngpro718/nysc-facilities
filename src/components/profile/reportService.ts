@@ -1,7 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { PostgrestFilterBuilder } from "@supabase/postgrest-js";
-import { Database } from "@/integrations/supabase/types";
 
 interface ReportProgress {
   status: 'pending' | 'generating' | 'completed' | 'error';
@@ -77,31 +76,6 @@ export async function generateKeyInventoryReport() {
   return stats;
 }
 
-interface IssueReportSection {
-  title: string;
-  data: any;
-}
-
-interface IssueReportMetrics {
-  total_issues: number;
-  open_issues: number;
-  resolved_issues: number;
-  overdue_issues: number;
-  avg_resolution_time?: string;
-  priority_distribution: Record<string, number>;
-  status_distribution: Record<string, number>;
-}
-
-interface FormattedIssueReport {
-  metadata: {
-    generated_at: string;
-    generated_by?: string;
-    report_period?: string;
-  };
-  metrics: IssueReportMetrics;
-  sections: IssueReportSection[];
-}
-
 interface IssueReportDetail {
   id: string;
   title: string;
@@ -131,6 +105,31 @@ interface IssueReportDetail {
   maintenance_requirements: Record<string, any> | null;
 }
 
+interface IssueReportSection {
+  title: string;
+  data: any;
+}
+
+interface IssueReportMetrics {
+  total_issues: number;
+  open_issues: number;
+  resolved_issues: number;
+  overdue_issues: number;
+  avg_resolution_time?: string;
+  priority_distribution: Record<string, number>;
+  status_distribution: Record<string, number>;
+}
+
+interface FormattedIssueReport {
+  metadata: {
+    generated_at: string;
+    generated_by?: string;
+    report_period?: string;
+  };
+  metrics: IssueReportMetrics;
+  sections: IssueReportSection[];
+}
+
 export async function fetchIssueReport(
   progressCallback: ReportCallback = () => {}
 ): Promise<FormattedIssueReport> {
@@ -141,7 +140,6 @@ export async function fetchIssueReport(
       message: 'Initializing issue report generation...'
     });
 
-    // Fetch detailed issue data from the new view
     const { data: issues, error } = await supabase
       .from('issue_report_details')
       .select('*')
@@ -166,7 +164,6 @@ export async function fetchIssueReport(
       message: 'Processing issue data...'
     });
 
-    // Calculate metrics
     const metrics = calculateIssueMetrics(issues);
 
     progressCallback({
@@ -175,7 +172,6 @@ export async function fetchIssueReport(
       message: 'Organizing report sections...'
     });
 
-    // Organize data into sections
     const sections = organizeIssueSections(issues);
 
     progressCallback({
@@ -222,15 +218,12 @@ function calculateIssueMetrics(issues: IssueReportDetail[]): IssueReportMetrics 
   };
 
   issues.forEach(issue => {
-    // Status counts
     metrics.status_distribution[issue.status] = 
       (metrics.status_distribution[issue.status] || 0) + 1;
 
-    // Priority distribution
     metrics.priority_distribution[issue.priority] = 
       (metrics.priority_distribution[issue.priority] || 0) + 1;
 
-    // Open vs Resolved
     if (issue.status === 'resolved') {
       metrics.resolved_issues++;
     } else {
