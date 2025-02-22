@@ -29,10 +29,30 @@ export const useIssueData = (issueId: string | null) => {
 
       if (error) throw error;
 
-      const transformedData = {
+      // Transform the data to match our Issue type
+      const transformedData: Issue = {
         ...data,
-        lighting_fixtures: data.lighting_fixtures ? [data.lighting_fixtures] : []
-      } as Issue;
+        lighting_fixtures: data.lighting_fixtures || [],
+        recurring_pattern: data.recurring_pattern ? {
+          is_recurring: data.recurring_pattern.is_recurring || false,
+          frequency: data.recurring_pattern.frequency,
+          pattern_confidence: data.recurring_pattern.pattern_confidence
+        } : {
+          is_recurring: false
+        },
+        maintenance_requirements: data.maintenance_requirements ? {
+          scheduled: data.maintenance_requirements.scheduled || false,
+          frequency: data.maintenance_requirements.frequency,
+          next_due: data.maintenance_requirements.next_due
+        } : {
+          scheduled: false
+        },
+        lighting_details: data.lighting_details || {
+          fixture_status: undefined,
+          detected_issues: [],
+          maintenance_history: []
+        }
+      };
 
       return transformedData;
     },
@@ -62,4 +82,3 @@ export const useIssueData = (issueId: string | null) => {
     timelineLoading
   };
 };
-
