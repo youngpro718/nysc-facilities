@@ -1,4 +1,3 @@
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -18,7 +17,7 @@ const editIssueSchema = z.object({
   date_info: z.string().optional().nullable(),
   resolution_type: z.enum(["fixed", "replaced", "maintenance_performed", "no_action_needed", "deferred", "other"] as const).optional(),
   resolution_notes: z.string().optional(),
-  assignee_id: z.string().optional(),
+  assigned_to: z.enum(["DCAS", "OCA", "Self", "Outside_Vendor"] as const).optional(),
 });
 
 export const useEditIssueForm = (issue: Issue, onClose: () => void) => {
@@ -45,7 +44,7 @@ export const useEditIssueForm = (issue: Issue, onClose: () => void) => {
       date_info: issue.date_info || '',
       resolution_type: issue.resolution_type || undefined,
       resolution_notes: issue.resolution_notes || '',
-      assignee_id: issue.assignee_id || undefined,
+      assigned_to: issue.assigned_to || undefined,
     },
   });
 

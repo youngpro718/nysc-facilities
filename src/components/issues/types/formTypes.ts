@@ -11,7 +11,7 @@ export interface FormData {
   date_info?: string;
   resolution_type?: ResolutionType;
   resolution_notes?: string;
-  assignee_id?: string;
+  assigned_to?: 'DCAS' | 'OCA' | 'Self' | 'Outside_Vendor';
   issue_type?: IssueType;
   problem_type?: string;
   building_id?: string;

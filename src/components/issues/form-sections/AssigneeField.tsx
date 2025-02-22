@@ -3,33 +3,19 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UseFormReturn } from "react-hook-form";
 import { FormData } from "../types/formTypes";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 
 interface AssigneeFieldProps {
   form: UseFormReturn<FormData>;
 }
 
 export function AssigneeField({ form }: AssigneeFieldProps) {
-  const { data: profiles } = useQuery({
-    queryKey: ['profiles'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name');
-      
-      if (error) throw error;
-      return data;
-    },
-  });
-
   return (
     <FormField
       control={form.control}
-      name="assignee_id"
+      name="assigned_to"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Assignee</FormLabel>
+          <FormLabel>Assign To</FormLabel>
           <Select onValueChange={field.onChange} defaultValue={field.value}>
             <FormControl>
               <SelectTrigger>
@@ -37,12 +23,10 @@ export function AssigneeField({ form }: AssigneeFieldProps) {
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              <SelectItem value="unassigned">Unassigned</SelectItem>
-              {profiles?.map((profile) => (
-                <SelectItem key={profile.id} value={profile.id}>
-                  {profile.first_name} {profile.last_name}
-                </SelectItem>
-              ))}
+              <SelectItem value="DCAS">DCAS</SelectItem>
+              <SelectItem value="OCA">OCA</SelectItem>
+              <SelectItem value="Self">Self</SelectItem>
+              <SelectItem value="Outside_Vendor">Outside Vendor</SelectItem>
             </SelectContent>
           </Select>
           <FormMessage />
