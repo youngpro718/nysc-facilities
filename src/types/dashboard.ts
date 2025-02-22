@@ -53,6 +53,18 @@ export interface UserProfile {
   avatar_url?: string;
 }
 
+export interface BuildingFloor {
+  id: string;
+  name: string;
+  floor_number: number;
+}
+
+export interface LightingStats {
+  total_fixtures: number;
+  working_fixtures: number;
+  non_working_fixtures: number;
+}
+
 export interface Building {
   id: string;
   name: string;
@@ -60,11 +72,8 @@ export interface Building {
   address: string;
   created_at: string;
   updated_at: string;
-  building_floors?: {
-    id: string;
-    name: string;
-    floor_number: number;
-  }[];
+  building_floors?: BuildingFloor[];
+  lighting_stats?: LightingStats;
 }
 
 export interface Activity {
