@@ -42,25 +42,35 @@ export const useDashboardData = () => {
     queryKey: ['activities'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('activities')
+        .from('building_activities')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(10);
       if (error) throw error;
-      return data;
+      
+      return data.map(activity => ({
+        id: activity.id,
+        action: activity.description,
+        activity_type: activity.type,
+        performed_by: activity.performed_by,
+        created_at: activity.created_at,
+        metadata: {
+          building_id: activity.building_id
+        }
+      }));
     },
     enabled: !!userData?.id,
     staleTime: 60000,
   });
 
   // Fetch user profile with caching
-  const { data: profile = {} } = useQuery<UserProfile>({
+  const { data: profile = {} as UserProfile } = useQuery<UserProfile>({
     queryKey: ['userProfile', userData?.id],
     queryFn: async () => {
       if (!userData?.id) throw new Error('No user ID available');
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, username, first_name, last_name, title, avatar_url')
         .eq('id', userData.id)
         .single();
       
@@ -183,7 +193,6 @@ export const useDashboardData = () => {
 
       if (error) throw error;
 
-      // Optimistically update the cache
       queryClient.setQueryData(['userIssues', userData?.id], (old: UserIssue[] | undefined) =>
         old?.map(issue =>
           issue.id === id ? { ...issue, seen: true } : issue
@@ -203,15 +212,15 @@ export const useDashboardData = () => {
         return;
       }
 
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
+      const { data: userRole, error: roleError } = await supabase
+        .from('user_roles')
         .select('role')
-        .eq('id', user.id)
+        .eq('user_id', user.id)
         .single();
 
-      if (profileError) throw profileError;
+      if (roleError) throw roleError;
 
-      if (profile?.role !== 'admin') {
+      if (userRole?.role !== 'admin') {
         navigate('/dashboard');
       }
     } catch (error) {

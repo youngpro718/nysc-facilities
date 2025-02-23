@@ -37,7 +37,7 @@ export default function UserDashboard() {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   // Set up real-time subscriptions
-  useDashboardSubscriptions({ userId: profile.id });
+  useDashboardSubscriptions({ profileId: profile?.id });
 
   if (dashboardError) {
     return (
@@ -92,4 +92,3 @@ export default function UserDashboard() {
     </ErrorBoundary>
   );
 }
-
