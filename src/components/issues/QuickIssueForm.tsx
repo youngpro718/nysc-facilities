@@ -18,19 +18,33 @@ import { IssueTypeField } from "./form-sections/IssueTypeField";
 import { ProblemTypeField } from "./form-sections/ProblemTypeField";
 import { DescriptionField } from "./form-sections/DescriptionField";
 import { LocationFields } from "./form-sections/LocationFields";
+import type { UserAssignment } from "@/types/dashboard";
 
-export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
+interface QuickIssueFormProps {
+  onSuccess?: () => void;
+  assignedRooms?: UserAssignment[];
+}
+
+export function QuickIssueForm({ onSuccess, assignedRooms }: QuickIssueFormProps) {
   const [isManualTitle, setIsManualTitle] = useState(false);
   const [selectedIssueType, setSelectedIssueType] = useState<StandardizedIssueType | null>(null);
   const { uploading, selectedPhotos, handlePhotoUpload, setSelectedPhotos } = usePhotoUpload();
   const queryClient = useQueryClient();
+
+  // Find primary assigned room
+  const primaryRoom = assignedRooms?.find(room => room.is_primary);
 
   const form = useForm<FormData>({
     defaultValues: {
       priority: 'medium',
       description: '',
       due_date: undefined,
-      date_info: ''
+      date_info: '',
+      ...(primaryRoom && {
+        building_id: primaryRoom.building_id,
+        floor_id: primaryRoom.floor_id,
+        room_id: primaryRoom.room_id
+      })
     }
   });
 
@@ -56,7 +70,7 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
           seen: false,
           due_date: formattedDueDate,
           date_info: data.date_info || null,
-          created_by: user.id  // Make sure we set the created_by field
+          created_by: user.id
         });
       
       if (error) throw error;
@@ -144,7 +158,7 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
         )}
 
         <DescriptionField form={form} />
-        <LocationFields form={form} />
+        <LocationFields form={form} disableFields={!!primaryRoom} />
 
         <div className="space-y-4">
           <FormField

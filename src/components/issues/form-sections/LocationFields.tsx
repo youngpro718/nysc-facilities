@@ -9,9 +9,10 @@ import { Building, Floor, Room } from "../types/locationTypes";
 
 interface LocationFieldsProps {
   form: UseFormReturn<FormData>;
+  disableFields?: boolean;
 }
 
-export function LocationFields({ form }: LocationFieldsProps) {
+export function LocationFields({ form, disableFields = false }: LocationFieldsProps) {
   const fetchBuildings = async (): Promise<Building[]> => {
     const { data, error } = await supabase
       .from('buildings')
@@ -79,6 +80,7 @@ export function LocationFields({ form }: LocationFieldsProps) {
                 form.setValue('room_id', undefined);
               }} 
               value={field.value}
+              disabled={disableFields}
             >
               <FormControl>
                 <SelectTrigger>
@@ -110,7 +112,7 @@ export function LocationFields({ form }: LocationFieldsProps) {
                 form.setValue('room_id', undefined);
               }} 
               value={field.value}
-              disabled={!buildingId}
+              disabled={disableFields || !buildingId}
             >
               <FormControl>
                 <SelectTrigger>
@@ -139,7 +141,7 @@ export function LocationFields({ form }: LocationFieldsProps) {
             <Select 
               onValueChange={field.onChange} 
               value={field.value}
-              disabled={!floorId}
+              disabled={disableFields || !floorId}
             >
               <FormControl>
                 <SelectTrigger>
