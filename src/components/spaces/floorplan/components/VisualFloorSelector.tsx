@@ -21,6 +21,8 @@ export function VisualFloorSelector({
   selectedFloorId,
   onFloorSelect,
 }: VisualFloorSelectorProps) {
+  console.log('VisualFloorSelector props:', { floors, selectedFloorId });
+
   // Group floors by building
   const floorsByBuilding = floors.reduce((acc, floor) => {
     const buildingName = floor.buildings?.name || 'Unknown Building';
@@ -31,19 +33,23 @@ export function VisualFloorSelector({
     return acc;
   }, {} as Record<string, Floor[]>);
 
+  console.log('Grouped floors:', floorsByBuilding);
+
   return (
     <ScrollArea className="h-[400px]">
       <div className="p-4 space-y-4">
-        {Object.entries(floorsByBuilding).map(([buildingName, buildingFloors]) => (
-          <div key={buildingName} className="space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Building2 className="h-4 w-4" />
-              <span>{buildingName}</span>
-            </div>
-            <div className="space-y-1 pl-6">
-              {buildingFloors
-                .sort((a, b) => b.floor_number - a.floor_number) // Sort floors in descending order
-                .map((floor) => (
+        {Object.entries(floorsByBuilding).map(([buildingName, buildingFloors]) => {
+          console.log('Rendering building:', buildingName, 'with floors:', buildingFloors);
+          return (
+            <div key={buildingName} className="space-y-2">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Building2 className="h-4 w-4" />
+                <span>{buildingName}</span>
+              </div>
+              <div className="space-y-1 pl-6">
+                {buildingFloors
+                  .sort((a, b) => b.floor_number - a.floor_number) // Sort floors in descending order
+                  .map((floor) => (
                   <button
                     key={floor.id}
                     onClick={() => onFloorSelect(floor.id)}
@@ -57,9 +63,10 @@ export function VisualFloorSelector({
                     <span>{floor.name}</span>
                   </button>
                 ))}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </ScrollArea>
   );
