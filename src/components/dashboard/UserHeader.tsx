@@ -1,6 +1,5 @@
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import type { UserProfile } from "@/types/dashboard";
 
 interface UserHeaderProps {
@@ -28,4 +27,3 @@ export function UserHeader({ profile, isMobile }: UserHeaderProps) {
     </div>
   );
 }
-
