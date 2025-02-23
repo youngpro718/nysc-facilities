@@ -49,7 +49,9 @@ export async function fetchDataWithProgress<T>(
 
 export async function downloadPdf(docDefinition: TDocumentDefinitions, filename: string) {
   try {
-    pdfMake.vfs = pdfFonts.pdfMake?.vfs;
+    // Explicitly cast pdfFonts to any to handle the vfs property
+    const fonts = pdfFonts as any;
+    pdfMake.vfs = fonts.pdfMake?.vfs;
     const pdfDocGenerator = pdfMake.createPdf(docDefinition);
 
     pdfDocGenerator.getBlob((blob) => {
@@ -128,4 +130,3 @@ export async function scheduleReport(report: Omit<ScheduledReport, 'id'>) {
 
 export { downloadPdf as downloadReport };
 export type { ReportTemplate, ScheduledReport };
-
