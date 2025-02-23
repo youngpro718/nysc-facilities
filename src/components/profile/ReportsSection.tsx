@@ -13,7 +13,7 @@ import {
   fetchReportTemplates, 
   fetchScheduledReports, 
   createReportTemplate 
-} from "./reports/reportUtils";
+} from "./reports/reportService";
 import type { ReportTemplate, ScheduledReport } from "./reports/reportUtils";
 import { 
   fetchFloorplanReportData, 
