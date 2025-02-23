@@ -5,6 +5,7 @@ import type { UserProfile } from "@/types/dashboard";
 interface UserHeaderProps {
   profile: UserProfile;
   isMobile: boolean;
+  onReportIssue: () => void;
 }
 
 export function UserHeader({ profile, isMobile }: UserHeaderProps) {
