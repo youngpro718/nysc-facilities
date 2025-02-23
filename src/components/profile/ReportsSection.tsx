@@ -149,7 +149,7 @@ export function ReportsSection() {
       
       setNewTemplateName("");
       setNewTemplateDesc("");
-      loadTemplates();
+      await loadTemplates();
     } catch (error) {
       console.error('Template creation error:', error);
       toast({
