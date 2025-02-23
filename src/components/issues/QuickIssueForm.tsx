@@ -36,6 +36,9 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
 
   const createIssueMutation = useMutation({
     mutationFn: async (data: FormData) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No authenticated user found');
+
       const formattedDueDate = data.due_date ? new Date(data.due_date).toISOString() : null;
       
       const { error } = await supabase
@@ -52,7 +55,8 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
           photos: selectedPhotos,
           seen: false,
           due_date: formattedDueDate,
-          date_info: data.date_info || null
+          date_info: data.date_info || null,
+          created_by: user.id  // Make sure we set the created_by field
         });
       
       if (error) throw error;
@@ -64,6 +68,7 @@ export function QuickIssueForm({ onSuccess }: { onSuccess?: () => void }) {
       onSuccess?.();
     },
     onError: (error: any) => {
+      console.error('Error creating issue:', error);
       toast.error(error.message || "Failed to report issue");
     }
   });

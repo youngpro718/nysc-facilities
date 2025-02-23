@@ -165,10 +165,15 @@ export const useDashboardData = () => {
             name
           )
         `)
-        .eq('created_by', userId)
+        .eq('created_by', userId)  // Make sure we filter by the current user's ID
         .order('created_at', { ascending: false });
 
-      if (issuesError) throw issuesError;
+      if (issuesError) {
+        console.error('Error fetching user issues:', issuesError);
+        throw issuesError;
+      }
+      
+      console.log('Fetched user issues:', issuesData);
       setUserIssues(issuesData);
 
     } catch (error) {
