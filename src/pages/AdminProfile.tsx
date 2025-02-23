@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DatabaseSection } from "@/components/profile/DatabaseSection";
-import { ReportsSection } from "@/components/profile/ReportsSection";
+import { ReportsSection } from "@/components/profile/reports/ReportsSection";
 import { SecuritySection } from "@/components/profile/SecuritySection";
 import { AdminProfileHeader } from "@/components/profile/sections/AdminProfileHeader";
 import { SystemSettingsSection } from "@/components/profile/sections/SystemSettingsSection";

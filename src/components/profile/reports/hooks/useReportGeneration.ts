@@ -34,25 +34,25 @@ export function useReportGeneration() {
       
       switch (type) {
         case 'floorplan':
-          reportData = await fetchFloorplanReportData(progressCallback);
+          reportData = await fetchFloorplanReportData();
           break;
         case 'lighting':
-          reportData = await fetchLightingReport(progressCallback);
+          reportData = await fetchLightingReport();
           break;
         case 'occupant':
-          reportData = await fetchOccupantReport(progressCallback);
+          reportData = await fetchOccupantReport();
           break;
         case 'key':
-          reportData = await fetchKeyReport(progressCallback);
+          reportData = await fetchKeyReport();
           break;
         case 'room':
-          reportData = await fetchRoomReport(progressCallback);
+          reportData = await fetchRoomReport();
           break;
         case 'issue':
-          reportData = await fetchIssueReport(progressCallback);
+          reportData = await fetchIssueReport();
           break;
         case 'database':
-          reportData = await fetchFullDatabaseReport(progressCallback);
+          reportData = await fetchFullDatabaseReport();
           break;
         default:
           throw new Error('Invalid report type');
