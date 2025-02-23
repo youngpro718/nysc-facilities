@@ -7,6 +7,7 @@ import { AuthorizationError } from "./types/errors";
 export const useAdminCheck = () => {
   const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false); // Add isAdmin state
   const navigate = useNavigate();
 
   const checkUserRoleAndFetchData = useCallback(async () => {
@@ -27,13 +28,17 @@ export const useAdminCheck = () => {
       if (roleError) throw new AuthorizationError(`Role check error: ${roleError.message}`);
       if (!userRole) throw new AuthorizationError('No role found for user');
 
-      if (userRole.role !== 'admin') {
+      const hasAdminRole = userRole.role === 'admin';
+      setIsAdmin(hasAdminRole);
+
+      if (!hasAdminRole) {
         navigate('/dashboard');
         throw new AuthorizationError('User does not have admin privileges');
       }
     } catch (error) {
       console.error('Error checking user role:', error);
       setError(error as Error);
+      setIsAdmin(false);
     } finally {
       setIsLoading(false);
     }
@@ -43,5 +48,6 @@ export const useAdminCheck = () => {
     checkUserRoleAndFetchData();
   }, [checkUserRoleAndFetchData]);
 
-  return { isLoading, error, checkUserRoleAndFetchData };
+  return { isLoading, error, isAdmin, checkUserRoleAndFetchData };
 };
+
