@@ -1,6 +1,6 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { QuickIssueForm } from "./QuickIssueForm";
+import { IssueWizard } from "./wizard/IssueWizard";
 import type { UserAssignment } from "@/types/dashboard";
 
 export interface IssueDialogProps {
@@ -17,15 +17,15 @@ export function IssueDialog({ open, onOpenChange, onSuccess, assignedRooms }: Is
         <DialogHeader>
           <DialogTitle>Report an Issue</DialogTitle>
         </DialogHeader>
-        <QuickIssueForm 
+        <IssueWizard 
           onSuccess={() => {
             onSuccess?.();
             onOpenChange(false);
           }}
+          onCancel={() => onOpenChange(false)}
           assignedRooms={assignedRooms}
         />
       </DialogContent>
     </Dialog>
   );
 }
-
