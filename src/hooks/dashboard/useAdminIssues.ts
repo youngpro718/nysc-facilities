@@ -1,18 +1,26 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { IssueError } from "./types/errors";
 import type { UserIssue } from "@/types/dashboard";
 
 export const useAdminIssues = () => {
   const { data: allIssues = [] } = useQuery<UserIssue[]>({
     queryKey: ['allIssues'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('issues')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await supabase
+          .from('issues')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw new IssueError(`Failed to fetch all issues: ${error.message}`);
+        if (!data) throw new IssueError('No issues data returned');
+        return data;
+      } catch (error) {
+        console.error('Error fetching all issues:', error);
+        throw new IssueError(error instanceof Error ? error.message : 'Failed to fetch all issues');
+      }
     },
     staleTime: 30000,
   });

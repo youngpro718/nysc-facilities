@@ -2,6 +2,7 @@
 import { useCallback, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { AuthorizationError } from "./types/errors";
 
 export const useAdminCheck = () => {
   const [error, setError] = useState<Error | null>(null);
@@ -10,22 +11,25 @@ export const useAdminCheck = () => {
 
   const checkUserRoleAndFetchData = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) throw new AuthorizationError(`Authentication error: ${authError.message}`);
       if (!user) {
         navigate('/login');
-        return;
+        throw new AuthorizationError('No authenticated user found');
       }
 
       const { data: userRole, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (roleError) throw roleError;
+      if (roleError) throw new AuthorizationError(`Role check error: ${roleError.message}`);
+      if (!userRole) throw new AuthorizationError('No role found for user');
 
-      if (userRole?.role !== 'admin') {
+      if (userRole.role !== 'admin') {
         navigate('/dashboard');
+        throw new AuthorizationError('User does not have admin privileges');
       }
     } catch (error) {
       console.error('Error checking user role:', error);
