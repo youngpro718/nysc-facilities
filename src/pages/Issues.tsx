@@ -1,6 +1,7 @@
+
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { QuickIssueForm } from "@/components/issues/QuickIssueForm";
+import { IssueDialog } from "@/components/issues/IssueDialog";
 import { useState } from "react";
 import { IssuesList } from "@/components/issues/IssuesList";
 
@@ -18,15 +19,13 @@ const Issues = () => {
       </div>
 
       <div className="space-y-6">
-        {showIssueForm ? (
-          <QuickIssueForm onSuccess={() => setShowIssueForm(false)} />
-        ) : (
-          <div className="space-y-6">
-            <div className="overflow-y-auto -mx-4 sm:mx-0 px-4 sm:px-0">
-              <IssuesList />
-            </div>
-          </div>
-        )}
+        <IssueDialog 
+          open={showIssueForm} 
+          onOpenChange={setShowIssueForm}
+        />
+        <div className="overflow-y-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+          <IssuesList />
+        </div>
       </div>
     </div>
   );
