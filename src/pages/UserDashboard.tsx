@@ -13,9 +13,11 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { Loader2 } from "lucide-react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function UserDashboard() {
   const [showReportIssue, setShowReportIssue] = useState(false);
+  const { isLoading, isAuthenticated } = useAuth();
   const {
     profile,
     assignedRooms,
@@ -38,6 +40,14 @@ export default function UserDashboard() {
 
   // Set up real-time subscriptions
   useDashboardSubscriptions({ userId: profile?.id });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (dashboardError) {
     return (
