@@ -1,3 +1,4 @@
+
 export interface RoomData {
   id: string;
   assigned_at: string;
@@ -26,6 +27,9 @@ export interface UserAssignment {
   key_type?: 'standard' | 'restricted' | 'master';
   access_areas?: string;
   expiry_date?: string;
+  building_id?: string;  // Added
+  floor_id?: string;     // Added
+  room_id?: string;      // Added
 }
 
 export interface UserIssue {
@@ -92,3 +96,4 @@ export interface AdminDashboardData {
   activities: Activity[];
   handleMarkAsSeen: (id: string) => void;
 }
+
