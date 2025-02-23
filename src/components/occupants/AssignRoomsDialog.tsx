@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
@@ -33,17 +33,30 @@ export function AssignRoomsDialog({
   const { data: availableRooms, isLoading: isLoadingRooms } = useRoomData(authError);
   const { data: currentOccupants, isLoading: isLoadingOccupants } = useRoomOccupants(selectedRoom, authError);
 
-  const filteredRooms = availableRooms?.filter(room => {
+  // Memoize the filtered rooms to prevent unnecessary recalculations
+  const filteredRooms = useCallback(() => {
+    if (!availableRooms) return [];
     const searchStr = searchQuery.toLowerCase();
-    return (
+    return availableRooms.filter(room => (
       room.name.toLowerCase().includes(searchStr) ||
       room.room_number.toLowerCase().includes(searchStr) ||
       room.floors?.name.toLowerCase().includes(searchStr) ||
       room.floors?.buildings?.name.toLowerCase().includes(searchStr)
-    );
-  }) || [];
+    ));
+  }, [availableRooms, searchQuery]);
+
+  // Reset state when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setSelectedRoom("");
+      setIsPrimaryAssignment(false);
+      setSearchQuery("");
+    }
+  }, [open]);
 
   const handleAssign = async () => {
+    if (!selectedRoom) return;
+
     const selectedRoomDetails = availableRooms?.find(r => r.id === selectedRoom);
     
     if (selectedRoomDetails?.capacity && 
@@ -85,7 +98,7 @@ export function AssignRoomsDialog({
               onSearchChange={setSearchQuery}
               selectedRoom={selectedRoom}
               onRoomChange={setSelectedRoom}
-              filteredRooms={filteredRooms}
+              filteredRooms={filteredRooms()}
               isLoadingRooms={isLoadingRooms}
             />
 
