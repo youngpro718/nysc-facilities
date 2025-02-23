@@ -1,4 +1,3 @@
-
 import React from "react";  
 import { Lightbulb } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -11,35 +10,44 @@ import {
 } from "@/components/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { calculateRoomLightingStatus } from "@/utils/dashboardUtils";
 
 interface LightingStatusIndicatorProps {
   roomId?: string;
 }
 
 export function LightingStatusIndicator({ roomId }: LightingStatusIndicatorProps) {
-  const { data: roomLighting } = useQuery({
-    queryKey: ['room-lighting-status', roomId],
+  const { data: roomData } = useQuery({
+    queryKey: ['room', roomId],
     queryFn: async () => {
       if (!roomId) return null;
       
-      const { data, error } = await supabase
-        .from('room_lighting_status')
-        .select('*')
-        .eq('room_id', roomId)
+      const { data: room, error } = await supabase
+        .from('spaces')
+        .select(`
+          id,
+          name,
+          room_number,
+          lighting_fixtures (
+            id,
+            status,
+            bulb_count
+          )
+        `)
+        .eq('id', roomId)
         .maybeSingle();
 
       if (error) {
-        console.error('Error fetching room lighting status:', error);
+        console.error('Error fetching room data:', error);
         return null;
       }
 
-      console.log("Room lighting status:", data);
-      return data;
+      return room;
     },
     enabled: !!roomId
   });
 
-  if (!roomId || !roomLighting) {
+  if (!roomId || !roomData) {
     return (
       <TooltipProvider>
         <Tooltip>
@@ -56,6 +64,8 @@ export function LightingStatusIndicator({ roomId }: LightingStatusIndicatorProps
       </TooltipProvider>
     );
   }
+
+  const roomLighting = calculateRoomLightingStatus(roomData);
 
   const getStatusColor = () => {
     if (roomLighting.non_working_fixtures > 0) {

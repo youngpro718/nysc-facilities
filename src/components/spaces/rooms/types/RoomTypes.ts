@@ -28,6 +28,10 @@ export enum StorageType {
 export interface Building {
   id: string;
   name: string;
+  address: string;
+  status: 'active' | 'inactive' | 'under_maintenance';
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Floor {

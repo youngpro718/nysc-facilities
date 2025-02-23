@@ -1,4 +1,3 @@
-
 import { UseFormReturn } from "react-hook-form";
 import { Badge } from "@/components/ui/badge";
 import { EditSpaceFormData } from "../../schemas/editSpaceSchema";
@@ -22,8 +21,14 @@ export function HistoryTab({ form }: HistoryTabProps) {
       <div className="space-y-4">
         {form.watch("statusHistory")?.map((entry: any, index: number) => (
           <div key={index} className="flex items-center gap-2">
-            <Badge variant={entry.status === 'active' ? 'default' : 'destructive'}>
-              {entry.status}
+            <Badge 
+              variant={
+                entry.status === 'active' ? 'default' :
+                entry.status === 'under_maintenance' ? 'secondary' :
+                'destructive'
+              }
+            >
+              {entry.status.replace(/_/g, ' ')}
             </Badge>
             <span className="text-sm text-muted-foreground">
               {format(new Date(entry.changed_at), "PPP")}

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { IssueDialog } from "@/components/issues/IssueDialog";
 import { ReportedIssuesCard } from "@/components/dashboard/ReportedIssuesCard";
@@ -11,9 +10,87 @@ import { useDashboardData } from "@/hooks/useDashboardData";
 import { useDashboardSubscriptions } from "@/hooks/useDashboardSubscriptions";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useIsMobile } from "@/hooks/useIsMobile";
-import { Loader2 } from "lucide-react";
+import { Loader2, ChevronDown } from "lucide-react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+interface DashboardSectionProps {
+  id: string;
+  title: string;
+  children: React.ReactNode;
+  isCollapsible?: boolean;
+  defaultExpanded?: boolean;
+  priority?: 'high' | 'medium' | 'low';
+  badge?: number;
+}
+
+function DashboardSection({ 
+  id, 
+  title, 
+  children, 
+  isCollapsible = true,
+  defaultExpanded = true,
+  priority = 'medium',
+  badge
+}: DashboardSectionProps) {
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+  const isMobile = useIsMobile();
+
+  // Always make sections collapsible on iPhone
+  const shouldBeCollapsible = isMobile;
+
+  return (
+    <div 
+      id={id}
+      className={cn(
+        "transition-all duration-200 rounded-lg",
+        priority === 'high' ? 'order-first' : 
+        priority === 'low' ? 'order-last' : '',
+        !shouldBeCollapsible && 'bg-card border shadow-sm'
+      )}
+    >
+      {shouldBeCollapsible && (
+        <Button
+          variant="ghost"
+          className={cn(
+            "w-full flex items-center justify-between py-3 px-4",
+            "rounded-lg bg-card border shadow-sm",
+            isExpanded && "rounded-b-none border-b-0"
+          )}
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-base font-semibold">{title}</span>
+            {badge && badge > 0 && (
+              <span className="bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-xs font-medium">
+                {badge}
+              </span>
+            )}
+          </div>
+          <ChevronDown 
+            className={cn(
+              "h-5 w-5 transition-transform duration-200",
+              isExpanded ? "transform rotate-180" : ""
+            )} 
+          />
+        </Button>
+      )}
+      <div className={cn(
+        "transition-all duration-200",
+        shouldBeCollapsible ? [
+          isExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0",
+          "overflow-hidden",
+          isExpanded && "bg-card border border-t-0 rounded-b-lg shadow-sm"
+        ] : "h-auto"
+      )}>
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export default function UserDashboard() {
   const [showReportIssue, setShowReportIssue] = useState(false);
@@ -24,7 +101,7 @@ export default function UserDashboard() {
     userIssues,
     handleMarkAsSeen,
     error: dashboardError
-  } = useDashboardData(false); // Explicitly pass false for user dashboard
+  } = useDashboardData(false);
 
   const { 
     notifications, 
@@ -34,9 +111,9 @@ export default function UserDashboard() {
   } = useNotifications();
 
   const isMobile = useIsMobile();
-
-  // Calculate unread notifications
   const unreadCount = notifications.filter(n => !n.read).length;
+  const hasUnreadNotifications = unreadCount > 0;
+  const hasActiveIssues = userIssues.length > 0;
 
   // Set up real-time subscriptions
   useDashboardSubscriptions({ userId: profile?.id });
@@ -59,38 +136,70 @@ export default function UserDashboard() {
 
   return (
     <ErrorBoundary>
-      <div className="container mx-auto p-4 max-w-6xl">
-        <UserHeader 
-          profile={profile}
-          isMobile={isMobile}
-          onReportIssue={() => setShowReportIssue(true)}
-        />
-
-        <div className="grid gap-3 sm:gap-6">
-          <QuickAccess 
-            onReportIssue={() => setShowReportIssue(true)} 
-            unreadNotifications={unreadCount}
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-4 sm:px-6 lg:px-8 max-w-6xl">
+          <UserHeader 
+            profile={profile}
+            isMobile={isMobile}
+            onReportIssue={() => setShowReportIssue(true)}
           />
-          
-          <div id="notifications">
-            <NotificationCard 
-              notifications={notifications}
-              onMarkAsRead={markAsRead}
-              onMarkAllAsRead={markAllAsRead}
-            />
-          </div>
 
-          <div id="reported-issues">
-            <ReportedIssuesCard issues={userIssues} />
-          </div>
+          <ScrollArea className="h-[calc(100vh-5rem)]">
+            <div className="space-y-3 pb-20">
+              <DashboardSection 
+                id="quick-access"
+                title="Quick Access"
+                isCollapsible={false}
+                priority="high"
+              >
+                <QuickAccess 
+                  onReportIssue={() => setShowReportIssue(true)} 
+                  unreadNotifications={unreadCount}
+                />
+              </DashboardSection>
 
-          <div id="assigned-rooms">
-            <AssignedRoomsCard rooms={assignedRooms} />
-          </div>
+              <DashboardSection 
+                id="notifications"
+                title="Notifications"
+                defaultExpanded={hasUnreadNotifications}
+                priority={hasUnreadNotifications ? 'high' : 'medium'}
+                badge={unreadCount}
+              >
+                <NotificationCard 
+                  notifications={notifications}
+                  onMarkAsRead={markAsRead}
+                  onMarkAllAsRead={markAllAsRead}
+                />
+              </DashboardSection>
 
-          <div id="assigned-keys">
-            <AssignedKeysCard keys={[]} />
-          </div>
+              <DashboardSection 
+                id="reported-issues"
+                title="Reported Issues"
+                defaultExpanded={hasActiveIssues}
+                priority={hasActiveIssues ? 'high' : 'medium'}
+                badge={userIssues.length}
+              >
+                <ReportedIssuesCard issues={userIssues} />
+              </DashboardSection>
+
+              <DashboardSection 
+                id="assigned-rooms"
+                title="Assigned Rooms"
+                priority="medium"
+                badge={assignedRooms.length}
+              >
+                <AssignedRoomsCard rooms={assignedRooms} />
+              </DashboardSection>
+
+              <DashboardSection 
+                id="assigned-keys"
+                title="Assigned Keys"
+                priority="medium"
+              >
+                <AssignedKeysCard keys={[]} />
+              </DashboardSection>
+            </div>
+          </ScrollArea>
         </div>
 
         <IssueDialog 

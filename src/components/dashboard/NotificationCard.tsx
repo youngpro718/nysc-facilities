@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Bell, Check, Clock } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import { cn } from "@/lib/utils";
 
 export interface Notification {
   id: string;
@@ -23,6 +25,7 @@ interface NotificationCardProps {
 
 export function NotificationCard({ notifications, onMarkAsRead, onMarkAllAsRead }: NotificationCardProps) {
   const unreadCount = notifications.filter(n => !n.read).length;
+  const isMobile = useIsMobile();
 
   const getNotificationIcon = (type: Notification['type']) => {
     switch (type) {
@@ -38,11 +41,15 @@ export function NotificationCard({ notifications, onMarkAsRead, onMarkAllAsRead 
   };
 
   return (
-    <Card className="p-6">
-      <div className="flex items-center justify-between mb-4">
+    <Card className="h-full">
+      <div className={cn(
+        "flex items-center justify-between",
+        "p-4 sm:p-6",
+        "border-b"
+      )}>
         <div className="flex items-center gap-2">
           <Bell className="h-5 w-5 text-muted-foreground" />
-          <h2 className="text-2xl font-semibold">Notifications</h2>
+          <h2 className="text-lg sm:text-2xl font-semibold">Notifications</h2>
         </div>
         <div className="flex items-center gap-2">
           {unreadCount > 0 && (
@@ -52,45 +59,54 @@ export function NotificationCard({ notifications, onMarkAsRead, onMarkAllAsRead 
           )}
           <Button 
             variant="outline" 
-            size="sm"
+            size={isMobile ? "sm" : "default"}
             onClick={onMarkAllAsRead}
             disabled={unreadCount === 0}
+            className="whitespace-nowrap"
           >
-            Mark all as read
+            {isMobile ? "Mark all" : "Mark all as read"}
           </Button>
         </div>
       </div>
       
-      <ScrollArea className="h-[300px] pr-4">
+      <ScrollArea className={cn(
+        "h-[300px] sm:h-[400px]",
+        "px-4 sm:px-6"
+      )}>
         {notifications.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-8 text-muted-foreground">
             <Bell className="h-8 w-8" />
             <p>No notifications</p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2 py-4">
             {notifications.map((notification) => (
               <div
                 key={notification.id}
-                className={`group relative rounded-lg border p-4 transition-colors hover:bg-accent ${
-                  !notification.read ? 'bg-muted/50' : ''
-                }`}
+                className={cn(
+                  "group relative rounded-lg border p-3 sm:p-4",
+                  "transition-colors hover:bg-accent",
+                  !notification.read ? 'bg-muted/50' : '',
+                  "cursor-pointer"
+                )}
                 onClick={() => !notification.read && onMarkAsRead(notification.id)}
               >
-                <div className="flex items-start gap-4">
-                  <div className="mt-1">{getNotificationIcon(notification.type)}</div>
-                  <div className="flex-1 space-y-1">
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <div className="mt-1 shrink-0">
+                    {getNotificationIcon(notification.type)}
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex items-center gap-2">
-                      <p className="font-medium">{notification.title}</p>
+                      <p className="font-medium truncate">{notification.title}</p>
                       {!notification.read && (
-                        <Badge variant="default" className="text-[10px]">New</Badge>
+                        <Badge variant="default" className="text-[10px] shrink-0">New</Badge>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground line-clamp-2 sm:line-clamp-none">
                       {notification.message}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {format(new Date(notification.created_at), "MMM d, h:mm a")}
+                      {format(new Date(notification.created_at), isMobile ? "MMM d, h:mm a" : "PPp")}
                     </p>
                   </div>
                 </div>

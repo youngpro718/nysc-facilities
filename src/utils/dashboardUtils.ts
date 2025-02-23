@@ -1,12 +1,13 @@
 export interface LightingFixture {
   id: string;
   bulb_count: number;
-  status: 'working' | 'not_working';
+  status: 'working' | 'not_working' | 'maintenance' | 'functional' | 'maintenance_needed' | 'non_functional' | 'pending_maintenance' | 'scheduled_replacement';
 }
 
 export interface Room {
   id: string;
   name: string;
+  room_number?: string;
   lighting_fixtures?: LightingFixture[];
 }
 
@@ -32,6 +33,34 @@ export interface BuildingStats {
   totalFixtures: number;
 }
 
+export interface RoomLightingStatus {
+  room_id: string;
+  room_name: string;
+  room_number: string | null;
+  total_fixtures: number;
+  working_fixtures: number;
+  non_working_fixtures: number;
+}
+
+const isWorkingStatus = (status: string) => {
+  return status === 'working' || status === 'functional';
+};
+
+export const calculateRoomLightingStatus = (room: Room): RoomLightingStatus => {
+  const total_fixtures = room.lighting_fixtures?.length || 0;
+  const working_fixtures = room.lighting_fixtures?.filter(fixture => isWorkingStatus(fixture.status)).length || 0;
+  const non_working_fixtures = total_fixtures - working_fixtures;
+
+  return {
+    room_id: room.id,
+    room_name: room.name,
+    room_number: room.room_number || null,
+    total_fixtures,
+    working_fixtures,
+    non_working_fixtures
+  };
+};
+
 export const calculateBuildingStats = (building: Building): BuildingStats => {
   const floorCount = building.floors?.length || 0;
   const roomCount =
@@ -48,7 +77,7 @@ export const calculateBuildingStats = (building: Building): BuildingStats => {
       room.lighting_fixtures?.forEach(fixture => {
         const fixtureCount = fixture.bulb_count || 0;
         totalFixtures += fixtureCount;
-        if (fixture.status === 'working') {
+        if (isWorkingStatus(fixture.status)) {
           workingFixtures += fixtureCount;
         }
       });

@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Building, UserIssue, Activity } from "@/types/dashboard";
@@ -85,7 +84,7 @@ export const useAdminDashboardData = () => {
         }
       }
 
-      // Fetch only unseen issues that have photos
+      // Fetch only unseen, unresolved issues that have photos
       const { data: issuesData, error: issuesError } = await supabase
         .from('issues')
         .select(`
@@ -112,6 +111,7 @@ export const useAdminDashboardData = () => {
           )
         `)
         .eq('seen', false)
+        .neq('status', 'resolved')  // Only show unresolved issues
         .not('photos', 'eq', '{}')
         .not('photos', 'is', null)
         .order('created_at', { ascending: false });

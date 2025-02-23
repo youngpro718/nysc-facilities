@@ -1,4 +1,3 @@
-
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -323,7 +322,7 @@ export function EditPropertiesPanel({ selectedObject, onClose, onUpdate }: EditP
                     <SelectContent>
                       <SelectItem value="active">Active</SelectItem>
                       <SelectItem value="inactive">Inactive</SelectItem>
-                      <SelectItem value="maintenance">Maintenance</SelectItem>
+                      <SelectItem value="under_maintenance">Under Maintenance</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

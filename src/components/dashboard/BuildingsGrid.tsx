@@ -1,4 +1,3 @@
-
 import { BuildingCard } from "./BuildingCard";
 import { BuildingCardSkeleton } from "./BuildingCardSkeleton";
 import { calculateBuildingStats } from "@/utils/dashboardUtils";
@@ -12,6 +11,7 @@ export interface Issue {
   photos?: string[];
   created_at: string;
   seen: boolean;
+  status: string;
 }
 
 export interface Activity {
@@ -34,8 +34,8 @@ interface BuildingsGridProps {
 }
 
 const buildingImages = [
-  "/lovable-uploads/83d441a4-13af-461a-800b-3b483c153ed4.png",
   "/lovable-uploads/aed346ca-c3c6-4e0c-b236-528b0e54e20c.png",
+  "/lovable-uploads/83d441a4-13af-461a-800b-3b483c153ed4.png",
 ];
 
 export function BuildingsGrid({
@@ -63,7 +63,9 @@ export function BuildingsGrid({
         const buildingIssues =
           issues?.filter(
             (issue) =>
-              issue.building_id === building.id && issue.photos?.length > 0
+              issue.building_id === building.id && 
+              issue.photos?.length > 0 &&
+              issue.status !== 'resolved'
           ) || [];
 
         const buildingActivities =

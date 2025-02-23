@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -15,48 +14,74 @@ import {
   ShieldAlert
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getTypeIcon } from "./utils/iconUtils.tsx";
+
+interface LightingStats {
+  functionalPercentage: number;
+  byType: {
+    type: string;
+    total: number;
+    functional_count: number;
+    needs_maintenance: number;
+    non_functional: number;
+    needs_replacement: number;
+  }[];
+}
+
+const isWorkingStatus = (status: string) => {
+  return status === 'working' || status === 'functional';
+};
+
+const isMaintenanceStatus = (status: string) => {
+  return status === 'maintenance' || status === 'maintenance_needed' || status === 'pending_maintenance';
+};
+
+const isNonFunctionalStatus = (status: string) => {
+  return status === 'not_working' || status === 'non_functional';
+};
+
+const isReplacementStatus = (status: string) => {
+  return status === 'scheduled_replacement';
+};
 
 export const LightingDashboard = () => {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['lighting-stats'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('lighting_fixture_stats')
-        .select('*');
-      
+      const { data: fixtures, error } = await supabase
+        .from('lighting_fixtures')
+        .select('type, status');
+
       if (error) throw error;
-      
-      // Transform data into aggregated stats
-      const totals = {
-        totalFixtures: data.reduce((sum, row) => sum + row.total, 0),
-        functional: data.reduce((sum, row) => sum + row.functional_count, 0),
-        needsMaintenance: data.reduce((sum, row) => sum + row.needs_maintenance, 0),
-        nonFunctional: data.reduce((sum, row) => sum + row.non_functional, 0),
-        needsReplacement: data.reduce((sum, row) => sum + row.needs_replacement, 0),
+
+      const fixturesByType = fixtures.reduce((acc: Record<string, any[]>, fixture) => {
+        if (!acc[fixture.type]) acc[fixture.type] = [];
+        acc[fixture.type].push(fixture);
+        return acc;
+      }, {});
+
+      const totalFixtures = fixtures.length;
+      const workingFixtures = fixtures.filter(f => isWorkingStatus(f.status)).length;
+
+      const stats: LightingStats = {
+        functionalPercentage: (workingFixtures / totalFixtures) * 100,
+        byType: Object.entries(fixturesByType).map(([type, fixtures]) => ({
+          type,
+          total: fixtures.length,
+          functional_count: fixtures.filter(f => isWorkingStatus(f.status)).length,
+          needs_maintenance: fixtures.filter(f => isMaintenanceStatus(f.status)).length,
+          non_functional: fixtures.filter(f => isNonFunctionalStatus(f.status)).length,
+          needs_replacement: fixtures.filter(f => isReplacementStatus(f.status)).length
+        }))
       };
 
-      return {
-        byType: data,
-        totals,
-        functionalPercentage: (totals.functional / totals.totalFixtures) * 100,
-      };
+      return stats;
     }
   });
 
-  if (isLoading) {
-    return <div>Loading statistics...</div>;
+  if (isLoading || !stats) {
+    return <div>Loading...</div>;
   }
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'emergency':
-        return <ShieldAlert className="h-4 w-4 text-red-500" />;
-      case 'motion_sensor':
-        return <Radar className="h-4 w-4 text-blue-500" />;
-      default:
-        return <Lightbulb className="h-4 w-4 text-yellow-500" />;
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -72,15 +97,15 @@ export const LightingDashboard = () => {
                 <Lightbulb className="h-4 w-4 text-green-500" />
                 <span className="text-sm font-medium">Functional Status</span>
               </div>
-              <span className="text-sm font-bold">{stats?.functionalPercentage.toFixed(1)}%</span>
+              <span className="text-sm font-bold">{stats.functionalPercentage.toFixed(1)}%</span>
             </div>
-            <Progress value={stats?.functionalPercentage} className="h-2" />
+            <Progress value={stats.functionalPercentage} className="h-2" />
           </div>
 
           {/* Type Breakdown */}
           <div className="space-y-4 border-t pt-4">
             <h3 className="text-sm font-medium">Fixtures by Type</h3>
-            {stats?.byType.map((typeStats) => (
+            {stats.byType.map((typeStats) => (
               <div key={typeStats.type} className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -117,7 +142,7 @@ export const LightingDashboard = () => {
               <Activity className="h-4 w-4 text-green-500" />
               <div className="space-y-0.5">
                 <div className="text-xs text-muted-foreground">Total Fixtures</div>
-                <div className="text-sm font-bold">{stats?.totals.totalFixtures}</div>
+                <div className="text-sm font-bold">{stats.byType.reduce((sum, row) => sum + row.total, 0)}</div>
               </div>
             </div>
 
@@ -125,7 +150,7 @@ export const LightingDashboard = () => {
               <Wrench className="h-4 w-4 text-yellow-500" />
               <div className="space-y-0.5">
                 <div className="text-xs text-muted-foreground">Need Maintenance</div>
-                <div className="text-sm font-bold">{stats?.totals.needsMaintenance}</div>
+                <div className="text-sm font-bold">{stats.byType.reduce((sum, row) => sum + row.needs_maintenance, 0)}</div>
               </div>
             </div>
 
@@ -133,7 +158,7 @@ export const LightingDashboard = () => {
               <AlertTriangle className="h-4 w-4 text-red-500" />
               <div className="space-y-0.5">
                 <div className="text-xs text-muted-foreground">Non-Functional</div>
-                <div className="text-sm font-bold">{stats?.totals.nonFunctional}</div>
+                <div className="text-sm font-bold">{stats.byType.reduce((sum, row) => sum + row.non_functional, 0)}</div>
               </div>
             </div>
 
@@ -141,7 +166,7 @@ export const LightingDashboard = () => {
               <AlertCircle className="h-4 w-4 text-purple-500" />
               <div className="space-y-0.5">
                 <div className="text-xs text-muted-foreground">Need Replacement</div>
-                <div className="text-sm font-bold">{stats?.totals.needsReplacement}</div>
+                <div className="text-sm font-bold">{stats.byType.reduce((sum, row) => sum + row.needs_replacement, 0)}</div>
               </div>
             </div>
           </div>

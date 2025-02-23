@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { BuildingError } from "./types/errors";
@@ -10,25 +9,97 @@ export const useBuildingData = (userId?: string) => {
     queryKey: ['buildings'],
     queryFn: async () => {
       try {
-        const { data, error } = await supabase
+        // First fetch buildings with floors
+        const { data: buildingsData, error: buildingsError } = await supabase
           .from('buildings')
-          .select('*');
+          .select(`
+            id,
+            name,
+            address,
+            status,
+            created_at,
+            updated_at,
+            floors (
+              id,
+              name,
+              floor_number,
+              status
+            )
+          `)
+          .eq('status', 'active')
+          .order('name');
 
-        if (error) throw new BuildingError(`Failed to fetch buildings: ${error.message}`);
-        if (!data) throw new BuildingError('No buildings data returned');
-        return data;
+        if (buildingsError) throw buildingsError;
+        if (!buildingsData) throw new Error('No buildings data returned');
+
+        // For each building, fetch rooms and lighting fixtures
+        const buildingsWithDetails = await Promise.all(
+          buildingsData.map(async (building) => {
+            const floorIds = building.floors?.map(f => f.id) || [];
+            
+            // Fetch rooms for all floors in this building
+            const { data: roomsData, error: roomsError } = await supabase
+              .from('rooms')
+              .select(`
+                id,
+                name,
+                room_number,
+                floor_id,
+                status,
+                lighting_fixtures (
+                  id,
+                  name,
+                  type,
+                  status,
+                  bulb_count
+                )
+              `)
+              .in('floor_id', floorIds)
+              .eq('status', 'active');
+
+            if (roomsError) throw roomsError;
+
+            // Group rooms by floor
+            const roomsByFloor = roomsData?.reduce((acc, room) => {
+              if (!acc[room.floor_id]) {
+                acc[room.floor_id] = [];
+              }
+              acc[room.floor_id].push(room);
+              return acc;
+            }, {} as Record<string, any[]>) || {};
+
+            // Combine everything
+            return {
+              ...building,
+              building_floors: building.floors?.map(floor => ({
+                id: floor.id,
+                name: floor.name,
+                floor_number: floor.floor_number
+              })) || [],
+              floors: building.floors?.map(floor => ({
+                ...floor,
+                rooms: (roomsByFloor[floor.id] || []).map(room => ({
+                  ...room,
+                  lighting_fixtures: room.lighting_fixtures || []
+                }))
+              })) || []
+            };
+          })
+        );
+
+        return buildingsWithDetails;
       } catch (error) {
         console.error('Error fetching buildings:', error);
         throw new BuildingError(error instanceof Error ? error.message : 'Failed to fetch buildings');
       }
     },
     enabled: !!userId,
-    staleTime: 300000,
+    staleTime: 300000, // Consider data fresh for 5 minutes
   });
 
-  // Fetch activities
+  // Fetch recent activities
   const { data: activities = [] } = useQuery<Activity[]>({
-    queryKey: ['activities'],
+    queryKey: ['building-activities'],
     queryFn: async () => {
       try {
         const { data, error } = await supabase
@@ -37,27 +108,30 @@ export const useBuildingData = (userId?: string) => {
           .order('created_at', { ascending: false })
           .limit(10);
 
-        if (error) throw new BuildingError(`Failed to fetch activities: ${error.message}`);
-        if (!data) throw new BuildingError('No activities data returned');
+        if (error) throw error;
         
-        return data.map(activity => ({
+        return (data || []).map(activity => ({
           id: activity.id,
-          action: activity.description,
+          action: activity.description, // Map description to action
           activity_type: activity.type,
-          performed_by: activity.performed_by,
-          created_at: activity.created_at,
+          performed_by: activity.performed_by || 'System',
+          created_at: activity.created_at || new Date().toISOString(),
           metadata: {
-            building_id: activity.building_id
+            building_id: activity.building_id || ''
           }
         }));
       } catch (error) {
         console.error('Error fetching activities:', error);
-        throw new BuildingError(error instanceof Error ? error.message : 'Failed to fetch activities');
+        return [];
       }
     },
     enabled: !!userId,
-    staleTime: 60000,
+    staleTime: 60000, // Consider data fresh for 1 minute
   });
 
-  return { buildings, buildingsLoading, activities };
+  return {
+    buildings,
+    buildingsLoading,
+    activities
+  };
 };
