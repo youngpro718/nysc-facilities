@@ -14,14 +14,14 @@ export function ReportHeader({ onShowTemplates, onShowSchedule }: ReportHeaderPr
       <div className="space-x-2">
         <Button
           variant="outline"
-          onClick={onShowTemplates}
+          onClick={() => onShowTemplates()}
         >
           <BookTemplate className="mr-2 h-4 w-4" />
           Templates
         </Button>
         <Button
           variant="outline"
-          onClick={onShowSchedule}
+          onClick={() => onShowSchedule()}
         >
           <Clock className="mr-2 h-4 w-4" />
           Scheduled Reports
