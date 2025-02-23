@@ -27,7 +27,7 @@ export function AssignRoomsDialog({
   const [isPrimaryAssignment, setIsPrimaryAssignment] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { authError, checkAuth } = useAuthCheck(open);
+  const { authError, authErrorMessage } = useAuthCheck(open);
   const { isAssigning, handleAssignRoom } = useRoomAssignment(onSuccess);
   
   const { data: availableRooms, isLoading: isLoadingRooms } = useRoomData(authError);
@@ -80,9 +80,9 @@ export function AssignRoomsDialog({
           </DialogTitle>
         </DialogHeader>
 
-        {authError ? (
+        {authErrorMessage ? (
           <div className="p-4 text-center">
-            <p className="text-destructive">{authError}</p>
+            <p className="text-destructive">{authErrorMessage}</p>
             <Button 
               onClick={() => window.location.reload()} 
               variant="outline" 
@@ -122,7 +122,7 @@ export function AssignRoomsDialog({
           </Button>
           <Button 
             onClick={handleAssign} 
-            disabled={isAssigning || !selectedRoom || !!authError}
+            disabled={isAssigning || !selectedRoom || authError}
           >
             {isAssigning ? (
               <>

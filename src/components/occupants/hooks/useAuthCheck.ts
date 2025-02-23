@@ -6,30 +6,23 @@ export function useAuthCheck(isOpen: boolean) {
   const [authError, setAuthError] = useState<string | null>(null);
 
   const checkAuth = async () => {
-    try {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error) throw error;
-      if (!session) {
-        setAuthError("No active session found. Please log in again.");
-        return false;
-      }
-      setAuthError(null);
-      return true;
-    } catch (error: any) {
-      console.error("Auth check error:", error);
-      setAuthError(error.message || "Authentication error occurred");
+    if (!isOpen) return;
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setAuthError("No active session. Please refresh the page.");
       return false;
     }
+    return true;
   };
 
   useEffect(() => {
-    if (isOpen) {
-      checkAuth();
-    }
+    checkAuth();
   }, [isOpen]);
 
   return {
-    authError,
-    checkAuth,
+    authError: authError !== null, // Convert string to boolean
+    authErrorMessage: authError,   // Keep the original error message
+    checkAuth
   };
 }
