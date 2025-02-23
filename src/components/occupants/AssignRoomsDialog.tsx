@@ -1,7 +1,5 @@
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
@@ -10,33 +8,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Building2, Loader2 } from "lucide-react";
 import { useAuthCheck } from "./hooks/useAuthCheck";
 import { useRoomAssignment } from "./hooks/useRoomAssignment";
 import { RoomSelectionSection } from "./components/RoomSelectionSection";
 import { CurrentOccupantsSection } from "./components/CurrentOccupantsSection";
-
-interface AssignRoomsDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  selectedOccupants: string[];
-  onSuccess: () => void;
-}
-
-interface RoomDetails {
-  id: string;
-  name: string;
-  room_number: string;
-  capacity: number | null;
-  current_occupancy: number;
-  floors: {
-    name: string;
-    buildings: {
-      name: string;
-    };
-  } | null;
-}
+import { useRoomData } from "./hooks/useRoomData";
+import { useRoomOccupants } from "./hooks/useRoomOccupants";
+import type { AssignRoomsDialogProps } from "./types/assignmentTypes";
 
 export function AssignRoomsDialog({
   open,
@@ -50,90 +29,9 @@ export function AssignRoomsDialog({
 
   const { authError, checkAuth } = useAuthCheck(open);
   const { isAssigning, handleAssignRoom } = useRoomAssignment(onSuccess);
-
-  const { data: availableRooms, isLoading: isLoadingRooms } = useQuery({
-    queryKey: ["available-rooms"],
-    enabled: !authError,
-    queryFn: async () => {
-      console.log("Fetching rooms data...");
-      
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error("No active session");
-      }
-      
-      const { data: roomsData, error: roomsError } = await supabase
-        .from("rooms")
-        .select(`
-          id,
-          name,
-          room_number,
-          capacity,
-          current_occupancy,
-          floors (
-            name,
-            buildings (
-              name
-            )
-          )
-        `)
-        .eq("status", "active")
-        .order("name");
-
-      if (roomsError) {
-        console.error('Error fetching rooms:', roomsError);
-        throw roomsError;
-      }
-
-      console.log('Available rooms fetched:', roomsData);
-      return roomsData as RoomDetails[];
-    },
-  });
-
-  const { data: currentOccupants, isLoading: isLoadingOccupants } = useQuery({
-    queryKey: ["room-occupants", selectedRoom],
-    enabled: !!selectedRoom && !authError,
-    queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error("No active session");
-      }
-
-      const { data: occupantsData, error } = await supabase
-        .from("occupant_room_assignments")
-        .select(`
-          is_primary,
-          occupants!fk_occupant_room_assignments_occupant (
-            id,
-            first_name,
-            last_name
-          )
-        `)
-        .eq("room_id", selectedRoom);
-
-      if (error) {
-        console.error('Error fetching room occupants:', error);
-        throw error;
-      }
-      
-      if (!occupantsData) {
-        console.log('No occupants data found');
-        return [];
-      }
-
-      const mappedOccupants = occupantsData
-        .filter(assignment => assignment.occupants)
-        .map(assignment => ({
-          id: assignment.occupants.id,
-          first_name: assignment.occupants.first_name,
-          last_name: assignment.occupants.last_name,
-          is_primary: assignment.is_primary
-        }));
-
-      console.log('Current occupants:', mappedOccupants);
-      return mappedOccupants;
-    }
-  });
+  
+  const { data: availableRooms, isLoading: isLoadingRooms } = useRoomData(authError);
+  const { data: currentOccupants, isLoading: isLoadingOccupants } = useRoomOccupants(selectedRoom, authError);
 
   const filteredRooms = availableRooms?.filter(room => {
     const searchStr = searchQuery.toLowerCase();
@@ -191,26 +89,12 @@ export function AssignRoomsDialog({
               isLoadingRooms={isLoadingRooms}
             />
 
-            <div className="flex items-center space-x-2">
-              <label className="text-sm font-medium">Primary Assignment</label>
-              <Select
-                value={isPrimaryAssignment ? "yes" : "no"}
-                onValueChange={(value) => setIsPrimaryAssignment(value === "yes")}
-              >
-                <SelectTrigger className="w-[100px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="yes">Yes</SelectItem>
-                  <SelectItem value="no">No</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
             <CurrentOccupantsSection
               selectedRoom={selectedRoom}
               currentOccupants={currentOccupants}
               isLoadingOccupants={isLoadingOccupants}
+              isPrimaryAssignment={isPrimaryAssignment}
+              onPrimaryAssignmentChange={(value) => setIsPrimaryAssignment(value === "yes")}
             />
 
             <div className="text-sm text-muted-foreground">
