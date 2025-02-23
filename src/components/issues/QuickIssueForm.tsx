@@ -74,9 +74,12 @@ export function QuickIssueForm({ onSuccess, assignedRooms }: QuickIssueFormProps
         });
       
       if (error) throw error;
+
+      // Invalidate and refetch relevant queries
+      await queryClient.invalidateQueries({ queryKey: ['userIssues'] });
+      await queryClient.invalidateQueries({ queryKey: ['issues'] });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['issues'] });
       toast.success("Issue reported successfully");
       form.reset();
       onSuccess?.();
