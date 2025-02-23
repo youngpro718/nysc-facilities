@@ -1,63 +1,14 @@
 
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Department, UserVerificationView, VerificationRequest, VerificationStatus, RequestStatus } from "./types";
+import { mapVerificationStatusToRequestStatus } from "../utils/statusMapping";
+import type { VerificationRequest } from "./types";
+import { useDepartments } from "./useDepartments";
+import { useVerificationUsers } from "./useVerificationUsers";
+import { useAdminRoles } from "./useAdminRoles";
 
 export function useVerificationQueries() {
-  const { data: departments, isLoading: isLoadingDepartments } = useQuery({
-    queryKey: ['departments'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('departments')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-      return data as Department[];
-    }
-  });
-
-  const { 
-    data: users, 
-    isLoading: isLoadingUsers, 
-    refetch: refetchUsers 
-  } = useQuery({
-    queryKey: ['users-verification'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_verification_view')
-        .select('*')
-        .returns<UserVerificationView[]>();
-
-      if (error) throw error;
-      return data;
-    }
-  });
-
-  // Query to get admin roles
-  const { data: adminRoles } = useQuery({
-    queryKey: ['admin-roles'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('user_id')
-        .eq('role', 'admin');
-      
-      if (error) throw error;
-      return data.map(role => role.user_id);
-    }
-  });
-
-  const mapVerificationStatusToRequestStatus = (status: VerificationStatus): RequestStatus => {
-    switch (status) {
-      case 'verified':
-        return 'approved';
-      case 'rejected':
-        return 'rejected';
-      default:
-        return 'pending';
-    }
-  };
+  const { departments, isLoadingDepartments } = useDepartments();
+  const { users, isLoadingUsers, refetchUsers } = useVerificationUsers();
+  const { adminRoles } = useAdminRoles();
 
   const verificationRequests: VerificationRequest[] = users?.map(user => ({
     id: user.id,
