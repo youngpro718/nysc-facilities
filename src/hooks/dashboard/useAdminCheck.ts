@@ -31,13 +31,20 @@ export const useAdminCheck = (shouldRedirect: boolean = true) => {
       const hasAdminRole = userRole.role === 'admin';
       setIsAdmin(hasAdminRole);
 
+      // Only redirect and throw error if shouldRedirect is true and user is not admin
       if (shouldRedirect && !hasAdminRole) {
         navigate('/dashboard');
         throw new AuthorizationError('User does not have admin privileges');
       }
+      
+      // Clear any existing error if the check passes
+      setError(null);
     } catch (error) {
       console.error('Error checking user role:', error);
-      setError(error as Error);
+      // Only set the error if shouldRedirect is true or if it's not an admin privileges error
+      if (shouldRedirect || (error as Error).message !== 'User does not have admin privileges') {
+        setError(error as Error);
+      }
       setIsAdmin(false);
     } finally {
       setIsLoading(false);

@@ -24,7 +24,7 @@ export default function UserDashboard() {
     userIssues,
     handleMarkAsSeen,
     error: dashboardError
-  } = useDashboardData();
+  } = useDashboardData(false); // Explicitly pass false for user dashboard
 
   const { 
     notifications, 
