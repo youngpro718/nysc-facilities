@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -6,6 +5,12 @@ import type { UserProfile, UserAssignment, UserIssue } from "@/types/dashboard";
 import type { Building } from "@/utils/dashboardUtils";
 import type { Issue, Activity } from "@/components/dashboard/BuildingsGrid";
 import { toast } from "sonner";
+
+interface LocationData {
+  areas?: string[];
+  description?: string;
+  [key: string]: any;
+}
 
 export const useDashboardData = () => {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -18,7 +23,161 @@ export const useDashboardData = () => {
   const [assignedKeys, setAssignedKeys] = useState<UserAssignment[]>([]);
   const [userIssues, setUserIssues] = useState<UserIssue[]>([]);
   const [profile, setProfile] = useState<UserProfile>({});
+  const [error, setError] = useState<Error | null>(null);
   const navigate = useNavigate();
+
+  const fetchUserData = async (userId: string) => {
+    try {
+      setIsLoading(true);
+      console.log('Fetching user data...');
+      
+      // Get user profile
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (profileError) throw profileError;
+      setProfile(profileData);
+
+      // Get assigned rooms
+      const { data: roomsData, error: roomsError } = await supabase
+        .from('occupant_room_assignments')
+        .select(`
+          id,
+          assigned_at,
+          is_primary,
+          rooms (
+            id,
+            name,
+            room_number,
+            floors (
+              name,
+              buildings (
+                name
+              )
+            )
+          )
+        `)
+        .eq('occupant_id', userId);
+
+      if (roomsError) throw roomsError;
+      setAssignedRooms(roomsData.map(assignment => ({
+        id: assignment.id,
+        room_name: assignment.rooms?.name,
+        room_number: assignment.rooms?.room_number,
+        building_name: assignment.rooms?.floors?.buildings?.name,
+        floor_name: assignment.rooms?.floors?.name,
+        assigned_at: assignment.assigned_at,
+        is_primary: assignment.is_primary
+      })));
+
+      // Fetch assigned keys
+      const { data: assignedKeys, error: keysError } = await supabase
+        .from('key_assignments')
+        .select(`
+          id,
+          assigned_at,
+          returned_at,
+          keys (
+            id,
+            name,
+            type,
+            location_data,
+            status,
+            is_passkey
+          )
+        `)
+        .eq('occupant_id', userId)
+        .is('returned_at', null);
+
+      if (keysError) throw keysError;
+
+      // Map key types to display types
+      const getDisplayKeyType = (keyData: { type: string; is_passkey: boolean }): 'standard' | 'restricted' | 'master' => {
+        if (keyData.is_passkey) return 'master';
+        
+        switch (keyData.type) {
+          case 'elevator_pass':
+            return 'restricted';
+          case 'physical_key':
+            return 'standard';
+          case 'room_key':
+            return 'standard';
+          default:
+            return 'standard';
+        }
+      };
+
+      // Get access areas from location data
+      const getAccessAreas = (locationData: LocationData | null): string => {
+        try {
+          if (!locationData) return 'General Access';
+          if (Array.isArray(locationData.areas)) {
+            return locationData.areas.join(', ') || 'General Access';
+          }
+          if (locationData.description) {
+            return locationData.description;
+          }
+          return 'General Access';
+        } catch (e) {
+          return 'General Access';
+        }
+      };
+
+      // Map assigned keys to UserAssignment format
+      const mappedKeys: UserAssignment[] = assignedKeys.map((assignment) => ({
+        id: assignment.id,
+        key_name: assignment.keys.name,
+        key_type: getDisplayKeyType({ 
+          type: assignment.keys.type,
+          is_passkey: assignment.keys.is_passkey
+        }),
+        access_areas: getAccessAreas(assignment.keys.location_data as LocationData),
+        assigned_at: assignment.assigned_at,
+      }));
+
+      setAssignedKeys(mappedKeys);
+
+      // Get user's issues
+      const { data: issuesData, error: issuesError } = await supabase
+        .from('issues')
+        .select(`
+          id,
+          title,
+          description,
+          status,
+          priority,
+          created_at,
+          building_id,
+          seen,
+          photos,
+          rooms:room_id (
+            id,
+            name,
+            room_number
+          ),
+          buildings:building_id (
+            name
+          ),
+          floors:floor_id (
+            name
+          )
+        `)
+        .eq('created_by', userId)
+        .order('created_at', { ascending: false });
+
+      if (issuesError) throw issuesError;
+      setUserIssues(issuesData);
+
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      setError(error as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleMarkAsSeen = async (issueId: string) => {
     try {
@@ -68,10 +227,7 @@ export const useDashboardData = () => {
           )
         `);
 
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       console.log('Buildings data:', data);
 
@@ -81,7 +237,6 @@ export const useDashboardData = () => {
         return;
       }
 
-      // Map the data to match our expected types
       const transformedBuildings: Building[] = data.map(building => ({
         id: building.id,
         name: building.name,
@@ -206,17 +361,16 @@ export const useDashboardData = () => {
       console.log('User is admin:', userIsAdmin);
       setIsAdmin(userIsAdmin);
 
-      if (!userIsAdmin) {
-        console.log('User is not admin, redirecting to dashboard');
-        navigate('/dashboard');
-        return;
+      if (userIsAdmin) {
+        // Fetch admin-specific data
+        await Promise.all([
+          fetchBuildings(),
+          fetchIssuesAndActivities()
+        ]);
+      } else {
+        // Fetch user-specific data
+        await fetchUserData(session.user.id);
       }
-
-      // Fetch admin-specific data
-      await Promise.all([
-        fetchBuildings(),
-        fetchIssuesAndActivities()
-      ]);
 
     } catch (error) {
       console.error('Error in checkUserRoleAndFetchData:', error);

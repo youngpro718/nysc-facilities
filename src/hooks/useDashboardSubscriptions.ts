@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { RealtimeChannel } from "@supabase/supabase-js";
@@ -31,7 +30,12 @@ export const useDashboardSubscriptions = (onDataUpdate: () => void) => {
           .channel('issues-changes')
           .on(
             'postgres_changes',
-            { event: '*', schema: 'public', table: 'issues' },
+            { 
+              event: '*', 
+              schema: 'public', 
+              table: 'issues',
+              filter: `created_by=eq.${user.id}`
+            },
             (payload) => {
               console.log('Issues update received:', payload);
               onDataUpdate();
@@ -43,7 +47,12 @@ export const useDashboardSubscriptions = (onDataUpdate: () => void) => {
           .channel('keys-changes')
           .on(
             'postgres_changes',
-            { event: '*', schema: 'public', table: 'key_assignments' },
+            {
+              event: '*',
+              schema: 'public',
+              table: 'key_assignments',
+              filter: `occupant_id=eq.${user.id}`
+            },
             (payload) => {
               console.log('Keys update received:', payload);
               onDataUpdate();

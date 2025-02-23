@@ -1,39 +1,32 @@
-
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { SparklesCore } from "@/components/ui/sparkles";
 import { Card } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
 import { EvervaultCard } from "@/components/ui/evervault-card";
 import { AuthForm } from "@/components/auth/AuthForm";
-import { delay } from "@/utils/timing";
+import { useAuth } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
 
 const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const [isChecking, setIsChecking] = useState(true);
+  const { isAuthenticated, isAdmin, isLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    // Check if user is already logged in
-    const checkAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          await delay(100); // Small delay to ensure auth state is stable
-          navigate("/", { replace: true });
-        }
-      } catch (error) {
-        console.error("Auth check error:", error);
-      } finally {
-        setIsChecking(false);
-      }
-    };
+    if (isAuthenticated) {
+      // Redirect to the attempted URL or default route
+      const from = location.state?.from?.pathname || (isAdmin ? '/' : '/dashboard');
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, isAdmin, navigate, location]);
 
-    checkAuth();
-  }, [navigate]);
-
-  if (isChecking) {
-    return null;
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   return (
@@ -53,7 +46,9 @@ const LoginPage = () => {
 
       <Card className="relative z-20 w-full max-w-md p-8 bg-white/10 backdrop-blur-lg rounded-lg shadow-xl border border-white/20 group/card">
         <div className="absolute inset-0 -z-10" style={{ margin: '-1px' }}>
-          <EvervaultCard text={isLogin ? "Sign In" : "Sign Up"} />
+          <div className="text-center text-white text-2xl font-bold py-4">
+            {isLogin ? "Sign In" : "Sign Up"}
+          </div>
         </div>
         
         <div className="flex flex-col items-center gap-6 mb-8">
@@ -70,7 +65,10 @@ const LoginPage = () => {
           </div>
         </div>
 
-        <AuthForm isLogin={isLogin} setIsLogin={setIsLogin} />
+        <AuthForm 
+          isLogin={isLogin} 
+          setIsLogin={setIsLogin}
+        />
       </Card>
     </div>
   );

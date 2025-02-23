@@ -1,4 +1,3 @@
-
 export interface RoomData {
   id: string;
   assigned_at: string;
@@ -17,9 +16,16 @@ export interface KeyData {
 
 export interface UserAssignment {
   id: string;
-  room_name?: string;
   key_name?: string;
+  room_name?: string;
+  room_number?: string;
+  building_name?: string;
+  floor_name?: string;
+  is_primary?: boolean;
   assigned_at: string;
+  key_type?: 'standard' | 'restricted' | 'master';
+  access_areas?: string;
+  expiry_date?: string;
 }
 
 export interface UserIssue {

@@ -1,86 +1,23 @@
-
-import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { useState, useEffect, useCallback } from "react";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { useSessionManagement } from "./hooks/useSessionManagement";
+import { useAuth } from "@/contexts/AuthContext";
 import { adminNavigation, userNavigation, getNavigationRoutes } from "./config/navigation";
 import { MobileMenu } from "./components/MobileMenu";
 import { DesktopNavigation } from "./components/DesktopNavigation";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { UserRound } from "lucide-react";
+import { UserRound, Loader2 } from "lucide-react";
 
 const Layout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const isLoginPage = location.pathname === '/login';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { isLoading, isAdmin, initialCheckComplete } = useSessionManagement(isLoginPage);
-  const [profile, setProfile] = useState<{ first_name?: string; last_name?: string; avatar_url?: string } | null>(null);
+  const { isAuthenticated, isAdmin, isLoading, profile, signOut } = useAuth();
 
-  const fetchProfile = useCallback(async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('first_name, last_name, avatar_url')
-        .eq('id', user.id)
-        .single();
-
-      if (profileData) {
-        setProfile(profileData);
-      }
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
-
-  const handleSignOut = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // First, delete the user session from our database
-        const { data } = await supabase
-          .from('user_sessions')
-          .select('id')
-          .eq('user_id', session.user.id)
-          .limit(1)
-          .maybeSingle();
-
-        if (data?.id) {
-          await supabase
-            .from('user_sessions')
-            .delete()
-            .eq('id', data.id);
-        }
-
-        // Clear all storage before signing out
-        localStorage.removeItem('app-auth');
-        sessionStorage.clear();
-        
-        // Sign out with both local and global options
-        await supabase.auth.signOut({ scope: 'local' });
-        await supabase.auth.signOut({ scope: 'global' });
-        
-        toast.success("Successfully signed out!");
-      }
-    } catch (error: any) {
-      console.error("Sign out error:", error);
-      toast.error(error.message || "Error signing out");
-    }
-  };
-
-  const handleNavigationChange = async (index: number | null) => {
+  const handleNavigationChange = (index: number | null) => {
     if (index === null) return;
-    
     const routes = getNavigationRoutes(isAdmin);
     const route = routes[index];
     if (route) {
@@ -89,16 +26,18 @@ const Layout = () => {
     }
   };
 
-  // Don't render anything until initial auth check is complete
-  if (!initialCheckComplete || isLoading) {
-    return null;
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
-
-  const navigation = isAdmin ? adminNavigation : userNavigation;
 
   return (
     <div className="min-h-screen bg-background">
-      {!isLoginPage && (
+      {!isLoginPage && isAuthenticated && (
         <header className="bg-card shadow sticky top-0 z-50">
           <div className="mx-auto px-4">
             <div className="flex h-16 items-center justify-between">
@@ -113,51 +52,49 @@ const Layout = () => {
 
               <div className="flex items-center gap-4">
                 {/* Profile Section */}
-                {!isLoginPage && (
-                  <div className="flex items-center gap-3">
-                    <div className="hidden md:flex flex-col items-end">
-                      <span className="text-sm font-medium">
-                        {profile?.first_name} {profile?.last_name}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {isAdmin ? 'Administrator' : 'User'}
-                      </span>
-                    </div>
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={profile?.avatar_url ?? undefined} />
-                      <AvatarFallback>
-                        <UserRound className="h-4 w-4" />
-                      </AvatarFallback>
-                    </Avatar>
+                <div className="flex items-center gap-3">
+                  <div className="hidden md:flex flex-col items-end">
+                    <span className="text-sm font-medium">
+                      {profile?.first_name} {profile?.last_name}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {isAdmin ? 'Administrator' : 'User'}
+                    </span>
                   </div>
-                )}
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={profile?.avatar_url} />
+                    <AvatarFallback>
+                      <UserRound className="h-4 w-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
                 
                 {/* Mobile Menu */}
                 <div className="md:hidden">
                   <MobileMenu
                     isOpen={isMobileMenuOpen}
                     onOpenChange={setIsMobileMenuOpen}
-                    navigation={navigation}
+                    navigation={isAdmin ? adminNavigation : userNavigation}
                     onNavigationChange={handleNavigationChange}
-                    onSignOut={handleSignOut}
+                    onSignOut={signOut}
                   />
                 </div>
 
                 {/* Desktop Navigation */}
-                <DesktopNavigation
-                  navigation={navigation}
-                  onNavigationChange={handleNavigationChange}
-                  onSignOut={handleSignOut}
-                />
+                <div className="hidden md:flex items-center gap-4">
+                  <DesktopNavigation
+                    navigation={isAdmin ? adminNavigation : userNavigation}
+                    onNavigationChange={handleNavigationChange}
+                    onSignOut={signOut}
+                  />
+                </div>
               </div>
             </div>
           </div>
         </header>
       )}
-      <main className={cn(
-        "mx-auto max-w-7xl px-4 py-8",
-        isAdmin && "bg-background"
-      )}>
+
+      <main className="flex-1">
         <Outlet />
       </main>
     </div>
