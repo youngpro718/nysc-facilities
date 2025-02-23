@@ -15,7 +15,7 @@ const AdminDashboard = () => {
     checkUserRoleAndFetchData,
     isLoading,
     isAdmin
-  } = useDashboardData();
+  } = useDashboardData(true); // Pass true for admin dashboard
 
   useEffect(() => {
     checkUserRoleAndFetchData();

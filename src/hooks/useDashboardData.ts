@@ -8,13 +8,13 @@ import { useBuildingData } from "./dashboard/useBuildingData";
 import { useAdminIssues } from "./dashboard/useAdminIssues";
 import { useAdminCheck } from "./dashboard/useAdminCheck";
 
-export const useDashboardData = () => {
+export const useDashboardData = (isAdminDashboard: boolean = false) => {
   const { userData, profile } = useUserData();
   const { assignedRooms } = useRoomAssignments(userData?.id);
   const { userIssues, handleMarkAsSeen, refetchIssues } = useUserIssues(userData?.id);
   const { allIssues } = useAdminIssues();
   const { buildings, buildingsLoading, activities } = useBuildingData(userData?.id);
-  const { isAdmin, isLoading, error, checkUserRoleAndFetchData } = useAdminCheck();
+  const { isAdmin, isLoading, error, checkUserRoleAndFetchData } = useAdminCheck(isAdminDashboard);
 
   useEffect(() => {
     if (!userData?.id) return;

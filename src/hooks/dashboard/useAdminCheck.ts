@@ -4,10 +4,10 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthorizationError } from "./types/errors";
 
-export const useAdminCheck = () => {
+export const useAdminCheck = (shouldRedirect: boolean = true) => {
   const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false); // Add isAdmin state
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
 
   const checkUserRoleAndFetchData = useCallback(async () => {
@@ -31,7 +31,7 @@ export const useAdminCheck = () => {
       const hasAdminRole = userRole.role === 'admin';
       setIsAdmin(hasAdminRole);
 
-      if (!hasAdminRole) {
+      if (shouldRedirect && !hasAdminRole) {
         navigate('/dashboard');
         throw new AuthorizationError('User does not have admin privileges');
       }
@@ -42,7 +42,7 @@ export const useAdminCheck = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [navigate]);
+  }, [navigate, shouldRedirect]);
 
   useEffect(() => {
     checkUserRoleAndFetchData();
@@ -50,4 +50,3 @@ export const useAdminCheck = () => {
 
   return { isLoading, error, isAdmin, checkUserRoleAndFetchData };
 };
-
