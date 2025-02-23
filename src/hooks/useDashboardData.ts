@@ -1,18 +1,18 @@
-
 import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import type { UserProfile, UserAssignment, UserIssue } from "@/types/dashboard";
+import type { UserProfile, UserAssignment, UserIssue, Building, Activity } from "@/types/dashboard";
 
 export const useDashboardData = () => {
   const [error, setError] = useState<Error | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   // Get current user
-  const { data: userData } = useQuery({
+  const { data: userData, isLoading: userLoading } = useQuery({
     queryKey: ['currentUser'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -21,6 +21,36 @@ export const useDashboardData = () => {
     },
     retry: 1,
     staleTime: 300000, // Cache for 5 minutes
+  });
+
+  // Fetch buildings with caching
+  const { data: buildings = [], isLoading: buildingsLoading } = useQuery<Building[]>({
+    queryKey: ['buildings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('buildings')
+        .select('*');
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!userData?.id,
+    staleTime: 300000,
+  });
+
+  // Fetch activities
+  const { data: activities = [] } = useQuery<Activity[]>({
+    queryKey: ['activities'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('activities')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!userData?.id,
+    staleTime: 60000,
   });
 
   // Fetch user profile with caching
@@ -129,6 +159,21 @@ export const useDashboardData = () => {
     staleTime: 30000, // Cache for 30 seconds
   });
 
+  // Fetch all issues for admin
+  const { data: issues = [] } = useQuery<UserIssue[]>({
+    queryKey: ['allIssues'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('issues')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!userData?.id,
+    staleTime: 30000,
+  });
+
   const handleMarkAsSeen = useCallback(async (id: string) => {
     try {
       const { error } = await supabase
@@ -150,7 +195,37 @@ export const useDashboardData = () => {
     }
   }, [queryClient, userData?.id]);
 
-  // Subscribe to real-time updates
+  const checkUserRoleAndFetchData = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/login');
+        return;
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      if (profile?.role !== 'admin') {
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      console.error('Error checking user role:', error);
+      setError(error as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    checkUserRoleAndFetchData();
+  }, [checkUserRoleAndFetchData]);
+
   useEffect(() => {
     if (!userData?.id) return;
 
@@ -179,7 +254,13 @@ export const useDashboardData = () => {
     profile,
     assignedRooms,
     userIssues,
+    buildings,
+    buildingsLoading,
+    issues,
+    activities,
     handleMarkAsSeen,
+    checkUserRoleAndFetchData,
+    isLoading,
     error,
   };
 };
