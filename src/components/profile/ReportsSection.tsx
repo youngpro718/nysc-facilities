@@ -1,10 +1,20 @@
-import { Button } from "@/components/ui/button";
+
 import { Card } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, Lightbulb, User, Key, DoorOpen, Bug, Database, Clock, BookTemplate, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { format } from "date-fns";
+import { ReportProgress } from "./reports/types";
+import { ReportCard } from "./reports/components/ReportCard";
+import { TemplateDialog } from "./reports/components/TemplateDialog";
+import { ScheduleDialog } from "./reports/components/ScheduleDialog";
+import { ReportHeader } from "./reports/components/ReportHeader";
+import { reports } from "./reports/config/reportTypes";
+import { 
+  fetchReportTemplates, 
+  fetchScheduledReports, 
+  createReportTemplate 
+} from "./reports/reportUtils";
+import type { ReportTemplate, ScheduledReport } from "./reports/reportUtils";
 import { 
   fetchFloorplanReportData, 
   fetchLightingReport,
@@ -13,26 +23,8 @@ import {
   fetchRoomReport,
   fetchIssueReport,
   fetchFullDatabaseReport,
-  downloadReport
+  downloadReport 
 } from "./reports/reportService";
-import { 
-  fetchReportTemplates, 
-  fetchScheduledReports, 
-  createReportTemplate, 
-  scheduleReport
-} from "./reports/reportUtils";
-import type { ReportTemplate, ScheduledReport } from "./reports/reportUtils";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
-
-interface ReportProgress {
-  status: 'pending' | 'generating' | 'completed' | 'error';
-  progress: number;
-  message?: string;
-}
 
 export function ReportsSection() {
   const { toast } = useToast();
@@ -168,214 +160,45 @@ export function ReportsSection() {
     }
   };
 
-  const reports = [
-    {
-      title: "Floorplan Report",
-      description: "Comprehensive report of building's floorplan data, including room and hallway details.",
-      icon: FileText,
-      type: "floorplan"
-    },
-    {
-      title: "Lighting Report",
-      description: "Status and maintenance information for all lighting fixtures.",
-      icon: Lightbulb,
-      type: "lighting"
-    },
-    {
-      title: "Occupant Report",
-      description: "Details about building occupants and their assignments.",
-      icon: User,
-      type: "occupant"
-    },
-    {
-      title: "Key Report",
-      description: "Key inventory and assignment status.",
-      icon: Key,
-      type: "key"
-    },
-    {
-      title: "Room Report",
-      description: "Room occupancy and status information.",
-      icon: DoorOpen,
-      type: "room"
-    },
-    {
-      title: "Issue Report",
-      description: "Comprehensive report of all facility issues and their status.",
-      icon: Bug,
-      type: "issue"
-    },
-    {
-      title: "Full Database Report",
-      description: "Complete database export with all facility management data.",
-      icon: Database,
-      type: "database"
-    }
-  ];
-
   return (
     <Card className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold">Reports</h2>
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            onClick={() => {
-              setShowTemplates(true);
-              loadTemplates();
-            }}
-          >
-            <BookTemplate className="mr-2 h-4 w-4" />
-            Templates
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setShowSchedule(true);
-              loadScheduledReports();
-            }}
-          >
-            <Clock className="mr-2 h-4 w-4" />
-            Scheduled Reports
-          </Button>
-        </div>
-      </div>
+      <ReportHeader 
+        onShowTemplates={() => {
+          setShowTemplates(true);
+          loadTemplates();
+        }}
+        onShowSchedule={() => {
+          setShowSchedule(true);
+          loadScheduledReports();
+        }}
+      />
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {reports.map((report) => {
-          const progress = reportProgress[report.type];
-          const isGenerating = progress?.status === 'generating';
-          const isError = progress?.status === 'error';
-          
-          return (
-            <div 
-              key={report.type} 
-              className={cn(
-                "space-y-2 p-4 rounded-lg border",
-                isGenerating && "bg-muted/50",
-                isError && "bg-destructive/10 border-destructive/50"
-              )}
-            >
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <report.icon className="h-5 w-5" />
-                {report.title}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {report.description}
-              </p>
-              {progress && (
-                <div className="space-y-2">
-                  <Progress value={progress.progress} />
-                  {progress.message && (
-                    <p className="text-xs text-muted-foreground">{progress.message}</p>
-                  )}
-                </div>
-              )}
-              <Button
-                onClick={() => handleGenerateReport(report.type)}
-                disabled={isGenerating}
-                className="w-full"
-                variant={isError ? "destructive" : "default"}
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <FileText className="mr-2 h-4 w-4" />
-                    {isError ? "Retry" : "Generate Report"}
-                  </>
-                )}
-              </Button>
-            </div>
-          );
-        })}
+        {reports.map((report) => (
+          <ReportCard
+            key={report.type}
+            {...report}
+            progress={reportProgress[report.type]}
+            onGenerate={handleGenerateReport}
+          />
+        ))}
       </div>
 
       <Dialog open={showTemplates} onOpenChange={setShowTemplates}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Report Templates</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Template Name</Label>
-              <Input
-                value={newTemplateName}
-                onChange={(e) => setNewTemplateName(e.target.value)}
-                placeholder="Enter template name"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <Input
-                value={newTemplateDesc}
-                onChange={(e) => setNewTemplateDesc(e.target.value)}
-                placeholder="Enter template description"
-              />
-            </div>
-            <Button onClick={handleCreateTemplate}>Create Template</Button>
-          </div>
-          <ScrollArea className="h-[300px] mt-4">
-            <div className="space-y-4">
-              {templates.map((template) => (
-                <div
-                  key={template.id}
-                  className="flex items-center justify-between p-4 rounded-lg border"
-                >
-                  <div>
-                    <h4 className="font-medium">{template.name}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {template.description}
-                    </p>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    Use Template
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
-        </DialogContent>
+        <TemplateDialog
+          templates={templates}
+          newTemplateName={newTemplateName}
+          newTemplateDesc={newTemplateDesc}
+          onTemplateNameChange={setNewTemplateName}
+          onTemplateDescChange={setNewTemplateDesc}
+          onCreateTemplate={handleCreateTemplate}
+        />
       </Dialog>
 
       <Dialog open={showSchedule} onOpenChange={setShowSchedule}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Scheduled Reports</DialogTitle>
-          </DialogHeader>
-          <ScrollArea className="h-[400px]">
-            <div className="space-y-4">
-              {scheduledReports.map((report) => (
-                <div
-                  key={report.id}
-                  className="flex items-center justify-between p-4 rounded-lg border"
-                >
-                  <div>
-                    <h4 className="font-medium">{report.name}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Next run: {report.next_run_at ? format(new Date(report.next_run_at), 'PPp') : 'Not scheduled'}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Recipients: {report.recipients.length}
-                    </p>
-                  </div>
-                  <div className="space-x-2">
-                    <Button variant="outline" size="sm">
-                      Edit
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      Run Now
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
-        </DialogContent>
+        <ScheduleDialog scheduledReports={scheduledReports} />
       </Dialog>
     </Card>
   );
 }
+

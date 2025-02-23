@@ -30,3 +30,4 @@ export function ReportHeader({ onShowTemplates, onShowSchedule }: ReportHeaderPr
     </div>
   );
 }
+

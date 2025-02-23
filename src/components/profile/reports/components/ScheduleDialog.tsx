@@ -1,7 +1,7 @@
 
-import { Button } from "@/components/ui/button";
 import { DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { ScheduledReport } from "../types";
 
@@ -46,3 +46,4 @@ export function ScheduleDialog({ scheduledReports }: ScheduleDialogProps) {
     </DialogContent>
   );
 }
+
