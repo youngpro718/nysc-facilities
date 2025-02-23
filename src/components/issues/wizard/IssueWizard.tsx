@@ -7,7 +7,7 @@ import { StandardizedIssueType } from "../constants/issueTypes";
 import { UserAssignment } from "@/types/dashboard";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle, ChevronLeft, ChevronRight, Flag, AlertOctagon, Mic, Camera } from "lucide-react";
+import { AlertTriangle, ChevronLeft, ChevronRight, Flag, AlertOctagon, Bolt, Droplet, Building2, Key, Thermometer, Trash2 } from "lucide-react";
 import { LocationFields } from "../form-sections/LocationFields";
 import { IssueTypeField } from "../form-sections/IssueTypeField";
 import { ProblemTypeField } from "../form-sections/ProblemTypeField";
@@ -27,6 +27,26 @@ interface IssueWizardProps {
 }
 
 type WizardStep = 'location' | 'type' | 'details' | 'review';
+
+export const getIssueTypeIcon = (type?: StandardizedIssueType) => {
+  switch (type) {
+    case 'ELECTRICAL_NEEDS':
+      return <Bolt className="h-5 w-5" />;
+    case 'PLUMBING_NEEDS':
+      return <Droplet className="h-5 w-5" />;
+    case 'BUILDING_SYSTEMS':
+      return <Building2 className="h-5 w-5" />;
+    case 'ACCESS_REQUEST':
+      return <Key className="h-5 w-5" />;
+    case 'CLIMATE_CONTROL':
+      return <Thermometer className="h-5 w-5" />;
+    case 'CLEANING_REQUEST':
+      return <Trash2 className="h-5 w-5" />;
+    case 'GENERAL_REQUESTS':
+    default:
+      return <Flag className="h-5 w-5" />;
+  }
+};
 
 export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardProps) {
   const [currentStep, setCurrentStep] = useState<WizardStep>('location');
@@ -149,7 +169,7 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {isEmergency && (
-          <Alert variant="destructive" className="mb-4">
+          <Alert variant="destructive" className="mb-4 animate-fade-in">
             <AlertOctagon className="h-4 w-4" />
             <AlertDescription>
               This appears to be a critical issue. It will be marked as high priority.
@@ -158,15 +178,44 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
         )}
 
         <div className="space-y-6">
+          <div className="flex items-center justify-center gap-2 mb-6">
+            {['location', 'type', 'details', 'review'].map((step, index) => (
+              <div key={step} className="flex items-center">
+                <div
+                  className={cn(
+                    "w-8 h-8 rounded-full flex items-center justify-center transition-colors",
+                    currentStep === step
+                      ? "bg-primary text-primary-foreground"
+                      : index < ['location', 'type', 'details', 'review'].indexOf(currentStep)
+                      ? "bg-primary/20 text-primary"
+                      : "bg-muted text-muted-foreground"
+                  )}
+                >
+                  {index + 1}
+                </div>
+                {index < 3 && (
+                  <div
+                    className={cn(
+                      "h-0.5 w-12",
+                      index < ['location', 'type', 'details', 'review'].indexOf(currentStep)
+                        ? "bg-primary"
+                        : "bg-muted"
+                    )}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+
           {currentStep === 'location' && (
-            <Card className="p-6">
+            <Card className="p-6 animate-fade-in">
               <h3 className="text-lg font-semibold mb-4">Where is the issue located?</h3>
               <LocationFields form={form} disableFields={!!primaryRoom} />
             </Card>
           )}
 
           {currentStep === 'type' && (
-            <Card className="p-6">
+            <Card className="p-6 animate-fade-in">
               <h3 className="text-lg font-semibold mb-4">What type of issue are you reporting?</h3>
               <div className="space-y-6">
                 <IssueTypeField form={form} />
@@ -176,7 +225,7 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
           )}
 
           {currentStep === 'details' && (
-            <Card className="p-6">
+            <Card className="p-6 animate-fade-in">
               <h3 className="text-lg font-semibold mb-4">Describe the issue</h3>
               <div className="space-y-6">
                 <DescriptionField form={form} />
@@ -193,7 +242,7 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
           )}
 
           {currentStep === 'review' && (
-            <Card className="p-6">
+            <Card className="p-6 animate-fade-in">
               <h3 className="text-lg font-semibold mb-4">Review and Submit</h3>
               <div className="space-y-4">
                 <div>
@@ -204,9 +253,12 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
                 </div>
                 <div>
                   <h4 className="font-medium">Issue Type</h4>
-                  <p className="text-muted-foreground">
-                    {form.getValues('issue_type')} {form.getValues('problem_type') && `- ${form.getValues('problem_type')}`}
-                  </p>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    {getIssueTypeIcon(form.getValues('issue_type'))}
+                    <span>
+                      {form.getValues('issue_type')} {form.getValues('problem_type') && `- ${form.getValues('problem_type')}`}
+                    </span>
+                  </div>
                 </div>
                 <div>
                   <h4 className="font-medium">Description</h4>
@@ -258,7 +310,7 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
                 type="button"
                 onClick={handleNext}
                 className={cn(
-                  "flex items-center gap-2",
+                  "flex items-center gap-2 transition-all",
                   isEmergency && "bg-red-600 hover:bg-red-700"
                 )}
               >
@@ -269,11 +321,14 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
                 type="submit"
                 disabled={uploading || createIssueMutation.isPending}
                 className={cn(
-                  "flex items-center gap-2",
+                  "flex items-center gap-2 transition-all",
                   isEmergency && "bg-red-600 hover:bg-red-700"
                 )}
               >
                 Submit Issue
+                {createIssueMutation.isPending && (
+                  <AlertTriangle className="h-4 w-4 animate-pulse" />
+                )}
               </Button>
             )}
           </div>
@@ -282,3 +337,4 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
     </Form>
   );
 }
+
