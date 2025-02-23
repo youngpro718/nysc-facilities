@@ -1,3 +1,4 @@
+
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { BuildingsGrid } from "@/components/dashboard/BuildingsGrid";
 import { useDashboardData } from "@/hooks/useDashboardData";
@@ -12,7 +13,8 @@ const AdminDashboard = () => {
     activities,
     handleMarkAsSeen,
     checkUserRoleAndFetchData,
-    isLoading
+    isLoading,
+    isAdmin
   } = useDashboardData();
 
   useEffect(() => {
@@ -23,6 +25,14 @@ const AdminDashboard = () => {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <p className="text-muted-foreground">You don't have access to this page</p>
       </div>
     );
   }

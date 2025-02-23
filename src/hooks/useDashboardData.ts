@@ -5,12 +5,16 @@ import { useUserData } from "./dashboard/useUserData";
 import { useRoomAssignments } from "./dashboard/useRoomAssignments";
 import { useUserIssues } from "./dashboard/useUserIssues";
 import { useBuildingData } from "./dashboard/useBuildingData";
+import { useAdminIssues } from "./dashboard/useAdminIssues";
+import { useAdminCheck } from "./dashboard/useAdminCheck";
 
 export const useDashboardData = () => {
   const { userData, profile } = useUserData();
   const { assignedRooms } = useRoomAssignments(userData?.id);
   const { userIssues, handleMarkAsSeen, refetchIssues } = useUserIssues(userData?.id);
+  const { allIssues } = useAdminIssues();
   const { buildings, buildingsLoading, activities } = useBuildingData(userData?.id);
+  const { isAdmin, isLoading, error, checkUserRoleAndFetchData } = useAdminCheck();
 
   useEffect(() => {
     if (!userData?.id) return;
@@ -44,6 +48,11 @@ export const useDashboardData = () => {
     buildingsLoading,
     activities,
     handleMarkAsSeen,
-    error: null,
+    error,
+    // Admin specific properties
+    issues: allIssues,
+    isLoading,
+    isAdmin,
+    checkUserRoleAndFetchData
   };
 };
