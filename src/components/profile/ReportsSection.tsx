@@ -1,3 +1,4 @@
+
 import { Card } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -163,12 +164,12 @@ export function ReportsSection() {
     <Card className="p-6">
       <ReportHeader 
         onShowTemplates={() => {
+          void loadTemplates();
           setShowTemplates(true);
-          loadTemplates();
         }}
         onShowSchedule={() => {
+          void loadScheduledReports();
           setShowSchedule(true);
-          loadScheduledReports();
         }}
       />
 
@@ -200,3 +201,4 @@ export function ReportsSection() {
     </Card>
   );
 }
+
