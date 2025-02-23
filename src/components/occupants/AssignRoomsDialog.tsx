@@ -109,8 +109,7 @@ export function AssignRoomsDialog({
         throw roomsError;
       }
 
-      if (!roomsData) return [];
-
+      console.log('Available rooms fetched:', roomsData);
       return roomsData as RoomDetails[];
     },
   });
@@ -141,41 +140,17 @@ export function AssignRoomsDialog({
         return [];
       }
 
-      return occupantsData
+      const mappedOccupants = occupantsData
         .filter(assignment => assignment.occupants)
         .map(assignment => ({
           id: assignment.occupants.id,
           first_name: assignment.occupants.first_name,
           last_name: assignment.occupants.last_name,
           is_primary: assignment.is_primary
-        })) as CurrentOccupant[];
-    }
-  });
+        }));
 
-  const { data: existingPrimaryAssignments } = useQuery({
-    queryKey: ["primary-assignments", selectedOccupants],
-    enabled: isPrimaryAssignment,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("occupant_room_assignments")
-        .select(`
-          occupant_id,
-          room_id,
-          assignment_type,
-          is_primary,
-          schedule,
-          occupants!fk_occupant_room_assignments_occupant (
-            id,
-            first_name,
-            last_name,
-            title
-          )
-        `)
-        .in("occupant_id", selectedOccupants)
-        .eq("is_primary", true);
-
-      if (error) throw error;
-      return data;
+      console.log('Current occupants:', mappedOccupants);
+      return mappedOccupants as CurrentOccupant[];
     }
   });
 
@@ -196,15 +171,12 @@ export function AssignRoomsDialog({
     }
 
     const selectedRoomDetails = availableRooms?.find(r => r.id === selectedRoom);
+    console.log('Selected room details:', selectedRoomDetails);
+    console.log('Selected occupants:', selectedOccupants);
     
     if (selectedRoomDetails?.capacity && 
         selectedRoomDetails.current_occupancy + selectedOccupants.length > selectedRoomDetails.capacity) {
       toast.error("This assignment would exceed the room's capacity");
-      return;
-    }
-
-    if (isPrimaryAssignment && existingPrimaryAssignments?.length) {
-      toast.error("Some selected occupants already have primary room assignments");
       return;
     }
 
@@ -218,16 +190,25 @@ export function AssignRoomsDialog({
         is_primary: isPrimaryAssignment
       }));
 
-      const { error: assignmentError } = await supabase
-        .from("occupant_room_assignments")
-        .insert(assignments);
+      console.log('Creating room assignments:', assignments);
 
-      if (assignmentError) throw assignmentError;
+      const { data, error: assignmentError } = await supabase
+        .from("occupant_room_assignments")
+        .insert(assignments)
+        .select();
+
+      if (assignmentError) {
+        console.error('Room assignment error:', assignmentError);
+        throw assignmentError;
+      }
+
+      console.log('Room assignment successful:', data);
 
       toast.success(`Room${selectedOccupants.length > 1 ? 's' : ''} assigned successfully`);
       onSuccess();
       onOpenChange(false);
     } catch (error: any) {
+      console.error('Failed to assign rooms:', error);
       toast.error(error.message || "Failed to assign rooms");
     } finally {
       setIsAssigning(false);
