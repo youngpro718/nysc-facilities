@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,18 +9,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { toast } from "sonner";
-import { Building2, Loader2, Search, Users } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Building2, Loader2 } from "lucide-react";
+import { useAuthCheck } from "./hooks/useAuthCheck";
+import { useRoomAssignment } from "./hooks/useRoomAssignment";
+import { RoomSelectionSection } from "./components/RoomSelectionSection";
+import { CurrentOccupantsSection } from "./components/CurrentOccupantsSection";
 
 interface AssignRoomsDialogProps {
   open: boolean;
@@ -43,33 +37,6 @@ interface RoomDetails {
   } | null;
 }
 
-interface SpaceSelectItem {
-  id: string;
-  name: string;
-  room_number: string;
-  capacity: number | null;
-  current_occupancy: number;
-  floors: RoomDetails['floors'];
-}
-
-interface CurrentOccupant {
-  id: string;
-  first_name: string;
-  last_name: string;
-  is_primary: boolean;
-}
-
-function generateSpaceSelectItem(room: RoomDetails): SpaceSelectItem {
-  return {
-    id: room.id,
-    name: room.name,
-    room_number: room.room_number,
-    capacity: room.capacity ?? null,
-    current_occupancy: room.current_occupancy ?? 0,
-    floors: room.floors
-  };
-}
-
 export function AssignRoomsDialog({
   open,
   onOpenChange,
@@ -78,33 +45,10 @@ export function AssignRoomsDialog({
 }: AssignRoomsDialogProps) {
   const [selectedRoom, setSelectedRoom] = useState<string>("");
   const [isPrimaryAssignment, setIsPrimaryAssignment] = useState(false);
-  const [isAssigning, setIsAssigning] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [authError, setAuthError] = useState<string | null>(null);
 
-  // Check authentication on mount and when dialog opens
-  useEffect(() => {
-    if (open) {
-      checkAuth();
-    }
-  }, [open]);
-
-  const checkAuth = async () => {
-    try {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error) throw error;
-      if (!session) {
-        setAuthError("No active session found. Please log in again.");
-        return false;
-      }
-      setAuthError(null);
-      return true;
-    } catch (error: any) {
-      console.error("Auth check error:", error);
-      setAuthError(error.message || "Authentication error occurred");
-      return false;
-    }
-  };
+  const { authError, checkAuth } = useAuthCheck(open);
+  const { isAssigning, handleAssignRoom } = useRoomAssignment(onSuccess);
 
   const { data: availableRooms, isLoading: isLoadingRooms } = useQuery({
     queryKey: ["available-rooms"],
@@ -186,7 +130,7 @@ export function AssignRoomsDialog({
         }));
 
       console.log('Current occupants:', mappedOccupants);
-      return mappedOccupants as CurrentOccupant[];
+      return mappedOccupants;
     }
   });
 
@@ -201,21 +145,7 @@ export function AssignRoomsDialog({
   }) || [];
 
   const handleAssign = async () => {
-    if (!selectedRoom) {
-      toast.error("Please select a room to assign");
-      return;
-    }
-
-    // Verify auth before proceeding
-    const isAuthenticated = await checkAuth();
-    if (!isAuthenticated) {
-      toast.error("Authentication error. Please log in again.");
-      return;
-    }
-
     const selectedRoomDetails = availableRooms?.find(r => r.id === selectedRoom);
-    console.log('Selected room details:', selectedRoomDetails);
-    console.log('Selected occupants:', selectedOccupants);
     
     if (selectedRoomDetails?.capacity && 
         selectedRoomDetails.current_occupancy + selectedOccupants.length > selectedRoomDetails.capacity) {
@@ -223,38 +153,9 @@ export function AssignRoomsDialog({
       return;
     }
 
-    try {
-      setIsAssigning(true);
-
-      const assignments = selectedOccupants.map((occupantId) => ({
-        occupant_id: occupantId,
-        room_id: selectedRoom,
-        assigned_at: new Date().toISOString(),
-        is_primary: isPrimaryAssignment
-      }));
-
-      console.log('Creating room assignments:', assignments);
-
-      const { data, error: assignmentError } = await supabase
-        .from("occupant_room_assignments")
-        .insert(assignments)
-        .select();
-
-      if (assignmentError) {
-        console.error('Room assignment error:', assignmentError);
-        throw assignmentError;
-      }
-
-      console.log('Room assignment successful:', data);
-
-      toast.success(`Room${selectedOccupants.length > 1 ? 's' : ''} assigned successfully`);
-      onSuccess();
+    const success = await handleAssignRoom(selectedRoom, selectedOccupants, isPrimaryAssignment);
+    if (success) {
       onOpenChange(false);
-    } catch (error: any) {
-      console.error('Failed to assign rooms:', error);
-      toast.error(error.message || "Failed to assign rooms");
-    } finally {
-      setIsAssigning(false);
     }
   };
 
@@ -280,97 +181,36 @@ export function AssignRoomsDialog({
           </div>
         ) : (
           <div className="space-y-6 py-4">
-            <div className="space-y-4">
-              <label className="text-sm font-medium">Search and Select Room</label>
-              <div className="flex gap-2 items-center">
-                <div className="relative flex-1">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search rooms..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-8"
-                  />
-                </div>
-              </div>
+            <RoomSelectionSection
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              selectedRoom={selectedRoom}
+              onRoomChange={setSelectedRoom}
+              filteredRooms={filteredRooms}
+              isLoadingRooms={isLoadingRooms}
+            />
+
+            <div className="flex items-center space-x-2">
+              <label className="text-sm font-medium">Primary Assignment</label>
               <Select
-                value={selectedRoom}
-                onValueChange={setSelectedRoom}
-                disabled={isLoadingRooms}
+                value={isPrimaryAssignment ? "yes" : "no"}
+                onValueChange={(value) => setIsPrimaryAssignment(value === "yes")}
               >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder={isLoadingRooms ? "Loading rooms..." : "Select a room"} />
+                <SelectTrigger className="w-[100px]">
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <ScrollArea className="max-h-[300px]">
-                    {filteredRooms?.map((room) => (
-                      <SelectItem key={room.id} value={room.id}>
-                        <div className="flex items-center justify-between w-full pr-4">
-                          <span>
-                            {room.name} - {room.floors?.name}, {room.floors?.buildings?.name}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <Badge variant={
-                              !room.capacity ? "secondary" :
-                              room.current_occupancy >= room.capacity ? "destructive" :
-                              room.current_occupancy >= room.capacity * 0.8 ? "outline" :
-                              "default"
-                            }>
-                              <Users className="w-3 h-3 mr-1" />
-                              {room.current_occupancy}{room.capacity ? `/${room.capacity}` : ''}
-                            </Badge>
-                          </div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </ScrollArea>
+                  <SelectItem value="yes">Yes</SelectItem>
+                  <SelectItem value="no">No</SelectItem>
                 </SelectContent>
               </Select>
-
-              <div className="flex items-center space-x-2">
-                <label className="text-sm font-medium">Primary Assignment</label>
-                <Select
-                  value={isPrimaryAssignment ? "yes" : "no"}
-                  onValueChange={(value) => setIsPrimaryAssignment(value === "yes")}
-                >
-                  <SelectTrigger className="w-[100px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="yes">Yes</SelectItem>
-                    <SelectItem value="no">No</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
 
-            {selectedRoom && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Current Occupants</label>
-                <div className="rounded-md border p-4 space-y-2">
-                  {isLoadingOccupants ? (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Loading occupants...
-                    </div>
-                  ) : currentOccupants && currentOccupants.length > 0 ? (
-                    currentOccupants.map((occupant) => (
-                      <div key={occupant.id} className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Users className="w-4 h-4 text-muted-foreground" />
-                          <span>{occupant.first_name} {occupant.last_name}</span>
-                        </div>
-                        {occupant.is_primary && (
-                          <Badge variant="outline">Primary</Badge>
-                        )}
-                      </div>
-                    ))
-                  ) : (
-                    <span className="text-muted-foreground">No current occupants</span>
-                  )}
-                </div>
-              </div>
-            )}
+            <CurrentOccupantsSection
+              selectedRoom={selectedRoom}
+              currentOccupants={currentOccupants}
+              isLoadingOccupants={isLoadingOccupants}
+            />
 
             <div className="text-sm text-muted-foreground">
               Selected occupants: {selectedOccupants.length}
