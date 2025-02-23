@@ -94,7 +94,7 @@ export function AssignRoomsDialog({
               currentOccupants={currentOccupants}
               isLoadingOccupants={isLoadingOccupants}
               isPrimaryAssignment={isPrimaryAssignment}
-              onPrimaryAssignmentChange={(value) => setIsPrimaryAssignment(value === "yes")}
+              onPrimaryAssignmentChange={setIsPrimaryAssignment}
             />
 
             <div className="text-sm text-muted-foreground">
@@ -128,4 +128,3 @@ export function AssignRoomsDialog({
     </Dialog>
   );
 }
-

@@ -15,7 +15,7 @@ interface CurrentOccupantsSectionProps {
   currentOccupants: CurrentOccupant[] | undefined;
   isLoadingOccupants: boolean;
   isPrimaryAssignment: boolean;
-  onPrimaryAssignmentChange: (value: string) => void;
+  onPrimaryAssignmentChange: (value: boolean) => void;
 }
 
 export function CurrentOccupantsSection({
@@ -33,7 +33,7 @@ export function CurrentOccupantsSection({
         <label className="text-sm font-medium">Primary Assignment</label>
         <Select
           value={isPrimaryAssignment ? "yes" : "no"}
-          onValueChange={onPrimaryAssignmentChange}
+          onValueChange={(value: string) => onPrimaryAssignmentChange(value === "yes")}
         >
           <SelectTrigger className="w-[100px]">
             <SelectValue />
@@ -73,4 +73,3 @@ export function CurrentOccupantsSection({
     </div>
   );
 }
-
