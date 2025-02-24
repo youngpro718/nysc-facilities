@@ -1,99 +1,121 @@
-
 import { LightingFixture } from "@/components/lighting/types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { RotateCcw } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
-import { Badge } from "@/components/ui/badge";
+import { AlertTriangle, Zap, RotateCcw } from "lucide-react";
 
 interface CardBackProps {
   fixture: LightingFixture;
-  onFlip: () => void;
+  onFlip: (e?: React.MouseEvent) => void;
 }
 
 export const CardBack = ({ fixture, onFlip }: CardBackProps) => {
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'functional':
+        return <Badge className="bg-green-100 text-green-800">Functional</Badge>;
+      case 'maintenance_needed':
+        return <Badge className="bg-yellow-100 text-yellow-800">Needs Maintenance</Badge>;
+      case 'non_functional':
+        return <Badge className="bg-red-100 text-red-800">Non-functional</Badge>;
+      default:
+        return <Badge variant="outline">{status.replace(/_/g, ' ')}</Badge>;
+    }
+  };
+
   return (
-    <Card 
-      className="absolute w-full h-full cursor-pointer backface-hidden rotate-y-180"
-      onClick={onFlip}
-    >
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-lg font-bold">Maintenance History</CardTitle>
-        <Button 
-          variant="ghost" 
-          size="icon"
-          onClick={(e) => {
-            e.stopPropagation();
-            onFlip();
-          }}
-        >
-          <RotateCcw className="h-4 w-4" />
-        </Button>
-      </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[220px] pr-4">
+    <Card className="w-full h-full bg-card">
+      <CardContent className="p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="font-medium">Fixture History</h3>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation();
+              onFlip(e);
+            }}
+          >
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <ScrollArea className="h-[200px] pr-4">
           <div className="space-y-4">
-            {/* Ballast Status Section */}
-            <div className="space-y-2">
-              <h3 className="font-semibold">Ballast Status</h3>
-              <div className="flex items-center gap-2">
-                <Badge variant={fixture.ballast_issue ? "destructive" : "secondary"}>
-                  {fixture.ballast_issue ? "Issue Detected" : "Normal"}
-                </Badge>
-                {fixture.ballast_check_notes && (
-                  <p className="text-sm text-muted-foreground">
-                    {fixture.ballast_check_notes}
-                  </p>
-                )}
+            {/* Current Issues Section */}
+            {(fixture.electrical_issues?.short_circuit || 
+              fixture.electrical_issues?.wiring_issues || 
+              fixture.electrical_issues?.voltage_problems || 
+              fixture.ballast_issue) && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-red-500" />
+                  Current Issues
+                </h4>
+                <div className="space-y-1">
+                  {Object.entries(fixture.electrical_issues || {}).map(([issue, hasIssue]) => 
+                    hasIssue && (
+                      <div key={issue} className="flex items-center gap-2">
+                        <Zap className="h-3 w-3 text-yellow-500" />
+                        <span className="text-sm">{issue.replace(/_/g, ' ')}</span>
+                      </div>
+                    )
+                  )}
+                  {fixture.ballast_issue && (
+                    <div className="flex items-center gap-2">
+                      <Zap className="h-3 w-3 text-yellow-500" />
+                      <span className="text-sm">Ballast issue</span>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Maintenance History Section */}
-            <div className="space-y-2">
-              <h3 className="font-semibold">Maintenance Records</h3>
-              {fixture.maintenance_history && fixture.maintenance_history.length > 0 ? (
+            {fixture.maintenance_records && fixture.maintenance_records.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium">Maintenance History</h4>
                 <div className="space-y-2">
-                  {fixture.maintenance_history.map((record: any, index: number) => (
-                    <div key={index} className="text-sm p-2 bg-muted rounded-lg">
-                      <p className="font-medium">{record.type}</p>
-                      <p className="text-muted-foreground">
-                        {format(new Date(record.date), 'PPp')}
-                      </p>
+                  {fixture.maintenance_records.map((record, index) => (
+                    <div key={index} className="text-sm space-y-1 border rounded-md p-2">
+                      <div className="flex justify-between">
+                        <span className="font-medium">{record.type}</span>
+                        <span className="text-muted-foreground">
+                          {format(new Date(record.date), 'MMM d, yyyy')}
+                        </span>
+                      </div>
                       {record.notes && (
-                        <p className="text-muted-foreground mt-1">{record.notes}</p>
+                        <p className="text-muted-foreground">{record.notes}</p>
                       )}
                     </div>
                   ))}
                 </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">No maintenance records found</p>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Inspection History Section */}
-            <div className="space-y-2">
-              <h3 className="font-semibold">Inspection History</h3>
-              {fixture.inspection_history && fixture.inspection_history.length > 0 ? (
+            {fixture.inspection_records && fixture.inspection_records.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium">Inspection History</h4>
                 <div className="space-y-2">
-                  {fixture.inspection_history.map((inspection: any, index: number) => (
-                    <div key={index} className="text-sm p-2 bg-muted rounded-lg">
-                      <p className="font-medium">
-                        {inspection.status}
-                      </p>
-                      <p className="text-muted-foreground">
-                        {format(new Date(inspection.date), 'PPp')}
-                      </p>
-                      {inspection.notes && (
-                        <p className="text-muted-foreground mt-1">{inspection.notes}</p>
+                  {fixture.inspection_records.map((record, index) => (
+                    <div key={index} className="text-sm space-y-1 border rounded-md p-2">
+                      <div className="flex justify-between items-center">
+                        {getStatusBadge(record.status)}
+                        <span className="text-muted-foreground">
+                          {format(new Date(record.date), 'MMM d, yyyy')}
+                        </span>
+                      </div>
+                      {record.notes && (
+                        <p className="text-muted-foreground">{record.notes}</p>
                       )}
                     </div>
                   ))}
                 </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">No inspection records found</p>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </ScrollArea>
       </CardContent>

@@ -2,17 +2,18 @@ import { LightingFixture } from "@/components/lighting/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Edit2, Trash2, AlertTriangle, Zap } from "lucide-react";
+import { Edit2, Trash2, Lightbulb, RotateCw } from "lucide-react";
 import { EditLightingDialog } from "@/components/lighting/EditLightingDialog";
-import { LightingMaintenanceDialog } from "@/components/spaces/lighting/LightingMaintenanceDialog";
 import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface CardFrontProps {
   fixture: LightingFixture;
   isSelected: boolean;
   onSelect: (checked: boolean) => void;
-  onDelete: () => void;
+  onDelete: (e?: React.MouseEvent) => void;
   onFixtureUpdated: () => void;
+  onFlip: () => void;
 }
 
 export function CardFront({ 
@@ -20,78 +21,77 @@ export function CardFront({
   isSelected, 
   onSelect, 
   onDelete,
-  onFixtureUpdated 
+  onFixtureUpdated,
+  onFlip
 }: CardFrontProps) {
-  const statusColor = {
-    functional: "bg-green-500",
-    maintenance_needed: "bg-yellow-500",
-    non_functional: "bg-red-500",
-    pending_maintenance: "bg-blue-500",
-    scheduled_replacement: "bg-purple-500"
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'functional':
+        return 'bg-green-100 text-green-800';
+      case 'maintenance_needed':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'non_functional':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
   return (
-    <Card className={cn(
-      "relative group transition-all", 
-      isSelected ? "ring-2 ring-primary" : ""
-    )}>
-      <CardContent className="p-4">
+    <Card className="absolute w-full h-full bg-card">
+      <CardContent className="p-6 space-y-4">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
-            <h3 className="font-medium text-sm">{fixture.name}</h3>
             <div className="flex items-center gap-2">
-              <Badge variant="outline">{fixture.type}</Badge>
-              <Badge className={statusColor[fixture.status]}>
+              <Checkbox 
+                checked={isSelected}
+                onCheckedChange={onSelect}
+              />
+              <h3 className="font-medium">{fixture.name}</h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className={getStatusColor(fixture.status)}>
                 {fixture.status.replace(/_/g, ' ')}
+              </Badge>
+              <Badge variant="outline">
+                {fixture.type}
               </Badge>
             </div>
           </div>
-
-          <input
-            type="checkbox"
-            checked={isSelected}
-            onChange={(e) => onSelect(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300"
-          />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                onFlip();
+              }}
+            >
+              <RotateCw className="h-4 w-4" />
+            </Button>
+            <EditLightingDialog 
+              fixture={fixture}
+              onFixtureUpdated={onFixtureUpdated}
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={onDelete}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
-        <div className="mt-4 space-y-2">
-          {fixture.electrical_issues && (
-            Object.entries(fixture.electrical_issues).map(([key, value]) => (
-              value && (
-                <div key={key} className="flex items-center gap-2 text-red-600 text-sm">
-                  <Zap className="h-4 w-4" />
-                  <span>{key.replace(/_/g, ' ')}</span>
-                </div>
-              )
-            ))
-          )}
-
-          {fixture.ballast_issue && (
-            <div className="flex items-center gap-2 text-orange-600 text-sm">
-              <AlertTriangle className="h-4 w-4" />
-              <span>Ballast Issue</span>
-            </div>
-          )}
-        </div>
-
-        <div className="mt-4 flex items-center gap-2">
-          <EditLightingDialog 
-            fixture={fixture} 
-            onFixtureUpdated={onFixtureUpdated}
-          />
-          <Button 
-            variant="outline" 
-            size="icon"
-            onClick={onDelete}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-          <LightingMaintenanceDialog
-            fixtureId={fixture.id}
-            fixtureName={fixture.name}
-            onMaintenanceScheduled={onFixtureUpdated}
-          />
+        <div className="space-y-2 text-sm">
+          <div className="flex items-center gap-2">
+            <Lightbulb className="h-4 w-4" />
+            <span>{fixture.bulb_count} {fixture.technology || 'Standard'} {fixture.bulb_count === 1 ? 'Bulb' : 'Bulbs'}</span>
+          </div>
+          <p className="text-muted-foreground">
+            {fixture.building_name} - {fixture.floor_name}
+            {fixture.room_number && ` (Room ${fixture.room_number})`}
+          </p>
         </div>
       </CardContent>
     </Card>

@@ -1,10 +1,8 @@
-
 import { useState } from 'react';
 import { LightingFixture } from "@/components/lighting/types";
 import { CardFront } from "./CardFront";
 import { CardBack } from "./CardBack";
-import { Button } from "@/components/ui/button";
-import { RotateCw } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface LightingFixtureCardProps {
   fixture: LightingFixture;
@@ -24,33 +22,43 @@ export const LightingFixtureCard = ({
   const [isFlipped, setIsFlipped] = useState(false);
 
   return (
-    <div className="relative w-full h-[300px] perspective-1000">
-      <div className={`relative w-full h-full transform-style-3d transition-transform duration-500 ${
-        isFlipped ? 'rotate-y-180' : ''
-      }`}>
-        <div className="absolute bottom-4 right-4 z-10">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsFlipped(!isFlipped);
-            }}
-          >
-            <RotateCw className="h-4 w-4" />
-          </Button>
+    <div 
+      className="relative w-full h-[300px]"
+      style={{ perspective: '1000px' }}
+    >
+      <div 
+        className={cn(
+          "relative w-full h-full duration-500",
+          "preserve-3d transition-transform",
+          isFlipped ? "[transform:rotateY(180deg)]" : ""
+        )}
+        style={{ transformStyle: 'preserve-3d' }}
+      >
+        {/* Front of card */}
+        <div 
+          className="absolute w-full h-full"
+          style={{ backfaceVisibility: 'hidden' }}
+        >
+          <CardFront
+            fixture={fixture}
+            isSelected={isSelected}
+            onSelect={onSelect}
+            onDelete={onDelete}
+            onFixtureUpdated={onFixtureUpdated}
+            onFlip={() => setIsFlipped(true)}
+          />
         </div>
-        <CardFront
-          fixture={fixture}
-          isSelected={isSelected}
-          onSelect={onSelect}
-          onDelete={onDelete}
-          onFixtureUpdated={onFixtureUpdated}
-        />
-        <CardBack
-          fixture={fixture}
-          onFlip={() => setIsFlipped(false)}
-        />
+
+        {/* Back of card */}
+        <div 
+          className="absolute w-full h-full [transform:rotateY(180deg)]"
+          style={{ backfaceVisibility: 'hidden' }}
+        >
+          <CardBack
+            fixture={fixture}
+            onFlip={() => setIsFlipped(false)}
+          />
+        </div>
       </div>
     </div>
   );
