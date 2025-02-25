@@ -21,22 +21,27 @@ interface FormValues {
   start_date: string;
   end_date: string;
   reason: string;
+  relocation_type: "emergency" | "maintenance" | "other" | "construction";
   special_instructions?: string;
 }
 
 export function RelocationDialog({ open, onOpenChange }: RelocationDialogProps) {
-  const form = useForm<FormValues>();
+  const form = useForm<FormValues>({
+    defaultValues: {
+      relocation_type: "maintenance"
+    }
+  });
   const queryClient = useQueryClient();
 
   const createRelocation = useMutation({
     mutationFn: async (values: FormValues) => {
       const { data, error } = await supabase
         .from('room_relocations')
-        .insert([{
+        .insert({
           ...values,
           status: 'scheduled',
-          relocation_type: 'temporary'
-        }])
+          notes: values.special_instructions
+        })
         .select()
         .single();
 
@@ -113,6 +118,30 @@ export function RelocationDialog({ open, onOpenChange }: RelocationDialogProps) 
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="relocation_type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Relocation Type</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="maintenance">Maintenance</SelectItem>
+                      <SelectItem value="emergency">Emergency</SelectItem>
+                      <SelectItem value="construction">Construction</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
