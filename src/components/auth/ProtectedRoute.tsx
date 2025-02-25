@@ -7,9 +7,10 @@ import { toast } from 'sonner';
 
 interface ProtectedRouteProps {
   children: ReactNode;
+  requireAdmin?: boolean;
 }
 
-export function ProtectedRoute({ children }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
   const navigate = useNavigate();
 
   // Check maintenance mode status
@@ -37,6 +38,20 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
         return;
       }
 
+      if (requireAdmin) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('access_level')
+          .eq('id', session.user.id)
+          .single();
+          
+        if (profile?.access_level !== 'admin') {
+          toast.error('Admin access required');
+          navigate('/dashboard');
+          return;
+        }
+      }
+
       // Check if system is in maintenance mode
       if (settings?.maintenance_mode) {
         // Get user's profile to check if they're an admin
@@ -55,7 +70,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     };
 
     checkSession();
-  }, [navigate, settings]);
+  }, [navigate, settings, requireAdmin]);
 
   return <>{children}</>;
 }
