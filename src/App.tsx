@@ -1,4 +1,3 @@
-
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Layout from "@/components/layout/Layout";
@@ -14,7 +13,6 @@ import Lighting from "@/pages/Lighting";
 import UserDashboard from "@/pages/UserDashboard";
 import AdminProfile from "@/pages/AdminProfile";
 import VerificationPending from "@/pages/VerificationPending";
-import MaintenancePage from "@/pages/MaintenancePage";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -90,7 +88,6 @@ function App() {
                 {/* Public Routes */}
                 <Route path="login" element={<LoginPage />} />
                 <Route path="verification-pending" element={<VerificationPending />} />
-                <Route path="maintenance" element={<MaintenancePage />} />
                 <Route path="*" element={<NotFound />} />
               </Route>
             </Routes>
