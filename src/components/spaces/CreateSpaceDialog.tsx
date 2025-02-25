@@ -47,11 +47,15 @@ export function CreateSpaceDialog() {
 
   const createSpaceMutation = useMutation({
     mutationFn: createSpace,
-    onSuccess: (_, variables) => {
-      // Invalidate both the rooms query and the specific building/floor combination
-      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+    onSuccess: (data, variables) => {
+      console.log('Space created successfully:', data);
+      
+      // Invalidate both queries to ensure UI updates
       queryClient.invalidateQueries({ 
         queryKey: ['rooms', variables.buildingId, variables.floorId] 
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ['rooms'] 
       });
       
       toast({
@@ -62,16 +66,18 @@ export function CreateSpaceDialog() {
       form.reset();
     },
     onError: (error) => {
+      console.error('Error in createSpaceMutation:', error);
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create space",
+        title: "Error creating space",
+        description: error instanceof Error ? error.message : "Failed to create space. Please try again.",
         variant: "destructive",
       });
     },
   });
 
-  const onSubmit = (data: CreateSpaceFormData) => {
+  const onSubmit = async (data: CreateSpaceFormData) => {
     if (createSpaceMutation.isPending) return;
+    console.log('Submitting form data:', data);
     createSpaceMutation.mutate(data);
   };
 
@@ -105,4 +111,3 @@ export function CreateSpaceDialog() {
     </Dialog>
   );
 }
-
