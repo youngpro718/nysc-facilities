@@ -28,13 +28,21 @@ export function RelocationDialog({ open, onOpenChange }: RelocationDialogProps) 
 
   const createRelocation = useMutation({
     mutationFn: async (values: FormValues) => {
+      // Prepare the data to match the database requirements
+      const relocationData = {
+        original_room_id: values.original_room_id,
+        temporary_room_id: values.temporary_room_id,
+        start_date: values.start_date,
+        end_date: values.end_date,
+        reason: values.reason,
+        relocation_type: values.relocation_type,
+        status: 'scheduled',
+        notes: values.special_instructions || ''
+      };
+
       const { data, error } = await supabase
         .from('room_relocations')
-        .insert({
-          ...values,
-          status: 'scheduled',
-          notes: values.special_instructions
-        })
+        .insert(relocationData)
         .select()
         .single();
 
