@@ -12,6 +12,7 @@ export async function createSpace(data: CreateSpaceFormData) {
     type: data.type,
     floor_id: data.floorId,
     status: data.status,
+    room_number: data.type === 'room' ? data.roomNumber : null,
     position: data.position || { x: 0, y: 0 },
     size: data.type === 'door' ? 
       { width: 60, height: 20 } : 
@@ -25,7 +26,10 @@ export async function createSpace(data: CreateSpaceFormData) {
     .select()
     .single();
 
-  if (spaceError) throw spaceError;
+  if (spaceError) {
+    console.error('Error creating space:', spaceError);
+    throw spaceError;
+  }
 
   if (data.type === 'room') {
     // Type guard to narrow down the type with correct enum types
@@ -55,23 +59,12 @@ export async function createSpace(data: CreateSpaceFormData) {
       .from('room_properties')
       .insert(roomProperties);
 
-    if (roomError) throw roomError;
-  }
-
-  if (data.connections) {
-    const { error: connectionError } = await supabase
-      .from('space_connections')
-      .insert([{
-        from_space_id: space.id,
-        to_space_id: data.connections.toSpaceId,
-        space_type: data.type,
-        connection_type: data.connections.connectionType,
-        direction: data.connections.direction,
-        status: 'active',
-        connection_status: 'active'
-      }]);
-
-    if (connectionError) throw connectionError;
+    if (roomError) {
+      console.error('Error creating room properties:', roomError);
+      // Delete the space if room properties creation fails
+      await supabase.from('new_spaces').delete().match({ id: space.id });
+      throw roomError;
+    }
   }
 
   return space;
