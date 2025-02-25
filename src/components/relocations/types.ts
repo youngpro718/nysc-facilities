@@ -10,9 +10,8 @@ export const relocationSchema = z.object({
   }),
   temporary_room_id: z.string({
     required_error: "Please select the temporary room"
-  }).superRefine((val, ctx) => {
-    const data = ctx.parent as { original_room_id: string };
-    if (val === data.original_room_id) {
+  }).superRefine((val, ctx: z.RefinementContext) => {
+    if (val === (ctx as any).data.original_room_id) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Temporary room must be different from original room"
@@ -24,10 +23,9 @@ export const relocationSchema = z.object({
   }),
   end_date: z.string({
     required_error: "End date is required"
-  }).superRefine((val, ctx) => {
-    const data = ctx.parent as { start_date: string };
-    if (data.start_date && val) {
-      if (new Date(val) <= new Date(data.start_date)) {
+  }).superRefine((val, ctx: z.RefinementContext) => {
+    if ((ctx as any).data.start_date && val) {
+      if (new Date(val) <= new Date((ctx as any).data.start_date)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "End date must be after start date"
