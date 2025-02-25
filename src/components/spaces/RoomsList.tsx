@@ -1,3 +1,4 @@
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -32,8 +33,8 @@ const RoomsList = ({ selectedBuilding, selectedFloor }: RoomsListProps) => {
     searchQuery,
     sortBy,
     statusFilter,
-    selectedBuilding: 'all',
-    selectedFloor: 'all',
+    selectedBuilding,
+    selectedFloor,
   });
 
   const deleteRoom = useMutation({
