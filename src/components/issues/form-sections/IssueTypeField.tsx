@@ -1,5 +1,5 @@
 
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -9,7 +9,7 @@ import { UseFormReturn } from "react-hook-form";
 import { FormData } from "../types/formTypes";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-import { getIssueTypeIcon } from "../wizard/IssueWizard";
+import { getIssueTypeIcon } from "../utils/issueIcons";
 
 interface IssueTypeFieldProps {
   form: UseFormReturn<FormData>;
@@ -84,4 +84,3 @@ export function IssueTypeField({ form }: IssueTypeFieldProps) {
     />
   );
 }
-
