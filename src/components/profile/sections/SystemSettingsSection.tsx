@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 interface SystemSettings {
   maintenance_mode: boolean;
@@ -51,7 +52,6 @@ export function SystemSettingsSection() {
       if (error) throw error;
       
       if (data?.value) {
-        // First cast to unknown, then validate and type cast
         const valueAsUnknown = data.value as unknown;
         
         if (isValidSystemSettings(valueAsUnknown)) {
@@ -75,13 +75,19 @@ export function SystemSettingsSection() {
 
   const updateSetting = async (key: keyof SystemSettings, value: boolean) => {
     try {
+      // If turning on maintenance mode, show confirmation dialog
+      if (key === 'maintenance_mode' && value) {
+        return; // The actual update will be handled by the AlertDialog
+      }
+
       const newSettings = { ...settings, [key]: value };
       
       const { error } = await supabase
         .from('system_settings')
         .upsert({
           key: 'general_settings',
-          value: newSettings
+          value: newSettings,
+          updated_at: new Date().toISOString()
         });
 
       if (error) throw error;
@@ -91,6 +97,28 @@ export function SystemSettingsSection() {
     } catch (error) {
       console.error('Error updating setting:', error);
       toast.error('Failed to update setting');
+    }
+  };
+
+  const enableMaintenanceMode = async () => {
+    try {
+      const newSettings = { ...settings, maintenance_mode: true };
+      
+      const { error } = await supabase
+        .from('system_settings')
+        .upsert({
+          key: 'general_settings',
+          value: newSettings,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+      
+      setSettings(newSettings);
+      toast.success('Maintenance mode enabled');
+    } catch (error) {
+      console.error('Error enabling maintenance mode:', error);
+      toast.error('Failed to enable maintenance mode');
     }
   };
 
@@ -110,10 +138,32 @@ export function SystemSettingsSection() {
               Enable maintenance mode to prevent user access
             </p>
           </div>
-          <Switch
-            checked={settings.maintenance_mode}
-            onCheckedChange={(checked) => updateSetting('maintenance_mode', checked)}
-          />
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Switch
+                checked={settings.maintenance_mode}
+                onCheckedChange={(checked) => {
+                  if (!checked) {
+                    updateSetting('maintenance_mode', false);
+                  }
+                }}
+              />
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Enable Maintenance Mode?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will prevent all non-admin users from accessing the system. Are you sure you want to continue?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={enableMaintenanceMode}>
+                  Enable
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
 
         <div className="flex items-center justify-between">

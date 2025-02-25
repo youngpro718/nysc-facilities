@@ -6147,6 +6147,44 @@ export type Database = {
         }
         Returns: string
       }
+      find_doors_by_room_number: {
+        Args: {
+          p_room_number: string
+        }
+        Returns: {
+          id: string
+          label: string
+          status: string
+          room_type: string
+        }[]
+      }
+      get_connected_objects: {
+        Args: {
+          p_object_id: string
+        }
+        Returns: {
+          id: string
+          type: Database["public"]["Enums"]["floor_plan_object_type"]
+          label: string
+          connection_type: string
+        }[]
+      }
+      get_door_room_details: {
+        Args: {
+          door_id: string
+        }
+        Returns: {
+          room_type: string
+          room_number: string
+          status: string
+        }[]
+      }
+      get_door_status: {
+        Args: {
+          door_id: string
+        }
+        Returns: string
+      }
       get_next_lighting_sequence: {
         Args: {
           p_space_id: string
@@ -6164,6 +6202,14 @@ export type Database = {
           key_id: string
         }
         Returns: number
+      }
+      initialize_door_properties: {
+        Args: {
+          p_room_number?: string
+          p_room_type?: string
+          p_status?: string
+        }
+        Returns: Json
       }
       is_admin: {
         Args: {
@@ -6190,6 +6236,22 @@ export type Database = {
           p_status?: string
         }
         Returns: undefined
+      }
+      update_door_properties: {
+        Args: {
+          p_door_id: string
+          p_room_number?: string
+          p_room_type?: string
+          p_status?: string
+        }
+        Returns: undefined
+      }
+      validate_floor_plan_connection: {
+        Args: {
+          source_id: string
+          target_id: string
+        }
+        Returns: boolean
       }
     }
     Enums: {
