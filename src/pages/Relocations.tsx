@@ -3,8 +3,10 @@ import { useState } from "react";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { RelocationsList } from "@/components/relocations/RelocationsList";
 import { RelocationDialog } from "@/components/relocations/RelocationDialog";
+import { RelocationCalendar } from "@/components/relocations/RelocationCalendar";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const Relocations = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -20,7 +22,18 @@ const Relocations = () => {
         </Button>
       </div>
       
-      <RelocationsList />
+      <Tabs defaultValue="list">
+        <TabsList>
+          <TabsTrigger value="list">List View</TabsTrigger>
+          <TabsTrigger value="calendar">Calendar View</TabsTrigger>
+        </TabsList>
+        <TabsContent value="list">
+          <RelocationsList />
+        </TabsContent>
+        <TabsContent value="calendar">
+          <RelocationCalendar />
+        </TabsContent>
+      </Tabs>
       
       <RelocationDialog 
         open={showCreateDialog}
