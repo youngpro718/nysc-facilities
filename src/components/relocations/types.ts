@@ -10,7 +10,7 @@ export const relocationSchema = z.object({
   }),
   temporary_room_id: z.string({
     required_error: "Please select the temporary room"
-  }).superRefine((val, ctx: z.RefinementContext) => {
+  }).superRefine((val, ctx: z.RefinementCtx) => {
     if (val === (ctx as any).data.original_room_id) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -23,7 +23,7 @@ export const relocationSchema = z.object({
   }),
   end_date: z.string({
     required_error: "End date is required"
-  }).superRefine((val, ctx: z.RefinementContext) => {
+  }).superRefine((val, ctx: z.RefinementCtx) => {
     if ((ctx as any).data.start_date && val) {
       if (new Date(val) <= new Date((ctx as any).data.start_date)) {
         ctx.addIssue({
@@ -43,3 +43,4 @@ export const relocationSchema = z.object({
 });
 
 export type FormValues = z.infer<typeof relocationSchema>;
+
