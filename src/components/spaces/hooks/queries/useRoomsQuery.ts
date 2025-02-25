@@ -20,9 +20,9 @@ export function useRoomsQuery({ buildingId, floorId }: UseRoomsQueryProps = {}) 
   const { toast } = useToast();
 
   return useQuery({
-    queryKey: ['rooms', buildingId, floorId], // Include filters in query key
+    queryKey: ['rooms', buildingId, floorId],
     queryFn: async () => {
-      console.log("Fetching rooms data with filters:", { buildingId, floorId });
+      console.log("Fetching rooms with filters:", { buildingId, floorId });
       
       const { data: roomsData, error: roomsError } = await fetchRoomsData(buildingId, floorId);
 
@@ -36,7 +36,12 @@ export function useRoomsQuery({ buildingId, floorId }: UseRoomsQueryProps = {}) 
         throw roomsError;
       }
 
-      if (!roomsData) return [];
+      console.log("Raw rooms data from database:", roomsData);
+
+      if (!roomsData) {
+        console.log("No rooms data returned from query");
+        return [];
+      }
 
       // Fetch additional data in parallel
       const [
@@ -47,7 +52,12 @@ export function useRoomsQuery({ buildingId, floorId }: UseRoomsQueryProps = {}) 
       ] = await fetchRelatedRoomData(roomsData.map(room => room.id));
 
       if (occupantsError || issuesError || historyError || fixturesError) {
-        console.error('Error fetching related data:', { occupantsError, issuesError, historyError, fixturesError });
+        console.error('Error fetching related data:', { 
+          occupantsError, 
+          issuesError, 
+          historyError, 
+          fixturesError 
+        });
       }
 
       // Create lookup maps for the related data
@@ -65,7 +75,7 @@ export function useRoomsQuery({ buildingId, floorId }: UseRoomsQueryProps = {}) 
         occupantsByRoomId
       );
 
-      console.log("Transformed room data:", transformedRooms);
+      console.log("Transformed rooms data:", transformedRooms);
       return transformedRooms;
     },
     staleTime: 1000 * 60 * 5, // Cache data for 5 minutes

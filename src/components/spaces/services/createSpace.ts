@@ -21,6 +21,8 @@ export async function createSpace(data: CreateSpaceFormData) {
       rotation: data.rotation || 0
     };
 
+    console.log('Inserting space with data:', spaceData);
+
     const { data: space, error: spaceError } = await supabase
       .from('new_spaces')
       .insert([spaceData])
@@ -31,6 +33,8 @@ export async function createSpace(data: CreateSpaceFormData) {
       console.error('Error creating space:', spaceError);
       throw spaceError;
     }
+
+    console.log('Successfully created space:', space);
 
     if (data.type === 'room') {
       // Type guard to narrow down the type with correct enum types
@@ -45,6 +49,8 @@ export async function createSpace(data: CreateSpaceFormData) {
         parentRoomId?: string | null;
       };
 
+      console.log('Creating room properties for space:', space.id);
+
       // Check if room properties already exist for this space
       const { data: existingProps } = await supabase
         .from('room_properties')
@@ -54,6 +60,8 @@ export async function createSpace(data: CreateSpaceFormData) {
 
       // If room properties already exist, update them instead of inserting
       if (existingProps) {
+        console.log('Updating existing room properties for space:', space.id);
+        
         const { error: updateError } = await supabase
           .from('room_properties')
           .update({
@@ -74,6 +82,8 @@ export async function createSpace(data: CreateSpaceFormData) {
           throw updateError;
         }
       } else {
+        console.log('Creating new room properties for space:', space.id);
+        
         // Insert new room properties
         const roomProperties = {
           space_id: space.id,
@@ -97,6 +107,8 @@ export async function createSpace(data: CreateSpaceFormData) {
           throw roomError;
         }
       }
+
+      console.log('Successfully created/updated room properties');
     }
 
     return space;
