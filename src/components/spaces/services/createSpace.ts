@@ -6,13 +6,7 @@ import { RoomTypeEnum, StorageTypeEnum } from "../rooms/types/roomEnums";
 export async function createSpace(data: CreateSpaceFormData) {
   console.log('Creating space with data:', data);
   
-  // Start a transaction by creating a client
-  const client = supabase;
-  
   try {
-    // Start the transaction
-    await client.rpc('begin');
-    
     // Create base space record
     const spaceData = {
       name: data.name,
@@ -27,7 +21,7 @@ export async function createSpace(data: CreateSpaceFormData) {
       rotation: data.rotation || 0
     };
 
-    const { data: space, error: spaceError } = await client
+    const { data: space, error: spaceError } = await supabase
       .from('new_spaces')
       .insert([spaceData])
       .select()
@@ -52,7 +46,7 @@ export async function createSpace(data: CreateSpaceFormData) {
       };
 
       // Check if room properties already exist for this space
-      const { data: existingProps } = await client
+      const { data: existingProps } = await supabase
         .from('room_properties')
         .select()
         .eq('space_id', space.id)
@@ -60,7 +54,7 @@ export async function createSpace(data: CreateSpaceFormData) {
 
       // If room properties already exist, update them instead of inserting
       if (existingProps) {
-        const { error: updateError } = await client
+        const { error: updateError } = await supabase
           .from('room_properties')
           .update({
             room_type: roomData.roomType,
@@ -75,6 +69,8 @@ export async function createSpace(data: CreateSpaceFormData) {
 
         if (updateError) {
           console.error('Error updating room properties:', updateError);
+          // Delete the space if room properties update fails
+          await supabase.from('new_spaces').delete().match({ id: space.id });
           throw updateError;
         }
       } else {
@@ -90,26 +86,22 @@ export async function createSpace(data: CreateSpaceFormData) {
           parent_room_id: roomData.parentRoomId,
         };
 
-        const { error: roomError } = await client
+        const { error: roomError } = await supabase
           .from('room_properties')
           .insert(roomProperties);
 
         if (roomError) {
           console.error('Error creating room properties:', roomError);
           // Delete the space if room properties creation fails
-          await client.from('new_spaces').delete().match({ id: space.id });
+          await supabase.from('new_spaces').delete().match({ id: space.id });
           throw roomError;
         }
       }
     }
 
-    // Commit the transaction
-    await client.rpc('commit');
-
     return space;
   } catch (error) {
-    // Rollback the transaction on error
-    await client.rpc('rollback');
+    console.error('Error in createSpace:', error);
     throw error;
   }
 }
