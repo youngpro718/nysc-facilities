@@ -13,7 +13,7 @@ export const ISSUE_TYPES: StandardizedIssueType[] = [
   'CLEANING_REQUEST',
   'ELECTRICAL_NEEDS',
   'GENERAL_REQUESTS',
-  'LIGHTING_NEEDS',
+  'LIGHTING',  // Changed from LIGHTING_NEEDS to match database
   'PLUMBING_NEEDS'
 ] as const;
 
@@ -38,5 +38,27 @@ export const PROBLEM_TYPES: Record<StandardizedIssueType, string[]> = {
   'RESTROOM_REPAIR': ['Fixture', 'Plumbing', 'Supplies', 'Cleaning'],
   'SIGNAGE': ['New', 'Repair', 'Update', 'Remove'],
   'WINDOW': ['Broken', 'Seal', 'Lock', 'Screen']
+};
+
+// Add utility functions for icon handling
+export const getIssueTypeIcon = (type: StandardizedIssueType) => {
+  switch (type) {
+    case 'ELECTRICAL_NEEDS':
+      return 'Bolt';
+    case 'PLUMBING_NEEDS':
+      return 'Droplet';
+    case 'CLIMATE_CONTROL':
+      return 'Thermometer';
+    case 'ACCESS_REQUEST':
+      return 'Key';
+    case 'BUILDING_SYSTEMS':
+      return 'Building2';
+    case 'CLEANING_REQUEST':
+      return 'Trash2';
+    case 'LIGHTING':
+      return 'Lightbulb';
+    default:
+      return 'AlertCircle';
+  }
 };
 
