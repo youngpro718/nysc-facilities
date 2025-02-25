@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useRooms } from "@/hooks/useRooms";
+import { Loader2 } from "lucide-react";
 
 interface RelocationDialogProps {
   open: boolean;
@@ -32,6 +34,7 @@ export function RelocationDialog({ open, onOpenChange }: RelocationDialogProps) 
     }
   });
   const queryClient = useQueryClient();
+  const { data: rooms, isLoading: roomsLoading } = useRooms();
 
   const createRelocation = useMutation({
     mutationFn: async (values: FormValues) => {
@@ -83,12 +86,19 @@ export function RelocationDialog({ open, onOpenChange }: RelocationDialogProps) 
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select room" />
+                          <SelectValue placeholder={roomsLoading ? "Loading rooms..." : "Select room"} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {/* Room options will be populated here */}
-                        <SelectItem value="room1">Room 101</SelectItem>
+                        {roomsLoading ? (
+                          <div className="flex items-center justify-center p-4">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          </div>
+                        ) : rooms?.map((room) => (
+                          <SelectItem key={room.id} value={room.id}>
+                            Room {room.room_number} - {room.floors.buildings.name}, {room.floors.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -105,12 +115,19 @@ export function RelocationDialog({ open, onOpenChange }: RelocationDialogProps) 
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select room" />
+                          <SelectValue placeholder={roomsLoading ? "Loading rooms..." : "Select room"} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {/* Room options will be populated here */}
-                        <SelectItem value="room2">Room 102</SelectItem>
+                        {roomsLoading ? (
+                          <div className="flex items-center justify-center p-4">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          </div>
+                        ) : rooms?.map((room) => (
+                          <SelectItem key={room.id} value={room.id}>
+                            Room {room.room_number} - {room.floors.buildings.name}, {room.floors.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
