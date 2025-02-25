@@ -12,6 +12,8 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import { EditLightingZoneDialog } from "./EditLightingZoneDialog";
+import { ZoneControls } from "./components/ZoneControls";
 
 type LightingZone = {
   id: string;
@@ -29,7 +31,12 @@ type LightingZone = {
   }[];
 };
 
-export const LightingZonesList = () => {
+interface LightingZonesListProps {
+  selectedBuilding: string;
+  selectedFloor: string;
+}
+
+export function LightingZonesList({ selectedBuilding, selectedFloor }: LightingZonesListProps) {
   const { data: zones, isLoading, refetch } = useQuery({
     queryKey: ['lighting_zones'],
     queryFn: async () => {
@@ -135,16 +142,19 @@ export const LightingZonesList = () => {
                   </HoverCardContent>
                 </HoverCard>
               )}
+
+              <ZoneControls
+                zoneId={zone.id}
+                zoneName={zone.name}
+                zoneType={zone.type}
+              />
             </div>
             
             <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={() => toast.info("Edit zone coming soon!")}
-              >
-                <Edit2 className="h-4 w-4" />
-              </Button>
+              <EditLightingZoneDialog 
+                zone={zone}
+                onZoneUpdated={refetch}
+              />
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="outline" size="icon">
@@ -178,4 +188,4 @@ export const LightingZonesList = () => {
       </div>
     </div>
   );
-};
+}

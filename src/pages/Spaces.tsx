@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import SpacesTabs from "@/components/spaces/SpacesTabs";
 import { CreateSpaceDialog } from "@/components/spaces/CreateSpaceDialog";
@@ -15,9 +14,9 @@ const Spaces = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
+    <div className="space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="space-y-2">
           <h2 className="text-3xl font-bold tracking-tight">Space Management</h2>
           <SpacesBreadcrumb buildingId={selectedBuilding} floorId={selectedFloor} />
         </div>
@@ -33,10 +32,12 @@ const Spaces = () => {
         onFloorChange={setSelectedFloor}
       />
       
-      <SpacesTabs
-        selectedBuilding={selectedBuilding}
-        selectedFloor={selectedFloor}
-      />
+      <div className="mt-6">
+        <SpacesTabs
+          selectedBuilding={selectedBuilding}
+          selectedFloor={selectedFloor}
+        />
+      </div>
     </div>
   );
 };

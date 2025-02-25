@@ -52,79 +52,60 @@ export function EditPropertiesPanel({ selectedObject, onClose, onUpdate }: EditP
       rotation: selectedObject.rotation || 0,
       room_number: selectedObject.properties?.room_number || '',
       room_type: selectedObject.properties?.room_type || 'default',
-      status: selectedObject.properties?.status || 'active',
+      status: selectedObject.properties?.status || 'active'
     }
   });
 
-  const onSubmit = async (data: FormValues) => {
+  const onSubmit = async (values: FormValues) => {
     try {
-      console.log('Selected object:', selectedObject);
-      console.log('Form data:', data);
+      const table = selectedObject.type === 'door' ? 'doors' : 
+                    selectedObject.type === 'hallway' ? 'hallways' : 
+                    selectedObject.type === 'room' ? 'rooms' : 
+                    'floor_plan_objects';
 
-      const isHallway = selectedObject.type === 'hallway';
-      const isRoom = selectedObject.type === 'room';
-      const tableName = isHallway ? 'hallways' : isRoom ? 'rooms' : 'floor_plan_objects';
+      console.log('Updating object:', {
+        id: selectedObject.id,
+        type: selectedObject.type,
+        values
+      });
 
-      const baseUpdateData = {
-        position: {
-          x: Number(data.positionX),
-          y: Number(data.positionY)
-        },
-        size: {
-          width: Number(data.width),
-          height: Number(data.height)
-        },
-        rotation: Number(data.rotation)
-      };
+      const { error } = await supabase
+        .from(table)
+        .update({
+          label: values.label,
+          position: { 
+            x: Math.round(values.positionX), 
+            y: Math.round(values.positionY) 
+          },
+          size: { 
+            width: Math.round(values.width), 
+            height: Math.round(values.height) 
+          },
+          rotation: values.rotation,
+          properties: {
+            ...selectedObject.properties,
+            room_number: values.room_number,
+            room_type: values.room_type,
+            status: values.status
+          }
+        })
+        .eq('id', selectedObject.id);
 
-      const updateData = isHallway ? {
-        ...baseUpdateData,
-        name: data.label,
-        status: data.status,
-        properties: {
-          ...selectedObject.properties,
-          status: data.status
-        }
-      } : isRoom ? {
-        ...baseUpdateData,
-        name: data.label,
-        room_number: data.room_number,
-        room_type: data.room_type,
-        status: data.status
-      } : {
-        ...baseUpdateData,
-        label: data.label,
-        type: selectedObject.type as SpaceType,
-        properties: {
-          room_number: data.room_number,
-          room_type: data.room_type,
-          status: data.status
-        },
-        style: selectedObject.style
-      };
-
-      console.log('Sending update data:', updateData);
-      console.log('Updating table:', tableName);
-
-      const { data: result, error } = await supabase
-        .from(tableName)
-        .update(updateData)
-        .eq('id', selectedObject.id)
-        .select();
-
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
+      if (error) throw error;
+      
+      console.log('Successfully updated object:', selectedObject.id);
+      toast.success('Changes saved successfully');
+      
+      // Trigger the update callback to refresh the floor plan
+      if (onUpdate) {
+        onUpdate();
       }
-
-      console.log('Update result:', result);
-
-      toast.success('Properties updated successfully');
-      onUpdate();
+      
+      // Close the edit panel
       onClose();
-    } catch (error) {
-      console.error('Error updating properties:', error);
-      toast.error('Failed to update properties');
+    } catch (err) {
+      console.error('Error updating object:', err);
+      toast.error('Failed to save changes');
     }
   };
 

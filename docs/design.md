@@ -1,4 +1,3 @@
-
 # Design System
 
 ## Colors
@@ -112,3 +111,69 @@ import { Link2, Loader2, UserRound } from "lucide-react";
 - ARIA labels on interactive elements
 - Focus management
 - Color contrast compliance
+
+# Design Documentation
+
+## Floor Plan Interface
+
+### Visual Design
+1. Layout
+   - Split view with canvas and properties panel
+   - Fixed-position control bar at top
+   - Responsive grid layout for different screen sizes
+
+2. Node Styling
+   - Consistent color scheme for different node types
+   - Status-based visual feedback
+   - Clear connection points with hover states
+   - Rotation and resize handles
+
+3. Interactive Elements
+   - Intuitive zoom controls (0.5x to 2x)
+   - Pan mode for navigation
+   - Visual feedback for selection
+   - Clear undo/redo indicators
+
+### User Experience
+1. Floor Selection
+   - Quick dropdown access
+   - Visual selector with building grouping
+   - Clear hierarchy display
+   - Search and filter capabilities
+
+2. Object Manipulation
+   - Direct manipulation of size and rotation
+   - Snap-to-grid functionality
+   - Multi-select support
+   - Keyboard shortcuts
+
+3. Connection Management
+   - Visual validation feedback
+   - Clear connection points
+   - Intuitive handle placement
+   - Error prevention
+
+### Accessibility
+1. Keyboard Navigation
+   - Tab navigation between elements
+   - Arrow key controls for fine positioning
+   - Keyboard shortcuts for common actions
+
+2. Visual Assistance
+   - High contrast mode support
+   - Clear status indicators
+   - Screen reader compatibility
+   - Focus indicators
+
+### Responsive Design
+1. Layout Adaptation
+   - Collapsible properties panel
+   - Responsive control bar
+   - Touch-friendly interactions
+   - Mobile-optimized views
+
+2. Performance
+   - Efficient rendering of large floor plans
+   - Smooth zoom and pan
+   - Optimized real-time updates
+   - Progressive loading

@@ -1,15 +1,18 @@
-
-import { ReactFlow, Background, Controls, MiniMap, Panel, Node } from 'reactflow';
+import { ReactFlow, Background, Controls, MiniMap, Panel, Node, Connection, Edge } from 'reactflow';
 import { panelStyle } from '../styles/flowStyles';
+import { useState, useCallback } from 'react';
+import { Move } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface FloorPlanFlowProps {
   nodes: Node[];
-  edges: any[];
+  edges: Edge[];
   onNodesChange: any;
   onEdgesChange: any;
   onConnect: any;
   onNodeClick: any;
   nodeTypes: any;
+  zoom?: number;
 }
 
 export function FloorPlanFlow({
@@ -20,8 +23,42 @@ export function FloorPlanFlow({
   onConnect,
   onNodeClick,
   nodeTypes,
+  zoom = 1,
 }: FloorPlanFlowProps) {
-  const defaultViewport = { x: 0, y: 0, zoom: 1 };
+  const [isPanning, setIsPanning] = useState(false);
+  const defaultViewport = { x: 0, y: 0, zoom };
+
+  const isValidConnection = useCallback((connection: Connection) => {
+    const sourceNode = nodes.find(n => n.id === connection.source);
+    const targetNode = nodes.find(n => n.id === connection.target);
+
+    if (!sourceNode || !targetNode) return false;
+
+    // Don't allow connections between the same node
+    if (connection.source === connection.target) return false;
+
+    // Don't allow doors to connect to doors
+    if (sourceNode.type === 'door' && targetNode.type === 'door') return false;
+
+    // Don't allow more than one connection between the same nodes
+    const existingConnection = edges.find(
+      edge => 
+        (edge.source === connection.source && edge.target === connection.target) ||
+        (edge.source === connection.target && edge.target === connection.source)
+    );
+    if (existingConnection) return false;
+
+    return true;
+  }, [nodes, edges]);
+
+  const handleConnect = useCallback(
+    (params: Connection | Edge) => {
+      if (isValidConnection(params as Connection)) {
+        onConnect(params);
+      }
+    },
+    [onConnect, isValidConnection]
+  );
 
   return (
     <ReactFlow
@@ -29,7 +66,7 @@ export function FloorPlanFlow({
       edges={edges}
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
-      onConnect={onConnect}
+      onConnect={handleConnect}
       onNodeClick={onNodeClick}
       nodeTypes={nodeTypes}
       defaultViewport={defaultViewport}
@@ -46,13 +83,13 @@ export function FloorPlanFlow({
       snapGrid={[10, 10]}
       snapToGrid
       selectNodesOnDrag={false}
-      panOnDrag={[1, 2]}
-      zoomOnScroll={true}
+      panOnDrag={isPanning ? [0, 1, 2] : [1, 2]}
+      zoomOnScroll={!isPanning}
       zoomOnPinch={true}
       preventScrolling={true}
-      nodesDraggable={true}
-      nodesConnectable={true}
-      elementsSelectable={true}
+      nodesDraggable={!isPanning}
+      nodesConnectable={!isPanning}
+      elementsSelectable={!isPanning}
       onNodeDragStop={(event, node) => {
         // This ensures the final position is saved after dragging stops
         onNodesChange([{
@@ -62,10 +99,19 @@ export function FloorPlanFlow({
         }]);
       }}
     >
-      <Panel position="top-left">
+      <Panel position="top-left" className="space-y-2">
         <div style={panelStyle} className="text-gray-700">
-          Rooms: {nodes.length}
+          Objects: {nodes.length}
         </div>
+        <Button
+          variant={isPanning ? "secondary" : "outline"}
+          size="sm"
+          className="flex items-center gap-2"
+          onClick={() => setIsPanning(!isPanning)}
+        >
+          <Move className="h-4 w-4" />
+          <span>Move</span>
+        </Button>
       </Panel>
       <Controls showInteractive={true} />
       <MiniMap 

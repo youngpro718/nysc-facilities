@@ -1,4 +1,3 @@
-
 export type LightStatus = 'functional' | 'maintenance_needed' | 'non_functional' | 'pending_maintenance' | 'scheduled_replacement';
 export type LightingType = 'standard' | 'emergency' | 'motion_sensor';
 export type LightingTechnology = 'LED' | 'Fluorescent' | 'Bulb' | null;
@@ -6,12 +5,14 @@ export type LightingPosition = 'ceiling' | 'wall' | 'floor' | 'desk';
 export type SpaceType = 'room' | 'hallway';
 
 export interface ElectricalIssues {
+  [key: string]: boolean;
   short_circuit: boolean;
   wiring_issues: boolean;
   voltage_problems: boolean;
 }
 
 export interface MaintenanceRecord {
+  [key: string]: string | null;
   id: string;
   date: string;
   type: string;
@@ -19,10 +20,11 @@ export interface MaintenanceRecord {
 }
 
 export interface InspectionRecord {
+  [key: string]: string | null;
   id: string;
   date: string;
   status: string;
-  notes?: string;
+  notes: string;
 }
 
 export interface SpatialAssignment {
@@ -62,6 +64,8 @@ export interface LightingFixture {
   maintenance_history?: MaintenanceRecord[];
   inspection_history?: InspectionRecord[];
   spatial_assignment?: SpatialAssignment;
+  maintenance_records?: MaintenanceRecord[];
+  inspection_records?: InspectionRecord[];
 }
 
 export interface RoomLightingConfig {

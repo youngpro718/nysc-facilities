@@ -1,162 +1,113 @@
-
 import { useCallback, useRef } from 'react';
-import { OnNodesChange, NodeChange, Node, NodePositionChange, NodeDimensionChange } from 'reactflow';
-import { supabase } from "../utils/supabaseClient";
-import { toast } from "sonner";
+import { NodeChange, OnNodesChange, Node, useReactFlow } from 'reactflow';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import debounce from 'lodash/debounce';
 
 interface NodeUpdateData {
   position?: { x: number; y: number };
   size?: { width: number; height: number };
   rotation?: number;
-  type?: string;
 }
 
 export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
-  const nodeTypes = useRef<Map<string, string>>(new Map());
-  const pendingUpdates = useRef<Map<string, NodeUpdateData>>(new Map());
-
-  const registerNodeTypes = useCallback((nodes: Node[]) => {
-    nodes.forEach(node => {
-      if (node.id && node.type) {
-        nodeTypes.current.set(node.id, node.type);
-      }
-    });
-  }, []);
-
-  const saveNodeUpdates = useCallback(
-    debounce(async () => {
-      const updates = pendingUpdates.current;
-      if (updates.size === 0) return;
-
-      console.log('Processing updates for nodes:', Array.from(updates.entries()));
-      const currentPendingUpdates = new Map(pendingUpdates.current);
-      pendingUpdates.current = new Map();
-
-      for (const [nodeId, updateData] of currentPendingUpdates) {
-        try {
-          const nodeType = nodeTypes.current.get(nodeId);
-          if (!nodeType) {
-            console.error(`Unknown node type for node ${nodeId}`);
-            continue;
-          }
-
-          if (updateData.position) {
-            const { x, y } = updateData.position;
-            if (isNaN(x) || isNaN(y)) {
-              console.error('Invalid position data:', updateData.position);
-              continue;
-            }
-          }
-
-          const table = nodeType === 'door' ? 'doors' : 
-                       nodeType === 'hallway' ? 'hallways' : 
-                       nodeType === 'room' ? 'rooms' : 
-                       'floor_plan_objects';
-
-          const updatePayload: Record<string, any> = {};
-          
-          if (updateData.position) {
-            updatePayload.position = updateData.position;
-          }
-          if (updateData.size) {
-            updatePayload.size = updateData.size;
-          }
-          if (typeof updateData.rotation === 'number') {
-            updatePayload.rotation = updateData.rotation;
-          }
-
-          if (Object.keys(updatePayload).length === 0) {
-            console.log(`No changes to update for node ${nodeId}`);
-            continue;
-          }
-
-          console.log(`Updating ${table} node ${nodeId} with payload:`, updatePayload);
-
-          const { error } = await supabase
-            .from(table)
-            .update(updatePayload)
-            .eq('id', nodeId);
-
-          if (error) {
-            console.error(`Error updating ${table}:`, error);
-            toast.error(`Failed to update ${nodeType} position`);
-            pendingUpdates.current.set(nodeId, updateData);
-          } else {
-            console.log(`Successfully updated ${table} ${nodeId}`);
-          }
-        } catch (err) {
-          console.error(`Error updating node ${nodeId}:`, err);
-          toast.error(`Failed to save changes for node ${nodeId}`);
-          pendingUpdates.current.set(nodeId, updateData);
+  const pendingUpdates = useRef(new Set<string>());
+  const { getNode } = useReactFlow();
+  
+  const debouncedUpdateNode = useCallback(
+    debounce(async (nodeId: string, node: Node) => {
+      try {
+        const table = node.type === 'door' ? 'doors' : 
+                     node.type === 'hallway' ? 'hallways' : 
+                     node.type === 'room' ? 'rooms' : null;
+                     
+        if (!table) {
+          throw new Error(`Invalid node type: ${node.type}`);
         }
-      }
 
-      if (pendingUpdates.current.size === 0) {
-        toast.success('All changes saved successfully');
-      } else {
-        const failedNodes = Array.from(pendingUpdates.current.entries());
-        console.warn('Updates failed for nodes:', failedNodes);
-        toast.error(`Failed to save changes for ${failedNodes.length} nodes`);
+        // Build update data from node's current state
+        const updateData: NodeUpdateData = {};
+
+        // Only include position if it's valid
+        if (node.position && 
+            typeof node.position.x === 'number' && 
+            typeof node.position.y === 'number' &&
+            !isNaN(node.position.x) && 
+            !isNaN(node.position.y)) {
+          updateData.position = node.position;
+        }
+
+        // Only include size if it's valid
+        if (node.data?.size &&
+            typeof node.data.size.width === 'number' &&
+            typeof node.data.size.height === 'number' &&
+            !isNaN(node.data.size.width) &&
+            !isNaN(node.data.size.height)) {
+          updateData.size = node.data.size;
+        }
+
+        // Only include rotation if it's valid
+        if (typeof node.data?.rotation === 'number' && !isNaN(node.data.rotation)) {
+          updateData.rotation = node.data.rotation;
+        }
+
+        // Only proceed if we have valid data to update
+        if (Object.keys(updateData).length === 0) {
+          console.warn('No valid data to update for node:', nodeId);
+          return;
+        }
+
+        console.log('Updating node:', { nodeId, type: node.type, table, data: updateData });
+        
+        const { data, error } = await supabase
+          .from(table)
+          .update(updateData)
+          .eq('id', nodeId)
+          .select();
+
+        if (error) throw error;
+        
+        // Only show success toast for size/rotation changes, not position
+        if (updateData.size || updateData.rotation) {
+          toast.success('Changes saved successfully');
+        }
+      } catch (error) {
+        console.error('Error updating node:', error);
+        toast.error('Failed to save changes');
+      } finally {
+        pendingUpdates.current.delete(nodeId);
       }
-    }, 500),
+    }, 1000),
     []
   );
 
-  const handleNodesChange: OnNodesChange = useCallback(
+  const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
+      // First apply changes to the React Flow state
       onNodesChange(changes);
-      
-      for (const change of changes) {
-        if (!('id' in change)) continue;
-        
+
+      // Then handle database updates
+      changes.forEach((change) => {
+        if (!('id' in change)) return;
         const nodeId = change.id;
-        let updateNeeded = false;
-        const currentUpdate = pendingUpdates.current.get(nodeId) || {};
-
-        if (change.type === 'position' && isPositionChange(change)) {
-          const x = Math.round(change.position.x);
-          const y = Math.round(change.position.y);
-          
-          if (!isNaN(x) && !isNaN(y)) {
-            console.log(`Processing position change for node ${nodeId}:`, { x, y });
-            currentUpdate.position = { x, y };
-            updateNeeded = true;
-          } else {
-            console.warn('Invalid position values:', change.position);
-          }
+        
+        // Get the actual node from React Flow state
+        const node = getNode(nodeId);
+        if (!node) {
+          console.warn('Node not found:', nodeId);
+          return;
         }
 
-        if (change.type === 'dimensions' && isDimensionChange(change)) {
-          const width = Math.round(change.dimensions.width);
-          const height = Math.round(change.dimensions.height);
-          
-          if (!isNaN(width) && !isNaN(height)) {
-            console.log(`Processing dimension change for node ${nodeId}:`, { width, height });
-            currentUpdate.size = { width, height };
-            updateNeeded = true;
-          } else {
-            console.warn('Invalid dimension values:', change.dimensions);
-          }
+        // For any type of change, we'll use the current node state
+        // This ensures we always have the correct and complete node data
+        if (!pendingUpdates.current.has(nodeId)) {
+          pendingUpdates.current.add(nodeId);
+          debouncedUpdateNode(nodeId, node);
         }
-
-        if (updateNeeded) {
-          console.log(`Queueing update for node ${nodeId}:`, currentUpdate);
-          pendingUpdates.current.set(nodeId, currentUpdate);
-          saveNodeUpdates();
-        }
-      }
+      });
     },
-    [onNodesChange, saveNodeUpdates]
+    [onNodesChange, debouncedUpdateNode, getNode]
   );
 
-  return { handleNodesChange, registerNodeTypes };
-}
-
-function isPositionChange(change: NodeChange): change is NodePositionChange {
-  return change.type === 'position' && 'position' in change;
-}
-
-function isDimensionChange(change: NodeChange): change is NodeDimensionChange {
-  return change.type === 'dimensions' && 'dimensions' in change;
+  return handleNodesChange;
 }

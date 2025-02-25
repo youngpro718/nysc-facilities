@@ -1,14 +1,15 @@
-
 import { Button } from "@/components/ui/button";
 import { CreateLightingDialog } from "../CreateLightingDialog";
 import { 
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
-import { RefreshCw, CheckSquare, XSquare, Download } from "lucide-react";
+import { RefreshCw, CheckSquare, XSquare, Download, Layers } from "lucide-react";
 import { LightingFixture } from "../types";
+import { AssignZoneDialog } from "./AssignZoneDialog";
 
 export interface LightingHeaderProps {
   selectedFixtures: string[];
@@ -29,13 +30,14 @@ export const LightingHeader = ({
 }: LightingHeaderProps) => {
   const exportSelectedFixtures = () => {
     if (!fixtures) return;
+    
     const selectedData = fixtures.filter(f => selectedFixtures.includes(f.id));
     const csvContent = "data:text/csv;charset=utf-8," + 
-      "Name,Type,Status,Zone,Location,Maintenance Notes\n" +
+      "Name,Type,Status,Zone,Building,Floor,Room Number\n" +
       selectedData.map(f => 
-        `${f.name},${f.type},${f.status},${f.zone_name || 'Unassigned'},${f.building_name} - ${f.floor_name},${f.maintenance_notes || ''}`
+        `"${f.name}","${f.type}","${f.status}","${f.zone_name || 'Unassigned'}","${f.building_name || ''}","${f.floor_name || ''}","${f.room_number || ''}"`
       ).join("\n");
-    
+
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -65,6 +67,11 @@ export const LightingHeader = ({
               {selectedFixtures.length === fixtures?.length ? 'Deselect All' : 'Select All'}
             </Button>
             
+            <AssignZoneDialog 
+              selectedFixtures={selectedFixtures}
+              onComplete={onFixtureCreated}
+            />
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -82,6 +89,7 @@ export const LightingHeader = ({
                       <RefreshCw className="h-4 w-4 mr-2" />
                       Mark as Needs Maintenance
                     </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                   </>
                 )}
                 <DropdownMenuItem onClick={onBulkDelete}>

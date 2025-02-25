@@ -628,17 +628,17 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
 
         {/* Navigation Buttons */}
         <div className="flex justify-between">
-          <Button
-            type="button"
-            variant="outline"
+              <Button
+                type="button"
+                variant="outline"
             onClick={currentStep === 'type' ? onCancel : handleBack}
-          >
+              >
             <ChevronLeft className="mr-2 h-4 w-4" />
             {currentStep === 'type' ? 'Cancel' : 'Back'}
-          </Button>
+              </Button>
 
           {currentStep === 'review' ? (
-            <Button 
+            <Button
               type="submit"
               disabled={createIssueMutation.isPending}
             >
@@ -652,15 +652,15 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
               )}
             </Button>
           ) : (
-            <Button 
-              type="button" 
-              onClick={handleNext}
+              <Button
+                type="button"
+                onClick={handleNext}
               disabled={!useAssignedRoom && !form.watch('room_id')}
             >
               Next
               <ChevronRight className="ml-2 h-4 w-4" />
-            </Button>
-          )}
+              </Button>
+            )}
         </div>
       </form>
     </Form>

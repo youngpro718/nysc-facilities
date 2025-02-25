@@ -133,7 +133,7 @@ export function InventoryForm({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">No Category</SelectItem>
+                  <SelectItem value="none">No Category</SelectItem>
                   {categories?.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       <div className="flex items-center gap-2">

@@ -1,32 +1,31 @@
-
-import { Handle, Position, NodeProps, NodeResizer } from 'reactflow';
+import { Handle, NodeProps, NodeResizer } from 'reactflow';
 import { FloorPlanObjectData } from '../types/floorPlanTypes';
+import { useNodeHandles } from '../hooks/useNodeHandles';
+import { getNodeBaseStyle, getResizerConfig } from '../utils/nodeStyles';
 
-export function HallwayNode({ data }: NodeProps<FloorPlanObjectData>) {
-  const style = {
-    width: data.size?.width || 300,
-    height: data.size?.height || 50,
-    backgroundColor: '#e5e7eb',
-    border: '1px solid #cbd5e1',
-    ...data.style,
-  };
+export function HallwayNode({ data, selected }: NodeProps<FloorPlanObjectData>) {
+  if (!data) return null;
+
+  const { handleStyle, standardHandles } = useNodeHandles(selected);
+  const style = getNodeBaseStyle('hallway', data, selected);
+  const resizerConfig = getResizerConfig('hallway');
 
   return (
-    <>
-      <NodeResizer 
-        minWidth={200}
-        minHeight={40}
-        isVisible={true}
-        lineClassName="border-blue-400"
-        handleClassName="h-3 w-3 bg-white border-2 rounded border-blue-400"
-      />
-      <Handle type="target" position={Position.Left} />
-      <div style={style} className="flex items-center justify-center">
-        <div className="text-sm font-medium text-gray-700 truncate">
-          {data.label || 'Hallway'}
-        </div>
+    <div style={style}>
+      <NodeResizer {...resizerConfig} />
+      
+      {standardHandles.map((handle, index) => (
+        <Handle
+          key={`${handle.position}-${index}`}
+          type={index % 2 === 0 ? "target" : "source"}
+          position={handle.position}
+          style={{ ...handleStyle, top: handle.top, left: handle.left }}
+        />
+      ))}
+      
+      <div style={{ fontSize: '0.875rem', fontWeight: 500, color: '#374151', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        {data.label || 'Hallway'}
       </div>
-      <Handle type="source" position={Position.Right} />
-    </>
+    </div>
   );
 }

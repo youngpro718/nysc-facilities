@@ -1,4 +1,3 @@
-
 # Functionality Documentation
 
 ## Core Features
@@ -78,6 +77,81 @@ interface OccupantAssignment {
    - Real-time subscriptions
    - RLS policies
    - Database triggers
+
+### Floor Plan Management
+
+#### Interactive Floor Plan
+```typescript
+interface FloorPlanState {
+  selectedFloorId: string | null;
+  selectedObject: any | null;
+  zoom: number;
+}
+```
+
+1. Floor Selection
+   - Dropdown selection of floors
+   - Visual floor selector with building grouping
+   - Real-time floor data loading
+
+2. Object Manipulation
+   - Room, door, and hallway placement
+   - Object resizing and rotation
+   - Connection management between objects
+   - Properties panel for object editing
+
+3. View Controls
+   - Zoom in/out (0.5x to 2x)
+   - Pan and reset view
+   - Undo/redo support for state changes
+
+4. State Management
+   ```typescript
+   const { state, setState, canUndo, canRedo, undo, redo } = useUndo<FloorPlanState>({
+     selectedFloorId: null,
+     selectedObject: null,
+     zoom: 1
+   });
+   ```
+
+#### Node Types
+1. Room Nodes
+   - Resizable containers
+   - Multiple connection points
+   - Room number and type display
+   - Status indicators
+
+2. Door Nodes
+   - Rotatable elements
+   - Hardware status tracking
+   - Connection validation
+   - Status-based styling
+
+3. Hallway Nodes
+   - Extended connection support
+   - Flexible sizing
+   - Multiple entry/exit points
+
+#### Connection Management
+```typescript
+interface Connection {
+  source: string;
+  target: string;
+  sourceHandle?: string;
+  targetHandle?: string;
+}
+```
+
+1. Connection Rules
+   - Validation of connection types
+   - Prevention of invalid connections
+   - Handle positioning
+   - Visual feedback
+
+2. Connection State
+   - Real-time updates
+   - Undo/redo support
+   - Error handling
 
 ## API Endpoints
 

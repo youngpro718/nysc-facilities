@@ -1,32 +1,43 @@
-
-import { Handle, Position, NodeProps, NodeResizer } from 'reactflow';
+import { Handle, NodeProps, NodeResizer } from 'reactflow';
 import { FloorPlanObjectData } from '../types/floorPlanTypes';
+import { useNodeHandles } from '../hooks/useNodeHandles';
+import { getNodeBaseStyle, getResizerConfig } from '../utils/nodeStyles';
 
-export function DoorNode({ data }: NodeProps<FloorPlanObjectData>) {
-  const style = {
-    width: data.size?.width || 60,
-    height: data.size?.height || 20,
-    backgroundColor: '#94a3b8',
-    border: '2px solid #475569',
-    ...data.style,
+export function DoorNode({ data, selected }: NodeProps<FloorPlanObjectData>) {
+  if (!data) return null;
+
+  const { handleStyle, doorHandles } = useNodeHandles(selected);
+  const style = getNodeBaseStyle('door', data, selected);
+  const resizerConfig = getResizerConfig('door');
+
+  const isActive = data.properties?.status === 'active';
+  const doorStyle = {
+    ...style,
+    backgroundColor: isActive ? style.backgroundColor : '#cbd5e1',
+    border: isActive ? style.border : '2px solid #94a3b8'
   };
 
   return (
-    <>
-      <NodeResizer 
-        minWidth={40}
-        minHeight={15}
-        isVisible={true}
-        lineClassName="border-blue-400"
-        handleClassName="h-3 w-3 bg-white border-2 rounded border-blue-400"
-      />
-      <Handle type="target" position={Position.Left} />
-      <div style={style} className="flex items-center justify-center">
-        <div className="text-xs font-medium text-white truncate">
-          {data.label || 'Door'}
-        </div>
+    <div style={doorStyle}>
+      <NodeResizer {...resizerConfig} />
+      
+      {doorHandles.map((handle, index) => (
+        <Handle
+          key={`${handle.position}-${index}`}
+          type={index % 2 === 0 ? "target" : "source"}
+          position={handle.position}
+          style={handleStyle}
+        />
+      ))}
+      
+      <div style={{ fontSize: '0.75rem', fontWeight: 500, color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        {data.label || 'Door'}
+        {data.properties?.room_number && (
+          <span style={{ marginLeft: '0.25rem', opacity: 0.8 }}>
+            ({data.properties.room_number})
+          </span>
+        )}
       </div>
-      <Handle type="source" position={Position.Right} />
-    </>
+    </div>
   );
 }

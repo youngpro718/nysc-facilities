@@ -1,4 +1,3 @@
-
 # Application Structure
 
 ## Overview
@@ -11,6 +10,37 @@ This React application is a facilities management system built with TypeScript, 
   - Handles responsive design
   - Manages auth state with Supabase
   - Provides navigation through React Router
+
+### Space Management
+
+#### Floor Plan Components
+- `FloorPlanView.tsx`: Main floor plan interface component
+  - Floor selection and visualization
+  - Zoom and pan controls
+  - Undo/redo functionality
+  - Object selection and editing
+
+- `FloorPlanCanvas.tsx`: Interactive canvas for floor plan editing
+  - React Flow integration
+  - Node and edge management
+  - Connection validation
+  - Real-time updates
+
+- Node Components:
+  - `RoomNode.tsx`: Room visualization and interaction
+  - `DoorNode.tsx`: Door visualization and status
+  - `HallwayNode.tsx`: Hallway connections and routing
+
+- UI Components:
+  - `VisualFloorSelector.tsx`: Building-grouped floor selection
+  - `PropertiesPanel.tsx`: Object property editing
+  - `EditPropertiesPanel.tsx`: Detailed property editing
+
+#### Floor Plan Hooks
+- `useUndo.ts`: Undo/redo state management
+- `useFloorPlanData.ts`: Floor plan data fetching and caching
+- `useNodeManagement.ts`: Node creation and updates
+- `useConnectionValidation.ts`: Connection rule enforcement
 
 ### Space Management
 - `SpaceConnectionManager.tsx`: Manages space connections between rooms, hallways, and doors

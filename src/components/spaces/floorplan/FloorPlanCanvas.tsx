@@ -5,11 +5,11 @@ import {
   Connection, 
   Edge, 
   Node,
-  addEdge
+  addEdge,
+  ReactFlowProvider
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Card } from "@/components/ui/card";
-import { ReactFlowProvider } from 'reactflow';
 import { FloorPlanFlow } from './components/FloorPlanFlow';
 import { useFloorPlanData } from "./hooks/useFloorPlanData";
 import { useFloorPlanNodes } from "./hooks/useFloorPlanNodes";
@@ -30,7 +30,7 @@ const nodeTypes = {
   hallway: HallwayNode,
 };
 
-export function FloorPlanCanvas({ 
+function FloorPlanCanvasInner({ 
   floorId, 
   zoom = 1, 
   onObjectSelect 
@@ -38,19 +38,13 @@ export function FloorPlanCanvas({
   const { objects, edges: graphEdges, isLoading } = useFloorPlanData(floorId);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const initialized = useRef(false);
-  const { handleNodesChange, registerNodeTypes } = useFloorPlanNodes(onNodesChange);
+  const lastFloorId = useRef<string | null>(null);
+  const initialized = useRef<boolean>(false);
+  const memoizedNodeTypes = useRef(nodeTypes);
+  const handleNodesChange = useFloorPlanNodes(onNodesChange);
 
-  useEffect(() => {
-    if (floorId) {
-      initialized.current = false;
-    }
-  }, [floorId]);
-
-  useEffect(() => {
-    if (!objects || initialized.current) return;
-
-    console.log('Initializing nodes with objects:', objects);
+  const initializeNodes = useCallback((objects: any[]) => {
+    if (!objects?.length) return [];
 
     const reactFlowNodes = objects.map((obj) => {
       // Ensure we have valid position and size
@@ -75,10 +69,10 @@ export function FloorPlanCanvas({
           height: obj.type === 'door' ? 20 : 100
         };
 
-      const node = {
+      return {
         id: obj.id,
         type: obj.type,
-        position: position || { x: 0, y: 0 }, // Fallback position will be adjusted by layout
+        position: position || { x: 0, y: 0 },
         draggable: true,
         selectable: true,
         resizable: true,
@@ -99,14 +93,6 @@ export function FloorPlanCanvas({
           }
         }
       };
-
-      console.log(`Created node ${obj.id}:`, {
-        position: node.position,
-        size: node.data.size,
-        type: node.type
-      });
-
-      return node;
     });
 
     // Apply automatic layout for nodes without valid positions
@@ -115,8 +101,6 @@ export function FloorPlanCanvas({
     );
 
     if (nodesWithoutPosition.length > 0) {
-      console.log(`Applying automatic layout for ${nodesWithoutPosition.length} nodes`);
-      
       nodesWithoutPosition.forEach((node, index) => {
         const padding = 50;
         const maxRoomsPerRow = 4;
@@ -126,32 +110,36 @@ export function FloorPlanCanvas({
           x: (index % maxRoomsPerRow) * (size.width + padding) + 100,
           y: Math.floor(index / maxRoomsPerRow) * (size.height + padding) + 100
         };
-
-        console.log(`Auto-positioned node ${node.id}:`, node.position);
       });
     }
 
-    // Register node types for position updates
-    registerNodeTypes(reactFlowNodes);
+    return reactFlowNodes;
+  }, []);
 
-    console.log('Final node positions:', reactFlowNodes.map(n => ({ 
-      id: n.id, 
-      position: n.position,
-      size: n.data.size,
-      type: n.type
-    })));
-    
-    setNodes(reactFlowNodes);
-    setEdges(graphEdges || []);
-    initialized.current = true;
-  }, [objects, graphEdges, setNodes, setEdges, registerNodeTypes]);
+  useEffect(() => {
+    if (!objects || !floorId || isLoading) {
+      return;
+    }
+
+    if (floorId !== lastFloorId.current) {
+      initialized.current = false;
+    }
+
+    if (!initialized.current) {
+      const reactFlowNodes = initializeNodes(objects);
+      setNodes(reactFlowNodes);
+      setEdges(graphEdges || []);
+      lastFloorId.current = floorId;
+      initialized.current = true;
+    }
+  }, [floorId, isLoading, initializeNodes, objects, graphEdges, setNodes, setEdges]);
 
   const onConnect = useCallback(
     (params: Connection | Edge) => {
       setEdges((eds) => addEdge(params, eds));
       toast.success('Connection created successfully');
     },
-    [setEdges],
+    [setEdges]
   );
 
   const onNodeClick = useCallback((event: React.MouseEvent, node: Node<any>) => {
@@ -169,39 +157,42 @@ export function FloorPlanCanvas({
 
   if (!floorId) {
     return (
-      <Card className="p-4">
-        <div className="h-[600px] w-full flex items-center justify-center bg-gray-50">
-          Select a floor to view the floor plan
-        </div>
-      </Card>
+      <div className="h-[600px] w-full flex items-center justify-center bg-gray-50">
+        Select a floor to view the floor plan
+      </div>
     );
   }
 
   if (isLoading) {
     return (
-      <Card className="p-4">
-        <div className="h-[600px] w-full flex items-center justify-center bg-gray-50">
-          Loading floor plan...
-        </div>
-      </Card>
+      <div className="h-[600px] w-full flex items-center justify-center bg-gray-50">
+        Loading floor plan...
+      </div>
     );
   }
 
   return (
+    <div style={{ width: '100%', height: '600px', position: 'relative' }}>
+      <FloorPlanFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={handleNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        onNodeClick={onNodeClick}
+        nodeTypes={memoizedNodeTypes.current}
+        zoom={zoom}
+      />
+    </div>
+  );
+}
+
+export function FloorPlanCanvas(props: FloorPlanCanvasProps) {
+  return (
     <Card className="p-4">
-      <div style={{ width: '100%', height: '600px', position: 'relative' }}>
-        <ReactFlowProvider>
-          <FloorPlanFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={handleNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onNodeClick={onNodeClick}
-            nodeTypes={nodeTypes}
-          />
-        </ReactFlowProvider>
-      </div>
+      <ReactFlowProvider>
+        <FloorPlanCanvasInner {...props} />
+      </ReactFlowProvider>
     </Card>
   );
 }

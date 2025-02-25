@@ -39,7 +39,7 @@ const Layout = () => {
     <div className="min-h-screen bg-background">
       {!isLoginPage && isAuthenticated && (
         <header className="bg-card shadow sticky top-0 z-50">
-          <div className="mx-auto px-4">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex h-16 items-center justify-between">
               <div className="flex items-center gap-3">
                 <img 
@@ -95,7 +95,9 @@ const Layout = () => {
       )}
 
       <main className="flex-1">
-        <Outlet />
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+          <Outlet />
+        </div>
       </main>
     </div>
   );
