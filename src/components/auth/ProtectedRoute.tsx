@@ -38,15 +38,22 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
         return;
       }
 
-      // Get user's profile to check if they're an admin
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('access_level')
-        .eq('id', session.user.id)
-        .single();
+      // Get user's role to check if they're an admin
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
 
-      // If requireAdmin is true and user is not an admin, redirect to dashboard
-      if (requireAdmin && profile?.access_level !== 'admin') {
+      if (roleError) {
+        console.error('Error fetching user role:', roleError);
+        toast.error('Error checking permissions');
+        navigate('/login');
+        return;
+      }
+
+      // If requireAdmin is true and user doesn't have admin role, redirect to dashboard
+      if (requireAdmin && (!roleData || roleData.role !== 'admin')) {
         toast.error('You do not have permission to access this page');
         navigate('/dashboard');
         return;
@@ -55,7 +62,7 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
       // Check if system is in maintenance mode
       if (settings?.maintenance_mode) {
         // If user is not an admin, redirect to maintenance page
-        if (profile?.access_level !== 'admin') {
+        if (!roleData || roleData.role !== 'admin') {
           toast.error('System is currently under maintenance');
           navigate('/maintenance');
         }

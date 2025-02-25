@@ -4,8 +4,12 @@ import { BuildingsGrid } from "@/components/dashboard/BuildingsGrid";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const {
     buildings,
     buildingsLoading,
@@ -18,8 +22,31 @@ const AdminDashboard = () => {
   } = useDashboardData(true); // Pass true for admin dashboard
 
   useEffect(() => {
-    checkUserRoleAndFetchData();
-  }, [checkUserRoleAndFetchData]);
+    const checkAdminAccess = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        navigate('/login');
+        return;
+      }
+
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+
+      if (roleError || !roleData || roleData.role !== 'admin') {
+        toast.error('You do not have permission to access this page');
+        navigate('/dashboard');
+        return;
+      }
+
+      checkUserRoleAndFetchData();
+    };
+
+    checkAdminAccess();
+  }, [navigate, checkUserRoleAndFetchData]);
 
   if (isLoading || buildingsLoading) {
     return (
