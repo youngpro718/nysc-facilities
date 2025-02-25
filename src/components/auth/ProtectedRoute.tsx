@@ -7,9 +7,10 @@ import { toast } from 'sonner';
 
 interface ProtectedRouteProps {
   children: ReactNode;
+  requireAdmin?: boolean;
 }
 
-export function ProtectedRoute({ children }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
   const navigate = useNavigate();
 
   // Check maintenance mode status
@@ -37,15 +38,22 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
         return;
       }
 
+      // Get user's profile to check if they're an admin
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('access_level')
+        .eq('id', session.user.id)
+        .single();
+
+      // If requireAdmin is true and user is not an admin, redirect to dashboard
+      if (requireAdmin && profile?.access_level !== 'admin') {
+        toast.error('You do not have permission to access this page');
+        navigate('/dashboard');
+        return;
+      }
+
       // Check if system is in maintenance mode
       if (settings?.maintenance_mode) {
-        // Get user's profile to check if they're an admin
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('access_level')
-          .eq('id', session.user.id)
-          .single();
-
         // If user is not an admin, redirect to maintenance page
         if (profile?.access_level !== 'admin') {
           toast.error('System is currently under maintenance');
@@ -55,7 +63,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     };
 
     checkSession();
-  }, [navigate, settings]);
+  }, [navigate, settings, requireAdmin]);
 
   return <>{children}</>;
 }
