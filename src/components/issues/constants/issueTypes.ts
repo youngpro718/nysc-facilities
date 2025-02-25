@@ -1,7 +1,7 @@
 
 export type StandardizedIssueType = 'ACCESS_REQUEST' | 'BUILDING_SYSTEMS' | 'CEILING' | 'CLEANING_REQUEST' | 
   'CLIMATE_CONTROL' | 'DOOR' | 'ELECTRICAL_NEEDS' | 'EMERGENCY' | 'EXTERIOR_FACADE' | 
-  'FLAGPOLE_FLAG' | 'FLOORING' | 'GENERAL_REQUESTS' | 'LEAK' | 'LIGHTING' | 'LOCK' | 
+  'FLAGPOLE_FLAG' | 'FLOORING' | 'GENERAL_REQUESTS' | 'LEAK' | 'LIGHTING' | 'LIGHTING_NEEDS' | 'LOCK' | 
   'PLUMBING_NEEDS' | 'RESTROOM_REPAIR' | 'SIGNAGE' | 'WINDOW';
 
 export type IssuePriority = 'low' | 'medium' | 'high';
@@ -13,6 +13,7 @@ export const ISSUE_TYPES: StandardizedIssueType[] = [
   'CLEANING_REQUEST',
   'ELECTRICAL_NEEDS',
   'GENERAL_REQUESTS',
+  'LIGHTING_NEEDS',
   'PLUMBING_NEEDS'
 ] as const;
 
@@ -31,6 +32,7 @@ export const PROBLEM_TYPES: Record<StandardizedIssueType, string[]> = {
   'GENERAL_REQUESTS': ['Maintenance', 'Installation', 'Repair', 'Other'],
   'LEAK': ['Water', 'Gas', 'Ceiling', 'Pipe'],
   'LIGHTING': ['Bulb Out', 'Fixture', 'Emergency Light', 'Controls'],
+  'LIGHTING_NEEDS': ['Bulb Replacement', 'Fixture Repair', 'Emergency Lighting', 'Controls'],
   'LOCK': ['Key', 'Electronic', 'Broken', 'Replacement'],
   'PLUMBING_NEEDS': ['Leak', 'Clog', 'No Water', 'Water Pressure'],
   'RESTROOM_REPAIR': ['Fixture', 'Plumbing', 'Supplies', 'Cleaning'],
