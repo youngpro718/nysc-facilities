@@ -6525,6 +6525,12 @@ export type Database = {
         }
         Returns: undefined
       }
+      safely_delete_relocation: {
+        Args: {
+          relocation_id_param: string
+        }
+        Returns: undefined
+      }
       safely_update_inventory_quantity: {
         Args: {
           p_item_id: string
