@@ -6,8 +6,14 @@ import { RoomTypeEnum, StorageTypeEnum } from "../rooms/types/roomEnums";
 export async function createSpace(data: CreateSpaceFormData) {
   console.log('Creating space with data:', data);
   
+  // Start a Supabase transaction
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('User must be authenticated to create spaces');
+  }
+
   try {
-    // Start a Supabase transaction
+    // Create the space first
     const { data: space, error: spaceError } = await supabase
       .from('new_spaces')
       .insert([{
@@ -33,9 +39,20 @@ export async function createSpace(data: CreateSpaceFormData) {
     console.log('Successfully created space:', space);
 
     if (data.type === 'room') {
-      // Type guard to narrow down the type
+      // Check if room properties already exist
+      const { data: existingProps, error: checkError } = await supabase
+        .from('room_properties')
+        .select()
+        .eq('space_id', space.id)
+        .single();
+
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 means no rows returned
+        console.error('Error checking room properties:', checkError);
+        throw checkError;
+      }
+
+      // Prepare room properties data
       const roomData = data as {
-        type: 'room';
         roomType: RoomTypeEnum;
         phoneNumber?: string;
         currentFunction?: string;
@@ -45,36 +62,19 @@ export async function createSpace(data: CreateSpaceFormData) {
         parentRoomId?: string | null;
       };
 
-      console.log('Creating room properties for space:', space.id);
-
-      // Check if room properties already exist
-      const { data: existingProps, error: checkError } = await supabase
-        .from('room_properties')
-        .select()
-        .eq('space_id', space.id)
-        .maybeSingle();
-
-      if (checkError) {
-        console.error('Error checking existing room properties:', checkError);
-        // Delete the space since room properties check failed
-        await supabase.from('new_spaces').delete().match({ id: space.id });
-        throw checkError;
-      }
-
-      // Prepare room properties data
       const roomProperties = {
         space_id: space.id,
         room_type: roomData.roomType,
-        phone_number: roomData.phoneNumber,
-        current_function: roomData.currentFunction,
+        phone_number: roomData.phoneNumber || null,
+        current_function: roomData.currentFunction || null,
         is_storage: roomData.isStorage || false,
         storage_type: roomData.isStorage ? roomData.storageType : null,
-        storage_capacity: roomData.storageCapacity,
-        parent_room_id: roomData.parentRoomId,
+        storage_capacity: roomData.storageCapacity || null,
+        parent_room_id: roomData.parentRoomId || null
       };
 
       if (existingProps) {
-        console.log('Updating existing room properties for space:', space.id);
+        // Update existing properties
         const { error: updateError } = await supabase
           .from('room_properties')
           .update(roomProperties)
@@ -82,25 +82,19 @@ export async function createSpace(data: CreateSpaceFormData) {
 
         if (updateError) {
           console.error('Error updating room properties:', updateError);
-          // Delete the space if room properties update fails
-          await supabase.from('new_spaces').delete().match({ id: space.id });
           throw updateError;
         }
       } else {
-        console.log('Inserting new room properties for space:', space.id);
+        // Insert new properties
         const { error: insertError } = await supabase
           .from('room_properties')
           .insert([roomProperties]);
 
         if (insertError) {
           console.error('Error creating room properties:', insertError);
-          // Delete the space if room properties creation fails
-          await supabase.from('new_spaces').delete().match({ id: space.id });
           throw insertError;
         }
       }
-
-      console.log('Successfully created/updated room properties');
     }
 
     return space;
