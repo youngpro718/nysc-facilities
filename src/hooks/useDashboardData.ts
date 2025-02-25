@@ -13,7 +13,7 @@ export const useDashboardData = (isAdminDashboard: boolean = false) => {
   const { assignedRooms } = useRoomAssignments(userData?.id);
   const { userIssues, handleMarkAsSeen, refetchIssues } = useUserIssues(userData?.id);
   const { allIssues } = useAdminIssues();
-  const { buildings, buildingsLoading, activities } = useBuildingData(isAdminDashboard ? null : userData?.id);
+  const { buildings, buildingsLoading, activities } = useBuildingData(userData?.id);
   const { isAdmin, isLoading, error, checkUserRoleAndFetchData } = useAdminCheck(isAdminDashboard);
 
   useEffect(() => {
@@ -27,7 +27,7 @@ export const useDashboardData = (isAdminDashboard: boolean = false) => {
           event: '*',
           schema: 'public',
           table: 'issues',
-          filter: isAdminDashboard ? undefined : `created_by=eq.${userData.id}`
+          filter: `created_by=eq.${userData.id}`
         },
         () => {
           refetchIssues();
@@ -38,19 +38,19 @@ export const useDashboardData = (isAdminDashboard: boolean = false) => {
     return () => {
       issuesSubscription.unsubscribe();
     };
-  }, [userData?.id, refetchIssues, isAdminDashboard]);
+  }, [userData?.id, refetchIssues]);
 
   return {
     profile,
-    assignedRooms: isAdminDashboard ? [] : assignedRooms,
-    userIssues: isAdminDashboard ? [] : userIssues,
+    assignedRooms,
+    userIssues,
     buildings,
     buildingsLoading,
     activities,
     handleMarkAsSeen,
     error,
     // Admin specific properties
-    issues: isAdminDashboard ? allIssues : [],
+    issues: allIssues,
     isLoading,
     isAdmin,
     checkUserRoleAndFetchData

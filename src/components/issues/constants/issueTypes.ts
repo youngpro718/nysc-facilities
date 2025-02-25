@@ -13,7 +13,6 @@ export const ISSUE_TYPES: StandardizedIssueType[] = [
   'CLEANING_REQUEST',
   'ELECTRICAL_NEEDS',
   'GENERAL_REQUESTS',
-  'LIGHTING',
   'PLUMBING_NEEDS'
 ] as const;
 
@@ -39,24 +38,3 @@ export const PROBLEM_TYPES: Record<StandardizedIssueType, string[]> = {
   'WINDOW': ['Broken', 'Seal', 'Lock', 'Screen']
 };
 
-// Utility function for icon handling
-export const getIssueTypeIcon = (type: StandardizedIssueType) => {
-  switch (type) {
-    case 'ELECTRICAL_NEEDS':
-      return 'Bolt';
-    case 'PLUMBING_NEEDS':
-      return 'Droplet';
-    case 'CLIMATE_CONTROL':
-      return 'Thermometer';
-    case 'ACCESS_REQUEST':
-      return 'Key';
-    case 'BUILDING_SYSTEMS':
-      return 'Building2';
-    case 'CLEANING_REQUEST':
-      return 'Trash2';
-    case 'LIGHTING':
-      return 'Lightbulb';
-    default:
-      return 'AlertCircle';
-  }
-};

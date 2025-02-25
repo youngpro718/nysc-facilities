@@ -3,9 +3,8 @@ import { IssueStatus, IssuePriority, ResolutionType } from "./IssueTypes";
 import { StandardizedIssueType } from "../constants/issueTypes";
 
 export interface FormData {
-  title: string;
+  title?: string;
   description: string;
-  type: StandardizedIssueType;
   status?: IssueStatus;
   priority: IssuePriority;
   due_date?: string;
