@@ -32,37 +32,41 @@ export function RelocationDialog({ open, onOpenChange }: RelocationDialogProps) 
       try {
         console.log("Starting relocation creation with values:", values);
 
+        // Check user authentication first
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) {
+          console.error("Authentication error:", authError);
+          throw new Error("You must be logged in to create relocations");
+        }
+
         // Validate dates first
         const startDate = new Date(values.start_date);
         const endDate = new Date(values.end_date);
         
         if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+          console.error("Invalid date format detected");
           throw new Error("Invalid date format");
         }
         
         if (endDate <= startDate) {
+          console.error("End date is before or equal to start date");
           throw new Error("End date must be after start date");
         }
 
-        const user = await supabase.auth.getUser();
-        if (!user.data.user?.id) {
-          throw new Error("User not authenticated");
-        }
-
-        // Prepare the data
+        // Prepare the relocation data
         const relocationData = {
           original_room_id: values.original_room_id,
           temporary_room_id: values.temporary_room_id,
-          start_date: values.start_date,
-          end_date: values.end_date,
+          start_date: startDate.toISOString(),
+          end_date: endDate.toISOString(),
           reason: values.reason,
           relocation_type: values.relocation_type,
           status: 'scheduled' as const,
           notes: values.special_instructions || '',
-          created_by: user.data.user.id
+          created_by: user.id
         };
 
-        console.log("Submitting relocation data to Supabase:", relocationData);
+        console.log("Submitting relocation data:", relocationData);
 
         const { data, error } = await supabase
           .from('room_relocations')
@@ -71,34 +75,47 @@ export function RelocationDialog({ open, onOpenChange }: RelocationDialogProps) 
           .single();
 
         if (error) {
-          console.error("Supabase error:", error);
+          console.error("Supabase insertion error:", error);
           throw new Error(error.message);
         }
 
         console.log("Successfully created relocation:", data);
         return data;
       } catch (error) {
-        console.error("Error in createRelocation mutation:", error);
+        console.error("Error in createRelocation:", error);
         throw error;
       }
     },
     onSuccess: () => {
-      console.log("Mutation succeeded, invalidating queries");
+      console.log("Relocation created successfully");
       queryClient.invalidateQueries({ queryKey: ['relocations'] });
       toast.success('Relocation scheduled successfully');
       onOpenChange(false);
       form.reset();
     },
     onError: (error: Error) => {
-      console.error('Error in mutation:', error);
+      console.error("Error creating relocation:", error);
       toast.error(error.message || 'Failed to schedule relocation');
     }
   });
 
   const onSubmit = async (values: FormValues) => {
-    console.log("Form submitted with values:", values);
-    
     try {
+      console.log("Form submitted with values:", values);
+      
+      // Check if required fields are filled
+      if (!values.original_room_id || !values.temporary_room_id) {
+        console.error("Missing room selection");
+        toast.error("Please select both rooms");
+        return;
+      }
+
+      if (!values.start_date || !values.end_date) {
+        console.error("Missing dates");
+        toast.error("Please select both start and end dates");
+        return;
+      }
+
       await createRelocation.mutateAsync(values);
     } catch (error) {
       console.error("Form submission error:", error);
