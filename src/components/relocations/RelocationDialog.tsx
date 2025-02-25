@@ -29,71 +29,79 @@ export function RelocationDialog({ open, onOpenChange }: RelocationDialogProps) 
 
   const createRelocation = useMutation({
     mutationFn: async (values: FormValues) => {
-      console.log("Submitting relocation with values:", values);
+      try {
+        console.log("Starting relocation creation with values:", values);
 
-      // Prepare the data to match the database requirements
-      const relocationData = {
-        original_room_id: values.original_room_id,
-        temporary_room_id: values.temporary_room_id,
-        start_date: values.start_date,
-        end_date: values.end_date,
-        reason: values.reason,
-        relocation_type: values.relocation_type,
-        status: 'scheduled' as const,
-        notes: values.special_instructions || '',
-        created_by: (await supabase.auth.getUser()).data.user?.id
-      };
+        // Validate dates first
+        const startDate = new Date(values.start_date);
+        const endDate = new Date(values.end_date);
+        
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+          throw new Error("Invalid date format");
+        }
+        
+        if (endDate <= startDate) {
+          throw new Error("End date must be after start date");
+        }
 
-      console.log("Prepared relocation data:", relocationData);
+        const user = await supabase.auth.getUser();
+        if (!user.data.user?.id) {
+          throw new Error("User not authenticated");
+        }
 
-      const { data, error } = await supabase
-        .from('room_relocations')
-        .insert(relocationData)
-        .select()
-        .single();
+        // Prepare the data
+        const relocationData = {
+          original_room_id: values.original_room_id,
+          temporary_room_id: values.temporary_room_id,
+          start_date: values.start_date,
+          end_date: values.end_date,
+          reason: values.reason,
+          relocation_type: values.relocation_type,
+          status: 'scheduled' as const,
+          notes: values.special_instructions || '',
+          created_by: user.data.user.id
+        };
 
-      if (error) {
-        console.error("Supabase error details:", error);
-        throw new Error(`Failed to create relocation: ${error.message}`);
+        console.log("Submitting relocation data to Supabase:", relocationData);
+
+        const { data, error } = await supabase
+          .from('room_relocations')
+          .insert(relocationData)
+          .select()
+          .single();
+
+        if (error) {
+          console.error("Supabase error:", error);
+          throw new Error(error.message);
+        }
+
+        console.log("Successfully created relocation:", data);
+        return data;
+      } catch (error) {
+        console.error("Error in createRelocation mutation:", error);
+        throw error;
       }
-
-      console.log("Successfully created relocation:", data);
-      return data;
     },
     onSuccess: () => {
+      console.log("Mutation succeeded, invalidating queries");
       queryClient.invalidateQueries({ queryKey: ['relocations'] });
       toast.success('Relocation scheduled successfully');
       onOpenChange(false);
       form.reset();
     },
     onError: (error: Error) => {
-      console.error('Error creating relocation:', error);
+      console.error('Error in mutation:', error);
       toast.error(error.message || 'Failed to schedule relocation');
     }
   });
 
   const onSubmit = async (values: FormValues) => {
+    console.log("Form submitted with values:", values);
+    
     try {
-      console.log("Form submitted with values:", values);
-      
-      // Validate dates
-      const startDate = new Date(values.start_date);
-      const endDate = new Date(values.end_date);
-      
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-        toast.error("Invalid date format");
-        return;
-      }
-      
-      if (endDate <= startDate) {
-        toast.error("End date must be after start date");
-        return;
-      }
-
       await createRelocation.mutateAsync(values);
     } catch (error) {
       console.error("Form submission error:", error);
-      toast.error("Failed to submit form");
     }
   };
 
@@ -120,7 +128,7 @@ export function RelocationDialog({ open, onOpenChange }: RelocationDialogProps) 
               </Button>
               <Button 
                 type="submit" 
-                disabled={createRelocation.isPending || !form.formState.isValid}
+                disabled={createRelocation.isPending}
               >
                 {createRelocation.isPending ? (
                   <>
