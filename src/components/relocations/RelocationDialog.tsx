@@ -11,6 +11,7 @@ import { DateAndTypeFields } from "./form-sections/DateAndTypeFields";
 import { ReasonFields } from "./form-sections/ReasonFields";
 import { FormValues, relocationSchema } from "./types";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
 
 interface RelocationDialogProps {
   open: boolean;
@@ -28,6 +29,8 @@ export function RelocationDialog({ open, onOpenChange }: RelocationDialogProps) 
 
   const createRelocation = useMutation({
     mutationFn: async (values: FormValues) => {
+      console.log("Submitting relocation with values:", values);
+
       // Prepare the data to match the database requirements
       const relocationData = {
         original_room_id: values.original_room_id,
@@ -36,9 +39,12 @@ export function RelocationDialog({ open, onOpenChange }: RelocationDialogProps) 
         end_date: values.end_date,
         reason: values.reason,
         relocation_type: values.relocation_type,
-        status: 'scheduled' as const, // Explicitly type this as a const to match the enum
-        notes: values.special_instructions || ''
+        status: 'scheduled' as const,
+        notes: values.special_instructions || '',
+        created_by: (await supabase.auth.getUser()).data.user?.id
       };
+
+      console.log("Prepared relocation data:", relocationData);
 
       const { data, error } = await supabase
         .from('room_relocations')
@@ -46,7 +52,12 @@ export function RelocationDialog({ open, onOpenChange }: RelocationDialogProps) 
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error details:", error);
+        throw new Error(`Failed to create relocation: ${error.message}`);
+      }
+
+      console.log("Successfully created relocation:", data);
       return data;
     },
     onSuccess: () => {
@@ -55,14 +66,35 @@ export function RelocationDialog({ open, onOpenChange }: RelocationDialogProps) 
       onOpenChange(false);
       form.reset();
     },
-    onError: (error) => {
-      toast.error('Failed to schedule relocation');
+    onError: (error: Error) => {
       console.error('Error creating relocation:', error);
+      toast.error(error.message || 'Failed to schedule relocation');
     }
   });
 
-  const onSubmit = (values: FormValues) => {
-    createRelocation.mutate(values);
+  const onSubmit = async (values: FormValues) => {
+    try {
+      console.log("Form submitted with values:", values);
+      
+      // Validate dates
+      const startDate = new Date(values.start_date);
+      const endDate = new Date(values.end_date);
+      
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        toast.error("Invalid date format");
+        return;
+      }
+      
+      if (endDate <= startDate) {
+        toast.error("End date must be after start date");
+        return;
+      }
+
+      await createRelocation.mutateAsync(values);
+    } catch (error) {
+      console.error("Form submission error:", error);
+      toast.error("Failed to submit form");
+    }
   };
 
   return (
@@ -79,11 +111,25 @@ export function RelocationDialog({ open, onOpenChange }: RelocationDialogProps) 
             <ReasonFields form={form} />
 
             <div className="flex justify-end gap-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => onOpenChange(false)}
+              >
                 Cancel
               </Button>
-              <Button type="submit" disabled={createRelocation.isPending}>
-                {createRelocation.isPending ? "Creating..." : "Create Relocation"}
+              <Button 
+                type="submit" 
+                disabled={createRelocation.isPending || !form.formState.isValid}
+              >
+                {createRelocation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  "Create Relocation"
+                )}
               </Button>
             </div>
           </form>
