@@ -18,6 +18,7 @@ import { createSpace } from "./services/createSpace";
 import { CreateSpaceFormData, createSpaceSchema } from "./schemas/createSpaceSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RoomTypeEnum, StatusEnum } from "./rooms/types/roomEnums";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export function CreateSpaceDialog() {
   const [open, setOpen] = useState(false);
@@ -47,7 +48,12 @@ export function CreateSpaceDialog() {
   const createSpaceMutation = useMutation({
     mutationFn: createSpace,
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: [`${variables.type}s`] });
+      // Invalidate both the rooms query and the specific building/floor combination
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['rooms', variables.buildingId, variables.floorId] 
+      });
+      
       toast({
         title: "Space created",
         description: `Successfully created ${variables.type} "${variables.name}"`,
@@ -65,6 +71,7 @@ export function CreateSpaceDialog() {
   });
 
   const onSubmit = (data: CreateSpaceFormData) => {
+    if (createSpaceMutation.isPending) return;
     createSpaceMutation.mutate(data);
   };
 
@@ -80,19 +87,22 @@ export function CreateSpaceDialog() {
         <DialogHeader>
           <DialogTitle>Create New Space</DialogTitle>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <CreateSpaceFormFields form={form} />
-            <Button 
-              type="submit" 
-              className="w-full"
-              disabled={createSpaceMutation.isPending}
-            >
-              {createSpaceMutation.isPending ? "Creating..." : "Create Space"}
-            </Button>
-          </form>
-        </Form>
+        <ErrorBoundary>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <CreateSpaceFormFields form={form} />
+              <Button 
+                type="submit" 
+                className="w-full"
+                disabled={createSpaceMutation.isPending}
+              >
+                {createSpaceMutation.isPending ? "Creating..." : "Create Space"}
+              </Button>
+            </form>
+          </Form>
+        </ErrorBoundary>
       </DialogContent>
     </Dialog>
   );
 }
+
