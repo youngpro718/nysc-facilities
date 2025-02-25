@@ -36,7 +36,7 @@ export function RelocationDialog({ open, onOpenChange }: RelocationDialogProps) 
         end_date: values.end_date,
         reason: values.reason,
         relocation_type: values.relocation_type,
-        status: 'scheduled',
+        status: 'scheduled' as const, // Explicitly type this as a const to match the enum
         notes: values.special_instructions || ''
       };
 
