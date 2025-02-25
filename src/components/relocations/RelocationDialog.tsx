@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { RoomSelectionFields } from "./form-sections/RoomSelectionFields";
 import { DateAndTypeFields } from "./form-sections/DateAndTypeFields";
 import { ReasonFields } from "./form-sections/ReasonFields";
-import { FormValues } from "./types";
+import { FormValues, relocationSchema } from "./types";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 interface RelocationDialogProps {
   open: boolean;
@@ -18,6 +19,7 @@ interface RelocationDialogProps {
 
 export function RelocationDialog({ open, onOpenChange }: RelocationDialogProps) {
   const form = useForm<FormValues>({
+    resolver: zodResolver(relocationSchema),
     defaultValues: {
       relocation_type: "maintenance"
     }
@@ -72,8 +74,8 @@ export function RelocationDialog({ open, onOpenChange }: RelocationDialogProps) 
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit">
-                Create Relocation
+              <Button type="submit" disabled={createRelocation.isPending}>
+                {createRelocation.isPending ? "Creating..." : "Create Relocation"}
               </Button>
             </div>
           </form>
@@ -82,4 +84,3 @@ export function RelocationDialog({ open, onOpenChange }: RelocationDialogProps) 
     </Dialog>
   );
 }
-
