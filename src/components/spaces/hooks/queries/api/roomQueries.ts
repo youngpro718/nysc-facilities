@@ -5,25 +5,26 @@ export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
   console.log("Fetching rooms with filters:", { buildingId, floorId });
   
   let query = supabase
-    .from('rooms')
+    .from('new_spaces')
     .select(`
       id,
       name,
       room_number,
-      room_type,
-      description,
       status,
       floor_id,
-      parent_room_id,
-      is_storage,
-      storage_capacity,
-      storage_type,
-      storage_notes,
-      phone_number,
-      created_at,
-      current_function,
-      previous_functions,
-      function_change_date,
+      type,
+      position,
+      size,
+      room_properties!left (
+        room_type,
+        current_function,
+        is_storage,
+        storage_type,
+        storage_capacity,
+        phone_number,
+        current_occupancy,
+        parent_room_id
+      ),
       floors!inner ( 
         id,
         name,
@@ -31,11 +32,9 @@ export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
           id,
           name
         )
-      ),
-      parent_room:parent_room_id (
-        name
       )
-    `);
+    `)
+    .eq('type', 'room');
 
   // Apply building filter if specified
   if (buildingId && buildingId !== 'all') {
@@ -54,12 +53,23 @@ export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
     throw error;
   }
 
-  return { data, error };
+  // Transform the data to match the expected Room interface
+  const transformedData = data?.map(space => ({
+    ...space,
+    // Flatten room_properties into the main object
+    ...(space.room_properties || {}),
+    // Ensure these properties exist even if room_properties is null
+    room_type: space.room_properties?.room_type || 'office',
+    is_storage: space.room_properties?.is_storage || false,
+    current_occupancy: space.room_properties?.current_occupancy || 0,
+  }));
+
+  return { data: transformedData, error };
 };
 
 export const fetchRelatedRoomData = async (roomIds: string[]) => {
   return Promise.all([
-    // Fetch occupants - using the correct relationship name
+    // Fetch occupants
     supabase
       .from('occupant_room_assignments')
       .select(`
