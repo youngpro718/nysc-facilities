@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -5,7 +6,7 @@ import {
   createScheduleChange,
   updateScheduleChange,
   deleteScheduleChange
-} from "../services/relocationService";
+} from "../services/scheduleChangeService";
 import {
   CreateScheduleChangeFormData,
   UpdateScheduleChangeFormData,
