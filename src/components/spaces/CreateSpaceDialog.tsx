@@ -18,7 +18,6 @@ import { createSpace } from "./services/createSpace";
 import { CreateSpaceFormData, createSpaceSchema } from "./schemas/createSpaceSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RoomTypeEnum, StatusEnum } from "./rooms/types/roomEnums";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export function CreateSpaceDialog() {
   const [open, setOpen] = useState(false);
@@ -47,17 +46,8 @@ export function CreateSpaceDialog() {
 
   const createSpaceMutation = useMutation({
     mutationFn: createSpace,
-    onSuccess: (data, variables) => {
-      console.log('Space created successfully:', data);
-      
-      // Invalidate both queries to ensure UI updates
-      queryClient.invalidateQueries({ 
-        queryKey: ['rooms', variables.buildingId, variables.floorId] 
-      });
-      queryClient.invalidateQueries({ 
-        queryKey: ['rooms'] 
-      });
-      
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: [`${variables.type}s`] });
       toast({
         title: "Space created",
         description: `Successfully created ${variables.type} "${variables.name}"`,
@@ -66,18 +56,15 @@ export function CreateSpaceDialog() {
       form.reset();
     },
     onError: (error) => {
-      console.error('Error in createSpaceMutation:', error);
       toast({
-        title: "Error creating space",
-        description: error instanceof Error ? error.message : "Failed to create space. Please try again.",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create space",
         variant: "destructive",
       });
     },
   });
 
-  const onSubmit = async (data: CreateSpaceFormData) => {
-    if (createSpaceMutation.isPending) return;
-    console.log('Submitting form data:', data);
+  const onSubmit = (data: CreateSpaceFormData) => {
     createSpaceMutation.mutate(data);
   };
 
@@ -93,20 +80,18 @@ export function CreateSpaceDialog() {
         <DialogHeader>
           <DialogTitle>Create New Space</DialogTitle>
         </DialogHeader>
-        <ErrorBoundary>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <CreateSpaceFormFields form={form} />
-              <Button 
-                type="submit" 
-                className="w-full"
-                disabled={createSpaceMutation.isPending}
-              >
-                {createSpaceMutation.isPending ? "Creating..." : "Create Space"}
-              </Button>
-            </form>
-          </Form>
-        </ErrorBoundary>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <CreateSpaceFormFields form={form} />
+            <Button 
+              type="submit" 
+              className="w-full"
+              disabled={createSpaceMutation.isPending}
+            >
+              {createSpaceMutation.isPending ? "Creating..." : "Create Space"}
+            </Button>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

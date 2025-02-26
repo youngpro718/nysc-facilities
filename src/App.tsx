@@ -1,4 +1,3 @@
-
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Layout from "@/components/layout/Layout";
@@ -11,7 +10,6 @@ import Occupants from "@/pages/Occupants";
 import Keys from "@/pages/Keys";
 import Profile from "@/pages/Profile";
 import Lighting from "@/pages/Lighting";
-import Relocations from "@/pages/Relocations";
 import UserDashboard from "@/pages/UserDashboard";
 import AdminProfile from "@/pages/AdminProfile";
 import VerificationPending from "@/pages/VerificationPending";
@@ -67,11 +65,6 @@ function App() {
                 <Route path="lighting" element={
                   <ProtectedRoute requireAdmin>
                     <Lighting />
-                  </ProtectedRoute>
-                } />
-                <Route path="relocations" element={
-                  <ProtectedRoute requireAdmin>
-                    <Relocations />
                   </ProtectedRoute>
                 } />
                 <Route path="admin-profile" element={

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -10,8 +9,6 @@ import { Lightbulb, LayoutGrid } from "lucide-react";
 
 export const LightingManagement = () => {
   const [view, setView] = useState<'fixtures' | 'zones'>('fixtures');
-  const [selectedBuilding, setSelectedBuilding] = useState<string>('all');
-  const [selectedFloor, setSelectedFloor] = useState<string>('all');
 
   const handleFixtureCreated = async () => {
     // Refetch fixtures list
@@ -48,15 +45,9 @@ export const LightingManagement = () => {
 
       <div className="mt-8">
         {view === 'fixtures' ? (
-          <LightingFixturesList
-            selectedBuilding={selectedBuilding}
-            selectedFloor={selectedFloor}
-          />
+          <LightingFixturesList />
         ) : (
-          <LightingZonesList
-            selectedBuilding={selectedBuilding}
-            selectedFloor={selectedFloor}
-          />
+          <LightingZonesList />
         )}
       </div>
     </div>

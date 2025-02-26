@@ -5,26 +5,25 @@ export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
   console.log("Fetching rooms with filters:", { buildingId, floorId });
   
   let query = supabase
-    .from('new_spaces')
+    .from('rooms')
     .select(`
       id,
       name,
       room_number,
+      room_type,
+      description,
       status,
       floor_id,
-      type,
-      position,
-      size,
-      room_properties (
-        room_type,
-        current_function,
-        is_storage,
-        storage_type,
-        storage_capacity,
-        phone_number,
-        current_occupancy,
-        parent_room_id
-      ),
+      parent_room_id,
+      is_storage,
+      storage_capacity,
+      storage_type,
+      storage_notes,
+      phone_number,
+      created_at,
+      current_function,
+      previous_functions,
+      function_change_date,
       floors!inner ( 
         id,
         name,
@@ -32,9 +31,11 @@ export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
           id,
           name
         )
+      ),
+      parent_room:parent_room_id (
+        name
       )
-    `)
-    .eq('type', 'room');
+    `);
 
   // Apply building filter if specified
   if (buildingId && buildingId !== 'all') {
@@ -46,36 +47,19 @@ export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
     query = query.eq('floor_id', floorId);
   }
 
-  const { data: rooms, error } = await query;
+  const { data, error } = await query;
   
   if (error) {
     console.error('Error fetching rooms:', error);
     throw error;
   }
 
-  // Transform the data with typed room properties
-  const transformedData = rooms?.map(room => ({
-    ...room,
-    position: typeof room.position === 'string' ? JSON.parse(room.position) : room.position,
-    size: typeof room.size === 'string' ? JSON.parse(room.size) : room.size,
-    room_properties: room.room_properties || {
-      room_type: 'OFFICE',
-      current_function: null,
-      is_storage: false,
-      storage_type: null,
-      storage_capacity: null,
-      phone_number: null,
-      current_occupancy: 0,
-      parent_room_id: null
-    }
-  }));
-
-  return { data: transformedData, error };
+  return { data, error };
 };
 
 export const fetchRelatedRoomData = async (roomIds: string[]) => {
   return Promise.all([
-    // Fetch occupants
+    // Fetch occupants - using the correct relationship name
     supabase
       .from('occupant_room_assignments')
       .select(`

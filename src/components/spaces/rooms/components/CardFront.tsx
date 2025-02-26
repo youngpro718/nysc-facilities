@@ -1,15 +1,13 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trash2, Phone, Users, Building2, ArrowRightLeft } from "lucide-react";
+import { Trash2, Phone, Users, Building2 } from "lucide-react";
 import { EditSpaceDialog } from "../../EditSpaceDialog";
 import { Room } from "../types/RoomTypes";
 import { StatusEnum, RoomTypeEnum, StorageTypeEnum } from "../types/roomEnums";
 import { LightingStatusIndicator } from "./LightingStatusIndicator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRoomOccupants } from "../../hooks/useRoomOccupants";
-import { useNavigate } from "react-router-dom";
 
 interface CardFrontProps {
   room: Room;
@@ -18,7 +16,6 @@ interface CardFrontProps {
 
 export function CardFront({ room, onDelete }: CardFrontProps) {
   const { data: occupants, isLoading: isLoadingOccupants } = useRoomOccupants(room.id);
-  const navigate = useNavigate();
 
   // Convert room type to RoomTypeEnum safely
   const getRoomType = (type: string): RoomTypeEnum => {
@@ -70,13 +67,6 @@ export function CardFront({ room, onDelete }: CardFrontProps) {
             </Badge>
           </div>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/relocations')}
-            >
-              <ArrowRightLeft className="h-4 w-4" />
-            </Button>
             <EditSpaceDialog
               id={room.id}
               type="room"
