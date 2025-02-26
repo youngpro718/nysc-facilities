@@ -15,7 +15,7 @@ export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
       type,
       position,
       size,
-      room_properties!left (
+      room_properties (
         room_type,
         current_function,
         is_storage,
@@ -46,22 +46,26 @@ export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
     query = query.eq('floor_id', floorId);
   }
 
-  const { data, error } = await query;
+  const { data: rooms, error } = await query;
   
   if (error) {
     console.error('Error fetching rooms:', error);
     throw error;
   }
 
-  // Transform the data to match the expected Room interface
-  const transformedData = data?.map(space => ({
-    ...space,
-    // Flatten room_properties into the main object
-    ...(space.room_properties || {}),
-    // Ensure these properties exist even if room_properties is null
-    room_type: space.room_properties?.room_type || 'office',
-    is_storage: space.room_properties?.is_storage || false,
-    current_occupancy: space.room_properties?.current_occupancy || 0,
+  // Transform the data with typed room properties
+  const transformedData = rooms?.map(room => ({
+    ...room,
+    room_properties: room.room_properties || {
+      room_type: 'office',
+      current_function: null,
+      is_storage: false,
+      storage_type: null,
+      storage_capacity: null,
+      phone_number: null,
+      current_occupancy: 0,
+      parent_room_id: null
+    }
   }));
 
   return { data: transformedData, error };

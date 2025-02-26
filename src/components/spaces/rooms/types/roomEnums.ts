@@ -31,3 +31,13 @@ export enum StatusEnum {
   INACTIVE = "inactive",
   UNDER_MAINTENANCE = "under_maintenance"
 }
+
+export interface LightingFixture {
+  id: string;
+  type: string;
+  status: string;
+  technology: string;
+  electrical_issues: boolean;
+  ballast_issue: boolean;
+  maintenance_notes?: string;
+}
