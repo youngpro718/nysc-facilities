@@ -17,6 +17,8 @@ import { ThemeProvider } from "@/providers/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import Relocations from "@/pages/Relocations";
+import { RelocationDetails } from "@/components/relocations/details/RelocationDetails";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -65,6 +67,18 @@ function App() {
                 <Route path="lighting" element={
                   <ProtectedRoute requireAdmin>
                     <Lighting />
+                  </ProtectedRoute>
+                } />
+                <Route path="relocations" element={
+                  <ProtectedRoute requireAdmin>
+                    <Relocations />
+                  </ProtectedRoute>
+                } />
+                <Route path="relocations/:id" element={
+                  <ProtectedRoute requireAdmin>
+                    <div className="container mx-auto py-6">
+                      <RelocationDetails id={window.location.pathname.split('/')[2]} />
+                    </div>
                   </ProtectedRoute>
                 } />
                 <Route path="admin-profile" element={

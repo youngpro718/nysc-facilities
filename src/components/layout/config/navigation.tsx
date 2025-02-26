@@ -1,4 +1,3 @@
-
 import {
   Building2,
   Users,
@@ -6,6 +5,7 @@ import {
   AlertCircle,
   LayoutDashboard,
   UserRound,
+  ArrowRightLeft
 } from "lucide-react";
 import { NavigationTab } from "../types";
 
@@ -16,6 +16,7 @@ export const adminNavigation: NavigationTab[] = [
   { type: "separator" },
   { title: "Keys", icon: Key },
   { title: "Issues", icon: AlertCircle },
+  { title: "Relocations", icon: ArrowRightLeft },
   { type: "separator" },
   { title: "Admin Profile", icon: UserRound },
 ];
@@ -28,7 +29,7 @@ export const userNavigation: NavigationTab[] = [
 
 export const getNavigationRoutes = (isAdmin: boolean) => {
   if (isAdmin) {
-    return ['/', '/spaces', '/occupants', null, '/keys', '/issues', null, '/admin-profile'];
+    return ['/', '/spaces', '/occupants', null, '/keys', '/issues', '/relocations', null, '/admin-profile'];
   }
   return ['/dashboard', null, '/profile'];
 };
