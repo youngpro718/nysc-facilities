@@ -56,8 +56,10 @@ export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
   // Transform the data with typed room properties
   const transformedData = rooms?.map(room => ({
     ...room,
+    position: typeof room.position === 'string' ? JSON.parse(room.position) : room.position,
+    size: typeof room.size === 'string' ? JSON.parse(room.size) : room.size,
     room_properties: room.room_properties || {
-      room_type: 'office',
+      room_type: 'OFFICE',
       current_function: null,
       is_storage: false,
       storage_type: null,

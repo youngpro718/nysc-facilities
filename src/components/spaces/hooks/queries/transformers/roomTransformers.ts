@@ -1,6 +1,6 @@
 
 import { Room } from "../../../rooms/types/RoomTypes";
-import { LightingFixture } from "../../../rooms/types/roomEnums";
+import { LightingFixture, RoomType } from "../../../rooms/types/roomEnums";
 
 interface RawRoom {
   id: string;
@@ -39,23 +39,28 @@ export function transformRoomData(
   occupantsByRoomId: Record<string, any[]>
 ): Room[] {
   return rooms.map((room) => {
+    // Parse position and size if they're strings
     const position = typeof room.position === 'string' ? 
       JSON.parse(room.position) : room.position;
     const size = typeof room.size === 'string' ? 
       JSON.parse(room.size) : room.size;
+
+    // Convert room_type string to enum
+    const roomType = (room.room_properties?.room_type || 'office').toUpperCase() as keyof typeof RoomType;
+    const convertedRoomType = RoomType[roomType] || RoomType.OFFICE;
 
     return {
       id: room.id,
       name: room.name,
       room_number: room.room_number,
       floor_id: room.floor_id,
-      status: room.status,
+      status: room.status as "active" | "inactive" | "under_maintenance",
       type: room.type,
       position: position,
       size: size,
-      created_at: new Date().toISOString(), // Default value for now
-      space_connections: [], // Default empty array
-      room_type: room.room_properties?.room_type || 'office',
+      created_at: new Date().toISOString(),
+      space_connections: [],
+      room_type: convertedRoomType,
       current_function: room.room_properties?.current_function || null,
       is_storage: room.room_properties?.is_storage || false,
       storage_type: room.room_properties?.storage_type || null,
