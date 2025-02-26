@@ -3,13 +3,17 @@ import { useToast } from "@/hooks/use-toast";
 import {
   fetchRelocations,
   fetchActiveRelocations,
-  fetchRelocationById,
+  fetchRelocationById
+} from "../services/queries/relocationQueries";
+import {
   createRelocation,
-  updateRelocation,
+  updateRelocation
+} from "../services/mutations/relocationMutations";
+import {
   activateRelocation,
   completeRelocation,
   cancelRelocation
-} from "../services/relocationService";
+} from "../services/mutations/statusMutations";
 import {
   CreateRelocationFormData,
   UpdateRelocationFormData,
@@ -292,4 +296,4 @@ export function useRelocationDetails(id: string) {
     isCompleting: completeRelocationMutation.isPending,
     isCancelling: cancelRelocationMutation.isPending,
   };
-} 
+}
