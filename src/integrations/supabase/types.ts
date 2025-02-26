@@ -6562,6 +6562,31 @@ export type Database = {
         }
         Relationships: []
       }
+      unified_spaces: {
+        Row: {
+          created_at: string | null
+          current_function: string | null
+          current_occupancy: number | null
+          floor_id: string | null
+          id: string | null
+          is_storage: boolean | null
+          name: string | null
+          parent_room_id: string | null
+          phone_number: string | null
+          position: Json | null
+          properties: Json | null
+          room_number: string | null
+          room_type: Database["public"]["Enums"]["room_type_enum"] | null
+          rotation: number | null
+          size: Json | null
+          status: Database["public"]["Enums"]["status_enum"] | null
+          storage_capacity: number | null
+          storage_type: string | null
+          type: string | null
+          updated_at: string | null
+        }
+        Relationships: []
+      }
       user_activity_history: {
         Row: {
           action: string | null
