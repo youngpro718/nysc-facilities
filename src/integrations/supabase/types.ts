@@ -3384,6 +3384,73 @@ export type Database = {
           },
         ]
       }
+      maintenance_projects: {
+        Row: {
+          actual_end_date: string | null
+          contractor: string | null
+          created_at: string | null
+          description: string | null
+          expected_end_date: string
+          id: string
+          name: string
+          priority: string
+          project_manager: string | null
+          start_date: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          actual_end_date?: string | null
+          contractor?: string | null
+          created_at?: string | null
+          description?: string | null
+          expected_end_date: string
+          id?: string
+          name: string
+          priority: string
+          project_manager?: string | null
+          start_date: string
+          status: string
+          updated_at?: string | null
+        }
+        Update: {
+          actual_end_date?: string | null
+          contractor?: string | null
+          created_at?: string | null
+          description?: string | null
+          expected_end_date?: string
+          id?: string
+          name?: string
+          priority?: string
+          project_manager?: string | null
+          start_date?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_projects_project_manager_fkey"
+            columns: ["project_manager"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_projects_project_manager_fkey"
+            columns: ["project_manager"]
+            isOneToOne: false
+            referencedRelation: "user_verification_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_projects_project_manager_fkey"
+            columns: ["project_manager"]
+            isOneToOne: false
+            referencedRelation: "user_verification_view"
+            referencedColumns: ["profile_id"]
+          },
+        ]
+      }
       maintenance_records: {
         Row: {
           created_at: string | null
@@ -3438,6 +3505,7 @@ export type Database = {
           created_at: string | null
           floor_id: string
           id: string
+          maintenance_status: string | null
           name: string
           position: Json | null
           properties: Json | null
@@ -3452,6 +3520,7 @@ export type Database = {
           created_at?: string | null
           floor_id: string
           id?: string
+          maintenance_status?: string | null
           name: string
           position?: Json | null
           properties?: Json | null
@@ -3466,6 +3535,7 @@ export type Database = {
           created_at?: string | null
           floor_id?: string
           id?: string
+          maintenance_status?: string | null
           name?: string
           position?: Json | null
           properties?: Json | null
@@ -4004,6 +4074,103 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+          project_id: string
+          recipient_list: Json | null
+          recipient_type: string
+          scheduled_date: string
+          sent_date: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+          project_id: string
+          recipient_list?: Json | null
+          recipient_type: string
+          scheduled_date: string
+          sent_date?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+          project_id?: string
+          recipient_list?: Json | null
+          recipient_type?: string
+          scheduled_date?: string
+          sent_date?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_notifications_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_phases: {
+        Row: {
+          actual_end_date: string | null
+          created_at: string | null
+          description: string | null
+          expected_duration_days: number
+          id: string
+          name: string
+          project_id: string
+          sequence_number: number
+          start_date: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          actual_end_date?: string | null
+          created_at?: string | null
+          description?: string | null
+          expected_duration_days: number
+          id?: string
+          name: string
+          project_id: string
+          sequence_number: number
+          start_date: string
+          status: string
+          updated_at?: string | null
+        }
+        Update: {
+          actual_end_date?: string | null
+          created_at?: string | null
+          description?: string | null
+          expected_duration_days?: number
+          id?: string
+          name?: string
+          project_id?: string
+          sequence_number?: number
+          start_date?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_phases_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_projects"
             referencedColumns: ["id"]
           },
         ]
@@ -5126,6 +5293,47 @@ export type Database = {
         }
         Relationships: []
       }
+      service_impacts: {
+        Row: {
+          alternative_arrangements: string | null
+          contact_person: string | null
+          created_at: string | null
+          department: string
+          id: string
+          impact_description: string
+          project_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          alternative_arrangements?: string | null
+          contact_person?: string | null
+          created_at?: string | null
+          department: string
+          id?: string
+          impact_description: string
+          project_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          alternative_arrangements?: string | null
+          contact_person?: string | null
+          created_at?: string | null
+          department?: string
+          id?: string
+          impact_description?: string
+          project_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_impacts_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       space_connections: {
         Row: {
           access_requirements: Json | null
@@ -5370,6 +5578,91 @@ export type Database = {
             columns: ["to_space_id"]
             isOneToOne: false
             referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      space_impacts: {
+        Row: {
+          created_at: string | null
+          end_date: string
+          id: string
+          impact_type: string
+          notes: string | null
+          phase_id: string | null
+          project_id: string
+          space_id: string
+          start_date: string
+          temporary_relocation_space_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          end_date: string
+          id?: string
+          impact_type: string
+          notes?: string | null
+          phase_id?: string | null
+          project_id: string
+          space_id: string
+          start_date: string
+          temporary_relocation_space_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          end_date?: string
+          id?: string
+          impact_type?: string
+          notes?: string | null
+          phase_id?: string | null
+          project_id?: string
+          space_id?: string
+          start_date?: string
+          temporary_relocation_space_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "space_impacts_phase_id_fkey"
+            columns: ["phase_id"]
+            isOneToOne: false
+            referencedRelation: "project_phases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_impacts_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_impacts_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "new_spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_impacts_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_impacts_temporary_relocation_space_id_fkey"
+            columns: ["temporary_relocation_space_id"]
+            isOneToOne: false
+            referencedRelation: "new_spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_impacts_temporary_relocation_space_id_fkey"
+            columns: ["temporary_relocation_space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
             referencedColumns: ["id"]
           },
         ]
