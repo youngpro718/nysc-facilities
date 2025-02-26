@@ -11,7 +11,7 @@ import {
   AlertTriangle, ChevronLeft, ChevronRight, Flag, 
   AlertOctagon, Bolt, Droplet, Building2, Key, 
   Thermometer, Trash2, DoorClosed, Construction,
-  Lightbulb, Waves, PaintBucket
+  Lightbulb, Waves, PaintBucket, Wrench, Bug, Zap, HelpCircle 
 } from "lucide-react";
 import { LocationFields } from "../form-sections/LocationFields";
 import { ProblemTypeField } from "../form-sections/ProblemTypeField";
@@ -27,7 +27,6 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Bug, AlertTriangle, Wrench, Zap, Tool, HelpCircle } from "lucide-react";
 
 interface IssueWizardProps {
   onSuccess?: () => void;
@@ -660,7 +659,7 @@ export const getIssueTypeIcon = (type: string) => {
     case "Security":
       return <AlertTriangle className="h-4 w-4" />;
     case "Equipment":
-      return <Tool className="h-4 w-4" />;
+      return <Wrench className="h-4 w-4" />;
     case "Bug":
       return <Bug className="h-4 w-4" />;
     default:
