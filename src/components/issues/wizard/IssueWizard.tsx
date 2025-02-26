@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Bug, AlertTriangle, Wrench, Zap, Tool, HelpCircle } from "lucide-react";
 
 interface IssueWizardProps {
   onSuccess?: () => void;
@@ -97,7 +98,6 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
   const queryClient = useQueryClient();
   const [selectedIssueType, setSelectedIssueType] = useState<StandardizedIssueType | null>(null);
   
-  // Find primary assigned room
   const primaryRoom = assignedRooms?.find(room => room.is_primary);
 
   const form = useForm<FormData>({
@@ -114,7 +114,6 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
     }
   });
 
-  // Reset location fields when toggling assigned room
   useEffect(() => {
     if (!useAssignedRoom) {
       form.setValue('building_id', '');
@@ -127,7 +126,6 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
     }
   }, [useAssignedRoom, primaryRoom, form]);
 
-  // Watch for critical issue types
   const watchIssueType = form.watch('issue_type');
   useEffect(() => {
     if (watchIssueType && watchIssueType !== selectedIssueType) {
@@ -140,14 +138,12 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
     }
   }, [watchIssueType, selectedIssueType, form]);
 
-  // Add state for room selection
   const [selectedBuilding, setSelectedBuilding] = useState<string | null>(null);
   const [selectedFloor, setSelectedFloor] = useState<string | null>(null);
   const [buildings, setBuildings] = useState<any[]>([]);
   const [floors, setFloors] = useState<any[]>([]);
   const [rooms, setRooms] = useState<any[]>([]);
 
-  // Fetch buildings when component mounts
   useEffect(() => {
     const fetchBuildings = async () => {
       const { data } = await supabase
@@ -159,7 +155,6 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
     fetchBuildings();
   }, []);
 
-  // Fetch floors when building is selected
   useEffect(() => {
     const fetchFloors = async () => {
       if (!selectedBuilding) {
@@ -175,7 +170,6 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
     fetchFloors();
   }, [selectedBuilding]);
 
-  // Fetch rooms when floor is selected
   useEffect(() => {
     const fetchRooms = async () => {
       if (!selectedFloor) {
@@ -191,7 +185,6 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
     fetchRooms();
   }, [selectedFloor]);
 
-  // Handle building selection
   const handleBuildingSelect = (buildingId: string) => {
     setSelectedBuilding(buildingId);
     setSelectedFloor(null);
@@ -200,14 +193,12 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
     form.setValue('room_id', '');
   };
 
-  // Handle floor selection
   const handleFloorSelect = (floorId: string) => {
     setSelectedFloor(floorId);
     form.setValue('floor_id', floorId);
     form.setValue('room_id', '');
   };
 
-  // Handle room selection
   const handleRoomSelect = (roomId: string) => {
     form.setValue('room_id', roomId);
   };
@@ -293,7 +284,6 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {/* Room Selection Header */}
         {assignedRooms && assignedRooms.length > 0 ? (
           <Card className="p-4">
             <div className="space-y-4">
@@ -374,7 +364,6 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
         )}
 
         <div className="space-y-6">
-          {/* Progress Indicator */}
           <div className="flex items-center justify-center gap-2">
             {['type', 'details', 'review'].map((step, index) => (
               <div key={step} className="flex items-center">
@@ -404,12 +393,10 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
             ))}
           </div>
 
-          {/* Step Content */}
           {currentStep === 'type' && (
             <Card className="p-6 animate-fade-in">
               <h3 className="text-lg font-semibold mb-4">What type of issue are you reporting?</h3>
               
-              {/* Location Selection when not using assigned room */}
               {!useAssignedRoom && (
                 <div className="mb-6 space-y-6">
                   <div className="space-y-4">
@@ -518,7 +505,6 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
                 </div>
               )}
 
-              {/* Large Issue Type Grid */}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {ISSUE_TYPES.map((type) => (
                   <button
@@ -549,7 +535,6 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
                 ))}
               </div>
 
-              {/* Problem Type Selection */}
               {form.watch('issue_type') && (
                 <div className="mt-6 animate-fade-in">
                   <ProblemTypeField form={form} />
@@ -626,16 +611,15 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
           )}
         </div>
 
-        {/* Navigation Buttons */}
         <div className="flex justify-between">
-              <Button
-                type="button"
-                variant="outline"
+          <Button
+            type="button"
+            variant="outline"
             onClick={currentStep === 'type' ? onCancel : handleBack}
-              >
+          >
             <ChevronLeft className="mr-2 h-4 w-4" />
             {currentStep === 'type' ? 'Cancel' : 'Back'}
-              </Button>
+          </Button>
 
           {currentStep === 'review' ? (
             <Button
@@ -652,18 +636,34 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
               )}
             </Button>
           ) : (
-              <Button
-                type="button"
-                onClick={handleNext}
+            <Button
+              type="button"
+              onClick={handleNext}
               disabled={!useAssignedRoom && !form.watch('room_id')}
             >
               Next
               <ChevronRight className="ml-2 h-4 w-4" />
-              </Button>
-            )}
+            </Button>
+          )}
         </div>
       </form>
     </Form>
   );
 }
 
+export const getIssueTypeIcon = (type: string) => {
+  switch (type) {
+    case "Maintenance":
+      return <Wrench className="h-4 w-4" />;
+    case "Electrical":
+      return <Zap className="h-4 w-4" />;
+    case "Security":
+      return <AlertTriangle className="h-4 w-4" />;
+    case "Equipment":
+      return <Tool className="h-4 w-4" />;
+    case "Bug":
+      return <Bug className="h-4 w-4" />;
+    default:
+      return <HelpCircle className="h-4 w-4" />;
+  }
+};
