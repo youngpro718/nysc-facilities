@@ -6,7 +6,36 @@ import { RoomTypeEnum, StorageTypeEnum } from "../rooms/types/roomEnums";
 export async function createSpace(data: CreateSpaceFormData) {
   console.log('Creating space with data:', data);
   
-  // Create base space record
+  if (data.type === 'room') {
+    const roomData = {
+      name: data.name,
+      room_number: data.roomNumber,
+      room_type: data.roomType as RoomTypeEnum,
+      status: data.status,
+      floor_id: data.floorId,
+      description: data.description,
+      phone_number: data.phoneNumber,
+      current_function: data.currentFunction,
+      is_storage: data.isStorage || false,
+      storage_type: data.isStorage ? data.storageType as StorageTypeEnum : null,
+      storage_capacity: data.storageCapacity,
+      parent_room_id: data.parentRoomId,
+      position: data.position || { x: 0, y: 0 },
+      size: data.size || { width: 150, height: 100 },
+      rotation: data.rotation || 0
+    };
+
+    const { data: room, error: roomError } = await supabase
+      .from('rooms')
+      .insert([roomData])
+      .select()
+      .single();
+
+    if (roomError) throw roomError;
+    return room;
+  }
+
+  // Handle other space types (hallways, doors) using new_spaces table
   const spaceData = {
     name: data.name,
     type: data.type,
@@ -26,37 +55,6 @@ export async function createSpace(data: CreateSpaceFormData) {
     .single();
 
   if (spaceError) throw spaceError;
-
-  if (data.type === 'room') {
-    // Type guard to narrow down the type with correct enum types
-    const roomData = data as {
-      type: 'room';
-      roomType: RoomTypeEnum;
-      phoneNumber?: string;
-      currentFunction?: string;
-      isStorage?: boolean;
-      storageType?: StorageTypeEnum | null;
-      storageCapacity?: number | null;
-      parentRoomId?: string | null;
-    };
-
-    const roomProperties = {
-      space_id: space.id,
-      room_type: roomData.roomType,
-      phone_number: roomData.phoneNumber,
-      current_function: roomData.currentFunction,
-      is_storage: roomData.isStorage || false,
-      storage_type: roomData.isStorage ? roomData.storageType : null,
-      storage_capacity: roomData.storageCapacity,
-      parent_room_id: roomData.parentRoomId,
-    };
-
-    const { error: roomError } = await supabase
-      .from('room_properties')
-      .insert(roomProperties);
-
-    if (roomError) throw roomError;
-  }
 
   if (data.connections) {
     const { error: connectionError } = await supabase
