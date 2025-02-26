@@ -5,26 +5,14 @@ export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
   console.log("Fetching rooms with filters:", { buildingId, floorId });
   
   let query = supabase
-    .from('rooms')
+    .from('new_spaces')
     .select(`
       id,
       name,
       room_number,
-      room_type,
-      description,
       status,
       floor_id,
-      parent_room_id,
-      is_storage,
-      storage_capacity,
-      storage_type,
-      storage_notes,
-      phone_number,
-      created_at,
-      current_function,
-      previous_functions,
-      function_change_date,
-      floors!inner ( 
+      floor:floors!inner (
         id,
         name,
         buildings!inner (
@@ -32,10 +20,19 @@ export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
           name
         )
       ),
-      parent_room:parent_room_id (
-        name
+      room_properties (
+        room_type,
+        current_function,
+        is_storage,
+        storage_type,
+        storage_capacity,
+        phone_number,
+        parent_room_id,
+        function_change_date,
+        previous_functions
       )
-    `);
+    `)
+    .eq('type', 'room');
 
   // Apply building filter if specified
   if (buildingId && buildingId !== 'all') {
@@ -59,7 +56,7 @@ export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
 
 export const fetchRelatedRoomData = async (roomIds: string[]) => {
   return Promise.all([
-    // Fetch occupants - using the correct relationship name
+    // Fetch occupants
     supabase
       .from('occupant_room_assignments')
       .select(`
