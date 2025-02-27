@@ -2,7 +2,6 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { useRelocationDetails } from "../hooks/useRelocations";
 import { useScheduleChanges } from "../hooks/useScheduleChanges";
-// import { useNotifications } from "../hooks/useNotifications"; // Removed this import
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -72,9 +71,7 @@ export function RelocationDetails({ id }: RelocationDetailsProps) {
     if (!relocation) return 0;
     
     const startDate = new Date(relocation.start_date);
-    const endDate = relocation.expected_end_date 
-      ? new Date(relocation.expected_end_date) 
-      : null;
+    const endDate = new Date(relocation.end_date);
     const today = new Date();
     
     if (!endDate) return 0;
@@ -202,8 +199,8 @@ export function RelocationDetails({ id }: RelocationDetailsProps) {
     switch (status) {
       case "active":
         return <Badge className="bg-green-500">Active</Badge>;
-      case "pending":
-        return <Badge variant="outline" className="text-yellow-500 border-yellow-500">Pending</Badge>;
+      case "scheduled":
+        return <Badge variant="outline" className="text-yellow-500 border-yellow-500">Scheduled</Badge>;
       case "completed":
         return <Badge className="bg-blue-500">Completed</Badge>;
       case "cancelled":
@@ -516,4 +513,4 @@ export function RelocationDetails({ id }: RelocationDetailsProps) {
       </Tabs>
     </div>
   );
-} 
+}
