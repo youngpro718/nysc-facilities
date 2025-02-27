@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { CreateScheduleChangeFormData, UpdateScheduleChangeFormData, ScheduleChange } from "../types/relocationTypes";
+import { CreateScheduleChangeFormData, UpdateScheduleChangeFormData, ScheduleChange, RelocationStatus } from "../types/relocationTypes";
 
 export async function fetchScheduleChanges(relocationId: string) {
   const { data, error } = await supabase
@@ -32,7 +32,7 @@ export async function createScheduleChange(formData: CreateScheduleChangeFormDat
       start_date: formData.start_date,
       end_date: formData.end_date,
       special_instructions: formData.special_instructions,
-      status: 'pending',
+      status: 'scheduled' as RelocationStatus,
       created_by: userData.user.id
     })
     .select()

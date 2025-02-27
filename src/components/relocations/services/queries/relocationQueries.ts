@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { RoomRelocation, ActiveRelocation } from "../../types/relocationTypes";
 
 export async function fetchRelocations(
-  status?: string,
+  status?: "scheduled" | "active" | "completed" | "cancelled",
   buildingId?: string,
   floorId?: string,
   startDate?: string,
@@ -53,7 +53,7 @@ export async function fetchRelocations(
   }
 
   if (endDate) {
-    query = query.lte('expected_end_date', endDate);
+    query = query.lte('end_date', endDate);
   }
 
   if (buildingId) {
@@ -71,7 +71,7 @@ export async function fetchRelocations(
     throw error;
   }
 
-  return data as RoomRelocation[];
+  return data as unknown as RoomRelocation[];
 }
 
 export async function fetchActiveRelocations() {
@@ -130,5 +130,5 @@ export async function fetchRelocationById(id: string) {
     throw error;
   }
 
-  return data as RoomRelocation;
+  return data as unknown as RoomRelocation;
 }

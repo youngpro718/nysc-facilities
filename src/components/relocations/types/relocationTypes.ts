@@ -1,4 +1,3 @@
-
 import { Room } from "@/components/spaces/rooms/types/RoomTypes";
 
 export type RelocationStatus = 'scheduled' | 'active' | 'completed' | 'cancelled';
@@ -8,7 +7,7 @@ export interface RoomRelocation {
   original_room_id: string;
   temporary_room_id: string;
   start_date: string;
-  end_date: string; // This maps to expected_end_date in UI
+  end_date: string;
   actual_end_date?: string;
   reason: string;
   status: RelocationStatus;
@@ -111,4 +110,3 @@ export interface RelocationNotification {
   status: string;
   created_at: string;
 }
-

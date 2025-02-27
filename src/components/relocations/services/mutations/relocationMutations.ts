@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { CreateRelocationFormData, UpdateRelocationFormData, RoomRelocation } from "../../types/relocationTypes";
+import { CreateRelocationFormData, UpdateRelocationFormData, RoomRelocation, RelocationStatus } from "../../types/relocationTypes";
 
 export async function createRelocation(formData: CreateRelocationFormData) {
   const { data: userData } = await supabase.auth.getUser();
@@ -8,7 +8,6 @@ export async function createRelocation(formData: CreateRelocationFormData) {
     throw new Error('User not authenticated');
   }
 
-  // Start a transaction
   const { data, error } = await supabase
     .from('room_relocations')
     .insert({
@@ -19,7 +18,7 @@ export async function createRelocation(formData: CreateRelocationFormData) {
       reason: formData.reason,
       notes: formData.notes,
       relocation_type: formData.relocation_type,
-      status: 'scheduled',
+      status: 'scheduled' as RelocationStatus,
       created_by: userData.user.id
     })
     .select()
@@ -32,20 +31,20 @@ export async function createRelocation(formData: CreateRelocationFormData) {
 
   // If there are schedule changes, create them
   if (formData.schedule_changes && formData.schedule_changes.length > 0) {
-    const scheduleChanges = formData.schedule_changes.map(change => ({
+    const scheduleChangesData = formData.schedule_changes.map(change => ({
       relocation_id: data.id,
       original_court_part: change.original_court_part,
       temporary_assignment: change.temporary_assignment,
       start_date: formData.start_date,
       end_date: formData.end_date,
       special_instructions: change.special_instructions,
-      status: 'scheduled',
+      status: 'scheduled' as RelocationStatus,
       created_by: userData.user.id
     }));
 
     const { error: scheduleError } = await supabase
       .from('schedule_changes')
-      .insert(scheduleChanges);
+      .insert(scheduleChangesData);
 
     if (scheduleError) {
       console.error('Error creating schedule changes:', scheduleError);
@@ -62,6 +61,7 @@ export async function updateRelocation(formData: UpdateRelocationFormData) {
     .update({
       temporary_room_id: formData.temporary_room_id,
       end_date: formData.end_date,
+      actual_end_date: formData.actual_end_date,
       reason: formData.reason,
       status: formData.status,
       notes: formData.notes
