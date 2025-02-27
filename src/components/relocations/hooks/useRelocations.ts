@@ -40,13 +40,15 @@ export function useRelocations(props: UseRelocationsProps = {}) {
     queryFn: () => fetchRelocations(status, buildingId, floorId, startDate, endDate),
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 2,
-    onError: (error: Error) => {
-      console.error('Error fetching relocations:', error);
-      toast({
-        title: "Error Loading Relocations",
-        description: "There was a problem loading the relocations. Please try again.",
-        variant: "destructive",
-      });
+    meta: {
+      onError: (error: Error) => {
+        console.error('Error fetching relocations:', error);
+        toast({
+          title: "Error Loading Relocations",
+          description: "There was a problem loading the relocations. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   });
 
@@ -65,13 +67,15 @@ export function useRelocations(props: UseRelocationsProps = {}) {
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 2,
-    onError: (error: Error) => {
-      console.error('Error fetching active relocations:', error);
-      toast({
-        title: "Error Loading Active Relocations",
-        description: "There was a problem loading active relocations. Please try again.",
-        variant: "destructive",
-      });
+    meta: {
+      onError: (error: Error) => {
+        console.error('Error fetching active relocations:', error);
+        toast({
+          title: "Error Loading Active Relocations",
+          description: "There was a problem loading active relocations. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   });
 
@@ -184,7 +188,7 @@ export function useRelocations(props: UseRelocationsProps = {}) {
     // Queries
     relocations: relocationsQuery.data || [],
     activeRelocations: activeRelocationsQuery.data || [],
-    isLoading: relocationsQuery.isLoading || activeRelocationsQuery.isLoading,
+    isLoading: relocationsQuery.isPending || activeRelocationsQuery.isPending,
     isError: relocationsQuery.isError || activeRelocationsQuery.isError,
     error: relocationsQuery.error || activeRelocationsQuery.error,
     

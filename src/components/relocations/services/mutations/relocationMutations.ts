@@ -15,10 +15,11 @@ export async function createRelocation(formData: CreateRelocationFormData) {
       original_room_id: formData.original_room_id,
       temporary_room_id: formData.temporary_room_id,
       start_date: formData.start_date,
-      expected_end_date: formData.expected_end_date,
+      end_date: formData.end_date,
       reason: formData.reason,
       notes: formData.notes,
-      status: 'pending',
+      relocation_type: formData.relocation_type,
+      status: 'scheduled',
       created_by: userData.user.id
     })
     .select()
@@ -36,9 +37,9 @@ export async function createRelocation(formData: CreateRelocationFormData) {
       original_court_part: change.original_court_part,
       temporary_assignment: change.temporary_assignment,
       start_date: formData.start_date,
-      end_date: formData.expected_end_date,
+      end_date: formData.end_date,
       special_instructions: change.special_instructions,
-      status: 'pending',
+      status: 'scheduled',
       created_by: userData.user.id
     }));
 
@@ -60,8 +61,7 @@ export async function updateRelocation(formData: UpdateRelocationFormData) {
     .from('room_relocations')
     .update({
       temporary_room_id: formData.temporary_room_id,
-      expected_end_date: formData.expected_end_date,
-      actual_end_date: formData.actual_end_date,
+      end_date: formData.end_date,
       reason: formData.reason,
       status: formData.status,
       notes: formData.notes

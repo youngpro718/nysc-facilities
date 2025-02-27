@@ -12,9 +12,11 @@ const createRelocationSchema = z.object({
   original_room_id: z.string().min(1, "Original room is required"),
   temporary_room_id: z.string().min(1, "Temporary room is required"),
   start_date: z.string().min(1, "Start date is required"),
-  expected_end_date: z.string().optional(),
+  end_date: z.string().min(1, "End date is required"),
   reason: z.string().min(1, "Reason is required"),
   notes: z.string().optional(),
+  relocation_type: z.enum(['emergency', 'maintenance', 'other', 'construction'])
+    .default('maintenance'),
 });
 
 type CreateRelocationFormData = z.infer<typeof createRelocationSchema>;
@@ -29,8 +31,10 @@ export function CreateRelocationForm() {
       original_room_id: "",
       temporary_room_id: "",
       start_date: new Date().toISOString().split('T')[0],
+      end_date: "",
       reason: "",
       notes: "",
+      relocation_type: "maintenance",
     },
   });
 
@@ -86,12 +90,34 @@ export function CreateRelocationForm() {
 
         <FormField
           control={form.control}
-          name="expected_end_date"
+          name="end_date"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Expected End Date</FormLabel>
+              <FormLabel>End Date</FormLabel>
               <FormControl>
                 <Input type="date" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="relocation_type"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Type</FormLabel>
+              <FormControl>
+                <select
+                  {...field}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2"
+                >
+                  <option value="maintenance">Maintenance</option>
+                  <option value="emergency">Emergency</option>
+                  <option value="construction">Construction</option>
+                  <option value="other">Other</option>
+                </select>
               </FormControl>
               <FormMessage />
             </FormItem>

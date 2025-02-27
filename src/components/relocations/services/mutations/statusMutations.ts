@@ -20,7 +20,7 @@ export async function activateRelocation(id: string) {
     .from('schedule_changes')
     .update({ status: 'active' })
     .eq('relocation_id', id)
-    .eq('status', 'pending');
+    .eq('status', 'scheduled');
 
   if (scheduleError) {
     console.error(`Error activating schedule changes for relocation ${id}:`, scheduleError);
