@@ -31,8 +31,8 @@ export function RelocationsDashboard() {
     switch (status) {
       case "active":
         return <Badge className="bg-green-500">Active</Badge>;
-      case "pending":
-        return <Badge variant="outline" className="text-yellow-500 border-yellow-500">Pending</Badge>;
+      case "scheduled":
+        return <Badge variant="outline" className="text-yellow-500 border-yellow-500">Scheduled</Badge>;
       case "completed":
         return <Badge className="bg-blue-500">Completed</Badge>;
       case "cancelled":
@@ -159,10 +159,10 @@ export function RelocationsDashboard() {
                           <span className="text-muted-foreground">Start Date:</span>
                           <span>{format(new Date(relocation.start_date), "MMM d, yyyy")}</span>
                         </div>
-                        {relocation.expected_end_date && (
+                        {relocation.end_date && (
                           <div className="flex justify-between">
-                            <span className="text-muted-foreground">Expected End:</span>
-                            <span>{format(new Date(relocation.expected_end_date), "MMM d, yyyy")}</span>
+                            <span className="text-muted-foreground">End Date:</span>
+                            <span>{format(new Date(relocation.end_date), "MMM d, yyyy")}</span>
                           </div>
                         )}
                         <div className="flex justify-between">
@@ -229,10 +229,10 @@ export function RelocationsDashboard() {
                         <span className="text-muted-foreground">Start Date:</span>
                         <span>{format(new Date(relocation.start_date), "MMM d, yyyy")}</span>
                       </div>
-                      {relocation.expected_end_date && (
+                      {relocation.end_date && (
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Expected End:</span>
-                          <span>{format(new Date(relocation.expected_end_date), "MMM d, yyyy")}</span>
+                          <span className="text-muted-foreground">End Date:</span>
+                          <span>{format(new Date(relocation.end_date), "MMM d, yyyy")}</span>
                         </div>
                       )}
                       <div className="flex justify-between">
@@ -260,3 +260,4 @@ export function RelocationsDashboard() {
     </div>
   );
 }
+

@@ -8,7 +8,8 @@ export interface RoomRelocation {
   original_room_id: string;
   temporary_room_id: string;
   start_date: string;
-  end_date: string;
+  end_date: string; // This maps to expected_end_date in UI
+  actual_end_date?: string;
   reason: string;
   status: RelocationStatus;
   notes?: string;
@@ -68,6 +69,20 @@ export interface UpdateRelocationFormData {
   notes?: string;
 }
 
+export interface ScheduleChange {
+  id: string;
+  relocation_id: string;
+  original_court_part: string;
+  temporary_assignment: string;
+  start_date: string;
+  end_date?: string;
+  special_instructions?: string;
+  status: RelocationStatus;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+}
+
 export interface CreateScheduleChangeFormData {
   relocation_id: string;
   original_court_part: string;
@@ -96,3 +111,4 @@ export interface RelocationNotification {
   status: string;
   created_at: string;
 }
+
