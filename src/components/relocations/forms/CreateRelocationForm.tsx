@@ -3,8 +3,8 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
+import { FormButtons } from "@/components/ui/form-buttons";
 import { useRelocations } from "../hooks/useRelocations";
 import { CreateRelocationFormData } from "../types/relocationTypes";
 import { RoomSelectionSection } from "./sections/RoomSelectionSection";
@@ -54,20 +54,15 @@ export function CreateRelocationForm() {
         <RoomSelectionSection form={form} />
         <DateSelectionSection form={form} />
         <RelocationDetailsSection form={form} />
-
-        <div className="flex justify-end gap-4">
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={() => navigate("/relocations")}
-          >
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isCreating}>
-            {isCreating ? "Creating..." : "Create Relocation"}
-          </Button>
-        </div>
+        
+        <FormButtons
+          onCancel={() => navigate("/relocations")}
+          isSubmitting={isCreating}
+          submitLabel="Create Relocation"
+          cancelLabel="Cancel"
+        />
       </form>
     </Form>
   );
 }
+
