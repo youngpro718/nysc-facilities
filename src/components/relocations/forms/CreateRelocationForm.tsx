@@ -7,6 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useRelocations } from "../hooks/useRelocations";
+import { BuildingFloorNav } from "@/components/spaces/navigation/BuildingFloorNav";
+import { useRoomsQuery } from "@/components/spaces/hooks/queries/useRoomsQuery";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { useState } from "react";
+import { RoomSelectionSection } from "@/components/occupants/components/RoomSelectionSection";
 
 const createRelocationSchema = z.object({
   original_room_id: z.string().min(1, "Original room is required"),
@@ -24,6 +33,19 @@ type FormData = z.infer<typeof createRelocationSchema>;
 export function CreateRelocationForm() {
   const navigate = useNavigate();
   const { createRelocation, isCreating } = useRelocations();
+  const [selectedBuilding, setSelectedBuilding] = useState<string>("all");
+  const [selectedFloor, setSelectedFloor] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const { data: rooms, isLoading: isLoadingRooms } = useRoomsQuery({
+    buildingId: selectedBuilding === 'all' ? undefined : selectedBuilding,
+    floorId: selectedFloor === 'all' ? undefined : selectedFloor,
+  });
+
+  const filteredRooms = rooms?.filter(room => 
+    room.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    room.room_number.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
 
   const form = useForm<FormData>({
     resolver: zodResolver(createRelocationSchema),
@@ -39,22 +61,20 @@ export function CreateRelocationForm() {
   });
 
   const onSubmit = async (data: FormData) => {
-    await createRelocation({
-      ...data,
-      original_room_id: data.original_room_id,  // Ensure this is always set
-      temporary_room_id: data.temporary_room_id,
-      start_date: data.start_date,
-      end_date: data.end_date,
-      reason: data.reason,
-      relocation_type: data.relocation_type,
-      notes: data.notes
-    });
+    await createRelocation(data);
     navigate("/relocations");
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <BuildingFloorNav
+          selectedBuilding={selectedBuilding}
+          selectedFloor={selectedFloor}
+          onBuildingChange={setSelectedBuilding}
+          onFloorChange={setSelectedFloor}
+        />
+
         <FormField
           control={form.control}
           name="original_room_id"
@@ -62,7 +82,14 @@ export function CreateRelocationForm() {
             <FormItem>
               <FormLabel>Original Room</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="Select original room" />
+                <RoomSelectionSection
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+                  selectedRoom={field.value}
+                  onRoomChange={field.onChange}
+                  filteredRooms={filteredRooms}
+                  isLoadingRooms={isLoadingRooms}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -76,7 +103,14 @@ export function CreateRelocationForm() {
             <FormItem>
               <FormLabel>Temporary Room</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="Select temporary room" />
+                <RoomSelectionSection
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+                  selectedRoom={field.value}
+                  onRoomChange={field.onChange}
+                  filteredRooms={filteredRooms}
+                  isLoadingRooms={isLoadingRooms}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -87,11 +121,39 @@ export function CreateRelocationForm() {
           control={form.control}
           name="start_date"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="flex flex-col">
               <FormLabel>Start Date</FormLabel>
-              <FormControl>
-                <Input type="date" {...field} />
-              </FormControl>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full pl-3 text-left font-normal",
+                        !field.value && "text-muted-foreground"
+                      )}
+                    >
+                      {field.value ? (
+                        format(new Date(field.value), "PPP")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={field.value ? new Date(field.value) : undefined}
+                    onSelect={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                    disabled={(date) =>
+                      date < new Date() || date < new Date(form.getValues("start_date"))
+                    }
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
               <FormMessage />
             </FormItem>
           )}
@@ -101,11 +163,39 @@ export function CreateRelocationForm() {
           control={form.control}
           name="end_date"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="flex flex-col">
               <FormLabel>End Date</FormLabel>
-              <FormControl>
-                <Input type="date" {...field} />
-              </FormControl>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full pl-3 text-left font-normal",
+                        !field.value && "text-muted-foreground"
+                      )}
+                    >
+                      {field.value ? (
+                        format(new Date(field.value), "PPP")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={field.value ? new Date(field.value) : undefined}
+                    onSelect={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                    disabled={(date) =>
+                      date < new Date() || date < new Date(form.getValues("start_date"))
+                    }
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
               <FormMessage />
             </FormItem>
           )}
