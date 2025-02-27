@@ -14,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { RoomSelectionSection } from "@/components/occupants/components/RoomSelectionSection";
 
 const createRelocationSchema = z.object({
@@ -35,17 +35,31 @@ export function CreateRelocationForm() {
   const { createRelocation, isCreating } = useRelocations();
   const [selectedBuilding, setSelectedBuilding] = useState<string>("all");
   const [selectedFloor, setSelectedFloor] = useState<string>("all");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [originalSearchQuery, setOriginalSearchQuery] = useState("");
+  const [temporarySearchQuery, setTemporarySearchQuery] = useState("");
 
   const { data: rooms, isLoading: isLoadingRooms } = useRoomsQuery({
     buildingId: selectedBuilding === 'all' ? undefined : selectedBuilding,
     floorId: selectedFloor === 'all' ? undefined : selectedFloor,
   });
 
-  const filteredRooms = rooms?.filter(room => 
-    room.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    room.room_number.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  const filteredOriginalRooms = useMemo(() => 
+    rooms?.filter(room => 
+      room.name.toLowerCase().includes(originalSearchQuery.toLowerCase()) ||
+      room.room_number.toLowerCase().includes(originalSearchQuery.toLowerCase()) ||
+      room.floors?.buildings?.name?.toLowerCase().includes(originalSearchQuery.toLowerCase()) ||
+      room.floors?.name?.toLowerCase().includes(originalSearchQuery.toLowerCase())
+    ) || [], [rooms, originalSearchQuery]
+  );
+
+  const filteredTemporaryRooms = useMemo(() => 
+    rooms?.filter(room => 
+      room.name.toLowerCase().includes(temporarySearchQuery.toLowerCase()) ||
+      room.room_number.toLowerCase().includes(temporarySearchQuery.toLowerCase()) ||
+      room.floors?.buildings?.name?.toLowerCase().includes(temporarySearchQuery.toLowerCase()) ||
+      room.floors?.name?.toLowerCase().includes(temporarySearchQuery.toLowerCase())
+    ) || [], [rooms, temporarySearchQuery]
+  );
 
   const form = useForm<FormData>({
     resolver: zodResolver(createRelocationSchema),
@@ -75,131 +89,137 @@ export function CreateRelocationForm() {
           onFloorChange={setSelectedFloor}
         />
 
-        <FormField
-          control={form.control}
-          name="original_room_id"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Original Room</FormLabel>
-              <FormControl>
-                <RoomSelectionSection
-                  searchQuery={searchQuery}
-                  onSearchChange={setSearchQuery}
-                  selectedRoom={field.value}
-                  onRoomChange={field.onChange}
-                  filteredRooms={filteredRooms}
-                  isLoadingRooms={isLoadingRooms}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="temporary_room_id"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Temporary Room</FormLabel>
-              <FormControl>
-                <RoomSelectionSection
-                  searchQuery={searchQuery}
-                  onSearchChange={setSearchQuery}
-                  selectedRoom={field.value}
-                  onRoomChange={field.onChange}
-                  filteredRooms={filteredRooms}
-                  isLoadingRooms={isLoadingRooms}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="start_date"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Start Date</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full pl-3 text-left font-normal",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    >
-                      {field.value ? (
-                        format(new Date(field.value), "PPP")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value ? new Date(field.value) : undefined}
-                    onSelect={(date) => field.onChange(date?.toISOString().split('T')[0])}
-                    disabled={(date) =>
-                      date < new Date() || date < new Date(form.getValues("start_date"))
-                    }
-                    initialFocus
+        <div className="grid gap-6 md:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="original_room_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Original Room</FormLabel>
+                <FormControl>
+                  <RoomSelectionSection
+                    searchQuery={originalSearchQuery}
+                    onSearchChange={setOriginalSearchQuery}
+                    selectedRoom={field.value}
+                    onRoomChange={field.onChange}
+                    filteredRooms={filteredOriginalRooms}
+                    isLoadingRooms={isLoadingRooms}
+                    label="Original Room"
                   />
-                </PopoverContent>
-              </Popover>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="end_date"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>End Date</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full pl-3 text-left font-normal",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    >
-                      {field.value ? (
-                        format(new Date(field.value), "PPP")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value ? new Date(field.value) : undefined}
-                    onSelect={(date) => field.onChange(date?.toISOString().split('T')[0])}
-                    disabled={(date) =>
-                      date < new Date() || date < new Date(form.getValues("start_date"))
-                    }
-                    initialFocus
+          <FormField
+            control={form.control}
+            name="temporary_room_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Temporary Room</FormLabel>
+                <FormControl>
+                  <RoomSelectionSection
+                    searchQuery={temporarySearchQuery}
+                    onSearchChange={setTemporarySearchQuery}
+                    selectedRoom={field.value}
+                    onRoomChange={field.onChange}
+                    filteredRooms={filteredTemporaryRooms}
+                    isLoadingRooms={isLoadingRooms}
+                    label="Temporary Room"
                   />
-                </PopoverContent>
-              </Popover>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="start_date"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Start Date</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value ? (
+                          format(new Date(field.value), "PPP")
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={field.value ? new Date(field.value) : undefined}
+                      onSelect={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                      disabled={(date) =>
+                        date < new Date()
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="end_date"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>End Date</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value ? (
+                          format(new Date(field.value), "PPP")
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={field.value ? new Date(field.value) : undefined}
+                      onSelect={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                      disabled={(date) =>
+                        date < new Date(form.getValues("start_date"))
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <FormField
           control={form.control}

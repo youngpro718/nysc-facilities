@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 interface RoomSelectionSectionProps {
   searchQuery: string;
@@ -12,6 +13,7 @@ interface RoomSelectionSectionProps {
   onRoomChange: (value: string) => void;
   filteredRooms: any[];
   isLoadingRooms: boolean;
+  label?: string;
 }
 
 export function RoomSelectionSection({
@@ -20,16 +22,16 @@ export function RoomSelectionSection({
   selectedRoom,
   onRoomChange,
   filteredRooms,
-  isLoadingRooms
+  isLoadingRooms,
+  label = "Search and Select Room"
 }: RoomSelectionSectionProps) {
   return (
-    <div className="space-y-4">
-      <label className="text-sm font-medium">Search and Select Room</label>
-      <div className="flex gap-2 items-center">
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search rooms..."
+            placeholder={`Search ${label.toLowerCase()}...`}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             className="pl-8"
@@ -41,18 +43,32 @@ export function RoomSelectionSection({
         onValueChange={onRoomChange}
         disabled={isLoadingRooms}
       >
-        <SelectTrigger className="w-full">
-          <SelectValue placeholder={isLoadingRooms ? "Loading rooms..." : "Select a room"} />
+        <SelectTrigger className={cn(
+          "w-full",
+          !selectedRoom && "text-muted-foreground"
+        )}>
+          <SelectValue placeholder={isLoadingRooms ? "Loading rooms..." : `Select ${label.toLowerCase()}`} />
         </SelectTrigger>
         <SelectContent>
           <ScrollArea className="max-h-[300px]">
-            {filteredRooms?.map((room) => (
-              <SelectItem key={room.id} value={room.id}>
-                <div className="flex items-center justify-between w-full pr-4">
-                  <span>
-                    {room.name} - {room.floors?.name}, {room.floors?.buildings?.name}
-                  </span>
-                  <div className="flex items-center gap-2">
+            {filteredRooms.length === 0 ? (
+              <div className="p-2 text-sm text-muted-foreground text-center">
+                {isLoadingRooms ? "Loading..." : "No rooms found"}
+              </div>
+            ) : (
+              filteredRooms.map((room) => (
+                <SelectItem 
+                  key={room.id} 
+                  value={room.id}
+                  className="focus:bg-accent focus:text-accent-foreground"
+                >
+                  <div className="flex items-center justify-between w-full pr-4">
+                    <span className="flex flex-col">
+                      <span>{room.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {room.floors?.name}, {room.floors?.buildings?.name}
+                      </span>
+                    </span>
                     <Badge variant={
                       !room.capacity ? "secondary" :
                       room.current_occupancy >= room.capacity ? "destructive" :
@@ -63,9 +79,9 @@ export function RoomSelectionSection({
                       {room.current_occupancy}{room.capacity ? `/${room.capacity}` : ''}
                     </Badge>
                   </div>
-                </div>
-              </SelectItem>
-            ))}
+                </SelectItem>
+              ))
+            )}
           </ScrollArea>
         </SelectContent>
       </Select>
