@@ -1,3 +1,4 @@
+
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Layout from "@/components/layout/Layout";
@@ -18,6 +19,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Relocations from "@/pages/Relocations";
+import CreateRelocation from "@/pages/CreateRelocation";
 import { RelocationDetails } from "@/components/relocations/details/RelocationDetails";
 
 // Create a client
@@ -72,6 +74,11 @@ function App() {
                 <Route path="relocations" element={
                   <ProtectedRoute requireAdmin>
                     <Relocations />
+                  </ProtectedRoute>
+                } />
+                <Route path="relocations/create" element={
+                  <ProtectedRoute requireAdmin>
+                    <CreateRelocation />
                   </ProtectedRoute>
                 } />
                 <Route path="relocations/:id" element={

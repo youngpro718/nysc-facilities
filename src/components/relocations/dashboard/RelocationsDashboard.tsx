@@ -1,4 +1,6 @@
+
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,6 +10,7 @@ import { format } from "date-fns";
 import { PlusCircle, ArrowUpRight } from "lucide-react";
 
 export function RelocationsDashboard() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("active");
   const { relocations, isLoading, isError } = useRelocations({
     status: activeTab === "all" ? undefined : activeTab === "active" ? "active" : undefined
@@ -15,14 +18,12 @@ export function RelocationsDashboard() {
 
   // Handle view details click
   const handleViewDetails = (id: string) => {
-    // Navigate to relocation details page
-    window.location.href = `/relocations/${id}`;
+    navigate(`/relocations/${id}`);
   };
 
   // Handle create relocation click
   const handleCreateRelocation = () => {
-    // Navigate to create relocation page
-    window.location.href = "/relocations/create";
+    navigate("/relocations/create");
   };
 
   // Get status badge
@@ -258,4 +259,4 @@ export function RelocationsDashboard() {
       </Tabs>
     </div>
   );
-} 
+}
