@@ -22,6 +22,27 @@ export interface RoomRelocation {
   temporary_room?: Room;
 }
 
+export interface CreateRelocationFormData {
+  original_room_id: string;
+  temporary_room_id: string;
+  start_date: string;
+  end_date: string;
+  reason: string;
+  notes?: string;
+  schedule_changes?: ScheduleChangeData[];
+  relocation_type: 'emergency' | 'maintenance' | 'other' | 'construction';
+}
+
+export interface UpdateRelocationFormData {
+  id: string;
+  temporary_room_id?: string;
+  end_date?: string;
+  actual_end_date?: string;
+  reason?: string;
+  status?: RelocationStatus;
+  notes?: string;
+}
+
 export interface ScheduleChange {
   id: string;
   relocation_id: string;
@@ -36,28 +57,51 @@ export interface ScheduleChange {
   created_by?: string;
 }
 
-export interface CreateRelocationFormData {
-  original_room_id: string;
-  temporary_room_id: string;
-  start_date: string;
-  end_date: string;
-  reason: string;
-  notes?: string;
-  schedule_changes?: {
-    original_court_part: string;
-    temporary_assignment: string;
-    special_instructions?: string;
-  }[];
-  relocation_type: 'emergency' | 'maintenance' | 'other' | 'construction';
+export interface ScheduleChangeData {
+  original_court_part: string;
+  temporary_assignment: string;
+  special_instructions?: string;
 }
 
-export interface UpdateRelocationFormData {
-  id: string;
-  temporary_room_id?: string;
+export interface CreateScheduleChangeFormData {
+  relocation_id: string;
+  original_court_part: string;
+  temporary_assignment: string;
+  start_date: string;
   end_date?: string;
-  actual_end_date?: string;
-  reason?: string;
+  special_instructions?: string;
+}
+
+export interface UpdateScheduleChangeFormData {
+  id: string;
+  temporary_assignment?: string;
+  end_date?: string;
+  special_instructions?: string;
   status?: RelocationStatus;
-  notes?: string;
+}
+
+export interface RelocationNotification {
+  id: string;
+  relocation_id: string;
+  recipient_email: string;
+  subject: string;
+  message: string;
+  sent_at: string;
+  status: 'sent' | 'failed';
+}
+
+export interface ScheduleChangeNotification {
+  id: string;
+  schedule_change_id: string;
+  recipient_email: string;
+  subject: string;
+  message: string;
+  sent_at: string;
+  status: 'sent' | 'failed';
+}
+
+export interface ActiveRelocation extends RoomRelocation {
+  days_active: number;
+  progress_percentage: number;
 }
 

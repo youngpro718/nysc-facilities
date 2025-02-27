@@ -17,7 +17,6 @@ import { AlertCircle, Calendar, CheckCircle, Clock, Edit, Mail, MapPin, XCircle 
 import { NotificationRecipient } from "../services/notificationService";
 import { RelocationStatus } from "../types/relocationTypes";
 
-// Create a temporary mock for useNotifications until the actual hook is available
 const useNotifications = () => {
   return {
     sendRelocationNotification: async ({ relocationId, recipients, subject, message }: {
@@ -66,7 +65,6 @@ export function RelocationDetails({ id }: RelocationDetailsProps) {
     isSendingRelocationNotification 
   } = useNotifications();
   
-  // Calculate days active and progress
   const calculateProgress = () => {
     if (!relocation) return 0;
     
@@ -82,7 +80,6 @@ export function RelocationDetails({ id }: RelocationDetailsProps) {
     return Math.min(Math.round((daysActive / totalDays) * 100), 100);
   };
   
-  // Handle status change
   const handleStatusChange = (newStatus: RelocationStatus) => {
     switch (newStatus) {
       case "active":
@@ -99,7 +96,6 @@ export function RelocationDetails({ id }: RelocationDetailsProps) {
     }
   };
   
-  // Handle notification submission
   const handleSendNotification = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -107,7 +103,6 @@ export function RelocationDetails({ id }: RelocationDetailsProps) {
     const message = formData.get("message") as string;
     const recipientEmails = formData.get("recipients") as string;
     
-    // Parse recipient emails
     const recipients: NotificationRecipient[] = recipientEmails
       .split(",")
       .map(email => email.trim())
@@ -125,7 +120,6 @@ export function RelocationDetails({ id }: RelocationDetailsProps) {
     }
   };
   
-  // Loading state
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -148,7 +142,6 @@ export function RelocationDetails({ id }: RelocationDetailsProps) {
     );
   }
   
-  // Error state
   if (isError) {
     return (
       <Card className="border-red-200">
@@ -175,7 +168,6 @@ export function RelocationDetails({ id }: RelocationDetailsProps) {
     );
   }
   
-  // No relocation found
   if (!relocation) {
     return (
       <Card>
@@ -194,7 +186,6 @@ export function RelocationDetails({ id }: RelocationDetailsProps) {
     );
   }
   
-  // Status badge color
   const getStatusBadge = (status: RelocationStatus) => {
     switch (status) {
       case "active":
@@ -224,7 +215,7 @@ export function RelocationDetails({ id }: RelocationDetailsProps) {
         </div>
         
         <div className="flex gap-2">
-          {relocation.status === "pending" && (
+          {relocation.status === "scheduled" && (
             <Button 
               onClick={() => handleStatusChange("active")}
               disabled={isActivating}
@@ -244,7 +235,7 @@ export function RelocationDetails({ id }: RelocationDetailsProps) {
             </Button>
           )}
           
-          {(relocation.status === "pending" || relocation.status === "active") && (
+          {(relocation.status === "scheduled" || relocation.status === "active") && (
             <Button 
               variant="destructive"
               onClick={() => handleStatusChange("cancelled")}
@@ -374,11 +365,11 @@ export function RelocationDetails({ id }: RelocationDetailsProps) {
                         </span>
                       </div>
                       
-                      {relocation.expected_end_date && (
+                      {relocation.end_date && (
                         <div className="flex items-center">
                           <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
                           <span>
-                            <span className="font-medium">Expected End:</span> {format(new Date(relocation.expected_end_date), "MMMM d, yyyy")}
+                            <span className="font-medium">Expected End:</span> {format(new Date(relocation.end_date), "MMMM d, yyyy")}
                           </span>
                         </div>
                       )}
@@ -394,7 +385,7 @@ export function RelocationDetails({ id }: RelocationDetailsProps) {
                     </div>
                   </div>
                   
-                  {relocation.status === "active" && relocation.expected_end_date && (
+                  {relocation.status === "active" && relocation.end_date && (
                     <div>
                       <h3 className="text-sm font-medium text-muted-foreground mb-2">Progress</h3>
                       <div className="space-y-1">
