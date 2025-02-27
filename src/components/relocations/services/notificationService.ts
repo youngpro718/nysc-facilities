@@ -1,7 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { RelocationNotification } from "../types/relocationTypes";
 
-// Define a simpler type for recipients
 export type NotificationRecipient = {
   id?: string;
   email?: string;
@@ -9,7 +8,6 @@ export type NotificationRecipient = {
   type?: string;
 };
 
-// Helper function to prepare notification data
 function prepareNotificationData(data: {
   relocation_id?: string;
   schedule_change_id?: string;
@@ -19,17 +17,16 @@ function prepareNotificationData(data: {
   return {
     ...data,
     status: 'pending',
-    recipients: JSON.stringify(data.recipients) // Convert to string instead of parsing
+    recipients: JSON.stringify(data.recipients)
   };
 }
 
-// Create a notification for a relocation
 export async function createRelocationNotification(
   relocationId: string,
   recipients: NotificationRecipient[],
   subject?: string,
   message?: string
-) {
+): Promise<RelocationNotification> {
   const defaultMessage = subject || "Relocation Update";
   const notificationMessage = message || defaultMessage;
   
@@ -53,10 +50,13 @@ export async function createRelocationNotification(
     throw error;
   }
 
-  return data as RelocationNotification;
+  return {
+    ...data,
+    recipient_email: recipients[0]?.email || '',
+    subject: subject || defaultMessage
+  } as RelocationNotification;
 }
 
-// Create a notification for a schedule change
 export async function createScheduleChangeNotification(
   scheduleChangeId: string,
   recipients: NotificationRecipient[],
@@ -89,7 +89,6 @@ export async function createScheduleChangeNotification(
   return data as RelocationNotification;
 }
 
-// Mark a notification as sent
 export async function markNotificationAsSent(id: string) {
   const { data, error } = await supabase
     .from('relocation_notifications')
@@ -109,7 +108,6 @@ export async function markNotificationAsSent(id: string) {
   return data as RelocationNotification;
 }
 
-// Fetch notifications for a relocation
 export async function fetchRelocationNotifications(relocationId: string) {
   const { data, error } = await supabase
     .from('relocation_notifications')
@@ -125,12 +123,8 @@ export async function fetchRelocationNotifications(relocationId: string) {
   return data as RelocationNotification[];
 }
 
-// Fetch notifications for a schedule change
 export async function fetchScheduleChangeNotifications(scheduleChangeId: string): Promise<RelocationNotification[]> {
-  // Completely bypass the type instantiation issue by using a different approach
-  // First, get all notifications (without filtering)
   try {
-    // Get all notifications and filter them in memory
     const { data, error } = await supabase
       .from('relocation_notifications')
       .select('*');
@@ -139,17 +133,15 @@ export async function fetchScheduleChangeNotifications(scheduleChangeId: string)
       throw error;
     }
     
-    // Filter and sort in memory instead of in the query
     const filteredData = data
       .filter(notification => {
-        // Use type assertion to avoid property access error
         const typedNotification = notification as any;
         return typedNotification.schedule_change_id === scheduleChangeId;
       })
       .sort((a, b) => {
         const dateA = new Date(a.created_at).getTime();
         const dateB = new Date(b.created_at).getTime();
-        return dateB - dateA; // descending order
+        return dateB - dateA;
       });
     
     return filteredData as RelocationNotification[];
@@ -159,7 +151,6 @@ export async function fetchScheduleChangeNotifications(scheduleChangeId: string)
   }
 }
 
-// Fetch pending notifications
 export async function fetchPendingNotifications() {
   const { data, error } = await supabase
     .from('relocation_notifications')
@@ -175,7 +166,6 @@ export async function fetchPendingNotifications() {
   return data as RelocationNotification[];
 }
 
-// Generate notification message for relocation status change
 export function generateRelocationStatusMessage(
   status: string,
   originalRoomName: string,
@@ -206,7 +196,6 @@ export function generateRelocationStatusMessage(
   }
 }
 
-// Generate notification message for schedule change
 export function generateScheduleChangeMessage(
   originalCourtPart: string,
   temporaryAssignment: string,
@@ -224,4 +213,4 @@ export function generateScheduleChangeMessage(
   }
   
   return message;
-} 
+}

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { RoomRelocation, ActiveRelocation } from "../../types/relocationTypes";
 
@@ -8,7 +7,7 @@ export async function fetchRelocations(
   floorId?: string,
   startDate?: string,
   endDate?: string
-) {
+): Promise<RoomRelocation[]> {
   let query = supabase
     .from('room_relocations')
     .select(`
@@ -74,7 +73,7 @@ export async function fetchRelocations(
   return data as unknown as RoomRelocation[];
 }
 
-export async function fetchActiveRelocations() {
+export async function fetchActiveRelocations(): Promise<ActiveRelocation[]> {
   const { data, error } = await supabase
     .from('active_relocations')
     .select('*')
@@ -85,7 +84,14 @@ export async function fetchActiveRelocations() {
     throw error;
   }
 
-  return data as ActiveRelocation[];
+  return data.map(item => ({
+    ...item,
+    original_room_id: '', // These fields are required by the type but might not be in the view
+    temporary_room_id: '',
+    status: 'active',
+    days_active: typeof item.days_active === 'number' ? item.days_active : 0,
+    progress_percentage: typeof item.progress_percentage === 'number' ? item.progress_percentage : 0
+  })) as ActiveRelocation[];
 }
 
 export async function fetchRelocationById(id: string) {

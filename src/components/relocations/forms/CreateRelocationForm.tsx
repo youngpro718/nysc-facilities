@@ -19,13 +19,13 @@ const createRelocationSchema = z.object({
     .default('maintenance'),
 });
 
-type CreateRelocationFormData = z.infer<typeof createRelocationSchema>;
+type FormData = z.infer<typeof createRelocationSchema>;
 
 export function CreateRelocationForm() {
   const navigate = useNavigate();
   const { createRelocation, isCreating } = useRelocations();
 
-  const form = useForm<CreateRelocationFormData>({
+  const form = useForm<FormData>({
     resolver: zodResolver(createRelocationSchema),
     defaultValues: {
       original_room_id: "",
@@ -38,8 +38,17 @@ export function CreateRelocationForm() {
     },
   });
 
-  const onSubmit = async (data: CreateRelocationFormData) => {
-    await createRelocation(data);
+  const onSubmit = async (data: FormData) => {
+    await createRelocation({
+      ...data,
+      original_room_id: data.original_room_id,  // Ensure this is always set
+      temporary_room_id: data.temporary_room_id,
+      start_date: data.start_date,
+      end_date: data.end_date,
+      reason: data.reason,
+      relocation_type: data.relocation_type,
+      notes: data.notes
+    });
     navigate("/relocations");
   };
 
