@@ -66,7 +66,7 @@ export function RoomSelectionSection({
                     <span className="flex flex-col">
                       <span>{room.name}</span>
                       <span className="text-xs text-muted-foreground">
-                        {room.floors?.name}, {room.floors?.buildings?.name}
+                        {room.floor?.name}, {room.floor?.buildings?.name}
                       </span>
                     </span>
                     <Badge variant={

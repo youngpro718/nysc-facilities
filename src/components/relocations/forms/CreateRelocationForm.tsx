@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { useState, useMemo } from "react";
 import { RoomSelectionSection } from "@/components/occupants/components/RoomSelectionSection";
+import { CreateRelocationFormData } from "../types/relocationTypes";
 
 const createRelocationSchema = z.object({
   original_room_id: z.string().min(1, "Original room is required"),
@@ -27,8 +28,6 @@ const createRelocationSchema = z.object({
   relocation_type: z.enum(['emergency', 'maintenance', 'other', 'construction'])
     .default('maintenance'),
 });
-
-type FormData = z.infer<typeof createRelocationSchema>;
 
 export function CreateRelocationForm() {
   const navigate = useNavigate();
@@ -47,8 +46,8 @@ export function CreateRelocationForm() {
     rooms?.filter(room => 
       room.name.toLowerCase().includes(originalSearchQuery.toLowerCase()) ||
       room.room_number.toLowerCase().includes(originalSearchQuery.toLowerCase()) ||
-      room.floors?.buildings?.name?.toLowerCase().includes(originalSearchQuery.toLowerCase()) ||
-      room.floors?.name?.toLowerCase().includes(originalSearchQuery.toLowerCase())
+      room.floor?.buildings?.name?.toLowerCase().includes(originalSearchQuery.toLowerCase()) ||
+      room.floor?.name?.toLowerCase().includes(originalSearchQuery.toLowerCase())
     ) || [], [rooms, originalSearchQuery]
   );
 
@@ -56,12 +55,12 @@ export function CreateRelocationForm() {
     rooms?.filter(room => 
       room.name.toLowerCase().includes(temporarySearchQuery.toLowerCase()) ||
       room.room_number.toLowerCase().includes(temporarySearchQuery.toLowerCase()) ||
-      room.floors?.buildings?.name?.toLowerCase().includes(temporarySearchQuery.toLowerCase()) ||
-      room.floors?.name?.toLowerCase().includes(temporarySearchQuery.toLowerCase())
+      room.floor?.buildings?.name?.toLowerCase().includes(temporarySearchQuery.toLowerCase()) ||
+      room.floor?.name?.toLowerCase().includes(temporarySearchQuery.toLowerCase())
     ) || [], [rooms, temporarySearchQuery]
   );
 
-  const form = useForm<FormData>({
+  const form = useForm<CreateRelocationFormData>({
     resolver: zodResolver(createRelocationSchema),
     defaultValues: {
       original_room_id: "",
@@ -74,9 +73,13 @@ export function CreateRelocationForm() {
     },
   });
 
-  const onSubmit = async (data: FormData) => {
-    await createRelocation(data);
-    navigate("/relocations");
+  const onSubmit = async (data: CreateRelocationFormData) => {
+    try {
+      await createRelocation(data);
+      navigate("/relocations");
+    } catch (error) {
+      console.error('Error creating relocation:', error);
+    }
   };
 
   return (
