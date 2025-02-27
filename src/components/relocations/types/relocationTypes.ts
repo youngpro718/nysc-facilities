@@ -10,7 +10,7 @@ export interface RoomRelocation {
   start_date: string;
   end_date: string;
   actual_end_date?: string;
-  expected_end_date?: string;  // Added this field
+  expected_end_date?: string;
   reason: string;
   status: RelocationStatus;
   notes?: string;
@@ -81,7 +81,17 @@ export interface UpdateScheduleChangeFormData {
   status?: RelocationStatus;
 }
 
-// Updated to match the actual database structure
+export interface ScheduleChangeNotification {
+  id: string;
+  relocation_id: string;
+  schedule_change_id: string;
+  message: string;
+  created_at: string;
+  recipients: Array<{ email: string }>;
+  notification_type: string;
+  status: string;
+}
+
 export interface RelocationNotification {
   id: string;
   relocation_id: string;
@@ -92,11 +102,10 @@ export interface RelocationNotification {
   status: string;
   created_at: string;
   recipients: Array<{email: string}>;
-  recipient_email?: string;  // For backwards compatibility
-  subject?: string;         // For backwards compatibility
+  recipient_email?: string;
+  subject?: string;
 }
 
-// Updated to match the actual database view structure
 export interface ActiveRelocation extends RoomRelocation {
   days_active: number;
   progress_percentage: number;

@@ -36,8 +36,8 @@ export function useRelocations(props: UseRelocationsProps = {}) {
 
   // Fetch all relocations with optional filters
   const relocationsQuery = useQuery({
-    queryKey: ['relocations', status, buildingId, floorId, startDate, endDate],
-    queryFn: () => fetchRelocations(status, buildingId, floorId, startDate, endDate),
+    queryKey: ['relocations', status as RelocationStatus, buildingId, floorId, startDate, endDate],
+    queryFn: () => fetchRelocations(status as RelocationStatus, buildingId, floorId, startDate, endDate),
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 2,
     meta: {
