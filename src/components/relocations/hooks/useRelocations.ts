@@ -18,7 +18,8 @@ import {
   CreateRelocationFormData,
   UpdateRelocationFormData,
   RoomRelocation,
-  ActiveRelocation
+  ActiveRelocation,
+  RelocationStatus
 } from "../types/relocationTypes";
 
 interface UseRelocationsProps {
@@ -34,11 +35,10 @@ export function useRelocations(props: UseRelocationsProps = {}) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch all relocations with optional filters
   const relocationsQuery = useQuery({
     queryKey: ['relocations', status as RelocationStatus, buildingId, floorId, startDate, endDate],
     queryFn: () => fetchRelocations(status as RelocationStatus, buildingId, floorId, startDate, endDate),
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
     retry: 2,
     meta: {
       onError: (error: Error) => {
@@ -52,7 +52,6 @@ export function useRelocations(props: UseRelocationsProps = {}) {
     }
   });
 
-  // Fetch active relocations from the view with fallback
   const activeRelocationsQuery = useQuery({
     queryKey: ['activeRelocations'],
     queryFn: async () => {
@@ -60,12 +59,11 @@ export function useRelocations(props: UseRelocationsProps = {}) {
         return await fetchActiveRelocations();
       } catch (error) {
         console.error('Error fetching from active_relocations view:', error);
-        // Fallback to filtered query from main table
         const allRelocations = await fetchRelocations('active');
         return allRelocations.filter(r => r.status === 'active');
       }
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
     retry: 2,
     meta: {
       onError: (error: Error) => {
@@ -79,7 +77,6 @@ export function useRelocations(props: UseRelocationsProps = {}) {
     }
   });
 
-  // Create a new relocation
   const createRelocationMutation = useMutation({
     mutationFn: (data: CreateRelocationFormData) => createRelocation(data),
     onSuccess: () => {
@@ -100,7 +97,6 @@ export function useRelocations(props: UseRelocationsProps = {}) {
     },
   });
 
-  // Update an existing relocation
   const updateRelocationMutation = useMutation({
     mutationFn: (data: UpdateRelocationFormData) => updateRelocation(data),
     onSuccess: () => {
@@ -121,7 +117,6 @@ export function useRelocations(props: UseRelocationsProps = {}) {
     },
   });
 
-  // Activate a relocation
   const activateRelocationMutation = useMutation({
     mutationFn: (id: string) => activateRelocation(id),
     onSuccess: () => {
@@ -142,7 +137,6 @@ export function useRelocations(props: UseRelocationsProps = {}) {
     },
   });
 
-  // Complete a relocation
   const completeRelocationMutation = useMutation({
     mutationFn: (id: string) => completeRelocation(id),
     onSuccess: () => {
@@ -163,7 +157,6 @@ export function useRelocations(props: UseRelocationsProps = {}) {
     },
   });
 
-  // Cancel a relocation
   const cancelRelocationMutation = useMutation({
     mutationFn: (id: string) => cancelRelocation(id),
     onSuccess: () => {
@@ -185,21 +178,18 @@ export function useRelocations(props: UseRelocationsProps = {}) {
   });
 
   return {
-    // Queries
     relocations: relocationsQuery.data || [],
     activeRelocations: activeRelocationsQuery.data || [],
     isLoading: relocationsQuery.isPending || activeRelocationsQuery.isPending,
     isError: relocationsQuery.isError || activeRelocationsQuery.isError,
     error: relocationsQuery.error || activeRelocationsQuery.error,
     
-    // Mutations
     createRelocation: createRelocationMutation.mutate,
     updateRelocation: updateRelocationMutation.mutate,
     activateRelocation: activateRelocationMutation.mutate,
     completeRelocation: completeRelocationMutation.mutate,
     cancelRelocation: cancelRelocationMutation.mutate,
     
-    // Mutation states
     isCreating: createRelocationMutation.isPending,
     isUpdating: updateRelocationMutation.isPending,
     isActivating: activateRelocationMutation.isPending,
@@ -212,15 +202,13 @@ export function useRelocationDetails(id: string) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch a single relocation by ID
   const relocationQuery = useQuery({
     queryKey: ['relocation', id],
     queryFn: () => fetchRelocationById(id),
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
     enabled: !!id,
   });
 
-  // Update an existing relocation
   const updateRelocationMutation = useMutation({
     mutationFn: (data: UpdateRelocationFormData) => updateRelocation(data),
     onSuccess: () => {
@@ -242,7 +230,6 @@ export function useRelocationDetails(id: string) {
     },
   });
 
-  // Activate a relocation
   const activateRelocationMutation = useMutation({
     mutationFn: () => activateRelocation(id),
     onSuccess: () => {
@@ -264,7 +251,6 @@ export function useRelocationDetails(id: string) {
     },
   });
 
-  // Complete a relocation
   const completeRelocationMutation = useMutation({
     mutationFn: () => completeRelocation(id),
     onSuccess: () => {
@@ -286,7 +272,6 @@ export function useRelocationDetails(id: string) {
     },
   });
 
-  // Cancel a relocation
   const cancelRelocationMutation = useMutation({
     mutationFn: () => cancelRelocation(id),
     onSuccess: () => {
@@ -309,19 +294,16 @@ export function useRelocationDetails(id: string) {
   });
 
   return {
-    // Query
     relocation: relocationQuery.data as RoomRelocation | undefined,
     isLoading: relocationQuery.isLoading,
     isError: relocationQuery.isError,
     error: relocationQuery.error,
     
-    // Mutations
     updateRelocation: updateRelocationMutation.mutate,
     activateRelocation: activateRelocationMutation.mutate,
     completeRelocation: completeRelocationMutation.mutate,
     cancelRelocation: cancelRelocationMutation.mutate,
     
-    // Mutation states
     isUpdating: updateRelocationMutation.isPending,
     isActivating: activateRelocationMutation.isPending,
     isCompleting: completeRelocationMutation.isPending,
