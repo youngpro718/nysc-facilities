@@ -2,36 +2,54 @@
 import { Room } from "@/components/spaces/rooms/types/RoomTypes";
 
 export type RelocationStatus = 'scheduled' | 'active' | 'completed' | 'cancelled';
+export type RelocationType = 'emergency' | 'maintenance' | 'other' | 'construction';
 
-export interface RoomRelocation {
-  id: string;
+// Base interfaces for specific aspects of a relocation
+export interface RelocationRooms {
   original_room_id: string;
   temporary_room_id: string;
+}
+
+export interface RelocationDates {
   start_date: string;
   end_date: string;
   actual_end_date?: string;
   expected_end_date?: string;
+}
+
+export interface RelocationDetails {
   reason: string;
-  status: RelocationStatus;
   notes?: string;
+  relocation_type: RelocationType;
+}
+
+export interface ScheduleChangeData {
+  original_court_part: string;
+  temporary_assignment: string;
+  special_instructions?: string;
+}
+
+// Form data interface composed of the smaller interfaces
+export interface CreateRelocationFormData 
+  extends RelocationRooms, 
+          RelocationDates, 
+          RelocationDetails {
+  schedule_changes?: ScheduleChangeData[];
+}
+
+// Complete relocation interface with all possible fields
+export interface RoomRelocation 
+  extends RelocationRooms, 
+          RelocationDates, 
+          RelocationDetails {
+  id: string;
+  status: RelocationStatus;
   created_at: string;
   updated_at: string;
   created_by?: string;
   metadata?: Record<string, any>;
-  relocation_type: 'emergency' | 'maintenance' | 'other' | 'construction';
   original_room?: Room;
   temporary_room?: Room;
-}
-
-export interface CreateRelocationFormData {
-  original_room_id: string;
-  temporary_room_id: string;
-  start_date: string;
-  end_date: string;
-  reason: string;
-  notes?: string;
-  schedule_changes?: ScheduleChangeData[];
-  relocation_type: 'emergency' | 'maintenance' | 'other' | 'construction';
 }
 
 export interface UpdateRelocationFormData {
@@ -56,12 +74,6 @@ export interface ScheduleChange {
   created_at: string;
   updated_at: string;
   created_by?: string;
-}
-
-export interface ScheduleChangeData {
-  original_court_part: string;
-  temporary_assignment: string;
-  special_instructions?: string;
 }
 
 export interface CreateScheduleChangeFormData {
