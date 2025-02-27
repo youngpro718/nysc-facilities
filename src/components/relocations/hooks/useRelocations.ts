@@ -39,13 +39,40 @@ export function useRelocations(props: UseRelocationsProps = {}) {
     queryKey: ['relocations', status, buildingId, floorId, startDate, endDate],
     queryFn: () => fetchRelocations(status, buildingId, floorId, startDate, endDate),
     staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 2,
+    onError: (error: Error) => {
+      console.error('Error fetching relocations:', error);
+      toast({
+        title: "Error Loading Relocations",
+        description: "There was a problem loading the relocations. Please try again.",
+        variant: "destructive",
+      });
+    }
   });
 
-  // Fetch active relocations from the view
+  // Fetch active relocations from the view with fallback
   const activeRelocationsQuery = useQuery({
     queryKey: ['activeRelocations'],
-    queryFn: fetchActiveRelocations,
+    queryFn: async () => {
+      try {
+        return await fetchActiveRelocations();
+      } catch (error) {
+        console.error('Error fetching from active_relocations view:', error);
+        // Fallback to filtered query from main table
+        const allRelocations = await fetchRelocations('active');
+        return allRelocations.filter(r => r.status === 'active');
+      }
+    },
     staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 2,
+    onError: (error: Error) => {
+      console.error('Error fetching active relocations:', error);
+      toast({
+        title: "Error Loading Active Relocations",
+        description: "There was a problem loading active relocations. Please try again.",
+        variant: "destructive",
+      });
+    }
   });
 
   // Create a new relocation

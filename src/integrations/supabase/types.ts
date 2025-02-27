@@ -4250,6 +4250,13 @@ export type Database = {
             foreignKeyName: "relocation_notifications_relocation_id_fkey"
             columns: ["relocation_id"]
             isOneToOne: false
+            referencedRelation: "active_relocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relocation_notifications_relocation_id_fkey"
+            columns: ["relocation_id"]
+            isOneToOne: false
             referencedRelation: "active_relocations_view"
             referencedColumns: ["id"]
           },
@@ -4300,6 +4307,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "relocation_schedule_changes_relocation_id_fkey"
+            columns: ["relocation_id"]
+            isOneToOne: false
+            referencedRelation: "active_relocations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "relocation_schedule_changes_relocation_id_fkey"
             columns: ["relocation_id"]
@@ -5923,6 +5937,35 @@ export type Database = {
       }
     }
     Views: {
+      active_relocations: {
+        Row: {
+          created_at: string | null
+          days_active: number | null
+          end_date: string | null
+          id: string | null
+          metadata: Json | null
+          notes: string | null
+          original_building_name: string | null
+          original_floor_name: string | null
+          original_room_name: string | null
+          original_room_number: string | null
+          progress_percentage: number | null
+          reason: string | null
+          relocation_type:
+            | Database["public"]["Enums"]["relocation_type_enum"]
+            | null
+          special_instructions: string | null
+          start_date: string | null
+          status: Database["public"]["Enums"]["relocation_status_enum"] | null
+          temporary_building_name: string | null
+          temporary_floor_name: string | null
+          temporary_room_name: string | null
+          temporary_room_number: string | null
+          total_days: number | null
+          updated_at: string | null
+        }
+        Relationships: []
+      }
       active_relocations_view: {
         Row: {
           building_name: string | null
