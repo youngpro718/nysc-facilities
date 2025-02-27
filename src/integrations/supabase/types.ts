@@ -5227,6 +5227,70 @@ export type Database = {
         }
         Relationships: []
       }
+      schedule_changes: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          end_date: string | null
+          id: string
+          original_court_part: string
+          relocation_id: string | null
+          special_instructions: string | null
+          start_date: string
+          status: Database["public"]["Enums"]["relocation_status_enum"] | null
+          temporary_assignment: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          original_court_part: string
+          relocation_id?: string | null
+          special_instructions?: string | null
+          start_date: string
+          status?: Database["public"]["Enums"]["relocation_status_enum"] | null
+          temporary_assignment: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          original_court_part?: string
+          relocation_id?: string | null
+          special_instructions?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["relocation_status_enum"] | null
+          temporary_assignment?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_changes_relocation_id_fkey"
+            columns: ["relocation_id"]
+            isOneToOne: false
+            referencedRelation: "active_relocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedule_changes_relocation_id_fkey"
+            columns: ["relocation_id"]
+            isOneToOne: false
+            referencedRelation: "active_relocations_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedule_changes_relocation_id_fkey"
+            columns: ["relocation_id"]
+            isOneToOne: false
+            referencedRelation: "room_relocations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scheduled_reports: {
         Row: {
           config: Json
