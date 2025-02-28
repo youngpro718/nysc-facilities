@@ -8,6 +8,7 @@ import {
 import { IssueDetails } from "../details/IssueDetails";
 import { ResolutionForm } from "../forms/ResolutionForm";
 import { DialogState } from "@/hooks/useDialogManager";
+import { useEffect } from "react";
 
 interface IssueDialogManagerProps {
   dialogState: DialogState;
@@ -15,6 +16,16 @@ interface IssueDialogManagerProps {
 }
 
 export const IssueDialogManager = ({ dialogState, onClose }: IssueDialogManagerProps) => {
+  // Force dialog to close properly when route changes
+  useEffect(() => {
+    return () => {
+      // Cleanup effect when component unmounts
+      if (dialogState.isOpen) {
+        onClose();
+      }
+    };
+  }, [dialogState.isOpen, onClose]);
+
   const handleSheetOpenChange = (open: boolean) => {
     if (!open) {
       onClose();
@@ -46,8 +57,9 @@ export const IssueDialogManager = ({ dialogState, onClose }: IssueDialogManagerP
         <Sheet 
           open={dialogState.isOpen} 
           onOpenChange={handleSheetOpenChange}
+          forceMount
         >
-          <SheetContent>
+          <SheetContent side="right">
             <SheetHeader>
               <SheetTitle>Resolve Issue</SheetTitle>
             </SheetHeader>
