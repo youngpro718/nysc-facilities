@@ -226,7 +226,7 @@ export function RelocationDetails({ id }: RelocationDetailsProps) {
                   <div>
                     <p className="text-lg font-medium">{relocation.original_room?.name || 'N/A'}</p>
                     <p className="text-sm text-muted-foreground">
-                      {relocation.original_room?.floor?.buildings?.name}, {relocation.original_room?.floor?.name}
+                      {relocation.original_room?.floor?.building?.name}, {relocation.original_room?.floor?.name}
                     </p>
                   </div>
                 </CardContent>
@@ -244,7 +244,7 @@ export function RelocationDetails({ id }: RelocationDetailsProps) {
                   <div>
                     <p className="text-lg font-medium">{relocation.temporary_room?.name || 'N/A'}</p>
                     <p className="text-sm text-muted-foreground">
-                      {relocation.temporary_room?.floor?.buildings?.name}, {relocation.temporary_room?.floor?.name}
+                      {relocation.temporary_room?.floor?.building?.name}, {relocation.temporary_room?.floor?.name}
                     </p>
                   </div>
                 </CardContent>
