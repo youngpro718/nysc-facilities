@@ -2,20 +2,68 @@
 import { useRelocationDetails } from "../hooks/useRelocations";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Calendar, AlertTriangle, Clock, CheckCircle, Building } from "lucide-react";
+import { ArrowLeft, Calendar, AlertTriangle, Clock, CheckCircle, Building, Play, X, CheckSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useState } from "react";
 
 interface RelocationDetailsProps {
   id: string;
 }
 
 export function RelocationDetails({ id }: RelocationDetailsProps) {
-  const { relocation, isLoading, isError } = useRelocationDetails(id);
+  const { 
+    relocation, 
+    isLoading, 
+    isError, 
+    activateRelocation,
+    completeRelocation,
+    cancelRelocation,
+    isActivating,
+    isCompleting,
+    isCancelling
+  } = useRelocationDetails(id);
+  
+  const [confirmAction, setConfirmAction] = useState<'activate' | 'complete' | 'cancel' | null>(null);
 
   if (isLoading) {
-    return <div className="flex justify-center p-8">Loading relocation details...</div>;
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-9 w-32" />
+            <Skeleton className="h-8 w-48" />
+          </div>
+          <Skeleton className="h-6 w-24" />
+        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-4">
+                <Skeleton className="h-6 w-32" />
+                <Card>
+                  <CardContent className="p-4 space-y-3">
+                    <Skeleton className="h-5 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                  </CardContent>
+                </Card>
+              </div>
+              <div className="space-y-4">
+                <Skeleton className="h-6 w-32" />
+                <Card>
+                  <CardContent className="p-4 space-y-3">
+                    <Skeleton className="h-5 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   if (isError || !relocation) {
@@ -55,6 +103,96 @@ export function RelocationDetails({ id }: RelocationDetailsProps) {
       month: 'short',
       day: 'numeric'
     });
+  };
+
+  const handleAction = (action: 'activate' | 'complete' | 'cancel') => {
+    if (confirmAction === action) {
+      // Execute the action
+      if (action === 'activate') {
+        activateRelocation();
+      } else if (action === 'complete') {
+        completeRelocation();
+      } else if (action === 'cancel') {
+        cancelRelocation();
+      }
+      setConfirmAction(null);
+    } else {
+      // Set to confirmation state
+      setConfirmAction(action);
+    }
+  };
+
+  const renderActionButtons = () => {
+    if (relocation.status === 'scheduled') {
+      return (
+        <div className="flex items-center gap-2 mt-6">
+          <Button 
+            onClick={() => handleAction('activate')} 
+            className="flex items-center gap-2"
+            disabled={isActivating}
+          >
+            {confirmAction === 'activate' ? (
+              'Confirm Activation'
+            ) : (
+              <>
+                <Play className="h-4 w-4" />
+                Activate
+              </>
+            )}
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => handleAction('cancel')}
+            className="flex items-center gap-2 text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
+            disabled={isCancelling}
+          >
+            {confirmAction === 'cancel' ? (
+              'Confirm Cancellation'
+            ) : (
+              <>
+                <X className="h-4 w-4" />
+                Cancel
+              </>
+            )}
+          </Button>
+        </div>
+      );
+    } else if (relocation.status === 'active') {
+      return (
+        <div className="flex items-center gap-2 mt-6">
+          <Button 
+            onClick={() => handleAction('complete')}
+            className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+            disabled={isCompleting}
+          >
+            {confirmAction === 'complete' ? (
+              'Confirm Completion'
+            ) : (
+              <>
+                <CheckSquare className="h-4 w-4" />
+                Complete
+              </>
+            )}
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => handleAction('cancel')}
+            className="flex items-center gap-2 text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
+            disabled={isCancelling}
+          >
+            {confirmAction === 'cancel' ? (
+              'Confirm Cancellation'
+            ) : (
+              <>
+                <X className="h-4 w-4" />
+                Cancel
+              </>
+            )}
+          </Button>
+        </div>
+      );
+    }
+    return null;
   };
 
   return (
@@ -169,6 +307,16 @@ export function RelocationDetails({ id }: RelocationDetailsProps) {
                 <div className="bg-muted/30 p-4 rounded-md text-muted-foreground">
                   {relocation.notes}
                 </div>
+              </div>
+            </>
+          )}
+
+          {(relocation.status === 'scheduled' || relocation.status === 'active') && (
+            <>
+              <Separator className="my-6" />
+              <div className="space-y-2">
+                <h2 className="text-lg font-medium">Actions</h2>
+                {renderActionButtons()}
               </div>
             </>
           )}
