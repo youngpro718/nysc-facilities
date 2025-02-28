@@ -2,7 +2,10 @@
 import { useRelocationDetails } from "../hooks/useRelocations";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Calendar, AlertTriangle, Clock, CheckCircle, Building } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 interface RelocationDetailsProps {
   id: string;
@@ -30,80 +33,147 @@ export function RelocationDetails({ id }: RelocationDetailsProps) {
     );
   }
 
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'scheduled':
+        return <Badge variant="outline" className="flex items-center gap-1"><Clock className="h-3 w-3" /> Scheduled</Badge>;
+      case 'active':
+        return <Badge className="bg-blue-500 flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Active</Badge>;
+      case 'completed':
+        return <Badge className="bg-green-500 flex items-center gap-1"><CheckCircle className="h-3 w-3" /> Completed</Badge>;
+      case 'cancelled':
+        return <Badge variant="destructive" className="flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Cancelled</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return 'N/A';
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
   return (
-    <div>
-      <div className="flex items-center mb-6">
-        <Button asChild variant="outline" className="mr-4">
-          <Link to="/relocations">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Relocations
-          </Link>
-        </Button>
-        <h1 className="text-2xl font-bold">Relocation Details</h1>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button asChild variant="outline" size="sm">
+            <Link to="/relocations">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Relocations
+            </Link>
+          </Button>
+          <h1 className="text-2xl font-bold">Relocation Details</h1>
+        </div>
+        <div>
+          {getStatusBadge(relocation.status)}
+        </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h2 className="text-lg font-medium mb-4">Room Information</h2>
-            <div className="space-y-3">
-              <div>
-                <span className="text-gray-500 text-sm">Original Room:</span>
-                <p className="font-medium">{relocation.original_room?.name || 'N/A'}</p>
+      <Card className="bg-card shadow-md">
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Original Room Card */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-lg font-medium">
+                <Building className="h-5 w-5 text-muted-foreground" />
+                <h2>Original Room</h2>
               </div>
-              <div>
-                <span className="text-gray-500 text-sm">Temporary Room:</span>
-                <p className="font-medium">{relocation.temporary_room?.name || 'N/A'}</p>
+              <Card className="bg-muted/30 border-muted">
+                <CardContent className="p-4 space-y-3">
+                  <div>
+                    <p className="text-lg font-medium">{relocation.original_room?.name || 'N/A'}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {relocation.original_room?.floors?.buildings?.name}, {relocation.original_room?.floors?.name}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Temporary Room Card */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-lg font-medium">
+                <Building className="h-5 w-5 text-muted-foreground" />
+                <h2>Temporary Room</h2>
+              </div>
+              <Card className="bg-muted/30 border-muted">
+                <CardContent className="p-4 space-y-3">
+                  <div>
+                    <p className="text-lg font-medium">{relocation.temporary_room?.name || 'N/A'}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {relocation.temporary_room?.floors?.buildings?.name}, {relocation.temporary_room?.floors?.name}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          <Separator className="my-6" />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Relocation Details */}
+            <div className="space-y-4">
+              <h2 className="text-lg font-medium">Relocation Details</h2>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Type</p>
+                  <p className="font-medium capitalize">{relocation.relocation_type}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Created At</p>
+                  <p className="font-medium">{formatDate(relocation.created_at)}</p>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Reason</p>
+                <p className="font-medium">{relocation.reason || 'No reason provided'}</p>
+              </div>
+            </div>
+
+            {/* Schedule */}
+            <div className="space-y-4">
+              <h2 className="text-lg font-medium flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-muted-foreground" />
+                Schedule
+              </h2>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Start Date</p>
+                  <p className="font-medium">{formatDate(relocation.start_date)}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">End Date</p>
+                  <p className="font-medium">{formatDate(relocation.end_date)}</p>
+                </div>
+                {relocation.actual_end_date && (
+                  <div className="space-y-1 col-span-2">
+                    <p className="text-sm text-muted-foreground">Actual End Date</p>
+                    <p className="font-medium">{formatDate(relocation.actual_end_date)}</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          <div>
-            <h2 className="text-lg font-medium mb-4">Relocation Details</h2>
-            <div className="space-y-3">
-              <div>
-                <span className="text-gray-500 text-sm">Status:</span>
-                <p className="font-medium capitalize">{relocation.status}</p>
+          {relocation.notes && (
+            <>
+              <Separator className="my-6" />
+              <div className="space-y-2">
+                <h2 className="text-lg font-medium">Notes</h2>
+                <div className="bg-muted/30 p-4 rounded-md text-muted-foreground">
+                  {relocation.notes}
+                </div>
               </div>
-              <div>
-                <span className="text-gray-500 text-sm">Type:</span>
-                <p className="font-medium capitalize">{relocation.relocation_type}</p>
-              </div>
-              <div>
-                <span className="text-gray-500 text-sm">Reason:</span>
-                <p className="font-medium">{relocation.reason}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-6">
-          <h2 className="text-lg font-medium mb-4">Schedule</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <span className="text-gray-500 text-sm">Start Date:</span>
-              <p className="font-medium">{new Date(relocation.start_date).toLocaleDateString()}</p>
-            </div>
-            <div>
-              <span className="text-gray-500 text-sm">End Date:</span>
-              <p className="font-medium">{new Date(relocation.end_date).toLocaleDateString()}</p>
-            </div>
-            {relocation.actual_end_date && (
-              <div>
-                <span className="text-gray-500 text-sm">Actual End Date:</span>
-                <p className="font-medium">{new Date(relocation.actual_end_date).toLocaleDateString()}</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {relocation.notes && (
-          <div className="mt-6">
-            <h2 className="text-lg font-medium mb-2">Notes</h2>
-            <p className="text-gray-700">{relocation.notes}</p>
-          </div>
-        )}
-      </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
