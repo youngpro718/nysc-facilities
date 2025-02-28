@@ -25,7 +25,7 @@ export function IssueCard({ issue, onMarkAsSeen }: IssueCardProps) {
             size="icon"
             className="transition-opacity"
             onClick={(e) => {
-              e.stopPropagation();
+              e.stopPropagation(); // Prevent click from bubbling up
               setIsFlipped(!isFlipped);
             }}
           >
