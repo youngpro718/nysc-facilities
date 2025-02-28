@@ -42,14 +42,15 @@ export const useResolveIssueMutation = () => {
     },
     onSuccess: (data) => {
       console.log("Resolution mutation succeeded:", data);
-      // Batch invalidate queries - we'll do this in a small delay to avoid race conditions
-      setTimeout(() => {
-        queryClient.invalidateQueries({ 
-          queryKey: ['issues'],
-          exact: false 
-        });
-        toast.success("Issue resolved successfully");
-      }, 100);
+      
+      // Instead of using setTimeout, invalidate the queries immediately
+      // but do it in a controlled way to prevent UI freezes
+      queryClient.invalidateQueries({ 
+        queryKey: ['issues'],
+        exact: false 
+      });
+      
+      toast.success("Issue resolved successfully");
     },
     onError: (error) => {
       console.error("Mutation error:", error);

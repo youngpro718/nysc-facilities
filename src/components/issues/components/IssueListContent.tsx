@@ -8,7 +8,6 @@ import { CardView } from "../views/CardView";
 import { IssueListHeader } from "./IssueListHeader";
 import { useIssueQueries } from "../hooks/useIssueQueries";
 import { useMemo } from "react";
-import _ from "lodash";
 
 interface IssueListContentProps {
   viewMode: 'table' | 'cards';
@@ -77,6 +76,13 @@ export const IssueListContent = ({
     }
   };
 
+  const handleIssueSelect = (id: string) => {
+    // Use a short delay to prevent event conflicts
+    setTimeout(() => {
+      openDialog('issueDetails', { issueId: id });
+    }, 10);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[200px]">
@@ -107,12 +113,12 @@ export const IssueListContent = ({
       {viewMode === 'cards' ? (
         <CardView
           issues={issues}
-          onIssueSelect={(id) => openDialog('issueDetails', { issueId: id })}
+          onIssueSelect={handleIssueSelect}
         />
       ) : (
         <TableView
           issues={issues}
-          onIssueSelect={(id) => openDialog('issueDetails', { issueId: id })}
+          onIssueSelect={handleIssueSelect}
           onStatusChange={handleStatusChange}
           onDelete={handleDelete}
         />

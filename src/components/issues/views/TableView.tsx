@@ -33,6 +33,21 @@ export const TableView = ({
   onStatusChange, 
   onDelete 
 }: TableViewProps) => {
+  const handleActionClick = (
+    e: React.MouseEvent, 
+    action: (id: string) => void, 
+    id: string
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Use a small delay to ensure event propagation is complete
+    // before running the action
+    setTimeout(() => {
+      action(id);
+    }, 10);
+  };
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -54,13 +69,14 @@ export const TableView = ({
               key={issue.id}
               className="cursor-pointer hover:bg-muted/50"
               onClick={(e) => {
-                e.stopPropagation(); // Prevent event from bubbling
-                onIssueSelect(issue.id);
+                e.preventDefault();
+                handleActionClick(e, onIssueSelect, issue.id);
               }}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
                   onIssueSelect(issue.id);
                 }
               }}
@@ -99,18 +115,18 @@ export const TableView = ({
                       variant="ghost" 
                       className="h-8 w-8 p-0"
                       onClick={(e) => {
+                        e.preventDefault();
                         e.stopPropagation(); // Prevent triggering row click
                       }}
                     >
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                     {issue.status !== 'in_progress' && (
                       <DropdownMenuItem
                         onClick={(e) => {
-                          e.stopPropagation();
-                          onStatusChange(issue.id, 'in_progress');
+                          handleActionClick(e, (id) => onStatusChange(id, 'in_progress'), issue.id);
                         }}
                       >
                         Mark In Progress
@@ -119,8 +135,7 @@ export const TableView = ({
                     {issue.status !== 'resolved' && (
                       <DropdownMenuItem
                         onClick={(e) => {
-                          e.stopPropagation();
-                          onStatusChange(issue.id, 'resolved');
+                          handleActionClick(e, (id) => onStatusChange(id, 'resolved'), issue.id);
                         }}
                       >
                         Resolve Issue
@@ -129,8 +144,7 @@ export const TableView = ({
                     {issue.status !== 'open' && (
                       <DropdownMenuItem
                         onClick={(e) => {
-                          e.stopPropagation();
-                          onStatusChange(issue.id, 'open');
+                          handleActionClick(e, (id) => onStatusChange(id, 'open'), issue.id);
                         }}
                       >
                         Reopen Issue
@@ -138,8 +152,7 @@ export const TableView = ({
                     )}
                     <DropdownMenuItem
                       onClick={(e) => {
-                        e.stopPropagation();
-                        onDelete(issue.id);
+                        handleActionClick(e, onDelete, issue.id);
                       }}
                       className="text-red-600"
                     >

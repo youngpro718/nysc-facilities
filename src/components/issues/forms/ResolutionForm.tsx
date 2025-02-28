@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -52,6 +52,7 @@ const RESOLUTION_TYPES: { label: string; value: ResolutionType }[] = [
 
 export function ResolutionForm({ issueId, onSuccess, onCancel }: ResolutionFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFormProcessed, setIsFormProcessed] = useState(false);
   
   const form = useForm<ResolutionFormData>({
     resolver: zodResolver(resolutionSchema),
@@ -61,6 +62,14 @@ export function ResolutionForm({ issueId, onSuccess, onCancel }: ResolutionFormP
   });
 
   const resolveMutation = useResolveIssueMutation();
+  
+  // Reset state when form is unmounted or issueId changes
+  useEffect(() => {
+    return () => {
+      setIsSubmitting(false);
+      setIsFormProcessed(false);
+    };
+  }, [issueId]);
 
   const onSubmit = async (data: ResolutionFormData) => {
     if (!issueId) {
@@ -69,7 +78,7 @@ export function ResolutionForm({ issueId, onSuccess, onCancel }: ResolutionFormP
     }
     
     // Prevent duplicate submissions
-    if (isSubmitting) return;
+    if (isSubmitting || isFormProcessed) return;
     
     try {
       setIsSubmitting(true);
@@ -81,21 +90,24 @@ export function ResolutionForm({ issueId, onSuccess, onCancel }: ResolutionFormP
         resolution_notes: data.resolution_notes,
       });
 
-      // Reset form on success
+      // Mark form as processed to prevent multiple submissions
+      setIsFormProcessed(true);
+      
+      // Reset form
       form.reset();
       
-      // Allow a short delay for the UI to update before closing the dialog
-      setTimeout(() => {
-        if (onSuccess) {
-          console.log("Calling onSuccess callback");
-          onSuccess();
-        }
-        setIsSubmitting(false);
-      }, 250);
+      // Call success callback after a short delay
+      // to ensure state updates complete first
+      if (onSuccess) {
+        console.log("Calling onSuccess callback");
+        onSuccess();
+      }
     } catch (error) {
       console.error("Resolution submission error:", error);
       toast.error("Failed to resolve issue");
+      // Reset submission state on error
       setIsSubmitting(false);
+      setIsFormProcessed(false);
     }
   };
 
@@ -113,7 +125,7 @@ export function ResolutionForm({ issueId, onSuccess, onCancel }: ResolutionFormP
   };
 
   // Determine if we should disable controls
-  const isProcessing = isSubmitting || resolveMutation.isPending;
+  const isProcessing = isSubmitting || resolveMutation.isPending || isFormProcessed;
 
   return (
     <Form {...form}>
