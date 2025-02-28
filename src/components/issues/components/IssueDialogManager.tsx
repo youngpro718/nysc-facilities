@@ -21,6 +21,11 @@ export const IssueDialogManager = ({ dialogState, onClose }: IssueDialogManagerP
     }
   };
 
+  // Return null early if dialog is not open or has no type
+  if (!dialogState.isOpen || !dialogState.type) {
+    return null;
+  }
+
   return (
     <>
       {dialogState.type === 'issueDetails' && (

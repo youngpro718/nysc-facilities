@@ -53,7 +53,17 @@ export const TableView = ({
             <TableRow 
               key={issue.id}
               className="cursor-pointer hover:bg-muted/50"
-              onClick={() => onIssueSelect(issue.id)}
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent event from bubbling
+                onIssueSelect(issue.id);
+              }}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  onIssueSelect(issue.id);
+                }
+              }}
             >
               <TableCell>{issue.title}</TableCell>
               <TableCell>{issue.description}</TableCell>
@@ -85,7 +95,13 @@ export const TableView = ({
               <TableCell className="text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
+                    <Button 
+                      variant="ghost" 
+                      className="h-8 w-8 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent triggering row click
+                      }}
+                    >
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
