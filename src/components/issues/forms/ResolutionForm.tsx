@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -51,6 +51,8 @@ const RESOLUTION_TYPES: { label: string; value: ResolutionType }[] = [
 ];
 
 export function ResolutionForm({ issueId, onSuccess, onCancel }: ResolutionFormProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const form = useForm<ResolutionFormData>({
     resolver: zodResolver(resolutionSchema),
     defaultValues: {
@@ -66,36 +68,52 @@ export function ResolutionForm({ issueId, onSuccess, onCancel }: ResolutionFormP
       return;
     }
     
+    // Prevent duplicate submissions
+    if (isSubmitting) return;
+    
     try {
+      setIsSubmitting(true);
+      console.log("Submitting resolution form:", { issueId, ...data });
+      
       await resolveMutation.mutateAsync({
         id: issueId,
         resolution_type: data.resolution_type as ResolutionType,
         resolution_notes: data.resolution_notes,
       });
 
-      toast.success("Issue resolved successfully");
-      form.reset(); // Reset form on success
+      // Reset form on success
+      form.reset();
       
-      if (onSuccess) {
-        // Small delay to ensure mutation has completed
-        setTimeout(() => {
+      // Allow a short delay for the UI to update before closing the dialog
+      setTimeout(() => {
+        if (onSuccess) {
+          console.log("Calling onSuccess callback");
           onSuccess();
-        }, 100);
-      }
+        }
+        setIsSubmitting(false);
+      }, 250);
     } catch (error) {
-      console.error("Resolution error:", error);
+      console.error("Resolution submission error:", error);
       toast.error("Failed to resolve issue");
+      setIsSubmitting(false);
     }
   };
 
   const handleCancel = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Don't allow cancellation during active submission
+    if (isSubmitting) return;
+    
     form.reset();
     if (onCancel) {
       onCancel();
     }
   };
+
+  // Determine if we should disable controls
+  const isProcessing = isSubmitting || resolveMutation.isPending;
 
   return (
     <Form {...form}>
@@ -106,7 +124,11 @@ export function ResolutionForm({ issueId, onSuccess, onCancel }: ResolutionFormP
           render={({ field }) => (
             <FormItem>
               <FormLabel>Resolution Type</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select 
+                onValueChange={field.onChange} 
+                defaultValue={field.value}
+                disabled={isProcessing}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select how the issue was resolved" />
@@ -135,6 +157,7 @@ export function ResolutionForm({ issueId, onSuccess, onCancel }: ResolutionFormP
                 <Textarea
                   placeholder="Describe how the issue was resolved"
                   className="min-h-[100px]"
+                  disabled={isProcessing}
                   {...field}
                 />
               </FormControl>
@@ -149,16 +172,16 @@ export function ResolutionForm({ issueId, onSuccess, onCancel }: ResolutionFormP
               type="button" 
               variant="outline" 
               onClick={handleCancel}
-              disabled={resolveMutation.isPending}
+              disabled={isProcessing}
             >
               Cancel
             </Button>
           )}
           <Button 
             type="submit"
-            disabled={resolveMutation.isPending}
+            disabled={isProcessing}
           >
-            {resolveMutation.isPending ? (
+            {isProcessing ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Resolving...

@@ -16,6 +16,7 @@ export const useResolveIssueMutation = () => {
   return useMutation({
     mutationFn: async ({ id, resolution_type, resolution_notes }: ResolveIssueData) => {
       try {
+        console.log("Starting issue resolution for ID:", id);
         const { error } = await supabase
           .from("issues")
           .update({
@@ -27,18 +28,28 @@ export const useResolveIssueMutation = () => {
           })
           .eq("id", id);
 
-        if (error) throw error;
+        if (error) {
+          console.error("Supabase update error:", error);
+          throw error;
+        }
+        
+        console.log("Issue resolved successfully");
+        return { id, success: true };
       } catch (error) {
         console.error("Supabase error:", error);
         throw error;
       }
     },
-    onSuccess: () => {
-      // Batch invalidate queries
-      queryClient.invalidateQueries({ 
-        queryKey: ['issues'],
-        exact: false 
-      });
+    onSuccess: (data) => {
+      console.log("Resolution mutation succeeded:", data);
+      // Batch invalidate queries - we'll do this in a small delay to avoid race conditions
+      setTimeout(() => {
+        queryClient.invalidateQueries({ 
+          queryKey: ['issues'],
+          exact: false 
+        });
+        toast.success("Issue resolved successfully");
+      }, 100);
     },
     onError: (error) => {
       console.error("Mutation error:", error);

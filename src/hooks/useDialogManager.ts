@@ -16,10 +16,12 @@ export function useDialogManager() {
   });
 
   const openDialog = useCallback((type: DialogType, data?: any) => {
+    console.log(`Opening dialog: ${type}`, data);
     setDialogState({ type, isOpen: true, data });
   }, []);
 
   const closeDialog = useCallback(() => {
+    console.log("Closing dialog");
     // Ensure we clean up the entire state
     setDialogState({
       type: null,
