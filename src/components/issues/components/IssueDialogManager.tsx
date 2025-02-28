@@ -57,7 +57,6 @@ export const IssueDialogManager = ({ dialogState, onClose }: IssueDialogManagerP
         <Sheet 
           open={dialogState.isOpen} 
           onOpenChange={handleSheetOpenChange}
-          forceMount
         >
           <SheetContent side="right">
             <SheetHeader>
