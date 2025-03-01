@@ -1,7 +1,9 @@
+
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { FormButtons } from "@/components/ui/form-buttons";
 import { 
   Select,
   SelectContent,
@@ -18,6 +20,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Slider } from "@/components/ui/slider";
 import { Building2, Move, RotateCw, Link2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
 
 interface EditPropertiesPanelProps {
   selectedObject: FloorPlanObjectData & { 
@@ -27,6 +30,7 @@ interface EditPropertiesPanelProps {
   };
   onClose: () => void;
   onUpdate: () => void;
+  onPreview?: (values: FormValues) => void;
 }
 
 interface FormValues {
@@ -41,7 +45,9 @@ interface FormValues {
   status: string;
 }
 
-export function EditPropertiesPanel({ selectedObject, onClose, onUpdate }: EditPropertiesPanelProps) {
+export function EditPropertiesPanel({ selectedObject, onClose, onUpdate, onPreview }: EditPropertiesPanelProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const form = useForm<FormValues>({
     defaultValues: {
       label: selectedObject.label || '',
@@ -56,8 +62,19 @@ export function EditPropertiesPanel({ selectedObject, onClose, onUpdate }: EditP
     }
   });
 
+  // Watch form values to provide real-time preview
+  const formValues = form.watch();
+  
+  // Send preview updates to parent component when form values change
+  useEffect(() => {
+    if (onPreview) {
+      onPreview(formValues);
+    }
+  }, [formValues, onPreview]);
+
   const onSubmit = async (values: FormValues) => {
     try {
+      setIsSubmitting(true);
       const table = selectedObject.type === 'door' ? 'doors' : 
                     selectedObject.type === 'hallway' ? 'hallways' : 
                     selectedObject.type === 'room' ? 'rooms' : 
@@ -106,6 +123,8 @@ export function EditPropertiesPanel({ selectedObject, onClose, onUpdate }: EditP
     } catch (err) {
       console.error('Error updating object:', err);
       toast.error('Failed to save changes');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -195,7 +214,9 @@ export function EditPropertiesPanel({ selectedObject, onClose, onUpdate }: EditP
                   <FormItem>
                     <FormLabel>X Position</FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} />
+                      <Input type="number" {...field} onChange={(e) => {
+                        field.onChange(parseInt(e.target.value) || 0);
+                      }} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -209,7 +230,9 @@ export function EditPropertiesPanel({ selectedObject, onClose, onUpdate }: EditP
                   <FormItem>
                     <FormLabel>Y Position</FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} />
+                      <Input type="number" {...field} onChange={(e) => {
+                        field.onChange(parseInt(e.target.value) || 0);
+                      }} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -229,6 +252,9 @@ export function EditPropertiesPanel({ selectedObject, onClose, onUpdate }: EditP
                         type="number" 
                         {...field} 
                         min={selectedObject.type === 'door' ? 40 : 100}
+                        onChange={(e) => {
+                          field.onChange(parseInt(e.target.value) || 0);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -247,6 +273,9 @@ export function EditPropertiesPanel({ selectedObject, onClose, onUpdate }: EditP
                         type="number" 
                         {...field}
                         min={selectedObject.type === 'door' ? 15 : 100}
+                        onChange={(e) => {
+                          field.onChange(parseInt(e.target.value) || 0);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -268,7 +297,7 @@ export function EditPropertiesPanel({ selectedObject, onClose, onUpdate }: EditP
               name="rotation"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Rotation (degrees)</FormLabel>
+                  <FormLabel>Rotation (degrees): {field.value}°</FormLabel>
                   <FormControl>
                     <Slider
                       min={0}
@@ -313,14 +342,11 @@ export function EditPropertiesPanel({ selectedObject, onClose, onUpdate }: EditP
           </div>
         </div>
 
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit">
-            Save Changes
-          </Button>
-        </div>
+        <FormButtons 
+          onCancel={onClose}
+          isSubmitting={isSubmitting}
+          submitLabel="Save Changes"
+        />
       </form>
     </Form>
   );

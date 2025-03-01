@@ -1,3 +1,4 @@
+
 import { useCallback, useRef } from 'react';
 import { NodeChange, OnNodesChange, Node, useReactFlow } from 'reactflow';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,6 +9,8 @@ interface NodeUpdateData {
   position?: { x: number; y: number };
   size?: { width: number; height: number };
   rotation?: number;
+  label?: string;
+  properties?: Record<string, any>;
 }
 
 export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
@@ -47,8 +50,20 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
         }
 
         // Only include rotation if it's valid
-        if (typeof node.data?.rotation === 'number' && !isNaN(node.data.rotation)) {
+        if (typeof node.rotation === 'number' && !isNaN(node.rotation)) {
+          updateData.rotation = node.rotation;
+        } else if (typeof node.data?.rotation === 'number' && !isNaN(node.data.rotation)) {
           updateData.rotation = node.data.rotation;
+        }
+        
+        // Include label if available
+        if (node.data?.label) {
+          updateData.label = node.data.label;
+        }
+        
+        // Include properties if available
+        if (node.data?.properties) {
+          updateData.properties = node.data.properties;
         }
 
         // Only proceed if we have valid data to update
@@ -67,8 +82,12 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
 
         if (error) throw error;
         
-        // Only show success toast for size/rotation changes, not position
-        if (updateData.size || updateData.rotation) {
+        // Only show success toast for manual changes, not position
+        const isPositionOnlyUpdate = 
+          Object.keys(updateData).length === 1 && 
+          Object.keys(updateData).includes('position');
+          
+        if (!isPositionOnlyUpdate) {
           toast.success('Changes saved successfully');
         }
       } catch (error) {

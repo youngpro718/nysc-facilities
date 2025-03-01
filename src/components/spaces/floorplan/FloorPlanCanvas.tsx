@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef } from 'react';
+
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { 
   useNodesState, 
   useEdgesState, 
@@ -6,7 +7,9 @@ import {
   Edge, 
   Node,
   addEdge,
-  ReactFlowProvider
+  ReactFlowProvider,
+  applyNodeChanges,
+  NodeChange
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Card } from "@/components/ui/card";
@@ -22,6 +25,7 @@ interface FloorPlanCanvasProps {
   floorId: string | null;
   zoom?: number;
   onObjectSelect?: (object: any | null) => void;
+  previewData?: any;
 }
 
 const nodeTypes = {
@@ -33,7 +37,8 @@ const nodeTypes = {
 function FloorPlanCanvasInner({ 
   floorId, 
   zoom = 1, 
-  onObjectSelect 
+  onObjectSelect,
+  previewData
 }: FloorPlanCanvasProps) {
   const { objects, edges: graphEdges, isLoading } = useFloorPlanData(floorId);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -42,6 +47,7 @@ function FloorPlanCanvasInner({
   const initialized = useRef<boolean>(false);
   const memoizedNodeTypes = useRef(nodeTypes);
   const handleNodesChange = useFloorPlanNodes(onNodesChange);
+  const previewingNodeId = useRef<string | null>(null);
 
   const initializeNodes = useCallback((objects: any[]) => {
     if (!objects?.length) return [];
@@ -77,6 +83,7 @@ function FloorPlanCanvasInner({
         selectable: true,
         resizable: true,
         rotatable: true,
+        rotation: obj.rotation || 0,
         data: {
           ...obj.data,
           label: obj.data?.label || 'Unnamed Room',
@@ -90,7 +97,8 @@ function FloorPlanCanvasInner({
             room_number: '',
             room_type: 'default',
             status: 'active'
-          }
+          },
+          rotation: obj.rotation || 0
         }
       };
     });
@@ -115,6 +123,32 @@ function FloorPlanCanvasInner({
 
     return reactFlowNodes;
   }, []);
+
+  // Apply preview data when it changes
+  useEffect(() => {
+    if (previewData && nodes.length > 0) {
+      const { id, position, rotation, data } = previewData;
+      previewingNodeId.current = id;
+      
+      setNodes(nodes => {
+        return nodes.map(node => {
+          if (node.id === id) {
+            return {
+              ...node,
+              position: position || node.position,
+              rotation: rotation !== undefined ? rotation : node.rotation,
+              data: {
+                ...node.data,
+                ...data,
+                rotation: rotation
+              }
+            };
+          }
+          return node;
+        });
+      });
+    }
+  }, [previewData, setNodes]);
 
   useEffect(() => {
     if (!objects || !floorId || isLoading) {
@@ -150,7 +184,7 @@ function FloorPlanCanvasInner({
         type: node.type,
         position: node.position,
         size: node.data?.size,
-        rotation: node.data?.rotation || 0
+        rotation: node.rotation || node.data?.rotation || 0
       });
     }
   }, [onObjectSelect]);

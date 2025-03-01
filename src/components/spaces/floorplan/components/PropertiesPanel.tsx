@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,10 +10,41 @@ import { EditPropertiesPanel } from "./EditPropertiesPanel";
 interface PropertiesPanelProps {
   selectedObject: any | null;
   onUpdate?: () => void;
+  onPreviewChange?: (previewData: any) => void;
 }
 
-export function PropertiesPanel({ selectedObject, onUpdate }: PropertiesPanelProps) {
+export function PropertiesPanel({ selectedObject, onUpdate, onPreviewChange }: PropertiesPanelProps) {
   const [isEditing, setIsEditing] = useState(false);
+  
+  const handlePreview = useCallback((values: any) => {
+    if (onPreviewChange && selectedObject) {
+      const previewData = {
+        id: selectedObject.id,
+        type: selectedObject.type,
+        position: { 
+          x: Number(values.positionX), 
+          y: Number(values.positionY) 
+        },
+        rotation: Number(values.rotation),
+        data: {
+          ...selectedObject.data,
+          label: values.label,
+          size: { 
+            width: Number(values.width), 
+            height: Number(values.height) 
+          },
+          properties: {
+            ...selectedObject.properties,
+            room_number: values.room_number,
+            room_type: values.room_type,
+            status: values.status
+          }
+        }
+      };
+      
+      onPreviewChange(previewData);
+    }
+  }, [selectedObject, onPreviewChange]);
 
   if (!selectedObject) {
     return (
@@ -34,6 +66,7 @@ export function PropertiesPanel({ selectedObject, onUpdate }: PropertiesPanelPro
             if (onUpdate) onUpdate();
             setIsEditing(false);
           }}
+          onPreview={handlePreview}
         />
       </Card>
     );
@@ -134,7 +167,7 @@ export function PropertiesPanel({ selectedObject, onUpdate }: PropertiesPanelPro
               <span className="text-muted-foreground">Size:</span>{' '}
               {selectedObject.size?.width || 0}x{selectedObject.size?.height || 0}
             </div>
-            {selectedObject.rotation && (
+            {selectedObject.rotation !== undefined && (
               <div>
                 <span className="text-muted-foreground">Rotation:</span>{' '}
                 {Math.round(selectedObject.rotation)}°

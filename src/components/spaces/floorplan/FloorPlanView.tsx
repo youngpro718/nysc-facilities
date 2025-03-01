@@ -1,15 +1,17 @@
-import { useState, useCallback } from "react";
+
+import { useState, useCallback, useRef } from "react";
 import { FloorPlanCanvas } from "./FloorPlanCanvas";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ZoomIn, ZoomOut, RotateCcw, Undo2, Redo2, Layers } from "lucide-react";
+import { ZoomIn, ZoomOut, RotateCcw, Undo2, Redo2, Layers, View } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PropertiesPanel } from "./components/PropertiesPanel";
 import { VisualFloorSelector } from "./components/VisualFloorSelector";
 import { useUndo } from "./hooks/useUndo";
 import { toast } from "sonner";
+import { ThreeDViewer } from "./components/ThreeDViewer";
 
 /**
  * State interface for the floor plan view component.
@@ -34,6 +36,7 @@ interface FloorPlanState {
  * - Zoom and pan around the floor plan
  * - Select and modify floor plan objects (rooms, doors, hallways)
  * - Undo/redo changes to the floor plan state
+ * - Toggle between 2D and 3D views
  * 
  * Features:
  * - Visual floor selector with building grouping
@@ -41,6 +44,7 @@ interface FloorPlanState {
  * - Undo/redo functionality for state changes
  * - Properties panel for selected objects
  * - Real-time updates with Supabase integration
+ * - 3D visualization of the floor plan
  * 
  * @component
  * @example
@@ -64,6 +68,8 @@ export function FloorPlanView() {
 
   const { selectedFloorId, selectedObject, zoom } = state;
   const [isVisualSelectorOpen, setIsVisualSelectorOpen] = useState(false);
+  const [is3DView, setIs3DView] = useState(false);
+  const [previewData, setPreviewData] = useState<any>(null);
   const queryClient = useQueryClient();
 
   /**
@@ -101,6 +107,7 @@ export function FloorPlanView() {
       selectedObject: null, // Clear selection when changing floors
       zoom
     });
+    setPreviewData(null);
   }, [setState, zoom]);
 
   const handleZoomIn = useCallback(() => {
@@ -130,6 +137,7 @@ export function FloorPlanView() {
   }, [selectedFloorId, selectedObject, setState]);
 
   const handleObjectSelect = useCallback((obj: any) => {
+    setPreviewData(null);
     setState({
       selectedFloorId,
       selectedObject: obj,
@@ -143,18 +151,25 @@ export function FloorPlanView() {
       selectedObject: null,
       zoom
     });
+    setPreviewData(null);
     setIsVisualSelectorOpen(false);
   }, [zoom, setState]);
 
   const handleUndo = useCallback(() => {
     if (!canUndo) return;
     undo();
+    setPreviewData(null);
   }, [canUndo, undo]);
 
   const handleRedo = useCallback(() => {
     if (!canRedo) return;
     redo();
+    setPreviewData(null);
   }, [canRedo, redo]);
+
+  const handlePreviewChange = useCallback((data: any) => {
+    setPreviewData(data);
+  }, []);
 
   /**
    * Handles property updates
@@ -162,6 +177,8 @@ export function FloorPlanView() {
    */
   const handlePropertyUpdate = useCallback(async () => {
     try {
+      setPreviewData(null);
+      
       // Clear the selected object
       setState({
         selectedFloorId,
@@ -182,14 +199,19 @@ export function FloorPlanView() {
     }
   }, [selectedFloorId, zoom, setState, queryClient]);
 
+  const toggleViewMode = useCallback(() => {
+    setIs3DView(prev => !prev);
+  }, []);
+
   /**
    * Renders the floor plan interface with:
    * - Top control bar containing:
    *   - Floor selector dropdown with visual selector option
    *   - Zoom controls (in, out, reset)
    *   - Undo/redo buttons
+   *   - 2D/3D view toggle
    * - Main content area with:
-   *   - Interactive floor plan canvas
+   *   - Interactive floor plan canvas or 3D viewer
    *   - Properties panel for selected objects
    * 
    * @returns {JSX.Element} The rendered floor plan interface
@@ -258,21 +280,40 @@ export function FloorPlanView() {
             <Button variant="outline" size="icon" onClick={handleRedo} disabled={!canRedo}>
               <Redo2 className="h-4 w-4" />
             </Button>
+            <Button 
+              variant={is3DView ? "default" : "outline"} 
+              className="flex items-center gap-2"
+              onClick={toggleViewMode}
+            >
+              <View className="h-4 w-4" />
+              <span>{is3DView ? "3D View" : "2D View"}</span>
+            </Button>
           </div>
         </div>
       </div>
       
       {/* Main Content */}
       <div className="grid gap-4 md:grid-cols-[1fr_300px]">
-        <FloorPlanCanvas 
-          floorId={selectedFloorId} 
-          zoom={zoom}
-          onObjectSelect={handleObjectSelect}
-        />
+        {is3DView ? (
+          <ThreeDViewer 
+            floorId={selectedFloorId} 
+            onObjectSelect={handleObjectSelect} 
+            selectedObjectId={selectedObject?.id}
+            previewData={previewData}
+          />
+        ) : (
+          <FloorPlanCanvas 
+            floorId={selectedFloorId} 
+            zoom={zoom}
+            onObjectSelect={handleObjectSelect}
+            previewData={previewData}
+          />
+        )}
         
         <PropertiesPanel 
           selectedObject={selectedObject}
           onUpdate={handlePropertyUpdate}
+          onPreviewChange={handlePreviewChange}
         />
       </div>
     </div>
