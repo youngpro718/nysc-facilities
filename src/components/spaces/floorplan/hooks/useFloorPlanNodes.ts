@@ -49,11 +49,13 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
           updateData.size = node.data.size;
         }
 
-        // Only include rotation if it's valid
-        if (typeof node.rotation === 'number' && !isNaN(node.rotation)) {
-          updateData.rotation = node.rotation;
-        } else if (typeof node.data?.rotation === 'number' && !isNaN(node.data.rotation)) {
-          updateData.rotation = node.data.rotation;
+        // Only include rotation if it's valid - get from data or node
+        const nodeRotation = node.data?.rotation !== undefined ? 
+          node.data.rotation : 
+          (node as any).rotation;
+          
+        if (typeof nodeRotation === 'number' && !isNaN(nodeRotation)) {
+          updateData.rotation = nodeRotation;
         }
         
         // Include label if available

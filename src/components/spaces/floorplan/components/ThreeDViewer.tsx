@@ -5,6 +5,8 @@ import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Grid } from '@react-three/drei';
 import { useFloorPlanData } from '../hooks/useFloorPlanData';
 import * as THREE from 'three';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { FloorPlanNode } from '../types/floorPlanTypes';
 
 // Room 3D Component
 function Room3D({ 
@@ -15,13 +17,21 @@ function Room3D({
   onClick, 
   isSelected = false,
   id
+}: {
+  position: { x: number, y: number };
+  size: { width: number, height: number };
+  rotation?: number;
+  color?: string;
+  onClick: (data: any) => void;
+  isSelected?: boolean;
+  id: string;
 }) {
-  const roomMaterial = useRef();
+  const materialRef = useRef<THREE.MeshStandardMaterial>(null);
   
   useEffect(() => {
-    if (roomMaterial.current) {
-      roomMaterial.current.color.set(color);
-      roomMaterial.current.needsUpdate = true;
+    if (materialRef.current) {
+      materialRef.current.color.set(color);
+      materialRef.current.needsUpdate = true;
     }
   }, [color]);
 
@@ -38,7 +48,7 @@ function Room3D({
     >
       <boxGeometry args={[size.width, 100, size.height]} />
       <meshStandardMaterial 
-        ref={roomMaterial} 
+        ref={materialRef} 
         color={color} 
         transparent={true}
         opacity={0.8}
@@ -58,6 +68,14 @@ function Hallway3D({
   onClick, 
   isSelected = false,
   id
+}: {
+  position: { x: number, y: number };
+  size: { width: number, height: number };
+  rotation?: number;
+  color?: string;
+  onClick: (data: any) => void;
+  isSelected?: boolean;
+  id: string;
 }) {
   return (
     <mesh
@@ -88,6 +106,14 @@ function Door3D({
   onClick, 
   isSelected = false,
   id
+}: {
+  position: { x: number, y: number };
+  size: { width: number, height: number };
+  rotation?: number;
+  color?: string;
+  onClick: (data: any) => void;
+  isSelected?: boolean;
+  id: string;
 }) {
   return (
     <mesh
@@ -116,9 +142,14 @@ function ThreeDScene({
   onObjectSelect, 
   selectedObjectId = null,
   previewData = null
+}: {
+  objects: FloorPlanNode[];
+  onObjectSelect: (object: any) => void;
+  selectedObjectId?: string | null;
+  previewData?: any | null;
 }) {
   const { camera } = useThree();
-  const controlsRef = useRef();
+  const controlsRef = useRef<any>(null);
 
   // Initial camera setup
   useEffect(() => {
@@ -201,8 +232,11 @@ function ThreeDScene({
           objectData = {
             ...obj,
             position: previewData.position || obj.position,
-            rotation: previewData.rotation ?? obj.rotation,
-            size: previewData.data?.size || obj.size
+            rotation: previewData.rotation ?? (obj.data.rotation || 0),
+            data: {
+              ...obj.data,
+              size: previewData.data?.size || obj.data.size
+            }
           };
         }
         
@@ -215,8 +249,8 @@ function ThreeDScene({
                 key={obj.id}
                 id={obj.id}
                 position={objectData.position}
-                size={objectData.size}
-                rotation={objectData.rotation || 0}
+                size={objectData.data.size}
+                rotation={objectData.data.rotation || 0}
                 color={obj.data?.style?.backgroundColor || '#e2e8f0'}
                 onClick={onObjectSelect}
                 isSelected={isSelected}
@@ -228,8 +262,8 @@ function ThreeDScene({
                 key={obj.id}
                 id={obj.id}
                 position={objectData.position}
-                size={objectData.size}
-                rotation={objectData.rotation || 0}
+                size={objectData.data.size}
+                rotation={objectData.data.rotation || 0}
                 color={obj.data?.style?.backgroundColor || '#e5e7eb'}
                 onClick={onObjectSelect}
                 isSelected={isSelected}
@@ -241,8 +275,8 @@ function ThreeDScene({
                 key={obj.id}
                 id={obj.id}
                 position={objectData.position}
-                size={objectData.size || {width: 40, height: 15}}
-                rotation={objectData.rotation || 0}
+                size={objectData.data.size || {width: 40, height: 15}}
+                rotation={objectData.data.rotation || 0}
                 color={obj.data?.style?.backgroundColor || '#94a3b8'}
                 onClick={onObjectSelect}
                 isSelected={isSelected}
@@ -270,7 +304,7 @@ export function ThreeDViewer({
   previewData
 }: ThreeDViewerProps) {
   const { objects, isLoading } = useFloorPlanData(floorId);
-  const [, setError] = useState<Error | null>(null);
+  const [error, setError] = useState<Error | null>(null);
 
   const handleObjectSelect = (object: any) => {
     if (onObjectSelect) {
@@ -281,16 +315,16 @@ export function ThreeDViewer({
           id: selectedObj.id,
           type: selectedObj.type,
           position: selectedObj.position,
-          size: selectedObj.size,
-          rotation: selectedObj.rotation || 0
+          size: selectedObj.data.size,
+          rotation: selectedObj.data.rotation || 0
         });
       }
     }
   };
 
-  const handleCanvasError = (error: Error) => {
-    console.error('ThreeDViewer error:', error);
-    setError(error);
+  const handleCanvasError = (err: Error) => {
+    console.error('ThreeDViewer error:', err);
+    setError(err);
   };
 
   if (!floorId) {
@@ -311,20 +345,22 @@ export function ThreeDViewer({
 
   return (
     <Card className="w-full h-[600px] overflow-hidden">
-      <Canvas
-        shadows
-        onError={handleCanvasError}
-        gl={{ antialias: true }}
-        camera={{ position: [0, 500, 500], fov: 50 }}
-        style={{ background: '#f0f9ff' }}
-      >
-        <ThreeDScene 
-          objects={objects} 
-          onObjectSelect={handleObjectSelect} 
-          selectedObjectId={selectedObjectId} 
-          previewData={previewData}
-        />
-      </Canvas>
+      <ErrorBoundary>
+        <Canvas
+          shadows
+          onError={handleCanvasError as any}
+          gl={{ antialias: true }}
+          camera={{ position: [0, 500, 500], fov: 50 }}
+          style={{ background: '#f0f9ff' }}
+        >
+          <ThreeDScene 
+            objects={objects} 
+            onObjectSelect={handleObjectSelect} 
+            selectedObjectId={selectedObjectId} 
+            previewData={previewData}
+          />
+        </Canvas>
+      </ErrorBoundary>
     </Card>
   );
 }

@@ -1,6 +1,4 @@
 
-import { Json } from "@/integrations/supabase/types";
-
 export type LayerType = 'rooms' | 'doors' | 'grid' | 'hallways' | 'annotations';
 
 export type SpaceType = 'room' | 'door' | 'hallway' | 'annotation';
@@ -51,7 +49,7 @@ export interface FloorPlanLayerDB {
   name: string;
   order_index: number;
   visible: boolean;
-  data: Json;
+  data: any;
   created_at: string;
   updated_at: string;
 }

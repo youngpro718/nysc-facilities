@@ -20,6 +20,7 @@ import { RoomNode } from './nodes/RoomNode';
 import { DoorNode } from './nodes/DoorNode';
 import { HallwayNode } from './nodes/HallwayNode';
 import { toast } from "sonner";
+import { FloorPlanNode } from './types/floorPlanTypes';
 
 interface FloorPlanCanvasProps {
   floorId: string | null;
@@ -83,7 +84,6 @@ function FloorPlanCanvasInner({
         selectable: true,
         resizable: true,
         rotatable: true,
-        rotation: obj.rotation || 0,
         data: {
           ...obj.data,
           label: obj.data?.label || 'Unnamed Room',
@@ -136,11 +136,10 @@ function FloorPlanCanvasInner({
             return {
               ...node,
               position: position || node.position,
-              rotation: rotation !== undefined ? rotation : node.rotation,
               data: {
                 ...node.data,
                 ...data,
-                rotation: rotation
+                rotation: rotation !== undefined ? rotation : (node.data?.rotation || 0)
               }
             };
           }
@@ -176,7 +175,7 @@ function FloorPlanCanvasInner({
     [setEdges]
   );
 
-  const onNodeClick = useCallback((event: React.MouseEvent, node: Node<any>) => {
+  const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
     if (onObjectSelect) {
       onObjectSelect({
         ...node.data,
@@ -184,7 +183,7 @@ function FloorPlanCanvasInner({
         type: node.type,
         position: node.position,
         size: node.data?.size,
-        rotation: node.rotation || node.data?.rotation || 0
+        rotation: node.data?.rotation || 0
       });
     }
   }, [onObjectSelect]);

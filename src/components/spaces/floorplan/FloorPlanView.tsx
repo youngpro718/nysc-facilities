@@ -1,321 +1,102 @@
 
-import { useState, useCallback, useRef } from "react";
-import { FloorPlanCanvas } from "./FloorPlanCanvas";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ZoomIn, ZoomOut, RotateCcw, Undo2, Redo2, Layers, View } from "lucide-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { PropertiesPanel } from "./components/PropertiesPanel";
-import { VisualFloorSelector } from "./components/VisualFloorSelector";
-import { useUndo } from "./hooks/useUndo";
-import { toast } from "sonner";
-import { ThreeDViewer } from "./components/ThreeDViewer";
+import { useState, useEffect } from 'react';
+import { FloorPlanCanvas } from './FloorPlanCanvas';
+import { PropertiesPanel } from './components/PropertiesPanel';
+import { VisualFloorSelector } from './components/VisualFloorSelector';
+import { EditPropertiesPanel } from './components/EditPropertiesPanel';
+import { ThreeDViewer } from './components/ThreeDViewer';
+import { useDialogManager } from '@/hooks/useDialogManager';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
-/**
- * State interface for the floor plan view component.
- * Manages the current state of the floor plan including selected floor,
- * selected object, and zoom level.
- * @interface FloorPlanState
- * @property {string | null} selectedFloorId - ID of the currently selected floor
- * @property {any | null} selectedObject - Currently selected object in the floor plan
- * @property {number} zoom - Current zoom level of the floor plan view
- */
-interface FloorPlanState {
-  selectedFloorId: string | null;
-  selectedObject: any | null;
-  zoom: number;
-}
-
-/**
- * FloorPlanView Component
- * 
- * A comprehensive floor plan management interface that allows users to:
- * - View and select different floors across buildings
- * - Zoom and pan around the floor plan
- * - Select and modify floor plan objects (rooms, doors, hallways)
- * - Undo/redo changes to the floor plan state
- * - Toggle between 2D and 3D views
- * 
- * Features:
- * - Visual floor selector with building grouping
- * - Zoom controls with min/max limits
- * - Undo/redo functionality for state changes
- * - Properties panel for selected objects
- * - Real-time updates with Supabase integration
- * - 3D visualization of the floor plan
- * 
- * @component
- * @example
- * ```tsx
- * <FloorPlanView />
- * ```
- */
 export function FloorPlanView() {
-  const { 
-    state,
-    canUndo,
-    canRedo,
-    undo,
-    redo,
-    setState
-  } = useUndo<FloorPlanState>({
-    selectedFloorId: null,
-    selectedObject: null,
-    zoom: 1
-  });
+  const [selectedFloor, setSelectedFloor] = useState<string | null>(null);
+  const [selectedObject, setSelectedObject] = useState<any | null>(null);
+  const [previewData, setPreviewData] = useState<any | null>(null);
+  const { dialogState, openDialog, closeDialog } = useDialogManager();
+  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
 
-  const { selectedFloorId, selectedObject, zoom } = state;
-  const [isVisualSelectorOpen, setIsVisualSelectorOpen] = useState(false);
-  const [is3DView, setIs3DView] = useState(false);
-  const [previewData, setPreviewData] = useState<any>(null);
-  const queryClient = useQueryClient();
+  // Handle object selection
+  const handleObjectSelect = (object: any) => {
+    setSelectedObject(object);
+  };
 
-  /**
-   * Fetches floor data from Supabase including building information
-   * Orders floors by floor number in descending order
-   */
-  const { data: floors, isLoading: isLoadingFloors } = useQuery({
-    queryKey: ['floors'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('floors')
-        .select(`
-          id,
-          name,
-          floor_number,
-          buildings (
-            name
-          )
-        `)
-        .order('floor_number', { ascending: false });
+  // Reset selected object when floor changes
+  useEffect(() => {
+    setSelectedObject(null);
+  }, [selectedFloor]);
 
-      if (error) {
-        console.error('Error fetching floors:', error);
-        return [];
-      }
-
-      return data || [];
-    }
-  });
-
-  // Local state setters
-  const setSelectedFloorId = useCallback((id: string | null) => {
-    setState({
-      selectedFloorId: id,
-      selectedObject: null, // Clear selection when changing floors
-      zoom
+  // Handle property updates during edit
+  const handlePropertyUpdate = (updates: any) => {
+    setPreviewData({
+      id: selectedObject?.id,
+      data: updates,
+      rotation: updates.rotation,
+      position: updates.position
     });
-    setPreviewData(null);
-  }, [setState, zoom]);
+  };
 
-  const handleZoomIn = useCallback(() => {
-    const newZoom = Math.min(zoom + 0.1, 2);
-    setState({
-      selectedFloorId,
-      selectedObject,
-      zoom: newZoom
-    });
-  }, [selectedFloorId, selectedObject, zoom, setState]);
-
-  const handleZoomOut = useCallback(() => {
-    const newZoom = Math.max(zoom - 0.1, 0.5);
-    setState({
-      selectedFloorId,
-      selectedObject,
-      zoom: newZoom
-    });
-  }, [selectedFloorId, selectedObject, zoom, setState]);
-
-  const handleReset = useCallback(() => {
-    setState({
-      selectedFloorId,
-      selectedObject,
-      zoom: 1
-    });
-  }, [selectedFloorId, selectedObject, setState]);
-
-  const handleObjectSelect = useCallback((obj: any) => {
-    setPreviewData(null);
-    setState({
-      selectedFloorId,
-      selectedObject: obj,
-      zoom
-    });
-  }, [selectedFloorId, zoom, setState]);
-
-  const handleFloorSelect = useCallback((floorId: string) => {
-    setState({
-      selectedFloorId: floorId,
-      selectedObject: null,
-      zoom
-    });
-    setPreviewData(null);
-    setIsVisualSelectorOpen(false);
-  }, [zoom, setState]);
-
-  const handleUndo = useCallback(() => {
-    if (!canUndo) return;
-    undo();
-    setPreviewData(null);
-  }, [canUndo, undo]);
-
-  const handleRedo = useCallback(() => {
-    if (!canRedo) return;
-    redo();
-    setPreviewData(null);
-  }, [canRedo, redo]);
-
-  const handlePreviewChange = useCallback((data: any) => {
-    setPreviewData(data);
-  }, []);
-
-  /**
-   * Handles property updates
-   * Clears the selected object and invalidates the floor plan data queries
-   */
-  const handlePropertyUpdate = useCallback(async () => {
-    try {
+  // When dialog closes, clear preview data
+  useEffect(() => {
+    if (!dialogState.isOpen) {
       setPreviewData(null);
-      
-      // Clear the selected object
-      setState({
-        selectedFloorId,
-        selectedObject: null,
-        zoom
-      });
-      
-      // Invalidate the floor plan data queries to trigger a refresh
-      await queryClient.invalidateQueries({
-        queryKey: ['floorplan-objects', selectedFloorId]
-      });
-      
-      console.log('Floor plan data invalidated for refresh');
-      toast.success('Floor plan updated successfully');
-    } catch (err) {
-      console.error('Error refreshing floor plan:', err);
-      toast.error('Failed to refresh floor plan');
     }
-  }, [selectedFloorId, zoom, setState, queryClient]);
+  }, [dialogState.isOpen]);
 
-  const toggleViewMode = useCallback(() => {
-    setIs3DView(prev => !prev);
-  }, []);
-
-  /**
-   * Renders the floor plan interface with:
-   * - Top control bar containing:
-   *   - Floor selector dropdown with visual selector option
-   *   - Zoom controls (in, out, reset)
-   *   - Undo/redo buttons
-   *   - 2D/3D view toggle
-   * - Main content area with:
-   *   - Interactive floor plan canvas or 3D viewer
-   *   - Properties panel for selected objects
-   * 
-   * @returns {JSX.Element} The rendered floor plan interface
-   */
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          {/* Floor Selector */}
-          <div className="relative">
-            <Select
-              value={selectedFloorId || ''}
-              onValueChange={setSelectedFloorId}
-            >
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Select a floor" />
-              </SelectTrigger>
-              <SelectContent>
-                {floors?.map((floor) => (
-                  <SelectItem key={floor.id} value={floor.id}>
-                    {floor.buildings?.name} - {floor.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="w-full md:w-64">
+          <VisualFloorSelector 
+            selectedFloorId={selectedFloor} 
+            onFloorSelect={setSelectedFloor} 
+          />
+        </div>
+        
+        <div className="flex-1 space-y-4">
+          <Tabs defaultValue="2d" className="w-full" onValueChange={(value) => setViewMode(value as '2d' | '3d')}>
+            <TabsList className="mb-4">
+              <TabsTrigger value="2d">2D View</TabsTrigger>
+              <TabsTrigger value="3d">3D View</TabsTrigger>
+            </TabsList>
             
-            {/* Visual Floor Selector Toggle */}
-            <Button
-              variant="outline"
-              size="sm"
-              className="absolute right-8 top-1/2 -translate-y-1/2"
-              onClick={() => setIsVisualSelectorOpen(true)}
-            >
-              <Layers className="h-4 w-4" />
-            </Button>
-
-            {/* Visual Floor Selector Dropdown */}
-            {isVisualSelectorOpen && (
-              <Card className="absolute z-50 top-full mt-2 left-0 w-[300px] bg-background">
-                <VisualFloorSelector
-                  floors={floors || []}
-                  selectedFloorId={selectedFloorId}
-                  onFloorSelect={(floorId) => {
-                    handleFloorSelect(floorId);
-                    setIsVisualSelectorOpen(false);
-                  }}
-                />
-              </Card>
-            )}
-          </div>
-
-          {/* Control Buttons */}
-          <div className="space-x-2">
-            <Button variant="outline" size="icon" onClick={handleZoomIn}>
-              <ZoomIn className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon" onClick={handleZoomOut}>
-              <ZoomOut className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon" onClick={handleReset}>
-              <RotateCcw className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon" onClick={handleUndo} disabled={!canUndo}>
-              <Undo2 className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon" onClick={handleRedo} disabled={!canRedo}>
-              <Redo2 className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant={is3DView ? "default" : "outline"} 
-              className="flex items-center gap-2"
-              onClick={toggleViewMode}
-            >
-              <View className="h-4 w-4" />
-              <span>{is3DView ? "3D View" : "2D View"}</span>
-            </Button>
-          </div>
+            <TabsContent value="2d">
+              <FloorPlanCanvas 
+                floorId={selectedFloor} 
+                onObjectSelect={handleObjectSelect}
+                previewData={previewData}
+              />
+            </TabsContent>
+            
+            <TabsContent value="3d">
+              <ThreeDViewer 
+                floorId={selectedFloor}
+                onObjectSelect={handleObjectSelect}
+                selectedObjectId={selectedObject?.id}
+                previewData={previewData}
+              />
+            </TabsContent>
+          </Tabs>
+        </div>
+        
+        <div className="w-full md:w-80">
+          <PropertiesPanel 
+            selectedObject={selectedObject} 
+            onEdit={() => {
+              if (selectedObject) {
+                openDialog('propertyEdit', selectedObject);
+              }
+            }}
+          />
         </div>
       </div>
-      
-      {/* Main Content */}
-      <div className="grid gap-4 md:grid-cols-[1fr_300px]">
-        {is3DView ? (
-          <ThreeDViewer 
-            floorId={selectedFloorId} 
-            onObjectSelect={handleObjectSelect} 
-            selectedObjectId={selectedObject?.id}
-            previewData={previewData}
-          />
-        ) : (
-          <FloorPlanCanvas 
-            floorId={selectedFloorId} 
-            zoom={zoom}
-            onObjectSelect={handleObjectSelect}
-            previewData={previewData}
-          />
-        )}
-        
-        <PropertiesPanel 
-          selectedObject={selectedObject}
+
+      {dialogState.isOpen && dialogState.type === 'propertyEdit' && (
+        <EditPropertiesPanel
+          object={dialogState.data}
+          onClose={closeDialog}
           onUpdate={handlePropertyUpdate}
-          onPreviewChange={handlePreviewChange}
         />
-      </div>
+      )}
     </div>
   );
 }
