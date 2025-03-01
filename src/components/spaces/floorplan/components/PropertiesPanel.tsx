@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -60,7 +59,7 @@ export function PropertiesPanel({ selectedObject, onUpdate, onPreviewChange }: P
     return (
       <Card className="p-4">
         <EditPropertiesPanel
-          selectedObject={selectedObject}
+          object={selectedObject}
           onClose={() => setIsEditing(false)}
           onUpdate={() => {
             if (onUpdate) onUpdate();
