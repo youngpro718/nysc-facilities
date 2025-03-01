@@ -127,6 +127,7 @@ export function FloorPlanView() {
           object={dialogState.data}
           onClose={closeDialog}
           onUpdate={handlePropertyUpdate}
+          onPreview={handlePropertyUpdate}
         />
       )}
     </div>

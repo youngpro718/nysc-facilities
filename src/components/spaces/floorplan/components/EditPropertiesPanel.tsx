@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Form, FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
@@ -11,7 +10,7 @@ import { ArrowLeft, Save } from "lucide-react";
 export interface EditPropertiesPanelProps {
   object: any; // This is what the component expects
   onClose: () => void;
-  onUpdate: () => void;
+  onUpdate: (values: any) => void; // Update type signature to accept values parameter
   onPreview?: (values: any) => void;
 }
 
@@ -48,7 +47,7 @@ export function EditPropertiesPanel({ object, onClose, onUpdate, onPreview }: Ed
       console.log('Saving properties:', values);
       
       // Call the onUpdate callback to notify parent component
-      onUpdate();
+      onUpdate(values);
     } catch (error) {
       console.error('Error saving properties:', error);
     } finally {
