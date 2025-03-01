@@ -1,352 +1,290 @@
 
-import { Form } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { useState } from "react";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { FormButtons } from "@/components/ui/form-buttons";
-import { 
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "sonner";
-import { FloorPlanObjectData, Position, SpaceType } from "../types/floorPlanTypes";
-import { useForm } from "react-hook-form";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Slider } from "@/components/ui/slider";
-import { Building2, Move, RotateCw, Link2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect, useState } from "react";
+import { toast } from "sonner";
+
+const formSchema = z.object({
+  label: z.string().min(1),
+  room_number: z.string().optional(),
+  room_type: z.string().optional(),
+  status: z.string(),
+  width: z.coerce.number().min(20),
+  height: z.coerce.number().min(20),
+  positionX: z.coerce.number(),
+  positionY: z.coerce.number(),
+  rotation: z.coerce.number(),
+});
+
+type FormValues = z.infer<typeof formSchema>;
 
 interface EditPropertiesPanelProps {
-  selectedObject: FloorPlanObjectData & { 
-    id: string;
-    position?: Position;
-    rotation?: number;
-  };
+  object: any;
+  selectedObject?: any;
   onClose: () => void;
-  onUpdate: () => void;
-  onPreview?: (values: FormValues) => void;
+  onUpdate: (values: any) => void;
+  onPreview?: (values: any) => void;
 }
 
-interface FormValues {
-  label: string;
-  positionX: number;
-  positionY: number;
-  width: number;
-  height: number;
-  rotation: number;
-  room_number?: string;
-  room_type?: string;
-  status: string;
-}
-
-export function EditPropertiesPanel({ selectedObject, onClose, onUpdate, onPreview }: EditPropertiesPanelProps) {
+export function EditPropertiesPanel({ 
+  object, 
+  selectedObject, 
+  onClose, 
+  onUpdate, 
+  onPreview 
+}: EditPropertiesPanelProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+  const objectToUse = selectedObject || object;
+
   const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
-      label: selectedObject.label || '',
-      positionX: selectedObject.position?.x || 0,
-      positionY: selectedObject.position?.y || 0,
-      width: selectedObject.size?.width || 150,
-      height: selectedObject.size?.height || 100,
-      rotation: selectedObject.rotation || 0,
-      room_number: selectedObject.properties?.room_number || '',
-      room_type: selectedObject.properties?.room_type || 'default',
-      status: selectedObject.properties?.status || 'active'
-    }
+      label: objectToUse?.data?.label || objectToUse?.label || "",
+      room_number: objectToUse?.data?.properties?.room_number || objectToUse?.properties?.room_number || "",
+      room_type: objectToUse?.data?.properties?.room_type || objectToUse?.properties?.room_type || "default",
+      status: objectToUse?.data?.properties?.status || objectToUse?.properties?.status || "active",
+      width: objectToUse?.data?.size?.width || objectToUse?.size?.width || 100,
+      height: objectToUse?.data?.size?.height || objectToUse?.size?.height || 100,
+      positionX: objectToUse?.position?.x || 0,
+      positionY: objectToUse?.position?.y || 0,
+      rotation: objectToUse?.data?.rotation || objectToUse?.rotation || 0,
+    },
   });
 
-  // Watch form values to provide real-time preview
-  const formValues = form.watch();
+  // Preview changes as they happen
+  const watchedValues = form.watch();
   
-  // Send preview updates to parent component when form values change
-  useEffect(() => {
-    if (onPreview) {
-      onPreview(formValues);
-    }
-  }, [formValues, onPreview]);
+  // Call onPreview whenever watched values change
+  if (onPreview) {
+    onPreview(watchedValues);
+  }
 
-  const onSubmit = async (values: FormValues) => {
+  async function onSubmit(values: FormValues) {
+    setIsSubmitting(true);
     try {
-      setIsSubmitting(true);
-      const table = selectedObject.type === 'door' ? 'doors' : 
-                    selectedObject.type === 'hallway' ? 'hallways' : 
-                    selectedObject.type === 'room' ? 'rooms' : 
-                    'floor_plan_objects';
-
-      console.log('Updating object:', {
-        id: selectedObject.id,
-        type: selectedObject.type,
-        values
-      });
-
-      const { error } = await supabase
-        .from(table)
-        .update({
-          label: values.label,
-          position: { 
-            x: Math.round(values.positionX), 
-            y: Math.round(values.positionY) 
-          },
-          size: { 
-            width: Math.round(values.width), 
-            height: Math.round(values.height) 
-          },
-          rotation: values.rotation,
-          properties: {
-            ...selectedObject.properties,
-            room_number: values.room_number,
-            room_type: values.room_type,
-            status: values.status
-          }
-        })
-        .eq('id', selectedObject.id);
-
-      if (error) throw error;
+      const nodeId = objectToUse.id;
+      const nodeType = objectToUse.type;
       
-      console.log('Successfully updated object:', selectedObject.id);
-      toast.success('Changes saved successfully');
+      const table = nodeType === 'door' ? 'doors' : 
+                    nodeType === 'hallway' ? 'hallways' : 
+                    nodeType === 'room' ? 'rooms' : null;
       
-      // Trigger the update callback to refresh the floor plan
-      if (onUpdate) {
-        onUpdate();
+      if (!table) {
+        throw new Error(`Invalid node type: ${nodeType}`);
       }
       
-      // Close the edit panel
-      onClose();
-    } catch (err) {
-      console.error('Error updating object:', err);
-      toast.error('Failed to save changes');
+      const updateData = {
+        label: values.label,
+        position: { x: values.positionX, y: values.positionY },
+        size: { width: values.width, height: values.height },
+        rotation: values.rotation,
+        properties: {
+          room_number: values.room_number,
+          room_type: values.room_type,
+          status: values.status,
+        },
+      };
+      
+      const { error } = await supabase
+        .from(table)
+        .update(updateData)
+        .eq('id', nodeId);
+      
+      if (error) throw error;
+      
+      toast.success("Changes saved successfully");
+      onUpdate(values);
+    } catch (error) {
+      console.error("Error updating properties:", error);
+      toast.error("Failed to save changes");
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="space-y-4">
-          {/* Basic Information */}
-          <div className="space-y-4">
-            <h3 className="font-medium flex items-center gap-2">
-              <Building2 className="h-4 w-4" />
-              Basic Information
-            </h3>
-            
-            <FormField
-              control={form.control}
-              name="label"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="label"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Label</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-            {selectedObject.type === 'room' && (
-              <>
-                <FormField
-                  control={form.control}
-                  name="room_number"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Room Number</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="room_type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Room Type</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select room type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectGroup>
-                            <SelectLabel>Room Types</SelectLabel>
-                            <SelectItem value="office">Office</SelectItem>
-                            <SelectItem value="meeting">Meeting Room</SelectItem>
-                            <SelectItem value="storage">Storage</SelectItem>
-                            <SelectItem value="utility">Utility Room</SelectItem>
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </>
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="room_number"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Room Number</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
             )}
-          </div>
+          />
 
-          {/* Position and Size */}
-          <div className="space-y-4">
-            <h3 className="font-medium flex items-center gap-2">
-              <Move className="h-4 w-4" />
-              Position & Size
-            </h3>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="positionX"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>X Position</FormLabel>
-                    <FormControl>
-                      <Input type="number" {...field} onChange={(e) => {
-                        field.onChange(parseInt(e.target.value) || 0);
-                      }} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="positionY"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Y Position</FormLabel>
-                    <FormControl>
-                      <Input type="number" {...field} onChange={(e) => {
-                        field.onChange(parseInt(e.target.value) || 0);
-                      }} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="width"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Width</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        {...field} 
-                        min={selectedObject.type === 'door' ? 40 : 100}
-                        onChange={(e) => {
-                          field.onChange(parseInt(e.target.value) || 0);
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="height"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Height</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        {...field}
-                        min={selectedObject.type === 'door' ? 15 : 100}
-                        onChange={(e) => {
-                          field.onChange(parseInt(e.target.value) || 0);
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
-
-          {/* Rotation */}
-          <div className="space-y-4">
-            <h3 className="font-medium flex items-center gap-2">
-              <RotateCw className="h-4 w-4" />
-              Rotation
-            </h3>
-            
-            <FormField
-              control={form.control}
-              name="rotation"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Rotation (degrees): {field.value}°</FormLabel>
+          <FormField
+            control={form.control}
+            name="room_type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Type</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <Slider
-                      min={0}
-                      max={360}
-                      step={1}
-                      value={[field.value]}
-                      onValueChange={(vals) => field.onChange(vals[0])}
-                    />
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          {/* Status */}
-          <div className="space-y-4">
-            <h3 className="font-medium">Status</h3>
-            
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Current Status</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="inactive">Inactive</SelectItem>
-                      <SelectItem value="under_maintenance">Under Maintenance</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
+                  <SelectContent>
+                    <SelectItem value="office">Office</SelectItem>
+                    <SelectItem value="conference">Conference Room</SelectItem>
+                    <SelectItem value="storage">Storage</SelectItem>
+                    <SelectItem value="courtroom">Courtroom</SelectItem>
+                    <SelectItem value="default">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
-        <FormButtons 
-          onCancel={onClose}
-          isSubmitting={isSubmitting}
-          submitLabel="Save Changes"
+        <FormField
+          control={form.control}
+          name="status"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Status</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="under_maintenance">Under Maintenance</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
         />
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="width"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Width</FormLabel>
+                <FormControl>
+                  <Input type="number" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="height"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Height</FormLabel>
+                <FormControl>
+                  <Input type="number" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="positionX"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Position X</FormLabel>
+                <FormControl>
+                  <Input type="number" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="positionY"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Position Y</FormLabel>
+                <FormControl>
+                  <Input type="number" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="rotation"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Rotation (degrees)</FormLabel>
+              <FormControl>
+                <Input type="number" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="flex justify-end space-x-2 pt-4">
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Saving..." : "Save Changes"}
+          </Button>
+        </div>
       </form>
     </Form>
   );

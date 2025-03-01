@@ -7,7 +7,7 @@ import { Building2, Edit2, Hash, LayoutDashboard, Users, ArrowLeft, ArrowRight }
 import { cn } from "@/lib/utils";
 import { EditPropertiesPanel } from "./EditPropertiesPanel";
 
-interface PropertiesPanelProps {
+export interface PropertiesPanelProps {
   selectedObject: any | null;
   onUpdate?: () => void;
   onPreviewChange?: (previewData: any) => void;

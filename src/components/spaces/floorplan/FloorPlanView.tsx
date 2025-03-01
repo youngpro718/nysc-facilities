@@ -7,6 +7,7 @@ import { EditPropertiesPanel } from './components/EditPropertiesPanel';
 import { ThreeDViewer } from './components/ThreeDViewer';
 import { useDialogManager } from '@/hooks/useDialogManager';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { supabase } from '@/integrations/supabase/client';
 
 export function FloorPlanView() {
   const [selectedFloor, setSelectedFloor] = useState<string | null>(null);
@@ -14,6 +15,35 @@ export function FloorPlanView() {
   const [previewData, setPreviewData] = useState<any | null>(null);
   const { dialogState, openDialog, closeDialog } = useDialogManager();
   const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
+  const [floors, setFloors] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch floors data
+  useEffect(() => {
+    const fetchFloors = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('floors')
+          .select('*, buildings(name)')
+          .order('floor_number', { ascending: false });
+        
+        if (error) throw error;
+        
+        setFloors(data || []);
+        // If we have floors and no selected floor, select the first one
+        if (data && data.length > 0 && !selectedFloor) {
+          setSelectedFloor(data[0].id);
+        }
+      } catch (error) {
+        console.error('Error fetching floors:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchFloors();
+  }, [selectedFloor]);
 
   // Handle object selection
   const handleObjectSelect = (object: any) => {
@@ -47,6 +77,7 @@ export function FloorPlanView() {
       <div className="flex flex-col md:flex-row gap-4">
         <div className="w-full md:w-64">
           <VisualFloorSelector 
+            floors={floors}
             selectedFloorId={selectedFloor} 
             onFloorSelect={setSelectedFloor} 
           />
@@ -81,11 +112,12 @@ export function FloorPlanView() {
         <div className="w-full md:w-80">
           <PropertiesPanel 
             selectedObject={selectedObject} 
-            onEdit={() => {
+            onUpdate={() => {
               if (selectedObject) {
                 openDialog('propertyEdit', selectedObject);
               }
             }}
+            onPreviewChange={handlePropertyUpdate}
           />
         </div>
       </div>
