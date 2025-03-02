@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -9,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -34,8 +36,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 const stockAdjustmentSchema = z.object({
   transactionType: z.enum(["add", "remove", "adjustment"]),
-  quantity: z.number().min(1),
-  reason: z.string().min(1),
+  quantity: z.number().min(1, "Quantity must be at least 1"),
+  reason: z.string().min(1, "Reason is required"),
   notes: z.string().optional(),
 });
 
@@ -43,6 +45,7 @@ type StockAdjustmentForm = z.infer<typeof stockAdjustmentSchema>;
 
 export function KeyStockAdjustment({ keyId, keyName }: { keyId: string; keyName: string }) {
   const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -57,30 +60,54 @@ export function KeyStockAdjustment({ keyId, keyName }: { keyId: string; keyName:
   });
 
   const onSubmit = async (data: StockAdjustmentForm) => {
-    const { error } = await supabase
-      .from("key_stock_transactions")
-      .insert({
-        key_id: keyId,
-        transaction_type: data.transactionType,
+    try {
+      setIsSubmitting(true);
+      
+      console.log("Processing stock adjustment:", {
+        keyId,
+        transactionType: data.transactionType,
         quantity: data.transactionType === "remove" ? -data.quantity : data.quantity,
         reason: data.reason,
         notes: data.notes,
       });
 
-    if (error) {
+      const { error } = await supabase
+        .from("key_stock_transactions")
+        .insert({
+          key_id: keyId,
+          transaction_type: data.transactionType,
+          quantity: data.transactionType === "remove" ? -data.quantity : data.quantity,
+          reason: data.reason,
+          notes: data.notes,
+          performed_by: (await supabase.auth.getUser()).data.user?.id,
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      // Invalidate relevant queries to trigger a refresh
+      queryClient.invalidateQueries({ queryKey: ["keys"] });
+      queryClient.invalidateQueries({ queryKey: ["keys-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["key-inventory-view"] });
+      queryClient.invalidateQueries({ queryKey: ["available-keys"] });
+      
+      toast({
+        title: "Stock adjusted successfully",
+        description: `${data.transactionType === "add" ? "Added" : data.transactionType === "remove" ? "Removed" : "Adjusted"} ${data.quantity} ${data.quantity === 1 ? "key" : "keys"}`,
+      });
+      
+      setOpen(false);
+      form.reset();
+    } catch (error: any) {
+      console.error("Error adjusting stock:", error);
       toast({
         variant: "destructive",
         title: "Error adjusting stock",
-        description: error.message,
+        description: error.message || "An unexpected error occurred",
       });
-    } else {
-      toast({
-        title: "Stock adjusted successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ["keys"] });
-      queryClient.invalidateQueries({ queryKey: ["keyStats"] });
-      setOpen(false);
-      form.reset();
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -95,6 +122,9 @@ export function KeyStockAdjustment({ keyId, keyName }: { keyId: string; keyName:
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Adjust Stock for {keyName}</DialogTitle>
+          <DialogDescription>
+            Update the inventory quantity for this key. This will be recorded in the transaction history.
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -149,7 +179,7 @@ export function KeyStockAdjustment({ keyId, keyName }: { keyId: string; keyName:
                       type="number"
                       min="1"
                       {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value))}
+                      onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
                     />
                   </FormControl>
                   <FormMessage />
@@ -182,8 +212,8 @@ export function KeyStockAdjustment({ keyId, keyName }: { keyId: string; keyName:
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full">
-              Submit
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Processing..." : "Submit"}
             </Button>
           </form>
         </Form>
