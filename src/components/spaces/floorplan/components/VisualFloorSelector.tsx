@@ -17,8 +17,13 @@ export function VisualFloorSelector({
   onFloorSelect,
   isLoading = false
 }: VisualFloorSelectorProps) {
+  // Ensure floors is always an array
+  const safeFloors = Array.isArray(floors) ? floors : [];
+  
   // Group floors by building
-  const floorsByBuilding = floors.reduce((acc: Record<string, any[]>, floor) => {
+  const floorsByBuilding = safeFloors.reduce((acc: Record<string, any[]>, floor) => {
+    if (!floor) return acc; // Skip null/undefined floors
+    
     const buildingId = floor.building_id || 'unknown';
     const buildingName = floor.buildings?.name || 'Unknown Building';
     
@@ -49,7 +54,7 @@ export function VisualFloorSelector({
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
             <p className="text-sm text-gray-500 mt-4">Loading floors...</p>
           </div>
-        ) : floors.length === 0 ? (
+        ) : safeFloors.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-[500px] p-4">
             <p className="text-sm text-gray-500">No floors available</p>
           </div>
@@ -79,6 +84,9 @@ export function VisualFloorSelector({
                     
                     <div className="ml-2 pl-4 border-l-2 border-dashed border-gray-200 space-y-1">
                       {sortedFloors.map(floor => {
+                        // Ensure floor is a valid object
+                        if (!floor || typeof floor !== 'object') return null;
+                        
                         const isSelected = floor.id === selectedFloorId;
                         const floorNumber = typeof floor.floor_number === 'number' ? floor.floor_number : 0;
                         

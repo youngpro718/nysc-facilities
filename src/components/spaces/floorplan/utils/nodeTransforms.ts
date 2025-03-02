@@ -1,6 +1,9 @@
+
 import { FloorPlanNode, ROOM_COLORS } from "../types/floorPlanTypes";
 
 export function getSpaceColor(space: any): string {
+  if (!space) return '#e2e8f0'; // Default color for undefined spaces
+  
   if (space.object_type === 'room') {
     const baseColor = ROOM_COLORS[space.type] || ROOM_COLORS.default;
     return space.status === 'active' ? baseColor : `${baseColor}80`;
@@ -12,6 +15,29 @@ export function getSpaceColor(space: any): string {
 }
 
 export function transformSpaceToNode(space: any, index: number): FloorPlanNode {
+  // Validate space object
+  if (!space || typeof space !== 'object') {
+    console.warn('Invalid space object:', space);
+    // Return a fallback node to prevent crashes
+    return {
+      id: `fallback-${index}`,
+      type: 'room',
+      position: { x: index * 100, y: index * 100 },
+      data: {
+        label: 'Error: Invalid Data',
+        type: 'room',
+        size: { width: 150, height: 100 },
+        style: {
+          backgroundColor: '#f87171',
+          border: '1px dashed #ef4444',
+          opacity: 0.7
+        },
+        properties: {}
+      },
+      zIndex: 0
+    };
+  }
+
   // Calculate default position with more spacing
   const defaultPosition = {
     x: (index % 3) * 300 + 100,  // Increased spacing
@@ -64,12 +90,25 @@ export function transformSpaceToNode(space: any, index: number): FloorPlanNode {
     spaceSize = defaultSize;
   }
 
+  // Ensure space.object_type is a string
+  const objectType = typeof space.object_type === 'string' ? space.object_type : 'room';
+  
   const backgroundColor = getSpaceColor(space);
 
-  // Handle hallway connections
-  if (space.connections?.length > 0) {
+  // Initialize properties object with safe defaults
+  const properties = {
+    room_number: space.room_number || '',
+    space_type: space.type || 'default',
+    status: space.status || 'active',
+    parent_room_id: space.parent_room_id || null,
+    connection_data: space.connection_data || null
+  };
+
+  // Handle hallway connections safely
+  if (Array.isArray(space.connections) && space.connections.length > 0) {
     const hallwayConnection = space.connections.find((conn: any) => 
-      conn.direction === 'left_of_hallway' || conn.direction === 'right_of_hallway'
+      conn && typeof conn === 'object' && 
+      (conn.direction === 'left_of_hallway' || conn.direction === 'right_of_hallway')
     );
 
     if (hallwayConnection) {
@@ -86,26 +125,20 @@ export function transformSpaceToNode(space: any, index: number): FloorPlanNode {
   }
 
   return {
-    id: space.id,
-    type: space.object_type,
+    id: space.id || `generated-${index}`,
+    type: objectType,
     position: spacePosition,
     data: {
-      label: space.name,
-      type: space.object_type,
+      label: space.name || `Space ${index}`,
+      type: objectType,
       size: spaceSize,
       style: {
         backgroundColor,
         border: space.status === 'active' ? '1px solid #cbd5e1' : '2px dashed #ef4444',
         opacity: space.status === 'active' ? 1 : 0.7
       },
-      properties: {
-        room_number: space.room_number,
-        space_type: space.type,
-        status: space.status,
-        parent_room_id: space.parent_room_id,
-        connection_data: space.connection_data
-      }
+      properties
     },
-    zIndex: space.object_type === 'door' ? 2 : space.object_type === 'hallway' ? 1 : 0
+    zIndex: objectType === 'door' ? 2 : objectType === 'hallway' ? 1 : 0
   };
 }

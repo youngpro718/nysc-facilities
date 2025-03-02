@@ -20,6 +20,12 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
   const debouncedUpdateNode = useCallback(
     debounce(async (nodeId: string, node: Node) => {
       try {
+        // Skip update if node doesn't have a type
+        if (!node.type) {
+          console.warn('Node missing type property:', nodeId);
+          return;
+        }
+
         const table = node.type === 'door' ? 'doors' : 
                      node.type === 'hallway' ? 'hallways' : 
                      node.type === 'room' ? 'rooms' : null;
@@ -40,8 +46,8 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
           updateData.position = node.position;
         }
 
-        // Only include size if it's valid
-        if (node.data?.size &&
+        // Only include size if node.data exists and size is valid
+        if (node.data && node.data.size &&
             typeof node.data.size.width === 'number' &&
             typeof node.data.size.height === 'number' &&
             !isNaN(node.data.size.width) &&
@@ -50,7 +56,7 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
         }
 
         // Only include rotation if it's valid - get from data or node
-        const nodeRotation = node.data?.rotation !== undefined ? 
+        const nodeRotation = node.data && node.data.rotation !== undefined ? 
           node.data.rotation : 
           (node as any).rotation;
           
@@ -59,12 +65,12 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
         }
         
         // Include label if available
-        if (node.data?.label) {
+        if (node.data && node.data.label) {
           updateData.label = node.data.label;
         }
         
         // Include properties if available
-        if (node.data?.properties) {
+        if (node.data && node.data.properties) {
           updateData.properties = node.data.properties;
         }
 
