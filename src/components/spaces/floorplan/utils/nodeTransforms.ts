@@ -14,6 +14,7 @@ export function transformSpaceToNode(spaceObject: any, index: number): FloorPlan
       position: { x: 0, y: 0 },
       data: {
         label: 'Error Node',
+        type: 'room', // Added the missing 'type' property
         size: { width: 100, height: 100 },
         style: { backgroundColor: '#ffcccc', border: '1px solid #ff0000' },
         properties: {},
@@ -78,6 +79,7 @@ export function transformSpaceToNode(spaceObject: any, index: number): FloorPlan
       position: { x, y },
       data: {
         label: spaceObject.name || spaceObject.room_number || 'Unnamed',
+        type: nodeType, // Added the missing 'type' property
         size: {
           width: !isNaN(width) ? width : 100,
           height: !isNaN(height) ? height : 100,
@@ -100,6 +102,7 @@ export function transformSpaceToNode(spaceObject: any, index: number): FloorPlan
       position: { x: index * 100, y: 0 },
       data: {
         label: 'Error Node',
+        type: 'room', // Added the missing 'type' property
         size: { width: 100, height: 100 },
         style: { backgroundColor: '#ffcccc', border: '1px solid #ff0000' },
         properties: {},
