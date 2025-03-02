@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
@@ -256,8 +255,8 @@ function ThreeDScene({
       objects.forEach(obj => {
         const x = obj.position.x;
         const y = obj.position.y;
-        const width = obj.data?.size?.width || 100;
-        const height = obj.data?.size?.height || 100;
+        const width = obj.data.size?.width || 100;
+        const height = obj.data.size?.height || 100;
         
         minX = Math.min(minX, x - width/2);
         maxX = Math.max(maxX, x + width/2);
@@ -331,80 +330,6 @@ function ThreeDScene({
     }
   }, [selectedObjectId, objects]);
 
-  const renderObject = (obj: FloorPlanNode) => {
-    // Apply preview data if available
-    let objectData = obj;
-    if (previewData && previewData.id === obj.id) {
-      objectData = {
-        ...obj,
-        position: previewData.position || obj.position,
-        rotation: previewData.rotation ?? (obj.data?.rotation || 0),
-        data: {
-          ...obj.data,
-          size: previewData.data?.size || obj.data?.size,
-          properties: previewData.data?.properties || obj.data?.properties
-        }
-      };
-    }
-    
-    const isSelected = selectedObjectId === obj.id;
-
-    // Ensure all required properties exist
-    if (!objectData.position || !objectData.data) {
-      console.warn(`Invalid object data for ${obj.id}`, objectData);
-      return null;
-    }
-
-    const size = objectData.data.size || { width: 100, height: 100 };
-    const rotation = objectData.data.rotation || 0;
-    const backgroundColor = objectData.data?.style?.backgroundColor;
-    
-    switch (obj.type) {
-      case 'room':
-        return (
-          <Room3D 
-            key={obj.id}
-            id={obj.id}
-            position={objectData.position}
-            size={size}
-            rotation={rotation}
-            color={backgroundColor || '#e2e8f0'}
-            onClick={onObjectSelect}
-            isSelected={isSelected}
-            properties={objectData.data?.properties}
-          />
-        );
-      case 'hallway':
-        return (
-          <Hallway3D
-            key={obj.id}
-            id={obj.id}
-            position={objectData.position}
-            size={size}
-            rotation={rotation}
-            color={backgroundColor || '#e5e7eb'}
-            onClick={onObjectSelect}
-            isSelected={isSelected}
-          />
-        );
-      case 'door':
-        return (
-          <Door3D
-            key={obj.id}
-            id={obj.id}
-            position={objectData.position}
-            size={size || {width: 40, height: 15}}
-            rotation={rotation}
-            color={backgroundColor || '#94a3b8'}
-            onClick={onObjectSelect}
-            isSelected={isSelected}
-          />
-        );
-      default:
-        return null;
-    }
-  };
-
   return (
     <>
       <SceneLighting />
@@ -441,8 +366,70 @@ function ThreeDScene({
         />
       </group>
       
-      {/* Render all objects with safety checks */}
-      {objects.map(obj => renderObject(obj))}
+      {/* Render all objects */}
+      {objects.map(obj => {
+        // Apply preview data if available
+        let objectData = obj;
+        if (previewData && previewData.id === obj.id) {
+          objectData = {
+            ...obj,
+            position: previewData.position || obj.position,
+            rotation: previewData.rotation ?? (obj.data.rotation || 0),
+            data: {
+              ...obj.data,
+              size: previewData.data?.size || obj.data.size,
+              properties: previewData.data?.properties || obj.data.properties
+            }
+          };
+        }
+        
+        const isSelected = selectedObjectId === obj.id;
+        
+        switch (obj.type) {
+          case 'room':
+            return (
+              <Room3D 
+                key={obj.id}
+                id={obj.id}
+                position={objectData.position}
+                size={objectData.data.size}
+                rotation={objectData.data.rotation || 0}
+                color={obj.data?.style?.backgroundColor || '#e2e8f0'}
+                onClick={onObjectSelect}
+                isSelected={isSelected}
+                properties={obj.data?.properties}
+              />
+            );
+          case 'hallway':
+            return (
+              <Hallway3D
+                key={obj.id}
+                id={obj.id}
+                position={objectData.position}
+                size={objectData.data.size}
+                rotation={objectData.data.rotation || 0}
+                color={obj.data?.style?.backgroundColor || '#e5e7eb'}
+                onClick={onObjectSelect}
+                isSelected={isSelected}
+              />
+            );
+          case 'door':
+            return (
+              <Door3D
+                key={obj.id}
+                id={obj.id}
+                position={objectData.position}
+                size={objectData.data.size || {width: 40, height: 15}}
+                rotation={objectData.data.rotation || 0}
+                color={obj.data?.style?.backgroundColor || '#94a3b8'}
+                onClick={onObjectSelect}
+                isSelected={isSelected}
+              />
+            );
+          default:
+            return null;
+        }
+      })}
     </>
   );
 }
@@ -463,19 +450,11 @@ export function ThreeDViewer({
   const { objects, isLoading } = useFloorPlanData(floorId);
   const [viewerError, setViewerError] = useState<Error | null>(null);
   const [isMounted, setIsMounted] = useState<boolean>(false);
-  const [canvasKey, setCanvasKey] = useState<number>(0);
 
   useEffect(() => {
     setIsMounted(true);
     return () => setIsMounted(false);
   }, []);
-
-  // Reset canvas when floor changes
-  useEffect(() => {
-    if (floorId) {
-      setCanvasKey(prev => prev + 1);
-    }
-  }, [floorId]);
 
   const handleObjectSelect = (object: any) => {
     if (onObjectSelect) {
@@ -486,9 +465,9 @@ export function ThreeDViewer({
           id: selectedObj.id,
           type: selectedObj.type,
           position: selectedObj.position,
-          size: selectedObj.data?.size,
-          rotation: selectedObj.data?.rotation || 0,
-          properties: selectedObj.data?.properties
+          size: selectedObj.data.size,
+          rotation: selectedObj.data.rotation || 0,
+          properties: selectedObj.data.properties
         });
       }
     }
@@ -530,22 +509,11 @@ export function ThreeDViewer({
     );
   }
 
-  // Check if we have valid objects to render
-  const validObjects = Array.isArray(objects) ? objects.filter(obj => 
-    obj && 
-    obj.position && 
-    typeof obj.position.x === 'number' && 
-    typeof obj.position.y === 'number' &&
-    !isNaN(obj.position.x) && 
-    !isNaN(obj.position.y)
-  ) : [];
-
   return (
     <Card className="w-full h-[600px] overflow-hidden relative">
       <ErrorBoundary>
         {isMounted && (
           <Canvas
-            key={`three-canvas-${canvasKey}`}
             shadows
             onError={handleCanvasError as any}
             gl={{ 
@@ -562,7 +530,7 @@ export function ThreeDViewer({
             style={{ background: 'linear-gradient(to bottom, #e0f2fe, #f8fafc)' }}
           >
             <ThreeDScene 
-              objects={validObjects} 
+              objects={objects} 
               onObjectSelect={handleObjectSelect} 
               selectedObjectId={selectedObjectId} 
               previewData={previewData}
