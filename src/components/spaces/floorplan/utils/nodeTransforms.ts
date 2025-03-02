@@ -1,144 +1,110 @@
 
-import { FloorPlanNode, ROOM_COLORS } from "../types/floorPlanTypes";
+import { FloorPlanNode } from "../types/floorPlanTypes";
 
-export function getSpaceColor(space: any): string {
-  if (!space) return '#e2e8f0'; // Default color for undefined spaces
-  
-  if (space.object_type === 'room') {
-    const baseColor = ROOM_COLORS[space.type] || ROOM_COLORS.default;
-    return space.status === 'active' ? baseColor : `${baseColor}80`;
-  } else if (space.object_type === 'hallway') {
-    return space.status === 'active' ? '#e5e7eb' : '#e5e7eb80';
-  } else {
-    return space.status === 'active' ? '#94a3b8' : '#94a3b880';
-  }
-}
-
-export function transformSpaceToNode(space: any, index: number): FloorPlanNode {
-  // Validate space object
-  if (!space || typeof space !== 'object') {
-    console.warn('Invalid space object:', space);
-    // Return a fallback node to prevent crashes
+/**
+ * Transforms a space object from the database into a node for the floor plan visualization
+ */
+export function transformSpaceToNode(spaceObject: any, index: number): FloorPlanNode {
+  if (!spaceObject) {
+    console.error('Invalid space object provided to transformSpaceToNode');
+    // Return fallback/default node to prevent UI crashes
     return {
       id: `fallback-${index}`,
       type: 'room',
-      position: { x: index * 100, y: index * 100 },
+      position: { x: 0, y: 0 },
       data: {
-        label: 'Error: Invalid Data',
-        type: 'room',
-        size: { width: 150, height: 100 },
-        style: {
-          backgroundColor: '#f87171',
-          border: '1px dashed #ef4444',
-          opacity: 0.7
-        },
-        properties: {}
-      },
-      zIndex: 0
+        label: 'Error Node',
+        size: { width: 100, height: 100 },
+        style: { backgroundColor: '#ffcccc', border: '1px solid #ff0000' },
+        properties: {},
+        rotation: 0
+      }
     };
   }
 
-  // Calculate default position with more spacing
-  const defaultPosition = {
-    x: (index % 3) * 300 + 100,  // Increased spacing
-    y: Math.floor(index / 3) * 200 + 100  // Increased spacing
-  };
-
-  // Parse position from space object
-  let spacePosition;
   try {
-    spacePosition = space.position ? 
-      (typeof space.position === 'string' ? JSON.parse(space.position) : space.position) :
-      null;
+    // Extract position data with fallbacks
+    const posX = parseFloat(spaceObject?.position_x || spaceObject?.x || 0);
+    const posY = parseFloat(spaceObject?.position_y || spaceObject?.y || 0);
     
-    // Validate position values
-    if (!spacePosition || 
-        typeof spacePosition.x !== 'number' || 
-        typeof spacePosition.y !== 'number' ||
-        isNaN(spacePosition.x) || 
-        isNaN(spacePosition.y)) {
-      spacePosition = defaultPosition;
-    }
-  } catch (error) {
-    console.warn('Error parsing position:', error);
-    spacePosition = defaultPosition;
-  }
-
-  // Calculate size with better defaults
-  const defaultSize = space.object_type === 'hallway' ? 
-    { width: 300, height: 50 } :
-    space.object_type === 'door' ?
-    { width: 40, height: 10 } :
-    { width: 150, height: 100 };
-
-  let spaceSize;
-  try {
-    spaceSize = space.size ?
-      (typeof space.size === 'string' ? JSON.parse(space.size) : space.size) :
-      defaultSize;
+    // Validate position data
+    const x = !isNaN(posX) ? posX : 0;
+    const y = !isNaN(posY) ? posY : 0;
     
-    // Validate size values
-    if (!spaceSize || 
-        typeof spaceSize.width !== 'number' || 
-        typeof spaceSize.height !== 'number' ||
-        isNaN(spaceSize.width) || 
-        isNaN(spaceSize.height)) {
-      spaceSize = defaultSize;
+    // Extract dimensions with fallbacks
+    const width = parseFloat(spaceObject?.width || 100);
+    const height = parseFloat(spaceObject?.height || 100); 
+    
+    // Extract properties safely
+    let properties = {};
+    try {
+      properties = typeof spaceObject.properties === 'string' 
+        ? JSON.parse(spaceObject.properties) 
+        : (spaceObject.properties || {});
+    } catch (e) {
+      console.warn('Failed to parse properties for space:', spaceObject.id);
     }
-  } catch (error) {
-    console.warn('Error parsing size:', error);
-    spaceSize = defaultSize;
-  }
-
-  // Ensure space.object_type is a string
-  const objectType = typeof space.object_type === 'string' ? space.object_type : 'room';
-  
-  const backgroundColor = getSpaceColor(space);
-
-  // Initialize properties object with safe defaults
-  const properties = {
-    room_number: space.room_number || '',
-    space_type: space.type || 'default',
-    status: space.status || 'active',
-    parent_room_id: space.parent_room_id || null,
-    connection_data: space.connection_data || null
-  };
-
-  // Handle hallway connections safely
-  if (Array.isArray(space.connections) && space.connections.length > 0) {
-    const hallwayConnection = space.connections.find((conn: any) => 
-      conn && typeof conn === 'object' && 
-      (conn.direction === 'left_of_hallway' || conn.direction === 'right_of_hallway')
-    );
-
-    if (hallwayConnection) {
-      const offset = hallwayConnection.offset_distance || 50;
-      const alongHallway = (hallwayConnection.hallway_position || 0.5) * 1000;
-      
-      // Adjust position based on hallway connection
-      if (hallwayConnection.direction === 'left_of_hallway') {
-        spacePosition.x = alongHallway - offset - spaceSize.width;
-      } else {
-        spacePosition.x = alongHallway + offset;
+    
+    // Basic validations
+    if (!spaceObject.id) {
+      console.warn('Space object missing ID, generating a fallback ID');
+      spaceObject.id = `generated-${index}-${Date.now()}`;
+    }
+    
+    // Determine node type
+    const nodeType = spaceObject.space_type || spaceObject.type || 'room';
+    
+    // Background color based on type
+    let backgroundColor = '#e2e8f0'; // Default light gray
+    switch (nodeType) {
+      case 'room':
+        backgroundColor = '#e2e8f0';
+        break;
+      case 'hallway':
+        backgroundColor = '#e5e7eb';
+        break;
+      case 'door':
+        backgroundColor = '#94a3b8';
+        break;
+    }
+    
+    // Extract rotation
+    const rotation = parseFloat(spaceObject?.rotation || 0);
+    
+    // Create and return the node
+    return {
+      id: spaceObject.id,
+      type: nodeType,
+      position: { x, y },
+      data: {
+        label: spaceObject.name || spaceObject.room_number || 'Unnamed',
+        size: {
+          width: !isNaN(width) ? width : 100,
+          height: !isNaN(height) ? height : 100,
+        },
+        style: {
+          backgroundColor,
+          border: nodeType === 'door' ? '2px solid #475569' : '1px solid #cbd5e1',
+        },
+        properties: properties,
+        rotation: !isNaN(rotation) ? rotation : 0
       }
-    }
+    };
+  } catch (error) {
+    console.error('Error transforming space object to node:', error, spaceObject);
+    
+    // Return a fallback node rather than throwing
+    return {
+      id: spaceObject?.id || `error-${index}`,
+      type: 'room',
+      position: { x: index * 100, y: 0 },
+      data: {
+        label: 'Error Node',
+        size: { width: 100, height: 100 },
+        style: { backgroundColor: '#ffcccc', border: '1px solid #ff0000' },
+        properties: {},
+        rotation: 0
+      }
+    };
   }
-
-  return {
-    id: space.id || `generated-${index}`,
-    type: objectType,
-    position: spacePosition,
-    data: {
-      label: space.name || `Space ${index}`,
-      type: objectType,
-      size: spaceSize,
-      style: {
-        backgroundColor,
-        border: space.status === 'active' ? '1px solid #cbd5e1' : '2px dashed #ef4444',
-        opacity: space.status === 'active' ? 1 : 0.7
-      },
-      properties
-    },
-    zIndex: objectType === 'door' ? 2 : objectType === 'hallway' ? 1 : 0
-  };
 }
