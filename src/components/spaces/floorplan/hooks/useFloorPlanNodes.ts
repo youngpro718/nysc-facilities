@@ -9,7 +9,7 @@ interface NodeUpdateData {
   position?: { x: number; y: number };
   size?: { width: number; height: number };
   rotation?: number;
-  label?: string;
+  name?: string;
   properties?: Record<string, any>;
 }
 
@@ -64,14 +64,33 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
           updateData.rotation = nodeRotation;
         }
         
-        // Include label if available
+        // Include name/label if available (not label - that was causing the 400 error)
         if (node.data && node.data.label) {
-          updateData.label = node.data.label;
+          updateData.name = node.data.label;
         }
         
-        // Include properties if available
+        // For properties, we need to extract what's allowed in each table
+        // This varies based on table type - for now just pass along what's in properties
         if (node.data && node.data.properties) {
-          updateData.properties = node.data.properties;
+          // Only include valid properties for the specific table
+          // For hallways table, the schema expects specific column names
+          if (table === 'hallways') {
+            // Filter properties to only include valid hallway columns
+            // Don't try to update properties directly
+            if (node.data.properties.room_number) {
+              // No room_number field for hallways
+            }
+            if (node.data.properties.space_type) {
+              updateData.type = node.data.properties.space_type;
+            }
+            if (node.data.properties.status) {
+              updateData.status = node.data.properties.status;
+            }
+            // Don't pass other properties that don't match columns
+          } else {
+            // For rooms and doors, include properties object
+            updateData.properties = node.data.properties;
+          }
         }
 
         // Only proceed if we have valid data to update
