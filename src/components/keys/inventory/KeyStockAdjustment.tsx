@@ -66,31 +66,42 @@ export function KeyStockAdjustment({ keyId, keyName }: { keyId: string; keyName:
       console.log("Processing stock adjustment:", {
         keyId,
         transactionType: data.transactionType,
-        quantity: data.transactionType === "remove" ? -data.quantity : data.quantity,
+        quantity: data.quantity,
         reason: data.reason,
         notes: data.notes,
       });
 
+      // Get current user
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      
+      const userId = userData.user?.id;
+      if (!userId) throw new Error("User not authenticated");
+
+      // Create the transaction
       const { error } = await supabase
         .from("key_stock_transactions")
         .insert({
           key_id: keyId,
           transaction_type: data.transactionType,
-          quantity: data.transactionType === "remove" ? -data.quantity : data.quantity,
+          quantity: data.quantity,
           reason: data.reason,
-          notes: data.notes,
-          performed_by: (await supabase.auth.getUser()).data.user?.id,
+          notes: data.notes || null,
+          performed_by: userId,
         });
 
       if (error) {
         throw error;
       }
 
+      // Wait a moment for the trigger to complete
+      await new Promise(resolve => setTimeout(resolve, 300));
+
       // Invalidate relevant queries to trigger a refresh
-      queryClient.invalidateQueries({ queryKey: ["keys"] });
-      queryClient.invalidateQueries({ queryKey: ["keys-stats"] });
-      queryClient.invalidateQueries({ queryKey: ["key-inventory-view"] });
-      queryClient.invalidateQueries({ queryKey: ["available-keys"] });
+      await queryClient.invalidateQueries({ queryKey: ["keys"] });
+      await queryClient.invalidateQueries({ queryKey: ["keys-stats"] });
+      await queryClient.invalidateQueries({ queryKey: ["key-inventory-view"] });
+      await queryClient.invalidateQueries({ queryKey: ["keys-inventory"] });
       
       toast({
         title: "Stock adjusted successfully",
