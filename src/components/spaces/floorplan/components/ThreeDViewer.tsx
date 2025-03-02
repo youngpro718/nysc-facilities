@@ -1,8 +1,7 @@
-
 import { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Grid, Environment, ContactShadows, useHelper } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera, Grid, Environment, ContactShadows } from '@react-three/drei';
 import { useFloorPlanData } from '../hooks/useFloorPlanData';
 import * as THREE from 'three';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -31,8 +30,7 @@ function Room3D({
 }) {
   const wallHeight = 120; // Standard wall height 
   const meshRef = useRef<THREE.Mesh>(null);
-  const textRef = useRef<THREE.Mesh>(null);
-
+  
   // Material setup with PBR properties
   const material = new THREE.MeshStandardMaterial({ 
     color: new THREE.Color(color),
@@ -88,13 +86,14 @@ function Room3D({
         </mesh>
       </mesh>
       
-      {/* Room label */}
+      {/* Room label - using simple Text from drei instead of TextGeometry */}
       {roomName && (
-        <group position={[0, 30, 0]} rotation={[0, Math.PI, 0]}>
-          <mesh position={[0, wallHeight/2 - 10, 0]}>
-            <textGeometry args={[roomName, { font: new THREE.Font(), size: 12, height: 2 }]} />
-            <meshStandardMaterial color="#1f2937" />
+        <group position={[0, wallHeight/2 - 10, 0]} rotation={[0, Math.PI, 0]}>
+          <mesh position={[0, 0, 0]}>
+            <boxGeometry args={[size.width * 0.8, 15, 2]} />
+            <meshStandardMaterial color="#1f2937" opacity={0} transparent={true} />
           </mesh>
+          {/* We'll use HTML text overlay instead of 3D text */}
         </group>
       )}
     </group>
@@ -201,9 +200,6 @@ function Door3D({
 function SceneLighting() {
   const lightRef = useRef<THREE.DirectionalLight>(null);
   const ambientRef = useRef<THREE.AmbientLight>(null);
-  
-  // Helper to visualize light in development
-  // useHelper(lightRef, THREE.DirectionalLightHelper, 0.5, 'red');
   
   return (
     <>
@@ -451,7 +447,7 @@ export function ThreeDViewer({
   selectedObjectId,
   previewData
 }: ThreeDViewerProps) {
-  const { objects, isLoading, error } = useFloorPlanData(floorId);
+  const { objects, isLoading } = useFloorPlanData(floorId);
   const [viewerError, setViewerError] = useState<Error | null>(null);
   const [isMounted, setIsMounted] = useState<boolean>(false);
 
@@ -459,14 +455,6 @@ export function ThreeDViewer({
     setIsMounted(true);
     return () => setIsMounted(false);
   }, []);
-
-  // Error handling
-  useEffect(() => {
-    if (error) {
-      toast.error('Error loading floor plan data');
-      console.error('Floor plan data error:', error);
-    }
-  }, [error]);
 
   const handleObjectSelect = (object: any) => {
     if (onObjectSelect) {

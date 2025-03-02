@@ -52,7 +52,7 @@ export function useFloorPlanData(floorId: string | null) {
   });
 
   return {
-    layers,
+    layers: layers || [],
     objects: processedObjects,
     edges,
     isLoading: isLoadingLayers || isLoadingObjects
