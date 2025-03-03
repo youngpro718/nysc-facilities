@@ -1,4 +1,3 @@
-
 import { useCallback, useRef } from 'react';
 import { NodeChange, OnNodesChange, Node, useReactFlow } from 'reactflow';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,6 +10,8 @@ interface NodeUpdateData {
   rotation?: number;
   name?: string;
   properties?: Record<string, any>;
+  type?: string;
+  status?: string;
 }
 
 export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
@@ -64,7 +65,7 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
           updateData.rotation = nodeRotation;
         }
         
-        // Include name/label if available (not label - that was causing the 400 error)
+        // Include name if available (instead of label - that was causing the 400 error)
         if (node.data && node.data.label) {
           updateData.name = node.data.label;
         }
@@ -77,9 +78,6 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
           if (table === 'hallways') {
             // Filter properties to only include valid hallway columns
             // Don't try to update properties directly
-            if (node.data.properties.room_number) {
-              // No room_number field for hallways
-            }
             if (node.data.properties.space_type) {
               updateData.type = node.data.properties.space_type;
             }

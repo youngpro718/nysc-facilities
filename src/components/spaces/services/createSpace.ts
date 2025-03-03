@@ -56,20 +56,28 @@ export async function createSpace(data: CreateSpaceFormData) {
 
   if (spaceError) throw spaceError;
 
-  if (data.connections) {
+  // Only create a connection if all required data is present
+  if (data.connections && data.connections.toSpaceId && data.connections.connectionType && data.connections.direction) {
+    const connectionData = {
+      from_space_id: space.id,
+      to_space_id: data.connections.toSpaceId,
+      space_type: data.type,
+      connection_type: data.connections.connectionType,
+      direction: data.connections.direction,
+      status: 'active',
+      connection_status: 'active'
+    };
+
+    console.log('Creating connection with data:', connectionData);
+
     const { error: connectionError } = await supabase
       .from('space_connections')
-      .insert([{
-        from_space_id: space.id,
-        to_space_id: data.connections.toSpaceId,
-        space_type: data.type,
-        connection_type: data.connections.connectionType,
-        direction: data.connections.direction,
-        status: 'active',
-        connection_status: 'active'
-      }]);
+      .insert([connectionData]);
 
-    if (connectionError) throw connectionError;
+    if (connectionError) {
+      console.error('Connection error:', connectionError);
+      toast.error(`Space created but connection failed: ${connectionError.message}`);
+    }
   }
 
   return space;
