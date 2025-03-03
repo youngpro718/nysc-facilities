@@ -74,9 +74,9 @@ export async function createSpace(data: CreateSpaceFormData) {
     const hallwayPropsData = {
       space_id: hallway.id,
       section: data.section || 'connector',
-      traffic_flow: data.trafficFlow || 'two_way',
-      accessibility: data.accessibility || 'fully_accessible',
-      emergency_route: data.emergencyRoute || 'not_designated',
+      traffic_flow: (data.trafficFlow || 'two_way') as 'two_way' | 'one_way' | 'restricted',
+      accessibility: (data.accessibility || 'fully_accessible') as 'fully_accessible' | 'limited_access' | 'stairs_only' | 'restricted',
+      emergency_route: (data.emergencyRoute || 'not_designated') as 'not_designated' | 'primary' | 'secondary',
       maintenance_priority: data.maintenancePriority || 'low',
       capacity_limit: data.capacityLimit
     };
@@ -130,7 +130,7 @@ export async function createSpace(data: CreateSpaceFormData) {
     position: data.position || { x: 0, y: 0 },
     size: data.type === 'door' ? 
       { width: 60, height: 20 } : 
-      data.size || { width: 150, height: 100 },
+      { width: 150, height: 100 },
     rotation: data.rotation || 0
   };
 

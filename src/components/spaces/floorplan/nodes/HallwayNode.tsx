@@ -19,10 +19,24 @@ export function HallwayNode({ data, selected }: NodeProps<FloorPlanObjectData>) 
   };
 
   // Determine the hallway metadata for display
-  const hallwaySection = data.properties?.section || 'connector';
-  const hallwayType = data.properties?.hallwayType || 'public_main';
-  const trafficFlow = data.properties?.traffic_flow || 'two_way';
-  const accessibility = data.properties?.accessibility || 'fully_accessible';
+  // Try to extract from both properties and direct properties
+  const hallwaySection = 
+    (data.properties?.section) || 
+    (data.properties?.hallwayType?.section) || 
+    'connector';
+    
+  const hallwayType = 
+    (data.properties?.hallwayType) || 
+    'public_main';
+    
+  const trafficFlow = 
+    (data.properties?.traffic_flow) || 
+    (data.properties?.trafficFlow) || 
+    'two_way';
+    
+  const accessibility = 
+    (data.properties?.accessibility) || 
+    'fully_accessible';
 
   // Different appearance based on hallway attributes
   const getHallwayColor = () => {

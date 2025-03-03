@@ -1,10 +1,11 @@
+
 import { useCallback, useRef } from 'react';
 import { NodeChange, OnNodesChange, Node, useReactFlow } from 'reactflow';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import debounce from 'lodash/debounce';
 
-interface NodeUpdateData {
+type NodeUpdateData = {
   position?: { x: number; y: number };
   size?: { width: number; height: number };
   rotation?: number;
@@ -12,7 +13,7 @@ interface NodeUpdateData {
   properties?: Record<string, any>;
   type?: string;
   status?: 'active' | 'inactive' | 'under_maintenance';
-}
+};
 
 export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
   const pendingUpdates = useRef(new Set<string>());
@@ -27,14 +28,14 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
           return;
         }
 
-        let table = '';
         // Determine the correct table based on node type
+        let table: 'rooms' | 'doors' | 'new_spaces';
         if (node.type === 'room') {
           table = 'rooms';
         } else if (node.type === 'door') {
           table = 'doors';
         } else if (node.type === 'hallway') {
-          // For hallways, we now use the new_spaces table
+          // For hallways, we use the new_spaces table
           table = 'new_spaces';
         } else {
           throw new Error(`Invalid node type: ${node.type}`);

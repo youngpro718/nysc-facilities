@@ -68,15 +68,15 @@ const roomSchema = baseSpaceSchema.extend({
 // Hallway-specific schema - enhanced with more specific hallway fields
 const hallwaySchema = baseSpaceSchema.extend({
   type: z.literal("hallway"),
-  hallwayType: z.string().optional(),
-  section: z.string().optional(),
+  hallwayType: z.enum(["public_main", "private"]).optional(),
+  section: z.enum(["left_wing", "right_wing", "connector"]).optional(),
   maintenanceSchedule: z.array(maintenanceScheduleEntrySchema).optional(),
   emergencyExits: z.array(emergencyExitSchema).optional(),
   maintenancePriority: z.string().optional(),
   maintenanceNotes: z.string().optional(),
-  emergencyRoute: z.string().optional(),
-  accessibility: z.string().optional(),
-  trafficFlow: z.string().optional(),
+  emergencyRoute: z.enum(["primary", "secondary", "not_designated"]).optional(),
+  accessibility: z.enum(["fully_accessible", "limited_access", "stairs_only", "restricted"]).optional(),
+  trafficFlow: z.enum(["one_way", "two_way", "restricted"]).optional(),
   capacityLimit: z.number().optional(),
   width: z.number().optional(),
   length: z.number().optional()
