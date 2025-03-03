@@ -1,16 +1,15 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { FloorPlanCanvas } from './FloorPlanCanvas';
 import { PropertiesPanel } from './components/PropertiesPanel';
-import { VisualFloorSelector } from './components/VisualFloorSelector';
 import { EditPropertiesPanel } from './components/EditPropertiesPanel';
 import { ThreeDViewer } from './components/ThreeDViewer';
 import { useDialogManager } from '@/hooks/useDialogManager';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { ZoomIn, ZoomOut, Maximize, Minimize, RefreshCw } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize, RefreshCw } from 'lucide-react';
+import { SimpleFloorSelector } from './components/SimpleFloorSelector';
 
 export function FloorPlanView() {
   const [selectedFloor, setSelectedFloor] = useState<string | null>(null);
@@ -28,11 +27,11 @@ export function FloorPlanView() {
     const fetchFloors = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('floors')
+      const { data, error } = await supabase
+        .from('floors')
           .select('*, buildings(name)')
-          .order('floor_number', { ascending: false });
-        
+        .order('floor_number', { ascending: false });
+
         if (error) throw error;
         
         setFloors(data || []);
@@ -126,42 +125,61 @@ export function FloorPlanView() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="w-full md:w-64">
-          <VisualFloorSelector 
-            floors={floors}
-            selectedFloorId={selectedFloor} 
-            onFloorSelect={setSelectedFloor} 
-            isLoading={isLoading}
-          />
-        </div>
-        
-        <div className="flex-1 space-y-4">
-          <Tabs defaultValue="2d" className="w-full" onValueChange={(value) => setViewMode(value as '2d' | '3d')}>
-            <div className="flex justify-between items-center mb-4">
-              <TabsList>
-                <TabsTrigger value="2d">2D View</TabsTrigger>
-                <TabsTrigger value="3d">3D View</TabsTrigger>
-              </TabsList>
-              
-              <div className="flex items-center space-x-2">
-                <Button variant="outline" size="icon" onClick={handleZoomOut} disabled={zoom <= 0.5}>
-                  <ZoomOut className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="icon" onClick={handleZoomReset}>
-                  <Maximize className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="icon" onClick={handleZoomIn} disabled={zoom >= 2}>
-                  <ZoomIn className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="icon" onClick={handleRefresh} title="Refresh floor plan">
-                  <RefreshCw className="h-4 w-4" />
-                </Button>
-              </div>
+    <div className="h-[calc(100vh-4rem)] flex flex-col">
+      {/* Top Bar with Controls */}
+      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
+        <div className="flex items-center justify-between px-4 h-14">
+          <div className="flex items-center space-x-4">
+            <SimpleFloorSelector
+              selectedFloorId={selectedFloor}
+              onFloorSelect={setSelectedFloor}
+            />
+            <div className="h-6 w-px bg-border" />
+            <TabsList className="h-9 bg-muted/50">
+              <TabsTrigger 
+                value="2d" 
+                onClick={() => setViewMode('2d')}
+                className={viewMode === '2d' ? 'bg-background data-[state=active]:bg-background' : ''}
+              >
+                2D View
+              </TabsTrigger>
+              <TabsTrigger 
+                value="3d" 
+                onClick={() => setViewMode('3d')}
+                className={viewMode === '3d' ? 'bg-background data-[state=active]:bg-background' : ''}
+              >
+                3D View
+              </TabsTrigger>
+            </TabsList>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <div className="bg-muted/50 rounded-md p-1 flex items-center space-x-1">
+              <Button variant="ghost" size="sm" onClick={handleZoomOut} disabled={zoom <= 0.5} className="h-7 px-2">
+                <ZoomOut className="h-4 w-4" />
+              </Button>
+              <span className="text-sm px-2 min-w-[3rem] text-center">{(zoom * 100).toFixed(0)}%</span>
+              <Button variant="ghost" size="sm" onClick={handleZoomIn} disabled={zoom >= 2} className="h-7 px-2">
+                <ZoomIn className="h-4 w-4" />
+              </Button>
             </div>
-            
-            <TabsContent value="2d">
+            <Button variant="ghost" size="sm" onClick={handleZoomReset} className="h-7 px-2">
+              <Maximize className="h-4 w-4" />
+            </Button>
+            <div className="h-6 w-px bg-border" />
+            <Button variant="ghost" size="sm" onClick={handleRefresh} title="Refresh floor plan" className="h-7 px-2">
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex min-h-0">
+        {/* Floor Plan View */}
+        <div className="flex-1 relative">
+          <div className="absolute inset-0">
+            {viewMode === '2d' ? (
               <FloorPlanCanvas 
                 key={`2d-${refreshKey}`}
                 floorId={selectedFloor} 
@@ -169,9 +187,7 @@ export function FloorPlanView() {
                 previewData={previewData}
                 zoom={zoom}
               />
-            </TabsContent>
-            
-            <TabsContent value="3d">
+            ) : (
               <ThreeDViewer 
                 key={`3d-${refreshKey}`}
                 floorId={selectedFloor}
@@ -179,20 +195,23 @@ export function FloorPlanView() {
                 selectedObjectId={selectedObject?.id}
                 previewData={previewData}
               />
-            </TabsContent>
-          </Tabs>
+            )}
+          </div>
         </div>
-        
-        <div className="w-full md:w-80">
-          <PropertiesPanel 
-            selectedObject={selectedObject} 
-            onUpdate={() => {
-              if (selectedObject) {
-                openDialog('propertyEdit', selectedObject);
-              }
-            }}
-            onPreviewChange={handlePropertyUpdate}
-          />
+
+        {/* Properties Panel */}
+        <div className="w-80 border-l bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="h-full overflow-auto">
+            <PropertiesPanel 
+              selectedObject={selectedObject}
+              onUpdate={() => {
+                if (selectedObject) {
+                  openDialog('propertyEdit', selectedObject);
+                }
+              }}
+              onPreviewChange={handlePropertyUpdate}
+            />
+          </div>
         </div>
       </div>
 
