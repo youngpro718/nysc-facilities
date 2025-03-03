@@ -13,6 +13,8 @@ export async function fetchFloorPlanLayers(floorId: string) {
 }
 
 export async function fetchFloorPlanObjects(floorId: string) {
+  console.log("Fetching floor plan objects for floor:", floorId);
+  
   // Fetch rooms
   const { data: rooms, error: roomsError } = await supabase
     .from('rooms')
@@ -44,6 +46,8 @@ export async function fetchFloorPlanObjects(floorId: string) {
     .eq('status', 'active');
 
   if (newSpacesError) throw newSpacesError;
+  
+  console.log("Fetched new spaces:", newSpaces?.length || 0);
 
   // Extract hallways from new_spaces
   const hallwayObjects = (newSpaces || [])
@@ -56,10 +60,12 @@ export async function fetchFloorPlanObjects(floorId: string) {
       position: hallway.position,
       size: hallway.size,
       rotation: hallway.rotation,
-      properties: hallway.properties,
+      properties: hallway.properties || {},  // Ensure properties is an object
       floor_id: hallway.floor_id,
       object_type: 'hallway' as const
     }));
+    
+  console.log("Extracted hallways:", hallwayObjects.length);
 
   // Fetch doors
   const { data: doors, error: doorsError } = await supabase
@@ -84,6 +90,8 @@ export async function fetchFloorPlanObjects(floorId: string) {
   let hallwayProperties = [];
   
   if (hallwayIds.length > 0) {
+    console.log("Fetching properties for hallway IDs:", hallwayIds);
+    
     const { data: props, error: propsError } = await supabase
       .from('hallway_properties')
       .select('*')
@@ -93,6 +101,7 @@ export async function fetchFloorPlanObjects(floorId: string) {
       console.error('Error fetching hallway properties:', propsError);
     } else {
       hallwayProperties = props || [];
+      console.log("Fetched hallway properties:", hallwayProperties.length);
     }
   }
   
@@ -125,9 +134,15 @@ export async function fetchFloorPlanObjects(floorId: string) {
   const { data: connections, error: connectionsError } = await supabase
     .from('space_connections')
     .select('*')
+    .or(`from_space_id.in.(${hallwayIds.join(',')}),to_space_id.in.(${hallwayIds.join(',')})`)
     .eq('status', 'active');
 
-  if (connectionsError) throw connectionsError;
+  if (connectionsError) {
+    console.error('Error fetching space connections:', connectionsError);
+    throw connectionsError;
+  }
+  
+  console.log("Fetched space connections:", connections?.length || 0);
 
   // Combine all objects
   const allObjects = [...roomObjects, ...enrichedHallways, ...doorObjects];

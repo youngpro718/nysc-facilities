@@ -1,6 +1,6 @@
 
 import { useCallback, useRef } from 'react';
-import { NodeChange, OnNodesChange, Node, useReactFlow } from 'reactflow';
+import { NodeChange, OnNodesChange, useReactFlow } from 'reactflow';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import debounce from 'lodash/debounce';
@@ -27,6 +27,8 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
         if (!node) {
           return;
         }
+
+        console.log(`Preparing to update node in database:`, node);
 
         // Determine the correct table based on node type
         let table: 'rooms' | 'doors' | 'new_spaces';
@@ -74,11 +76,17 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
           console.error(`Error updating ${node.type}:`, error);
           toast.error(`Failed to update ${node.type}: ${error.message}`);
         } else {
+          console.log(`Successfully updated ${node.type} in ${table}`);
+          
           // If the node was a hallway, also update hallway_properties table if needed
           if (node.type === 'hallway' && node.data?.properties) {
             const { section, traffic_flow, accessibility, emergency_route, maintenance_priority, capacity_limit } = node.data.properties;
             
             if (section || traffic_flow || accessibility || emergency_route || maintenance_priority || capacity_limit) {
+              console.log('Updating hallway properties:', {
+                section, traffic_flow, accessibility, emergency_route, maintenance_priority, capacity_limit
+              });
+              
               const hallwayProps = {
                 section,
                 traffic_flow,
@@ -88,13 +96,39 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
                 capacity_limit
               };
               
-              const { error: propsError } = await supabase
+              // First check if a record exists
+              const { data: existingProps, error: checkError } = await supabase
                 .from('hallway_properties')
-                .update(hallwayProps)
-                .eq('space_id', nodeId);
+                .select('*')
+                .eq('space_id', nodeId)
+                .single();
                 
-              if (propsError) {
-                console.error('Error updating hallway properties:', propsError);
+              if (checkError && checkError.code !== 'PGRST116') { // Not found error
+                console.error('Error checking hallway properties:', checkError);
+              }
+              
+              // If record exists, update it, otherwise insert new
+              if (existingProps) {
+                const { error: propsError } = await supabase
+                  .from('hallway_properties')
+                  .update(hallwayProps)
+                  .eq('space_id', nodeId);
+                  
+                if (propsError) {
+                  console.error('Error updating hallway properties:', propsError);
+                } else {
+                  console.log('Successfully updated hallway properties');
+                }
+              } else {
+                const { error: insertError } = await supabase
+                  .from('hallway_properties')
+                  .insert([{ space_id: nodeId, ...hallwayProps }]);
+                  
+                if (insertError) {
+                  console.error('Error inserting hallway properties:', insertError);
+                } else {
+                  console.log('Successfully inserted hallway properties');
+                }
               }
             }
           }
