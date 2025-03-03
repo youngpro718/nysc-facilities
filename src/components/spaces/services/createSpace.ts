@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { CreateSpaceFormData } from "../schemas/createSpaceSchema";
 import { RoomTypeEnum, StorageTypeEnum } from "../rooms/types/roomEnums";
+import { toast } from "sonner";
 
 export async function createSpace(data: CreateSpaceFormData) {
   console.log('Creating space with data:', data);
@@ -64,7 +65,7 @@ export async function createSpace(data: CreateSpaceFormData) {
       space_type: data.type,
       connection_type: data.connections.connectionType,
       direction: data.connections.direction,
-      status: 'active',
+      status: 'active' as 'active' | 'inactive' | 'under_maintenance',
       connection_status: 'active'
     };
 

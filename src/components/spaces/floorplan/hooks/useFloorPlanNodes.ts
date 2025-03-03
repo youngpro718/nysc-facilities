@@ -11,7 +11,7 @@ interface NodeUpdateData {
   name?: string;
   properties?: Record<string, any>;
   type?: string;
-  status?: string;
+  status?: 'active' | 'inactive' | 'under_maintenance';
 }
 
 export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
@@ -82,7 +82,11 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
               updateData.type = node.data.properties.space_type;
             }
             if (node.data.properties.status) {
-              updateData.status = node.data.properties.status;
+              // Ensure status is a valid enum value
+              const status = node.data.properties.status;
+              if (status === 'active' || status === 'inactive' || status === 'under_maintenance') {
+                updateData.status = status;
+              }
             }
             // Don't pass other properties that don't match columns
           } else {
