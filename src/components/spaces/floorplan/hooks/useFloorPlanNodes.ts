@@ -27,12 +27,21 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
           return;
         }
 
-        const table = node.type === 'door' ? 'doors' : 
-                     node.type === 'hallway' ? 'hallways' : 
-                     node.type === 'room' ? 'rooms' : null;
+        let table = '';
+        // Determine the correct table based on node type
+        if (node.type === 'room') {
+          table = 'rooms';
+        } else if (node.type === 'door') {
+          table = 'doors';
+        } else if (node.type === 'hallway') {
+          // For hallways, we now use the new_spaces table
+          table = 'new_spaces';
+        } else {
+          throw new Error(`Invalid node type: ${node.type}`);
+        }
                      
         if (!table) {
-          throw new Error(`Invalid node type: ${node.type}`);
+          throw new Error(`Couldn't determine table for type: ${node.type}`);
         }
 
         // Build update data from node's current state
@@ -65,33 +74,38 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
           updateData.rotation = nodeRotation;
         }
         
-        // Include name if available (instead of label - that was causing the 400 error)
+        // Include name if available
         if (node.data && node.data.label) {
           updateData.name = node.data.label;
         }
         
-        // For properties, we need to extract what's allowed in each table
-        // This varies based on table type - for now just pass along what's in properties
-        if (node.data && node.data.properties) {
-          // Only include valid properties for the specific table
-          // For hallways table, the schema expects specific column names
-          if (table === 'hallways') {
-            // Filter properties to only include valid hallway columns
-            // Don't try to update properties directly
-            if (node.data.properties.space_type) {
-              updateData.type = node.data.properties.space_type;
-            }
+        // For hallway-specific fields, use properties
+        if (node.type === 'hallway') {
+          // For hallways in new_spaces, update the properties field directly
+          if (node.data && node.data.properties) {
+            updateData.properties = {
+              // Keep existing properties and merge with updates
+              ...(typeof node.data.properties === 'object' ? node.data.properties : {}),
+              // Add any new properties the node might have
+            };
+            
+            // Ensure status is a valid enum value if it exists
             if (node.data.properties.status) {
-              // Ensure status is a valid enum value
               const status = node.data.properties.status;
               if (status === 'active' || status === 'inactive' || status === 'under_maintenance') {
                 updateData.status = status;
               }
             }
-            // Don't pass other properties that don't match columns
-          } else {
-            // For rooms and doors, include properties object
-            updateData.properties = node.data.properties;
+          }
+        }
+        // For other node types, use standard fields
+        else if (node.data && node.data.properties) {
+          if (node.data.properties.status) {
+            // Ensure status is a valid enum value
+            const status = node.data.properties.status;
+            if (status === 'active' || status === 'inactive' || status === 'under_maintenance') {
+              updateData.status = status;
+            }
           }
         }
 

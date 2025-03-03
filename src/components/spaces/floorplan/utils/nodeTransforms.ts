@@ -4,10 +4,10 @@ import { FloorPlanNode, ROOM_COLORS } from "../types/floorPlanTypes";
 export function getSpaceColor(space: any): string {
   if (!space) return '#e2e8f0'; // Default color for undefined spaces
   
-  if (space.object_type === 'room') {
+  if (space.object_type === 'room' || space.type === 'room') {
     const baseColor = ROOM_COLORS[space.type] || ROOM_COLORS.default;
     return space.status === 'active' ? baseColor : `${baseColor}80`;
-  } else if (space.object_type === 'hallway') {
+  } else if (space.object_type === 'hallway' || space.type === 'hallway') {
     return space.status === 'active' ? '#e5e7eb' : '#e5e7eb80';
   } else {
     return space.status === 'active' ? '#94a3b8' : '#94a3b880';
@@ -64,11 +64,13 @@ export function transformSpaceToNode(space: any, index: number): FloorPlanNode {
     spacePosition = defaultPosition;
   }
 
-  // Calculate size with better defaults
-  const defaultSize = space.object_type === 'hallway' ? 
-    { width: 300, height: 50 } :
-    space.object_type === 'door' ?
-    { width: 40, height: 10 } :
+  // Determine space type - check both object_type and type field
+  const spaceType = space.object_type || space.type || 'room';
+
+  // Set default size based on type
+  const defaultSize = 
+    spaceType === 'hallway' ? { width: 300, height: 50 } :
+    spaceType === 'door' ? { width: 40, height: 10 } :
     { width: 150, height: 100 };
 
   let spaceSize;
@@ -90,22 +92,31 @@ export function transformSpaceToNode(space: any, index: number): FloorPlanNode {
     spaceSize = defaultSize;
   }
 
-  // Ensure space.object_type is a string
-  const objectType = typeof space.object_type === 'string' ? space.object_type : 'room';
+  // Ensure we have a valid type
+  const objectType = typeof spaceType === 'string' ? spaceType : 'room';
   
-  const backgroundColor = getSpaceColor(space);
+  const backgroundColor = getSpaceColor({...space, type: objectType});
 
-  // Initialize properties object with safe defaults
+  // Merge properties from different possible sources
   const properties = {
+    ...(space.properties || {}),
     room_number: space.room_number || '',
-    space_type: space.type || 'default',
+    space_type: space.type || spaceType || 'default',
     status: space.status || 'active',
     parent_room_id: space.parent_room_id || null,
-    connection_data: space.connection_data || null
+    connection_data: space.connection_data || null,
+    // For hallways, include specific properties
+    ...(objectType === 'hallway' ? {
+      section: (space.properties && space.properties.section) || space.section || 'connector',
+      traffic_flow: (space.properties && space.properties.traffic_flow) || space.traffic_flow || 'two_way',
+      accessibility: (space.properties && space.properties.accessibility) || space.accessibility || 'fully_accessible',
+      emergency_route: (space.properties && space.properties.emergency_route) || space.emergency_route || 'not_designated'
+    } : {})
   };
 
-  // Handle hallway connections safely
-  if (Array.isArray(space.connections) && space.connections.length > 0) {
+  // Handle hallway connections for positioning
+  if (objectType === 'hallway' && Array.isArray(space.connections) && space.connections.length > 0) {
+    // Look for connected spaces
     const hallwayConnection = space.connections.find((conn: any) => 
       conn && typeof conn === 'object' && 
       (conn.direction === 'left_of_hallway' || conn.direction === 'right_of_hallway')
@@ -124,6 +135,13 @@ export function transformSpaceToNode(space: any, index: number): FloorPlanNode {
     }
   }
 
+  // Extract rotation from data or direct property
+  const rotation = space.data?.rotation !== undefined ? 
+    space.data.rotation : 
+    (space.rotation !== undefined ? 
+      space.rotation : 
+      0);
+
   return {
     id: space.id || `generated-${index}`,
     type: objectType,
@@ -137,7 +155,8 @@ export function transformSpaceToNode(space: any, index: number): FloorPlanNode {
         border: space.status === 'active' ? '1px solid #cbd5e1' : '2px dashed #ef4444',
         opacity: space.status === 'active' ? 1 : 0.7
       },
-      properties
+      properties,
+      rotation
     },
     zIndex: objectType === 'door' ? 2 : objectType === 'hallway' ? 1 : 0
   };

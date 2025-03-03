@@ -65,7 +65,7 @@ const roomSchema = baseSpaceSchema.extend({
   parentRoomId: z.string().nullable()
 });
 
-// Hallway-specific schema
+// Hallway-specific schema - enhanced with more specific hallway fields
 const hallwaySchema = baseSpaceSchema.extend({
   type: z.literal("hallway"),
   hallwayType: z.string().optional(),
@@ -76,7 +76,10 @@ const hallwaySchema = baseSpaceSchema.extend({
   maintenanceNotes: z.string().optional(),
   emergencyRoute: z.string().optional(),
   accessibility: z.string().optional(),
-  trafficFlow: z.string().optional()
+  trafficFlow: z.string().optional(),
+  capacityLimit: z.number().optional(),
+  width: z.number().optional(),
+  length: z.number().optional()
 });
 
 // Door-specific schema

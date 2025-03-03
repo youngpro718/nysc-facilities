@@ -36,7 +36,92 @@ export async function createSpace(data: CreateSpaceFormData) {
     return room;
   }
 
-  // Handle other space types (hallways, doors) using new_spaces table
+  // Custom handling for hallways with appropriate properties and dimensions
+  if (data.type === 'hallway') {
+    const hallwayData = {
+      name: data.name,
+      type: data.type,
+      floor_id: data.floorId,
+      status: data.status,
+      // Use hallway-specific dimensions (longer and thinner)
+      position: data.position || { x: 0, y: 0 },
+      size: data.size || { width: 300, height: 50 },
+      rotation: data.rotation || 0,
+      // Store hallway-specific properties
+      properties: {
+        section: data.section || 'connector',
+        hallwayType: data.hallwayType || 'public_main',
+        maintenance_priority: data.maintenancePriority || 'low',
+        accessibility: data.accessibility || 'fully_accessible',
+        traffic_flow: data.trafficFlow || 'two_way',
+        emergency_route: data.emergencyRoute || 'not_designated',
+        description: data.description
+      }
+    };
+
+    const { data: hallway, error: hallwayError } = await supabase
+      .from('new_spaces')
+      .insert([hallwayData])
+      .select()
+      .single();
+
+    if (hallwayError) {
+      console.error('Error creating hallway:', hallwayError);
+      throw hallwayError;
+    }
+
+    // Create hallway properties in the specialized table
+    const hallwayPropsData = {
+      space_id: hallway.id,
+      section: data.section || 'connector',
+      traffic_flow: data.trafficFlow || 'two_way',
+      accessibility: data.accessibility || 'fully_accessible',
+      emergency_route: data.emergencyRoute || 'not_designated',
+      maintenance_priority: data.maintenancePriority || 'low',
+      capacity_limit: data.capacityLimit
+    };
+
+    const { error: propsError } = await supabase
+      .from('hallway_properties')
+      .insert([hallwayPropsData]);
+
+    if (propsError) {
+      console.error('Error saving hallway properties:', propsError);
+      // Don't throw here, proceed with connections if possible
+    }
+
+    // Only create a connection if all required data is present
+    if (data.connections && data.connections.toSpaceId && data.connections.connectionType && data.connections.direction) {
+      const connectionData = {
+        from_space_id: hallway.id,
+        to_space_id: data.connections.toSpaceId,
+        space_type: data.type,
+        connection_type: data.connections.connectionType,
+        direction: data.connections.direction,
+        status: data.status as 'active' | 'inactive' | 'under_maintenance',
+        connection_status: 'active',
+        // Add hallway-specific connection data
+        hallway_position: 0.5, // Default to middle (0-1 range)
+        offset_distance: 50,   // Default offset from hallway
+        position: data.connections.direction === 'north' || data.connections.direction === 'south' ? 'vertical' : 'horizontal'
+      };
+
+      console.log('Creating connection with data:', connectionData);
+
+      const { error: connectionError } = await supabase
+        .from('space_connections')
+        .insert([connectionData]);
+
+      if (connectionError) {
+        console.error('Connection error:', connectionError);
+        toast.error(`Space created but connection failed: ${connectionError.message}`);
+      }
+    }
+
+    return hallway;
+  }
+
+  // Handle other space types (doors) using new_spaces table
   const spaceData = {
     name: data.name,
     type: data.type,
@@ -65,7 +150,7 @@ export async function createSpace(data: CreateSpaceFormData) {
       space_type: data.type,
       connection_type: data.connections.connectionType,
       direction: data.connections.direction,
-      status: 'active' as 'active' | 'inactive' | 'under_maintenance',
+      status: data.status as 'active' | 'inactive' | 'under_maintenance',
       connection_status: 'active'
     };
 
