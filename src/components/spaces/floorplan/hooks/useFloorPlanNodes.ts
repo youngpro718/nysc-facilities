@@ -9,7 +9,7 @@ type NodeUpdateData = {
   position?: { x: number; y: number };
   size?: { width: number; height: number };
   rotation?: number;
-  name?: string;
+  data?: Record<string, any>;
   properties?: Record<string, any>;
   type?: string;
   status?: 'active' | 'inactive' | 'under_maintenance';
@@ -18,13 +18,13 @@ type NodeUpdateData = {
 export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
   const pendingUpdates = useRef(new Set<string>());
   const { getNode } = useReactFlow();
-  
-  const debouncedUpdateNode = useCallback(
-    debounce(async (nodeId: string, node: Node) => {
-      try {
-        // Skip update if node doesn't have a type
-        if (!node.type) {
-          console.warn('Node missing type property:', nodeId);
+
+  // Debounced update function that sends changes to database
+  const updateNodeInDatabase = useCallback(debounce(async (nodeId: string) => {
+    try {
+      if (pendingUpdates.current.has(nodeId)) {
+        const node = getNode(nodeId);
+        if (!node) {
           return;
         }
 
@@ -40,137 +40,91 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
         } else {
           throw new Error(`Invalid node type: ${node.type}`);
         }
-                     
-        if (!table) {
-          throw new Error(`Couldn't determine table for type: ${node.type}`);
-        }
 
-        // Build update data from node's current state
+        // Create update payload based on node data
         const updateData: NodeUpdateData = {};
 
-        // Only include position if it's valid
-        if (node.position && 
-            typeof node.position.x === 'number' && 
-            typeof node.position.y === 'number' &&
-            !isNaN(node.position.x) && 
-            !isNaN(node.position.y)) {
+        // Extract position, size and rotation from node
+        if (node.position) {
           updateData.position = node.position;
         }
 
-        // Only include size if node.data exists and size is valid
-        if (node.data && node.data.size &&
-            typeof node.data.size.width === 'number' &&
-            typeof node.data.size.height === 'number' &&
-            !isNaN(node.data.size.width) &&
-            !isNaN(node.data.size.height)) {
+        if (node.data?.size) {
           updateData.size = node.data.size;
         }
 
-        // Only include rotation if it's valid - get from data or node
-        const nodeRotation = node.data && node.data.rotation !== undefined ? 
-          node.data.rotation : 
-          (node as any).rotation;
-          
-        if (typeof nodeRotation === 'number' && !isNaN(nodeRotation)) {
-          updateData.rotation = nodeRotation;
+        if (node.data?.rotation !== undefined) {
+          updateData.rotation = node.data.rotation;
         }
-        
-        // Include name if available
-        if (node.data && node.data.label) {
-          updateData.name = node.data.label;
+
+        // For hallways, update the properties
+        if (node.type === 'hallway' && node.data?.properties) {
+          updateData.properties = node.data.properties;
         }
-        
-        // For hallway-specific fields, use properties
-        if (node.type === 'hallway') {
-          // For hallways in new_spaces, update the properties field directly
-          if (node.data && node.data.properties) {
-            updateData.properties = {
-              // Keep existing properties and merge with updates
-              ...(typeof node.data.properties === 'object' ? node.data.properties : {}),
-              // Add any new properties the node might have
-            };
+
+        console.log(`Updating ${node.type} in ${table}:`, nodeId, updateData);
+
+        // Update in the database
+        const { error } = await supabase
+          .from(table)
+          .update(updateData)
+          .eq('id', nodeId);
+
+        if (error) {
+          console.error(`Error updating ${node.type}:`, error);
+          toast.error(`Failed to update ${node.type}: ${error.message}`);
+        } else {
+          // If the node was a hallway, also update hallway_properties table if needed
+          if (node.type === 'hallway' && node.data?.properties) {
+            const { section, traffic_flow, accessibility, emergency_route, maintenance_priority, capacity_limit } = node.data.properties;
             
-            // Ensure status is a valid enum value if it exists
-            if (node.data.properties.status) {
-              const status = node.data.properties.status;
-              if (status === 'active' || status === 'inactive' || status === 'under_maintenance') {
-                updateData.status = status;
+            if (section || traffic_flow || accessibility || emergency_route || maintenance_priority || capacity_limit) {
+              const hallwayProps = {
+                section,
+                traffic_flow,
+                accessibility,
+                emergency_route,
+                maintenance_priority,
+                capacity_limit
+              };
+              
+              const { error: propsError } = await supabase
+                .from('hallway_properties')
+                .update(hallwayProps)
+                .eq('space_id', nodeId);
+                
+              if (propsError) {
+                console.error('Error updating hallway properties:', propsError);
               }
             }
           }
         }
-        // For other node types, use standard fields
-        else if (node.data && node.data.properties) {
-          if (node.data.properties.status) {
-            // Ensure status is a valid enum value
-            const status = node.data.properties.status;
-            if (status === 'active' || status === 'inactive' || status === 'under_maintenance') {
-              updateData.status = status;
-            }
-          }
-        }
 
-        // Only proceed if we have valid data to update
-        if (Object.keys(updateData).length === 0) {
-          console.warn('No valid data to update for node:', nodeId);
-          return;
-        }
-
-        console.log('Updating node:', { nodeId, type: node.type, table, data: updateData });
-        
-        const { data, error } = await supabase
-          .from(table)
-          .update(updateData)
-          .eq('id', nodeId)
-          .select();
-
-        if (error) throw error;
-        
-        // Only show success toast for manual changes, not position
-        const isPositionOnlyUpdate = 
-          Object.keys(updateData).length === 1 && 
-          Object.keys(updateData).includes('position');
-          
-        if (!isPositionOnlyUpdate) {
-          toast.success('Changes saved successfully');
-        }
-      } catch (error) {
-        console.error('Error updating node:', error);
-        toast.error('Failed to save changes');
-      } finally {
+        // Remove from pending updates
         pendingUpdates.current.delete(nodeId);
       }
-    }, 1000),
-    []
-  );
+    } catch (err) {
+      console.error('Error in updateNodeInDatabase:', err);
+      pendingUpdates.current.delete(nodeId);
+    }
+  }, 500), [getNode]);
 
-  const handleNodesChange = useCallback(
-    (changes: NodeChange[]) => {
-      // First apply changes to the React Flow state
-      onNodesChange(changes);
+  // Handle node changes (position, size, etc.)
+  const handleNodesChange = useCallback((changes: NodeChange[]) => {
+    // First apply changes using the original handler
+    onNodesChange(changes);
 
-      // Then handle database updates
-      changes.forEach((change) => {
-        if (!('id' in change)) return;
-        const nodeId = change.id;
-        
-        // Get the actual node from React Flow state
-        const node = getNode(nodeId);
-        if (!node) {
-          console.warn('Node not found:', nodeId);
-          return;
-        }
-
-        // For any type of change, we'll use the current node state
-        // This ensures we always have the correct and complete node data
-        if (!pendingUpdates.current.has(nodeId)) {
-          pendingUpdates.current.add(nodeId);
-          debouncedUpdateNode(nodeId, node);
-        }
-      });
-    },
-    [onNodesChange, debouncedUpdateNode, getNode]
-  );
+    // Track changes that need to be synced with database
+    changes.forEach((change) => {
+      if ((change.type === 'position' && change.position) || 
+          (change.type === 'dimensions' && change.dimensions) ||
+          (change.type === 'select') // Selection might include rotation changes
+      ) {
+        pendingUpdates.current.add(change.id);
+        updateNodeInDatabase(change.id);
+      }
+    });
+  }, [onNodesChange, updateNodeInDatabase]);
 
   return handleNodesChange;
 }
