@@ -100,10 +100,11 @@ export async function fetchFloorPlanObjects(floorId: string) {
   const enrichedHallways = hallwayObjects.map(hallway => {
     const props = hallwayProperties.find(p => p.space_id === hallway.id);
     if (props) {
+      // Fix: Create a proper object merge instead of using spread on potentially undefined values
       return {
         ...hallway,
         properties: {
-          ...hallway.properties,
+          ...(hallway.properties || {}),  // Add null check and default to empty object
           section: props.section,
           traffic_flow: props.traffic_flow,
           accessibility: props.accessibility,
