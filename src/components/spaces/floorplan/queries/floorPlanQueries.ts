@@ -60,7 +60,7 @@ export async function fetchFloorPlanObjects(floorId: string) {
       position: hallway.position,
       size: hallway.size,
       rotation: hallway.rotation,
-      properties: hallway.properties || {},  // Ensure properties is an object
+      properties: typeof hallway.properties === 'object' && hallway.properties !== null ? hallway.properties : {},
       floor_id: hallway.floor_id,
       object_type: 'hallway' as const
     }));

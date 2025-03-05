@@ -84,7 +84,7 @@ export function HallwayNode({ data, selected }: NodeProps<FloorPlanObjectData>) 
         flexDirection: 'column',
         alignItems: 'center'
       }}>
-        <div>{data.label || data.name || 'Hallway'}</div>
+        <div>{data.label || 'Hallway'}</div>
         <div style={{ 
           fontSize: '0.75rem', 
           opacity: 0.7,

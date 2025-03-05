@@ -111,7 +111,7 @@ export async function createSpace(data: CreateSpaceFormData) {
 
       // Step 3: Create a connection if all required data is present
       if (data.connections && data.connections.toSpaceId && data.connections.connectionType && data.connections.direction) {
-        const connectionData = {
+        const hallwayConnectionData = {
           from_space_id: hallway.id,
           to_space_id: data.connections.toSpaceId,
           space_type: data.type,
@@ -125,11 +125,11 @@ export async function createSpace(data: CreateSpaceFormData) {
           position: data.connections.direction === 'north' || data.connections.direction === 'south' ? 'vertical' : 'horizontal'
         };
 
-        console.log('Creating connection with data:', connectionData);
+        console.log('Creating connection with data:', hallwayConnectionData);
 
         const { data: connectionData, error: connectionError } = await supabase
           .from('space_connections')
-          .insert([connectionData])
+          .insert([hallwayConnectionData])
           .select();
 
         if (connectionError) {
@@ -166,7 +166,7 @@ export async function createSpace(data: CreateSpaceFormData) {
 
     // Only create a connection if all required data is present
     if (data.connections && data.connections.toSpaceId && data.connections.connectionType && data.connections.direction) {
-      const connectionData = {
+      const spaceConnectionData = {
         from_space_id: space.id,
         to_space_id: data.connections.toSpaceId,
         space_type: data.type,
@@ -176,11 +176,11 @@ export async function createSpace(data: CreateSpaceFormData) {
         connection_status: 'active'
       };
 
-      console.log('Creating connection with data:', connectionData);
+      console.log('Creating connection with data:', spaceConnectionData);
 
       const { error: connectionError } = await supabase
         .from('space_connections')
-        .insert([connectionData]);
+        .insert([spaceConnectionData]);
 
       if (connectionError) {
         console.error('Connection error:', connectionError);
