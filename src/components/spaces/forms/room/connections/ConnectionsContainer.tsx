@@ -39,7 +39,7 @@ export function ConnectionsContainer({ form, floorId, roomId }: ConnectionsConta
         
       if (hallwaysError) throw hallwaysError;
   
-      // Fetch doors from the same floor - making sure we don't use 'door_type' column
+      // Fetch doors from the same floor - using 'type' instead of the non-existent 'door_type' column
       const { data: doors, error: doorsError } = await supabase
         .from("doors")
         .select("id, name, type")
