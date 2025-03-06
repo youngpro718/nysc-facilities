@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -56,7 +55,6 @@ export function EditSpaceDialog({
 
   const editSpaceMutation = useMutation({
     mutationFn: async (data: RoomFormData) => {
-      // Convert form data to database structure
       const updateData = {
         name: data.name,
         room_number: data.roomNumber,
@@ -73,17 +71,74 @@ export function EditSpaceDialog({
         floor_id: data.floorId,
       };
 
-      const { error } = await supabase
+      const { error: roomError } = await supabase
         .from("rooms")
         .update(updateData)
         .eq('id', id);
 
-      if (error) throw error;
+      if (roomError) throw roomError;
+      
+      if (data.connections && data.connections.length > 0) {
+        const { data: existingConnections, error: fetchError } = await supabase
+          .from("space_connections")
+          .select("id")
+          .eq("from_space_id", id)
+          .eq("status", "active");
+          
+        if (fetchError) throw fetchError;
+        
+        const existingIds = (existingConnections || []).map(c => c.id);
+        
+        const keepConnectionIds: string[] = [];
+        
+        for (const connection of data.connections) {
+          if (connection.id) {
+            keepConnectionIds.push(connection.id);
+            
+            const { error: updateError } = await supabase
+              .from("space_connections")
+              .update({
+                to_space_id: connection.toSpaceId,
+                connection_type: connection.connectionType,
+                direction: connection.direction,
+              })
+              .eq("id", connection.id);
+              
+            if (updateError) throw updateError;
+          } else if (connection.toSpaceId && connection.connectionType) {
+            const { error: insertError } = await supabase
+              .from("space_connections")
+              .insert({
+                from_space_id: id,
+                to_space_id: connection.toSpaceId,
+                space_type: "room",
+                connection_type: connection.connectionType,
+                direction: connection.direction,
+                status: "active"
+              });
+              
+            if (insertError) throw insertError;
+          }
+        }
+        
+        const connectionsToDelete = existingIds.filter(id => !keepConnectionIds.includes(id));
+        
+        if (connectionsToDelete.length > 0) {
+          const { error: deleteError } = await supabase
+            .from("space_connections")
+            .update({ status: "inactive" })
+            .in("id", connectionsToDelete);
+            
+          if (deleteError) throw deleteError;
+        }
+      }
       
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      queryClient.invalidateQueries({ queryKey: ['room-connections', id] });
+      queryClient.invalidateQueries({ queryKey: ['floorplan-objects'] });
       toast.success("Room updated successfully");
       setOpen(false);
       if (onSpaceUpdated) onSpaceUpdated();
@@ -98,7 +153,6 @@ export function EditSpaceDialog({
     await editSpaceMutation.mutateAsync(data);
   };
 
-  // Render content based on space type
   const renderContent = () => {
     if (type === 'hallway') {
       return (
@@ -120,11 +174,11 @@ export function EditSpaceDialog({
         onSubmit={handleSubmit}
         isPending={editSpaceMutation.isPending}
         onCancel={() => setOpen(false)}
+        roomId={id}
       />
     );
   };
 
-  // Get dialog title based on space type
   const getDialogTitle = () => {
     switch (type) {
       case 'hallway':

@@ -8,12 +8,14 @@ import { StorageFields } from "./StorageFields";
 import { ParentRoomField } from "./ParentRoomField";
 import { type RoomFormData } from "./RoomFormSchema";
 import { Separator } from "@/components/ui/separator";
+import { ConnectionsField } from "./ConnectionsField";
 
 interface RoomFormContentProps {
   form: UseFormReturn<RoomFormData>;
   onSubmit: (data: RoomFormData) => Promise<void>;
   isPending: boolean;
   onCancel: () => void;
+  roomId?: string;
 }
 
 export function RoomFormContent({
@@ -21,6 +23,7 @@ export function RoomFormContent({
   onSubmit,
   isPending,
   onCancel,
+  roomId,
 }: RoomFormContentProps) {
   const isStorage = form.watch("isStorage");
   const floorId = form.watch("floorId");
@@ -43,6 +46,14 @@ export function RoomFormContent({
           form={form} 
           floorId={floorId}
           currentRoomId={form.getValues("id")}
+        />
+
+        <Separator />
+
+        <ConnectionsField 
+          form={form}
+          floorId={floorId}
+          roomId={roomId}
         />
         
         <div className="flex justify-end gap-2 pt-4">

@@ -2,6 +2,14 @@
 import { z } from "zod";
 import { RoomTypeEnum, StorageTypeEnum, StatusEnum } from "../../rooms/types/roomEnums";
 
+// Define connection schema for form usage
+const roomConnectionSchema = z.object({
+  id: z.string().uuid().optional(), // For existing connections
+  toSpaceId: z.string().uuid().optional(),
+  connectionType: z.string().optional(),
+  direction: z.string().optional()
+});
+
 export const roomFormSchema = z.object({
   id: z.string().uuid().optional(),
   name: z.string().min(1, "Name is required"),
@@ -17,6 +25,8 @@ export const roomFormSchema = z.object({
   parentRoomId: z.string().uuid().nullable(),
   floorId: z.string().uuid(),
   currentFunction: z.string().optional(),
+  connections: z.array(roomConnectionSchema).optional().default([])
 });
 
 export type RoomFormData = z.infer<typeof roomFormSchema>;
+export type RoomConnectionData = z.infer<typeof roomConnectionSchema>;
