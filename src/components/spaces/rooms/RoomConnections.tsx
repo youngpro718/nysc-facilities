@@ -23,6 +23,21 @@ export function RoomConnections({ connections }: RoomConnectionsProps) {
     }
   };
 
+  // Helper function to format connection type for display
+  const formatConnectionType = (connectionType: string | undefined | null) => {
+    if (!connectionType) return 'Link';
+    
+    // Format the connection type to be more readable
+    switch (connectionType) {
+      case 'door': return 'Door';
+      case 'opening': return 'Opening';
+      case 'hallway': return 'Hallway';
+      case 'stairs': return 'Stairs';
+      case 'elevator': return 'Elevator';
+      default: return connectionType.charAt(0).toUpperCase() + connectionType.slice(1);
+    }
+  };
+
   if (!connections || connections.length === 0) {
     return (
       <div className="mt-4 space-y-2">
@@ -32,16 +47,23 @@ export function RoomConnections({ connections }: RoomConnectionsProps) {
     );
   }
 
+  console.log("Connections in RoomConnections:", connections);
+
   return (
     <div className="mt-4 space-y-2">
       <p className="text-sm font-medium">Connected Spaces</p>
       <div className="space-y-1">
         {connections.map((conn) => (
-          <div key={conn.id} className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs">
-              {formatDirection(conn.direction)}
+          <div key={conn.id} className="flex items-center flex-wrap gap-2 p-2 rounded-md bg-muted/40">
+            <Badge variant="secondary" className="text-xs">
+              {formatConnectionType(conn.connection_type)}
             </Badge>
-            <span className="text-sm text-muted-foreground">
+            {conn.direction && (
+              <Badge variant="outline" className="text-xs">
+                {formatDirection(conn.direction)}
+              </Badge>
+            )}
+            <span className="text-sm text-muted-foreground ml-auto">
               {conn.to_space?.name || 'Unknown Space'}
             </span>
           </div>

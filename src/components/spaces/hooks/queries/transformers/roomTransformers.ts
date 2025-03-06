@@ -6,7 +6,8 @@ export const transformRoomData = (
   fixturesByRoomId: Record<string, any>,
   issuesByRoomId: Record<string, any[]>,
   historyByRoomId: Record<string, any[]>,
-  occupantsByRoomId: Record<string, any[]>
+  occupantsByRoomId: Record<string, any[]>,
+  connectionsByRoomId: Record<string, any[]>
 ): Room[] => {
   return roomsData.map(room => ({
     ...room,
@@ -21,7 +22,7 @@ export const transformRoomData = (
       ballast_issue: fixturesByRoomId[room.id].ballast_issue,
       maintenance_notes: fixturesByRoomId[room.id].maintenance_notes
     } : null,
-    space_connections: [],
+    space_connections: connectionsByRoomId[room.id] || [],
     issues: (issuesByRoomId[room.id] || []).map(issue => ({
       id: issue.id,
       title: issue.title,

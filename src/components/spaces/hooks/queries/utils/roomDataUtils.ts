@@ -51,3 +51,26 @@ export const createFixturesLookup = (fixturesData: any[] = []): Record<string, a
     return acc;
   }, {});
 };
+
+export const createConnectionsLookup = (connectionsData: any[] = []): Record<string, any[]> => {
+  if (!Array.isArray(connectionsData)) return {};
+
+  return connectionsData.reduce((acc, connection) => {
+    // For from_space connections
+    if (!acc[connection.from_space_id]) {
+      acc[connection.from_space_id] = [];
+    }
+    
+    // Add connection with direction 
+    acc[connection.from_space_id].push({
+      id: connection.id,
+      connection_type: connection.connection_type,
+      direction: connection.direction,
+      from_space_id: connection.from_space_id,
+      to_space_id: connection.to_space_id,
+      to_space: connection.to_space
+    });
+    
+    return acc;
+  }, {});
+};

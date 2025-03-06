@@ -8,7 +8,8 @@ import {
   createOccupantsLookup, 
   createIssuesLookup, 
   createHistoryLookup, 
-  createFixturesLookup 
+  createFixturesLookup,
+  createConnectionsLookup
 } from "./utils/roomDataUtils";
 
 interface UseRoomsQueryProps {
@@ -43,11 +44,18 @@ export function useRoomsQuery({ buildingId, floorId }: UseRoomsQueryProps = {}) 
         { data: occupantsData, error: occupantsError },
         { data: issuesData, error: issuesError },
         { data: historyData, error: historyError },
-        { data: fixturesData, error: fixturesError }
+        { data: fixturesData, error: fixturesError },
+        { data: connectionsData, error: connectionsError }
       ] = await fetchRelatedRoomData(roomsData.map(room => room.id));
 
-      if (occupantsError || issuesError || historyError || fixturesError) {
-        console.error('Error fetching related data:', { occupantsError, issuesError, historyError, fixturesError });
+      if (occupantsError || issuesError || historyError || fixturesError || connectionsError) {
+        console.error('Error fetching related data:', { 
+          occupantsError, 
+          issuesError, 
+          historyError, 
+          fixturesError,
+          connectionsError
+        });
       }
 
       // Create lookup maps for the related data
@@ -55,6 +63,7 @@ export function useRoomsQuery({ buildingId, floorId }: UseRoomsQueryProps = {}) 
       const issuesByRoomId = createIssuesLookup(issuesData || []);
       const historyByRoomId = createHistoryLookup(historyData || []);
       const fixturesByRoomId = createFixturesLookup(fixturesData || []);
+      const connectionsByRoomId = createConnectionsLookup(connectionsData || []);
 
       // Transform the data
       const transformedRooms = transformRoomData(
@@ -62,7 +71,8 @@ export function useRoomsQuery({ buildingId, floorId }: UseRoomsQueryProps = {}) 
         fixturesByRoomId,
         issuesByRoomId,
         historyByRoomId,
-        occupantsByRoomId
+        occupantsByRoomId,
+        connectionsByRoomId
       );
 
       console.log("Transformed room data:", transformedRooms);

@@ -91,7 +91,24 @@ export const fetchRelatedRoomData = async (roomIds: string[]) => {
     supabase
       .from('lighting_fixture_details')
       .select('*')
-      .in('space_id', roomIds)
+      .in('space_id', roomIds),
+      
+    // Fetch space connections
+    supabase
+      .from('space_connections')
+      .select(`
+        id,
+        from_space_id,
+        to_space_id,
+        connection_type,
+        direction,
+        to_space:to_space_id (
+          id,
+          name,
+          type
+        )
+      `)
+      .in('from_space_id', roomIds)
   ]);
 };
 
