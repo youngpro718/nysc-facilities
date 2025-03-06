@@ -1,3 +1,4 @@
+
 import {
   Table,
   TableBody,
@@ -49,11 +50,28 @@ export function RoomTable({ rooms, onDelete }: RoomTableProps) {
                   <EditSpaceDialog
                     id={room.id}
                     type="room"
+                    onSpaceUpdated={() => console.log('Space updated successfully')}
                     initialData={{
                       id: room.id,
                       name: room.name,
+                      roomNumber: room.room_number || '',
+                      roomType: room.room_type,
+                      description: room.description || '',
                       status: room.status as StatusEnum,
                       floorId: room.floor_id,
+                      isStorage: room.is_storage || false,
+                      storageType: room.storage_type || null,
+                      storageCapacity: room.storage_capacity || null,
+                      storageNotes: room.storage_notes || null,
+                      parentRoomId: room.parent_room_id || null,
+                      currentFunction: room.current_function || null,
+                      phoneNumber: room.phone_number || null,
+                      connections: room.space_connections.map(conn => ({
+                        id: conn.id,
+                        connectionType: conn.connection_type,
+                        toSpaceId: conn.to_space_id,
+                        direction: conn.direction || null
+                      }))
                     }}
                   />
                   <Button

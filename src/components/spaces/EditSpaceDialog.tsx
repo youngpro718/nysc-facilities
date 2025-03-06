@@ -56,6 +56,8 @@ export function EditSpaceDialog({
 
   const editSpaceMutation = useMutation({
     mutationFn: async (data: RoomFormData) => {
+      console.log("Submitting data for room update:", data);
+      
       const updateData = {
         name: data.name,
         room_number: data.roomNumber,
@@ -151,6 +153,7 @@ export function EditSpaceDialog({
   });
 
   const handleSubmit = async (data: RoomFormData) => {
+    console.log("Handling submit with data:", data);
     await editSpaceMutation.mutateAsync(data);
   };
 

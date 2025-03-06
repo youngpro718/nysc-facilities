@@ -26,10 +26,16 @@ export function RoomFormContent({
 }: RoomFormContentProps) {
   const isStorage = form.watch("isStorage");
   const floorId = form.watch("floorId");
+  
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log("Form submitted, calling form.handleSubmit");
+    return form.handleSubmit(onSubmit)(e);
+  };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleFormSubmit} className="space-y-6">
         <BasicRoomFields form={form} />
         
         {isStorage && (
@@ -65,7 +71,7 @@ export function RoomFormContent({
           </Button>
           <Button 
             type="submit"
-            disabled={isPending || !form.formState.isDirty}
+            disabled={isPending}
           >
             {isPending ? (
               <>
