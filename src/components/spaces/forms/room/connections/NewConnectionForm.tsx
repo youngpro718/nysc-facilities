@@ -63,6 +63,8 @@ export function NewConnectionForm({
             <SelectItem value="east">East</SelectItem>
             <SelectItem value="west">West</SelectItem>
             <SelectItem value="adjacent">Adjacent</SelectItem>
+            <SelectItem value="left_of_hallway">Left of Hallway</SelectItem>
+            <SelectItem value="right_of_hallway">Right of Hallway</SelectItem>
           </SelectContent>
         </Select>
       </div>

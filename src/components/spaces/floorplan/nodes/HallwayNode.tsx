@@ -7,8 +7,6 @@ import { getNodeBaseStyle, getResizerConfig } from '../utils/nodeStyles';
 export function HallwayNode({ data, selected }: NodeProps<FloorPlanObjectData>) {
   if (!data) return null;
 
-  console.log("Rendering hallway node with data:", data);
-
   const { handleStyle, standardHandles } = useNodeHandles(selected);
   const style = {
     ...getNodeBaseStyle('hallway', data, selected),
@@ -54,13 +52,6 @@ export function HallwayNode({ data, selected }: NodeProps<FloorPlanObjectData>) 
     ...style,
     backgroundColor: getHallwayColor()
   };
-
-  console.log("Hallway properties:", {
-    section: hallwaySection,
-    type: hallwayType,
-    trafficFlow: trafficFlow,
-    accessibility: accessibility
-  });
 
   return (
     <div style={hallwayStyle}>

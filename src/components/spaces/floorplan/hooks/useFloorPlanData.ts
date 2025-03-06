@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { transformLayer } from "../utils/layerTransforms";
 import { transformSpaceToNode } from "../utils/nodeTransforms";
@@ -79,6 +78,27 @@ export function useFloorPlanData(floorId: string | null) {
           x: parentObj.position.x + 50,
           y: parentObj.position.y + 50
         };
+        
+        // Adjust size to be smaller than parent
+        const parentSize = parentObj.data?.size;
+        if (parentSize) {
+          obj.data.size = {
+            width: Math.max(parentSize.width * 0.7, 100),
+            height: Math.max(parentSize.height * 0.7, 80)
+          };
+        }
+        
+        // Inherit style properties but make it visually distinct
+        if (obj.data?.style) {
+          obj.data.style = {
+            ...obj.data.style,
+            border: '1px dashed #64748b',
+            opacity: 0.9
+          };
+        }
+        
+        // Increment zIndex to draw above parent
+        obj.zIndex = (parentObj.zIndex || 0) + 1;
       }
     }
     return obj;

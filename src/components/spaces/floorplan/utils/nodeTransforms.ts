@@ -1,4 +1,3 @@
-
 import { FloorPlanNode, ROOM_COLORS } from "../types/floorPlanTypes";
 
 export function getSpaceColor(space: any): string {

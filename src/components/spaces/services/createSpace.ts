@@ -63,7 +63,11 @@ export async function createSpace(data: CreateSpaceFormData) {
         rotation: data.rotation || 0,
         // Store minimal properties in the properties field
         properties: {
-          description: data.description
+          description: data.description,
+          section: data.section || 'connector',
+          hallwayType: data.hallwayType || 'public_main',
+          trafficFlow: data.trafficFlow || 'two_way',
+          accessibility: data.accessibility || 'fully_accessible'
         }
       };
 
