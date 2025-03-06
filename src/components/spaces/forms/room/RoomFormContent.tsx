@@ -1,5 +1,5 @@
 
-import { UseFormReturn } from "react-hook-form";
+import { RoomFormProps } from "./types";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
@@ -10,8 +10,7 @@ import { type RoomFormData } from "./RoomFormSchema";
 import { Separator } from "@/components/ui/separator";
 import { ConnectionsField } from "./ConnectionsField";
 
-interface RoomFormContentProps {
-  form: UseFormReturn<RoomFormData>;
+interface RoomFormContentProps extends RoomFormProps {
   onSubmit: (data: RoomFormData) => Promise<void>;
   isPending: boolean;
   onCancel: () => void;
