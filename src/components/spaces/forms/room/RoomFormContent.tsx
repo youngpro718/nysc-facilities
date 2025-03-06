@@ -45,7 +45,7 @@ export function RoomFormContent({
         <ParentRoomField 
           form={form} 
           floorId={floorId}
-          currentRoomId={form.getValues("id")}
+          currentRoomId={roomId}
         />
 
         <Separator />

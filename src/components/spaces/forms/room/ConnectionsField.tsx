@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
@@ -26,10 +25,8 @@ export function ConnectionsField({ form, floorId, roomId }: ConnectionsFieldProp
     direction: undefined
   });
 
-  // Get current connections from form
   const connections = form.watch("connections") || [];
 
-  // Fetch available spaces on the floor
   const { data: spaces, isLoading: isLoadingSpaces } = useQuery({
     queryKey: ["floor-spaces", floorId],
     queryFn: async () => {
@@ -41,14 +38,12 @@ export function ConnectionsField({ form, floorId, roomId }: ConnectionsFieldProp
 
       if (error) throw error;
       
-      // Filter out the current room
       return (data || []).filter(space => space.id !== roomId);
     },
     enabled: !!floorId
   });
 
-  // Fetch existing connections
-  const { data: existingConnections, isLoading: isLoadingConnections } = useQuery({
+  const { data: existingConnections } = useQuery({
     queryKey: ["room-connections", roomId],
     queryFn: async () => {
       if (!roomId) return [];
@@ -66,21 +61,7 @@ export function ConnectionsField({ form, floorId, roomId }: ConnectionsFieldProp
         .eq("status", "active");
 
       if (error) throw error;
-      
       return data || [];
-    },
-    onSuccess: (data) => {
-      // Update form with existing connections
-      if (data && data.length > 0 && connections.length === 0) {
-        const formattedConnections = data.map(conn => ({
-          id: conn.id,
-          toSpaceId: conn.to_space_id,
-          connectionType: conn.connection_type,
-          direction: conn.direction
-        }));
-        
-        form.setValue("connections", formattedConnections);
-      }
     },
     enabled: !!roomId
   });
@@ -123,7 +104,7 @@ export function ConnectionsField({ form, floorId, roomId }: ConnectionsFieldProp
       : space.name;
   };
 
-  if (isLoadingSpaces || isLoadingConnections) {
+  if (isLoadingSpaces) {
     return <div className="py-3">Loading connections...</div>;
   }
 
@@ -135,7 +116,6 @@ export function ConnectionsField({ form, floorId, roomId }: ConnectionsFieldProp
         <FormItem className="space-y-4">
           <FormLabel>Connected Spaces</FormLabel>
           
-          {/* List existing connections */}
           {connections.length > 0 && (
             <div className="space-y-2">
               {connections.map((connection, index) => (
@@ -165,7 +145,6 @@ export function ConnectionsField({ form, floorId, roomId }: ConnectionsFieldProp
             </div>
           )}
 
-          {/* Add new connection UI */}
           {isAddingConnection ? (
             <div className="space-y-3 p-3 border rounded-md">
               <div className="space-y-2">

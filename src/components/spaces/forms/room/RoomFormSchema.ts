@@ -25,7 +25,17 @@ export const roomFormSchema = z.object({
   parentRoomId: z.string().uuid().nullable(),
   floorId: z.string().uuid(),
   currentFunction: z.string().optional(),
-  connections: z.array(roomConnectionSchema).optional().default([])
+  connections: z.array(roomConnectionSchema).default([]),
+  type: z.literal("room").default("room"),
+  position: z.object({
+    x: z.number(),
+    y: z.number()
+  }).optional(),
+  size: z.object({
+    width: z.number(),
+    height: z.number()
+  }).optional(),
+  rotation: z.number().optional()
 });
 
 export type RoomFormData = z.infer<typeof roomFormSchema>;
