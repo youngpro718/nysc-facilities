@@ -98,10 +98,12 @@ export function ConnectionFields({ form, floorId }: ConnectionFieldsProps) {
             <SelectValue placeholder="Select direction" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="north">North</SelectItem>
-            <SelectItem value="south">South</SelectItem>
-            <SelectItem value="east">East</SelectItem>
-            <SelectItem value="west">West</SelectItem>
+            {/* Updated direction options */}
+            <SelectItem value="start_of_hallway">Start of Hallway</SelectItem>
+            <SelectItem value="middle_of_hallway">Middle of Hallway</SelectItem>
+            <SelectItem value="end_of_hallway">End of Hallway</SelectItem>
+            <SelectItem value="left_of_hallway">Left of Hallway</SelectItem>
+            <SelectItem value="right_of_hallway">Right of Hallway</SelectItem>
             <SelectItem value="adjacent">Adjacent</SelectItem>
           </SelectContent>
         </Select>
