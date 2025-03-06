@@ -17,6 +17,7 @@ export function ConnectionItem({ connection, index, spaceName, onRemove }: Conne
       case 'end_of_hallway': return 'End of Hallway';
       case 'left_of_hallway': return 'Left of Hallway';
       case 'right_of_hallway': return 'Right of Hallway';
+      case 'adjacent': return 'Adjacent';
       default: return direction.charAt(0).toUpperCase() + direction.slice(1);
     }
   };
