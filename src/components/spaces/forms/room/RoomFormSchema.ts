@@ -24,6 +24,7 @@ export const roomFormSchema = z.object({
   storageNotes: z.string().optional(),
   parentRoomId: z.string().uuid().nullable(),
   floorId: z.string().uuid(),
+  buildingId: z.string().uuid().optional(), // Added to match createSpaceSchema
   currentFunction: z.string().optional(),
   connections: z.array(roomConnectionSchema).default([]),
   type: z.literal("room").default("room"),

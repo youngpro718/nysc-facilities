@@ -179,16 +179,6 @@ export function EditSpaceDialog({
     );
   };
 
-  const getDialogTitle = () => {
-    switch (type) {
-      case 'hallway':
-        return 'Edit Hallway';
-      case 'room':
-      default:
-        return 'Edit Room';
-    }
-  };
-
   return (
     <>
       {variant === "button" && (
@@ -205,7 +195,7 @@ export function EditSpaceDialog({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{getDialogTitle()}</DialogTitle>
+            <DialogTitle>{type === 'hallway' ? 'Edit Hallway' : 'Edit Room'}</DialogTitle>
           </DialogHeader>
           <ScrollArea className="max-h-[80vh] overflow-y-auto">
             <div className="p-1">

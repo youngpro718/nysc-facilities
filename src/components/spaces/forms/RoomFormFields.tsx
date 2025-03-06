@@ -1,6 +1,6 @@
 
 import { UseFormReturn } from "react-hook-form";
-import { type RoomFormData } from "./room/RoomFormSchema";
+import { RoomFormData } from "./room/RoomFormSchema";
 import { BasicRoomFields } from "./room/BasicRoomFields";
 import { ParentRoomField } from "./room/ParentRoomField";
 import { StorageFields } from "./room/StorageFields";

@@ -1,12 +1,13 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { EditSpaceFormData } from "../../schemas/editSpaceSchema";
+import { RoomFormData } from "./RoomFormSchema";
 
 interface ParentRoomFieldProps {
-  form: UseFormReturn<EditSpaceFormData>;
+  form: UseFormReturn<RoomFormData>;
   floorId: string;
   currentRoomId?: string;
 }

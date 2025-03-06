@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
@@ -10,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PlusCircle, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { type RoomFormData, type RoomConnectionData } from "./RoomFormSchema";
+import { RoomFormData, RoomConnectionData } from "./RoomFormSchema";
 
 interface ConnectionsFieldProps {
   form: UseFormReturn<RoomFormData>;
@@ -67,11 +66,9 @@ export function ConnectionsField({ form, floorId, roomId }: ConnectionsFieldProp
     enabled: !!roomId
   });
 
-  // Setup initial connections
   useQuery({
     queryKey: ["initialize-room-connections", roomId, existingConnections],
     queryFn: async () => {
-      // Only run this if we have the room ID, connections data, and no connections already set
       if (!roomId || !existingConnections || connections.length > 0) {
         return null;
       }
@@ -89,7 +86,7 @@ export function ConnectionsField({ form, floorId, roomId }: ConnectionsFieldProp
     enabled: !!roomId && !!existingConnections
   });
 
-  const handleAddConnection = () => {
+  function handleAddConnection() {
     if (!newConnection.toSpaceId || !newConnection.connectionType) {
       toast.error("Please select a space and connection type");
       return;
@@ -108,16 +105,16 @@ export function ConnectionsField({ form, floorId, roomId }: ConnectionsFieldProp
     });
     setIsAddingConnection(false);
     toast.success("Connection added");
-  };
+  }
 
-  const handleRemoveConnection = (index: number) => {
+  function handleRemoveConnection(index: number) {
     const updatedConnections = [...connections];
     updatedConnections.splice(index, 1);
     form.setValue("connections", updatedConnections);
     toast.success("Connection removed");
-  };
+  }
 
-  const getSpaceName = (spaceId?: string) => {
+  function getSpaceName(spaceId?: string) {
     if (!spaceId || !spaces) return "Unknown space";
     const space = spaces.find(s => s.id === spaceId);
     if (!space) return "Unknown space";
@@ -125,7 +122,7 @@ export function ConnectionsField({ form, floorId, roomId }: ConnectionsFieldProp
     return space.room_number 
       ? `${space.name} (${space.room_number})`
       : space.name;
-  };
+  }
 
   if (isLoadingSpaces) {
     return <div className="py-3">Loading connections...</div>;
