@@ -1,62 +1,148 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { FormField, FormItem } from "@/components/ui/form";
-import { RoomConnectionData } from "../../room/RoomFormSchema";
+import { supabase } from "@/integrations/supabase/client";
+import { RoomFormData, RoomConnectionData } from "../RoomFormSchema";
+import { UseFormReturn } from "react-hook-form";
 import { ConnectionFields } from "./ConnectionFields";
-import { ConnectionsContainerProps } from "./types";
+import { ConnectionItemProps, SpaceOption } from "./types";
+
+export interface ConnectionsContainerProps {
+  form: UseFormReturn<RoomFormData>;
+  floorId: string;
+  roomId?: string;
+}
 
 export function ConnectionsContainer({ form, floorId, roomId }: ConnectionsContainerProps) {
   const connections = form.watch("connections") || [];
+  const [connectedSpaceNames, setConnectedSpaceNames] = useState<Record<string, string>>({});
 
-  const { data: existingConnections } = useQuery({
-    queryKey: ["room-connections", roomId],
+  // Fetch available spaces that can be connected
+  const { data: spaces, isLoading } = useQuery({
+    queryKey: ["spaces-for-connections", floorId, roomId],
     queryFn: async () => {
-      if (!roomId) return null;
-      return null; // Just for initialization check - actual data fetching is in useConnections
+      // Fetch rooms from the same floor
+      const { data: rooms, error: roomsError } = await supabase
+        .from("rooms")
+        .select("id, name, room_number, room_type")
+        .eq("floor_id", floorId)
+        .neq("status", "inactive");
+        
+      if (roomsError) throw roomsError;
+  
+      // Fetch hallways from the same floor
+      const { data: hallways, error: hallwaysError } = await supabase
+        .from("hallways")
+        .select("id, name, section")
+        .eq("floor_id", floorId)
+        .neq("status", "inactive");
+        
+      if (hallwaysError) throw hallwaysError;
+  
+      // Fetch doors from the same floor
+      const { data: doors, error: doorsError } = await supabase
+        .from("doors")
+        .select("id, name, door_type")
+        .eq("floor_id", floorId)
+        .neq("status", "inactive");
+        
+      if (doorsError) throw doorsError;
+  
+      // Format spaces for dropdown
+      const allSpaces: SpaceOption[] = [
+        ...(rooms || []).map(r => ({
+          id: r.id,
+          name: r.name,
+          type: 'room',
+          room_number: r.room_number
+        })),
+        ...(hallways || []).map(h => ({
+          id: h.id,
+          name: h.name,
+          type: 'hallway'
+        })),
+        ...(doors || []).map(d => ({
+          id: d.id,
+          name: d.name,
+          type: 'door'
+        }))
+      ];
+  
+      // Remove the current room from the list
+      return allSpaces.filter(space => space.id !== roomId);
     },
-    enabled: !!roomId
+    enabled: !!floorId
   });
 
-  // Initialize connections from existing data
-  useQuery({
-    queryKey: ["initialize-room-connections", roomId, existingConnections],
-    queryFn: async () => {
-      if (!roomId || !existingConnections || connections.length > 0) {
-        return null;
-      }
+  // Fetch names of already connected spaces
+  useEffect(() => {
+    const fetchConnectedSpaceNames = async () => {
+      const spaceIds = connections
+        .filter(c => c.toSpaceId)
+        .map(c => c.toSpaceId as string);
       
-      return null; // React-query will handle existing connections initialization
-    },
-    enabled: !!roomId && !!existingConnections
-  });
+      if (spaceIds.length === 0) return;
+      
+      const names: Record<string, string> = {};
+      
+      // Fetch rooms
+      const { data: rooms } = await supabase
+        .from("rooms")
+        .select("id, name, room_number")
+        .in("id", spaceIds);
+        
+      (rooms || []).forEach(room => {
+        names[room.id] = `${room.name} (${room.room_number})`;
+      });
+      
+      // Fetch hallways
+      const { data: hallways } = await supabase
+        .from("hallways")
+        .select("id, name")
+        .in("id", spaceIds);
+        
+      (hallways || []).forEach(hallway => {
+        names[hallway.id] = hallway.name;
+      });
+      
+      // Fetch doors
+      const { data: doors } = await supabase
+        .from("doors")
+        .select("id, name")
+        .in("id", spaceIds);
+        
+      (doors || []).forEach(door => {
+        names[door.id] = door.name;
+      });
+      
+      setConnectedSpaceNames(names);
+    };
+    
+    fetchConnectedSpaceNames();
+  }, [connections]);
 
-  const handleAddConnection = (newConnection: RoomConnectionData) => {
-    const updatedConnections = [...connections, newConnection];
-    form.setValue("connections", updatedConnections);
+  const handleAddConnection = (connection: RoomConnectionData) => {
+    const updatedConnections = [...(form.getValues("connections") || []), connection];
+    form.setValue("connections", updatedConnections, { shouldDirty: true });
   };
 
-  const handleRemoveConnection = (index: number) => {
-    const updatedConnections = [...connections];
-    updatedConnections.splice(index, 1);
-    form.setValue("connections", updatedConnections);
+  const handleRemoveConnection = (indexToRemove: number) => {
+    const updatedConnections = (form.getValues("connections") || []).filter(
+      (_, index) => index !== indexToRemove
+    );
+    form.setValue("connections", updatedConnections, { shouldDirty: true });
   };
 
   return (
-    <FormField
-      control={form.control}
-      name="connections"
-      render={() => (
-        <FormItem className="space-y-4">
-          <ConnectionFields
-            floorId={floorId}
-            roomId={roomId}
-            connections={connections}
-            onAddConnection={handleAddConnection}
-            onRemoveConnection={handleRemoveConnection}
-          />
-        </FormItem>
-      )}
+    <ConnectionFields
+      floorId={floorId}
+      roomId={roomId}
+      connections={connections}
+      onAddConnection={handleAddConnection}
+      onRemoveConnection={handleRemoveConnection}
+      spaces={spaces}
+      isLoading={isLoading}
+      connectedSpaceNames={connectedSpaceNames}
     />
   );
 }

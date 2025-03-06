@@ -1,5 +1,5 @@
 
-import { RoomConnectionData } from "../../room/RoomFormSchema";
+import { RoomConnectionData } from "../RoomFormSchema";
 
 export interface SpaceOption {
   id: string;
