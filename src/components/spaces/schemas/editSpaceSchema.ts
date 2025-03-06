@@ -19,13 +19,14 @@ export const editSpaceSchema = z.preprocess(
     position: (data as any)?.position || { x: 0, y: 0 },
     size: (data as any)?.size || { width: 150, height: 100 },
     rotation: (data as any)?.rotation || 0,
+    connections: (data as any)?.connections || []
   }),
   createSpaceSchema.and(
     z.object({
       id: z.string().uuid("Invalid space ID"),
       position: positionSchema,
       size: sizeSchema,
-      rotation: z.number().default(0),
+      rotation: z.number().default(0)
     })
   )
 );

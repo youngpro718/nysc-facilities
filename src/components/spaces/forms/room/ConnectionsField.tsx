@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
@@ -6,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { PlusCircle, X, ArrowRight } from "lucide-react";
+import { PlusCircle, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { type RoomFormData, type RoomConnectionData } from "./RoomFormSchema";
@@ -64,6 +65,27 @@ export function ConnectionsField({ form, floorId, roomId }: ConnectionsFieldProp
       return data || [];
     },
     enabled: !!roomId
+  });
+
+  useQuery({
+    queryKey: ["initialize-room-connections", roomId],
+    queryFn: async () => {
+      // This is just for initial form population
+      if (!roomId || !existingConnections || connections.length > 0) {
+        return null;
+      }
+      
+      const formattedConnections = existingConnections.map(conn => ({
+        id: conn.id,
+        toSpaceId: conn.to_space_id,
+        connectionType: conn.connection_type,
+        direction: conn.direction
+      }));
+      
+      form.setValue("connections", formattedConnections, { shouldDirty: false });
+      return null;
+    },
+    enabled: !!roomId && !!existingConnections
   });
 
   const handleAddConnection = () => {

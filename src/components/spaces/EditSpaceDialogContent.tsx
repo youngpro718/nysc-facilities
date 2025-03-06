@@ -11,12 +11,13 @@ import { HallwayFormFields } from "./forms/HallwayFormFields";
 import { SpaceConnectionManager } from "./SpaceConnectionManager";
 import { EditSpaceFormData } from "./schemas/editSpaceSchema";
 import { Separator } from "@/components/ui/separator";
+import { RoomFormData } from "./forms/room/RoomFormSchema";
 
 interface EditSpaceDialogContentProps {
-  form: UseFormReturn<EditSpaceFormData>;
+  form: UseFormReturn<EditSpaceFormData> | UseFormReturn<RoomFormData>;
   type: "room" | "door" | "hallway";
   id: string;
-  onSubmit: (data: EditSpaceFormData) => Promise<void>;
+  onSubmit: (data: EditSpaceFormData | RoomFormData) => Promise<void>;
   isPending: boolean;
   onCancel: () => void;
 }
@@ -33,9 +34,9 @@ export function EditSpaceDialogContent({
     if (form.formState.isDirty) return;
     const currentValues = form.getValues();
     Object.keys(currentValues).forEach(key => {
-      const value = currentValues[key as keyof EditSpaceFormData];
+      const value = currentValues[key as keyof typeof currentValues];
       if (value !== undefined) {
-        form.setValue(key as keyof EditSpaceFormData, value, {
+        form.setValue(key as any, value, {
           shouldDirty: false,
           shouldTouch: false
         });
@@ -43,7 +44,7 @@ export function EditSpaceDialogContent({
     });
   }, [form]);
 
-  const handleSubmit = async (data: EditSpaceFormData) => {
+  const handleSubmit = async (data: EditSpaceFormData | RoomFormData) => {
     try {
       await onSubmit(data);
     } catch (error) {
@@ -58,12 +59,12 @@ export function EditSpaceDialogContent({
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
             {type === "room" && (
               <RoomFormFields 
-                form={form}
+                form={form as UseFormReturn<RoomFormData>}
                 floorId={form.getValues("floorId")} 
               />
             )}
-            {type === "door" && <DoorFormFields form={form} />}
-            {type === "hallway" && <HallwayFormFields form={form} />}
+            {type === "door" && <DoorFormFields form={form as any} />}
+            {type === "hallway" && <HallwayFormFields form={form as any} />}
             
             <Separator className="my-4" />
             

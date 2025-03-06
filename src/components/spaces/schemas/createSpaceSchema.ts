@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { RoomTypeEnum, StatusEnum, StorageTypeEnum } from "../rooms/types/roomEnums";
 import { 
@@ -11,9 +10,10 @@ import {
 
 // Define connection schema
 const connectionSchema = z.object({
-  toSpaceId: z.string().optional(),
+  toSpaceId: z.string().uuid().optional(),
   connectionType: z.string().optional(),
-  direction: z.string().optional()
+  direction: z.string().optional(),
+  id: z.string().uuid().optional()
 });
 
 // Define hardware status schema
@@ -55,7 +55,7 @@ const baseSpaceSchema = z.object({
     height: z.number()
   }).optional(),
   rotation: z.number().optional(),
-  connections: connectionSchema.optional()
+  connections: z.array(connectionSchema).default([])
 });
 
 // Room-specific schema
