@@ -13,16 +13,18 @@ interface CreateRoomFieldsProps {
 }
 
 export function CreateRoomFields({ form, floorId }: CreateRoomFieldsProps) {
+  const roomForm = form as unknown as UseFormReturn<RoomFormData>;
+  
   return (
     <div className="space-y-4">
-      <BasicRoomFields form={form as unknown as UseFormReturn<RoomFormData>} />
-      <StorageFields form={form as unknown as UseFormReturn<RoomFormData>} />
-      <StatusField form={form as unknown as UseFormReturn<RoomFormData>} />
+      <BasicRoomFields form={roomForm} />
+      <StorageFields form={roomForm} />
+      <StatusField form={roomForm} />
       
       {/* Only add ConnectionsField when creating a room with a selected floor */}
       {floorId && (
         <ConnectionsField 
-          form={form as unknown as UseFormReturn<RoomFormData>} 
+          form={roomForm}
           floorId={floorId} 
         />
       )}

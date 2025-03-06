@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,7 +38,7 @@ export function ConnectionsContainer({ form, floorId, roomId }: ConnectionsConta
         
       if (hallwaysError) throw hallwaysError;
   
-      // Fetch doors from the same floor - using 'type' instead of the non-existent 'door_type' column
+      // Fetch doors from the same floor - using 'type' instead of 'door_type'
       const { data: doors, error: doorsError } = await supabase
         .from("doors")
         .select("id, name, type")
