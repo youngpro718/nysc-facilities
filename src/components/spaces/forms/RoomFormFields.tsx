@@ -7,12 +7,12 @@ import { StorageFields } from "./room/StorageFields";
 import { StatusField } from "./room/StatusField";
 import { ConnectionsField } from "./room/ConnectionsField";
 
-interface RoomFormFieldsProps {
+interface FormFieldsProps {
   form: UseFormReturn<RoomFormData>;
   floorId: string;
 }
 
-export function RoomFormFields({ form, floorId }: RoomFormFieldsProps) {
+export function RoomFormFields({ form, floorId }: FormFieldsProps) {
   const currentRoomId = form.getValues("id");
 
   return (

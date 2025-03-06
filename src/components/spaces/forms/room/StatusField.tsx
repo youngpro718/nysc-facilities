@@ -1,15 +1,10 @@
 
-import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { EditSpaceFormData } from "../../schemas/editSpaceSchema";
 import { StatusEnum } from "../../rooms/types/roomEnums";
+import { RoomFormProps } from "./types";
 
-interface StatusFieldProps {
-  form: UseFormReturn<EditSpaceFormData>;
-}
-
-export function StatusField({ form }: StatusFieldProps) {
+export function StatusField({ form }: RoomFormProps) {
   return (
     <FormField
       control={form.control}

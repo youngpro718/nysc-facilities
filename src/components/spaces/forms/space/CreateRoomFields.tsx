@@ -6,13 +6,10 @@ import { StorageFields } from "../room/StorageFields";
 import { StatusField } from "../room/StatusField";
 import { ConnectionsField } from "../room/ConnectionsField";
 import { RoomFormData } from "../room/RoomFormSchema";
-
-interface CreateRoomFieldsProps {
-  form: UseFormReturn<CreateSpaceFormData>;
-  floorId: string;
-}
+import { CreateRoomFieldsProps } from "../room/types";
 
 export function CreateRoomFields({ form, floorId }: CreateRoomFieldsProps) {
+  // Convert the form type explicitly
   const roomForm = form as unknown as UseFormReturn<RoomFormData>;
   
   return (
