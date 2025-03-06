@@ -48,6 +48,7 @@ export function EditSpaceDialog({
 
   useEffect(() => {
     if (open && initialData) {
+      console.log("Resetting form with initial data:", initialData);
       form.reset(initialData);
     }
   }, [open, form, initialData]);
@@ -74,23 +75,33 @@ export function EditSpaceDialog({
         floor_id: data.floorId,
       };
 
+      console.log("Room update data:", updateData);
       const { error: roomError } = await supabase
         .from("rooms")
         .update(updateData)
         .eq('id', id);
 
-      if (roomError) throw roomError;
+      if (roomError) {
+        console.error("Room update error:", roomError);
+        throw roomError;
+      }
       
       if (data.connections && data.connections.length > 0) {
+        console.log("Processing connections:", data.connections);
+        
         const { data: existingConnections, error: fetchError } = await supabase
           .from("space_connections")
           .select("id")
           .eq("from_space_id", id)
           .eq("status", "active");
           
-        if (fetchError) throw fetchError;
+        if (fetchError) {
+          console.error("Error fetching connections:", fetchError);
+          throw fetchError;
+        }
         
         const existingIds = (existingConnections || []).map(c => c.id);
+        console.log("Existing connection IDs:", existingIds);
         
         const keepConnectionIds: string[] = [];
         
@@ -98,6 +109,7 @@ export function EditSpaceDialog({
           if (connection.id) {
             keepConnectionIds.push(connection.id);
             
+            console.log("Updating connection:", connection);
             const { error: updateError } = await supabase
               .from("space_connections")
               .update({
@@ -107,8 +119,12 @@ export function EditSpaceDialog({
               })
               .eq("id", connection.id);
               
-            if (updateError) throw updateError;
+            if (updateError) {
+              console.error("Connection update error:", updateError);
+              throw updateError;
+            }
           } else if (connection.toSpaceId && connection.connectionType) {
+            console.log("Creating new connection:", connection);
             const { error: insertError } = await supabase
               .from("space_connections")
               .insert({
@@ -120,11 +136,15 @@ export function EditSpaceDialog({
                 status: "active"
               });
               
-            if (insertError) throw insertError;
+            if (insertError) {
+              console.error("Connection insert error:", insertError);
+              throw insertError;
+            }
           }
         }
         
         const connectionsToDelete = existingIds.filter(id => !keepConnectionIds.includes(id));
+        console.log("Connections to delete:", connectionsToDelete);
         
         if (connectionsToDelete.length > 0) {
           const { error: deleteError } = await supabase
@@ -132,19 +152,26 @@ export function EditSpaceDialog({
             .update({ status: "inactive" })
             .in("id", connectionsToDelete);
             
-          if (deleteError) throw deleteError;
+          if (deleteError) {
+            console.error("Connection delete error:", deleteError);
+            throw deleteError;
+          }
         }
       }
       
       return data;
     },
     onSuccess: () => {
+      console.log("Update successful, invalidating queries");
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
       queryClient.invalidateQueries({ queryKey: ['room-connections', id] });
       queryClient.invalidateQueries({ queryKey: ['floorplan-objects'] });
       toast.success("Room updated successfully");
       setOpen(false);
-      if (onSpaceUpdated) onSpaceUpdated();
+      if (onSpaceUpdated) {
+        console.log("Calling onSpaceUpdated callback");
+        onSpaceUpdated();
+      }
     },
     onError: (error) => {
       console.error("Update error:", error);

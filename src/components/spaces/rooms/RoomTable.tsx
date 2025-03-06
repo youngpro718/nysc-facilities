@@ -66,12 +66,13 @@ export function RoomTable({ rooms, onDelete }: RoomTableProps) {
                       parentRoomId: room.parent_room_id || null,
                       currentFunction: room.current_function || null,
                       phoneNumber: room.phone_number || null,
-                      connections: room.space_connections.map(conn => ({
+                      connections: room.space_connections?.map(conn => ({
                         id: conn.id,
                         connectionType: conn.connection_type,
                         toSpaceId: conn.to_space_id,
                         direction: conn.direction || null
-                      }))
+                      })) || [],
+                      type: "room"
                     }}
                   />
                   <Button

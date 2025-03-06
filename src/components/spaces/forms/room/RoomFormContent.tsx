@@ -30,6 +30,18 @@ export function RoomFormContent({
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Form submitted, calling form.handleSubmit");
+    
+    // Get current form values for debugging
+    const formValues = form.getValues();
+    console.log("Current form values:", formValues);
+    
+    // Check form state
+    console.log("Form state:", {
+      isDirty: form.formState.isDirty,
+      isValid: form.formState.isValid,
+      errors: form.formState.errors
+    });
+    
     return form.handleSubmit(onSubmit)(e);
   };
 
