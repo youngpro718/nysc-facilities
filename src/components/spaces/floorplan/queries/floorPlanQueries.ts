@@ -75,15 +75,29 @@ export async function fetchFloorPlanObjects(floorId: string) {
       // Get hallway_properties data (from the joined table)
       const hallwayProps = hallway.hallway_properties?.[0] || {};
       
+      // Define a type-safe way to check and access properties
+      const getProperty = <T>(
+        obj: Record<string, any> | null | undefined, 
+        key: string, 
+        fallback: T
+      ): T => {
+        if (!obj) return fallback;
+        return (obj[key] as T) || fallback;
+      };
+      
+      // Handle properties from both objects with type safety
+      const properties = hallway.properties || {};
+      const stringProperties = typeof properties === 'string' ? JSON.parse(properties) : properties;
+      
       // Merge properties from both sources, with hallway_properties taking precedence
       const mergedProperties = {
-        ...(typeof hallway.properties === 'object' && hallway.properties !== null ? hallway.properties : {}),
-        section: hallwayProps.section || hallway.properties?.section || 'connector',
-        traffic_flow: hallwayProps.traffic_flow || hallway.properties?.traffic_flow || hallway.properties?.trafficFlow || 'two_way',
-        accessibility: hallwayProps.accessibility || hallway.properties?.accessibility || 'fully_accessible',
-        emergency_route: hallwayProps.emergency_route || hallway.properties?.emergency_route || hallway.properties?.emergencyRoute || 'not_designated',
-        maintenance_priority: hallwayProps.maintenance_priority || hallway.properties?.maintenance_priority || hallway.properties?.maintenancePriority || 'low',
-        capacity_limit: hallwayProps.capacity_limit || hallway.properties?.capacity_limit || hallway.properties?.capacityLimit
+        ...(typeof stringProperties === 'object' && stringProperties !== null ? stringProperties : {}),
+        section: hallwayProps.section || getProperty(stringProperties, 'section', 'connector'),
+        traffic_flow: hallwayProps.traffic_flow || getProperty(stringProperties, 'traffic_flow', getProperty(stringProperties, 'trafficFlow', 'two_way')),
+        accessibility: hallwayProps.accessibility || getProperty(stringProperties, 'accessibility', 'fully_accessible'),
+        emergency_route: hallwayProps.emergency_route || getProperty(stringProperties, 'emergency_route', getProperty(stringProperties, 'emergencyRoute', 'not_designated')),
+        maintenance_priority: hallwayProps.maintenance_priority || getProperty(stringProperties, 'maintenance_priority', getProperty(stringProperties, 'maintenancePriority', 'low')),
+        capacity_limit: hallwayProps.capacity_limit || getProperty(stringProperties, 'capacity_limit', getProperty(stringProperties, 'capacityLimit', null))
       };
       
       return {
