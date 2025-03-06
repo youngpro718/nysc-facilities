@@ -25,7 +25,7 @@ export function RoomSelectionSection({ form }: RoomSelectionSectionProps) {
   const filteredOriginalRooms = useMemo(() => 
     rooms?.filter(room => 
       room.name.toLowerCase().includes(originalSearchQuery.toLowerCase()) ||
-      room.room_number.toLowerCase().includes(originalSearchQuery.toLowerCase()) ||
+      room.room_number?.toLowerCase().includes(originalSearchQuery.toLowerCase()) ||
       room.floor?.building?.name?.toLowerCase().includes(originalSearchQuery.toLowerCase()) ||
       room.floor?.name?.toLowerCase().includes(originalSearchQuery.toLowerCase())
     ) || [], [rooms, originalSearchQuery]
@@ -34,7 +34,7 @@ export function RoomSelectionSection({ form }: RoomSelectionSectionProps) {
   const filteredTemporaryRooms = useMemo(() => 
     rooms?.filter(room => 
       room.name.toLowerCase().includes(temporarySearchQuery.toLowerCase()) ||
-      room.room_number.toLowerCase().includes(temporarySearchQuery.toLowerCase()) ||
+      room.room_number?.toLowerCase().includes(temporarySearchQuery.toLowerCase()) ||
       room.floor?.building?.name?.toLowerCase().includes(temporarySearchQuery.toLowerCase()) ||
       room.floor?.name?.toLowerCase().includes(temporarySearchQuery.toLowerCase())
     ) || [], [rooms, temporarySearchQuery]

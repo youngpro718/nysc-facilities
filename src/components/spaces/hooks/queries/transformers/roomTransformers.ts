@@ -32,6 +32,15 @@ export const transformRoomData = (
       created_at: issue.created_at
     })),
     room_history: historyByRoomId[room.id] || [],
-    current_occupants: occupantsByRoomId[room.id] || []
+    current_occupants: occupantsByRoomId[room.id] || [],
+    // Add a floor property that matches the structure used in the components
+    floor: room.floors ? {
+      id: room.floors.id,
+      name: room.floors.name,
+      building: room.floors.buildings ? {
+        id: room.floors.buildings.id,
+        name: room.floors.buildings.name
+      } : undefined
+    } : undefined
   }));
 };

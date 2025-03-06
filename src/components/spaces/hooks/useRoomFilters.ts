@@ -1,4 +1,3 @@
-
 import { useMemo } from 'react';
 import type { Room } from '../rooms/types/RoomTypes';
 
@@ -31,7 +30,7 @@ export function useRoomFilters({
     let filtered = rooms.filter(room => {
       const searchFields = [
         room.name.toLowerCase(),
-        room.room_number.toLowerCase(),
+        room.room_number?.toLowerCase() || '',
         room.floor?.building?.name?.toLowerCase() || '',
         room.floor?.name?.toLowerCase() || '',
         room.room_type.toLowerCase(),

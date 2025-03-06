@@ -1,4 +1,3 @@
-
 export type StatusEnum = 'active' | 'inactive' | 'maintenance' | 'construction';
 
 export type RoomType = 
@@ -90,6 +89,16 @@ export interface Room {
   current_occupants: any[];
   
   // Nested data from joins
+  floor?: {
+    id: string;
+    name: string;
+    building?: {
+      id: string;
+      name: string;
+    }
+  }
+  
+  // Keep the original floors property as well for backward compatibility
   floors?: {
     id: string;
     name: string;
