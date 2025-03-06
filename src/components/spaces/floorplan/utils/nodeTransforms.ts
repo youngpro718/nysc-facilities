@@ -8,6 +8,11 @@ export function getSpaceColor(space: any): string {
     const baseColor = ROOM_COLORS[space.type] || ROOM_COLORS.default;
     return space.status === 'active' ? baseColor : `${baseColor}80`;
   } else if (space.object_type === 'hallway' || space.type === 'hallway') {
+    // Different color based on hallway type
+    if (space.properties?.hallwayType === 'private' || 
+        space.properties?.type === 'private') {
+      return space.status === 'active' ? '#f3f4f6' : '#f3f4f680';
+    }
     return space.status === 'active' ? '#e5e7eb' : '#e5e7eb80';
   } else {
     return space.status === 'active' ? '#94a3b8' : '#94a3b880';
@@ -97,20 +102,34 @@ export function transformSpaceToNode(space: any, index: number): FloorPlanNode {
   
   const backgroundColor = getSpaceColor({...space, type: objectType});
 
-  // Merge properties from different possible sources
+  // Ensure properties is a valid object
+  const spaceProperties = typeof space.properties === 'object' && space.properties !== null ? 
+    space.properties : {};
+
+  // Merge properties from different possible sources for hallways
   const properties = {
-    ...(space.properties || {}),
+    ...spaceProperties,
     room_number: space.room_number || '',
     space_type: space.type || spaceType || 'default',
     status: space.status || 'active',
     parent_room_id: space.parent_room_id || null,
     connection_data: space.connection_data || null,
-    // For hallways, include specific properties
+    // For hallways, include specific properties from hallway_properties if available
     ...(objectType === 'hallway' ? {
-      section: (space.properties && space.properties.section) || space.section || 'connector',
-      traffic_flow: (space.properties && space.properties.traffic_flow) || space.traffic_flow || 'two_way',
-      accessibility: (space.properties && space.properties.accessibility) || space.accessibility || 'fully_accessible',
-      emergency_route: (space.properties && space.properties.emergency_route) || space.emergency_route || 'not_designated'
+      section: (space.hallway_properties?.[0]?.section) || 
+               spaceProperties.section || 
+               'connector',
+      traffic_flow: (space.hallway_properties?.[0]?.traffic_flow) || 
+                    spaceProperties.traffic_flow || 
+                    spaceProperties.trafficFlow || 
+                    'two_way',
+      accessibility: (space.hallway_properties?.[0]?.accessibility) || 
+                     spaceProperties.accessibility || 
+                     'fully_accessible',
+      emergency_route: (space.hallway_properties?.[0]?.emergency_route) || 
+                       spaceProperties.emergency_route || 
+                       spaceProperties.emergencyRoute || 
+                       'not_designated'
     } : {})
   };
 

@@ -61,14 +61,8 @@ export async function createSpace(data: CreateSpaceFormData) {
         position: data.position || { x: 0, y: 0 },
         size: data.size || { width: 300, height: 50 },
         rotation: data.rotation || 0,
-        // Store hallway-specific properties
+        // Store minimal properties in the properties field
         properties: {
-          section: data.section || 'connector',
-          hallwayType: data.hallwayType || 'public_main',
-          maintenance_priority: data.maintenancePriority || 'low',
-          accessibility: data.accessibility || 'fully_accessible',
-          traffic_flow: data.trafficFlow || 'two_way',
-          emergency_route: data.emergencyRoute || 'not_designated',
           description: data.description
         }
       };
@@ -92,7 +86,7 @@ export async function createSpace(data: CreateSpaceFormData) {
         section: data.section || 'connector',
         traffic_flow: (data.trafficFlow || 'two_way') as 'two_way' | 'one_way' | 'restricted',
         accessibility: (data.accessibility || 'fully_accessible') as 'fully_accessible' | 'limited_access' | 'stairs_only' | 'restricted',
-        emergency_route: (data.emergencyRoute || 'not_designated') as 'not_designated' | 'primary' | 'secondary',
+        emergency_route: (data.emergencyRoute || 'not_designated') as 'primary' | 'secondary' | 'not_designated',
         maintenance_priority: data.maintenancePriority || 'low',
         capacity_limit: data.capacityLimit
       };

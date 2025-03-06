@@ -38,10 +38,29 @@ export async function fetchFloorPlanObjects(floorId: string) {
     object_type: 'room' as const
   }));
 
-  // Fetch spaces from new_spaces table (including hallways)
+  // Fetch spaces from new_spaces table (including hallways) with JOIN to hallway_properties
   const { data: newSpaces, error: newSpacesError } = await supabase
     .from('new_spaces')
-    .select('id, name, type, status, position, size, rotation, properties, room_number, floor_id')
+    .select(`
+      id, 
+      name, 
+      type, 
+      status, 
+      position, 
+      size, 
+      rotation, 
+      properties, 
+      room_number, 
+      floor_id,
+      hallway_properties:hallway_properties(
+        section,
+        traffic_flow,
+        accessibility,
+        emergency_route,
+        maintenance_priority,
+        capacity_limit
+      )
+    `)
     .eq('floor_id', floorId)
     .eq('status', 'active');
 
@@ -49,21 +68,37 @@ export async function fetchFloorPlanObjects(floorId: string) {
   
   console.log("Fetched new spaces:", newSpaces?.length || 0);
 
-  // Extract hallways from new_spaces
+  // Extract hallways from new_spaces and merge hallway_properties data
   const hallwayObjects = (newSpaces || [])
     .filter(space => space.type === 'hallway')
-    .map(hallway => ({
-      id: hallway.id,
-      name: hallway.name,
-      type: hallway.type,
-      status: hallway.status,
-      position: hallway.position,
-      size: hallway.size,
-      rotation: hallway.rotation,
-      properties: typeof hallway.properties === 'object' && hallway.properties !== null ? hallway.properties : {},
-      floor_id: hallway.floor_id,
-      object_type: 'hallway' as const
-    }));
+    .map(hallway => {
+      // Get hallway_properties data (from the joined table)
+      const hallwayProps = hallway.hallway_properties?.[0] || {};
+      
+      // Merge properties from both sources, with hallway_properties taking precedence
+      const mergedProperties = {
+        ...(typeof hallway.properties === 'object' && hallway.properties !== null ? hallway.properties : {}),
+        section: hallwayProps.section || hallway.properties?.section || 'connector',
+        traffic_flow: hallwayProps.traffic_flow || hallway.properties?.traffic_flow || hallway.properties?.trafficFlow || 'two_way',
+        accessibility: hallwayProps.accessibility || hallway.properties?.accessibility || 'fully_accessible',
+        emergency_route: hallwayProps.emergency_route || hallway.properties?.emergency_route || hallway.properties?.emergencyRoute || 'not_designated',
+        maintenance_priority: hallwayProps.maintenance_priority || hallway.properties?.maintenance_priority || hallway.properties?.maintenancePriority || 'low',
+        capacity_limit: hallwayProps.capacity_limit || hallway.properties?.capacity_limit || hallway.properties?.capacityLimit
+      };
+      
+      return {
+        id: hallway.id,
+        name: hallway.name,
+        type: hallway.type,
+        status: hallway.status,
+        position: hallway.position,
+        size: hallway.size,
+        rotation: hallway.rotation,
+        properties: mergedProperties,
+        floor_id: hallway.floor_id,
+        object_type: 'hallway' as const
+      };
+    });
     
   console.log("Extracted hallways:", hallwayObjects.length);
 
@@ -85,56 +120,11 @@ export async function fetchFloorPlanObjects(floorId: string) {
     object_type: 'door' as const
   }));
 
-  // Fetch hallway properties to enrich hallway objects
-  const hallwayIds = hallwayObjects.map(h => h.id);
-  let hallwayProperties = [];
-  
-  if (hallwayIds.length > 0) {
-    console.log("Fetching properties for hallway IDs:", hallwayIds);
-    
-    const { data: props, error: propsError } = await supabase
-      .from('hallway_properties')
-      .select('*')
-      .in('space_id', hallwayIds);
-      
-    if (propsError) {
-      console.error('Error fetching hallway properties:', propsError);
-    } else {
-      hallwayProperties = props || [];
-      console.log("Fetched hallway properties:", hallwayProperties.length);
-    }
-  }
-  
-  // Enrich hallway objects with their properties
-  const enrichedHallways = hallwayObjects.map(hallway => {
-    const props = hallwayProperties.find(p => p.space_id === hallway.id);
-    if (props) {
-      // Ensure hallway.properties is always treated as an object before spreading
-      const baseProperties = typeof hallway.properties === 'object' && hallway.properties !== null 
-        ? hallway.properties 
-        : {};
-        
-      return {
-        ...hallway,
-        properties: {
-          ...baseProperties,
-          section: props.section,
-          traffic_flow: props.traffic_flow,
-          accessibility: props.accessibility,
-          emergency_route: props.emergency_route,
-          maintenance_priority: props.maintenance_priority,
-          capacity_limit: props.capacity_limit
-        }
-      };
-    }
-    return hallway;
-  });
-
   // Fetch space connections
   const { data: connections, error: connectionsError } = await supabase
     .from('space_connections')
     .select('*')
-    .or(`from_space_id.in.(${hallwayIds.join(',')}),to_space_id.in.(${hallwayIds.join(',')})`)
+    .or(`from_space_id.in.(${hallwayObjects.map(h => h.id).join(',')}),to_space_id.in.(${hallwayObjects.map(h => h.id).join(',')})`)
     .eq('status', 'active');
 
   if (connectionsError) {
@@ -145,7 +135,7 @@ export async function fetchFloorPlanObjects(floorId: string) {
   console.log("Fetched space connections:", connections?.length || 0);
 
   // Combine all objects
-  const allObjects = [...roomObjects, ...enrichedHallways, ...doorObjects];
+  const allObjects = [...roomObjects, ...hallwayObjects, ...doorObjects];
   
   return {
     objects: allObjects,

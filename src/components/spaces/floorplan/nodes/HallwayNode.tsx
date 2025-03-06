@@ -21,14 +21,14 @@ export function HallwayNode({ data, selected }: NodeProps<FloorPlanObjectData>) 
   };
 
   // Determine the hallway metadata for display
-  // Try to extract from both properties and direct properties
+  // Extract from properties with consistent naming
   const hallwaySection = 
     (data.properties?.section) || 
-    (data.properties?.hallwayType?.section) || 
     'connector';
     
   const hallwayType = 
     (data.properties?.hallwayType) || 
+    (data.properties?.type) ||
     'public_main';
     
   const trafficFlow = 
