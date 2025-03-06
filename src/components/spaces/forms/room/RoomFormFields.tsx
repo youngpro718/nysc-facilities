@@ -22,11 +22,13 @@ export function RoomFormFields({ form }: RoomFormProps) {
       
       <StorageFields form={form} />
       
-      <ConnectionsField
-        form={form}
-        floorId={floorId}
-        roomId={currentRoomId}
-      />
+      {floorId && (
+        <ConnectionsField
+          form={form}
+          floorId={floorId}
+          roomId={currentRoomId}
+        />
+      )}
       
       <StatusField form={form} />
     </div>

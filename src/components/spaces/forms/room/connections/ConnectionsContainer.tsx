@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { RoomFormData, RoomConnectionData } from "../RoomFormSchema";
 import { UseFormReturn } from "react-hook-form";
 import { ConnectionFields } from "./ConnectionFields";
-import { ConnectionItemProps, SpaceOption } from "./types";
+import { SpaceOption } from "./types";
 
 export interface ConnectionsContainerProps {
   form: UseFormReturn<RoomFormData>;
@@ -39,10 +39,10 @@ export function ConnectionsContainer({ form, floorId, roomId }: ConnectionsConta
         
       if (hallwaysError) throw hallwaysError;
   
-      // Fetch doors from the same floor
+      // Fetch doors from the same floor - making sure we don't use 'door_type' column
       const { data: doors, error: doorsError } = await supabase
         .from("doors")
-        .select("id, name, door_type")
+        .select("id, name, type")
         .eq("floor_id", floorId)
         .neq("status", "inactive");
         

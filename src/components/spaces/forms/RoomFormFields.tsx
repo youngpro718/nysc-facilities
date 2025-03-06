@@ -5,6 +5,7 @@ import { BasicRoomFields } from "./room/BasicRoomFields";
 import { ParentRoomField } from "./room/ParentRoomField";
 import { StorageFields } from "./room/StorageFields";
 import { StatusField } from "./room/StatusField";
+import { ConnectionsField } from "./room/ConnectionsField";
 
 interface RoomFormFieldsProps {
   form: UseFormReturn<RoomFormData>;
@@ -25,6 +26,12 @@ export function RoomFormFields({ form, floorId }: RoomFormFieldsProps) {
       />
       
       <StorageFields form={form} />
+      
+      <ConnectionsField
+        form={form}
+        floorId={floorId}
+        roomId={currentRoomId}
+      />
       
       <StatusField form={form} />
     </div>
