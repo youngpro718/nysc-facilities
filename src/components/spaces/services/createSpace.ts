@@ -103,34 +103,38 @@ export async function createSpace(data: CreateSpaceFormData) {
         console.log('Created hallway properties:', propsData);
       }
 
-      // Step 3: Create a connection if all required data is present
-      if (data.connections && data.connections.toSpaceId && data.connections.connectionType && data.connections.direction) {
-        const hallwayConnectionData = {
-          from_space_id: hallway.id,
-          to_space_id: data.connections.toSpaceId,
-          space_type: data.type,
-          connection_type: data.connections.connectionType,
-          direction: data.connections.direction,
-          status: data.status as 'active' | 'inactive' | 'under_maintenance',
-          connection_status: 'active',
-          // Add hallway-specific connection data
-          hallway_position: 0.5, // Default to middle (0-1 range)
-          offset_distance: 50,   // Default offset from hallway
-          position: data.connections.direction === 'north' || data.connections.direction === 'south' ? 'vertical' : 'horizontal'
-        };
+      // Step 3: Create connections if available
+      if (data.connections && data.connections.length > 0) {
+        const firstConnection = data.connections[0]; // Get the first connection
 
-        console.log('Creating connection with data:', hallwayConnectionData);
+        if (firstConnection && firstConnection.toSpaceId && firstConnection.connectionType) {
+          const hallwayConnectionData = {
+            from_space_id: hallway.id,
+            to_space_id: firstConnection.toSpaceId,
+            space_type: data.type,
+            connection_type: firstConnection.connectionType,
+            direction: firstConnection.direction || 'adjacent',
+            status: data.status as 'active' | 'inactive' | 'under_maintenance',
+            connection_status: 'active',
+            // Add hallway-specific connection data
+            hallway_position: 0.5, // Default to middle (0-1 range)
+            offset_distance: 50,   // Default offset from hallway
+            position: firstConnection.direction === 'north' || firstConnection.direction === 'south' ? 'vertical' : 'horizontal'
+          };
 
-        const { data: connectionData, error: connectionError } = await supabase
-          .from('space_connections')
-          .insert([hallwayConnectionData])
-          .select();
+          console.log('Creating connection with data:', hallwayConnectionData);
 
-        if (connectionError) {
-          console.error('Connection error:', connectionError);
-          toast.error(`Space created but connection failed: ${connectionError.message}`);
-        } else {
-          console.log('Created space connection:', connectionData);
+          const { data: connectionData, error: connectionError } = await supabase
+            .from('space_connections')
+            .insert([hallwayConnectionData])
+            .select();
+
+          if (connectionError) {
+            console.error('Connection error:', connectionError);
+            toast.error(`Space created but connection failed: ${connectionError.message}`);
+          } else {
+            console.log('Created space connection:', connectionData);
+          }
         }
       }
 
@@ -158,27 +162,31 @@ export async function createSpace(data: CreateSpaceFormData) {
 
     if (spaceError) throw spaceError;
 
-    // Only create a connection if all required data is present
-    if (data.connections && data.connections.toSpaceId && data.connections.connectionType && data.connections.direction) {
-      const spaceConnectionData = {
-        from_space_id: space.id,
-        to_space_id: data.connections.toSpaceId,
-        space_type: data.type,
-        connection_type: data.connections.connectionType,
-        direction: data.connections.direction,
-        status: data.status as 'active' | 'inactive' | 'under_maintenance',
-        connection_status: 'active'
-      };
+    // Create connections if available
+    if (data.connections && data.connections.length > 0) {
+      const firstConnection = data.connections[0]; // Get the first connection
 
-      console.log('Creating connection with data:', spaceConnectionData);
+      if (firstConnection && firstConnection.toSpaceId && firstConnection.connectionType) {
+        const spaceConnectionData = {
+          from_space_id: space.id,
+          to_space_id: firstConnection.toSpaceId,
+          space_type: data.type,
+          connection_type: firstConnection.connectionType,
+          direction: firstConnection.direction || 'adjacent',
+          status: data.status as 'active' | 'inactive' | 'under_maintenance',
+          connection_status: 'active'
+        };
 
-      const { error: connectionError } = await supabase
-        .from('space_connections')
-        .insert([spaceConnectionData]);
+        console.log('Creating connection with data:', spaceConnectionData);
 
-      if (connectionError) {
-        console.error('Connection error:', connectionError);
-        toast.error(`Space created but connection failed: ${connectionError.message}`);
+        const { error: connectionError } = await supabase
+          .from('space_connections')
+          .insert([spaceConnectionData]);
+
+        if (connectionError) {
+          console.error('Connection error:', connectionError);
+          toast.error(`Space created but connection failed: ${connectionError.message}`);
+        }
       }
     }
 

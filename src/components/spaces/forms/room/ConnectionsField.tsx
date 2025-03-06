@@ -67,10 +67,11 @@ export function ConnectionsField({ form, floorId, roomId }: ConnectionsFieldProp
     enabled: !!roomId
   });
 
+  // Setup initial connections
   useQuery({
-    queryKey: ["initialize-room-connections", roomId],
+    queryKey: ["initialize-room-connections", roomId, existingConnections],
     queryFn: async () => {
-      // This is just for initial form population
+      // Only run this if we have the room ID, connections data, and no connections already set
       if (!roomId || !existingConnections || connections.length > 0) {
         return null;
       }
