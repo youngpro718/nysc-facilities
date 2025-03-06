@@ -16,11 +16,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
 import { RoomFormContent } from "./forms/room/RoomFormContent";
 import { roomFormSchema, type RoomFormData } from "./forms/room/RoomFormSchema";
+import { EditHallwayForm } from "./forms/hallway/EditHallwayForm";
 
 interface EditSpaceDialogProps {
   id: string;
-  type: "room";
-  initialData?: Partial<RoomFormData>;
+  type: "room" | "hallway";
+  initialData?: any;
   open?: boolean;
   setOpen?: (open: boolean) => void;
   variant?: "button" | "custom";
@@ -29,6 +30,7 @@ interface EditSpaceDialogProps {
 
 export function EditSpaceDialog({
   id,
+  type,
   initialData,
   open: controlledOpen,
   setOpen: controlledSetOpen,
@@ -96,6 +98,43 @@ export function EditSpaceDialog({
     await editSpaceMutation.mutateAsync(data);
   };
 
+  // Render content based on space type
+  const renderContent = () => {
+    if (type === 'hallway') {
+      return (
+        <EditHallwayForm 
+          id={id}
+          initialData={initialData}
+          onSuccess={() => {
+            setOpen(false);
+            if (onSpaceUpdated) onSpaceUpdated();
+          }}
+          onCancel={() => setOpen(false)}
+        />
+      );
+    }
+    
+    return (
+      <RoomFormContent
+        form={form}
+        onSubmit={handleSubmit}
+        isPending={editSpaceMutation.isPending}
+        onCancel={() => setOpen(false)}
+      />
+    );
+  };
+
+  // Get dialog title based on space type
+  const getDialogTitle = () => {
+    switch (type) {
+      case 'hallway':
+        return 'Edit Hallway';
+      case 'room':
+      default:
+        return 'Edit Room';
+    }
+  };
+
   return (
     <>
       {variant === "button" && (
@@ -112,16 +151,11 @@ export function EditSpaceDialog({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Edit Room</DialogTitle>
+            <DialogTitle>{getDialogTitle()}</DialogTitle>
           </DialogHeader>
           <ScrollArea className="max-h-[80vh] overflow-y-auto">
             <div className="p-1">
-              <RoomFormContent
-                form={form}
-                onSubmit={handleSubmit}
-                isPending={editSpaceMutation.isPending}
-                onCancel={() => setOpen(false)}
-              />
+              {renderContent()}
             </div>
           </ScrollArea>
         </DialogContent>

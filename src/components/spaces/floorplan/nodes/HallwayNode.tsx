@@ -21,23 +21,25 @@ export function HallwayNode({ data, selected }: NodeProps<FloorPlanObjectData>) 
   };
 
   // Determine the hallway metadata for display
-  // Extract from properties with consistent naming
+  // Safely extract properties with consistent naming
+  const properties = data.properties || {};
+  
   const hallwaySection = 
-    (data.properties?.section) || 
+    (properties.section) || 
     'connector';
     
   const hallwayType = 
-    (data.properties?.hallwayType) || 
-    (data.properties?.type) ||
+    (properties.hallwayType) || 
+    (properties.type) ||
     'public_main';
     
   const trafficFlow = 
-    (data.properties?.traffic_flow) || 
-    (data.properties?.trafficFlow) || 
+    (properties.traffic_flow) || 
+    (properties.trafficFlow) || 
     'two_way';
     
   const accessibility = 
-    (data.properties?.accessibility) || 
+    (properties.accessibility) || 
     'fully_accessible';
 
   // Different appearance based on hallway attributes

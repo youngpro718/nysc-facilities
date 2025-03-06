@@ -1,6 +1,13 @@
 
 import { z } from "zod";
 import { RoomTypeEnum, StatusEnum, StorageTypeEnum } from "../rooms/types/roomEnums";
+import { 
+  HallwaySection,
+  HallwayType,
+  TrafficFlow,
+  Accessibility,
+  EmergencyRoute
+} from "../types/hallwayTypes";
 
 // Define connection schema
 const connectionSchema = z.object({
@@ -65,14 +72,15 @@ const roomSchema = baseSpaceSchema.extend({
   parentRoomId: z.string().nullable()
 });
 
-// Hallway-specific schema - enhanced with more specific hallway fields
+// Hallway-specific schema - enhanced with more specific hallway fields and proper enums
 const hallwaySchema = baseSpaceSchema.extend({
   type: z.literal("hallway"),
+  // Use proper enum types from hallwayTypes.ts for better type safety
   hallwayType: z.enum(["public_main", "private"]).optional(),
   section: z.enum(["left_wing", "right_wing", "connector"]).optional(),
   maintenanceSchedule: z.array(maintenanceScheduleEntrySchema).optional(),
   emergencyExits: z.array(emergencyExitSchema).optional(),
-  maintenancePriority: z.string().optional(),
+  maintenancePriority: z.enum(["low", "medium", "high"]).optional(),
   maintenanceNotes: z.string().optional(),
   emergencyRoute: z.enum(["primary", "secondary", "not_designated"]).optional(),
   accessibility: z.enum(["fully_accessible", "limited_access", "stairs_only", "restricted"]).optional(),
