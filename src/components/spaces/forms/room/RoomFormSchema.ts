@@ -3,7 +3,7 @@ import { z } from "zod";
 import { RoomTypeEnum, StorageTypeEnum, StatusEnum } from "../../rooms/types/roomEnums";
 
 // Define connection schema for form usage
-const roomConnectionSchema = z.object({
+export const roomConnectionSchema = z.object({
   id: z.string().uuid().optional(), // For existing connections
   toSpaceId: z.string().uuid().optional(),
   connectionType: z.string().optional(),

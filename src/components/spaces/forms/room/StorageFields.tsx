@@ -18,10 +18,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { StorageTypeEnum } from "../../rooms/types/roomEnums";
-import { CreateSpaceFormData } from "../../schemas/createSpaceSchema";
+import { RoomFormData } from "./RoomFormSchema";
 
 interface StorageFieldsProps {
-  form: UseFormReturn<CreateSpaceFormData>;
+  form: UseFormReturn<RoomFormData>;
 }
 
 export function StorageFields({ form }: StorageFieldsProps) {
