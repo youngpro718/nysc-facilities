@@ -3,7 +3,7 @@ import { FloorPlanEdge } from "../types/floorPlanTypes";
 
 export function createEdgesFromConnections(connections: any[]): FloorPlanEdge[] {
   return connections.map(conn => {
-    // Determine connection types and properties
+    // Determine if this is a hallway connection
     const isHallwayConnection = conn.space_type === 'hallway' || 
                               conn.to_space?.type === 'hallway' ||
                               ['start', 'end', 'left', 'right', 'center'].includes(conn.direction);
@@ -28,24 +28,14 @@ export function createEdgesFromConnections(connections: any[]): FloorPlanEdge[] 
     
     // Determine edge type and style based on connection type
     const isTransitionDoor = conn.is_transition_door || conn.connection_type === 'transition';
-    const isSecured = conn.connection_type === 'secured';
     const edgeType = isHallwayConnection ? 'straight' : 'smoothstep';
     
-    // Enhanced styling based on connection type and status
-    let strokeColor;
-    if (conn.status === 'active') {
-      if (conn.connection_type === 'door') {
-        strokeColor = '#64748b'; // Standard door color
-      } else if (isSecured) {
-        strokeColor = '#ef4444'; // Red for secured/restricted access
-      } else if (isTransitionDoor) {
-        strokeColor = '#3b82f6'; // Blue for transition points
-      } else {
-        strokeColor = '#94a3b8'; // Default connection color
-      }
-    } else {
-      strokeColor = '#94a3b8'; // Inactive connections
-    }
+    // Set style based on type and status
+    const strokeColor = conn.status === 'active' ? 
+                      (conn.connection_type === 'door' ? '#64748b' : 
+                      conn.connection_type === 'secured' ? '#ef4444' : 
+                      conn.connection_type === 'transition' ? '#3b82f6' : '#94a3b8') : 
+                      '#94a3b8';
     
     const strokeWidth = isHallwayConnection ? 3 : 2;
     const strokeDasharray = conn.status === 'active' ? '' : '5,5';
@@ -59,7 +49,6 @@ export function createEdgesFromConnections(connections: any[]): FloorPlanEdge[] 
         type: conn.connection_type,
         direction: conn.direction,
         isTransitionDoor: isTransitionDoor,
-        isSecured: isSecured,
         hallwayPosition: hallwayPosition,
         offsetDistance: offsetDistance,
         position: conn.position,

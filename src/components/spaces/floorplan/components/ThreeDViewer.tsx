@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
@@ -9,7 +8,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { FloorPlanNode } from '../types/floorPlanTypes';
 import { toast } from 'sonner';
 
-// Room 3D Component with enhanced materials and appearance
+// Room 3D Component with improved materials and appearance
 function Room3D({ 
   position, 
   size, 
@@ -18,8 +17,7 @@ function Room3D({
   onClick, 
   isSelected = false,
   id,
-  properties,
-  type = 'room'
+  properties
 }: {
   position: { x: number, y: number };
   size: { width: number, height: number };
@@ -29,23 +27,10 @@ function Room3D({
   isSelected?: boolean;
   id: string;
   properties?: any;
-  type?: string;
 }) {
+  const wallHeight = 120; // Standard wall height 
   const meshRef = useRef<THREE.Mesh>(null);
-  const [hovered, setHovered] = useState(false);
   
-  // Standard wall height
-  let wallHeight = 120; 
-  
-  // Adjust height based on room type
-  if (properties?.room_type === 'courtroom') {
-    wallHeight = 160; // Higher ceiling for courtrooms
-  } else if (properties?.is_storage) {
-    wallHeight = 100; // Lower for storage
-  } else if (properties?.parent_room_id) {
-    wallHeight = 80; // Lower for child rooms
-  }
-
   // Material setup with PBR properties
   const material = new THREE.MeshStandardMaterial({ 
     color: new THREE.Color(color),
@@ -62,24 +47,18 @@ function Room3D({
         meshRef.current.scale.set(1, 1.02, 1); // Slight scale up for selected rooms
         material.emissive = new THREE.Color(0x333333);
         material.emissiveIntensity = 0.2;
-      } else if (hovered) {
-        meshRef.current.scale.set(1, 1.01, 1); // Slight scale for hover effect
-        material.emissive = new THREE.Color(0x111111);
-        material.emissiveIntensity = 0.1;
       } else {
         meshRef.current.scale.set(1, 1, 1);
         material.emissive = new THREE.Color(0x000000);
         material.emissiveIntensity = 0;
       }
     }
-  }, [isSelected, hovered]);
+  }, [isSelected]);
 
-  // Room name and details
+  // Room name
   const roomName = properties?.room_number 
     ? `${properties.room_number}` 
     : '';
-    
-  const isChildRoom = properties?.parent_room_id;
 
   return (
     <group
@@ -90,41 +69,33 @@ function Room3D({
         ref={meshRef}
         onClick={(e) => {
           e.stopPropagation();
-          onClick({ id, type, position, size, rotation, properties });
+          onClick({ id, type: 'room', position, size, rotation, properties });
         }}
-        onPointerOver={() => setHovered(true)}
-        onPointerOut={() => setHovered(false)}
         receiveShadow
         castShadow
       >
         <boxGeometry args={[size.width, wallHeight, size.height]} />
         <primitive object={material} attach="material" />
-        
-        {/* Floor base with better material */}
+        {/* Floor base */}
         <mesh position={[0, -wallHeight/2 + 2, 0]} receiveShadow>
           <boxGeometry args={[size.width, 4, size.height]} />
           <meshStandardMaterial 
-            color={isChildRoom ? "#e2e8f0" : "#d1d5db"} 
+            color="#d1d5db" 
             roughness={0.8}
           />
         </mesh>
-        
-        {/* Parent-child indicator for child rooms */}
-        {isChildRoom && (
-          <mesh position={[0, -wallHeight/2 + 8, 0]} receiveShadow>
-            <boxGeometry args={[size.width * 0.9, 1, size.height * 0.9]} />
-            <meshStandardMaterial color="#94a3b8" transparent opacity={0.4} />
-          </mesh>
-        )}
-        
-        {/* Room access level indicator */}
-        {properties?.access_level === 'restricted' && (
-          <mesh position={[0, wallHeight/2 - 5, 0]} receiveShadow>
-            <boxGeometry args={[size.width, 4, size.height]} />
-            <meshStandardMaterial color="#f87171" transparent opacity={0.3} />
-          </mesh>
-        )}
       </mesh>
+      
+      {/* Room label - using simple Text from drei instead of TextGeometry */}
+      {roomName && (
+        <group position={[0, wallHeight/2 - 10, 0]} rotation={[0, Math.PI, 0]}>
+          <mesh position={[0, 0, 0]}>
+            <boxGeometry args={[size.width * 0.8, 15, 2]} />
+            <meshStandardMaterial color="#1f2937" opacity={0} transparent={true} />
+          </mesh>
+          {/* We'll use HTML text overlay instead of 3D text */}
+        </group>
+      )}
     </group>
   );
 }
@@ -134,11 +105,10 @@ function Hallway3D({
   position, 
   size, 
   rotation = 0, 
-  color = '#F1F0FB', 
+  color = '#e5e7eb', 
   onClick, 
   isSelected = false,
-  id,
-  properties
+  id
 }: {
   position: { x: number, y: number };
   size: { width: number, height: number };
@@ -147,78 +117,30 @@ function Hallway3D({
   onClick: (data: any) => void;
   isSelected?: boolean;
   id: string;
-  properties?: any;
 }) {
-  const [hovered, setHovered] = useState(false);
   const hallwayHeight = 30; // Lower than rooms to differentiate
   
-  // Determine hallway properties
-  const trafficFlow = properties?.traffic_flow || properties?.trafficFlow || 'two_way';
-  const accessibility = properties?.accessibility || 'fully_accessible';
-  const isRestricted = accessibility === 'restricted';
-  const isEmergencyRoute = properties?.emergency_route === 'primary' || 
-                          properties?.emergency_route === 'secondary';
-  
-  // Hallway opacity varies based on type
-  const opacity = isRestricted ? 0.8 : 0.75;
-  
-  // Emissive properties for selected/hovered state
-  const emissiveColor = isSelected ? 0x333333 : (hovered ? 0x111111 : 0);
-  const emissiveIntensity = isSelected ? 0.2 : (hovered ? 0.1 : 0);
-  
   return (
-    <group
+    <mesh
       position={[position.x, hallwayHeight/2, position.y]}
       rotation={[0, rotation * Math.PI / 180, 0]}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick({ id, type: 'hallway', position, size, rotation });
+      }}
+      receiveShadow
     >
-      {/* Main hallway structure */}
-      <mesh
-        position={[0, 0, 0]}
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick({ id, type: 'hallway', position, size, rotation, properties });
-        }}
-        onPointerOver={() => setHovered(true)}
-        onPointerOut={() => setHovered(false)}
-        receiveShadow
-      >
-        <boxGeometry args={[size.width, hallwayHeight, size.height]} />
-        <meshStandardMaterial 
-          color={color} 
-          transparent={true}
-          opacity={opacity}
-          roughness={0.9}
-          metalness={0.1}
-          emissive={new THREE.Color(emissiveColor)}
-          emissiveIntensity={emissiveIntensity}
-        />
-      </mesh>
-      
-      {/* Traffic flow indicators */}
-      {trafficFlow === 'one_way' && (
-        <mesh position={[0, hallwayHeight/2 + 2, 0]} rotation={[Math.PI/2, 0, 0]}>
-          <planeGeometry args={[size.width * 0.8, size.height * 0.6]} />
-          <meshBasicMaterial 
-            color="#94a3b8" 
-            transparent 
-            opacity={0.3} 
-            side={THREE.DoubleSide}
-          />
-        </mesh>
-      )}
-      
-      {/* Emergency route indicators */}
-      {isEmergencyRoute && (
-        <mesh position={[0, -hallwayHeight/2 + 2, 0]} receiveShadow>
-          <boxGeometry args={[size.width, 1, size.height]} />
-          <meshStandardMaterial 
-            color={properties?.emergency_route === 'primary' ? "#f59e0b" : "#84cc16"} 
-            emissive={properties?.emergency_route === 'primary' ? "#f59e0b" : "#84cc16"}
-            emissiveIntensity={0.5}
-          />
-        </mesh>
-      )}
-    </group>
+      <boxGeometry args={[size.width, hallwayHeight, size.height]} />
+      <meshStandardMaterial 
+        color={color} 
+        transparent={true}
+        opacity={0.75}
+        roughness={0.9}
+        metalness={0.1}
+        emissive={isSelected ? new THREE.Color(0x333333) : undefined}
+        emissiveIntensity={isSelected ? 0.2 : 0}
+      />
+    </mesh>
   );
 }
 
@@ -230,8 +152,7 @@ function Door3D({
   color = '#94a3b8', 
   onClick, 
   isSelected = false,
-  id,
-  properties
+  id
 }: {
   position: { x: number, y: number };
   size: { width: number, height: number };
@@ -240,93 +161,42 @@ function Door3D({
   onClick: (data: any) => void;
   isSelected?: boolean;
   id: string;
-  properties?: any;
 }) {
-  const [hovered, setHovered] = useState(false);
-  
   // Door is positioned half-way up the wall
   const doorHeight = 80;
   const doorWidth = Math.max(size.width, 40); // Ensure minimum door width
   const doorThickness = Math.min(size.height, 15); // Door thickness (depth)
   
-  // Door properties
-  const isSecured = properties?.security_level === 'high' || 
-                   properties?.security_level === 'restricted';
-                   
-  const isTransition = properties?.is_transition_door;
-  
-  // Material properties based on door type
-  const metalness = isSecured ? 0.7 : (isTransition ? 0.5 : 0.3);
-  const roughness = isSecured ? 0.3 : (isTransition ? 0.4 : 0.6);
-  
-  // Emissive properties for selected/hovered state
-  const emissiveColor = isSelected ? 0x555555 : (hovered ? 0x222222 : 0);
-  const emissiveIntensity = isSelected ? 0.3 : (hovered ? 0.15 : 0);
-  
   return (
     <group
       position={[position.x, doorHeight/2, position.y]}
       rotation={[0, rotation * Math.PI / 180, 0]}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick({ id, type: 'door', position, size, rotation });
+      }}
     >
-      {/* Main door structure */}
-      <mesh 
-        castShadow 
-        receiveShadow
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick({ id, type: 'door', position, size, rotation, properties });
-        }}
-        onPointerOver={() => setHovered(true)}
-        onPointerOut={() => setHovered(false)}
-      >
+      <mesh castShadow receiveShadow>
         <boxGeometry args={[doorWidth, doorHeight, doorThickness]} />
         <meshStandardMaterial 
           color={color} 
-          roughness={roughness}
-          metalness={metalness}
-          emissive={new THREE.Color(emissiveColor)}
-          emissiveIntensity={emissiveIntensity}
+          roughness={0.6}
+          metalness={0.3}
+          emissive={isSelected ? new THREE.Color(0x555555) : undefined}
+          emissiveIntensity={isSelected ? 0.3 : 0}
         />
       </mesh>
       
       {/* Door handle */}
       <mesh position={[doorWidth/2 - 5, 0, doorThickness/2 + 1]} castShadow>
         <sphereGeometry args={[3, 8, 8]} />
-        <meshStandardMaterial 
-          color={isSecured ? "#ef4444" : "#64748b"} 
-          metalness={0.8} 
-          roughness={0.2} 
-        />
+        <meshStandardMaterial color="#64748b" metalness={0.8} roughness={0.2} />
       </mesh>
-      
-      {/* Security indicator for secured doors */}
-      {isSecured && (
-        <mesh position={[-doorWidth/2 + 5, 0, doorThickness/2 + 1]} castShadow>
-          <boxGeometry args={[5, 5, 1]} />
-          <meshStandardMaterial 
-            color="#ef4444" 
-            emissive="#ef4444"
-            emissiveIntensity={0.5}
-          />
-        </mesh>
-      )}
-      
-      {/* Transition indicator for transition doors */}
-      {isTransition && (
-        <mesh position={[-doorWidth/2 + 5, doorHeight/3, doorThickness/2 + 1]} castShadow>
-          <boxGeometry args={[5, 5, 1]} />
-          <meshStandardMaterial 
-            color="#3b82f6" 
-            emissive="#3b82f6"
-            emissiveIntensity={0.5}
-          />
-        </mesh>
-      )}
     </group>
   );
 }
 
-// Scene Lighting Component with improved lighting
+// Scene Lighting Component
 function SceneLighting() {
   const lightRef = useRef<THREE.DirectionalLight>(null);
   const ambientRef = useRef<THREE.AmbientLight>(null);
@@ -359,113 +229,14 @@ function SceneLighting() {
   );
 }
 
-// Connection/Edge visualization in 3D
-function Connection3D({
-  source,
-  target,
-  connectionData,
-  onClick
-}: {
-  source: FloorPlanNode;
-  target: FloorPlanNode;
-  connectionData: any;
-  onClick: (data: any) => void;
-}) {
-  // Extract properties from connection data
-  const connectionType = connectionData?.type || 'default';
-  const isTransitionDoor = connectionData?.isTransitionDoor || false;
-  const isSecured = connectionData?.isSecured || false;
-  
-  // Get positions from source and target
-  const sourcePos = source?.position || { x: 0, y: 0 };
-  const targetPos = target?.position || { x: 0, y: 0 };
-  
-  // Calculate curve points (simple straight line for now)
-  const points = [
-    new THREE.Vector3(sourcePos.x, 40, sourcePos.y),
-    new THREE.Vector3(targetPos.x, 40, targetPos.y)
-  ];
-  
-  // Create curve
-  const curve = new THREE.LineCurve3(points[0], points[1]);
-  
-  // Determine color based on connection type
-  let connectionColor;
-  if (isTransitionDoor) {
-    connectionColor = '#3b82f6'; // Blue for transition
-  } else if (isSecured) {
-    connectionColor = '#ef4444'; // Red for secured
-  } else if (connectionType === 'door') {
-    connectionColor = '#64748b'; // Gray for standard doors
-  } else {
-    connectionColor = '#94a3b8'; // Default connection color
-  }
-  
-  // Position of indicator is halfway between source and target
-  const midPoint = new THREE.Vector3(
-    (sourcePos.x + targetPos.x) / 2,
-    60, // Slightly above the connection line
-    (sourcePos.y + targetPos.y) / 2
-  );
-  
-  return (
-    <group>
-      {/* Connection line */}
-      <mesh 
-        position={[0, 0, 0]} 
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick({
-            type: 'connection',
-            source: source.id,
-            target: target.id,
-            data: connectionData
-          });
-        }}
-      >
-        <tubeGeometry 
-          args={[
-            curve,
-            20, // Tube segments
-            2, // Tube radius
-            8, // Radial segments
-            false // closed
-          ]} 
-        />
-        <meshStandardMaterial 
-          color={connectionColor} 
-          transparent
-          opacity={0.6}
-          emissive={connectionColor}
-          emissiveIntensity={0.2}
-        />
-      </mesh>
-      
-      {/* Connection type indicator */}
-      {(isTransitionDoor || isSecured) && (
-        <mesh position={midPoint.toArray()}>
-          <sphereGeometry args={[5, 8, 8]} />
-          <meshStandardMaterial 
-            color={connectionColor} 
-            emissive={connectionColor}
-            emissiveIntensity={0.5}
-          />
-        </mesh>
-      )}
-    </group>
-  );
-}
-
 // Scene Initialization Component with improved controls and environment
 function ThreeDScene({ 
   objects, 
-  edges,
   onObjectSelect, 
   selectedObjectId = null,
   previewData = null
 }: {
   objects: FloorPlanNode[];
-  edges: any[];
   onObjectSelect: (object: any) => void;
   selectedObjectId?: string | null;
   previewData?: any | null;
@@ -498,8 +269,8 @@ function ThreeDScene({
       const centerY = (minY + maxY) / 2;
       
       // Calculate scene size and suitable camera distance
-      const sceneWidth = Math.max(maxX - minX, 100);
-      const sceneDepth = Math.max(maxY - minY, 100);
+      const sceneWidth = maxX - minX;
+      const sceneDepth = maxY - minY;
       const maxDimension = Math.max(sceneWidth, sceneDepth);
       const cameraDistance = maxDimension * 1.2; // Give some padding
       
@@ -559,26 +330,6 @@ function ThreeDScene({
     }
   }, [selectedObjectId, objects]);
 
-  // Create edge connections between objects
-  const renderConnections = () => {
-    return edges.map(edge => {
-      const sourceNode = objects.find(obj => obj.id === edge.source);
-      const targetNode = objects.find(obj => obj.id === edge.target);
-      
-      if (!sourceNode || !targetNode) return null;
-      
-      return (
-        <Connection3D 
-          key={edge.id}
-          source={sourceNode}
-          target={targetNode}
-          connectionData={edge.data}
-          onClick={onObjectSelect}
-        />
-      );
-    });
-  };
-
   return (
     <>
       <SceneLighting />
@@ -615,9 +366,6 @@ function ThreeDScene({
         />
       </group>
       
-      {/* Render connections */}
-      {renderConnections()}
-      
       {/* Render all objects */}
       {objects.map(obj => {
         // Apply preview data if available
@@ -650,7 +398,6 @@ function ThreeDScene({
                 onClick={onObjectSelect}
                 isSelected={isSelected}
                 properties={obj.data?.properties}
-                type="room"
               />
             );
           case 'hallway':
@@ -661,10 +408,9 @@ function ThreeDScene({
                 position={objectData.position}
                 size={objectData.data.size}
                 rotation={objectData.data.rotation || 0}
-                color={obj.data?.style?.backgroundColor || '#F1F0FB'}
+                color={obj.data?.style?.backgroundColor || '#e5e7eb'}
                 onClick={onObjectSelect}
                 isSelected={isSelected}
-                properties={obj.data?.properties}
               />
             );
           case 'door':
@@ -678,7 +424,6 @@ function ThreeDScene({
                 color={obj.data?.style?.backgroundColor || '#94a3b8'}
                 onClick={onObjectSelect}
                 isSelected={isSelected}
-                properties={obj.data?.properties}
               />
             );
           default:
@@ -702,7 +447,7 @@ export function ThreeDViewer({
   selectedObjectId,
   previewData
 }: ThreeDViewerProps) {
-  const { objects, edges, isLoading } = useFloorPlanData(floorId);
+  const { objects, isLoading } = useFloorPlanData(floorId);
   const [viewerError, setViewerError] = useState<Error | null>(null);
   const [isMounted, setIsMounted] = useState<boolean>(false);
 
@@ -713,18 +458,6 @@ export function ThreeDViewer({
 
   const handleObjectSelect = (object: any) => {
     if (onObjectSelect) {
-      if (object.type === 'connection') {
-        // For connections, return connection data
-        onObjectSelect({
-          id: `${object.source}-${object.target}`,
-          type: 'connection',
-          sourceId: object.source,
-          targetId: object.target,
-          data: object.data
-        });
-        return;
-      }
-      
       const selectedObj = objects.find(obj => obj.id === object.id);
       if (selectedObj) {
         onObjectSelect({
@@ -798,7 +531,6 @@ export function ThreeDViewer({
           >
             <ThreeDScene 
               objects={objects} 
-              edges={edges}
               onObjectSelect={handleObjectSelect} 
               selectedObjectId={selectedObjectId} 
               previewData={previewData}
@@ -820,33 +552,6 @@ export function ThreeDViewer({
             <div className="flex items-center gap-2">
               <span className="w-4 h-4 rounded-full bg-amber-500"></span>
               <span>Scroll: Zoom</span>
-            </div>
-          </div>
-        </div>
-        
-        {/* Color key for different space types */}
-        <div className="absolute top-4 left-4 bg-white/80 backdrop-blur-sm p-2 rounded-md shadow-md">
-          <div className="text-xs text-gray-600 font-medium mb-1">Legend</div>
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-sm" style={{backgroundColor: '#D3E4FD'}}></span>
-              <span className="text-xs">Public Rooms</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-sm" style={{backgroundColor: '#E5DEFF'}}></span>
-              <span className="text-xs">Private/Admin Rooms</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-sm" style={{backgroundColor: '#F1F0FB'}}></span>
-              <span className="text-xs">Public Hallways</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-sm" style={{backgroundColor: '#403E43'}}></span>
-              <span className="text-xs">Private Hallways</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-sm" style={{backgroundColor: '#ef4444'}}></span>
-              <span className="text-xs">Secured Access</span>
             </div>
           </div>
         </div>

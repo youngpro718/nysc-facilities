@@ -4,48 +4,19 @@ export function getSpaceColor(space: any): string {
   if (!space) return '#e2e8f0'; // Default color for undefined spaces
   
   if (space.object_type === 'room' || space.type === 'room') {
-    const roomType = space.properties?.room_type || 'default';
-    const accessLevel = space.properties?.access_level || 'standard';
-    
-    // Different colors based on room type and access level
-    if (roomType === 'courtroom' || roomType === 'hearing_room') {
-      return space.status === 'active' ? '#D3E4FD' : '#D3E4FD80'; // Light blue for public rooms
-    } else if (roomType === 'office' && accessLevel === 'restricted') {
-      return space.status === 'active' ? '#E5DEFF' : '#E5DEFF80'; // Muted purple for private/admin rooms
-    } else if (roomType === 'storage') {
-      return space.status === 'active' ? '#F1F5F9' : '#F1F5F980'; // Light gray for storage
-    }
-    
-    const baseColor = ROOM_COLORS[roomType] || ROOM_COLORS.default;
+    const baseColor = ROOM_COLORS[space.type] || ROOM_COLORS.default;
     return space.status === 'active' ? baseColor : `${baseColor}80`;
   } else if (space.object_type === 'hallway' || space.type === 'hallway') {
-    // Different color based on hallway type and accessibility
+    // Different color based on hallway type
     const hallwayType = space.properties?.hallwayType || 
                        space.properties?.type || 
                        'public_main';
     
-    const accessibility = space.properties?.accessibility || 
-                         'fully_accessible';
-    
-    if (accessibility === 'restricted' || hallwayType === 'private') {
-      return space.status === 'active' ? '#403E43' : '#403E4380'; // Darker color for private hallways
+    if (hallwayType === 'private' || 
+        space.properties?.accessibility === 'restricted') {
+      return space.status === 'active' ? '#f3f4f6' : '#f3f4f680'; // Lighter gray for private hallways
     }
-    
-    return space.status === 'active' ? '#F1F0FB' : '#F1F0FB80'; // Light transparent for public hallways
-  } else if (space.object_type === 'door' || space.type === 'door') {
-    const isSecured = space.properties?.security_level === 'restricted' || 
-                     space.properties?.security_level === 'high';
-    
-    if (isSecured) {
-      return space.status === 'active' ? '#ef4444' : '#ef444480'; // Red for secured doors
-    }
-    
-    const isTransition = space.properties?.is_transition_door || false;
-    if (isTransition) {
-      return space.status === 'active' ? '#3b82f6' : '#3b82f680'; // Blue for transition doors
-    }
-    
-    return space.status === 'active' ? '#94a3b8' : '#94a3b880'; // Default door color
+    return space.status === 'active' ? '#e5e7eb' : '#e5e7eb80'; // Default hallway color
   } else {
     return space.status === 'active' ? '#94a3b8' : '#94a3b880';
   }
