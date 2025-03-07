@@ -359,7 +359,7 @@ function ThreeDScene({
         }
         
         const isSelected = selectedObjectId === obj.id;
-        const rotation = objectData.data.rotation !== undefined 
+        const rotation = objectData.data?.rotation !== undefined 
           ? objectData.data.rotation 
           : (objectData.rotation || 0);
         

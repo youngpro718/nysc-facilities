@@ -64,7 +64,7 @@ export interface FloorPlanLayer {
   data: Record<string, any>;
 }
 
-// Raw object structure from API
+// Raw object structure from API - made all properties optional except id
 export interface RawFloorPlanObject {
   id: string;
   name?: string;
@@ -74,8 +74,8 @@ export interface RawFloorPlanObject {
   room_type?: string;
   status?: string;
   floor_id?: string;
-  position?: Position;
-  size?: Size;
+  position?: Position | any; // Allow any for parsing
+  size?: Size | any; // Allow any for parsing
   rotation?: number; 
   properties?: Record<string, any>;
 }

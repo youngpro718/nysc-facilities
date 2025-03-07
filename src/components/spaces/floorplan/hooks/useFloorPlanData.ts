@@ -4,7 +4,7 @@ import { transformLayer } from "../utils/layerTransforms";
 import { transformSpaceToNode } from "../utils/nodeTransforms";
 import { createEdgesFromConnections } from "../utils/edgeTransforms";
 import { fetchFloorPlanLayers, fetchFloorPlanObjects } from "../queries/floorPlanQueries";
-import { FloorPlanLayerDB, RawFloorPlanObject } from "../types/floorPlanTypes";
+import { FloorPlanLayerDB, RawFloorPlanObject, Position, Size } from "../types/floorPlanTypes";
 
 export function useFloorPlanData(floorId: string | null) {
   // Query for layers
@@ -35,24 +35,71 @@ export function useFloorPlanData(floorId: string | null) {
   // Assign default positions to objects without positions
   // This is crucial for the 3D view to show objects
   const objectsWithPositions = Array.isArray(safeSpaceData.objects) ? 
-    safeSpaceData.objects.map((rawObj: RawFloorPlanObject, index) => {
+    safeSpaceData.objects.map((rawObj: any, index) => {
       // Ensure we have a position (use default grid position if none exists)
-      const defaultPosition = {
+      const defaultPosition: Position = {
         x: (index % 4) * 250 + 100, // Create a grid layout with 4 columns
         y: Math.floor(index / 4) * 250 + 100
       };
       
       // Ensure we have a size
-      const defaultSize = { width: 150, height: 100 };
+      const defaultSize: Size = { width: 150, height: 100 };
+      
+      // Parse position if it's a string
+      let parsedPosition = defaultPosition;
+      if (rawObj.position) {
+        if (typeof rawObj.position === 'string') {
+          try {
+            parsedPosition = JSON.parse(rawObj.position);
+            // Validate the parsed position
+            if (!parsedPosition.x || !parsedPosition.y || 
+                typeof parsedPosition.x !== 'number' || 
+                typeof parsedPosition.y !== 'number') {
+              parsedPosition = defaultPosition;
+            }
+          } catch {
+            parsedPosition = defaultPosition;
+          }
+        } else if (typeof rawObj.position === 'object' && 
+                  rawObj.position !== null &&
+                  typeof rawObj.position.x === 'number' &&
+                  typeof rawObj.position.y === 'number') {
+          parsedPosition = rawObj.position;
+        }
+      }
+      
+      // Parse size if it's a string
+      let parsedSize = defaultSize;
+      if (rawObj.size) {
+        if (typeof rawObj.size === 'string') {
+          try {
+            parsedSize = JSON.parse(rawObj.size);
+            // Validate the parsed size
+            if (!parsedSize.width || !parsedSize.height || 
+                typeof parsedSize.width !== 'number' || 
+                typeof parsedSize.height !== 'number') {
+              parsedSize = defaultSize;
+            }
+          } catch {
+            parsedSize = defaultSize;
+          }
+        } else if (typeof rawObj.size === 'object' && 
+                  rawObj.size !== null &&
+                  typeof rawObj.size.width === 'number' &&
+                  typeof rawObj.size.height === 'number') {
+          parsedSize = rawObj.size;
+        }
+      }
       
       // Create a standardized object with all required fields
       return {
         ...rawObj,
-        position: rawObj.position || defaultPosition,
-        size: rawObj.size || defaultSize,
+        id: rawObj.id || `obj-${index}`,
+        position: parsedPosition,
+        size: parsedSize,
         properties: rawObj.properties || {},
         object_type: rawObj.object_type || rawObj.type || 'room'
-      };
+      } as RawFloorPlanObject;
     }) : 
     [];
   
@@ -67,17 +114,17 @@ export function useFloorPlanData(floorId: string | null) {
       return {
         id: obj.id || `error-${index}`,
         type: obj.object_type || 'room',
-        position: obj.position,
+        position: obj.position as Position || { x: index * 100, y: index * 100 },
         data: {
           label: obj.name || 'Error Object',
           type: obj.object_type || 'room',
-          size: obj.size,
+          size: obj.size as Size || { width: 150, height: 100 },
           style: {
             backgroundColor: '#f87171',
             border: '1px dashed #ef4444',
             opacity: 0.7
           },
-          properties: obj.properties,
+          properties: obj.properties || {},
           rotation: obj.rotation || 0
         },
         zIndex: 0
