@@ -38,8 +38,16 @@ export interface FloorPlanEdge {
   target: string;
   data?: {
     type: string;
+    direction?: string;
+    isTransitionDoor?: boolean;
+    isSecured?: boolean;
+    hallwayPosition?: number;
+    offsetDistance?: number;
+    position?: string;
     style?: Record<string, any>;
   };
+  type?: string;
+  animated?: boolean;
 }
 
 export interface FloorPlanLayerDB {
@@ -66,9 +74,11 @@ export interface FloorPlanLayer {
 
 export const ROOM_COLORS: Record<string, string> = {
   office: '#e2e8f0',
-  courtroom: '#dbeafe',
+  courtroom: '#D3E4FD',  // Light blue for public rooms
+  hearing_room: '#D3E4FD',
   storage: '#f1f5f9',
   conference: '#fef3c7',
+  private: '#E5DEFF',    // Muted purple for private/admin rooms
   default: '#e2e8f0'
 };
 
