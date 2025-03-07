@@ -3,107 +3,120 @@ import * as THREE from 'three';
 import { FloorPlanNode } from '../../types/floorPlanTypes';
 
 export function createDoor3D(node: FloorPlanNode, isSelected: boolean = false): THREE.Object3D {
-  // Get door properties
-  const { width = 40, height = 10 } = node.data.size;
-  const doorHeight = 40; // Standard door height
+  // Create parent object to hold all door components
+  const doorObject = new THREE.Object3D();
   
-  // Determine door properties
-  const isDoor = node.data.type === 'door';
-  const isTransition = node.data.properties?.isTransitionDoor || false;
-  const isSecured = node.data.properties?.isSecured || false;
+  // Get dimensions and properties
+  const { width, height } = node.data.size;
+  const doorHeight = 80; // Taller than rooms/hallways
+  const doorThickness = 10;
   
-  // Determine color based on door type
-  let color = 0x64748b; // Default door color
-  
-  if (isTransition) {
-    color = 0x3b82f6; // Blue for transition doors
-  } else if (isSecured) {
-    color = 0xef4444; // Red for secured doors
-  }
-  
-  // Create door group
-  const doorGroup = new THREE.Group();
-  
-  // Create door geometry
-  const doorGeometry = new THREE.BoxGeometry(width, doorHeight, height);
-  
-  const doorMaterial = new THREE.MeshStandardMaterial({
-    color,
+  // Door frame
+  const frameGeometry = new THREE.BoxGeometry(width + 10, doorHeight, doorThickness + 5);
+  const frameMaterial = new THREE.MeshStandardMaterial({ 
+    color: isSelected ? '#aaccff' : '#8b4513', // Brown wood color for frame
     roughness: 0.7,
+    metalness: 0.2
+  });
+  const frame = new THREE.Mesh(frameGeometry, frameMaterial);
+  
+  // Door panel
+  const doorGeometry = new THREE.BoxGeometry(width, doorHeight - 10, doorThickness);
+  const doorMaterial = new THREE.MeshStandardMaterial({ 
+    color: isSelected ? '#aaccff' : '#a0522d', // Darker brown for door
+    roughness: 0.5,
     metalness: 0.3
   });
   
-  // Create mesh
-  const door = new THREE.Mesh(doorGeometry, doorMaterial);
-  door.castShadow = true;
+  // If it's a security door, use different color
+  const isSecurityDoor = node.data.properties?.security_level === 'high' || 
+                          node.data.properties?.security_level === 'restricted';
   
-  // Position the door
-  door.position.set(0, doorHeight / 2, 0);
-  doorGroup.position.set(node.position.x, 0, node.position.y);
-  
-  // Rotate if needed
-  if (node.rotation) {
-    doorGroup.rotation.y = -node.rotation * (Math.PI / 180);
+  if (isSecurityDoor && !isSelected) {
+    doorMaterial.color = new THREE.Color('#8B0000'); // Dark red for security doors
   }
   
-  // Add door frame
-  const frameThickness = 5;
-  const frameWidth = width + frameThickness * 2;
-  const frameHeight = doorHeight + frameThickness;
+  const doorPanel = new THREE.Mesh(doorGeometry, doorMaterial);
   
-  // Frame sides
-  const frameSideGeometry = new THREE.BoxGeometry(frameThickness, frameHeight, height);
-  const frameMaterial = new THREE.MeshStandardMaterial({
-    color: 0x475569,
-    roughness: 0.9,
-    metalness: 0.1
+  // Door handle
+  const handleGeometry = new THREE.SphereGeometry(5, 8, 8);
+  const handleMaterial = new THREE.MeshStandardMaterial({ 
+    color: isSelected ? '#ffffff' : '#c0c0c0',
+    roughness: 0.2,
+    metalness: 0.8
+  });
+  const handle = new THREE.Mesh(handleGeometry, handleMaterial);
+  handle.position.set(width/3, 0, doorThickness/2 + 2);
+  
+  // Position in 3D space
+  doorObject.position.set(node.position.x, doorHeight/2, node.position.y);
+  
+  // Apply rotation if available
+  if (node.rotation) {
+    doorObject.rotation.y = (node.rotation * Math.PI) / 180;
+  }
+  
+  // Add shadows
+  frame.castShadow = true;
+  doorPanel.castShadow = true;
+  handle.castShadow = true;
+  
+  // Add all components to the door object
+  doorObject.add(frame);
+  doorObject.add(doorPanel);
+  doorObject.add(handle);
+  
+  // Add userData for raycasting
+  doorObject.userData = { nodeId: node.id };
+  
+  // Create and add door label
+  const doorLabel = createDoorLabel(node);
+  doorLabel.position.set(0, doorHeight + 5, 0);
+  doorObject.add(doorLabel);
+  
+  return doorObject;
+}
+
+function createDoorLabel(node: FloorPlanNode): THREE.Object3D {
+  // Get door properties
+  const doorNumber = node.data.properties?.room_number || '';
+  
+  // If no door number, create minimal label
+  if (!doorNumber) {
+    const simpleGeometry = new THREE.BoxGeometry(5, 5, 5);
+    const simpleMaterial = new THREE.MeshBasicMaterial({ color: '#ff0000' });
+    const simpleMesh = new THREE.Mesh(simpleGeometry, simpleMaterial);
+    return simpleMesh;
+  }
+  
+  // Create canvas for texture
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  if (!context) return new THREE.Object3D(); // fallback
+  
+  canvas.width = 128;
+  canvas.height = 64;
+  
+  // Set background with transparency
+  context.fillStyle = 'rgba(255, 255, 255, 0.8)';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  
+  // Draw door number
+  context.fillStyle = '#000000';
+  context.font = 'Bold 24px Arial';
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.fillText(doorNumber, canvas.width / 2, canvas.height / 2);
+  
+  // Create texture and sprite
+  const texture = new THREE.CanvasTexture(canvas);
+  const material = new THREE.SpriteMaterial({ 
+    map: texture,
+    transparent: true
   });
   
-  const leftFrame = new THREE.Mesh(frameSideGeometry, frameMaterial);
-  leftFrame.position.set(-width/2 - frameThickness/2, doorHeight/2, 0);
+  const sprite = new THREE.Sprite(material);
+  sprite.scale.set(20, 10, 1);
   
-  const rightFrame = new THREE.Mesh(frameSideGeometry, frameMaterial);
-  rightFrame.position.set(width/2 + frameThickness/2, doorHeight/2, 0);
-  
-  // Frame top
-  const frameTopGeometry = new THREE.BoxGeometry(frameWidth, frameThickness, height);
-  const topFrame = new THREE.Mesh(frameTopGeometry, frameMaterial);
-  topFrame.position.set(0, doorHeight + frameThickness/2, 0);
-  
-  doorGroup.add(door, leftFrame, rightFrame, topFrame);
-  
-  // Add security indicator for secured doors
-  if (isSecured) {
-    const securityGeometry = new THREE.SphereGeometry(5, 16, 16);
-    const securityMaterial = new THREE.MeshBasicMaterial({ color: 0xef4444 });
-    const securityIndicator = new THREE.Mesh(securityGeometry, securityMaterial);
-    securityIndicator.position.set(0, doorHeight * 0.7, height / 2 + 3);
-    doorGroup.add(securityIndicator);
-  }
-  
-  // Add highlights for selected door
-  if (isSelected) {
-    const edgeGeometry = new THREE.EdgesGeometry(doorGeometry);
-    const lineMaterial = new THREE.LineBasicMaterial({ color: 0x2563eb, linewidth: 2 });
-    const wireframe = new THREE.LineSegments(edgeGeometry, lineMaterial);
-    door.add(wireframe);
-    
-    // Add a subtle glow effect
-    const glowMaterial = new THREE.MeshBasicMaterial({
-      color: 0x3b82f6,
-      transparent: true,
-      opacity: 0.3,
-      side: THREE.BackSide
-    });
-    const glowMesh = new THREE.Mesh(
-      new THREE.BoxGeometry(width + 4, doorHeight + 4, height + 4),
-      glowMaterial
-    );
-    door.add(glowMesh);
-  }
-  
-  // Set userData for raycasting
-  doorGroup.userData = { nodeId: node.id };
-  
-  return doorGroup;
+  return sprite;
 }

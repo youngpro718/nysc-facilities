@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Grid3X3 } from "lucide-react";
 import { FloorPlan3D } from "./floorplan/FloorPlan3D";
+import { RoomsList } from "./RoomsList";
 
 interface SpacesTabsProps {
   selectedBuilding: string;
@@ -25,10 +26,10 @@ const SpacesTabs = ({ selectedBuilding, selectedFloor }: SpacesTabsProps) => {
       </div>
 
       <TabsContent value="list" className="space-y-4">
-        <div className="p-4 border rounded-md">
-          <h3 className="text-lg font-medium mb-2">Spaces List</h3>
-          <p className="text-gray-500">Select a building and floor to view spaces.</p>
-        </div>
+        <RoomsList 
+          buildingId={selectedBuilding === "all" ? undefined : selectedBuilding}
+          floorId={selectedFloor === "all" ? undefined : selectedFloor}
+        />
       </TabsContent>
 
       <TabsContent value="3d">

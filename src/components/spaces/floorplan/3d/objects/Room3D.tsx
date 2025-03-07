@@ -1,118 +1,139 @@
 
 import * as THREE from 'three';
-import { FloorPlanNode, ROOM_COLORS } from '../../types/floorPlanTypes';
+import { FloorPlanNode } from '../../types/floorPlanTypes';
 
 export function createRoom3D(node: FloorPlanNode, isSelected: boolean = false): THREE.Object3D {
-  // Get room properties
   const { width, height } = node.data.size;
-  const depth = 30; // Default room height
-  const roomType = node.data.type || 'default';
-  const isStorage = node.data.properties?.isStorage || false;
-  const isPrivate = node.data.properties?.roomType === 'private' || 
-                   node.data.properties?.roomType === 'office' || 
-                   roomType === 'private';
+  const depth = 40; // Standard room height
   
-  // Determine color and appearance based on room type
-  const colorKey = Object.keys(ROOM_COLORS).includes(roomType) ? roomType : 'default';
-  let color = ROOM_COLORS[colorKey];
-  
-  if (isStorage) {
-    // Darken the color slightly for storage rooms
-    const c = new THREE.Color(color);
-    c.offsetHSL(0, 0, -0.1);
-    color = c.getStyle();
-  }
-  
-  // Create basic room geometry
+  // Create room geometry (slightly elevated from ground)
   const geometry = new THREE.BoxGeometry(width, depth, height);
   
-  // Create materials with different appearance based on room type
+  // Get the color from node data or use default
+  const color = node.data.style?.backgroundColor || '#e2e8f0';
+  
+  // Create materials with different properties for sides and top/bottom
   const materials = [
-    new THREE.MeshStandardMaterial({ color, roughness: 0.8, metalness: 0.2 }), // Right side
-    new THREE.MeshStandardMaterial({ color, roughness: 0.8, metalness: 0.2 }), // Left side
-    new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, metalness: 0.1 }), // Top
-    new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.9, metalness: 0.1 }), // Bottom
-    new THREE.MeshStandardMaterial({ color, roughness: 0.8, metalness: 0.2 }), // Front
-    new THREE.MeshStandardMaterial({ color, roughness: 0.8, metalness: 0.2 })  // Back
+    new THREE.MeshStandardMaterial({ 
+      color: color, 
+      metalness: 0.1,
+      roughness: 0.7,
+      side: THREE.DoubleSide 
+    }), // right side
+    new THREE.MeshStandardMaterial({ 
+      color: color, 
+      metalness: 0.1,
+      roughness: 0.7,
+      side: THREE.DoubleSide 
+    }), // left side
+    new THREE.MeshStandardMaterial({ 
+      color: color, 
+      metalness: 0.1,
+      roughness: 0.7,
+      opacity: 0.95, 
+      transparent: true,
+      side: THREE.DoubleSide 
+    }), // top - slightly transparent
+    new THREE.MeshStandardMaterial({ 
+      color: color, 
+      metalness: 0.1,
+      roughness: 0.9,
+      side: THREE.DoubleSide 
+    }), // bottom
+    new THREE.MeshStandardMaterial({ 
+      color: color, 
+      metalness: 0.1,
+      roughness: 0.7,
+      side: THREE.DoubleSide 
+    }), // front
+    new THREE.MeshStandardMaterial({ 
+      color: color, 
+      metalness: 0.1,
+      roughness: 0.7,
+      side: THREE.DoubleSide 
+    })  // back
   ];
   
-  // Create mesh
-  const room = new THREE.Mesh(geometry, materials);
-  room.castShadow = true;
-  room.receiveShadow = true;
-  
-  // Position the room
-  room.position.set(node.position.x, depth / 2, node.position.y);
-  
-  // Rotate if needed
-  if (node.rotation) {
-    room.rotation.y = -node.rotation * (Math.PI / 180);
-  }
-  
-  // Parent/Child room relationship
-  if (node.data.properties?.parent_room_id) {
-    // Add a slight elevation for child rooms
-    room.position.y += 5;
-  }
-  
-  // Add highlights for selected room
+  // If selected, adjust materials
   if (isSelected) {
-    const edgeGeometry = new THREE.EdgesGeometry(geometry);
-    const lineMaterial = new THREE.LineBasicMaterial({ color: 0x2563eb, linewidth: 2 });
-    const wireframe = new THREE.LineSegments(edgeGeometry, lineMaterial);
-    room.add(wireframe);
-    
-    // Add a subtle glow effect for selected room
-    const glowMaterial = new THREE.MeshBasicMaterial({
-      color: 0x3b82f6,
-      transparent: true,
-      opacity: 0.2,
-      side: THREE.BackSide
+    materials.forEach(material => {
+      material.emissive = new THREE.Color(0x333333);
+      material.color = new THREE.Color(0xaaccff);
     });
-    const glowMesh = new THREE.Mesh(
-      new THREE.BoxGeometry(width + 2, depth + 2, height + 2),
-      glowMaterial
-    );
-    room.add(glowMesh);
+  }
+
+  const mesh = new THREE.Mesh(geometry, materials);
+  
+  // Position in 3D space - center the box on its bottom face
+  mesh.position.set(node.position.x, depth / 2, node.position.y);
+  
+  // Apply rotation if available
+  if (node.rotation) {
+    mesh.rotation.y = (node.rotation * Math.PI) / 180;
   }
   
-  // Add label for room name
+  // Enable shadows
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  
+  // Add the room label
+  const roomLabel = createRoomLabel(node);
+  roomLabel.position.set(0, depth + 5, 0); // Position the label on top of the room
+  mesh.add(roomLabel);
+  
+  // Add userData for raycasting
+  mesh.userData = { nodeId: node.id };
+  
+  return mesh;
+}
+
+function createRoomLabel(node: FloorPlanNode): THREE.Object3D {
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
+  if (!context) return new THREE.Object3D(); // fallback
+  
   canvas.width = 256;
   canvas.height = 128;
   
-  if (context) {
-    context.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.font = 'Bold 24px Arial';
-    context.textAlign = 'center';
-    context.textBaseline = 'middle';
-    context.fillStyle = '#333333';
-    context.fillText(node.data.label || '', canvas.width / 2, canvas.height / 2);
-    
-    // Add room number if available
-    if (node.data.properties?.roomNumber) {
-      context.font = '20px Arial';
-      context.fillText(`Room ${node.data.properties.roomNumber}`, canvas.width / 2, 80);
-    }
+  // Set background color
+  context.fillStyle = '#ffffff';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  
+  // Set text properties
+  context.fillStyle = '#000000';
+  context.font = 'Bold 24px Arial';
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  
+  // Write the room name (wrapped if needed)
+  const roomName = node.data.label || '';
+  const roomNumber = node.data.properties?.room_number || '';
+  
+  // Limit text length to prevent overflow
+  const maxLength = 20;
+  const displayName = roomName.length > maxLength ? 
+    roomName.substring(0, maxLength) + '...' : roomName;
+  
+  context.fillText(displayName, canvas.width / 2, canvas.height / 2 - 15);
+  
+  if (roomNumber) {
+    context.font = '18px Arial';
+    context.fillText(`#${roomNumber}`, canvas.width / 2, canvas.height / 2 + 15);
   }
   
+  // Create texture from canvas
   const texture = new THREE.CanvasTexture(canvas);
-  const labelMaterial = new THREE.MeshBasicMaterial({
+  texture.needsUpdate = true;
+  
+  // Create sprite material using the texture
+  const material = new THREE.SpriteMaterial({ 
     map: texture,
-    transparent: true,
-    side: THREE.DoubleSide
+    transparent: true
   });
   
-  const labelGeometry = new THREE.PlaneGeometry(80, 40);
-  const label = new THREE.Mesh(labelGeometry, labelMaterial);
-  label.position.set(0, depth + 10, 0);
-  label.rotation.x = -Math.PI / 2;
-  room.add(label);
+  // Create the sprite and scale it
+  const sprite = new THREE.Sprite(material);
+  sprite.scale.set(60, 30, 1);
   
-  // Set userData for raycasting
-  room.userData = { nodeId: node.id };
-  
-  return room;
+  return sprite;
 }
