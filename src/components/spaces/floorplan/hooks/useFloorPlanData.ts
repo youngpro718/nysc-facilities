@@ -1,9 +1,11 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { transformLayer } from "../utils/layerTransforms";
 import { transformSpaceToNode } from "../utils/nodeTransforms";
 import { createEdgesFromConnections } from "../utils/edgeTransforms";
 import { fetchFloorPlanLayers, fetchFloorPlanObjects } from "../queries/floorPlanQueries";
 import { FloorPlanLayerDB, RawFloorPlanObject, Position, Size } from "../types/floorPlanTypes";
+import { supabase } from "@/integrations/supabase/client";
 
 export function useFloorPlanData(floorId: string | null) {
   // Query for layers
