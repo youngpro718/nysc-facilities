@@ -64,6 +64,24 @@ export interface FloorPlanLayer {
   data: Record<string, any>;
 }
 
+// 3D visualization specific types
+export interface Object3D {
+  id: string;
+  type: string;
+  position: Position;
+  size: Size;
+  rotation?: number;
+  color?: string;
+  properties?: Record<string, any>;
+}
+
+export interface Connection3D {
+  id: string;
+  source: string;
+  target: string;
+  type: string;
+}
+
 export const ROOM_COLORS: Record<string, string> = {
   office: '#e2e8f0',
   courtroom: '#dbeafe',

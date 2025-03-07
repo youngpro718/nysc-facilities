@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { transformLayer } from "../utils/layerTransforms";
 import { transformSpaceToNode } from "../utils/nodeTransforms";
@@ -31,35 +32,62 @@ export function useFloorPlanData(floorId: string | null) {
   // Ensure spaceData is properly structured to avoid "undefined" errors
   const safeSpaceData = spaceData || { objects: [], connections: [] };
   
-  // Transform all objects into floor plan nodes
-  const objects = Array.isArray(safeSpaceData.objects) ? 
+  // Assign default positions to objects without positions
+  // This is crucial for the 3D view to show objects
+  const objectsWithPositions = Array.isArray(safeSpaceData.objects) ? 
     safeSpaceData.objects.map((obj, index) => {
-      // Ensure each object has the required properties
-      try {
-        return transformSpaceToNode(obj, index);
-      } catch (error) {
-        console.error('Error transforming object to node:', error, obj);
-        // Return a fallback node in case of errors
+      // If object has no position, assign a grid position
+      if (!obj.position || (obj.position.x === 0 && obj.position.y === 0)) {
+        // Calculate grid position - create a grid layout
+        const gridSize = 250; // Space between objects
+        const gridCols = 4; // Number of columns in the grid
+        const row = Math.floor(index / gridCols);
+        const col = index % gridCols;
+        
         return {
-          id: obj.id || `error-${index}`,
-          type: obj.object_type || 'room',
-          position: { x: index * 100, y: index * 100 },
-          data: {
-            label: obj.name || 'Error Object',
-            type: obj.object_type || 'room',
-            size: { width: 150, height: 100 },
-            style: {
-              backgroundColor: '#f87171',
-              border: '1px dashed #ef4444',
-              opacity: 0.7
-            },
-            properties: {}
-          },
-          zIndex: 0
+          ...obj,
+          position: {
+            x: col * gridSize + 100, // Add offset to avoid starting at 0,0
+            y: row * gridSize + 100
+          }
         };
       }
+      return obj;
     }) : 
     [];
+  
+  // Transform all objects into floor plan nodes
+  const objects = objectsWithPositions.map((obj, index) => {
+    // Ensure each object has the required properties
+    try {
+      // Set default size if missing or invalid
+      if (!obj.size || obj.size.width <= 0 || obj.size.height <= 0) {
+        obj.size = { width: 150, height: 100 };
+      }
+      
+      return transformSpaceToNode(obj, index);
+    } catch (error) {
+      console.error('Error transforming object to node:', error, obj);
+      // Return a fallback node in case of errors
+      return {
+        id: obj.id || `error-${index}`,
+        type: obj.object_type || 'room',
+        position: { x: obj.position?.x || index * 100, y: obj.position?.y || index * 100 },
+        data: {
+          label: obj.name || 'Error Object',
+          type: obj.object_type || 'room',
+          size: obj.size || { width: 150, height: 100 },
+          style: {
+            backgroundColor: '#f87171',
+            border: '1px dashed #ef4444',
+            opacity: 0.7
+          },
+          properties: obj.properties || {}
+        },
+        zIndex: 0
+      };
+    }
+  });
     
   const edges = Array.isArray(safeSpaceData.connections) ? 
     createEdgesFromConnections(safeSpaceData.connections) : 
