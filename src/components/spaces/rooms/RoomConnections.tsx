@@ -1,5 +1,15 @@
 
 import { Badge } from "@/components/ui/badge";
+import { 
+  ArrowLeft, 
+  ArrowRight, 
+  ArrowUp, 
+  ArrowDown,
+  ChevronsLeft,
+  ChevronsRight,
+  ChevronsUp,
+  ChevronsDown
+} from "lucide-react";
 import { RoomConnection } from "./types/RoomTypes";
 
 interface RoomConnectionsProps {
@@ -38,6 +48,36 @@ export function RoomConnections({ connections }: RoomConnectionsProps) {
     }
   };
 
+  // Get direction icon based on the direction string
+  const getDirectionIcon = (direction: string | null | undefined) => {
+    if (!direction) return null;
+    
+    const iconProps = { className: "h-4 w-4 ml-1", strokeWidth: 2 };
+    
+    switch (direction) {
+      case 'north':
+      case 'up': 
+        return <ArrowUp {...iconProps} />;
+      case 'south':
+      case 'down': 
+        return <ArrowDown {...iconProps} />;
+      case 'east':
+      case 'right': 
+        return <ArrowRight {...iconProps} />;
+      case 'west':
+      case 'left': 
+        return <ArrowLeft {...iconProps} />;
+      case 'start_of_hallway': 
+        return <ChevronsLeft {...iconProps} />;
+      case 'end_of_hallway': 
+        return <ChevronsRight {...iconProps} />;
+      case 'middle_of_hallway': 
+        return <ChevronsDown {...iconProps} />;
+      default:
+        return null;
+    }
+  };
+
   if (!connections || connections.length === 0) {
     return (
       <div className="space-y-2">
@@ -57,8 +97,9 @@ export function RoomConnections({ connections }: RoomConnectionsProps) {
               {formatConnectionType(conn.connection_type)}
             </Badge>
             {conn.direction && (
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-xs flex items-center">
                 {formatDirection(conn.direction)}
+                {getDirectionIcon(conn.direction)}
               </Badge>
             )}
             <span className="text-sm text-muted-foreground ml-auto">

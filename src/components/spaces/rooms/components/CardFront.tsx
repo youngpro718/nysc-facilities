@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,7 @@ import { EditSpaceDialog } from "../../EditSpaceDialog";
 import { Room } from "../types/RoomTypes";
 import { StatusEnum, RoomTypeEnum, StorageTypeEnum } from "../types/roomEnums";
 import { LightingStatusIndicator } from "./LightingStatusIndicator";
+import { HallwayConnections } from "./HallwayConnections";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRoomOccupants } from "../../hooks/useRoomOccupants";
 
@@ -101,6 +103,11 @@ export function CardFront({ room, onDelete }: CardFrontProps) {
                 <Phone className="h-4 w-4" />
                 {room.phone_number}
               </p>
+            )}
+            
+            {/* Add hallway connections component */}
+            {room.space_connections && room.space_connections.length > 0 && (
+              <HallwayConnections connections={room.space_connections} />
             )}
           </div>
 
