@@ -15,6 +15,10 @@ export function NewConnectionForm({
     return <div className="text-sm text-muted-foreground">Loading spaces...</div>;
   }
 
+  // Determine if selected space is a hallway
+  const selectedSpace = spaces?.find(space => space.id === newConnection.toSpaceId);
+  const isHallway = selectedSpace?.type === 'hallway';
+  
   return (
     <div className="space-y-3 p-3 border rounded-md">
       <div className="space-y-2">
@@ -47,27 +51,29 @@ export function NewConnectionForm({
             <SelectItem value="door">Door</SelectItem>
             <SelectItem value="direct">Direct</SelectItem>
             <SelectItem value="secured">Secured</SelectItem>
+            {isHallway && (
+              <SelectItem value="transition">Transition Door</SelectItem>
+            )}
           </SelectContent>
         </Select>
 
-        <Select
-          value={newConnection.direction}
-          onValueChange={(value) => onConnectionChange("direction", value)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select direction (optional)" />
-          </SelectTrigger>
-          <SelectContent>
-            {/* Valid directions according to database constraints */}
-            <SelectItem value="north">North</SelectItem>
-            <SelectItem value="south">South</SelectItem>
-            <SelectItem value="east">East</SelectItem>
-            <SelectItem value="west">West</SelectItem>
-            <SelectItem value="up">Up</SelectItem>
-            <SelectItem value="down">Down</SelectItem>
-            <SelectItem value="adjacent">Adjacent</SelectItem>
-          </SelectContent>
-        </Select>
+        {isHallway && (
+          <Select
+            value={newConnection.direction}
+            onValueChange={(value) => onConnectionChange("direction", value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Position on hallway" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="start_of_hallway">Start of Hallway</SelectItem>
+              <SelectItem value="middle_of_hallway">Middle of Hallway</SelectItem>
+              <SelectItem value="end_of_hallway">End of Hallway</SelectItem>
+              <SelectItem value="left_of_hallway">Left Side of Hallway</SelectItem>
+              <SelectItem value="right_of_hallway">Right Side of Hallway</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       <div className="flex gap-2 justify-end">

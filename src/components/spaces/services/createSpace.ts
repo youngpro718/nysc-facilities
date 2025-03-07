@@ -112,6 +112,16 @@ export async function createSpace(data: CreateSpaceFormData) {
         const firstConnection = data.connections[0]; // Get the first connection
 
         if (firstConnection && firstConnection.toSpaceId && firstConnection.connectionType) {
+          // Check if this is a transition door between hallways
+          const { data: targetSpaceData } = await supabase
+            .from('new_spaces')
+            .select('type')
+            .eq('id', firstConnection.toSpaceId)
+            .single();
+            
+          const isTransitionDoor = firstConnection.connectionType === 'transition' || 
+                                  (targetSpaceData?.type === 'hallway' && firstConnection.connectionType === 'door');
+          
           const hallwayConnectionData = {
             from_space_id: hallway.id,
             to_space_id: firstConnection.toSpaceId,
@@ -121,9 +131,10 @@ export async function createSpace(data: CreateSpaceFormData) {
             status: data.status as 'active' | 'inactive' | 'under_maintenance',
             connection_status: 'active',
             // Add hallway-specific connection data
-            hallway_position: 0.5, // Default to middle (0-1 range)
+            hallway_position: getHallwayPosition(firstConnection.direction),
             offset_distance: 50,   // Default offset from hallway
-            position: firstConnection.direction === 'north' || firstConnection.direction === 'south' ? 'vertical' : 'horizontal'
+            position: getPositionFromDirection(firstConnection.direction),
+            is_transition_door: isTransitionDoor
           };
 
           console.log('Creating connection with data:', hallwayConnectionData);
@@ -171,6 +182,22 @@ export async function createSpace(data: CreateSpaceFormData) {
       const firstConnection = data.connections[0]; // Get the first connection
 
       if (firstConnection && firstConnection.toSpaceId && firstConnection.connectionType) {
+        // Check if this is a transition door between hallways
+        const { data: fromSpaceData } = await supabase
+          .from('new_spaces')
+          .select('type')
+          .eq('id', space.id)
+          .single();
+          
+        const { data: targetSpaceData } = await supabase
+          .from('new_spaces')
+          .select('type')
+          .eq('id', firstConnection.toSpaceId)
+          .single();
+          
+        const isTransitionDoor = firstConnection.connectionType === 'transition' || 
+                                (fromSpaceData?.type === 'hallway' && targetSpaceData?.type === 'hallway');
+        
         const spaceConnectionData = {
           from_space_id: space.id,
           to_space_id: firstConnection.toSpaceId,
@@ -178,7 +205,10 @@ export async function createSpace(data: CreateSpaceFormData) {
           connection_type: firstConnection.connectionType,
           direction: firstConnection.direction || 'adjacent',
           status: data.status as 'active' | 'inactive' | 'under_maintenance',
-          connection_status: 'active'
+          connection_status: 'active',
+          is_transition_door: isTransitionDoor,
+          hallway_position: getHallwayPosition(firstConnection.direction),
+          position: getPositionFromDirection(firstConnection.direction)
         };
 
         console.log('Creating connection with data:', spaceConnectionData);
@@ -199,4 +229,34 @@ export async function createSpace(data: CreateSpaceFormData) {
     console.error('Error in createSpace:', error);
     throw error;
   }
+}
+
+// Helper function to convert direction to hallway position value
+function getHallwayPosition(direction: string | undefined): number {
+  if (!direction) return 0.5; // Default to middle
+  
+  switch (direction) {
+    case 'start_of_hallway': return 0.1;
+    case 'end_of_hallway': return 0.9;
+    case 'middle_of_hallway': return 0.5;
+    case 'left_of_hallway': return 0.3;
+    case 'right_of_hallway': return 0.7;
+    default: return 0.5;
+  }
+}
+
+// Helper function to determine position value from direction
+function getPositionFromDirection(direction: string | undefined): string | undefined {
+  if (!direction) return undefined;
+  
+  if (direction === 'north' || direction === 'south' || 
+      direction === 'up' || direction === 'down') {
+    return 'vertical';
+  } else if (direction === 'east' || direction === 'west' || 
+             direction === 'left' || direction === 'right' ||
+             direction === 'left_of_hallway' || direction === 'right_of_hallway') {
+    return 'horizontal';
+  }
+  
+  return undefined;
 }

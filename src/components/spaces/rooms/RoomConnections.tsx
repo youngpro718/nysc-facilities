@@ -23,13 +23,18 @@ export function RoomConnections({ connections }: RoomConnectionsProps) {
     
     // Format the direction to be more readable
     switch (direction) {
+      case 'start_of_hallway': return 'Start of Hallway';
+      case 'middle_of_hallway': return 'Middle of Hallway';
+      case 'end_of_hallway': return 'End of Hallway';
+      case 'left_of_hallway': return 'Left Side of Hallway';
+      case 'right_of_hallway': return 'Right Side of Hallway';
+      case 'adjacent': return 'Adjacent';
       case 'north': return 'North';
       case 'south': return 'South';  
       case 'east': return 'East';
       case 'west': return 'West';
       case 'up': return 'Up';
       case 'down': return 'Down';
-      case 'adjacent': return 'Adjacent';
       default: return direction.charAt(0).toUpperCase() + direction.slice(1);
     }
   };
@@ -43,6 +48,7 @@ export function RoomConnections({ connections }: RoomConnectionsProps) {
       case 'door': return 'Door';
       case 'direct': return 'Direct';
       case 'secured': return 'Secured';
+      case 'transition': return 'Transition Door';
       default: return connectionType.charAt(0).toUpperCase() + connectionType.slice(1);
     }
   };
@@ -80,28 +86,58 @@ export function RoomConnections({ connections }: RoomConnectionsProps) {
     );
   }
 
+  // Separate hallway connections
+  const hallwayConnections = connections.filter(conn => conn.to_space?.type === 'hallway');
+  const otherConnections = connections.filter(conn => conn.to_space?.type !== 'hallway');
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <p className="text-sm font-medium">Connected Spaces</p>
-      <div className="space-y-1">
-        {connections.map((conn) => (
-          <div key={conn.id} className="flex items-center flex-wrap gap-2 p-2 rounded-md bg-muted/40">
-            <Badge variant="secondary" className="text-xs">
-              {formatConnectionType(conn.connection_type)}
-            </Badge>
-            {conn.direction && (
-              <Badge variant="outline" className="text-xs flex items-center">
-                {formatDirection(conn.direction)}
-                {getDirectionIcon(conn.direction)}
+      
+      {hallwayConnections.length > 0 && (
+        <div className="space-y-1">
+          <p className="text-xs text-muted-foreground">Hallway Connections:</p>
+          {hallwayConnections.map((conn) => (
+            <div key={conn.id} className="flex items-center flex-wrap gap-2 p-2 rounded-md bg-muted/40">
+              <Badge variant="secondary" className="text-xs">
+                {formatConnectionType(conn.connection_type)}
               </Badge>
-            )}
-            <span className="text-sm text-muted-foreground ml-auto">
-              {conn.to_space?.name || 'Unknown Space'}
-              {conn.to_space?.type === 'hallway' && ' (Hallway)'}
-            </span>
-          </div>
-        ))}
-      </div>
+              {conn.direction && (
+                <Badge variant="outline" className="text-xs flex items-center">
+                  {formatDirection(conn.direction)}
+                  {getDirectionIcon(conn.direction)}
+                </Badge>
+              )}
+              <span className="text-sm text-muted-foreground ml-auto">
+                {conn.to_space?.name || 'Unknown Hallway'}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+      
+      {otherConnections.length > 0 && (
+        <div className="space-y-1">
+          <p className="text-xs text-muted-foreground">Other Connections:</p>
+          {otherConnections.map((conn) => (
+            <div key={conn.id} className="flex items-center flex-wrap gap-2 p-2 rounded-md bg-muted/40">
+              <Badge variant="secondary" className="text-xs">
+                {formatConnectionType(conn.connection_type)}
+              </Badge>
+              {conn.direction && (
+                <Badge variant="outline" className="text-xs flex items-center">
+                  {formatDirection(conn.direction)}
+                  {getDirectionIcon(conn.direction)}
+                </Badge>
+              )}
+              <span className="text-sm text-muted-foreground ml-auto">
+                {conn.to_space?.name || 'Unknown Space'}
+                {conn.to_space?.type && ` (${conn.to_space.type.charAt(0).toUpperCase() + conn.to_space.type.slice(1)})`}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -20,6 +20,9 @@ export function ConnectionFields({ form, floorId }: ConnectionFieldsProps) {
     connectionType: "",
     direction: ""
   });
+  
+  const spaceType = form.watch("type");
+  const isHallway = spaceType === 'hallway';
 
   const { data: spaces } = useQuery({
     queryKey: ["floor-spaces", floorId],
@@ -35,6 +38,11 @@ export function ConnectionFields({ form, floorId }: ConnectionFieldsProps) {
     },
     enabled: !!floorId
   });
+  
+  // Get selected space type
+  const selectedSpace = spaces?.find(space => space.id === newConnection.toSpaceId);
+  const selectedSpaceType = selectedSpace?.type;
+  const isSelectedSpaceHallway = selectedSpaceType === 'hallway';
 
   const handleAddConnection = () => {
     if (!newConnection.toSpaceId || !newConnection.connectionType) {
@@ -86,27 +94,29 @@ export function ConnectionFields({ form, floorId }: ConnectionFieldsProps) {
             <SelectItem value="door">Door</SelectItem>
             <SelectItem value="direct">Direct</SelectItem>
             <SelectItem value="secured">Secured</SelectItem>
+            {(isHallway && isSelectedSpaceHallway) && (
+              <SelectItem value="transition">Transition Door</SelectItem>
+            )}
           </SelectContent>
         </Select>
 
-        <Select
-          value={newConnection.direction}
-          onValueChange={(value) => setNewConnection({...newConnection, direction: value})}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select direction" />
-          </SelectTrigger>
-          <SelectContent>
-            {/* Valid directions according to database constraints */}
-            <SelectItem value="north">North</SelectItem>
-            <SelectItem value="south">South</SelectItem>
-            <SelectItem value="east">East</SelectItem>
-            <SelectItem value="west">West</SelectItem>
-            <SelectItem value="up">Up</SelectItem>
-            <SelectItem value="down">Down</SelectItem>
-            <SelectItem value="adjacent">Adjacent</SelectItem>
-          </SelectContent>
-        </Select>
+        {isSelectedSpaceHallway && (
+          <Select
+            value={newConnection.direction}
+            onValueChange={(value) => setNewConnection({...newConnection, direction: value})}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select hallway position" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="start_of_hallway">Start of Hallway</SelectItem>
+              <SelectItem value="middle_of_hallway">Middle of Hallway</SelectItem>
+              <SelectItem value="end_of_hallway">End of Hallway</SelectItem>
+              <SelectItem value="left_of_hallway">Left Side of Hallway</SelectItem>
+              <SelectItem value="right_of_hallway">Right Side of Hallway</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
 
         <Button
           type="button"

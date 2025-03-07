@@ -8,11 +8,15 @@ export function getSpaceColor(space: any): string {
     return space.status === 'active' ? baseColor : `${baseColor}80`;
   } else if (space.object_type === 'hallway' || space.type === 'hallway') {
     // Different color based on hallway type
-    if (space.properties?.hallwayType === 'private' || 
-        space.properties?.type === 'private') {
-      return space.status === 'active' ? '#f3f4f6' : '#f3f4f680';
+    const hallwayType = space.properties?.hallwayType || 
+                       space.properties?.type || 
+                       'public_main';
+    
+    if (hallwayType === 'private' || 
+        space.properties?.accessibility === 'restricted') {
+      return space.status === 'active' ? '#f3f4f6' : '#f3f4f680'; // Lighter gray for private hallways
     }
-    return space.status === 'active' ? '#e5e7eb' : '#e5e7eb80';
+    return space.status === 'active' ? '#e5e7eb' : '#e5e7eb80'; // Default hallway color
   } else {
     return space.status === 'active' ? '#94a3b8' : '#94a3b880';
   }
@@ -128,7 +132,8 @@ export function transformSpaceToNode(space: any, index: number): FloorPlanNode {
       emergency_route: (space.hallway_properties?.[0]?.emergency_route) || 
                        spaceProperties.emergency_route || 
                        spaceProperties.emergencyRoute || 
-                       'not_designated'
+                       'not_designated',
+      hallway_type: spaceProperties.hallwayType || 'public_main'
     } : {})
   };
 

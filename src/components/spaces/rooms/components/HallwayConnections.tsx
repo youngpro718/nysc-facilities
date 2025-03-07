@@ -57,6 +57,11 @@ export function HallwayConnections({ connections }: HallwayConnectionsProps) {
     
     // Format the direction to be more readable
     switch (direction) {
+      case 'start_of_hallway': return 'Start of Hallway';
+      case 'middle_of_hallway': return 'Middle of Hallway';
+      case 'end_of_hallway': return 'End of Hallway';
+      case 'left_of_hallway': return 'Left Side';
+      case 'right_of_hallway': return 'Right Side';
       case 'north': return 'North';
       case 'south': return 'South';  
       case 'east': return 'East';
@@ -65,6 +70,19 @@ export function HallwayConnections({ connections }: HallwayConnectionsProps) {
       case 'down': return 'Down';
       case 'adjacent': return 'Adjacent';
       default: return direction.charAt(0).toUpperCase() + direction.slice(1);
+    }
+  };
+
+  // Format connection type
+  const formatConnectionType = (type: string | undefined | null) => {
+    if (!type) return '';
+    
+    switch (type) {
+      case 'door': return 'Door';
+      case 'direct': return 'Direct';
+      case 'secured': return 'Secured';
+      case 'transition': return 'Transition';
+      default: return type.charAt(0).toUpperCase() + type.slice(1);
     }
   };
 
@@ -78,6 +96,8 @@ export function HallwayConnections({ connections }: HallwayConnectionsProps) {
             variant="outline" 
             className="flex items-center text-xs py-1"
           >
+            <span>{formatConnectionType(conn.connection_type)}</span>
+            <span className="mx-1">→</span>
             <span>{conn.to_space?.name || 'Hallway'}</span>
             {conn.direction && (
               <div className="flex items-center ml-1">

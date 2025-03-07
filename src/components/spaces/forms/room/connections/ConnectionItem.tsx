@@ -15,9 +15,9 @@ export function ConnectionItem({ connection, index, spaceName, onRemove }: Conne
       case 'start_of_hallway': return 'Start of Hallway';
       case 'middle_of_hallway': return 'Middle of Hallway';
       case 'end_of_hallway': return 'End of Hallway';
-      case 'left_of_hallway': return 'Left of Hallway';
-      case 'right_of_hallway': return 'Right of Hallway';
-      case 'adjacent': return 'Adjacent';
+      case 'left_of_hallway': return 'Left Side of Hallway';
+      case 'right_of_hallway': return 'Right Side of Hallway';
+      case 'adjacent': return 'Adjacent to';
       default: return direction.charAt(0).toUpperCase() + direction.slice(1);
     }
   };
@@ -27,7 +27,8 @@ export function ConnectionItem({ connection, index, spaceName, onRemove }: Conne
       <CardContent className="p-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-xs">
-            {connection.connectionType || "Unknown"}
+            {connection.connectionType === 'transition' ? 'Transition Door' : 
+             connection.connectionType.charAt(0).toUpperCase() + connection.connectionType.slice(1)}
           </Badge>
           <span className="text-sm">{spaceName}</span>
           {connection.direction && (

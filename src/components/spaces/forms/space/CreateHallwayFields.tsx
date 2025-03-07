@@ -21,7 +21,7 @@ export function CreateHallwayFields({ form }: CreateHallwayFieldsProps) {
         name="section"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Section</FormLabel>
+            <FormLabel>Hallway Section</FormLabel>
             <Select onValueChange={field.onChange} value={field.value}>
               <FormControl>
                 <SelectTrigger>
@@ -44,7 +44,7 @@ export function CreateHallwayFields({ form }: CreateHallwayFieldsProps) {
         name="hallwayType"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Hallway Type</FormLabel>
+            <FormLabel>Access Type</FormLabel>
             <Select onValueChange={field.onChange} value={field.value}>
               <FormControl>
                 <SelectTrigger>
@@ -52,8 +52,8 @@ export function CreateHallwayFields({ form }: CreateHallwayFieldsProps) {
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="public_main">Public Main</SelectItem>
-                <SelectItem value="private">Private</SelectItem>
+                <SelectItem value="public_main">Public (Main)</SelectItem>
+                <SelectItem value="private">Private (Staff Only)</SelectItem>
               </SelectContent>
             </Select>
             <FormMessage />
