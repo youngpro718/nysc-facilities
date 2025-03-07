@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { transformLayer } from "../utils/layerTransforms";
 import { transformSpaceToNode } from "../utils/nodeTransforms";
@@ -61,12 +62,13 @@ export function useFloorPlanData(floorId: string | null) {
     }) : 
     [];
     
+  // Transform connections into edges
   const edges = Array.isArray(safeSpaceData.connections) ? 
     createEdgesFromConnections(safeSpaceData.connections) : 
     [];
   
-  console.log('Transformed objects:', objects);
-  console.log('Created edges:', edges);
+  console.log('Transformed objects:', objects.length);
+  console.log('Created edges:', edges.length);
 
   // Process parent/child relationships
   const processedObjects = objects.map(obj => {
