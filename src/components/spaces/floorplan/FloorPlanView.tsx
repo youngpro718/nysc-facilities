@@ -149,16 +149,18 @@ export function FloorPlanView() {
           </div>
           
           <div className="flex items-center space-x-2">
-            <div className="bg-muted/50 rounded-md p-1 flex items-center space-x-1">
-              <Button variant="ghost" size="sm" onClick={handleZoomOut} disabled={zoom <= 0.5} className="h-7 px-2">
-                <ZoomOut className="h-4 w-4" />
-              </Button>
-              <span className="text-sm px-2 min-w-[3rem] text-center">{(zoom * 100).toFixed(0)}%</span>
-              <Button variant="ghost" size="sm" onClick={handleZoomIn} disabled={zoom >= 2} className="h-7 px-2">
-                <ZoomIn className="h-4 w-4" />
-              </Button>
-            </div>
-            <Button variant="ghost" size="sm" onClick={handleZoomReset} className="h-7 px-2">
+            {viewMode === '2d' && (
+              <div className="bg-muted/50 rounded-md p-1 flex items-center space-x-1">
+                <Button variant="ghost" size="sm" onClick={handleZoomOut} disabled={zoom <= 0.5} className="h-7 px-2">
+                  <ZoomOut className="h-4 w-4" />
+                </Button>
+                <span className="text-sm px-2 min-w-[3rem] text-center">{(zoom * 100).toFixed(0)}%</span>
+                <Button variant="ghost" size="sm" onClick={handleZoomIn} disabled={zoom >= 2} className="h-7 px-2">
+                  <ZoomIn className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+            <Button variant="ghost" size="sm" onClick={handleZoomReset} className="h-7 px-2" title="Reset view">
               <Maximize className="h-4 w-4" />
             </Button>
             <div className="h-6 w-px bg-border" />
