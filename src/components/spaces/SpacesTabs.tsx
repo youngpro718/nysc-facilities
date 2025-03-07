@@ -1,68 +1,43 @@
 
+import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, DoorClosed, GitFork, LayoutPanelLeft, Lightbulb } from "lucide-react";
-import RoomsList from "./RoomsList";
-import HallwaysList from "./HallwaysList";
-import DoorsList from "./DoorsList";
-import { FloorPlanView } from "./floorplan/FloorPlanView";
-import { Suspense } from "react";
-import { SpacesLightingView } from "./lighting/SpacesLightingView";
+import { SpacesDataTable } from "./SpacesDataTable";
+import { Grid3X3 } from "lucide-react";
+import { FloorPlan3D } from "./floorplan/FloorPlan3D";
 
-export interface SpaceViewProps {
+interface SpacesTabsProps {
   selectedBuilding: string;
   selectedFloor: string;
 }
 
-const SpacesTabs = ({ selectedBuilding, selectedFloor }: SpaceViewProps) => {
+const SpacesTabs = ({ selectedBuilding, selectedFloor }: SpacesTabsProps) => {
+  const [activeTab, setActiveTab] = useState<string>("list");
+
   return (
-    <div className="space-y-4">
-      <Tabs defaultValue="rooms" className="w-full">
-        <TabsList className="w-full justify-start">
-          <TabsTrigger value="rooms" className="flex items-center gap-2">
-            <Building2 size={16} />
-            Rooms
-          </TabsTrigger>
-          <TabsTrigger value="hallways" className="flex items-center gap-2">
-            <GitFork size={16} />
-            Hallways
-          </TabsTrigger>
-          <TabsTrigger value="doors" className="flex items-center gap-2">
-            <DoorClosed size={16} />
-            Doors
-          </TabsTrigger>
-          <TabsTrigger value="lighting" className="flex items-center gap-2">
-            <Lightbulb size={16} />
-            Lighting
-          </TabsTrigger>
-          <TabsTrigger value="floorplan" className="flex items-center gap-2">
-            <LayoutPanelLeft size={16} />
-            Floor Plan
+    <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <div className="flex justify-between items-center mb-4">
+        <TabsList>
+          <TabsTrigger value="list">List View</TabsTrigger>
+          <TabsTrigger value="3d" className="flex items-center gap-1">
+            <Grid3X3 className="h-4 w-4" />
+            <span>3D View</span>
           </TabsTrigger>
         </TabsList>
+      </div>
 
-        <TabsContent value="rooms" className="mt-4">
-          <RoomsList selectedBuilding={selectedBuilding} selectedFloor={selectedFloor} />
-        </TabsContent>
+      <TabsContent value="list" className="space-y-4">
+        <SpacesDataTable
+          buildingId={selectedBuilding === "all" ? undefined : selectedBuilding}
+          floorId={selectedFloor === "all" ? undefined : selectedFloor}
+        />
+      </TabsContent>
 
-        <TabsContent value="hallways" className="mt-4">
-          <HallwaysList selectedBuilding={selectedBuilding} selectedFloor={selectedFloor} />
-        </TabsContent>
-
-        <TabsContent value="doors" className="mt-4">
-          <DoorsList selectedBuilding={selectedBuilding} selectedFloor={selectedFloor} />
-        </TabsContent>
-
-        <TabsContent value="lighting" className="mt-4">
-          <SpacesLightingView selectedBuilding={selectedBuilding} selectedFloor={selectedFloor} />
-        </TabsContent>
-
-        <TabsContent value="floorplan" className="mt-4">
-          <Suspense fallback={<div>Loading floor plan...</div>}>
-            <FloorPlanView />
-          </Suspense>
-        </TabsContent>
-      </Tabs>
-    </div>
+      <TabsContent value="3d">
+        <FloorPlan3D
+          floorId={selectedFloor === "all" ? null : selectedFloor}
+        />
+      </TabsContent>
+    </Tabs>
   );
 };
 
