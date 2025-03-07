@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
@@ -76,6 +77,7 @@ function Room3D({
       >
         <boxGeometry args={[size.width, wallHeight, size.height]} />
         <primitive object={material} attach="material" />
+        
         {/* Floor base */}
         <mesh position={[0, -wallHeight/2 + 2, 0]} receiveShadow>
           <boxGeometry args={[size.width, 4, size.height]} />
@@ -196,6 +198,48 @@ function Door3D({
   );
 }
 
+// Connection/Edge 3D Component
+function Connection3D({
+  sourcePosition,
+  targetPosition,
+  style = { stroke: '#94a3b8', strokeWidth: 2 }
+}: {
+  sourcePosition: { x: number, y: number };
+  targetPosition: { x: number, y: number };
+  style?: { stroke?: string; strokeWidth?: number };
+}) {
+  // Calculate midpoint and direction
+  const midX = (sourcePosition.x + targetPosition.x) / 2;
+  const midY = (sourcePosition.y + targetPosition.y) / 2;
+  
+  // Calculate direction vector
+  const dirX = targetPosition.x - sourcePosition.x;
+  const dirY = targetPosition.y - sourcePosition.y;
+  
+  // Calculate length
+  const length = Math.sqrt(dirX * dirX + dirY * dirY);
+  
+  // Calculate rotation angle
+  const angle = Math.atan2(dirY, dirX);
+  
+  // Height of the connection line
+  const connectionHeight = 10;
+  
+  return (
+    <mesh
+      position={[midX, connectionHeight, midY]}
+      rotation={[0, angle, 0]}
+    >
+      <boxGeometry args={[length, 1, style.strokeWidth || 2]} />
+      <meshStandardMaterial 
+        color={style.stroke || '#94a3b8'} 
+        transparent={true}
+        opacity={0.7}
+      />
+    </mesh>
+  );
+}
+
 // Scene Lighting Component
 function SceneLighting() {
   const lightRef = useRef<THREE.DirectionalLight>(null);
@@ -232,11 +276,13 @@ function SceneLighting() {
 // Scene Initialization Component with improved controls and environment
 function ThreeDScene({ 
   objects, 
+  edges,
   onObjectSelect, 
   selectedObjectId = null,
   previewData = null
 }: {
   objects: FloorPlanNode[];
+  edges: any[];
   onObjectSelect: (object: any) => void;
   selectedObjectId?: string | null;
   previewData?: any | null;
@@ -330,6 +376,12 @@ function ThreeDScene({
     }
   }, [selectedObjectId, objects]);
 
+  // Find objects by id for edges
+  const getObjectPosition = (id: string) => {
+    const obj = objects.find(o => o.id === id);
+    return obj ? obj.position : { x: 0, y: 0 };
+  };
+
   return (
     <>
       <SceneLighting />
@@ -365,6 +417,24 @@ function ThreeDScene({
           position={[0, -1, 0]}
         />
       </group>
+      
+      {/* Render all connection edges */}
+      {edges.map(edge => {
+        const sourcePos = getObjectPosition(edge.source);
+        const targetPos = getObjectPosition(edge.target);
+        
+        // Only render if we have valid positions
+        if (!sourcePos || !targetPos) return null;
+        
+        return (
+          <Connection3D 
+            key={edge.id}
+            sourcePosition={sourcePos}
+            targetPosition={targetPos}
+            style={edge.data?.style || {}}
+          />
+        );
+      })}
       
       {/* Render all objects */}
       {objects.map(obj => {
@@ -447,7 +517,7 @@ export function ThreeDViewer({
   selectedObjectId,
   previewData
 }: ThreeDViewerProps) {
-  const { objects, isLoading } = useFloorPlanData(floorId);
+  const { objects, edges, isLoading, error } = useFloorPlanData(floorId);
   const [viewerError, setViewerError] = useState<Error | null>(null);
   const [isMounted, setIsMounted] = useState<boolean>(false);
 
@@ -455,6 +525,16 @@ export function ThreeDViewer({
     setIsMounted(true);
     return () => setIsMounted(false);
   }, []);
+
+  // Debugging info
+  useEffect(() => {
+    if (objects && objects.length > 0) {
+      console.log('3D Viewer objects:', objects.length);
+    }
+    if (edges && edges.length > 0) {
+      console.log('3D Viewer edges:', edges.length);
+    }
+  }, [objects, edges]);
 
   const handleObjectSelect = (object: any) => {
     if (onObjectSelect) {
@@ -498,12 +578,24 @@ export function ThreeDViewer({
     );
   }
 
-  if (viewerError) {
+  if (error || viewerError) {
     return (
       <Card className="w-full h-[600px] flex items-center justify-center bg-gray-50">
         <div className="text-center p-4">
           <p className="text-red-500 font-medium">Error rendering 3D view</p>
           <p className="text-gray-500 mt-2">Please try refreshing the page</p>
+          {error && <p className="text-xs text-gray-400 mt-2">{error.message}</p>}
+        </div>
+      </Card>
+    );
+  }
+
+  if (!objects || objects.length === 0) {
+    return (
+      <Card className="w-full h-[600px] flex items-center justify-center bg-gray-50">
+        <div className="text-center p-4">
+          <p className="text-gray-500">No objects found for this floor</p>
+          <p className="text-gray-400 text-sm mt-2">Try adding rooms, doors, and hallways</p>
         </div>
       </Card>
     );
@@ -531,6 +623,7 @@ export function ThreeDViewer({
           >
             <ThreeDScene 
               objects={objects} 
+              edges={edges}
               onObjectSelect={handleObjectSelect} 
               selectedObjectId={selectedObjectId} 
               previewData={previewData}
