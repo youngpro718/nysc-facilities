@@ -1,7 +1,7 @@
 
 import React, { useRef, useEffect } from 'react';
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'; // Note the .js extension
 import { FloorPlanNode, FloorPlanEdge, ROOM_COLORS } from '../types/floorPlanTypes';
 import { SceneControls } from './SceneControls';
 import { createRoom3D } from './objects/Room3D';
