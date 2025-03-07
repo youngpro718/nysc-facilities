@@ -114,8 +114,8 @@ export async function createSpace(data: CreateSpaceFormData) {
           const isTransitionDoor = firstConnection.connectionType === 'transition' || 
                                   (targetSpaceData?.type === 'hallway' && firstConnection.connectionType === 'door');
           
-          // Map direction to valid value for the database
-          let directionValue = firstConnection.direction || 'adjacent';
+          // Convert the direction to a valid value for the database constraint
+          let directionValue = validateDirection(firstConnection.direction);
           
           const hallwayConnectionData = {
             from_space_id: hallway.id,
@@ -189,8 +189,8 @@ export async function createSpace(data: CreateSpaceFormData) {
         const isTransitionDoor = firstConnection.connectionType === 'transition' || 
                                 (fromSpaceData?.type === 'hallway' && targetSpaceData?.type === 'hallway');
         
-        // Set a valid direction value
-        let directionValue = firstConnection.direction || 'adjacent';
+        // Convert the direction to a valid value for the database constraint
+        let directionValue = validateDirection(firstConnection.direction);
         
         const spaceConnectionData = {
           from_space_id: space.id,
@@ -223,6 +223,21 @@ export async function createSpace(data: CreateSpaceFormData) {
     console.error('Error in createSpace:', error);
     throw error;
   }
+}
+
+// Function to validate and convert direction to acceptable database values
+function validateDirection(direction: string | undefined): string {
+  if (!direction) return 'adjacent';
+  
+  // Valid direction values that meet database constraints
+  const validDirections = ['start', 'end', 'center', 'left', 'right', 'adjacent'];
+  
+  if (validDirections.includes(direction)) {
+    return direction;
+  }
+  
+  // Default to adjacent if not valid
+  return 'adjacent';
 }
 
 function getHallwayPosition(direction: string | undefined): number {
