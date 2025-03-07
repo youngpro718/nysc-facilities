@@ -36,25 +36,26 @@ export function useFloorPlanData(floorId: string | null) {
   // This is crucial for the 3D view to show objects
   const objectsWithPositions = Array.isArray(safeSpaceData.objects) ? 
     safeSpaceData.objects.map((rawObj: any, index) => {
-      // Ensure we have a position (use default grid position if none exists)
+      // Default values
       const defaultPosition: Position = {
         x: (index % 4) * 250 + 100, // Create a grid layout with 4 columns
         y: Math.floor(index / 4) * 250 + 100
       };
-      
-      // Ensure we have a size
       const defaultSize: Size = { width: 150, height: 100 };
       
-      // Parse position if it's a string
+      // Parse position if it's a string or ensure it's a valid object
       let parsedPosition = defaultPosition;
       if (rawObj.position) {
         if (typeof rawObj.position === 'string') {
           try {
             parsedPosition = JSON.parse(rawObj.position);
             // Validate the parsed position
-            if (!parsedPosition.x || !parsedPosition.y || 
+            if (!parsedPosition || 
+                typeof parsedPosition !== 'object' ||
                 typeof parsedPosition.x !== 'number' || 
-                typeof parsedPosition.y !== 'number') {
+                typeof parsedPosition.y !== 'number' ||
+                isNaN(parsedPosition.x) || 
+                isNaN(parsedPosition.y)) {
               parsedPosition = defaultPosition;
             }
           } catch {
@@ -68,16 +69,19 @@ export function useFloorPlanData(floorId: string | null) {
         }
       }
       
-      // Parse size if it's a string
+      // Parse size if it's a string or ensure it's a valid object
       let parsedSize = defaultSize;
       if (rawObj.size) {
         if (typeof rawObj.size === 'string') {
           try {
             parsedSize = JSON.parse(rawObj.size);
             // Validate the parsed size
-            if (!parsedSize.width || !parsedSize.height || 
+            if (!parsedSize || 
+                typeof parsedSize !== 'object' ||
                 typeof parsedSize.width !== 'number' || 
-                typeof parsedSize.height !== 'number') {
+                typeof parsedSize.height !== 'number' ||
+                isNaN(parsedSize.width) || 
+                isNaN(parsedSize.height)) {
               parsedSize = defaultSize;
             }
           } catch {
@@ -91,6 +95,9 @@ export function useFloorPlanData(floorId: string | null) {
         }
       }
       
+      // Determine the object type
+      const objectType = rawObj.object_type || rawObj.type || 'room';
+      
       // Create a standardized object with all required fields
       return {
         ...rawObj,
@@ -98,7 +105,8 @@ export function useFloorPlanData(floorId: string | null) {
         position: parsedPosition,
         size: parsedSize,
         properties: rawObj.properties || {},
-        object_type: rawObj.object_type || rawObj.type || 'room'
+        object_type: objectType,
+        rotation: rawObj.rotation || 0
       } as RawFloorPlanObject;
     }) : 
     [];

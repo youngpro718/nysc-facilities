@@ -74,10 +74,12 @@ export interface RawFloorPlanObject {
   room_type?: string;
   status?: string;
   floor_id?: string;
-  position?: Position | any; // Allow any for parsing
-  size?: Size | any; // Allow any for parsing
+  position?: Position | string | any; // Allow any for parsing flexibility
+  size?: Size | string | any; // Allow any for parsing flexibility
   rotation?: number; 
-  properties?: Record<string, any>;
+  properties?: Record<string, any> | null;
+  parent_room_id?: string | null;
+  hallway_properties?: any[];
 }
 
 // 3D visualization specific types
