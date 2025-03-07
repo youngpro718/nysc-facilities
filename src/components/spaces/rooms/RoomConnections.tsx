@@ -23,11 +23,12 @@ export function RoomConnections({ connections }: RoomConnectionsProps) {
     
     // Format the direction to be more readable
     switch (direction) {
-      case 'start_of_hallway': return 'Start of Hallway';
-      case 'middle_of_hallway': return 'Middle of Hallway';
-      case 'end_of_hallway': return 'End of Hallway';
-      case 'left_of_hallway': return 'Left of Hallway';
-      case 'right_of_hallway': return 'Right of Hallway';
+      case 'north': return 'North';
+      case 'south': return 'South';  
+      case 'east': return 'East';
+      case 'west': return 'West';
+      case 'up': return 'Up';
+      case 'down': return 'Down';
       case 'adjacent': return 'Adjacent';
       default: return direction.charAt(0).toUpperCase() + direction.slice(1);
     }
@@ -40,7 +41,6 @@ export function RoomConnections({ connections }: RoomConnectionsProps) {
     // Format the connection type to be more readable
     switch (connectionType) {
       case 'door': return 'Door';
-      case 'opening': return 'Opening';
       case 'direct': return 'Direct';
       case 'secured': return 'Secured';
       default: return connectionType.charAt(0).toUpperCase() + connectionType.slice(1);
@@ -66,12 +66,6 @@ export function RoomConnections({ connections }: RoomConnectionsProps) {
       case 'west':
       case 'left': 
         return <ArrowLeft {...iconProps} />;
-      case 'start_of_hallway': 
-        return <ChevronsLeft {...iconProps} />;
-      case 'end_of_hallway': 
-        return <ChevronsRight {...iconProps} />;
-      case 'middle_of_hallway': 
-        return <ChevronsDown {...iconProps} />;
       default:
         return null;
     }
@@ -103,6 +97,7 @@ export function RoomConnections({ connections }: RoomConnectionsProps) {
             )}
             <span className="text-sm text-muted-foreground ml-auto">
               {conn.to_space?.name || 'Unknown Space'}
+              {conn.to_space?.type === 'hallway' && ' (Hallway)'}
             </span>
           </div>
         ))}

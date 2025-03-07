@@ -17,14 +17,10 @@ interface HallwayConnectionsProps {
 }
 
 export function HallwayConnections({ connections }: HallwayConnectionsProps) {
-  // Filter connections related to hallways based on direction values
+  // We'll now identify hallway connections by their target space type
+  // rather than relying on direction values that may not be valid
   const hallwayConnections = connections.filter(
-    conn => conn.direction?.includes('hallway') || 
-            conn.direction === 'start_of_hallway' || 
-            conn.direction === 'middle_of_hallway' || 
-            conn.direction === 'end_of_hallway' ||
-            conn.direction === 'left_of_hallway' ||
-            conn.direction === 'right_of_hallway'
+    conn => conn.to_space?.type === 'hallway'
   );
 
   if (hallwayConnections.length === 0) {
@@ -50,12 +46,6 @@ export function HallwayConnections({ connections }: HallwayConnectionsProps) {
       case 'west':
       case 'left': 
         return <ArrowLeft {...iconProps} />;
-      case 'start_of_hallway': 
-        return <ChevronsLeft {...iconProps} />;
-      case 'end_of_hallway': 
-        return <ChevronsRight {...iconProps} />;
-      case 'middle_of_hallway': 
-        return <ChevronsDown {...iconProps} />;
       default:
         return null;
     }
@@ -67,11 +57,12 @@ export function HallwayConnections({ connections }: HallwayConnectionsProps) {
     
     // Format the direction to be more readable
     switch (direction) {
-      case 'start_of_hallway': return 'Start';
-      case 'middle_of_hallway': return 'Middle';
-      case 'end_of_hallway': return 'End';
-      case 'left_of_hallway': return 'Left Side';
-      case 'right_of_hallway': return 'Right Side';
+      case 'north': return 'North';
+      case 'south': return 'South';  
+      case 'east': return 'East';
+      case 'west': return 'West';
+      case 'up': return 'Up';
+      case 'down': return 'Down';
       case 'adjacent': return 'Adjacent';
       default: return direction.charAt(0).toUpperCase() + direction.slice(1);
     }
