@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { CreateSpaceFormData } from "../schemas/createSpaceSchema";
 import { RoomTypeEnum, StorageTypeEnum } from "../rooms/types/roomEnums";
@@ -113,12 +114,15 @@ export async function createSpace(data: CreateSpaceFormData) {
           const isTransitionDoor = firstConnection.connectionType === 'transition' || 
                                   (targetSpaceData?.type === 'hallway' && firstConnection.connectionType === 'door');
           
+          // Map direction to valid value for the database
+          let directionValue = firstConnection.direction || 'adjacent';
+          
           const hallwayConnectionData = {
             from_space_id: hallway.id,
             to_space_id: firstConnection.toSpaceId,
             space_type: data.type,
             connection_type: firstConnection.connectionType,
-            direction: firstConnection.direction || 'adjacent',
+            direction: directionValue,
             status: data.status as 'active' | 'inactive' | 'under_maintenance',
             connection_status: 'active',
             hallway_position: getHallwayPosition(firstConnection.direction),
@@ -185,12 +189,15 @@ export async function createSpace(data: CreateSpaceFormData) {
         const isTransitionDoor = firstConnection.connectionType === 'transition' || 
                                 (fromSpaceData?.type === 'hallway' && targetSpaceData?.type === 'hallway');
         
+        // Set a valid direction value
+        let directionValue = firstConnection.direction || 'adjacent';
+        
         const spaceConnectionData = {
           from_space_id: space.id,
           to_space_id: firstConnection.toSpaceId,
           space_type: data.type,
           connection_type: firstConnection.connectionType,
-          direction: firstConnection.direction || 'adjacent',
+          direction: directionValue,
           status: data.status as 'active' | 'inactive' | 'under_maintenance',
           connection_status: 'active',
           is_transition_door: isTransitionDoor,
@@ -222,11 +229,11 @@ function getHallwayPosition(direction: string | undefined): number {
   if (!direction) return 0.5;
   
   switch (direction) {
-    case 'north': return 0.1;
-    case 'south': return 0.9;
+    case 'start': return 0.1;
+    case 'end': return 0.9;
     case 'center': return 0.5;
-    case 'west': return 0.3;
-    case 'east': return 0.7;
+    case 'left': return 0.3;
+    case 'right': return 0.7;
     default: return 0.5;
   }
 }
@@ -234,12 +241,11 @@ function getHallwayPosition(direction: string | undefined): number {
 function getPositionFromDirection(direction: string | undefined): string | undefined {
   if (!direction) return undefined;
   
-  if (direction === 'north' || direction === 'south' || 
-      direction === 'up' || direction === 'down') {
-    return 'vertical';
-  } else if (direction === 'east' || direction === 'west' || 
-             direction === 'left' || direction === 'right') {
-    return 'horizontal';
+  if (direction === 'start' || direction === 'end' || 
+      direction === 'center') {
+    return 'longitudinal';
+  } else if (direction === 'left' || direction === 'right') {
+    return 'lateral';
   }
   
   return undefined;
