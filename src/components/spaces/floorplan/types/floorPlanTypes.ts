@@ -36,20 +36,9 @@ export interface FloorPlanEdge {
   id: string;
   source: string;
   target: string;
-  type?: string;
-  animated?: boolean;
   data?: {
-    type?: string;
-    direction?: string;
-    isTransitionDoor?: boolean;
-    hallwayPosition?: number;
-    offsetDistance?: number;
-    position?: any;
-    style?: {
-      stroke?: string;
-      strokeWidth?: number;
-      strokeDasharray?: string;
-    };
+    type: string;
+    style?: Record<string, any>;
   };
 }
 
@@ -73,26 +62,6 @@ export interface FloorPlanLayer {
   order_index: number;
   visible: boolean;
   data: Record<string, any>;
-}
-
-export interface FloorPlanConnectionData {
-  id: string;
-  from_space_id: string;
-  to_space_id: string;
-  connection_type: string;
-  status: string;
-  direction?: string;
-  space_type?: string;
-  hallway_position?: number;
-  offset_distance?: number;
-}
-
-export interface FloorPlanConnection {
-  id: string;
-  fromId: string;
-  toId: string;
-  type: string;
-  data?: Record<string, any>;
 }
 
 export const ROOM_COLORS: Record<string, string> = {

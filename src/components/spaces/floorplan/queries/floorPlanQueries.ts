@@ -134,11 +134,11 @@ export async function fetchFloorPlanObjects(floorId: string) {
     object_type: 'door' as const
   }));
 
-  // Fetch ALL space connections for the floor
+  // Fetch space connections
   const { data: connections, error: connectionsError } = await supabase
     .from('space_connections')
-    .select('*, to_space:new_spaces!to_space_id(*), from_space:new_spaces!from_space_id(*)')
-    .or(`from_space.floor_id.eq.${floorId},to_space.floor_id.eq.${floorId}`)
+    .select('*')
+    .or(`from_space_id.in.(${hallwayObjects.map(h => h.id).join(',')}),to_space_id.in.(${hallwayObjects.map(h => h.id).join(',')})`)
     .eq('status', 'active');
 
   if (connectionsError) {

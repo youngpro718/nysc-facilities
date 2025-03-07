@@ -2,20 +2,10 @@
 import { FloorPlanEdge } from "../types/floorPlanTypes";
 
 export function createEdgesFromConnections(connections: any[]): FloorPlanEdge[] {
-  if (!connections || !Array.isArray(connections) || connections.length === 0) {
-    console.log("No connections to transform");
-    return [];
-  }
-
-  console.log(`Transforming ${connections.length} connections to edges`);
-  
   return connections.map(conn => {
-    // Get connection type information
-    const connectionType = conn.connection_type || 'default';
-    
     // Determine if this is a hallway connection
     const isHallwayConnection = conn.space_type === 'hallway' || 
-                              (conn.to_space?.type === 'hallway') ||
+                              conn.to_space?.type === 'hallway' ||
                               ['start', 'end', 'left', 'right', 'center'].includes(conn.direction);
     
     // Get positioning data based on hallway position
@@ -51,18 +41,12 @@ export function createEdgesFromConnections(connections: any[]): FloorPlanEdge[] 
     const strokeDasharray = conn.status === 'active' ? '' : '5,5';
     const animated = conn.connection_type === 'door' || conn.connection_type === 'transition';
     
-    // Debug info
-    if (!conn.from_space_id || !conn.to_space_id) {
-      console.warn('Invalid connection missing source or target:', conn);
-      return null;
-    }
-
     return {
       id: conn.id,
       source: conn.from_space_id,
       target: conn.to_space_id,
       data: {
-        type: connectionType,
+        type: conn.connection_type,
         direction: conn.direction,
         isTransitionDoor: isTransitionDoor,
         hallwayPosition: hallwayPosition,
@@ -77,5 +61,5 @@ export function createEdgesFromConnections(connections: any[]): FloorPlanEdge[] 
       type: edgeType,
       animated: animated
     };
-  }).filter(edge => edge !== null); // Filter out any null edges from invalid connections
+  });
 }

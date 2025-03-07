@@ -1,98 +1,114 @@
-
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { FloorPlanNode, FloorPlanEdge } from "../types/floorPlanTypes";
+import { transformLayer } from "../utils/layerTransforms";
 import { transformSpaceToNode } from "../utils/nodeTransforms";
+import { createEdgesFromConnections } from "../utils/edgeTransforms";
+import { fetchFloorPlanLayers, fetchFloorPlanObjects } from "../queries/floorPlanQueries";
+import { FloorPlanLayerDB } from "../types/floorPlanTypes";
 
 export function useFloorPlanData(floorId: string | null) {
-  // Fetch spaces (objects) for the floor
-  const objectsQuery = useQuery({
-    queryKey: ["floor-plan-objects", floorId],
+  // Query for layers
+  const { data: layers, isLoading: isLoadingLayers } = useQuery({
+    queryKey: ['floorplan-layers', floorId],
     queryFn: async () => {
       if (!floorId) return [];
-
-      // Fetch all spaces for this floor
-      const { data: spaces, error } = await supabase
-        .from("new_spaces")
-        .select(`
-          id,
-          name,
-          type,
-          floor_id,
-          room_number,
-          status,
-          position,
-          size,
-          rotation,
-          properties,
-          hallway_properties (*)
-        `)
-        .eq("floor_id", floorId);
-
-      if (error) {
-        console.error("Error fetching spaces:", error);
-        throw error;
-      }
-
-      // Transform spaces to nodes
-      return spaces.map((space, index) => transformSpaceToNode(space, index));
+      const data = await fetchFloorPlanLayers(floorId);
+      return Array.isArray(data) ? data.map(layer => transformLayer(layer as FloorPlanLayerDB)) : [];
     },
     enabled: !!floorId
   });
 
-  // Fetch connections (edges) for the floor
-  const edgesQuery = useQuery({
-    queryKey: ["floor-plan-connections", floorId],
+  // Query for floor plan objects and connections
+  const { data: spaceData, isLoading: isLoadingObjects, error } = useQuery({
+    queryKey: ['floorplan-objects', floorId],
     queryFn: async () => {
-      if (!floorId) return [];
-
-      // Fetch connections between spaces on this floor
-      const { data: connections, error } = await supabase
-        .from("space_connections")
-        .select(`
-          id,
-          from_space_id,
-          to_space_id,
-          connection_type,
-          status,
-          direction,
-          space_type,
-          hallway_position,
-          offset_distance
-        `)
-        .eq("floor_id", floorId);
-
-      if (error) {
-        console.error("Error fetching connections:", error);
-        throw error;
-      }
-
-      // Transform connections to edges
-      return connections.map((connection): FloorPlanEdge => ({
-        id: connection.id,
-        source: connection.from_space_id,
-        target: connection.to_space_id,
-        type: "default",
-        data: {
-          type: connection.connection_type,
-          direction: connection.direction,
-          hallwayPosition: connection.hallway_position,
-          offsetDistance: connection.offset_distance,
-          style: {
-            stroke: connection.status === 'active' ? '#94a3b8' : '#cbd5e1',
-            strokeWidth: 2,
-            strokeDasharray: connection.status === 'active' ? undefined : '5,5'
-          }
-        }
-      }));
+      if (!floorId) return { objects: [], connections: [] };
+      console.log('Fetching floor plan objects for floor:', floorId);
+      return fetchFloorPlanObjects(floorId);
     },
     enabled: !!floorId
+  });
+
+  // Ensure spaceData is properly structured to avoid "undefined" errors
+  const safeSpaceData = spaceData || { objects: [], connections: [] };
+  
+  // Transform all objects into floor plan nodes
+  const objects = Array.isArray(safeSpaceData.objects) ? 
+    safeSpaceData.objects.map((obj, index) => {
+      // Ensure each object has the required properties
+      try {
+        return transformSpaceToNode(obj, index);
+      } catch (error) {
+        console.error('Error transforming object to node:', error, obj);
+        // Return a fallback node in case of errors
+        return {
+          id: obj.id || `error-${index}`,
+          type: obj.object_type || 'room',
+          position: { x: index * 100, y: index * 100 },
+          data: {
+            label: obj.name || 'Error Object',
+            type: obj.object_type || 'room',
+            size: { width: 150, height: 100 },
+            style: {
+              backgroundColor: '#f87171',
+              border: '1px dashed #ef4444',
+              opacity: 0.7
+            },
+            properties: {}
+          },
+          zIndex: 0
+        };
+      }
+    }) : 
+    [];
+    
+  const edges = Array.isArray(safeSpaceData.connections) ? 
+    createEdgesFromConnections(safeSpaceData.connections) : 
+    [];
+  
+  console.log('Transformed objects:', objects);
+  console.log('Created edges:', edges);
+
+  // Process parent/child relationships
+  const processedObjects = objects.map(obj => {
+    if (obj.data?.properties?.parent_room_id) {
+      const parentObj = objects.find(parent => parent.id === obj.data.properties.parent_room_id);
+      if (parentObj) {
+        // Adjust position relative to parent
+        obj.position = {
+          x: parentObj.position.x + 50,
+          y: parentObj.position.y + 50
+        };
+        
+        // Adjust size to be smaller than parent
+        const parentSize = parentObj.data?.size;
+        if (parentSize) {
+          obj.data.size = {
+            width: Math.max(parentSize.width * 0.7, 100),
+            height: Math.max(parentSize.height * 0.7, 80)
+          };
+        }
+        
+        // Inherit style properties but make it visually distinct
+        if (obj.data?.style) {
+          obj.data.style = {
+            ...obj.data.style,
+            border: '1px dashed #64748b',
+            opacity: 0.9
+          };
+        }
+        
+        // Increment zIndex to draw above parent
+        obj.zIndex = (parentObj.zIndex || 0) + 1;
+      }
+    }
+    return obj;
   });
 
   return {
-    objects: objectsQuery.data || [],
-    edges: edgesQuery.data || [],
-    isLoading: objectsQuery.isLoading || edgesQuery.isLoading,
-    error: objectsQuery.error || edgesQuery.error
+    layers: layers || [],
+    objects: processedObjects,
+    edges,
+    isLoading: isLoadingLayers || isLoadingObjects,
+    error // Include error in the return value
   };
 }
