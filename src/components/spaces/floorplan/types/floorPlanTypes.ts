@@ -87,6 +87,14 @@ export interface FloorPlanConnectionData {
   offset_distance?: number;
 }
 
+export interface FloorPlanConnection {
+  id: string;
+  fromId: string;
+  toId: string;
+  type: string;
+  data?: Record<string, any>;
+}
+
 export const ROOM_COLORS: Record<string, string> = {
   office: '#e2e8f0',
   courtroom: '#dbeafe',
