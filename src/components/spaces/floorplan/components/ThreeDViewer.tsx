@@ -8,7 +8,6 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { FloorPlanNode } from '../types/floorPlanTypes';
 import { toast } from 'sonner';
 
-// Room 3D Component with improved materials and appearance
 function Room3D({ 
   position, 
   size, 
@@ -31,7 +30,6 @@ function Room3D({
   const wallHeight = 120; // Standard wall height 
   const meshRef = useRef<THREE.Mesh>(null);
   
-  // Material setup with PBR properties
   const material = new THREE.MeshStandardMaterial({ 
     color: new THREE.Color(color),
     roughness: 0.7,
@@ -40,7 +38,6 @@ function Room3D({
     opacity: 0.85
   });
 
-  // Selected state effect
   useEffect(() => {
     if (meshRef.current) {
       if (isSelected) {
@@ -55,7 +52,6 @@ function Room3D({
     }
   }, [isSelected]);
 
-  // Room name
   const roomName = properties?.room_number 
     ? `${properties.room_number}` 
     : '';
@@ -76,7 +72,6 @@ function Room3D({
       >
         <boxGeometry args={[size.width, wallHeight, size.height]} />
         <primitive object={material} attach="material" />
-        {/* Floor base */}
         <mesh position={[0, -wallHeight/2 + 2, 0]} receiveShadow>
           <boxGeometry args={[size.width, 4, size.height]} />
           <meshStandardMaterial 
@@ -86,21 +81,18 @@ function Room3D({
         </mesh>
       </mesh>
       
-      {/* Room label - using simple Text from drei instead of TextGeometry */}
       {roomName && (
         <group position={[0, wallHeight/2 - 10, 0]} rotation={[0, Math.PI, 0]}>
           <mesh position={[0, 0, 0]}>
             <boxGeometry args={[size.width * 0.8, 15, 2]} />
             <meshStandardMaterial color="#1f2937" opacity={0} transparent={true} />
           </mesh>
-          {/* We'll use HTML text overlay instead of 3D text */}
         </group>
       )}
     </group>
   );
 }
 
-// Hallway 3D Component with improved appearance
 function Hallway3D({ 
   position, 
   size, 
@@ -144,7 +136,6 @@ function Hallway3D({
   );
 }
 
-// Door 3D Component with improved appearance
 function Door3D({ 
   position, 
   size, 
@@ -162,7 +153,6 @@ function Door3D({
   isSelected?: boolean;
   id: string;
 }) {
-  // Door is positioned half-way up the wall
   const doorHeight = 80;
   const doorWidth = Math.max(size.width, 40); // Ensure minimum door width
   const doorThickness = Math.min(size.height, 15); // Door thickness (depth)
@@ -187,7 +177,6 @@ function Door3D({
         />
       </mesh>
       
-      {/* Door handle */}
       <mesh position={[doorWidth/2 - 5, 0, doorThickness/2 + 1]} castShadow>
         <sphereGeometry args={[3, 8, 8]} />
         <meshStandardMaterial color="#64748b" metalness={0.8} roughness={0.2} />
@@ -196,7 +185,6 @@ function Door3D({
   );
 }
 
-// Scene Lighting Component
 function SceneLighting() {
   const lightRef = useRef<THREE.DirectionalLight>(null);
   const ambientRef = useRef<THREE.AmbientLight>(null);
@@ -229,7 +217,6 @@ function SceneLighting() {
   );
 }
 
-// Scene Initialization Component with improved controls and environment
 function ThreeDScene({ 
   objects, 
   onObjectSelect, 
@@ -245,10 +232,8 @@ function ThreeDScene({
   const controlsRef = useRef<any>(null);
   const [hasInitialized, setHasInitialized] = useState(false);
   
-  // Set up initial camera position based on objects
   useEffect(() => {
     if (camera && objects.length > 0 && !hasInitialized) {
-      // Find overall bounds of all objects
       let minX = Infinity, maxX = -Infinity;
       let minY = Infinity, maxY = -Infinity;
       
@@ -264,17 +249,14 @@ function ThreeDScene({
         maxY = Math.max(maxY, y + height/2);
       });
       
-      // Center point of all objects
       const centerX = (minX + maxX) / 2;
       const centerY = (minY + maxY) / 2;
       
-      // Calculate scene size and suitable camera distance
       const sceneWidth = maxX - minX;
       const sceneDepth = maxY - minY;
       const maxDimension = Math.max(sceneWidth, sceneDepth);
-      const cameraDistance = maxDimension * 1.2; // Give some padding
+      const cameraDistance = maxDimension * 1.2;
       
-      // Position camera with a good viewing angle
       camera.position.set(centerX, cameraDistance * 0.8, centerY + cameraDistance);
       camera.lookAt(centerX, 0, centerY);
       
@@ -287,7 +269,6 @@ function ThreeDScene({
     }
   }, [camera, objects, hasInitialized]);
 
-  // Update orbit controls target when selection changes for smooth transitions
   useEffect(() => {
     if (controlsRef.current && selectedObjectId) {
       const selectedObject = objects.find(obj => obj.id === selectedObjectId);
@@ -296,17 +277,15 @@ function ThreeDScene({
         const targetY = selectedObject.position.y;
         const targetZ = 0;
         
-        // Create a smooth transition to the selected object
         const startPosition = new THREE.Vector3().copy(controlsRef.current.target);
         const endPosition = new THREE.Vector3(targetX, targetZ, targetY);
-        const duration = 1000; // ms
+        const duration = 1000;
         const startTime = Date.now();
         
         const animateCamera = () => {
           const elapsedTime = Date.now() - startTime;
           const progress = Math.min(elapsedTime / duration, 1);
           
-          // Ease in-out function for smooth animation
           const easeProgress = progress < 0.5 
             ? 2 * progress * progress 
             : 1 - Math.pow(-2 * progress + 2, 2) / 2;
@@ -338,20 +317,17 @@ function ThreeDScene({
         enableDamping={true}
         dampingFactor={0.1}
         rotateSpeed={0.5}
-        maxPolarAngle={Math.PI / 2 - 0.1} // Prevent going below ground
-        minDistance={100} // Prevent zooming too close
-        maxDistance={2000} // Prevent zooming too far
+        maxPolarAngle={Math.PI / 2 - 0.1}
+        minDistance={100}
+        maxDistance={2000}
       />
       
-      {/* Environment and ground */}
       <group>
-        {/* Ground plane with shadows */}
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} receiveShadow>
           <planeGeometry args={[5000, 5000]} />
           <meshStandardMaterial color="#f3f4f6" roughness={0.8} metalness={0.1} />
         </mesh>
         
-        {/* Grid overlay with measurements */}
         <Grid 
           infiniteGrid 
           cellSize={20} 
@@ -366,24 +342,26 @@ function ThreeDScene({
         />
       </group>
       
-      {/* Render all objects */}
       {objects.map(obj => {
-        // Apply preview data if available
         let objectData = obj;
         if (previewData && previewData.id === obj.id) {
           objectData = {
             ...obj,
             position: previewData.position || obj.position,
-            rotation: previewData.rotation ?? (obj.data.rotation || 0),
+            rotation: previewData.rotation ?? obj.rotation,
             data: {
               ...obj.data,
               size: previewData.data?.size || obj.data.size,
-              properties: previewData.data?.properties || obj.data.properties
+              properties: previewData.data?.properties || obj.data.properties,
+              rotation: previewData.data?.rotation ?? obj.data.rotation
             }
           };
         }
         
         const isSelected = selectedObjectId === obj.id;
+        const rotation = objectData.data.rotation !== undefined 
+          ? objectData.data.rotation 
+          : (objectData.rotation || 0);
         
         switch (obj.type) {
           case 'room':
@@ -393,7 +371,7 @@ function ThreeDScene({
                 id={obj.id}
                 position={objectData.position}
                 size={objectData.data.size}
-                rotation={objectData.data.rotation || 0}
+                rotation={rotation}
                 color={obj.data?.style?.backgroundColor || '#e2e8f0'}
                 onClick={onObjectSelect}
                 isSelected={isSelected}
@@ -407,7 +385,7 @@ function ThreeDScene({
                 id={obj.id}
                 position={objectData.position}
                 size={objectData.data.size}
-                rotation={objectData.data.rotation || 0}
+                rotation={rotation}
                 color={obj.data?.style?.backgroundColor || '#e5e7eb'}
                 onClick={onObjectSelect}
                 isSelected={isSelected}
@@ -420,7 +398,7 @@ function ThreeDScene({
                 id={obj.id}
                 position={objectData.position}
                 size={objectData.data.size || {width: 40, height: 15}}
-                rotation={objectData.data.rotation || 0}
+                rotation={rotation}
                 color={obj.data?.style?.backgroundColor || '#94a3b8'}
                 onClick={onObjectSelect}
                 isSelected={isSelected}
@@ -538,7 +516,6 @@ export function ThreeDViewer({
           </Canvas>
         )}
         
-        {/* Interactive controls overlay */}
         <div className="absolute bottom-4 right-4 bg-white/80 backdrop-blur-sm p-2 rounded-md shadow-md">
           <div className="text-xs text-gray-600">
             <div className="flex items-center gap-2 mb-1">

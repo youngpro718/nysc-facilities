@@ -4,7 +4,7 @@ import { transformLayer } from "../utils/layerTransforms";
 import { transformSpaceToNode } from "../utils/nodeTransforms";
 import { createEdgesFromConnections } from "../utils/edgeTransforms";
 import { fetchFloorPlanLayers, fetchFloorPlanObjects } from "../queries/floorPlanQueries";
-import { FloorPlanLayerDB } from "../types/floorPlanTypes";
+import { FloorPlanLayerDB, RawFloorPlanObject } from "../types/floorPlanTypes";
 
 export function useFloorPlanData(floorId: string | null) {
   // Query for layers
@@ -35,24 +35,24 @@ export function useFloorPlanData(floorId: string | null) {
   // Assign default positions to objects without positions
   // This is crucial for the 3D view to show objects
   const objectsWithPositions = Array.isArray(safeSpaceData.objects) ? 
-    safeSpaceData.objects.map((obj, index) => {
-      // If object has no position, assign a grid position
-      if (!obj.position || (obj.position.x === 0 && obj.position.y === 0)) {
-        // Calculate grid position - create a grid layout
-        const gridSize = 250; // Space between objects
-        const gridCols = 4; // Number of columns in the grid
-        const row = Math.floor(index / gridCols);
-        const col = index % gridCols;
-        
-        return {
-          ...obj,
-          position: {
-            x: col * gridSize + 100, // Add offset to avoid starting at 0,0
-            y: row * gridSize + 100
-          }
-        };
-      }
-      return obj;
+    safeSpaceData.objects.map((rawObj: RawFloorPlanObject, index) => {
+      // Ensure we have a position (use default grid position if none exists)
+      const defaultPosition = {
+        x: (index % 4) * 250 + 100, // Create a grid layout with 4 columns
+        y: Math.floor(index / 4) * 250 + 100
+      };
+      
+      // Ensure we have a size
+      const defaultSize = { width: 150, height: 100 };
+      
+      // Create a standardized object with all required fields
+      return {
+        ...rawObj,
+        position: rawObj.position || defaultPosition,
+        size: rawObj.size || defaultSize,
+        properties: rawObj.properties || {},
+        object_type: rawObj.object_type || rawObj.type || 'room'
+      };
     }) : 
     [];
   
@@ -60,11 +60,6 @@ export function useFloorPlanData(floorId: string | null) {
   const objects = objectsWithPositions.map((obj, index) => {
     // Ensure each object has the required properties
     try {
-      // Set default size if missing or invalid
-      if (!obj.size || obj.size.width <= 0 || obj.size.height <= 0) {
-        obj.size = { width: 150, height: 100 };
-      }
-      
       return transformSpaceToNode(obj, index);
     } catch (error) {
       console.error('Error transforming object to node:', error, obj);
@@ -72,17 +67,18 @@ export function useFloorPlanData(floorId: string | null) {
       return {
         id: obj.id || `error-${index}`,
         type: obj.object_type || 'room',
-        position: { x: obj.position?.x || index * 100, y: obj.position?.y || index * 100 },
+        position: obj.position,
         data: {
           label: obj.name || 'Error Object',
           type: obj.object_type || 'room',
-          size: obj.size || { width: 150, height: 100 },
+          size: obj.size,
           style: {
             backgroundColor: '#f87171',
             border: '1px dashed #ef4444',
             opacity: 0.7
           },
-          properties: obj.properties || {}
+          properties: obj.properties,
+          rotation: obj.rotation || 0
         },
         zIndex: 0
       };

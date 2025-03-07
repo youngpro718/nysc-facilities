@@ -64,6 +64,22 @@ export interface FloorPlanLayer {
   data: Record<string, any>;
 }
 
+// Raw object structure from API
+export interface RawFloorPlanObject {
+  id: string;
+  name?: string;
+  room_number?: string;
+  type?: string;
+  object_type?: string;
+  room_type?: string;
+  status?: string;
+  floor_id?: string;
+  position?: Position;
+  size?: Size;
+  rotation?: number; 
+  properties?: Record<string, any>;
+}
+
 // 3D visualization specific types
 export interface Object3D {
   id: string;
