@@ -24,7 +24,7 @@ export function RoomConnections({ connections }: RoomConnectionsProps) {
   };
 
   // Helper function to format connection type for display
-  const formatConnectionType = (connectionType: string | undefined | null) => {
+  const formatConnectionType = (connectionType: string) => {
     if (!connectionType) return 'Link';
     
     // Format the connection type to be more readable
@@ -40,17 +40,15 @@ export function RoomConnections({ connections }: RoomConnectionsProps) {
 
   if (!connections || connections.length === 0) {
     return (
-      <div className="mt-4 space-y-2">
+      <div className="space-y-2">
         <p className="text-sm font-medium">Connected Spaces</p>
         <p className="text-sm text-muted-foreground">No connected rooms</p>
       </div>
     );
   }
 
-  console.log("Connections in RoomConnections:", connections);
-
   return (
-    <div className="mt-4 space-y-2">
+    <div className="space-y-2">
       <p className="text-sm font-medium">Connected Spaces</p>
       <div className="space-y-1">
         {connections.map((conn) => (

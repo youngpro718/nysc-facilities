@@ -18,7 +18,7 @@ export function CardBack({ room }: CardBackProps) {
   return (
     <Card className="absolute w-full h-full backface-hidden rotate-y-180">
       <CardHeader className="flex-none">
-        <CardTitle>Room History</CardTitle>
+        <CardTitle>Room Details</CardTitle>
       </CardHeader>
       <ScrollArea className="h-[calc(100%-5rem)] px-6">
         <div className="space-y-4 pb-6">
@@ -31,7 +31,9 @@ export function CardBack({ room }: CardBackProps) {
             </div>
           )}
           
-          <RoomConnections connections={room.space_connections || []} />
+          {room.space_connections && room.space_connections.length > 0 && (
+            <RoomConnections connections={room.space_connections} />
+          )}
 
           {room.description && (
             <div className="space-y-1">
@@ -65,9 +67,21 @@ export function CardBack({ room }: CardBackProps) {
             </div>
           )}
 
+          {room.current_function && (
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Current Function</p>
+              <p className="text-sm text-muted-foreground">{room.current_function}</p>
+              {room.function_change_date && (
+                <p className="text-xs text-muted-foreground">
+                  Since {format(new Date(room.function_change_date), 'MMM d, yyyy')}
+                </p>
+              )}
+            </div>
+          )}
+
           {room.issues && room.issues.length > 0 && (
             <div className="space-y-2">
-              <h4 className="text-sm font-medium">Issue History</h4>
+              <h4 className="text-sm font-medium">Issues</h4>
               <div className="space-y-2">
                 {room.issues.slice(0, 5).map((issue) => (
                   <div 
@@ -89,6 +103,20 @@ export function CardBack({ room }: CardBackProps) {
                         {format(new Date(issue.created_at), 'MMM d, yyyy')}
                       </span>
                     </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {room.current_occupants && room.current_occupants.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">Current Occupants</h4>
+              <div className="space-y-1">
+                {room.current_occupants.map((occupant, index) => (
+                  <div key={index} className="text-sm p-2 bg-muted rounded-lg">
+                    <p>{occupant.first_name} {occupant.last_name}</p>
+                    {occupant.title && <p className="text-xs text-muted-foreground">{occupant.title}</p>}
                   </div>
                 ))}
               </div>

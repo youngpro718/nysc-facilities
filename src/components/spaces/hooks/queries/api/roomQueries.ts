@@ -33,6 +33,7 @@ export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
         )
       ),
       parent_room:parent_room_id (
+        id,
         name
       )
     `);
@@ -78,6 +79,7 @@ export const fetchRelatedRoomData = async (roomIds: string[]) => {
         is_primary,
         schedule,
         occupants!fk_occupant_room_assignments_occupant (
+          id,
           first_name,
           last_name,
           title
