@@ -1,10 +1,11 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { FloorPlanCanvas } from './FloorPlanCanvas';
 import { PropertiesPanel } from './components/PropertiesPanel';
 import { EditPropertiesPanel } from './components/EditPropertiesPanel';
 import { ThreeDViewer } from './components/ThreeDViewer';
 import { useDialogManager } from '@/hooks/useDialogManager';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -135,22 +136,16 @@ export function FloorPlanView() {
               onFloorSelect={setSelectedFloor}
             />
             <div className="h-6 w-px bg-border" />
-            <TabsList className="h-9 bg-muted/50">
-              <TabsTrigger 
-                value="2d" 
-                onClick={() => setViewMode('2d')}
-                className={viewMode === '2d' ? 'bg-background data-[state=active]:bg-background' : ''}
-              >
-                2D View
-              </TabsTrigger>
-              <TabsTrigger 
-                value="3d" 
-                onClick={() => setViewMode('3d')}
-                className={viewMode === '3d' ? 'bg-background data-[state=active]:bg-background' : ''}
-              >
-                3D View
-              </TabsTrigger>
-            </TabsList>
+            <Tabs 
+              value={viewMode} 
+              onValueChange={(value) => setViewMode(value as '2d' | '3d')}
+              className="w-full"
+            >
+              <TabsList className="h-9 bg-muted/50">
+                <TabsTrigger value="2d">2D View</TabsTrigger>
+                <TabsTrigger value="3d">3D View</TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
           
           <div className="flex items-center space-x-2">

@@ -1,3 +1,4 @@
+
 import { ReactFlow, Background, Controls, MiniMap, Panel, Node, Connection, Edge } from 'reactflow';
 import { panelStyle } from '../styles/flowStyles';
 import { useState, useCallback } from 'react';
@@ -90,6 +91,7 @@ export function FloorPlanFlow({
       nodesDraggable={!isPanning}
       nodesConnectable={!isPanning}
       elementsSelectable={!isPanning}
+      style={{ width: '100%', height: '100%' }}
       onNodeDragStop={(event, node) => {
         // This ensures the final position is saved after dragging stops
         onNodesChange([{

@@ -190,7 +190,7 @@ function FloorPlanCanvasInner({
 
   if (!floorId) {
     return (
-      <div className="h-[600px] w-full flex items-center justify-center bg-gray-50">
+      <div className="h-full w-full flex items-center justify-center bg-gray-50">
         Select a floor to view the floor plan
       </div>
     );
@@ -198,14 +198,14 @@ function FloorPlanCanvasInner({
 
   if (isLoading) {
     return (
-      <div className="h-[600px] w-full flex items-center justify-center bg-gray-50">
+      <div className="h-full w-full flex items-center justify-center bg-gray-50">
         Loading floor plan...
       </div>
     );
   }
 
   return (
-    <div style={{ width: '100%', height: '600px', position: 'relative' }}>
+    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       <FloorPlanFlow
         nodes={nodes}
         edges={edges}
@@ -222,7 +222,7 @@ function FloorPlanCanvasInner({
 
 export function FloorPlanCanvas(props: FloorPlanCanvasProps) {
   return (
-    <Card className="p-4">
+    <Card className="h-full p-0 overflow-hidden">
       <ReactFlowProvider>
         <FloorPlanCanvasInner {...props} />
       </ReactFlowProvider>

@@ -5,7 +5,7 @@ import RoomsList from "./RoomsList";
 import HallwaysList from "./HallwaysList";
 import DoorsList from "./DoorsList";
 import { FloorPlanView } from "./floorplan/FloorPlanView";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { SpacesLightingView } from "./lighting/SpacesLightingView";
 
 export interface SpaceViewProps {
@@ -14,9 +14,11 @@ export interface SpaceViewProps {
 }
 
 const SpacesTabs = ({ selectedBuilding, selectedFloor }: SpaceViewProps) => {
+  const [activeTab, setActiveTab] = useState("rooms");
+
   return (
     <div className="space-y-4">
-      <Tabs defaultValue="rooms" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="w-full justify-start">
           <TabsTrigger value="rooms" className="flex items-center gap-2">
             <Building2 size={16} />
@@ -56,8 +58,8 @@ const SpacesTabs = ({ selectedBuilding, selectedFloor }: SpaceViewProps) => {
           <SpacesLightingView selectedBuilding={selectedBuilding} selectedFloor={selectedFloor} />
         </TabsContent>
 
-        <TabsContent value="floorplan" className="mt-4">
-          <Suspense fallback={<div>Loading floor plan...</div>}>
+        <TabsContent value="floorplan" className="mt-4 h-[calc(100vh-16rem)]">
+          <Suspense fallback={<div className="flex items-center justify-center h-full">Loading floor plan...</div>}>
             <FloorPlanView />
           </Suspense>
         </TabsContent>

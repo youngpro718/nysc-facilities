@@ -1,8 +1,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { Canvas, useThree, useFrame } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Grid, Environment, ContactShadows } from '@react-three/drei';
+import { Canvas, useThree } from '@react-three/fiber';
+import { OrbitControls, Grid, Environment } from '@react-three/drei';
 import { useFloorPlanData } from '../hooks/useFloorPlanData';
 import * as THREE from 'three';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -187,14 +187,10 @@ function Door3D({
 }
 
 function SceneLighting() {
-  const lightRef = useRef<THREE.DirectionalLight>(null);
-  const ambientRef = useRef<THREE.AmbientLight>(null);
-  
   return (
     <>
-      <ambientLight ref={ambientRef} intensity={0.6} />
+      <ambientLight intensity={0.6} />
       <directionalLight 
-        ref={lightRef}
         position={[300, 300, 300]} 
         intensity={0.6}
         castShadow
@@ -229,7 +225,7 @@ function ThreeDScene({
   selectedObjectId?: string | null;
   previewData?: any | null;
 }) {
-  const { camera, scene } = useThree();
+  const { camera } = useThree();
   const controlsRef = useRef<any>(null);
   const [hasInitialized, setHasInitialized] = useState(false);
   
@@ -255,7 +251,7 @@ function ThreeDScene({
       
       const sceneWidth = maxX - minX;
       const sceneDepth = maxY - minY;
-      const maxDimension = Math.max(sceneWidth, sceneDepth);
+      const maxDimension = Math.max(sceneWidth, sceneDepth, 500); // Minimum size for empty scenes
       const cameraDistance = maxDimension * 1.2;
       
       camera.position.set(centerX, cameraDistance * 0.8, centerY + cameraDistance);
@@ -278,34 +274,8 @@ function ThreeDScene({
         const targetY = selectedObject.position.y;
         const targetZ = 0;
         
-        const startPosition = new THREE.Vector3().copy(controlsRef.current.target);
-        const endPosition = new THREE.Vector3(targetX, targetZ, targetY);
-        const duration = 1000;
-        const startTime = Date.now();
-        
-        const animateCamera = () => {
-          const elapsedTime = Date.now() - startTime;
-          const progress = Math.min(elapsedTime / duration, 1);
-          
-          const easeProgress = progress < 0.5 
-            ? 2 * progress * progress 
-            : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-          
-          const newPosition = new THREE.Vector3().lerpVectors(
-            startPosition, 
-            endPosition, 
-            easeProgress
-          );
-          
-          controlsRef.current.target.copy(newPosition);
-          controlsRef.current.update();
-          
-          if (progress < 1) {
-            requestAnimationFrame(animateCamera);
-          }
-        };
-        
-        animateCamera();
+        controlsRef.current.target.set(targetX, targetZ, targetY);
+        controlsRef.current.update();
       }
     }
   }, [selectedObjectId, objects]);
@@ -460,7 +430,7 @@ export function ThreeDViewer({
 
   if (!floorId) {
     return (
-      <Card className="w-full h-[600px] flex items-center justify-center bg-gray-50">
+      <Card className="w-full h-full flex items-center justify-center bg-gray-50">
         <p className="text-gray-500">Select a floor to view the 3D model</p>
       </Card>
     );
@@ -468,7 +438,7 @@ export function ThreeDViewer({
 
   if (isLoading) {
     return (
-      <Card className="w-full h-[600px] flex items-center justify-center bg-gray-50">
+      <Card className="w-full h-full flex items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center space-y-4">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
           <p className="text-gray-500">Loading 3D model...</p>
@@ -479,7 +449,7 @@ export function ThreeDViewer({
 
   if (viewerError) {
     return (
-      <Card className="w-full h-[600px] flex items-center justify-center bg-gray-50">
+      <Card className="w-full h-full flex items-center justify-center bg-gray-50">
         <div className="text-center p-4">
           <p className="text-red-500 font-medium">Error rendering 3D view</p>
           <p className="text-gray-500 mt-2">Please try refreshing the page</p>
@@ -489,7 +459,7 @@ export function ThreeDViewer({
   }
 
   return (
-    <Card className="w-full h-[600px] overflow-hidden relative">
+    <Card className="w-full h-full overflow-hidden relative">
       <ErrorBoundary>
         {isMounted && (
           <Canvas
