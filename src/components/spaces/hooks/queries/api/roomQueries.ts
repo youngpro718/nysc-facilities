@@ -58,6 +58,16 @@ export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
 };
 
 export const fetchRelatedRoomData = async (roomIds: string[]) => {
+  if (roomIds.length === 0) {
+    return [
+      { data: [], error: null },
+      { data: [], error: null },
+      { data: [], error: null },
+      { data: [], error: null },
+      { data: [], error: null }
+    ];
+  }
+  
   return Promise.all([
     // Fetch occupants
     supabase
@@ -93,7 +103,7 @@ export const fetchRelatedRoomData = async (roomIds: string[]) => {
       .select('*')
       .in('space_id', roomIds),
       
-    // Fetch space connections
+    // Fetch space connections with detailed to_space information
     supabase
       .from('space_connections')
       .select(`
@@ -102,6 +112,7 @@ export const fetchRelatedRoomData = async (roomIds: string[]) => {
         to_space_id,
         connection_type,
         direction,
+        status,
         to_space:to_space_id (
           id,
           name,
@@ -109,6 +120,6 @@ export const fetchRelatedRoomData = async (roomIds: string[]) => {
         )
       `)
       .in('from_space_id', roomIds)
+      .eq('status', 'active')
   ]);
 };
-

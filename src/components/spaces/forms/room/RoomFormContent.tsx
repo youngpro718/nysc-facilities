@@ -10,6 +10,7 @@ import { type RoomFormData } from "./RoomFormSchema";
 import { Separator } from "@/components/ui/separator";
 import { ConnectionsField } from "./ConnectionsField";
 import { toast } from "sonner";
+import { FormButtons } from "@/components/ui/form-buttons";
 
 interface RoomFormContentProps extends RoomFormProps {
   onSubmit: (data: RoomFormData) => Promise<void>;
@@ -32,6 +33,22 @@ export function RoomFormContent({
     e.preventDefault();
     console.log("Form submitted, calling form.handleSubmit");
     
+    // Get current form state
+    console.log("Form state:", {
+      isDirty: form.formState.isDirty,
+      isValid: form.formState.isValid,
+      errors: form.formState.errors
+    });
+    
+    // Get current form values for debugging
+    const formValues = form.getValues();
+    console.log("Current form values:", formValues);
+    
+    // Ensure type field is set
+    if (!formValues.type) {
+      form.setValue("type", "room", { shouldValidate: true });
+    }
+    
     // Validate connections
     const connections = form.getValues("connections") || [];
     const validConnections = connections.filter(conn => conn.toSpaceId && conn.connectionType);
@@ -41,18 +58,12 @@ export function RoomFormContent({
       return;
     }
     
-    // Get current form values for debugging
-    const formValues = form.getValues();
-    console.log("Current form values:", formValues);
-    
-    // Check form state
-    console.log("Form state:", {
-      isDirty: form.formState.isDirty,
-      isValid: form.formState.isValid,
-      errors: form.formState.errors
-    });
-    
-    return form.handleSubmit(onSubmit)(e);
+    try {
+      await form.handleSubmit(onSubmit)(e);
+    } catch (error) {
+      console.error("Form submission error:", error);
+      toast.error("Form submission failed. Please check the console for details.");
+    }
   };
 
   return (
@@ -88,6 +99,7 @@ export function RoomFormContent({
             type="button"
             variant="outline"
             onClick={onCancel}
+            disabled={isPending}
           >
             Cancel
           </Button>

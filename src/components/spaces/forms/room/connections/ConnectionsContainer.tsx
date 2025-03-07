@@ -25,7 +25,7 @@ export function ConnectionsContainer({ form, floorId, roomId }: ConnectionsConta
       
       // Fetch all active spaces from the same floor except the current room
       const { data: spaceData, error: spaceError } = await supabase
-        .from("spaces")
+        .from("new_spaces")
         .select(`
           id,
           name,
@@ -51,9 +51,9 @@ export function ConnectionsContainer({ form, floorId, roomId }: ConnectionsConta
       
       return formattedSpaces;
     },
-    staleTime: 60000, // Cache for 1 minute
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     enabled: !!floorId,
-    retry: 2
+    retry: 3
   });
 
   // Fetch names of already connected spaces
@@ -66,7 +66,7 @@ export function ConnectionsContainer({ form, floorId, roomId }: ConnectionsConta
       if (spaceIds.length === 0) return;
       
       const { data: spaceData, error } = await supabase
-        .from("spaces")
+        .from("new_spaces")
         .select("id, name, type, room_number")
         .in("id", spaceIds);
         
@@ -91,6 +91,11 @@ export function ConnectionsContainer({ form, floorId, roomId }: ConnectionsConta
   }, [connections]);
 
   const handleAddConnection = (connection: RoomConnectionData) => {
+    // Validate connection before adding
+    if (!connection.toSpaceId || !connection.connectionType) {
+      return;
+    }
+    
     const updatedConnections = [...(form.getValues("connections") || []), connection];
     form.setValue("connections", updatedConnections, { shouldDirty: true });
   };

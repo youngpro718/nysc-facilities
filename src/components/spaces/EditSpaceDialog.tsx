@@ -41,17 +41,36 @@ export function EditSpaceDialog({
   const open = controlledOpen ?? internalOpen;
   const setOpen = controlledSetOpen ?? setInternalOpen;
 
+  // Prepare the form with the transformed data that matches the schema
   const form = useForm<RoomFormData>({
     resolver: zodResolver(roomFormSchema),
-    defaultValues: initialData,
+    defaultValues: {
+      ...initialData,
+      type: type === "room" ? "room" : "hallway", // Ensure type is set correctly
+      connections: initialData?.space_connections || initialData?.connections || []
+    },
   });
 
   useEffect(() => {
     if (open && initialData) {
       console.log("Resetting form with initial data:", initialData);
-      form.reset(initialData);
+      
+      // Transform connections data structure if needed
+      const connections = initialData.space_connections || initialData.connections || [];
+      
+      // Reset form with properly structured data
+      form.reset({
+        ...initialData,
+        type: type === "room" ? "room" : "hallway", // Ensure type is set
+        connections: connections.map((conn: any) => ({
+          id: conn.id,
+          toSpaceId: conn.to_space_id || conn.toSpaceId,
+          connectionType: conn.connection_type || conn.connectionType,
+          direction: conn.direction
+        }))
+      });
     }
-  }, [open, form, initialData]);
+  }, [open, form, initialData, type]);
 
   const queryClient = useQueryClient();
 

@@ -37,7 +37,7 @@ export function useRoomsQuery({ buildingId, floorId }: UseRoomsQueryProps = {}) 
         throw roomsError;
       }
 
-      if (!roomsData) return [];
+      if (!roomsData || roomsData.length === 0) return [];
 
       // Fetch additional data in parallel
       const [
@@ -56,7 +56,10 @@ export function useRoomsQuery({ buildingId, floorId }: UseRoomsQueryProps = {}) 
           fixturesError,
           connectionsError
         });
+        // Continue with partial data but log the errors
       }
+
+      console.log("Connections data:", connectionsData);
 
       // Create lookup maps for the related data
       const occupantsByRoomId = createOccupantsLookup(occupantsData || []);
