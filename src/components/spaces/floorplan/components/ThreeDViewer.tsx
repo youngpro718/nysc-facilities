@@ -101,7 +101,8 @@ function Hallway3D({
   color = '#e5e7eb', 
   onClick, 
   isSelected = false,
-  id
+  id,
+  properties
 }: {
   position: { x: number, y: number };
   size: { width: number, height: number };
@@ -110,30 +111,128 @@ function Hallway3D({
   onClick: (data: any) => void;
   isSelected?: boolean;
   id: string;
+  properties?: any;
 }) {
   const hallwayHeight = 30; // Lower than rooms to differentiate
+  const meshRef = useRef<THREE.Mesh>(null);
+  
+  const material = new THREE.MeshStandardMaterial({ 
+    color: new THREE.Color(color), 
+    transparent: true,
+    opacity: 0.75,
+    roughness: 0.9,
+    metalness: 0.1,
+    emissive: isSelected ? new THREE.Color(0x333333) : undefined,
+    emissiveIntensity: isSelected ? 0.2 : 0
+  });
+  
+  // Set hallway color based on lighting status if available
+  useEffect(() => {
+    if (meshRef.current) {
+      if (isSelected) {
+        meshRef.current.scale.set(1, 1.02, 1); // Slight scale up for selected hallways
+        material.emissive = new THREE.Color(0x333333);
+        material.emissiveIntensity = 0.2;
+      } else {
+        meshRef.current.scale.set(1, 1, 1);
+        material.emissive = new THREE.Color(0x000000);
+        material.emissiveIntensity = 0;
+      }
+      
+      // Check if lighting status is available and change color
+      if (properties?.lighting_status === 'all_functional') {
+        material.emissive = new THREE.Color(0x10b981); // Green tint for fully functional
+        material.emissiveIntensity = 0.05;
+      } else if (properties?.lighting_status === 'partial_issues') {
+        material.emissive = new THREE.Color(0xf59e0b); // Amber tint for partial issues
+        material.emissiveIntensity = 0.05;
+      } else if (properties?.lighting_status === 'all_non_functional') {
+        material.emissive = new THREE.Color(0xef4444); // Red tint for non-functional
+        material.emissiveIntensity = 0.05;
+      }
+    }
+  }, [isSelected, properties?.lighting_status]);
+
+  // Add lighting fixtures visualization if available
+  const hallwayType = properties?.hallwayType || properties?.type || 'public_main';
+  const isEmergencyRoute = properties?.emergency_route === 'designated' || properties?.emergencyRoute === 'designated';
   
   return (
-    <mesh
+    <group
       position={[position.x, hallwayHeight/2, position.y]}
       rotation={[0, rotation * Math.PI / 180, 0]}
       onClick={(e) => {
         e.stopPropagation();
-        onClick({ id, type: 'hallway', position, size, rotation });
+        onClick({ id, type: 'hallway', position, size, rotation, properties });
       }}
-      receiveShadow
     >
-      <boxGeometry args={[size.width, hallwayHeight, size.height]} />
-      <meshStandardMaterial 
-        color={color} 
-        transparent={true}
-        opacity={0.75}
-        roughness={0.9}
-        metalness={0.1}
-        emissive={isSelected ? new THREE.Color(0x333333) : undefined}
-        emissiveIntensity={isSelected ? 0.2 : 0}
-      />
-    </mesh>
+      <mesh
+        ref={meshRef}
+        receiveShadow
+      >
+        <boxGeometry args={[size.width, hallwayHeight, size.height]} />
+        <primitive object={material} attach="material" />
+      </mesh>
+      
+      {/* Floor marking for emergency routes */}
+      {isEmergencyRoute && (
+        <mesh
+          position={[0, -hallwayHeight/2 + 0.5, 0]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          receiveShadow
+        >
+          <planeGeometry args={[size.width * 0.9, size.height * 0.5]} />
+          <meshStandardMaterial 
+            color="#dc2626" 
+            emissive="#ef4444"
+            emissiveIntensity={0.2}
+            opacity={0.7}
+            transparent={true}
+          />
+        </mesh>
+      )}
+      
+      {/* Hallway label */}
+      {properties?.section && (
+        <group position={[0, hallwayHeight/2 - 10, 0]} rotation={[0, 0, 0]}>
+          <mesh position={[0, 0, 0]}>
+            <boxGeometry args={[size.width * 0.8, 1, 2]} />
+            <meshStandardMaterial color="#1f2937" opacity={0} transparent={true} />
+          </mesh>
+        </group>
+      )}
+      
+      {/* Lighting fixtures visualization if data available */}
+      {properties?.lighting_fixtures && Array.isArray(properties.lighting_fixtures) && 
+        properties.lighting_fixtures.map((fixture: any, idx: number) => {
+          // Calculate positions along hallway for fixtures
+          const xOffset = (idx / (properties.lighting_fixtures.length + 1)) * size.width - size.width/2;
+          
+          return (
+            <mesh 
+              key={`light-${idx}`} 
+              position={[xOffset, hallwayHeight - 2, 0]}
+              scale={[1, 1, 1]}
+            >
+              <boxGeometry args={[8, 2, 8]} />
+              <meshStandardMaterial 
+                color={
+                  fixture.status === 'functional' ? '#10b981' : 
+                  fixture.status === 'maintenance_needed' ? '#f59e0b' : 
+                  '#ef4444'
+                }
+                emissive={
+                  fixture.status === 'functional' ? '#10b981' : 
+                  fixture.status === 'maintenance_needed' ? '#f59e0b' : 
+                  '#ef4444'
+                }
+                emissiveIntensity={0.5}
+              />
+            </mesh>
+          );
+        })
+      }
+    </group>
   );
 }
 
@@ -360,6 +459,7 @@ function ThreeDScene({
                 color={obj.data?.style?.backgroundColor || '#e5e7eb'}
                 onClick={onObjectSelect}
                 isSelected={isSelected}
+                properties={obj.data?.properties}
               />
             );
           case 'door':

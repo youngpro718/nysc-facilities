@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { FloorPlanCanvas } from './FloorPlanCanvas';
 import { PropertiesPanel } from './components/PropertiesPanel';
@@ -82,12 +81,37 @@ export function FloorPlanView() {
     
     const rotation = parseFloat(updates.rotation);
     
-    // Build properties object
-    const properties = {
-      room_number: updates.room_number,
-      room_type: updates.room_type,
-      status: updates.status
-    };
+    // Build properties object based on object type
+    let properties: Record<string, any> = {};
+    
+    if (selectedObject?.type === 'room') {
+      properties = {
+        room_number: updates.room_number,
+        room_type: updates.room_type,
+        status: updates.status
+      };
+    } else if (selectedObject?.type === 'hallway') {
+      properties = {
+        section: updates.section,
+        hallwayType: updates.hallwayType,
+        traffic_flow: updates.traffic_flow,
+        accessibility: updates.accessibility,
+        emergency_route: updates.emergency_route
+      };
+    } else if (selectedObject?.type === 'door') {
+      properties = {
+        security_level: updates.security_level,
+        status: updates.status
+      };
+    }
+    
+    // Preserve lighting data if available
+    if (selectedObject?.properties?.lighting_fixtures) {
+      properties.lighting_fixtures = selectedObject.properties.lighting_fixtures;
+      properties.functional_lights = selectedObject.properties.functional_lights;
+      properties.total_lights = selectedObject.properties.total_lights;
+      properties.lighting_status = selectedObject.properties.lighting_status;
+    }
     
     setPreviewData({
       id: selectedObject?.id,

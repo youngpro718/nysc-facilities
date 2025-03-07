@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { transformLayer } from "../utils/layerTransforms";
 import { transformSpaceToNode } from "../utils/nodeTransforms";
@@ -25,6 +24,34 @@ export function useFloorPlanData(floorId: string | null) {
       if (!floorId) return { objects: [], connections: [] };
       console.log('Fetching floor plan objects for floor:', floorId);
       return fetchFloorPlanObjects(floorId);
+    },
+    enabled: !!floorId
+  });
+
+  // Query for lighting fixtures data
+  const { data: lightingData, isLoading: isLoadingLighting } = useQuery({
+    queryKey: ['floorplan-lighting', floorId],
+    queryFn: async () => {
+      if (!floorId) return [];
+      
+      const { data, error } = await supabase
+        .from('lighting_fixtures')
+        .select('id, space_id, space_type, status, position, name')
+        .eq('floor_id', floorId)
+        .order('space_id');
+        
+      if (error) throw error;
+      
+      // Group fixtures by space_id for easier access
+      const fixturesBySpace: Record<string, any[]> = {};
+      data?.forEach(fixture => {
+        if (!fixturesBySpace[fixture.space_id]) {
+          fixturesBySpace[fixture.space_id] = [];
+        }
+        fixturesBySpace[fixture.space_id].push(fixture);
+      });
+      
+      return fixturesBySpace;
     },
     enabled: !!floorId
   });
@@ -98,13 +125,33 @@ export function useFloorPlanData(floorId: string | null) {
       // Determine the object type
       const objectType = rawObj.object_type || rawObj.type || 'room';
       
+      // Add lighting data if available
+      let enhancedProperties = rawObj.properties || {};
+      if (lightingData && rawObj.id && lightingData[rawObj.id]) {
+        const fixtures = lightingData[rawObj.id];
+        const functionalLights = fixtures.filter((f: any) => f.status === 'functional').length;
+        const totalLights = fixtures.length;
+        
+        enhancedProperties = {
+          ...enhancedProperties,
+          lighting_fixtures: fixtures,
+          functional_lights: functionalLights,
+          total_lights: totalLights,
+          lighting_status: 
+            totalLights === 0 ? 'unknown' :
+            functionalLights === totalLights ? 'all_functional' :
+            functionalLights === 0 ? 'all_non_functional' : 
+            'partial_issues'
+        };
+      }
+      
       // Create a standardized object with all required fields
       return {
         ...rawObj,
         id: rawObj.id || `obj-${index}`,
         position: parsedPosition,
         size: parsedSize,
-        properties: rawObj.properties || {},
+        properties: enhancedProperties,
         object_type: objectType,
         rotation: rawObj.rotation || 0
       } as RawFloorPlanObject;
@@ -187,7 +234,7 @@ export function useFloorPlanData(floorId: string | null) {
     layers: layers || [],
     objects: processedObjects,
     edges,
-    isLoading: isLoadingLayers || isLoadingObjects,
+    isLoading: isLoadingLayers || isLoadingObjects || isLoadingLighting,
     error // Include error in the return value
   };
 }

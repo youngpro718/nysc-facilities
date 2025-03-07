@@ -68,6 +68,25 @@ export async function fetchFloorPlanObjects(floorId: string) {
   
   console.log("Fetched new spaces:", newSpaces?.length || 0);
 
+  // Fetch lighting fixtures for this floor
+  const { data: lightingFixtures, error: lightingError } = await supabase
+    .from('lighting_fixtures')
+    .select('id, name, status, space_id, space_type, position, sequence_number')
+    .eq('floor_id', floorId);
+
+  if (lightingError) throw lightingError;
+  
+  // Group fixtures by space
+  const fixturesBySpace: Record<string, any[]> = {};
+  (lightingFixtures || []).forEach(fixture => {
+    if (!fixture.space_id) return;
+    
+    if (!fixturesBySpace[fixture.space_id]) {
+      fixturesBySpace[fixture.space_id] = [];
+    }
+    fixturesBySpace[fixture.space_id].push(fixture);
+  });
+
   // Extract hallways from new_spaces and merge hallway_properties data
   const hallwayObjects = (newSpaces || [])
     .filter(space => space.type === 'hallway')
@@ -89,6 +108,11 @@ export async function fetchFloorPlanObjects(floorId: string) {
       const properties = hallway.properties || {};
       const stringProperties = typeof properties === 'string' ? JSON.parse(properties) : properties;
       
+      // Add lighting fixtures data
+      const fixtures = fixturesBySpace[hallway.id] || [];
+      const functionalLights = fixtures.filter(f => f.status === 'functional').length;
+      const totalLights = fixtures.length;
+      
       // Merge properties from both sources, with hallway_properties taking precedence
       const mergedProperties = {
         ...(typeof stringProperties === 'object' && stringProperties !== null ? stringProperties : {}),
@@ -97,7 +121,16 @@ export async function fetchFloorPlanObjects(floorId: string) {
         accessibility: hallwayProps.accessibility || getProperty(stringProperties, 'accessibility', 'fully_accessible'),
         emergency_route: hallwayProps.emergency_route || getProperty(stringProperties, 'emergency_route', getProperty(stringProperties, 'emergencyRoute', 'not_designated')),
         maintenance_priority: hallwayProps.maintenance_priority || getProperty(stringProperties, 'maintenance_priority', getProperty(stringProperties, 'maintenancePriority', 'low')),
-        capacity_limit: hallwayProps.capacity_limit || getProperty(stringProperties, 'capacity_limit', getProperty(stringProperties, 'capacityLimit', null))
+        capacity_limit: hallwayProps.capacity_limit || getProperty(stringProperties, 'capacity_limit', getProperty(stringProperties, 'capacityLimit', null)),
+        // Add lighting data
+        lighting_fixtures: fixtures,
+        functional_lights: functionalLights,
+        total_lights: totalLights,
+        lighting_status: 
+          totalLights === 0 ? 'unknown' :
+          functionalLights === totalLights ? 'all_functional' :
+          functionalLights === 0 ? 'all_non_functional' : 
+          'partial_issues'
       };
       
       return {
