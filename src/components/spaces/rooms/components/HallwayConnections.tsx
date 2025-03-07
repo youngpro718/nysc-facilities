@@ -17,9 +17,14 @@ interface HallwayConnectionsProps {
 }
 
 export function HallwayConnections({ connections }: HallwayConnectionsProps) {
-  // Filter for hallway connections only
+  // Filter connections related to hallways based on direction values
   const hallwayConnections = connections.filter(
-    conn => conn.connection_type === 'hallway'
+    conn => conn.direction?.includes('hallway') || 
+            conn.direction === 'start_of_hallway' || 
+            conn.direction === 'middle_of_hallway' || 
+            conn.direction === 'end_of_hallway' ||
+            conn.direction === 'left_of_hallway' ||
+            conn.direction === 'right_of_hallway'
   );
 
   if (hallwayConnections.length === 0) {

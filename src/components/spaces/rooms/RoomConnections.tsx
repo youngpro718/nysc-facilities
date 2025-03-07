@@ -41,9 +41,8 @@ export function RoomConnections({ connections }: RoomConnectionsProps) {
     switch (connectionType) {
       case 'door': return 'Door';
       case 'opening': return 'Opening';
-      case 'hallway': return 'Hallway';
-      case 'stairs': return 'Stairs';
-      case 'elevator': return 'Elevator';
+      case 'direct': return 'Direct';
+      case 'secured': return 'Secured';
       default: return connectionType.charAt(0).toUpperCase() + connectionType.slice(1);
     }
   };

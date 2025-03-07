@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
@@ -85,8 +84,8 @@ export function ConnectionFields({ form, floorId }: ConnectionFieldsProps) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="door">Door</SelectItem>
-            <SelectItem value="hallway">Hallway</SelectItem>
             <SelectItem value="direct">Direct</SelectItem>
+            <SelectItem value="secured">Secured</SelectItem>
           </SelectContent>
         </Select>
 

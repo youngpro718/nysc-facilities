@@ -45,8 +45,8 @@ export function NewConnectionForm({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="door">Door</SelectItem>
-            <SelectItem value="hallway">Hallway</SelectItem>
             <SelectItem value="direct">Direct</SelectItem>
+            <SelectItem value="secured">Secured</SelectItem>
           </SelectContent>
         </Select>
 
@@ -58,7 +58,7 @@ export function NewConnectionForm({
             <SelectValue placeholder="Select direction (optional)" />
           </SelectTrigger>
           <SelectContent>
-            {/* Replace cardinal directions with hallway positions */}
+            {/* Hallway positions and other directions */}
             <SelectItem value="start_of_hallway">Start of Hallway</SelectItem>
             <SelectItem value="middle_of_hallway">Middle of Hallway</SelectItem>
             <SelectItem value="end_of_hallway">End of Hallway</SelectItem>
