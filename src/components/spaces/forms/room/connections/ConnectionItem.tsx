@@ -12,10 +12,8 @@ export function ConnectionItem({ connection, index, spaceName, onRemove }: Conne
     
     // Format the direction to be more readable
     switch (direction) {
-      case 'north': return 'North';
-      case 'south': return 'South';
-      case 'east': return 'East';
-      case 'west': return 'West';
+      case 'start': return 'Start of Hallway';
+      case 'end': return 'End of Hallway';
       case 'left': return 'Left Side';
       case 'right': return 'Right Side';
       case 'center': return 'Center';

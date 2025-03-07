@@ -109,11 +109,11 @@ export function ConnectionFields({ form, floorId }: ConnectionFieldsProps) {
               <SelectValue placeholder="Select hallway position" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="north">Start of Hallway</SelectItem>
+              <SelectItem value="start">Start of Hallway</SelectItem>
               <SelectItem value="center">Middle of Hallway</SelectItem>
-              <SelectItem value="south">End of Hallway</SelectItem>
-              <SelectItem value="east">Right Side of Hallway</SelectItem>
-              <SelectItem value="west">Left Side of Hallway</SelectItem>
+              <SelectItem value="end">End of Hallway</SelectItem>
+              <SelectItem value="right">Right Side of Hallway</SelectItem>
+              <SelectItem value="left">Left Side of Hallway</SelectItem>
             </SelectContent>
           </Select>
         )}
