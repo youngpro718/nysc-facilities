@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { CreateSpaceFormData } from "../schemas/createSpaceSchema";
 import { RoomTypeEnum, StorageTypeEnum } from "../rooms/types/roomEnums";
@@ -37,7 +36,6 @@ export async function createSpace(data: CreateSpaceFormData) {
       return room;
     }
 
-    // Custom handling for hallways with appropriate properties and dimensions
     if (data.type === 'hallway') {
       console.log('Creating hallway with data:', {
         name: data.name,
@@ -51,17 +49,14 @@ export async function createSpace(data: CreateSpaceFormData) {
         capacityLimit: data.capacityLimit
       });
       
-      // Step 1: Create the base hallway in new_spaces table
       const hallwayData = {
         name: data.name,
         type: data.type,
         floor_id: data.floorId,
         status: data.status,
-        // Use hallway-specific dimensions (longer and thinner)
         position: data.position || { x: 0, y: 0 },
         size: data.size || { width: 300, height: 50 },
         rotation: data.rotation || 0,
-        // Store minimal properties in the properties field
         properties: {
           description: data.description,
           section: data.section || 'connector',
@@ -84,7 +79,6 @@ export async function createSpace(data: CreateSpaceFormData) {
 
       console.log('Created hallway in new_spaces:', hallway);
 
-      // Step 2: Create hallway properties in the specialized table
       const hallwayPropsData = {
         space_id: hallway.id,
         section: data.section || 'connector',
@@ -102,17 +96,14 @@ export async function createSpace(data: CreateSpaceFormData) {
 
       if (propsError) {
         console.error('Error saving hallway properties:', propsError);
-        // Don't throw here, proceed with connections if possible
       } else {
         console.log('Created hallway properties:', propsData);
       }
 
-      // Step 3: Create connections if available
       if (data.connections && data.connections.length > 0) {
-        const firstConnection = data.connections[0]; // Get the first connection
+        const firstConnection = data.connections[0];
 
         if (firstConnection && firstConnection.toSpaceId && firstConnection.connectionType) {
-          // Check if this is a transition door between hallways
           const { data: targetSpaceData } = await supabase
             .from('new_spaces')
             .select('type')
@@ -130,9 +121,8 @@ export async function createSpace(data: CreateSpaceFormData) {
             direction: firstConnection.direction || 'adjacent',
             status: data.status as 'active' | 'inactive' | 'under_maintenance',
             connection_status: 'active',
-            // Add hallway-specific connection data
             hallway_position: getHallwayPosition(firstConnection.direction),
-            offset_distance: 50,   // Default offset from hallway
+            offset_distance: 50,
             position: getPositionFromDirection(firstConnection.direction),
             is_transition_door: isTransitionDoor
           };
@@ -156,7 +146,6 @@ export async function createSpace(data: CreateSpaceFormData) {
       return hallway;
     }
 
-    // Handle other space types (doors) using new_spaces table
     const spaceData = {
       name: data.name,
       type: data.type,
@@ -177,12 +166,10 @@ export async function createSpace(data: CreateSpaceFormData) {
 
     if (spaceError) throw spaceError;
 
-    // Create connections if available
     if (data.connections && data.connections.length > 0) {
-      const firstConnection = data.connections[0]; // Get the first connection
+      const firstConnection = data.connections[0];
 
       if (firstConnection && firstConnection.toSpaceId && firstConnection.connectionType) {
-        // Check if this is a transition door between hallways
         const { data: fromSpaceData } = await supabase
           .from('new_spaces')
           .select('type')
@@ -231,21 +218,19 @@ export async function createSpace(data: CreateSpaceFormData) {
   }
 }
 
-// Helper function to convert direction to hallway position value
 function getHallwayPosition(direction: string | undefined): number {
-  if (!direction) return 0.5; // Default to middle
+  if (!direction) return 0.5;
   
   switch (direction) {
-    case 'start_of_hallway': return 0.1;
-    case 'end_of_hallway': return 0.9;
-    case 'middle_of_hallway': return 0.5;
-    case 'left_of_hallway': return 0.3;
-    case 'right_of_hallway': return 0.7;
+    case 'north': return 0.1;
+    case 'south': return 0.9;
+    case 'center': return 0.5;
+    case 'west': return 0.3;
+    case 'east': return 0.7;
     default: return 0.5;
   }
 }
 
-// Helper function to determine position value from direction
 function getPositionFromDirection(direction: string | undefined): string | undefined {
   if (!direction) return undefined;
   
@@ -253,8 +238,7 @@ function getPositionFromDirection(direction: string | undefined): string | undef
       direction === 'up' || direction === 'down') {
     return 'vertical';
   } else if (direction === 'east' || direction === 'west' || 
-             direction === 'left' || direction === 'right' ||
-             direction === 'left_of_hallway' || direction === 'right_of_hallway') {
+             direction === 'left' || direction === 'right') {
     return 'horizontal';
   }
   

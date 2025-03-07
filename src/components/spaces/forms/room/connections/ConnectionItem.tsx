@@ -12,11 +12,13 @@ export function ConnectionItem({ connection, index, spaceName, onRemove }: Conne
     
     // Format the direction to be more readable
     switch (direction) {
-      case 'start_of_hallway': return 'Start of Hallway';
-      case 'middle_of_hallway': return 'Middle of Hallway';
-      case 'end_of_hallway': return 'End of Hallway';
-      case 'left_of_hallway': return 'Left Side of Hallway';
-      case 'right_of_hallway': return 'Right Side of Hallway';
+      case 'north': return 'North';
+      case 'south': return 'South';
+      case 'east': return 'East';
+      case 'west': return 'West';
+      case 'left': return 'Left Side';
+      case 'right': return 'Right Side';
+      case 'center': return 'Center';
       case 'adjacent': return 'Adjacent to';
       default: return direction.charAt(0).toUpperCase() + direction.slice(1);
     }

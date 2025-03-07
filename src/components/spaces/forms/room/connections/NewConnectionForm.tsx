@@ -66,11 +66,11 @@ export function NewConnectionForm({
               <SelectValue placeholder="Position on hallway" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="start_of_hallway">Start of Hallway</SelectItem>
-              <SelectItem value="middle_of_hallway">Middle of Hallway</SelectItem>
-              <SelectItem value="end_of_hallway">End of Hallway</SelectItem>
-              <SelectItem value="left_of_hallway">Left Side of Hallway</SelectItem>
-              <SelectItem value="right_of_hallway">Right Side of Hallway</SelectItem>
+              <SelectItem value="north">Start of Hallway</SelectItem>
+              <SelectItem value="center">Middle of Hallway</SelectItem>
+              <SelectItem value="south">End of Hallway</SelectItem>
+              <SelectItem value="east">Right Side of Hallway</SelectItem>
+              <SelectItem value="west">Left Side of Hallway</SelectItem>
             </SelectContent>
           </Select>
         )}

@@ -6,25 +6,21 @@ export function createEdgesFromConnections(connections: any[]): FloorPlanEdge[] 
     // Determine if this is a hallway connection
     const isHallwayConnection = conn.space_type === 'hallway' || 
                               conn.to_space?.type === 'hallway' ||
-                              conn.direction === 'left_of_hallway' || 
-                              conn.direction === 'right_of_hallway' ||
-                              conn.direction === 'start_of_hallway' ||
-                              conn.direction === 'middle_of_hallway' ||
-                              conn.direction === 'end_of_hallway';
+                              ['east', 'west', 'north', 'south', 'center'].includes(conn.direction);
     
     // Get positioning data based on hallway position
     let hallwayPosition = conn.hallway_position || 0.5; // Default to middle
     
     // Adjust position based on the new direction values
-    if (conn.direction === 'start_of_hallway') {
+    if (conn.direction === 'north') {
       hallwayPosition = 0.1; // Near the start
-    } else if (conn.direction === 'end_of_hallway') {
+    } else if (conn.direction === 'south') {
       hallwayPosition = 0.9; // Near the end
-    } else if (conn.direction === 'middle_of_hallway') {
+    } else if (conn.direction === 'center') {
       hallwayPosition = 0.5; // In the middle
-    } else if (conn.direction === 'left_of_hallway') {
+    } else if (conn.direction === 'west') {
       hallwayPosition = 0.3; // Left side
-    } else if (conn.direction === 'right_of_hallway') {
+    } else if (conn.direction === 'east') {
       hallwayPosition = 0.7; // Right side
     }
     
