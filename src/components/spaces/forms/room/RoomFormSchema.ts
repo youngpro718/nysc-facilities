@@ -5,8 +5,8 @@ import { RoomTypeEnum, StorageTypeEnum, StatusEnum } from "../../rooms/types/roo
 // Define connection schema for form usage
 export const roomConnectionSchema = z.object({
   id: z.string().uuid().optional(), // For existing connections
-  toSpaceId: z.string().uuid().optional(),
-  connectionType: z.string().optional(),
+  toSpaceId: z.string().uuid(),
+  connectionType: z.string(),
   direction: z.string().optional()
 });
 

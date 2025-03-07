@@ -9,6 +9,7 @@ import { ParentRoomField } from "./ParentRoomField";
 import { type RoomFormData } from "./RoomFormSchema";
 import { Separator } from "@/components/ui/separator";
 import { ConnectionsField } from "./ConnectionsField";
+import { toast } from "sonner";
 
 interface RoomFormContentProps extends RoomFormProps {
   onSubmit: (data: RoomFormData) => Promise<void>;
@@ -27,9 +28,18 @@ export function RoomFormContent({
   const isStorage = form.watch("isStorage");
   const floorId = form.watch("floorId");
   
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Form submitted, calling form.handleSubmit");
+    
+    // Validate connections
+    const connections = form.getValues("connections") || [];
+    const validConnections = connections.filter(conn => conn.toSpaceId && conn.connectionType);
+    
+    if (connections.length !== validConnections.length) {
+      toast.error("Some connections are invalid. Please check all connections have a space and type selected.");
+      return;
+    }
     
     // Get current form values for debugging
     const formValues = form.getValues();

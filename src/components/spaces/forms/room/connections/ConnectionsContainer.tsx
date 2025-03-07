@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,57 +21,39 @@ export function ConnectionsContainer({ form, floorId, roomId }: ConnectionsConta
   const { data: spaces, isLoading } = useQuery({
     queryKey: ["spaces-for-connections", floorId, roomId],
     queryFn: async () => {
-      // Fetch rooms from the same floor
-      const { data: rooms, error: roomsError } = await supabase
-        .from("rooms")
-        .select("id, name, room_number, room_type")
+      if (!floorId) return [];
+      
+      // Fetch all active spaces from the same floor except the current room
+      const { data: spaceData, error: spaceError } = await supabase
+        .from("spaces")
+        .select(`
+          id,
+          name,
+          type,
+          room_number
+        `)
         .eq("floor_id", floorId)
-        .neq("status", "inactive");
-        
-      if (roomsError) throw roomsError;
-  
-      // Fetch hallways from the same floor
-      const { data: hallways, error: hallwaysError } = await supabase
-        .from("hallways")
-        .select("id, name, section")
-        .eq("floor_id", floorId)
-        .neq("status", "inactive");
-        
-      if (hallwaysError) throw hallwaysError;
-  
-      // Fetch doors from the same floor - using 'type' instead of 'door_type'
-      const { data: doors, error: doorsError } = await supabase
-        .from("doors")
-        .select("id, name, type")
-        .eq("floor_id", floorId)
-        .neq("status", "inactive");
-        
-      if (doorsError) throw doorsError;
-  
+        .neq("status", "inactive")
+        .neq("id", roomId || 'none'); // Exclude current room
+      
+      if (spaceError) {
+        console.error("Error fetching spaces for connections:", spaceError);
+        throw spaceError;
+      }
+      
       // Format spaces for dropdown
-      const allSpaces: SpaceOption[] = [
-        ...(rooms || []).map(r => ({
-          id: r.id,
-          name: r.name,
-          type: 'room',
-          room_number: r.room_number
-        })),
-        ...(hallways || []).map(h => ({
-          id: h.id,
-          name: h.name,
-          type: 'hallway'
-        })),
-        ...(doors || []).map(d => ({
-          id: d.id,
-          name: d.name,
-          type: 'door'
-        }))
-      ];
-  
-      // Remove the current room from the list
-      return allSpaces.filter(space => space.id !== roomId);
+      const formattedSpaces: SpaceOption[] = (spaceData || []).map(space => ({
+        id: space.id,
+        name: space.name,
+        type: space.type,
+        room_number: space.room_number
+      }));
+      
+      return formattedSpaces;
     },
-    enabled: !!floorId
+    staleTime: 60000, // Cache for 1 minute
+    enabled: !!floorId,
+    retry: 2
   });
 
   // Fetch names of already connected spaces
@@ -78,46 +61,33 @@ export function ConnectionsContainer({ form, floorId, roomId }: ConnectionsConta
     const fetchConnectedSpaceNames = async () => {
       const spaceIds = connections
         .filter(c => c.toSpaceId)
-        .map(c => c.toSpaceId as string);
+        .map(c => c.toSpaceId);
       
       if (spaceIds.length === 0) return;
       
+      const { data: spaceData, error } = await supabase
+        .from("spaces")
+        .select("id, name, type, room_number")
+        .in("id", spaceIds);
+        
+      if (error) {
+        console.error("Error fetching connected space names:", error);
+        return;
+      }
+      
       const names: Record<string, string> = {};
-      
-      // Fetch rooms
-      const { data: rooms } = await supabase
-        .from("rooms")
-        .select("id, name, room_number")
-        .in("id", spaceIds);
-        
-      (rooms || []).forEach(room => {
-        names[room.id] = `${room.name} (${room.room_number})`;
-      });
-      
-      // Fetch hallways
-      const { data: hallways } = await supabase
-        .from("hallways")
-        .select("id, name")
-        .in("id", spaceIds);
-        
-      (hallways || []).forEach(hallway => {
-        names[hallway.id] = hallway.name;
-      });
-      
-      // Fetch doors
-      const { data: doors } = await supabase
-        .from("doors")
-        .select("id, name")
-        .in("id", spaceIds);
-        
-      (doors || []).forEach(door => {
-        names[door.id] = door.name;
+      (spaceData || []).forEach(space => {
+        names[space.id] = space.room_number 
+          ? `${space.name} (${space.room_number})`
+          : `${space.name} (${space.type})`;
       });
       
       setConnectedSpaceNames(names);
     };
     
-    fetchConnectedSpaceNames();
+    if (connections.length > 0) {
+      fetchConnectedSpaceNames();
+    }
   }, [connections]);
 
   const handleAddConnection = (connection: RoomConnectionData) => {
