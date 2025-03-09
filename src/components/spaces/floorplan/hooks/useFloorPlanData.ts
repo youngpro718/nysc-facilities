@@ -38,7 +38,7 @@ export function useFloorPlanData(floorId: string | null) {
       
       const { data, error } = await supabase
         .from('lighting_fixtures')
-        .select('id, space_id, space_type, status, position, name')
+        .select('id, space_id, space_type, status, position, name, fixture_type, floor_id')
         .eq('floor_id', floorId)
         .order('space_id');
         
@@ -47,6 +47,8 @@ export function useFloorPlanData(floorId: string | null) {
       // Group fixtures by space_id for easier access
       const fixturesBySpace: Record<string, any[]> = {};
       data?.forEach(fixture => {
+        if (!fixture.space_id) return;
+        
         if (!fixturesBySpace[fixture.space_id]) {
           fixturesBySpace[fixture.space_id] = [];
         }
@@ -189,6 +191,7 @@ export function useFloorPlanData(floorId: string | null) {
     }
   });
     
+  // Create edges from connections data
   const edges = Array.isArray(safeSpaceData.connections) ? 
     createEdgesFromConnections(safeSpaceData.connections) : 
     [];
@@ -196,8 +199,9 @@ export function useFloorPlanData(floorId: string | null) {
   console.log('Transformed objects:', objects);
   console.log('Created edges:', edges);
 
-  // Process parent/child relationships
+  // Process parent/child relationships and establish connections
   const processedObjects = objects.map(obj => {
+    // Handle parent/child room relationships
     if (obj.data?.properties?.parent_room_id) {
       const parentObj = objects.find(parent => parent.id === obj.data.properties.parent_room_id);
       if (parentObj) {
@@ -229,6 +233,97 @@ export function useFloorPlanData(floorId: string | null) {
         obj.zIndex = (parentObj.zIndex || 0) + 1;
       }
     }
+
+    // Process connected spaces for each object
+    if (obj.type === 'hallway' || obj.type === 'room') {
+      // Find all objects connected to this one
+      const connectedTo = edges
+        .filter(edge => edge.source === obj.id || edge.target === obj.id)
+        .map(edge => {
+          const connectionId = edge.id;
+          const connectedObjectId = edge.source === obj.id ? edge.target : edge.source;
+          const connectedObject = objects.find(o => o.id === connectedObjectId);
+          
+          return {
+            id: connectedObjectId,
+            connectionId,
+            type: connectedObject?.type || 'unknown',
+            name: connectedObject?.data?.label || 'Unknown'
+          };
+        });
+      
+      // Add connected spaces to the object properties
+      if (connectedTo.length > 0) {
+        obj.data.properties = {
+          ...obj.data.properties,
+          connected_spaces: connectedTo
+        };
+      }
+    }
+
+    // For hallways, ensure they're properly sized based on connections
+    if (obj.type === 'hallway' && edges.length > 0) {
+      // Find connections to this hallway
+      const hallwayConnections = edges.filter(edge => 
+        edge.source === obj.id || edge.target === obj.id
+      );
+      
+      if (hallwayConnections.length >= 2) {
+        // Get connected room positions to determine hallway length and orientation
+        const connectedRooms = hallwayConnections.map(conn => {
+          const roomId = conn.source === obj.id ? conn.target : conn.source;
+          return objects.find(room => room.id === roomId);
+        }).filter(Boolean);
+        
+        if (connectedRooms.length >= 2) {
+          // Determine if hallway should be horizontal or vertical based on connected rooms
+          let minX = Math.min(...connectedRooms.map(room => room.position.x));
+          let maxX = Math.max(...connectedRooms.map(room => room.position.x));
+          let minY = Math.min(...connectedRooms.map(room => room.position.y));
+          let maxY = Math.max(...connectedRooms.map(room => room.position.y));
+          
+          const xDistance = maxX - minX;
+          const yDistance = maxY - minY;
+          
+          // Determine if hallway should be horizontal or vertical
+          const isHorizontal = xDistance > yDistance;
+          
+          // Size and position the hallway accordingly
+          if (isHorizontal) {
+            // Horizontal hallway - long width, short height
+            obj.data.size = {
+              width: Math.max(xDistance + 200, 300),  // Add padding to extend beyond rooms
+              height: 50                             // Standard hallway width
+            };
+            
+            // Position hallway between connected rooms
+            obj.position = {
+              x: (minX + maxX) / 2,
+              y: obj.position.y  // Keep original Y position
+            };
+            
+            // Set rotation to 0 for horizontal hallway
+            obj.data.rotation = 0;
+          } else {
+            // Vertical hallway - short width, long height
+            obj.data.size = {
+              width: 50,                             // Standard hallway width
+              height: Math.max(yDistance + 200, 300)  // Add padding to extend beyond rooms
+            };
+            
+            // Position hallway between connected rooms
+            obj.position = {
+              x: obj.position.x,  // Keep original X position
+              y: (minY + maxY) / 2
+            };
+            
+            // Set rotation to 90 degrees for vertical hallway
+            obj.data.rotation = 90;
+          }
+        }
+      }
+    }
+    
     return obj;
   });
 

@@ -18,7 +18,7 @@ export async function fetchFloorPlanObjects(floorId: string) {
   // Fetch rooms
   const { data: rooms, error: roomsError } = await supabase
     .from('rooms')
-    .select('id, name, room_number, room_type, status, position, size, parent_room_id, floor_id')
+    .select('id, name, room_number, room_type, status, position, size, rotation, parent_room_id, floor_id')
     .eq('floor_id', floorId)
     .eq('status', 'active');
 
@@ -33,6 +33,7 @@ export async function fetchFloorPlanObjects(floorId: string) {
     status: room.status,
     position: room.position,
     size: room.size,
+    rotation: room.rotation,
     parent_room_id: room.parent_room_id,
     floor_id: room.floor_id,
     object_type: 'room' as const
@@ -58,7 +59,9 @@ export async function fetchFloorPlanObjects(floorId: string) {
         accessibility,
         emergency_route,
         maintenance_priority,
-        capacity_limit
+        capacity_limit,
+        width,
+        length
       )
     `)
     .eq('floor_id', floorId)
@@ -71,7 +74,20 @@ export async function fetchFloorPlanObjects(floorId: string) {
   // Fetch lighting fixtures for this floor
   const { data: lightingFixtures, error: lightingError } = await supabase
     .from('lighting_fixtures')
-    .select('id, name, status, space_id, space_type, position, sequence_number')
+    .select(`
+      id, 
+      name, 
+      status, 
+      space_id, 
+      space_type, 
+      position, 
+      sequence_number,
+      fixture_type,
+      technology,
+      emergency_circuit,
+      maintenance_history,
+      installation_date
+    `)
     .eq('floor_id', floorId);
 
   if (lightingError) throw lightingError;
@@ -86,6 +102,24 @@ export async function fetchFloorPlanObjects(floorId: string) {
     }
     fixturesBySpace[fixture.space_id].push(fixture);
   });
+
+  // Fetch space connections to determine hallway layout
+  const { data: connections, error: connectionError } = await supabase
+    .from('space_connections')
+    .select(`
+      id,
+      from_space_id,
+      to_space_id,
+      connection_type,
+      direction,
+      hallway_position,
+      is_transition_door,
+      status
+    `)
+    .eq('floor_id', floorId)
+    .eq('status', 'active');
+
+  if (connectionError) throw connectionError;
 
   // Extract hallways from new_spaces and merge hallway_properties data
   const hallwayObjects = (newSpaces || [])
@@ -112,6 +146,42 @@ export async function fetchFloorPlanObjects(floorId: string) {
       const fixtures = fixturesBySpace[hallway.id] || [];
       const functionalLights = fixtures.filter(f => f.status === 'functional').length;
       const totalLights = fixtures.length;
+
+      // Find connections to this hallway to determine its layout
+      const hallwayConnections = connections?.filter(conn => 
+        conn.from_space_id === hallway.id || conn.to_space_id === hallway.id
+      ) || [];
+      
+      // Get connected room IDs for this hallway
+      const connectedSpaceIds = hallwayConnections.map(conn => 
+        conn.from_space_id === hallway.id ? conn.to_space_id : conn.from_space_id
+      );
+      
+      // Determine if hallway should be horizontal or vertical based on connections
+      let hallwayOrientation = 'horizontal';
+      let suggestedWidth = hallwayProps.width || getProperty(stringProperties, 'width', null);
+      let suggestedLength = hallwayProps.length || getProperty(stringProperties, 'length', null);
+      
+      if (hallwayConnections.length >= 2) {
+        // We have multiple connections - determine layout based on direction values
+        const directions = hallwayConnections.map(conn => conn.direction).filter(Boolean);
+        
+        if (directions.includes('north') || directions.includes('south') || 
+            directions.includes('up') || directions.includes('down')) {
+          hallwayOrientation = 'vertical';
+        }
+      }
+      
+      // Calculate suggested hallway dimensions based on orientation
+      if (!suggestedWidth || !suggestedLength) {
+        if (hallwayOrientation === 'horizontal') {
+          suggestedWidth = connectedSpaceIds.length * 150 + 100; // Base width on number of connections
+          suggestedLength = 50; // Standard hallway height/width
+        } else {
+          suggestedWidth = 50; // Standard hallway width
+          suggestedLength = connectedSpaceIds.length * 150 + 100; // Base length on number of connections
+        }
+      }
       
       // Merge properties from both sources, with hallway_properties taking precedence
       const mergedProperties = {
@@ -122,6 +192,9 @@ export async function fetchFloorPlanObjects(floorId: string) {
         emergency_route: hallwayProps.emergency_route || getProperty(stringProperties, 'emergency_route', getProperty(stringProperties, 'emergencyRoute', 'not_designated')),
         maintenance_priority: hallwayProps.maintenance_priority || getProperty(stringProperties, 'maintenance_priority', getProperty(stringProperties, 'maintenancePriority', 'low')),
         capacity_limit: hallwayProps.capacity_limit || getProperty(stringProperties, 'capacity_limit', getProperty(stringProperties, 'capacityLimit', null)),
+        width: suggestedWidth,
+        length: suggestedLength,
+        orientation: hallwayOrientation,
         // Add lighting data
         lighting_fixtures: fixtures,
         functional_lights: functionalLights,
@@ -130,8 +203,30 @@ export async function fetchFloorPlanObjects(floorId: string) {
           totalLights === 0 ? 'unknown' :
           functionalLights === totalLights ? 'all_functional' :
           functionalLights === 0 ? 'all_non_functional' : 
-          'partial_issues'
+          'partial_issues',
+        // Add connection data
+        connected_spaces: connectedSpaceIds,
+        connection_count: connectedSpaceIds.length
       };
+      
+      // Determine size based on orientation
+      let sizeObj = hallway.size;
+      if (typeof sizeObj === 'string') {
+        try {
+          sizeObj = JSON.parse(sizeObj);
+        } catch {
+          sizeObj = hallwayOrientation === 'horizontal' 
+            ? { width: suggestedWidth || 300, height: suggestedLength || 50 }
+            : { width: suggestedLength || 50, height: suggestedWidth || 300 };
+        }
+      } else if (!sizeObj || !sizeObj.width || !sizeObj.height) {
+        sizeObj = hallwayOrientation === 'horizontal' 
+          ? { width: suggestedWidth || 300, height: suggestedLength || 50 }
+          : { width: suggestedLength || 50, height: suggestedWidth || 300 };
+      }
+      
+      // If hallway is vertical, apply rotation
+      const calculatedRotation = hallwayOrientation === 'vertical' ? 90 : 0;
       
       return {
         id: hallway.id,
@@ -139,8 +234,8 @@ export async function fetchFloorPlanObjects(floorId: string) {
         type: hallway.type,
         status: hallway.status,
         position: hallway.position,
-        size: hallway.size,
-        rotation: hallway.rotation,
+        size: sizeObj,
+        rotation: hallway.rotation !== null ? hallway.rotation : calculatedRotation,
         properties: mergedProperties,
         floor_id: hallway.floor_id,
         object_type: 'hallway' as const
@@ -152,7 +247,7 @@ export async function fetchFloorPlanObjects(floorId: string) {
   // Fetch doors
   const { data: doors, error: doorsError } = await supabase
     .from('doors')
-    .select('id, name, type, status, floor_id')
+    .select('id, name, type, status, position, size, rotation, floor_id, security_level, passkey_enabled')
     .eq('floor_id', floorId)
     .eq('status', 'active');
 
@@ -163,23 +258,16 @@ export async function fetchFloorPlanObjects(floorId: string) {
     name: door.name,
     type: door.type,
     status: door.status,
+    position: door.position,
+    size: door.size,
+    rotation: door.rotation,
     floor_id: door.floor_id,
-    object_type: 'door' as const
+    object_type: 'door' as const,
+    properties: {
+      security_level: door.security_level,
+      passkey_enabled: door.passkey_enabled
+    }
   }));
-
-  // Fetch space connections
-  const { data: connections, error: connectionsError } = await supabase
-    .from('space_connections')
-    .select('*')
-    .or(`from_space_id.in.(${hallwayObjects.map(h => h.id).join(',')}),to_space_id.in.(${hallwayObjects.map(h => h.id).join(',')})`)
-    .eq('status', 'active');
-
-  if (connectionsError) {
-    console.error('Error fetching space connections:', connectionsError);
-    throw connectionsError;
-  }
-  
-  console.log("Fetched space connections:", connections?.length || 0);
 
   // Combine all objects
   const allObjects = [...roomObjects, ...hallwayObjects, ...doorObjects];
