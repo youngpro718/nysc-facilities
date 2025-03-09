@@ -1,10 +1,7 @@
-
 import React, { useRef, useState, useEffect } from 'react';
 import * as THREE from 'three';
 import { ObjectLabel } from '../ObjectLabel';
 import { SpaceInfoCard } from '../SpaceInfoCard';
-import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry';
-import { Font } from 'three/examples/jsm/loaders/FontLoader';
 
 interface Room3DProps {
   position: { x: number, y: number };
