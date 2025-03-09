@@ -1,6 +1,7 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import * as THREE from 'three';
+import { Html } from '@react-three/drei';
 import { ObjectLabel } from '../ObjectLabel';
 import { SpaceInfoCard } from '../SpaceInfoCard';
 
