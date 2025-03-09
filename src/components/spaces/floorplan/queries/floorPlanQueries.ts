@@ -140,8 +140,18 @@ export async function fetchFloorPlanObjects(floorId: string) {
       };
       
       // Handle properties from both objects with type safety
-      const properties = hallway.properties || {};
-      const stringProperties = typeof properties === 'string' ? JSON.parse(properties) : properties;
+      let properties: Record<string, any> = {};
+      if (hallway.properties) {
+        if (typeof hallway.properties === 'string') {
+          try {
+            properties = JSON.parse(hallway.properties);
+          } catch {
+            properties = {};
+          }
+        } else if (typeof hallway.properties === 'object' && hallway.properties !== null) {
+          properties = hallway.properties;
+        }
+      }
       
       // Add lighting fixtures data
       const fixtures = hallway.id && fixturesBySpace[hallway.id] ? fixturesBySpace[hallway.id] : [];
@@ -164,11 +174,18 @@ export async function fetchFloorPlanObjects(floorId: string) {
       let hallwayOrientation = 'horizontal';
       
       // Get width and length properties if available
-      const hallwayWidth = getProperty(hallwayProps, 'width', null) || 
-                          getProperty(stringProperties, 'width', null);
+      let hallwayWidth = null;
+      let hallwayLength = null;
       
-      const hallwayLength = getProperty(hallwayProps, 'length', null) || 
-                           getProperty(stringProperties, 'length', null);
+      // Safely access properties
+      if (hallwayProps && typeof hallwayProps === 'object') {
+        hallwayWidth = hallwayProps.width || null;
+      }
+      
+      if (properties && typeof properties === 'object') {
+        if (!hallwayWidth) hallwayWidth = properties.width || null;
+        hallwayLength = properties.length || null;
+      }
       
       let suggestedWidth = hallwayWidth;
       let suggestedLength = hallwayLength;
@@ -196,15 +213,32 @@ export async function fetchFloorPlanObjects(floorId: string) {
         }
       }
       
+      // Safely extract properties
+      const section = getProperty(hallwayProps, 'section', 'connector');
+      const trafficFlow = getProperty(hallwayProps, 'traffic_flow', 
+                          getProperty(properties, 'traffic_flow', 
+                          getProperty(properties, 'trafficFlow', 'two_way')));
+      const accessibility = getProperty(hallwayProps, 'accessibility', 
+                            getProperty(properties, 'accessibility', 'fully_accessible'));
+      const emergencyRoute = getProperty(hallwayProps, 'emergency_route', 
+                             getProperty(properties, 'emergency_route', 
+                             getProperty(properties, 'emergencyRoute', 'not_designated')));
+      const maintenancePriority = getProperty(hallwayProps, 'maintenance_priority', 
+                                  getProperty(properties, 'maintenance_priority', 
+                                  getProperty(properties, 'maintenancePriority', 'low')));
+      const capacityLimit = getProperty(hallwayProps, 'capacity_limit', 
+                            getProperty(properties, 'capacity_limit', 
+                            getProperty(properties, 'capacityLimit', null)));
+      
       // Merge properties from both sources, with hallway_properties taking precedence
       const mergedProperties = {
-        ...(typeof stringProperties === 'object' && stringProperties !== null ? stringProperties : {}),
-        section: getProperty(hallwayProps, 'section', 'connector'),
-        traffic_flow: getProperty(hallwayProps, 'traffic_flow', getProperty(stringProperties, 'traffic_flow', getProperty(stringProperties, 'trafficFlow', 'two_way'))),
-        accessibility: getProperty(hallwayProps, 'accessibility', getProperty(stringProperties, 'accessibility', 'fully_accessible')),
-        emergency_route: getProperty(hallwayProps, 'emergency_route', getProperty(stringProperties, 'emergency_route', getProperty(stringProperties, 'emergencyRoute', 'not_designated'))),
-        maintenance_priority: getProperty(hallwayProps, 'maintenance_priority', getProperty(stringProperties, 'maintenance_priority', getProperty(stringProperties, 'maintenancePriority', 'low'))),
-        capacity_limit: getProperty(hallwayProps, 'capacity_limit', getProperty(stringProperties, 'capacity_limit', getProperty(stringProperties, 'capacityLimit', null))),
+        ...(typeof properties === 'object' && properties !== null ? properties : {}),
+        section,
+        traffic_flow: trafficFlow,
+        accessibility,
+        emergency_route: emergencyRoute,
+        maintenance_priority: maintenancePriority,
+        capacity_limit: capacityLimit,
         width: suggestedWidth,
         length: suggestedLength,
         orientation: hallwayOrientation,
@@ -222,29 +256,35 @@ export async function fetchFloorPlanObjects(floorId: string) {
         connection_count: connectedSpaceIds.length
       };
 
-      // Determine size based on orientation
-      let sizeObj = hallway.size;
-      if (typeof sizeObj === 'string') {
-        try {
-          sizeObj = JSON.parse(sizeObj);
-        } catch {
-          sizeObj = hallwayOrientation === 'horizontal' 
-            ? { width: suggestedWidth || 300, height: suggestedLength || 50 }
-            : { width: suggestedLength || 50, height: suggestedWidth || 300 };
+      // Determine size based on orientation and ensure size is properly typed
+      let sizeObj: { width: number, height: number } = { width: 300, height: 50 };
+      
+      if (hallway.size) {
+        // Handle string serialized size
+        if (typeof hallway.size === 'string') {
+          try {
+            const parsedSize = JSON.parse(hallway.size);
+            if (typeof parsedSize === 'object' && parsedSize !== null && 
+                typeof parsedSize.width === 'number' && typeof parsedSize.height === 'number') {
+              sizeObj = parsedSize;
+            }
+          } catch {
+            sizeObj = hallwayOrientation === 'horizontal' 
+              ? { width: suggestedWidth || 300, height: suggestedLength || 50 }
+              : { width: suggestedLength || 50, height: suggestedWidth || 300 };
+          }
+        } 
+        // Handle object size
+        else if (typeof hallway.size === 'object' && hallway.size !== null) {
+          const sizeWidth = typeof hallway.size.width === 'number' ? hallway.size.width : (suggestedWidth || 300);
+          const sizeHeight = typeof hallway.size.height === 'number' ? hallway.size.height : (suggestedLength || 50);
+          sizeObj = { width: sizeWidth, height: sizeHeight };
         }
-      } else if (!sizeObj || typeof sizeObj !== 'object' || !sizeObj.width || !sizeObj.height) {
+      } else {
         sizeObj = hallwayOrientation === 'horizontal' 
           ? { width: suggestedWidth || 300, height: suggestedLength || 50 }
           : { width: suggestedLength || 50, height: suggestedWidth || 300 };
       }
-      
-      // Type guard to ensure size object has width and height properties
-      const typedSizeObj = typeof sizeObj === 'object' && sizeObj !== null
-        ? { 
-            width: typeof sizeObj.width === 'number' ? sizeObj.width : (suggestedWidth || 300),
-            height: typeof sizeObj.height === 'number' ? sizeObj.height : (suggestedLength || 50)
-          }
-        : { width: suggestedWidth || 300, height: suggestedLength || 50 };
       
       // If hallway is vertical, apply rotation
       const calculatedRotation = hallwayOrientation === 'vertical' ? 90 : 0;
@@ -255,7 +295,7 @@ export async function fetchFloorPlanObjects(floorId: string) {
         type: hallway.type,
         status: hallway.status,
         position: hallway.position,
-        size: typedSizeObj,
+        size: sizeObj,
         rotation: hallway.rotation !== null ? hallway.rotation : calculatedRotation,
         properties: mergedProperties,
         floor_id: hallway.floor_id,
@@ -288,10 +328,29 @@ export async function fetchFloorPlanObjects(floorId: string) {
   const doors = doorsData || [];
   
   const doorObjects = doors.map(door => {
-    // Safely extract properties
-    const properties = door.properties || {};
-    const security_level = typeof properties === 'object' ? properties.security_level : undefined;
-    const passkey_enabled = typeof properties === 'object' ? properties.passkey_enabled : undefined;
+    // Safely extract properties with type checking
+    let doorProperties: Record<string, any> = {};
+    
+    if (door.properties) {
+      if (typeof door.properties === 'string') {
+        try {
+          doorProperties = JSON.parse(door.properties);
+        } catch {
+          doorProperties = {};
+        }
+      } else if (typeof door.properties === 'object' && door.properties !== null) {
+        doorProperties = door.properties;
+      }
+    }
+    
+    // Safely extract security properties with fallbacks
+    const securityLevel = typeof doorProperties === 'object' && doorProperties !== null 
+      ? doorProperties.security_level || 'standard'
+      : 'standard';
+      
+    const passkeyEnabled = typeof doorProperties === 'object' && doorProperties !== null 
+      ? doorProperties.passkey_enabled || false
+      : false;
     
     return {
       id: door.id,
@@ -304,8 +363,8 @@ export async function fetchFloorPlanObjects(floorId: string) {
       floor_id: door.floor_id,
       object_type: 'door' as const,
       properties: {
-        security_level: security_level || 'standard',
-        passkey_enabled: passkey_enabled || false
+        security_level: securityLevel,
+        passkey_enabled: passkeyEnabled
       }
     };
   });
