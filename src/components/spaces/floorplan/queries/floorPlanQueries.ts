@@ -113,7 +113,8 @@ export async function fetchFloorPlanObjects(floorId: string) {
       direction,
       hallway_position,
       status,
-      is_transition_point
+      is_transition_point,
+      is_emergency_exit
     `)
     .eq('floor_id', floorId)
     .eq('status', 'active');
@@ -201,14 +202,14 @@ export async function fetchFloorPlanObjects(floorId: string) {
         }
       }
       
-      // Calculate suggested hallway dimensions based on orientation
+      // Calculate suggested hallway dimensions based on orientation and number of connections
       if (!suggestedWidth || !suggestedLength) {
         if (hallwayOrientation === 'horizontal') {
-          suggestedWidth = connectedSpaceIds.length * 150 + 100; // Base width on number of connections
+          suggestedWidth = Math.max(connectedSpaceIds.length * 150 + 100, 300); // Base width on number of connections
           suggestedLength = 50; // Standard hallway height/width
         } else {
           suggestedWidth = 50; // Standard hallway width
-          suggestedLength = connectedSpaceIds.length * 150 + 100; // Base length on number of connections
+          suggestedLength = Math.max(connectedSpaceIds.length * 150 + 100, 300); // Base length on number of connections
         }
       }
       
@@ -333,6 +334,30 @@ export async function fetchFloorPlanObjects(floorId: string) {
 
   const doors = doorsData || [];
   
+  // Find door connections
+  const doorConnections = connections ? connections.filter(conn => 
+    conn.connection_type === 'door' || 
+    doors.some(door => door.id === conn.from_space_id || door.id === conn.to_space_id)
+  ) : [];
+  
+  // Create a map of spaces that each door connects
+  const doorConnectionMap: Record<string, { from: string, to: string }> = {};
+  
+  doorConnections.forEach(conn => {
+    const doorId = doors.find(door => 
+      door.id === conn.from_space_id || door.id === conn.to_space_id
+    )?.id;
+    
+    if (doorId) {
+      if (!doorConnectionMap[doorId]) {
+        doorConnectionMap[doorId] = {
+          from: conn.from_space_id === doorId ? '' : conn.from_space_id,
+          to: conn.to_space_id === doorId ? '' : conn.to_space_id
+        };
+      }
+    }
+  });
+  
   const doorObjects = doors.map(door => {
     // Safely extract properties with type checking
     let doorProperties: Record<string, any> = {};
@@ -357,6 +382,17 @@ export async function fetchFloorPlanObjects(floorId: string) {
     const passkeyEnabled = typeof doorProperties === 'object' && doorProperties !== null && 
       'passkey_enabled' in doorProperties ? doorProperties.passkey_enabled : false;
     
+    // Find connections for this door
+    const doorConnection = doorConnectionMap[door.id];
+    const connectsSpaces = doorConnection ? 
+      `${doorConnection.from} to ${doorConnection.to}` : undefined;
+    
+    // Determine if this is a transition door
+    const isTransitionDoor = doorConnections.some(conn => 
+      (conn.from_space_id === door.id || conn.to_space_id === door.id) && 
+      conn.is_transition_point
+    );
+    
     return {
       id: door.id,
       name: door.name,
@@ -369,7 +405,9 @@ export async function fetchFloorPlanObjects(floorId: string) {
       object_type: 'door' as const,
       properties: {
         security_level: securityLevel,
-        passkey_enabled: passkeyEnabled
+        passkey_enabled: passkeyEnabled,
+        is_transition_door: isTransitionDoor,
+        connects: connectsSpaces
       }
     };
   });
@@ -377,8 +415,33 @@ export async function fetchFloorPlanObjects(floorId: string) {
   // Combine all objects
   const allObjects = [...roomObjects, ...hallwayObjects, ...doorObjects];
   
+  // Process connections to enhance with additional data
+  const enhancedConnections = (connections || []).map(conn => {
+    // Determine connection type label
+    let connectionLabel = conn.connection_type || "direct";
+    
+    // Check if this is a transition connection
+    const isTransition = conn.is_transition_point;
+    
+    // Check if this connects to a hallway
+    const connectsToHallway = hallwayObjects.some(hall => 
+      hall.id === conn.from_space_id || hall.id === conn.to_space_id
+    );
+    
+    // Check if this is an emergency exit
+    const isEmergencyExit = conn.is_emergency_exit;
+    
+    return {
+      ...conn,
+      connection_label: connectionLabel,
+      is_hallway_connection: connectsToHallway,
+      is_transition: isTransition,
+      is_emergency_exit: isEmergencyExit
+    };
+  });
+  
   return {
     objects: allObjects,
-    connections: connections || []
+    connections: enhancedConnections || []
   };
 }
