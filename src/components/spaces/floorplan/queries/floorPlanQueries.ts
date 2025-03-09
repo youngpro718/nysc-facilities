@@ -59,9 +59,7 @@ export async function fetchFloorPlanObjects(floorId: string) {
         accessibility,
         emergency_route,
         maintenance_priority,
-        capacity_limit,
-        width,
-        length
+        capacity_limit
       )
     `)
     .eq('floor_id', floorId)
@@ -82,7 +80,7 @@ export async function fetchFloorPlanObjects(floorId: string) {
       space_type, 
       position, 
       sequence_number,
-      fixture_type,
+      type,
       technology,
       emergency_circuit,
       maintenance_history,
@@ -113,8 +111,8 @@ export async function fetchFloorPlanObjects(floorId: string) {
       connection_type,
       direction,
       hallway_position,
-      is_transition_door,
-      status
+      status,
+      is_transition_point
     `)
     .eq('floor_id', floorId)
     .eq('status', 'active');
@@ -135,6 +133,7 @@ export async function fetchFloorPlanObjects(floorId: string) {
         fallback: T
       ): T => {
         if (!obj) return fallback;
+        if (typeof obj !== 'object') return fallback;
         return (obj[key] as T) || fallback;
       };
       
@@ -159,12 +158,22 @@ export async function fetchFloorPlanObjects(floorId: string) {
       
       // Determine if hallway should be horizontal or vertical based on connections
       let hallwayOrientation = 'horizontal';
-      let suggestedWidth = hallwayProps.width || getProperty(stringProperties, 'width', null);
-      let suggestedLength = hallwayProps.length || getProperty(stringProperties, 'length', null);
+      
+      // Get width and length properties if available
+      const hallwayWidth = getProperty(hallwayProps, 'width', null) || 
+                          getProperty(stringProperties, 'width', null);
+      
+      const hallwayLength = getProperty(hallwayProps, 'length', null) || 
+                           getProperty(stringProperties, 'length', null);
+      
+      let suggestedWidth = hallwayWidth;
+      let suggestedLength = hallwayLength;
       
       if (hallwayConnections.length >= 2) {
         // We have multiple connections - determine layout based on direction values
-        const directions = hallwayConnections.map(conn => conn.direction).filter(Boolean);
+        const directions = hallwayConnections
+          .map(conn => conn.direction)
+          .filter(dir => dir !== null && dir !== undefined);
         
         if (directions.includes('north') || directions.includes('south') || 
             directions.includes('up') || directions.includes('down')) {
@@ -186,12 +195,12 @@ export async function fetchFloorPlanObjects(floorId: string) {
       // Merge properties from both sources, with hallway_properties taking precedence
       const mergedProperties = {
         ...(typeof stringProperties === 'object' && stringProperties !== null ? stringProperties : {}),
-        section: hallwayProps.section || getProperty(stringProperties, 'section', 'connector'),
-        traffic_flow: hallwayProps.traffic_flow || getProperty(stringProperties, 'traffic_flow', getProperty(stringProperties, 'trafficFlow', 'two_way')),
-        accessibility: hallwayProps.accessibility || getProperty(stringProperties, 'accessibility', 'fully_accessible'),
-        emergency_route: hallwayProps.emergency_route || getProperty(stringProperties, 'emergency_route', getProperty(stringProperties, 'emergencyRoute', 'not_designated')),
-        maintenance_priority: hallwayProps.maintenance_priority || getProperty(stringProperties, 'maintenance_priority', getProperty(stringProperties, 'maintenancePriority', 'low')),
-        capacity_limit: hallwayProps.capacity_limit || getProperty(stringProperties, 'capacity_limit', getProperty(stringProperties, 'capacityLimit', null)),
+        section: getProperty(hallwayProps, 'section', 'connector'),
+        traffic_flow: getProperty(hallwayProps, 'traffic_flow', getProperty(stringProperties, 'traffic_flow', getProperty(stringProperties, 'trafficFlow', 'two_way'))),
+        accessibility: getProperty(hallwayProps, 'accessibility', getProperty(stringProperties, 'accessibility', 'fully_accessible')),
+        emergency_route: getProperty(hallwayProps, 'emergency_route', getProperty(stringProperties, 'emergency_route', getProperty(stringProperties, 'emergencyRoute', 'not_designated'))),
+        maintenance_priority: getProperty(hallwayProps, 'maintenance_priority', getProperty(stringProperties, 'maintenance_priority', getProperty(stringProperties, 'maintenancePriority', 'low'))),
+        capacity_limit: getProperty(hallwayProps, 'capacity_limit', getProperty(stringProperties, 'capacity_limit', getProperty(stringProperties, 'capacityLimit', null))),
         width: suggestedWidth,
         length: suggestedLength,
         orientation: hallwayOrientation,
@@ -247,7 +256,18 @@ export async function fetchFloorPlanObjects(floorId: string) {
   // Fetch doors
   const { data: doors, error: doorsError } = await supabase
     .from('doors')
-    .select('id, name, type, status, position, size, rotation, floor_id, security_level, passkey_enabled')
+    .select(`
+      id, 
+      name, 
+      type, 
+      status, 
+      position, 
+      size, 
+      rotation, 
+      floor_id, 
+      security_level, 
+      passkey_enabled
+    `)
     .eq('floor_id', floorId)
     .eq('status', 'active');
 

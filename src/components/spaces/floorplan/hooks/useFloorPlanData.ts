@@ -38,7 +38,7 @@ export function useFloorPlanData(floorId: string | null) {
       
       const { data, error } = await supabase
         .from('lighting_fixtures')
-        .select('id, space_id, space_type, status, position, name, fixture_type, floor_id')
+        .select('id, space_id, space_type, status, position, name, type, floor_id')
         .eq('floor_id', floorId)
         .order('space_id');
         

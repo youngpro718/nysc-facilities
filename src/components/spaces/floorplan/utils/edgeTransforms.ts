@@ -3,31 +3,38 @@ import { FloorPlanEdge } from "../types/floorPlanTypes";
 
 export function createEdgesFromConnections(connections: any[]): FloorPlanEdge[] {
   return connections.map(conn => {
+    // Check for required properties
+    if (!conn.from_space_id || !conn.to_space_id) {
+      console.warn('Connection missing required properties:', conn);
+      return null;
+    }
+    
     // Determine if this is a hallway connection
     const isHallwayConnection = conn.space_type === 'hallway' || 
-                              conn.to_space?.type === 'hallway' ||
-                              ['start', 'end', 'left', 'right', 'center'].includes(conn.direction);
+                              (conn.direction && ['start', 'end', 'left', 'right', 'center'].includes(conn.direction));
     
     // Get positioning data based on hallway position
     let hallwayPosition = conn.hallway_position || 0.5; // Default to middle
     
-    // Adjust position based on the direction values
-    if (conn.direction === 'start') {
-      hallwayPosition = 0.1; // Near the start
-    } else if (conn.direction === 'end') {
-      hallwayPosition = 0.9; // Near the end
-    } else if (conn.direction === 'center') {
-      hallwayPosition = 0.5; // In the middle
-    } else if (conn.direction === 'left') {
-      hallwayPosition = 0.3; // Left side
-    } else if (conn.direction === 'right') {
-      hallwayPosition = 0.7; // Right side
+    // Adjust position based on the direction values if direction exists
+    if (conn.direction) {
+      if (conn.direction === 'start') {
+        hallwayPosition = 0.1; // Near the start
+      } else if (conn.direction === 'end') {
+        hallwayPosition = 0.9; // Near the end
+      } else if (conn.direction === 'center') {
+        hallwayPosition = 0.5; // In the middle
+      } else if (conn.direction === 'left') {
+        hallwayPosition = 0.3; // Left side
+      } else if (conn.direction === 'right') {
+        hallwayPosition = 0.7; // Right side
+      }
     }
     
     const offsetDistance = conn.offset_distance || 50;   // Default offset
     
     // Determine edge type and style based on connection type
-    const isTransitionDoor = conn.is_transition_door || conn.connection_type === 'transition';
+    const isTransitionPoint = conn.is_transition_point || conn.connection_type === 'transition';
     const edgeType = isHallwayConnection ? 'straight' : 'smoothstep';
     
     // Set style based on type and status
@@ -46,9 +53,9 @@ export function createEdgesFromConnections(connections: any[]): FloorPlanEdge[] 
       source: conn.from_space_id,
       target: conn.to_space_id,
       data: {
-        type: conn.connection_type,
+        type: conn.connection_type || 'standard',
         direction: conn.direction,
-        isTransitionDoor: isTransitionDoor,
+        isTransitionPoint: isTransitionPoint,
         hallwayPosition: hallwayPosition,
         offsetDistance: offsetDistance,
         position: conn.position,
@@ -61,5 +68,5 @@ export function createEdgesFromConnections(connections: any[]): FloorPlanEdge[] 
       type: edgeType,
       animated: animated
     };
-  });
+  }).filter(edge => edge !== null) as FloorPlanEdge[];
 }
