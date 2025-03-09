@@ -1,16 +1,23 @@
 
 import React from 'react';
 
-export function SceneLighting() {
+interface SceneLightingProps {
+  intensity?: number;
+}
+
+export function SceneLighting({ intensity = 0.8 }: SceneLightingProps) {
+  // Scale all light intensities relative to the main intensity parameter
+  const scaleIntensity = (baseIntensity: number) => baseIntensity * (intensity / 0.8);
+  
   return (
     <>
-      {/* Increased ambient light for better overall visibility */}
-      <ambientLight intensity={0.7} />
+      {/* Enhanced ambient light for better overall visibility */}
+      <ambientLight intensity={scaleIntensity(0.8)} color="#f8fafc" />
       
-      {/* Main directional light with stronger shadows */}
+      {/* Main directional light with softer shadows */}
       <directionalLight 
-        position={[300, 400, 300]} 
-        intensity={0.8}
+        position={[300, 500, 300]} 
+        intensity={scaleIntensity(0.9)}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
@@ -19,27 +26,41 @@ export function SceneLighting() {
         shadow-camera-right={500}
         shadow-camera-top={500}
         shadow-camera-bottom={-500}
+        color="#ffffff"
       />
       
       {/* Secondary directional light from opposite side */}
       <directionalLight 
         position={[-300, 200, -300]} 
-        intensity={0.5}
+        intensity={scaleIntensity(0.4)}
         castShadow
+        color="#e0f2fe"
       />
       
       {/* Hemisphere light for more natural environment lighting */}
       <hemisphereLight 
-        args={['#b1e1ff', '#b97a20', 0.6]}
+        args={['#d1e5f0', '#f8eed4', scaleIntensity(0.6)]}
       />
       
-      {/* Additional soft light from below for better space definition */}
+      {/* Soft spot light for highlighting objects from above */}
+      <spotLight
+        position={[0, 800, 0]}
+        intensity={scaleIntensity(0.3)}
+        angle={Math.PI / 3}
+        penumbra={1}
+        decay={2}
+        distance={1500}
+        color="#ffffff"
+      />
+      
+      {/* Ground reflection light */}
       <spotLight
         position={[0, -200, 0]}
-        intensity={0.2}
+        intensity={scaleIntensity(0.15)}
         angle={Math.PI / 4}
         penumbra={0.8}
         decay={2}
+        color="#f1f5f9"
       />
     </>
   );

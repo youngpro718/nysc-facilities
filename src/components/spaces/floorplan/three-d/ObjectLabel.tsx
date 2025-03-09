@@ -9,15 +9,17 @@ interface ObjectLabelProps {
   backgroundColor?: string;
   type: string;
   onHover?: (isHovered: boolean) => void;
+  icon?: React.ReactNode;
 }
 
 export function ObjectLabel({ 
   position, 
   label, 
   color = '#1f2937', 
-  backgroundColor = 'rgba(255, 255, 255, 0.95)', // More opaque for better visibility
+  backgroundColor = 'rgba(255, 255, 255, 0.95)', 
   type,
-  onHover 
+  onHover,
+  icon
 }: ObjectLabelProps) {
   return (
     <Html
@@ -27,20 +29,28 @@ export function ObjectLabel({
       distanceFactor={15}
       onPointerOver={() => onHover && onHover(true)}
       onPointerOut={() => onHover && onHover(false)}
+      zIndexRange={[100, 500]} // Ensure labels are above other elements
     >
       <div 
-        className="px-3 py-1.5 text-sm font-medium rounded-md whitespace-nowrap select-none"
+        className="px-3 py-1.5 text-sm font-medium rounded-md whitespace-nowrap select-none transition-all"
         style={{ 
           color, 
           backgroundColor,
           border: '1px solid rgba(209, 213, 219, 0.8)',
-          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+          boxShadow: '0 2px 6px rgba(0, 0, 0, 0.15)',
           transform: 'translateY(-100%)',
-          marginBottom: '5px',
-          pointerEvents: 'none'
+          marginBottom: '8px',
+          pointerEvents: 'none',
+          maxWidth: '240px',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis'
         }}
       >
-        <span className="text-xs opacity-80 font-bold">{type}:</span> {label}
+        <div className="flex items-center gap-1.5">
+          {icon && <span className="text-xs opacity-90">{icon}</span>}
+          <span className="text-xs opacity-80 font-bold">{type}:</span> 
+          <span className="truncate">{label}</span>
+        </div>
       </div>
     </Html>
   );

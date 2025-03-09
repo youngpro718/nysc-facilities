@@ -33,13 +33,27 @@ export function Room3D({
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
   
-  // Create a more distinct material for rooms
-  const material = new THREE.MeshStandardMaterial({ 
+  // Create materials with better visual appearance
+  const wallMaterial = new THREE.MeshStandardMaterial({ 
     color: new THREE.Color(color),
-    roughness: 0.7,
-    metalness: 0.1,
+    roughness: 0.6,
+    metalness: 0.2,
     transparent: true,
     opacity: 0.85
+  });
+  
+  const floorMaterial = new THREE.MeshStandardMaterial({ 
+    color: "#d1d5db", 
+    roughness: 0.8,
+    metalness: 0.1
+  });
+
+  const windowMaterial = new THREE.MeshStandardMaterial({
+    color: "#93c5fd",
+    roughness: 0.2,
+    metalness: 0.6,
+    transparent: true,
+    opacity: 0.6
   });
 
   const wallHeight = 120; // Standard wall height 
@@ -49,22 +63,27 @@ export function Room3D({
     if (meshRef.current) {
       if (isSelected) {
         meshRef.current.scale.set(1, 1.05, 1); // More noticeable scale up
-        material.emissive = new THREE.Color(0x3b82f6);
-        material.emissiveIntensity = 0.2; // Increased intensity
+        wallMaterial.emissive = new THREE.Color(0x3b82f6);
+        wallMaterial.emissiveIntensity = 0.3; // Increased intensity
+        wallMaterial.opacity = 0.9;
       } else if (hovered) {
         meshRef.current.scale.set(1, 1.02, 1);
-        material.emissive = new THREE.Color(0x3b82f6);
-        material.emissiveIntensity = 0.1;
+        wallMaterial.emissive = new THREE.Color(0x3b82f6);
+        wallMaterial.emissiveIntensity = 0.15;
+        wallMaterial.opacity = 0.88;
       } else {
         meshRef.current.scale.set(1, 1, 1);
-        material.emissive = new THREE.Color(0x000000);
-        material.emissiveIntensity = 0;
+        wallMaterial.emissive = new THREE.Color(0x000000);
+        wallMaterial.emissiveIntensity = 0;
+        wallMaterial.opacity = 0.85;
       }
     }
   }, [isSelected, hovered]);
 
+  // Get room type and properties
   const roomType = properties?.room_type || 'default';
   const roomNumber = properties?.room_number || '';
+  const roomStatus = properties?.status || 'active';
   
   // Determine lighting color/status if available
   const hasTotalLights = properties?.total_lights && properties.total_lights > 0;
@@ -81,28 +100,63 @@ export function Room3D({
   // Define room color based on room type for better visual differentiation
   const getRoomTypeColor = () => {
     switch(roomType) {
-      case 'office': return '#60a5fa'; // Blue
-      case 'conference': return '#a78bfa'; // Purple
-      case 'storage': return '#d1d5db'; // Gray
-      case 'bathroom': return '#5eead4'; // Teal
+      case 'office': return '#93c5fd'; // Lighter blue
+      case 'conference': return '#c4b5fd'; // Lighter purple
+      case 'storage': return '#e5e7eb'; // Light gray
+      case 'bathroom': return '#99f6e4'; // Lighter teal
       case 'kitchen': return '#fcd34d'; // Yellow
-      case 'lab': return '#fb7185'; // Pink
+      case 'lab': return '#fda4af'; // Lighter pink
+      case 'courtroom': return '#a78bfa'; // Purple
+      case 'security': return '#f87171'; // Red
+      case 'reception': return '#fdba74'; // Orange
       default: return color;
     }
   };
 
   // Apply room type color
   useEffect(() => {
-    if (material) {
-      material.color = new THREE.Color(getRoomTypeColor());
+    if (wallMaterial) {
+      wallMaterial.color = new THREE.Color(getRoomTypeColor());
     }
   }, [roomType]);
 
+  // Create window positions based on room size
+  const createWindows = () => {
+    const windows = [];
+    if (size.width > 100) {
+      // Add windows on the longer sides
+      const windowSpacing = Math.min(80, size.width / 3);
+      const windowCount = Math.floor(size.width / windowSpacing) - 1;
+      
+      for (let i = 1; i <= windowCount; i++) {
+        const xPos = -size.width/2 + (i * windowSpacing);
+        
+        // North wall window
+        windows.push(
+          <mesh key={`window-n-${i}`} position={[xPos, wallHeight/3, size.height/2 - 1]} receiveShadow>
+            <boxGeometry args={[20, 30, 1]} />
+            <primitive object={windowMaterial} attach="material" />
+          </mesh>
+        );
+        
+        // South wall window
+        windows.push(
+          <mesh key={`window-s-${i}`} position={[xPos, wallHeight/3, -size.height/2 + 1]} receiveShadow>
+            <boxGeometry args={[20, 30, 1]} />
+            <primitive object={windowMaterial} attach="material" />
+          </mesh>
+        );
+      }
+    }
+    return windows;
+  };
+  
   return (
     <group
       position={[position.x, 0, position.y]}
       rotation={[0, rotation * Math.PI / 180, 0]}
     >
+      {/* Main room structure */}
       <mesh
         ref={meshRef}
         onClick={(e) => {
@@ -115,44 +169,58 @@ export function Room3D({
         castShadow
       >
         <boxGeometry args={[size.width, wallHeight, size.height]} />
-        <primitive object={material} attach="material" />
-        
-        {/* Floor with distinct color */}
-        <mesh position={[0, -wallHeight/2 + 2, 0]} receiveShadow>
-          <boxGeometry args={[size.width, 4, size.height]} />
-          <meshStandardMaterial 
-            color="#d1d5db" 
-            roughness={0.8}
-          />
-        </mesh>
+        <primitive object={wallMaterial} attach="material" />
+      </mesh>
+      
+      {/* Room floor with distinct material */}
+      <mesh position={[0, -wallHeight/2 + 2, 0]} receiveShadow>
+        <boxGeometry args={[size.width, 4, size.height]} />
+        <primitive object={floorMaterial} attach="material" />
+      </mesh>
 
-        {/* Room type indicator on the floor */}
-        <mesh position={[0, -wallHeight/2 + 4.1, 0]} receiveShadow>
-          <boxGeometry args={[size.width * 0.8, 0.2, size.height * 0.8]} />
+      {/* Add windows to the room */}
+      {createWindows()}
+
+      {/* Room type indicator on the floor */}
+      <mesh position={[0, -wallHeight/2 + 4.1, 0]} receiveShadow>
+        <boxGeometry args={[size.width * 0.85, 0.2, size.height * 0.85]} />
+        <meshStandardMaterial 
+          color={getRoomTypeColor()} 
+          roughness={0.7}
+          transparent={true}
+          opacity={0.6}
+        />
+      </mesh>
+      
+      {/* Status indicator for inactive rooms */}
+      {roomStatus !== 'active' && (
+        <mesh position={[0, wallHeight/2 + 5, 0]} receiveShadow>
+          <boxGeometry args={[size.width * 0.9, 1, size.height * 0.9]} />
           <meshStandardMaterial 
-            color={getRoomTypeColor()} 
-            roughness={0.7}
+            color="#ef4444" 
+            emissive="#ef4444"
+            emissiveIntensity={0.5}
             transparent={true}
             opacity={0.5}
           />
         </mesh>
-      </mesh>
+      )}
 
-      {/* Lighting visualization if available - made more visible */}
+      {/* Lighting visualization if available */}
       {lightingColor && (
         <mesh position={[0, wallHeight - 10, 0]} receiveShadow>
-          <boxGeometry args={[size.width * 0.6, 5, size.height * 0.6]} />
+          <boxGeometry args={[size.width * 0.7, 5, size.height * 0.7]} />
           <meshStandardMaterial 
             color={lightingColor}
             emissive={lightingColor}
-            emissiveIntensity={0.3} // Increased brightness
+            emissiveIntensity={0.4}
             transparent={true}
-            opacity={0.4}
+            opacity={0.5}
           />
         </mesh>
       )}
 
-      {/* Connection indicator - made larger and more prominent */}
+      {/* Connection indicator */}
       {connectionCount > 0 && (
         <mesh 
           position={[size.width/2 - 15, wallHeight/2 - 15, size.height/2 - 15]} 
@@ -161,43 +229,44 @@ export function Room3D({
             onClick({ id, type: 'room', position, size, rotation, properties, label });
           }}
         >
-          <sphereGeometry args={[12, 16, 16]} />
+          <sphereGeometry args={[14, 16, 16]} />
           <meshStandardMaterial 
             color="#3b82f6" 
             emissive="#3b82f6" 
-            emissiveIntensity={0.4}
+            emissiveIntensity={0.5}
             transparent={true}
             opacity={0.9}
           />
           
           {/* Connection count */}
           <Html position={[0, 0, 0]} center>
-            <div className="text-white text-xs font-bold">
+            <div className="text-white text-xs font-bold select-none">
               {connectionCount}
             </div>
           </Html>
         </mesh>
       )}
       
-      {/* Room label - improved visibility */}
+      {/* Room label */}
       {showLabels && (
         <ObjectLabel 
           position={[0, wallHeight + 20, 0]} 
           label={label || (roomNumber ? `Room ${roomNumber}` : `Room`)}
           type="Room"
           color="#1f2937"
-          backgroundColor="rgba(255, 255, 255, 0.95)" // More opaque
+          backgroundColor="rgba(255, 255, 255, 0.95)"
           onHover={setHovered}
         />
       )}
       
-      {/* Info card with improved visibility */}
+      {/* Enhanced room info card */}
       <SpaceInfoCard 
         data={{ 
           id, 
           label: label || (roomNumber ? `Room ${roomNumber}` : 'Room'),
           properties,
-          size
+          size,
+          type: roomType
         }}
         position={[0, wallHeight/2, 0]}
         visible={hovered || isSelected}

@@ -1,7 +1,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useThree } from '@react-three/fiber';
-import { OrbitControls, Grid } from '@react-three/drei';
+import { OrbitControls, Grid, Stats } from '@react-three/drei';
 import { FloorPlanNode } from '../types/floorPlanTypes';
 import { Room3D } from './spaces/Room3D';
 import { Hallway3D } from './spaces/Hallway3D';
@@ -17,6 +17,9 @@ interface ThreeDSceneProps {
   selectedObjectId?: string | null;
   previewData?: any | null;
   showLabels?: boolean;
+  showConnections?: boolean;
+  lightIntensity?: number;
+  viewMode?: 'default' | 'rooms' | 'hallways' | 'doors';
 }
 
 export function ThreeDScene({ 
@@ -25,7 +28,10 @@ export function ThreeDScene({
   onObjectSelect, 
   selectedObjectId = null,
   previewData = null,
-  showLabels = true
+  showLabels = true,
+  showConnections = true,
+  lightIntensity = 0.8,
+  viewMode = 'default'
 }: ThreeDSceneProps) {
   const { camera } = useThree();
   const controlsRef = useRef<any>(null);
@@ -36,17 +42,41 @@ export function ThreeDScene({
   const hallwayObjects = objects.filter(obj => obj.type === 'hallway');
   const doorObjects = objects.filter(obj => obj.type === 'door');
   
+  // Filter objects based on view mode
+  const visibleObjects = {
+    rooms: viewMode === 'default' || viewMode === 'rooms',
+    hallways: viewMode === 'default' || viewMode === 'hallways',
+    doors: viewMode === 'default' || viewMode === 'doors'
+  };
+  
   // Find visible connections between spaces
   const visibleConnections = connections.filter(conn => {
+    // Skip if connections are hidden
+    if (!showConnections) return false;
+    
     const sourceObj = objects.find(obj => obj.id === conn.source);
     const targetObj = objects.find(obj => obj.id === conn.target);
-    return sourceObj && targetObj;
+    
+    // If either object is filtered out by view mode, don't show the connection
+    if (!sourceObj || !targetObj) return false;
+    
+    const sourceVisible = 
+      (sourceObj.type === 'room' && visibleObjects.rooms) ||
+      (sourceObj.type === 'hallway' && visibleObjects.hallways) ||
+      (sourceObj.type === 'door' && visibleObjects.doors);
+      
+    const targetVisible = 
+      (targetObj.type === 'room' && visibleObjects.rooms) ||
+      (targetObj.type === 'hallway' && visibleObjects.hallways) ||
+      (targetObj.type === 'door' && visibleObjects.doors);
+    
+    return sourceVisible && targetVisible;
   });
 
   // Prepare connection data for spaces
   const objectConnectionMap = new Map<string, string[]>();
   
-  visibleConnections.forEach(conn => {
+  connections.forEach(conn => {
     if (conn.source && conn.target) {
       // Add target to source's connections
       if (!objectConnectionMap.has(conn.source)) {
@@ -85,10 +115,10 @@ export function ThreeDScene({
       
       const sceneWidth = maxX - minX;
       const sceneDepth = maxY - minY;
-      const maxDimension = Math.max(sceneWidth, sceneDepth, 500); // Minimum size for empty scenes
+      const maxDimension = Math.max(sceneWidth, sceneDepth, 600);
       const cameraDistance = maxDimension * 1.2;
       
-      camera.position.set(centerX, cameraDistance * 0.8, centerY + cameraDistance);
+      camera.position.set(centerX, cameraDistance * 0.7, centerY + cameraDistance * 0.7);
       camera.lookAt(centerX, 0, centerY);
       
       if (controlsRef.current) {
@@ -104,16 +134,44 @@ export function ThreeDScene({
   useEffect(() => {
     if (controlsRef.current && selectedObjectId) {
       const selectedObject = objects.find(obj => obj.id === selectedObjectId);
+      
       if (selectedObject) {
         const targetX = selectedObject.position.x;
         const targetY = selectedObject.position.y;
         const targetZ = 0;
         
-        controlsRef.current.target.set(targetX, targetZ, targetY);
-        controlsRef.current.update();
+        // Animate camera movement for better UX
+        const currentPosition = new THREE.Vector3().copy(camera.position);
+        const targetPosition = new THREE.Vector3(
+          targetX + 200, 
+          camera.position.y * 0.8, 
+          targetY + 200
+        );
+        
+        let startTime = Date.now();
+        const duration = 1000; // 1 second animation
+        
+        const animateCamera = () => {
+          const elapsed = Date.now() - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          const easeProgress = 1 - Math.pow(1 - progress, 3); // Cubic ease out
+          
+          camera.position.lerpVectors(currentPosition, targetPosition, easeProgress);
+          
+          if (controlsRef.current) {
+            controlsRef.current.target.set(targetX, targetZ, targetY);
+            controlsRef.current.update();
+          }
+          
+          if (progress < 1) {
+            requestAnimationFrame(animateCamera);
+          }
+        };
+        
+        animateCamera();
       }
     }
-  }, [selectedObjectId, objects]);
+  }, [selectedObjectId, objects, camera]);
 
   // Determine connection type
   const getConnectionType = (conn: any) => {
@@ -124,8 +182,8 @@ export function ThreeDScene({
     
     if (!sourceObj || !targetObj) return 'standard';
     
-    if (conn.connection_type === 'door') return 'door';
-    if (conn.is_emergency_exit) return 'emergency';
+    if (conn.connection_type === 'door' || conn.data?.type === 'door') return 'door';
+    if (conn.is_emergency_exit || conn.data?.type === 'emergency') return 'emergency';
     
     if (sourceObj.type === 'hallway' && targetObj.type === 'hallway') {
       return 'hallway';
@@ -140,7 +198,7 @@ export function ThreeDScene({
 
   return (
     <>
-      <SceneLighting />
+      <SceneLighting intensity={lightIntensity} />
       <OrbitControls 
         ref={controlsRef} 
         enableDamping={true}
@@ -148,26 +206,32 @@ export function ThreeDScene({
         rotateSpeed={0.5}
         maxPolarAngle={Math.PI / 2 - 0.1}
         minDistance={100}
-        maxDistance={2000}
+        maxDistance={3000}
       />
       
       <group>
-        {/* Floor plane */}
+        {/* Improved floor plane with gradient */}
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} receiveShadow>
-          <planeGeometry args={[5000, 5000]} />
-          <meshStandardMaterial color="#f3f4f6" roughness={0.8} metalness={0.1} />
+          <planeGeometry args={[6000, 6000]} />
+          <meshStandardMaterial 
+            color="#f8fafc" 
+            roughness={0.8} 
+            metalness={0.1}
+            transparent={true}
+            opacity={0.8} 
+          />
         </mesh>
         
-        {/* Grid for better spatial awareness */}
+        {/* Enhanced grid for better spatial awareness */}
         <Grid 
           infiniteGrid 
-          cellSize={20} 
+          cellSize={50} 
           cellThickness={0.6} 
-          cellColor="#94a3b8" 
-          sectionSize={100}
-          sectionThickness={1.5}
-          sectionColor="#475569"
-          fadeDistance={1500}
+          cellColor="#cbd5e1" 
+          sectionSize={200}
+          sectionThickness={1.2}
+          sectionColor="#64748b"
+          fadeDistance={2000}
           fadeStrength={1.5}
           position={[0, -1, 0]}
         />
@@ -180,6 +244,8 @@ export function ThreeDScene({
           if (!sourceObj || !targetObj) return null;
           
           const connectionType = getConnectionType(conn);
+          const isHighlighted = selectedObjectId && 
+            (conn.source === selectedObjectId || conn.target === selectedObjectId);
           
           return (
             <SpaceConnection 
@@ -188,12 +254,13 @@ export function ThreeDScene({
               to={targetObj}
               type={connectionType}
               isDashed={connectionType !== 'hallway' && connectionType !== 'direct'}
+              showLabels={isHighlighted && showLabels}
             />
           );
         })}
         
         {/* Render hallways first (lower) */}
-        {hallwayObjects.map(obj => {
+        {visibleObjects.hallways && hallwayObjects.map(obj => {
           let objectData = obj;
           if (previewData && previewData.id === obj.id) {
             objectData = {
@@ -244,7 +311,7 @@ export function ThreeDScene({
         })}
         
         {/* Render doors */}
-        {doorObjects.map(obj => {
+        {visibleObjects.doors && doorObjects.map(obj => {
           let objectData = obj;
           if (previewData && previewData.id === obj.id) {
             objectData = {
@@ -289,7 +356,7 @@ export function ThreeDScene({
         })}
         
         {/* Render rooms */}
-        {roomObjects.map(obj => {
+        {visibleObjects.rooms && roomObjects.map(obj => {
           let objectData = obj;
           if (previewData && previewData.id === obj.id) {
             objectData = {
@@ -333,6 +400,9 @@ export function ThreeDScene({
           );
         })}
       </group>
+      
+      {/* Stats for performance monitoring (only in development) */}
+      {process.env.NODE_ENV === 'development' && <Stats />}
     </>
   );
 }
