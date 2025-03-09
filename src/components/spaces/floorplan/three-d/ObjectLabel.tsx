@@ -15,7 +15,7 @@ export function ObjectLabel({
   position, 
   label, 
   color = '#1f2937', 
-  backgroundColor = 'rgba(255, 255, 255, 0.85)',
+  backgroundColor = 'rgba(255, 255, 255, 0.95)', // More opaque for better visibility
   type,
   onHover 
 }: ObjectLabelProps) {
@@ -29,18 +29,18 @@ export function ObjectLabel({
       onPointerOut={() => onHover && onHover(false)}
     >
       <div 
-        className="px-2 py-1 text-xs font-medium rounded-md whitespace-nowrap select-none"
+        className="px-3 py-1.5 text-sm font-medium rounded-md whitespace-nowrap select-none"
         style={{ 
           color, 
           backgroundColor,
-          border: '1px solid rgba(209, 213, 219, 0.5)',
-          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+          border: '1px solid rgba(209, 213, 219, 0.8)',
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
           transform: 'translateY(-100%)',
           marginBottom: '5px',
           pointerEvents: 'none'
         }}
       >
-        <span className="text-xs opacity-70">{type}:</span> {label}
+        <span className="text-xs opacity-80 font-bold">{type}:</span> {label}
       </div>
     </Html>
   );
