@@ -77,7 +77,6 @@ export async function fetchFloorPlanObjects(floorId: string) {
       name, 
       status, 
       space_id, 
-      space_type, 
       position, 
       sequence_number,
       type,
@@ -265,6 +264,7 @@ export async function fetchFloorPlanObjects(floorId: string) {
           try {
             const parsedSize = JSON.parse(hallway.size);
             if (typeof parsedSize === 'object' && parsedSize !== null && 
+                'width' in parsedSize && 'height' in parsedSize &&
                 typeof parsedSize.width === 'number' && typeof parsedSize.height === 'number') {
               sizeObj = parsedSize;
             }
@@ -274,11 +274,18 @@ export async function fetchFloorPlanObjects(floorId: string) {
               : { width: suggestedLength || 50, height: suggestedWidth || 300 };
           }
         } 
-        // Handle object size
+        // Handle object size with improved type checking
         else if (typeof hallway.size === 'object' && hallway.size !== null) {
-          const sizeWidth = typeof hallway.size.width === 'number' ? hallway.size.width : (suggestedWidth || 300);
-          const sizeHeight = typeof hallway.size.height === 'number' ? hallway.size.height : (suggestedLength || 50);
-          sizeObj = { width: sizeWidth, height: sizeHeight };
+          // Check if it's an object with width and height properties
+          if ('width' in hallway.size && 'height' in hallway.size) {
+            const sizeWidth = typeof hallway.size.width === 'number' ? hallway.size.width : (suggestedWidth || 300);
+            const sizeHeight = typeof hallway.size.height === 'number' ? hallway.size.height : (suggestedLength || 50);
+            sizeObj = { width: sizeWidth, height: sizeHeight };
+          } else {
+            sizeObj = hallwayOrientation === 'horizontal' 
+              ? { width: suggestedWidth || 300, height: suggestedLength || 50 }
+              : { width: suggestedLength || 50, height: suggestedWidth || 300 };
+          }
         }
       } else {
         sizeObj = hallwayOrientation === 'horizontal' 
@@ -315,7 +322,6 @@ export async function fetchFloorPlanObjects(floorId: string) {
       status, 
       position, 
       size, 
-      rotation, 
       floor_id, 
       properties
     `)
@@ -344,13 +350,12 @@ export async function fetchFloorPlanObjects(floorId: string) {
     }
     
     // Safely extract security properties with fallbacks
-    const securityLevel = typeof doorProperties === 'object' && doorProperties !== null 
-      ? doorProperties.security_level || 'standard'
-      : 'standard';
+    // Using type guards to ensure we're accessing properties correctly
+    const securityLevel = typeof doorProperties === 'object' && doorProperties !== null && 
+      'security_level' in doorProperties ? doorProperties.security_level : 'standard';
       
-    const passkeyEnabled = typeof doorProperties === 'object' && doorProperties !== null 
-      ? doorProperties.passkey_enabled || false
-      : false;
+    const passkeyEnabled = typeof doorProperties === 'object' && doorProperties !== null && 
+      'passkey_enabled' in doorProperties ? doorProperties.passkey_enabled : false;
     
     return {
       id: door.id,
@@ -359,7 +364,7 @@ export async function fetchFloorPlanObjects(floorId: string) {
       status: door.status,
       position: door.position,
       size: door.size,
-      rotation: door.rotation,
+      rotation: 0, // Default value since rotation may not exist in the query
       floor_id: door.floor_id,
       object_type: 'door' as const,
       properties: {
