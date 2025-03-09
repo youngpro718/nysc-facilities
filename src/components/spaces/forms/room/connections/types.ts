@@ -8,20 +8,6 @@ export interface SpaceOption {
   room_number?: string;
 }
 
-export interface ConnectionFieldsProps {
-  floorId: string;
-  roomId?: string;
-  connections: RoomConnectionData[];
-  onAddConnection: (connection: RoomConnectionData) => void;
-  onRemoveConnection: (index: number) => void;
-}
-
-export interface ConnectionsContainerProps {
-  floorId: string;
-  roomId?: string;
-  form: any; // Using any here to avoid circular dependency with RoomFormProps
-}
-
 export interface ConnectionItemProps {
   connection: RoomConnectionData;
   index: number;
@@ -36,4 +22,31 @@ export interface NewConnectionFormProps {
   onConnectionChange: (field: keyof RoomConnectionData, value: string) => void;
   onAddConnection: () => void;
   onCancel: () => void;
+}
+
+export interface ConnectionFieldsProps {
+  floorId: string;
+  roomId?: string;
+  connections: RoomConnectionData[];
+  onAddConnection: (connection: RoomConnectionData) => void;
+  onRemoveConnection: (index: number) => void;
+}
+
+export interface ConnectionTypes {
+  direct: string;
+  door: string;
+  secured: string;
+  transition: string;
+}
+
+export interface DirectionTypes {
+  north: string;
+  south: string;
+  east: string;
+  west: string;
+  start: string;
+  end: string;
+  center: string;
+  left: string;
+  right: string;
 }

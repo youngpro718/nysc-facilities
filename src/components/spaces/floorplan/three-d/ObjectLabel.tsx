@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Html } from '@react-three/drei';
+import { Building2Icon, HomeIcon, GitForkIcon, DoorClosedIcon, LinkIcon } from 'lucide-react';
 
 interface ObjectLabelProps {
   position: [number, number, number]; 
@@ -21,6 +22,33 @@ export function ObjectLabel({
   onHover,
   icon
 }: ObjectLabelProps) {
+  // Determine icon based on type if not provided
+  const getTypeIcon = () => {
+    if (icon) return icon;
+    
+    switch(type.toLowerCase()) {
+      case 'room':
+        return <HomeIcon className="h-3 w-3" />;
+      case 'hallway':
+      case 'emergency hallway':
+        return <GitForkIcon className="h-3 w-3" />;
+      case 'door':
+        return <DoorClosedIcon className="h-3 w-3" />;
+      case 'building':
+        return <Building2Icon className="h-3 w-3" />;
+      case 'connection':
+        return <LinkIcon className="h-3 w-3" />;
+      default:
+        return null;
+    }
+  };
+  
+  // Convert simple type to display name
+  const getTypeDisplay = () => {
+    if (type.toLowerCase() === 'emergency hallway') return 'Emergency';
+    return type;
+  };
+  
   return (
     <Html
       position={position}
@@ -47,8 +75,8 @@ export function ObjectLabel({
         }}
       >
         <div className="flex items-center gap-1.5">
-          {icon && <span className="text-xs opacity-90">{icon}</span>}
-          <span className="text-xs opacity-80 font-bold">{type}:</span> 
+          {getTypeIcon() && <span className="text-xs opacity-90">{getTypeIcon()}</span>}
+          <span className="text-xs opacity-80 font-bold">{getTypeDisplay()}:</span> 
           <span className="truncate">{label}</span>
         </div>
       </div>
