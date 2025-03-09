@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { transformLayer } from "../utils/layerTransforms";
 import { transformSpaceToNode } from "../utils/nodeTransforms";
@@ -34,11 +33,11 @@ export function useFloorPlanData(floorId: string | null) {
   const { data: lightingData, isLoading: isLoadingLighting } = useQuery({
     queryKey: ['floorplan-lighting', floorId],
     queryFn: async () => {
-      if (!floorId) return [];
+      if (!floorId) return {};
       
       const { data, error } = await supabase
         .from('lighting_fixtures')
-        .select('id, space_id, space_type, status, position, name, type, floor_id')
+        .select('id, space_id, status, position, name, type, floor_id')
         .eq('floor_id', floorId)
         .order('space_id');
         
@@ -46,14 +45,17 @@ export function useFloorPlanData(floorId: string | null) {
       
       // Group fixtures by space_id for easier access
       const fixturesBySpace: Record<string, any[]> = {};
-      data?.forEach(fixture => {
-        if (!fixture.space_id) return;
-        
-        if (!fixturesBySpace[fixture.space_id]) {
-          fixturesBySpace[fixture.space_id] = [];
-        }
-        fixturesBySpace[fixture.space_id].push(fixture);
-      });
+      
+      if (data && Array.isArray(data)) {
+        data.forEach(fixture => {
+          if (!fixture || !fixture.space_id) return;
+          
+          if (!fixturesBySpace[fixture.space_id]) {
+            fixturesBySpace[fixture.space_id] = [];
+          }
+          fixturesBySpace[fixture.space_id].push(fixture);
+        });
+      }
       
       return fixturesBySpace;
     },
@@ -131,6 +133,8 @@ export function useFloorPlanData(floorId: string | null) {
       
       // Add lighting data if available
       let enhancedProperties = rawObj.properties || {};
+      
+      // Use null check before trying to access lighting data
       if (lightingData && rawObj.id && lightingData[rawObj.id]) {
         const fixtures = lightingData[rawObj.id];
         const functionalLights = fixtures.filter((f: any) => f.status === 'functional').length;
@@ -191,7 +195,7 @@ export function useFloorPlanData(floorId: string | null) {
     }
   });
     
-  // Create edges from connections data
+  // Create edges from connections data - using a safe approach
   const edges = Array.isArray(safeSpaceData.connections) ? 
     createEdgesFromConnections(safeSpaceData.connections) : 
     [];

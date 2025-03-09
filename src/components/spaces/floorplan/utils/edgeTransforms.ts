@@ -1,8 +1,6 @@
 
-import { FloorPlanEdge } from "../types/floorPlanTypes";
-
 export function createEdgesFromConnections(connections: any[]): FloorPlanEdge[] {
-  return connections.map(conn => {
+  return connections.filter(conn => !!conn).map(conn => {
     // Check for required properties
     if (!conn.from_space_id || !conn.to_space_id) {
       console.warn('Connection missing required properties:', conn);
@@ -69,4 +67,26 @@ export function createEdgesFromConnections(connections: any[]): FloorPlanEdge[] 
       animated: animated
     };
   }).filter(edge => edge !== null) as FloorPlanEdge[];
+}
+
+// Make sure we define the FloorPlanEdge type to avoid errors
+interface FloorPlanEdge {
+  id: string;
+  source: string;
+  target: string;
+  data?: {
+    type: string;
+    direction?: string;
+    isTransitionPoint?: boolean;
+    hallwayPosition?: number;
+    offsetDistance?: number;
+    position?: string;
+    style?: {
+      stroke: string;
+      strokeWidth: number;
+      strokeDasharray: string;
+    };
+  };
+  type: string;
+  animated?: boolean;
 }

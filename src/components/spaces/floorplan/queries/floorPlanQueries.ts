@@ -82,7 +82,6 @@ export async function fetchFloorPlanObjects(floorId: string) {
       sequence_number,
       type,
       technology,
-      emergency_circuit,
       maintenance_history,
       installation_date
     `)
@@ -90,16 +89,19 @@ export async function fetchFloorPlanObjects(floorId: string) {
 
   if (lightingError) throw lightingError;
   
-  // Group fixtures by space
+  // Group fixtures by space - with null checks to prevent TypeScript errors
   const fixturesBySpace: Record<string, any[]> = {};
-  (lightingFixtures || []).forEach(fixture => {
-    if (!fixture.space_id) return;
-    
-    if (!fixturesBySpace[fixture.space_id]) {
-      fixturesBySpace[fixture.space_id] = [];
-    }
-    fixturesBySpace[fixture.space_id].push(fixture);
-  });
+  
+  if (lightingFixtures && Array.isArray(lightingFixtures)) {
+    lightingFixtures.forEach(fixture => {
+      if (!fixture || !fixture.space_id) return;
+      
+      if (!fixturesBySpace[fixture.space_id]) {
+        fixturesBySpace[fixture.space_id] = [];
+      }
+      fixturesBySpace[fixture.space_id].push(fixture);
+    });
+  }
 
   // Fetch space connections to determine hallway layout
   const { data: connections, error: connectionError } = await supabase
@@ -121,7 +123,7 @@ export async function fetchFloorPlanObjects(floorId: string) {
 
   // Extract hallways from new_spaces and merge hallway_properties data
   const hallwayObjects = (newSpaces || [])
-    .filter(space => space.type === 'hallway')
+    .filter(space => space && space.type === 'hallway')
     .map(hallway => {
       // Get hallway_properties data (from the joined table)
       const hallwayProps = hallway.hallway_properties?.[0] || {};
@@ -142,19 +144,21 @@ export async function fetchFloorPlanObjects(floorId: string) {
       const stringProperties = typeof properties === 'string' ? JSON.parse(properties) : properties;
       
       // Add lighting fixtures data
-      const fixtures = fixturesBySpace[hallway.id] || [];
+      const fixtures = hallway.id && fixturesBySpace[hallway.id] ? fixturesBySpace[hallway.id] : [];
       const functionalLights = fixtures.filter(f => f.status === 'functional').length;
       const totalLights = fixtures.length;
 
       // Find connections to this hallway to determine its layout
-      const hallwayConnections = connections?.filter(conn => 
-        conn.from_space_id === hallway.id || conn.to_space_id === hallway.id
-      ) || [];
+      // Use null coalescing to ensure we always have an array, even if connections is null
+      const safeConnections = connections || [];
+      const hallwayConnections = hallway.id ? safeConnections.filter(conn => 
+        conn && (conn.from_space_id === hallway.id || conn.to_space_id === hallway.id)
+      ) : [];
       
       // Get connected room IDs for this hallway
       const connectedSpaceIds = hallwayConnections.map(conn => 
-        conn.from_space_id === hallway.id ? conn.to_space_id : conn.from_space_id
-      );
+        conn && conn.from_space_id === hallway.id ? conn.to_space_id : conn.from_space_id
+      ).filter(Boolean);
       
       // Determine if hallway should be horizontal or vertical based on connections
       let hallwayOrientation = 'horizontal';
@@ -172,8 +176,8 @@ export async function fetchFloorPlanObjects(floorId: string) {
       if (hallwayConnections.length >= 2) {
         // We have multiple connections - determine layout based on direction values
         const directions = hallwayConnections
-          .map(conn => conn.direction)
-          .filter(dir => dir !== null && dir !== undefined);
+          .map(conn => conn && conn.direction)
+          .filter(Boolean);
         
         if (directions.includes('north') || directions.includes('south') || 
             directions.includes('up') || directions.includes('down')) {
@@ -217,7 +221,7 @@ export async function fetchFloorPlanObjects(floorId: string) {
         connected_spaces: connectedSpaceIds,
         connection_count: connectedSpaceIds.length
       };
-      
+
       // Determine size based on orientation
       let sizeObj = hallway.size;
       if (typeof sizeObj === 'string') {
@@ -228,11 +232,19 @@ export async function fetchFloorPlanObjects(floorId: string) {
             ? { width: suggestedWidth || 300, height: suggestedLength || 50 }
             : { width: suggestedLength || 50, height: suggestedWidth || 300 };
         }
-      } else if (!sizeObj || !sizeObj.width || !sizeObj.height) {
+      } else if (!sizeObj || typeof sizeObj !== 'object' || !sizeObj.width || !sizeObj.height) {
         sizeObj = hallwayOrientation === 'horizontal' 
           ? { width: suggestedWidth || 300, height: suggestedLength || 50 }
           : { width: suggestedLength || 50, height: suggestedWidth || 300 };
       }
+      
+      // Type guard to ensure size object has width and height properties
+      const typedSizeObj = typeof sizeObj === 'object' && sizeObj !== null
+        ? { 
+            width: typeof sizeObj.width === 'number' ? sizeObj.width : (suggestedWidth || 300),
+            height: typeof sizeObj.height === 'number' ? sizeObj.height : (suggestedLength || 50)
+          }
+        : { width: suggestedWidth || 300, height: suggestedLength || 50 };
       
       // If hallway is vertical, apply rotation
       const calculatedRotation = hallwayOrientation === 'vertical' ? 90 : 0;
@@ -243,7 +255,7 @@ export async function fetchFloorPlanObjects(floorId: string) {
         type: hallway.type,
         status: hallway.status,
         position: hallway.position,
-        size: sizeObj,
+        size: typedSizeObj,
         rotation: hallway.rotation !== null ? hallway.rotation : calculatedRotation,
         properties: mergedProperties,
         floor_id: hallway.floor_id,
@@ -253,9 +265,9 @@ export async function fetchFloorPlanObjects(floorId: string) {
     
   console.log("Extracted hallways:", hallwayObjects.length);
 
-  // Fetch doors
-  const { data: doors, error: doorsError } = await supabase
-    .from('doors')
+  // Fetch doors - safely handling missing columns
+  const { data: doorsData, error: doorsError } = await supabase
+    .from('new_spaces')
     .select(`
       id, 
       name, 
@@ -265,29 +277,38 @@ export async function fetchFloorPlanObjects(floorId: string) {
       size, 
       rotation, 
       floor_id, 
-      security_level, 
-      passkey_enabled
+      properties
     `)
     .eq('floor_id', floorId)
+    .eq('type', 'door')
     .eq('status', 'active');
 
   if (doorsError) throw doorsError;
 
-  const doorObjects = (doors || []).map(door => ({
-    id: door.id,
-    name: door.name,
-    type: door.type,
-    status: door.status,
-    position: door.position,
-    size: door.size,
-    rotation: door.rotation,
-    floor_id: door.floor_id,
-    object_type: 'door' as const,
-    properties: {
-      security_level: door.security_level,
-      passkey_enabled: door.passkey_enabled
-    }
-  }));
+  const doors = doorsData || [];
+  
+  const doorObjects = doors.map(door => {
+    // Safely extract properties
+    const properties = door.properties || {};
+    const security_level = typeof properties === 'object' ? properties.security_level : undefined;
+    const passkey_enabled = typeof properties === 'object' ? properties.passkey_enabled : undefined;
+    
+    return {
+      id: door.id,
+      name: door.name,
+      type: door.type,
+      status: door.status,
+      position: door.position,
+      size: door.size,
+      rotation: door.rotation,
+      floor_id: door.floor_id,
+      object_type: 'door' as const,
+      properties: {
+        security_level: security_level || 'standard',
+        passkey_enabled: passkey_enabled || false
+      }
+    };
+  });
 
   // Combine all objects
   const allObjects = [...roomObjects, ...hallwayObjects, ...doorObjects];
