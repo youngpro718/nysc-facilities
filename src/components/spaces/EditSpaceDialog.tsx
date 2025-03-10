@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { RoomFormContent } from "./forms/room/RoomFormContent";
 import { roomFormSchema, type RoomFormData } from "./forms/room/RoomFormSchema";
 import { EditHallwayForm } from "./forms/hallway/EditHallwayForm";
+import { StatusEnum, RoomTypeEnum, StorageTypeEnum, roomTypeToString, statusToString, storageTypeToString } from "./rooms/types/roomEnums";
 
 interface EditSpaceDialogProps {
   id: string;
@@ -78,11 +79,11 @@ export function EditSpaceDialog({
       const updateData = {
         name: data.name,
         room_number: data.roomNumber,
-        room_type: data.roomType,
-        status: data.status,
+        room_type: roomTypeToString(data.roomType),
+        status: statusToString(data.status),
         description: data.description,
         is_storage: data.isStorage,
-        storage_type: data.isStorage ? data.storageType : null,
+        storage_type: data.isStorage ? storageTypeToString(data.storageType) : null,
         storage_capacity: data.storageCapacity,
         storage_notes: data.storageNotes,
         parent_room_id: data.parentRoomId,

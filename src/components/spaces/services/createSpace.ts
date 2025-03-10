@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { CreateSpaceFormData } from "../schemas/createSpaceSchema";
-import { RoomTypeEnum, StorageTypeEnum } from "../rooms/types/roomEnums";
+import { RoomTypeEnum, StorageTypeEnum, roomTypeToString, statusToString, storageTypeToString } from "../rooms/types/roomEnums";
 import { toast } from "sonner";
 
 export async function createSpace(data: CreateSpaceFormData) {
@@ -12,14 +12,14 @@ export async function createSpace(data: CreateSpaceFormData) {
       const roomData = {
         name: data.name,
         room_number: data.roomNumber,
-        room_type: data.roomType,
-        status: data.status,
+        room_type: roomTypeToString(data.roomType),
+        status: statusToString(data.status),
         floor_id: data.floorId,
         description: data.description,
         phone_number: data.phoneNumber,
         current_function: data.currentFunction,
         is_storage: data.isStorage || false,
-        storage_type: data.isStorage ? data.storageType : null,
+        storage_type: data.isStorage ? storageTypeToString(data.storageType) : null,
         storage_capacity: data.storageCapacity,
         parent_room_id: data.parentRoomId,
         position: data.position || { x: 0, y: 0 },

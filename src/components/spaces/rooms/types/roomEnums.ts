@@ -36,22 +36,50 @@ export enum StorageTypeEnum {
   ARCHIVE = "archive"
 }
 
+// Type for database-acceptable room types (string literals)
+export type RoomTypeString = 
+  | "office"
+  | "meeting"
+  | "storage"
+  | "courtroom"
+  | "chambers"
+  | "reception"
+  | "breakroom"
+  | "library"
+  | "utility"
+  | "special"
+  | "judges_chambers"
+  | "jury_room"
+  | "conference_room"
+  | "filing_room"
+  | "male_locker_room"
+  | "female_locker_room"
+  | "robing_room"
+  | "stake_holder"
+  | "conference";
+
+// Type for database-acceptable status values (string literals)
+export type StatusString = "active" | "inactive" | "under_maintenance";
+
+// Type for database-acceptable storage types (string literals)
+export type StorageTypeString = "general" | "secure" | "climate_controlled" | "hazardous" | "archive";
+
 // Helper functions for string conversions
-export const statusToString = (status: StatusEnum): string => status;
+export const statusToString = (status: StatusEnum): StatusString => status as StatusString;
 export const stringToStatus = (str: string): StatusEnum => {
   return Object.values(StatusEnum).includes(str as StatusEnum) 
     ? str as StatusEnum 
     : StatusEnum.ACTIVE;
 };
 
-export const roomTypeToString = (type: RoomTypeEnum): string => type;
+export const roomTypeToString = (type: RoomTypeEnum): RoomTypeString => type as RoomTypeString;
 export const stringToRoomType = (str: string): RoomTypeEnum => {
   return Object.values(RoomTypeEnum).includes(str as RoomTypeEnum)
     ? str as RoomTypeEnum
     : RoomTypeEnum.OFFICE;
 };
 
-export const storageTypeToString = (type: StorageTypeEnum): string => type;
+export const storageTypeToString = (type: StorageTypeEnum): StorageTypeString => type as StorageTypeString;
 export const stringToStorageType = (str: string): StorageTypeEnum => {
   return Object.values(StorageTypeEnum).includes(str as StorageTypeEnum)
     ? str as StorageTypeEnum

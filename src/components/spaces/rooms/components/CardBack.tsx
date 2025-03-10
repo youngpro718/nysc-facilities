@@ -27,6 +27,17 @@ interface CardBackProps {
   onFlip: () => void;
 }
 
+// Helper function to safely format dates
+const safeFormatDate = (dateString: string | undefined) => {
+  if (!dateString) return "Not specified";
+  try {
+    return format(new Date(dateString), 'MMM d, yyyy');
+  } catch (error) {
+    console.error("Invalid date:", dateString, error);
+    return "Invalid date";
+  }
+};
+
 export function CardBack({ room, onFlip }: CardBackProps) {
   return (
     <div className="p-5 flex flex-col h-full">
@@ -95,7 +106,7 @@ export function CardBack({ room, onFlip }: CardBackProps) {
               <div className="text-sm">{room.current_function}</div>
               {room.function_change_date && (
                 <div className="text-xs text-muted-foreground mt-1">
-                  Changed: {format(new Date(room.function_change_date), 'MMM d, yyyy')}
+                  Changed: {safeFormatDate(room.function_change_date)}
                 </div>
               )}
             </div>
@@ -126,9 +137,9 @@ export function CardBack({ room, onFlip }: CardBackProps) {
           <div>
             <span className="text-sm font-medium">Dates</span>
             <div className="text-xs">
-              Created: {format(new Date(room.created_at), 'MMM d, yyyy')}
+              Created: {safeFormatDate(room.created_at)}
               <br />
-              Updated: {format(new Date(room.updated_at), 'MMM d, yyyy')}
+              Updated: {safeFormatDate(room.updated_at)}
             </div>
           </div>
         </div>
