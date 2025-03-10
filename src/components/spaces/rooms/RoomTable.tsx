@@ -49,7 +49,7 @@ export function RoomTable({ rooms, onDelete }: RoomTableProps) {
                 <div className="flex justify-end gap-2">
                   <EditSpaceDialog
                     id={room.id}
-                    type="room"
+                    spaceType="room"
                     onSpaceUpdated={() => console.log('Space updated successfully')}
                     initialData={{
                       id: room.id,

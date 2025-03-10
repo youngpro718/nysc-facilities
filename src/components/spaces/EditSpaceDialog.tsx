@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import {
   AlertDialog,
@@ -12,17 +13,20 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { EditHallwayForm } from "./forms/hallway/EditHallwayForm";
-import { RoomTypeEnum, StatusEnum, StorageTypeEnum } from "./rooms/types/roomEnums";
+import { RoomTypeEnum, StatusEnum, StorageTypeEnum, RoomType } from "./rooms/types/roomEnums";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { EditSpaceFormData } from "./schemas/editSpaceSchema";
 
 interface EditSpaceDialogProps {
   id: string;
-  onClose: () => void;
+  spaceType?: string;
+  onSpaceUpdated?: () => void;
+  initialData?: Partial<EditSpaceFormData>;
+  onClose?: () => void;
 }
 
-export function EditSpaceDialog({ id, onClose }: EditSpaceDialogProps) {
+export function EditSpaceDialog({ id, spaceType, onSpaceUpdated, initialData, onClose }: EditSpaceDialogProps) {
   const [open, setOpen] = useState(false);
   const [isHallway, setIsHallway] = useState(false);
   const [spaceData, setSpaceData] = useState<EditSpaceFormData | null>(null);
@@ -41,10 +45,10 @@ export function EditSpaceDialog({ id, onClose }: EditSpaceDialogProps) {
         if (error) throw error;
 
         // Check if the space is a hallway
-        setIsHallway(data.space_type === 'hallway');
+        setIsHallway(data.type === 'hallway');
 
         // Fetch additional properties based on space type
-        if (data.space_type === 'room') {
+        if (data.type === 'room') {
           const { data: roomData, error: roomError } = await supabase
             .from('rooms')
             .select('*')
@@ -57,7 +61,7 @@ export function EditSpaceDialog({ id, onClose }: EditSpaceDialogProps) {
             ...data,
             name: data.name,
             roomNumber: roomData.room_number,
-            roomType: roomData.room_type as RoomTypeEnum,
+            roomType: roomData.room_type as RoomType,
             status: roomData.status as StatusEnum,
             description: data.properties?.description || '',
             isStorage: roomData.is_storage,
@@ -66,8 +70,9 @@ export function EditSpaceDialog({ id, onClose }: EditSpaceDialogProps) {
             storageNotes: roomData.storage_notes,
             parentRoomId: roomData.parent_room_id,
             floorId: data.floor_id,
+            type: "room"
           } as EditSpaceFormData);
-        } else if (data.space_type === 'hallway') {
+        } else if (data.type === 'hallway') {
           const { data: hallwayData, error: hallwayError } = await supabase
             .from('hallway_properties')
             .select('*')
@@ -88,6 +93,7 @@ export function EditSpaceDialog({ id, onClose }: EditSpaceDialogProps) {
             emergencyRoute: hallwayData.emergency_route,
             maintenancePriority: hallwayData.maintenance_priority,
             capacityLimit: hallwayData.capacity_limit,
+            type: "hallway"
           } as EditSpaceFormData);
         }
       } catch (error) {
@@ -98,8 +104,14 @@ export function EditSpaceDialog({ id, onClose }: EditSpaceDialogProps) {
       }
     };
 
-    fetchSpaceData();
-  }, [id]);
+    if (open && !initialData) {
+      fetchSpaceData();
+    } else if (initialData) {
+      setSpaceData(initialData as EditSpaceFormData);
+      setIsHallway(initialData.type === 'hallway');
+      setIsLoading(false);
+    }
+  }, [id, open, initialData]);
 
   const handleUpdateConnections = async (spaceId: string, connections: any[]) => {
     try {
@@ -134,6 +146,10 @@ export function EditSpaceDialog({ id, onClose }: EditSpaceDialogProps) {
 
   const handleUpdateRoom = async (updatedData: EditSpaceFormData) => {
     try {
+      if (updatedData.type !== 'room') {
+        throw new Error('Invalid space type for room update');
+      }
+
       // Update the space data in the new_spaces table
       const { error: spaceError } = await supabase
         .from('new_spaces')
@@ -153,18 +169,20 @@ export function EditSpaceDialog({ id, onClose }: EditSpaceDialogProps) {
       if (spaceError) throw spaceError;
 
       // Update the room-specific data in the rooms table
+      const roomUpdateData = {
+        room_number: updatedData.roomNumber,
+        room_type: updatedData.roomType,
+        status: updatedData.status,
+        is_storage: updatedData.isStorage,
+        storage_type: updatedData.storageType,
+        storage_capacity: updatedData.storageCapacity,
+        storage_notes: updatedData.storageNotes,
+        parent_room_id: updatedData.parentRoomId,
+      };
+
       const { error: roomError } = await supabase
         .from('rooms')
-        .update({
-          room_number: updatedData.roomNumber,
-          room_type: updatedData.roomType,
-          status: updatedData.status,
-          is_storage: updatedData.isStorage,
-          storage_type: updatedData.storageType,
-          storage_capacity: updatedData.storageCapacity,
-          storage_notes: updatedData.storageNotes,
-          parent_room_id: updatedData.parentRoomId,
-        })
+        .update(roomUpdateData)
         .eq('id', id);
 
       if (roomError) throw roomError;
@@ -175,11 +193,17 @@ export function EditSpaceDialog({ id, onClose }: EditSpaceDialogProps) {
       }
 
       toast.success('Room updated successfully');
-      onClose();
+      if (onSpaceUpdated) onSpaceUpdated();
+      handleClose();
     } catch (error) {
       console.error('Update error:', error);
       toast.error('Failed to update room');
     }
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    if (onClose) onClose();
   };
 
   return (
@@ -206,15 +230,15 @@ export function EditSpaceDialog({ id, onClose }: EditSpaceDialogProps) {
               <EditHallwayForm
                 id={id}
                 initialData={spaceData}
-                onClose={onClose}
-                onSuccess={onClose}
+                onSuccess={onSpaceUpdated}
+                onClose={handleClose}
               />
             ) : spaceData ? (
               <EditHallwayForm
                 id={id}
                 initialData={spaceData}
-                onClose={onClose}
-                onSuccess={onClose}
+                onSuccess={onSpaceUpdated}
+                onClose={handleClose}
               />
             ) : (
               <div>No data available.</div>
@@ -222,7 +246,7 @@ export function EditSpaceDialog({ id, onClose }: EditSpaceDialogProps) {
           </>
         )}
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel onClick={handleClose}>Cancel</AlertDialogCancel>
           <AlertDialogAction>Okay</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

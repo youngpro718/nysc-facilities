@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Room } from "../types/RoomTypes";
 import { Badge } from "@/components/ui/badge";
@@ -155,31 +154,24 @@ export function CardFront({ room, onFlip, onDelete }: CardFrontProps) {
         <div className="flex gap-2">
           <EditSpaceDialog
             id={room.id}
-            type="room"
             initialData={{
               id: room.id,
               name: room.name,
-              roomNumber: room.room_number || '',
+              roomNumber: room.room_number,
               roomType: room.room_type,
-              description: room.description || '',
-              status: room.status,
+              description: room.description,
+              status: room.status as StatusEnum,
               floorId: room.floor_id,
-              isStorage: room.is_storage || false,
-              storageType: room.storage_type || null,
-              storageCapacity: room.storage_capacity || null,
-              storageNotes: room.storage_notes || null,
-              parentRoomId: room.parent_room_id || null,
-              currentFunction: room.current_function || null,
-              phoneNumber: room.phone_number || null,
-              courtRoomPhotos: room.courtroom_photos || null,
-              connections: room.space_connections?.map(conn => ({
-                id: conn.id,
-                connectionType: conn.connection_type,
-                toSpaceId: conn.to_space_id,
-                direction: conn.direction || null
-              })) || [],
+              isStorage: room.is_storage,
+              storageType: room.storage_type,
+              storageCapacity: room.storage_capacity,
+              storageNotes: room.storage_notes,
+              parentRoomId: room.parent_room_id,
+              currentFunction: room.current_function,
+              phoneNumber: room.phone_number,
               type: "room"
             }}
+            spaceType="room"
           />
           <Button
             variant="destructive"

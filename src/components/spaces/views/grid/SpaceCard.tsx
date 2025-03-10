@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,8 +42,13 @@ export function SpaceCard<T extends { id: string; name: string; status: string; 
             {type === "room" && (
               <EditSpaceDialog
                 id={item.id}
-                type="room"
-                initialData={initialData}
+                initialData={{
+                  id: item.id,
+                  name: item.name,
+                  status: item.status as StatusEnum, 
+                  floorId: item.floorId
+                }}
+                spaceType={type}
               />
             )}
             <Button

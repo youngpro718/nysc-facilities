@@ -22,7 +22,8 @@ export enum RoomTypeEnum {
   UTILITY = "utility_room",
   SPECIAL = "special",
   IT_ROOM = "it_room",
-  LABORATORY = "laboratory"
+  LABORATORY = "laboratory",
+  CONFERENCE = "conference"
 }
 
 export enum StorageTypeEnum {
@@ -51,7 +52,8 @@ export type RoomTypeString =
   | "utility_room"
   | "special"
   | "it_room"
-  | "laboratory";
+  | "laboratory"
+  | "conference";
 
 export type StorageTypeString = 
   | "general"

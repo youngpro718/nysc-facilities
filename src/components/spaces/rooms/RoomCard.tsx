@@ -1,4 +1,3 @@
-
 import { Room } from "./types/RoomTypes";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -167,31 +166,23 @@ export function RoomCard({ room, onDelete }: RoomCardProps) {
       <CardFooter className="pt-1 flex justify-end gap-2 border-t">
         <EditSpaceDialog
           id={room.id}
-          type="room"
           initialData={{
             id: room.id,
             name: room.name,
             roomNumber: room.room_number,
             roomType: room.room_type,
-            status: room.status,
-            description: room.description || "",
-            isStorage: room.is_storage || false,
-            storageType: room.storage_type || null,
-            storageCapacity: room.storage_capacity || null,
-            storageNotes: room.storage_notes || null,
+            status: room.status as StatusEnum,
+            description: room.description,
+            isStorage: room.is_storage,
+            storageType: room.storage_type,
+            storageCapacity: room.storage_capacity,
+            storageNotes: room.storage_notes,
+            currentFunction: room.current_function,
+            parentRoomId: room.parent_room_id,
             floorId: room.floor_id,
-            parentRoomId: room.parent_room_id || null,
-            currentFunction: room.current_function || null,
-            phoneNumber: room.phone_number || null,
-            courtRoomPhotos: room.courtroom_photos || null,
-            connections: room.space_connections?.map(conn => ({
-              id: conn.id,
-              toSpaceId: conn.to_space_id,
-              connectionType: conn.connection_type,
-              direction: conn.direction || null
-            })) || [],
             type: "room"
           }}
+          spaceType="room"
         />
         <Button 
           variant="destructive" 

@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { SpaceListFilters } from "./SpaceListFilters";
@@ -9,7 +10,7 @@ import { ConnectedSpaces } from "./hallway/ConnectedSpaces";
 import { filterSpaces, sortSpaces } from "./utils/spaceFilters";
 import { Hallway } from "./types/hallwayTypes";
 import { Shield, ArrowRight, Accessibility } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 interface HallwaysListProps {
@@ -22,6 +23,7 @@ const HallwaysList = ({ selectedBuilding, selectedFloor }: HallwaysListProps) =>
   const [sortBy, setSortBy] = useState("name_asc");
   const [statusFilter, setStatusFilter] = useState("all");
   const [view, setView] = useState<"grid" | "list">("grid");
+  const queryClient = useQueryClient();
 
   const { hallways, isLoading, deleteHallway } = useHallwayData({
     selectedBuilding,
@@ -31,6 +33,7 @@ const HallwaysList = ({ selectedBuilding, selectedFloor }: HallwaysListProps) =>
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteHallway(id),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hallways'] });
       toast.success('Hallway deleted successfully');
     },
     onError: (error) => {

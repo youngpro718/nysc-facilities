@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -14,7 +15,8 @@ interface EditHallwayFormProps {
   id: string;
   initialData: Partial<EditSpaceFormData>;
   onSuccess?: () => void;
-  onCancel: () => void;
+  onCancel?: () => void;
+  onClose?: () => void;
 }
 
 export function EditHallwayForm({
@@ -22,6 +24,7 @@ export function EditHallwayForm({
   initialData,
   onSuccess,
   onCancel,
+  onClose,
 }: EditHallwayFormProps) {
   const queryClient = useQueryClient();
   
@@ -120,6 +123,11 @@ export function EditHallwayForm({
     await hallwayMutation.mutateAsync(data);
   };
 
+  const handleCancel = () => {
+    if (onCancel) onCancel();
+    if (onClose) onClose();
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
@@ -129,7 +137,7 @@ export function EditHallwayForm({
           <Button
             type="button"
             variant="outline"
-            onClick={onCancel}
+            onClick={handleCancel}
           >
             Cancel
           </Button>
