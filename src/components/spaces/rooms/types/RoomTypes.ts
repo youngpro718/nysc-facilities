@@ -1,8 +1,9 @@
 
-import { StatusEnum, RoomTypeEnum, StorageTypeEnum } from "./roomEnums";
+import { StatusEnum, RoomTypeEnum, StorageTypeEnum, RoomTypeString, StorageTypeString } from "./roomEnums";
 
-export type RoomType = keyof typeof RoomTypeEnum | string;
-export type StorageType = keyof typeof StorageTypeEnum | string;
+// Accept either the enum or the string literal type
+export type RoomType = RoomTypeEnum | RoomTypeString;
+export type StorageType = StorageTypeEnum | StorageTypeString;
 
 export interface RoomConnection {
   id: string;
@@ -22,12 +23,12 @@ export interface Room {
   id: string;
   name: string;
   room_number: string;
-  room_type: RoomType | string;
+  room_type: RoomType;
   status: StatusEnum | string;
   description?: string | null;
   phone_number?: string | null;
   is_storage: boolean;
-  storage_type?: StorageType | string | null;
+  storage_type?: StorageType | null;
   storage_capacity?: number | null;
   storage_notes?: string | null;
   parent_room_id?: string | null;

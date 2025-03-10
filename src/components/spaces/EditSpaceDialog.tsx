@@ -78,11 +78,11 @@ export function EditSpaceDialog({
       const updateData = {
         name: data.name,
         room_number: data.roomNumber,
-        room_type: data.roomType as string, // Cast to string to match database expectation
+        room_type: data.roomType.toString(), // Cast to string for the database
         status: data.status,
         description: data.description,
         is_storage: data.isStorage,
-        storage_type: data.isStorage ? data.storageType as string : null, // Cast to string
+        storage_type: data.isStorage ? data.storageType?.toString() : null, // Cast to string
         storage_capacity: data.storageCapacity,
         storage_notes: data.storageNotes,
         parent_room_id: data.parentRoomId,

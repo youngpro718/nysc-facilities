@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { SpaceListFilters } from "./SpaceListFilters";
@@ -10,6 +11,7 @@ import { filterSpaces, sortSpaces } from "./utils/spaceFilters";
 import { Hallway } from "./types/hallwayTypes";
 import { Shield, ArrowRight, Accessibility } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 interface HallwaysListProps {
   selectedBuilding: string;
@@ -30,7 +32,11 @@ const HallwaysList = ({ selectedBuilding, selectedFloor }: HallwaysListProps) =>
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteHallway(id),
     onSuccess: () => {
-      console.log('Hallway deleted successfully');
+      toast.success('Hallway deleted successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to delete hallway');
+      console.error('Delete error:', error);
     }
   });
 
@@ -146,6 +152,7 @@ const HallwaysList = ({ selectedBuilding, selectedFloor }: HallwaysListProps) =>
             renderItem={renderGridContent}
             type="hallway"
             onDelete={handleDelete}
+            emptyMessage="No hallways found"
           />
         ) : (
           <ListView
@@ -162,6 +169,7 @@ const HallwaysList = ({ selectedBuilding, selectedFloor }: HallwaysListProps) =>
             </>}
             type="hallway"
             onDelete={handleDelete}
+            emptyMessage="No hallways found"
           />
         )
       )}

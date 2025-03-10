@@ -31,3 +31,29 @@ export enum StorageTypeEnum {
   HAZARDOUS = "hazardous",
   ARCHIVE = "archive"
 }
+
+// Type definitions for string literals that match enum values
+export type RoomTypeString = 
+  | "office" 
+  | "courtroom" 
+  | "judges_chambers" 
+  | "jury_room" 
+  | "conference_room" 
+  | "filing_room" 
+  | "male_locker_room" 
+  | "female_locker_room" 
+  | "robing_room" 
+  | "stake_holder" 
+  | "storage" 
+  | "breakroom" 
+  | "library" 
+  | "utility_room" 
+  | "special" 
+  | "it_room";
+
+export type StorageTypeString = 
+  | "general"
+  | "secure"
+  | "climate_controlled"
+  | "hazardous"
+  | "archive";
