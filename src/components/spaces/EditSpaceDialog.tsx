@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -78,11 +77,11 @@ export function EditSpaceDialog({
       const updateData = {
         name: data.name,
         room_number: data.roomNumber,
-        room_type: data.roomType.toString(), // Cast to string for the database
-        status: data.status,
+        room_type: data.roomType.toString(), // Convert enum to string
+        status: data.status.toString(), // Convert enum to string
         description: data.description,
         is_storage: data.isStorage,
-        storage_type: data.isStorage ? data.storageType?.toString() : null, // Cast to string
+        storage_type: data.isStorage ? (data.storageType ? data.storageType.toString() : null) : null, // Convert enum to string
         storage_capacity: data.storageCapacity,
         storage_notes: data.storageNotes,
         parent_room_id: data.parentRoomId,

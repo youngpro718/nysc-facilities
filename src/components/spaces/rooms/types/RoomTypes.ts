@@ -37,13 +37,13 @@ export interface Room {
   updated_at: string;
   function_change_date?: string;
   previous_functions?: any[];
-  position?: { x: number; y: number };
-  size?: { width: number; height: number };
+  position?: { x: number; y: number } | any;
+  size?: { width: number; height: number } | any;
   rotation?: number;
   courtroom_photos?: {
     judge_view?: string | null;
     audience_view?: string | null;
-  };
+  } | any;
   
   floor?: {
     id: string;
@@ -54,4 +54,12 @@ export interface Room {
     }
   };
   space_connections?: RoomConnection[];
+  
+  // Additional properties needed by components
+  lighting_fixture?: any;
+  current_occupants?: any[];
+  issues?: any[];
+  room_history?: any[];
+  capacity?: number;
+  current_occupancy?: number;
 }

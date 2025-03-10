@@ -15,9 +15,12 @@ export const transformRoomData = (
     storage_type: room.storage_type ? (room.storage_type as StorageType) : null,
     // Ensure position and size are in the expected format
     position: typeof room.position === 'object' ? room.position : 
-      (room.position ? JSON.parse(String(room.position)) : { x: 0, y: 0 }),
+      (room.position ? (typeof room.position === 'string' ? JSON.parse(room.position) : { x: 0, y: 0 }) : { x: 0, y: 0 }),
     size: typeof room.size === 'object' ? room.size : 
-      (room.size ? JSON.parse(String(room.size)) : { width: 150, height: 100 }),
+      (room.size ? (typeof room.size === 'string' ? JSON.parse(room.size) : { width: 150, height: 100 }) : { width: 150, height: 100 }),
+    // Convert courtroom_photos from Json if needed
+    courtroom_photos: typeof room.courtroom_photos === 'object' ? room.courtroom_photos :
+      (room.courtroom_photos ? (typeof room.courtroom_photos === 'string' ? JSON.parse(room.courtroom_photos) : null) : null),
     // Process relationships and related data
     lighting_fixture: fixturesByRoomId[room.id] ? {
       id: fixturesByRoomId[room.id].id,
@@ -29,7 +32,6 @@ export const transformRoomData = (
       maintenance_notes: fixturesByRoomId[room.id].maintenance_notes
     } : null,
     space_connections: connectionsByRoomId[room.id] || [],
-    courtroom_photos: room.courtroom_photos ? room.courtroom_photos : null,
     issues: (issuesByRoomId[room.id] || []).map(issue => ({
       id: issue.id,
       title: issue.title,
