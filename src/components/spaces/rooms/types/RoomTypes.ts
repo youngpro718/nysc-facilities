@@ -6,7 +6,7 @@ export type StorageType = StorageTypeEnum | StorageTypeString;
 
 export interface RoomConnection {
   id: string;
-  from_space_id: string;
+  from_space_id?: string; // Make this optional since it might be missing from server response
   to_space_id: string;
   connection_type: string;
   direction?: string | null;

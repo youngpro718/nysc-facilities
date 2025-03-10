@@ -94,7 +94,7 @@ export function EditSpaceDialog({
       console.log("Room update data:", updateData);
       const { error: roomError } = await supabase
         .from("rooms")
-        .update(updateData)
+        .update(updateData as any) // Use type assertion for Supabase compatibility
         .eq('id', id);
 
       if (roomError) {

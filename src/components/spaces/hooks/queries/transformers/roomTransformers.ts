@@ -31,7 +31,15 @@ export const transformRoomData = (
       ballast_issue: fixturesByRoomId[room.id].ballast_issue,
       maintenance_notes: fixturesByRoomId[room.id].maintenance_notes
     } : null,
-    space_connections: connectionsByRoomId[room.id] || [],
+    space_connections: (connectionsByRoomId[room.id] || []).map(conn => ({
+      id: conn.id,
+      from_space_id: conn.from_space_id || room.id, // Ensure from_space_id is set 
+      to_space_id: conn.to_space_id,
+      connection_type: conn.connection_type,
+      direction: conn.direction,
+      status: conn.status,
+      to_space: conn.to_space
+    })),
     issues: (issuesByRoomId[room.id] || []).map(issue => ({
       id: issue.id,
       title: issue.title,
