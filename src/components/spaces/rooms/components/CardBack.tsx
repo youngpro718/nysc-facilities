@@ -8,11 +8,19 @@ import {
   Phone, 
   Layers, 
   ExternalLink,
-  Lightbulb
+  Lightbulb,
+  CalendarClock,
+  Ruler,
+  AlertTriangle,
+  Info,
+  Archive
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { Room } from "../types/RoomTypes";
 import { HallwayConnections } from "./HallwayConnections";
+import { CourtroomPhotos } from "./CourtroomPhotos";
+import { format } from "date-fns";
 
 interface CardBackProps {
   room: Room;
@@ -22,7 +30,7 @@ interface CardBackProps {
 export function CardBack({ room, onFlip }: CardBackProps) {
   return (
     <div className="p-5 flex flex-col h-full">
-      {/* Floor & Building */}
+      {/* Floor & Building Navigation */}
       <div className="flex items-center mb-3 text-sm text-muted-foreground">
         <Building className="h-4 w-4 mr-1" />
         <span>
@@ -30,8 +38,32 @@ export function CardBack({ room, onFlip }: CardBackProps) {
         </span>
       </div>
 
-      {/* Additional Details */}
-      <div className="space-y-2 flex-1">
+      {/* Scrollable content area */}
+      <div className="space-y-3 flex-1 overflow-y-auto pr-1">
+        {/* Room dimensions and basic info */}
+        <div className="flex items-start">
+          <Ruler className="h-4 w-4 mr-2 mt-0.5 text-muted-foreground" />
+          <div>
+            <span className="text-sm font-medium">Dimensions</span>
+            <div className="text-sm">
+              {room.size ? 
+                `${room.size.width} × ${room.size.height} units` : 
+                "Dimensions not specified"}
+            </div>
+          </div>
+        </div>
+        
+        {/* Room capacity if available */}
+        {room.storage_capacity && (
+          <div className="flex items-start">
+            <Info className="h-4 w-4 mr-2 mt-0.5 text-muted-foreground" />
+            <div>
+              <span className="text-sm font-medium">Capacity</span>
+              <div className="text-sm">{room.storage_capacity}</div>
+            </div>
+          </div>
+        )}
+
         {/* Parent Room */}
         {room.parent_room_id && (
           <div className="flex items-start">
@@ -61,6 +93,57 @@ export function CardBack({ room, onFlip }: CardBackProps) {
             <div>
               <span className="text-sm font-medium">Function</span>
               <div className="text-sm">{room.current_function}</div>
+              {room.function_change_date && (
+                <div className="text-xs text-muted-foreground mt-1">
+                  Changed: {format(new Date(room.function_change_date), 'MMM d, yyyy')}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Storage details if room is storage */}
+        {room.is_storage && room.storage_type && (
+          <div className="flex items-start">
+            <Archive className="h-4 w-4 mr-2 mt-0.5 text-muted-foreground" />
+            <div>
+              <span className="text-sm font-medium">Storage Type</span>
+              <div className="text-sm">
+                {room.storage_type}
+                {room.storage_notes && (
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Notes: {room.storage_notes}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Timestamps */}
+        <div className="flex items-start">
+          <CalendarClock className="h-4 w-4 mr-2 mt-0.5 text-muted-foreground" />
+          <div>
+            <span className="text-sm font-medium">Dates</span>
+            <div className="text-xs">
+              Created: {format(new Date(room.created_at), 'MMM d, yyyy')}
+              <br />
+              Updated: {format(new Date(room.updated_at), 'MMM d, yyyy')}
+            </div>
+          </div>
+        </div>
+
+        {/* Issues */}
+        {room.issues && room.issues.length > 0 && (
+          <div className="flex items-start">
+            <AlertTriangle className="h-4 w-4 mr-2 mt-0.5 text-muted-foreground" />
+            <div>
+              <span className="text-sm font-medium">Issues</span>
+              <div className="flex flex-wrap gap-1 mt-1">
+                <Badge variant="outline" className="text-xs">
+                  {room.issues.length} issue{room.issues.length !== 1 ? 's' : ''}
+                </Badge>
+              </div>
             </div>
           </div>
         )}
@@ -95,9 +178,17 @@ export function CardBack({ room, onFlip }: CardBackProps) {
           </div>
         )}
 
-        {/* Hallway Connections */}
+        {/* Hallway Connections with Separator */}
         {room.space_connections && room.space_connections.length > 0 && (
-          <HallwayConnections connections={room.space_connections} />
+          <>
+            <Separator className="my-2" />
+            <HallwayConnections connections={room.space_connections} />
+          </>
+        )}
+        
+        {/* Courtroom Photos */}
+        {room.room_type === 'courtroom' && room.courtroom_photos && (
+          <CourtroomPhotos room={room} />
         )}
       </div>
 

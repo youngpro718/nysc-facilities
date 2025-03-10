@@ -35,3 +35,25 @@ export enum StorageTypeEnum {
   HAZARDOUS = "hazardous",
   ARCHIVE = "archive"
 }
+
+// Helper functions for string conversions
+export const statusToString = (status: StatusEnum): string => status;
+export const stringToStatus = (str: string): StatusEnum => {
+  return Object.values(StatusEnum).includes(str as StatusEnum) 
+    ? str as StatusEnum 
+    : StatusEnum.ACTIVE;
+};
+
+export const roomTypeToString = (type: RoomTypeEnum): string => type;
+export const stringToRoomType = (str: string): RoomTypeEnum => {
+  return Object.values(RoomTypeEnum).includes(str as RoomTypeEnum)
+    ? str as RoomTypeEnum
+    : RoomTypeEnum.OFFICE;
+};
+
+export const storageTypeToString = (type: StorageTypeEnum): string => type;
+export const stringToStorageType = (str: string): StorageTypeEnum => {
+  return Object.values(StorageTypeEnum).includes(str as StorageTypeEnum)
+    ? str as StorageTypeEnum
+    : StorageTypeEnum.GENERAL;
+};

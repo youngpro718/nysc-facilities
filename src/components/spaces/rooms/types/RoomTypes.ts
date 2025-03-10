@@ -4,6 +4,13 @@ import { StatusEnum, RoomTypeEnum, StorageTypeEnum } from "./roomEnums";
 export type RoomType = RoomTypeEnum;
 export type StorageType = StorageTypeEnum;
 
+// Helper functions to convert between enum and string types
+export const getRoomTypeString = (type: RoomTypeEnum): string => type;
+export const getRoomTypeEnum = (type: string): RoomTypeEnum => type as RoomTypeEnum;
+
+export const getStorageTypeString = (type: StorageTypeEnum): string => type;
+export const getStorageTypeEnum = (type: string): StorageTypeEnum => type as StorageTypeEnum;
+
 export interface RoomConnection {
   id: string;
   from_space_id: string;
