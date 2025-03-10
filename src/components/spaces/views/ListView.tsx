@@ -14,13 +14,17 @@ export interface ListViewProps<T> {
   renderRow: (item: T) => React.ReactNode;
   headers: React.ReactNode;
   emptyMessage?: string;
+  onDelete?: (id: string) => void;
+  type?: string;
 }
 
 export function ListView<T>({ 
   items, 
   renderRow, 
   headers,
-  emptyMessage = "No items found" 
+  emptyMessage = "No items found",
+  onDelete,
+  type
 }: ListViewProps<T>) {
   if (items.length === 0) {
     return (

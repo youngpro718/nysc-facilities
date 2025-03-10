@@ -209,15 +209,20 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
               {view === 'grid' ? (
                 <GridView
                   items={groupedDoors.transition}
-                  onDelete={(id) => deleteDoor.mutate(id)}
-                  renderItemContent={renderDoorContent}
+                  renderItem={(door) => renderDoorContent(door)}
                   type="door"
                 />
               ) : (
                 <ListView
                   items={groupedDoors.transition}
-                  onDelete={(id) => deleteDoor.mutate(id)}
                   renderRow={renderDoorRow}
+                  headers={<>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Issues</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </>}
                   type="door"
                 />
               )}
@@ -230,15 +235,20 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
               {view === 'grid' ? (
                 <GridView
                   items={groupedDoors.problem}
-                  onDelete={(id) => deleteDoor.mutate(id)}
-                  renderItemContent={renderDoorContent}
+                  renderItem={(door) => renderDoorContent(door)}
                   type="door"
                 />
               ) : (
                 <ListView
                   items={groupedDoors.problem}
-                  onDelete={(id) => deleteDoor.mutate(id)}
                   renderRow={renderDoorRow}
+                  headers={<>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Issues</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </>}
                   type="door"
                 />
               )}
@@ -250,15 +260,20 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
             {view === 'grid' ? (
               <GridView
                 items={groupedDoors.standard}
-                onDelete={(id) => deleteDoor.mutate(id)}
-                renderItemContent={renderDoorContent}
+                renderItem={(door) => renderDoorContent(door)}
                 type="door"
               />
             ) : (
               <ListView
                 items={groupedDoors.standard}
-                onDelete={(id) => deleteDoor.mutate(id)}
                 renderRow={renderDoorRow}
+                headers={<>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Issues</TableHead>
+                  <TableHead>Actions</TableHead>
+                </>}
                 type="door"
               />
             )}

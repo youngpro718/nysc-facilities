@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { SpaceListFilters } from "./SpaceListFilters";
@@ -132,15 +131,22 @@ const HallwaysList = ({ selectedBuilding, selectedFloor }: HallwaysListProps) =>
         view === 'grid' ? (
           <GridView
             items={filteredAndSortedHallways}
-            onDelete={(id) => deleteHallway.mutate(id)}
-            renderItemContent={renderGridContent}
+            renderItem={(hallway) => renderGridContent(hallway)}
             type="hallway"
           />
         ) : (
           <ListView
             items={filteredAndSortedHallways}
-            onDelete={(id) => deleteHallway.mutate(id)}
             renderRow={renderListRow}
+            headers={<>
+              <TableHead>Name</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Building</TableHead>
+              <TableHead>Floor</TableHead>
+              <TableHead>Accessibility</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Actions</TableHead>
+            </>}
             type="hallway"
           />
         )

@@ -6,12 +6,18 @@ export interface GridViewProps<T> {
   items: T[];
   renderItem: (item: T) => React.ReactNode;
   emptyMessage?: string;
+  onDelete?: (id: string) => void;
+  type?: string;
+  renderItemContent?: (item: T) => React.ReactNode;
 }
 
 export function GridView<T>({ 
   items, 
   renderItem, 
-  emptyMessage = "No items found" 
+  emptyMessage = "No items found",
+  onDelete,
+  type,
+  renderItemContent
 }: GridViewProps<T>) {
   if (items.length === 0) {
     return (
@@ -21,11 +27,14 @@ export function GridView<T>({
     );
   }
 
+  // If renderItemContent is provided, use it with renderItem function
+  const renderFn = renderItemContent ? renderItemContent : renderItem;
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {items.map((item, index) => (
         <Card key={index} className="overflow-hidden shadow-sm hover:shadow transition-shadow">
-          {renderItem(item)}
+          {renderFn(item)}
         </Card>
       ))}
     </div>

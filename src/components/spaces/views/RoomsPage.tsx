@@ -1,13 +1,14 @@
-import { useState, useEffect } from "react";
-import { useLocation, useParams } from "react-router-dom";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle, ArrowDown, ArrowUp, List, Grid } from "lucide-react";
+import { useState, useMemo } from "react";
 import { useRoomsQuery } from "../hooks/queries/useRoomsQuery";
+import { SpaceListFilters } from "../SpaceListFilters";
+import { filterSpaces, sortSpaces } from "../utils/spaceFilters";
 import { Room } from "../rooms/types/RoomTypes";
-import GridView from "../components/GridView";
-import ListView from "../components/ListView";
+import { EditSpaceDialog } from "../EditSpaceDialog";
 import { Button } from "@/components/ui/button";
+import { GridView } from "../views/GridView";
+import { ListView } from "../views/ListView";
+import { TableCell, TableHead } from "@/components/ui/table";
+import RoomCard from "../rooms/RoomCard";
 
 // Define proper types for sort options
 type SortOption = 
