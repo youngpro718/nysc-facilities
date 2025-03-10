@@ -1,48 +1,45 @@
 
+import React from 'react';
 import {
   Table,
   TableBody,
+  TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { SpaceRow } from "./list/SpaceRow";
 
-interface ListViewProps<T> {
+export interface ListViewProps<T> {
   items: T[];
-  onDelete: (id: string) => void;
-  renderRow?: (item: T) => React.ReactNode[];
-  type: "room" | "hallway" | "door";
+  renderRow: (item: T) => React.ReactNode;
+  headers: React.ReactNode;
+  emptyMessage?: string;
 }
 
-export function ListView<T extends { id: string; name: string; status: string; floor_id: string }>({ 
-  items,
-  onDelete,
-  renderRow,
-  type
+export function ListView<T>({ 
+  items, 
+  renderRow, 
+  headers,
+  emptyMessage = "No items found" 
 }: ListViewProps<T>) {
+  if (items.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-lg text-muted-foreground">{emptyMessage}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            {headers}
           </TableRow>
         </TableHeader>
         <TableBody>
-          {items.map((item) => (
-            <TableRow key={item.id}>
-              <SpaceRow
-                item={item}
-                onDelete={onDelete}
-                renderCells={renderRow}
-                type={type}
-              />
-            </TableRow>
-          ))}
+          {items.map((item, index) => renderRow(item))}
         </TableBody>
       </Table>
     </div>

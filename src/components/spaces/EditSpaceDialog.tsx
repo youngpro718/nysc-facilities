@@ -75,15 +75,15 @@ export function EditSpaceDialog({
     mutationFn: async (data: RoomFormData) => {
       console.log("Submitting data for room update:", data);
       
-      // Transform the room_type to string to ensure compatibility with Supabase
+      // Important: Convert enum values to strings for database compatibility
       const updateData = {
         name: data.name,
         room_number: data.roomNumber,
-        room_type: data.roomType as string, // Cast to string to avoid type issues
+        room_type: data.roomType as string, // Explicitly cast to string for Supabase
         status: data.status,
         description: data.description,
         is_storage: data.isStorage,
-        storage_type: data.isStorage ? data.storageType as string : null,
+        storage_type: data.isStorage ? data.storageType as string : null, // Explicitly cast to string
         storage_capacity: data.storageCapacity,
         storage_notes: data.storageNotes,
         parent_room_id: data.parentRoomId,

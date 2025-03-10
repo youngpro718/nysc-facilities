@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { CreateSpaceFormData } from "../schemas/createSpaceSchema";
 import { toast } from "sonner";
@@ -11,14 +10,14 @@ export async function createSpace(data: CreateSpaceFormData) {
       const roomData = {
         name: data.name,
         room_number: data.roomNumber,
-        room_type: data.roomType as string, // Cast to string to avoid type issues
+        room_type: data.roomType as string, // Explicitly cast to string for Supabase compatibility
         status: data.status,
         floor_id: data.floorId,
         description: data.description,
         phone_number: data.phoneNumber,
         current_function: data.currentFunction,
         is_storage: data.isStorage || false,
-        storage_type: data.isStorage ? data.storageType as string : null,
+        storage_type: data.isStorage ? data.storageType as string : null, // Explicitly cast to string
         storage_capacity: data.storageCapacity,
         parent_room_id: data.parentRoomId,
         position: data.position || { x: 0, y: 0 },

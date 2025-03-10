@@ -27,7 +27,8 @@ export enum RoomTypeEnum {
   ROBING_ROOM = "robing_room",
   STAKE_HOLDER = "stake_holder",
   CONFERENCE = "conference",
-  LABORATORY = "laboratory"
+  LABORATORY = "laboratory",
+  UTILITY_ROOM = "utility_room"
 }
 
 export enum StorageTypeEnum {
