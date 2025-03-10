@@ -6,6 +6,7 @@ import { FormData } from "../types/formTypes";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Building, Floor, Room } from "../types/locationTypes";
+import { Loader2 } from "lucide-react";
 
 interface LocationFieldsProps {
   form: UseFormReturn<FormData>;
@@ -13,55 +14,51 @@ interface LocationFieldsProps {
 }
 
 export function LocationFields({ form, disableFields = false }: LocationFieldsProps) {
-  const fetchBuildings = async (): Promise<Building[]> => {
-    const { data, error } = await supabase
-      .from('buildings')
-      .select('*')
-      .eq('status', 'active')
-      .order('name');
-    if (error) throw error;
-    return data as Building[];
-  };
-
-  const fetchFloors = async (buildingId: string): Promise<Floor[]> => {
-    const { data, error } = await supabase
-      .from('floors')
-      .select('*')
-      .eq('building_id', buildingId)
-      .eq('status', 'active')
-      .order('floor_number');
-    if (error) throw error;
-    return data as Floor[];
-  };
-
-  const fetchRooms = async (floorId: string): Promise<Room[]> => {
-    const { data, error } = await supabase
-      .from('rooms')
-      .select('*')
-      .eq('floor_id', floorId)
-      .eq('status', 'active')
-      .order('room_number');
-    if (error) throw error;
-    return data as Room[];
-  };
-
   const buildingId = form.watch('building_id');
   const floorId = form.watch('floor_id');
 
-  const { data: buildings } = useQuery({
+  const { data: buildings, isLoading: isLoadingBuildings } = useQuery({
     queryKey: ['buildings'],
-    queryFn: fetchBuildings
+    queryFn: async (): Promise<Building[]> => {
+      const { data, error } = await supabase
+        .from('buildings')
+        .select('*')
+        .eq('status', 'active')
+        .order('name');
+      if (error) throw error;
+      return data as Building[];
+    }
   });
 
-  const { data: floors } = useQuery({
+  const { data: floors, isLoading: isLoadingFloors } = useQuery({
     queryKey: ['floors', buildingId],
-    queryFn: () => buildingId ? fetchFloors(buildingId) : Promise.resolve([]),
+    queryFn: async (): Promise<Floor[]> => {
+      if (!buildingId) return [];
+      const { data, error } = await supabase
+        .from('floors')
+        .select('*')
+        .eq('building_id', buildingId)
+        .eq('status', 'active')
+        .order('floor_number');
+      if (error) throw error;
+      return data as Floor[];
+    },
     enabled: !!buildingId,
   });
 
-  const { data: rooms } = useQuery({
+  const { data: rooms, isLoading: isLoadingRooms } = useQuery({
     queryKey: ['rooms', floorId],
-    queryFn: () => floorId ? fetchRooms(floorId) : Promise.resolve([]),
+    queryFn: async (): Promise<Room[]> => {
+      if (!floorId) return [];
+      const { data, error } = await supabase
+        .from('rooms')
+        .select('*')
+        .eq('floor_id', floorId)
+        .eq('status', 'active')
+        .order('room_number');
+      if (error) throw error;
+      return data as Room[];
+    },
     enabled: !!floorId,
   });
 
@@ -80,14 +77,14 @@ export function LocationFields({ form, disableFields = false }: LocationFieldsPr
                 form.setValue('room_id', undefined);
               }} 
               value={field.value}
-              disabled={disableFields}
+              disabled={disableFields || isLoadingBuildings}
             >
               <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select building" />
+                <SelectTrigger className="z-30">
+                  <SelectValue placeholder={isLoadingBuildings ? "Loading buildings..." : "Select building"} />
                 </SelectTrigger>
               </FormControl>
-              <SelectContent>
+              <SelectContent position="popper" className="z-50">
                 {buildings?.map((building) => (
                   <SelectItem key={building.id} value={building.id}>
                     {building.name}
@@ -112,19 +109,32 @@ export function LocationFields({ form, disableFields = false }: LocationFieldsPr
                 form.setValue('room_id', undefined);
               }} 
               value={field.value}
-              disabled={disableFields || !buildingId}
+              disabled={disableFields || !buildingId || isLoadingFloors}
             >
               <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select floor" />
+                <SelectTrigger className="z-20">
+                  {isLoadingFloors ? (
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Loading floors...</span>
+                    </div>
+                  ) : (
+                    <SelectValue placeholder="Select floor" />
+                  )}
                 </SelectTrigger>
               </FormControl>
-              <SelectContent>
-                {floors?.map((floor) => (
-                  <SelectItem key={floor.id} value={floor.id}>
-                    Floor {floor.floor_number} - {floor.name}
-                  </SelectItem>
-                ))}
+              <SelectContent position="popper" className="z-50">
+                {floors?.length ? (
+                  floors.map((floor) => (
+                    <SelectItem key={floor.id} value={floor.id}>
+                      Floor {floor.floor_number} - {floor.name}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <div className="p-2 text-center text-sm text-muted-foreground">
+                    No floors available
+                  </div>
+                )}
               </SelectContent>
             </Select>
             <FormMessage />
@@ -141,19 +151,32 @@ export function LocationFields({ form, disableFields = false }: LocationFieldsPr
             <Select 
               onValueChange={field.onChange} 
               value={field.value}
-              disabled={disableFields || !floorId}
+              disabled={disableFields || !floorId || isLoadingRooms}
             >
               <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select room" />
+                <SelectTrigger className="z-10">
+                  {isLoadingRooms ? (
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Loading rooms...</span>
+                    </div>
+                  ) : (
+                    <SelectValue placeholder="Select room" />
+                  )}
                 </SelectTrigger>
               </FormControl>
-              <SelectContent>
-                {rooms?.map((room) => (
-                  <SelectItem key={room.id} value={room.id}>
-                    Room {room.room_number} - {room.name}
-                  </SelectItem>
-                ))}
+              <SelectContent position="popper" className="z-50">
+                {rooms?.length ? (
+                  rooms.map((room) => (
+                    <SelectItem key={room.id} value={room.id}>
+                      Room {room.room_number} - {room.name}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <div className="p-2 text-center text-sm text-muted-foreground">
+                    No rooms available
+                  </div>
+                )}
               </SelectContent>
             </Select>
             <FormMessage />

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
@@ -11,14 +12,15 @@ import {
   AlertTriangle, ChevronLeft, ChevronRight, Flag, 
   AlertOctagon, Bolt, Droplet, Building2, Key, 
   Thermometer, Trash2, DoorClosed, Construction,
-  Lightbulb, Waves, PaintBucket, Wrench, Bug, Zap, HelpCircle 
+  Lightbulb, Waves, PaintBucket, Wrench, Bug, Zap, HelpCircle, 
+  Loader2
 } from "lucide-react";
 import { LocationFields } from "../form-sections/LocationFields";
 import { ProblemTypeField } from "../form-sections/ProblemTypeField";
 import { DescriptionField } from "../form-sections/DescriptionField";
 import { IssuePhotoForm } from "./IssuePhotoForm";
 import { usePhotoUpload } from "../hooks/usePhotoUpload";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -126,6 +128,9 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
   }, [useAssignedRoom, primaryRoom, form]);
 
   const watchIssueType = form.watch('issue_type');
+  const watchBuildingId = form.watch('building_id');
+  const watchFloorId = form.watch('floor_id');
+  
   useEffect(() => {
     if (watchIssueType && watchIssueType !== selectedIssueType) {
       setSelectedIssueType(watchIssueType);
@@ -137,63 +142,66 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
     }
   }, [watchIssueType, selectedIssueType, form]);
 
-  const [selectedBuilding, setSelectedBuilding] = useState<string | null>(null);
-  const [selectedFloor, setSelectedFloor] = useState<string | null>(null);
-  const [buildings, setBuildings] = useState<any[]>([]);
-  const [floors, setFloors] = useState<any[]>([]);
-  const [rooms, setRooms] = useState<any[]>([]);
-
-  useEffect(() => {
-    const fetchBuildings = async () => {
-      const { data } = await supabase
+  // Fetch buildings
+  const { data: buildings = [], isLoading: isLoadingBuildings } = useQuery({
+    queryKey: ['buildings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from('buildings')
         .select('*')
-        .eq('status', 'active');
-      if (data) setBuildings(data);
-    };
-    fetchBuildings();
-  }, []);
+        .eq('status', 'active')
+        .order('name');
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
 
-  useEffect(() => {
-    const fetchFloors = async () => {
-      if (!selectedBuilding) {
-        setFloors([]);
-        return;
-      }
-      const { data } = await supabase
+  // Fetch floors based on selected building
+  const { data: floors = [], isLoading: isLoadingFloors } = useQuery({
+    queryKey: ['floors', watchBuildingId],
+    queryFn: async () => {
+      if (!watchBuildingId) return [];
+      
+      const { data, error } = await supabase
         .from('floors')
         .select('*')
-        .eq('building_id', selectedBuilding);
-      if (data) setFloors(data);
-    };
-    fetchFloors();
-  }, [selectedBuilding]);
+        .eq('building_id', watchBuildingId)
+        .eq('status', 'active')
+        .order('floor_number');
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!watchBuildingId && !useAssignedRoom
+  });
 
-  useEffect(() => {
-    const fetchRooms = async () => {
-      if (!selectedFloor) {
-        setRooms([]);
-        return;
-      }
-      const { data } = await supabase
+  // Fetch rooms based on selected floor
+  const { data: rooms = [], isLoading: isLoadingRooms } = useQuery({
+    queryKey: ['rooms', watchFloorId],
+    queryFn: async () => {
+      if (!watchFloorId) return [];
+      
+      const { data, error } = await supabase
         .from('rooms')
         .select('*')
-        .eq('floor_id', selectedFloor);
-      if (data) setRooms(data);
-    };
-    fetchRooms();
-  }, [selectedFloor]);
+        .eq('floor_id', watchFloorId)
+        .eq('status', 'active')
+        .order('room_number');
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!watchFloorId && !useAssignedRoom
+  });
 
   const handleBuildingSelect = (buildingId: string) => {
-    setSelectedBuilding(buildingId);
-    setSelectedFloor(null);
     form.setValue('building_id', buildingId);
     form.setValue('floor_id', '');
     form.setValue('room_id', '');
   };
 
   const handleFloorSelect = (floorId: string) => {
-    setSelectedFloor(floorId);
     form.setValue('floor_id', floorId);
     form.setValue('room_id', '');
   };
@@ -278,6 +286,13 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
       default:
         return [];
     }
+  };
+
+  const isNextButtonDisabled = () => {
+    if (currentStep === 'type' && !useAssignedRoom) {
+      return !form.getValues('room_id');
+    }
+    return false;
   };
 
   return (
@@ -400,105 +415,137 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
                 <div className="mb-6 space-y-6">
                   <div className="space-y-4">
                     <h4 className="font-medium">Select Building</h4>
-                    <RadioGroup
-                      value={selectedBuilding || ''}
-                      onValueChange={handleBuildingSelect}
-                      className="grid grid-cols-1 md:grid-cols-2 gap-2"
-                    >
-                      {buildings.map((building) => (
-                        <div key={building.id}>
-                          <RadioGroupItem
-                            value={building.id}
-                            id={`building-${building.id}`}
-                            className="peer sr-only"
-                          />
-                          <Label
-                            htmlFor={`building-${building.id}`}
-                            className={cn(
-                              "flex items-center gap-2 p-4 rounded-lg border cursor-pointer",
-                              "hover:bg-accent hover:text-accent-foreground",
-                              "peer-data-[state=checked]:border-primary",
-                              "peer-data-[state=checked]:bg-primary/5"
-                            )}
-                          >
-                            <Building2 className="h-4 w-4" />
-                            <div>
-                              <div className="font-medium">{building.name}</div>
-                              <div className="text-xs text-muted-foreground">{building.address}</div>
-                            </div>
-                          </Label>
-                        </div>
-                      ))}
-                    </RadioGroup>
-                  </div>
-
-                  {selectedBuilding && (
-                    <div className="space-y-4 animate-fade-in">
-                      <h4 className="font-medium">Select Floor</h4>
+                    {isLoadingBuildings ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      </div>
+                    ) : (
                       <RadioGroup
-                        value={selectedFloor || ''}
-                        onValueChange={handleFloorSelect}
-                        className="grid grid-cols-2 md:grid-cols-4 gap-2"
+                        value={form.watch('building_id') || ''}
+                        onValueChange={handleBuildingSelect}
+                        className="grid grid-cols-1 md:grid-cols-2 gap-2 z-10"
                       >
-                        {floors.map((floor) => (
-                          <div key={floor.id}>
+                        {buildings.map((building) => (
+                          <div key={building.id} className="relative">
                             <RadioGroupItem
-                              value={floor.id}
-                              id={`floor-${floor.id}`}
+                              value={building.id}
+                              id={`building-${building.id}`}
                               className="peer sr-only"
                             />
                             <Label
-                              htmlFor={`floor-${floor.id}`}
+                              htmlFor={`building-${building.id}`}
                               className={cn(
-                                "flex items-center justify-center p-4 rounded-lg border cursor-pointer",
+                                "flex items-center gap-2 p-4 rounded-lg border cursor-pointer",
                                 "hover:bg-accent hover:text-accent-foreground",
                                 "peer-data-[state=checked]:border-primary",
                                 "peer-data-[state=checked]:bg-primary/5"
                               )}
                             >
-                              {floor.name}
+                              <Building2 className="h-4 w-4" />
+                              <div>
+                                <div className="font-medium">{building.name}</div>
+                                <div className="text-xs text-muted-foreground">{building.address}</div>
+                              </div>
                             </Label>
                           </div>
                         ))}
                       </RadioGroup>
+                    )}
+                  </div>
+
+                  {form.watch('building_id') && (
+                    <div className="space-y-4 animate-fade-in">
+                      <h4 className="font-medium">Select Floor</h4>
+                      {isLoadingFloors ? (
+                        <div className="flex items-center justify-center py-4">
+                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                        </div>
+                      ) : (
+                        <RadioGroup
+                          value={form.watch('floor_id') || ''}
+                          onValueChange={handleFloorSelect}
+                          className="grid grid-cols-2 md:grid-cols-4 gap-2 z-20"
+                        >
+                          {floors.length > 0 ? (
+                            floors.map((floor) => (
+                              <div key={floor.id} className="relative">
+                                <RadioGroupItem
+                                  value={floor.id}
+                                  id={`floor-${floor.id}`}
+                                  className="peer sr-only"
+                                />
+                                <Label
+                                  htmlFor={`floor-${floor.id}`}
+                                  className={cn(
+                                    "flex items-center justify-center p-4 rounded-lg border cursor-pointer",
+                                    "hover:bg-accent hover:text-accent-foreground",
+                                    "peer-data-[state=checked]:border-primary",
+                                    "peer-data-[state=checked]:bg-primary/5"
+                                  )}
+                                >
+                                  {floor.name}
+                                </Label>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="col-span-full text-center text-muted-foreground py-2">
+                              No floors found for this building
+                            </div>
+                          )}
+                        </RadioGroup>
+                      )}
                     </div>
                   )}
 
-                  {selectedFloor && (
+                  {form.watch('floor_id') && (
                     <div className="space-y-4 animate-fade-in">
                       <h4 className="font-medium">Select Room</h4>
-                      <ScrollArea className="h-[200px]">
-                        <RadioGroup
-                          value={form.watch('room_id') || ''}
-                          onValueChange={handleRoomSelect}
-                          className="grid grid-cols-1 md:grid-cols-2 gap-2 pr-4"
-                        >
-                          {rooms.map((room) => (
-                            <div key={room.id}>
-                              <RadioGroupItem
-                                value={room.id}
-                                id={`room-${room.id}`}
-                                className="peer sr-only"
-                              />
-                              <Label
-                                htmlFor={`room-${room.id}`}
-                                className={cn(
-                                  "flex items-center gap-2 p-4 rounded-lg border cursor-pointer",
-                                  "hover:bg-accent hover:text-accent-foreground",
-                                  "peer-data-[state=checked]:border-primary",
-                                  "peer-data-[state=checked]:bg-primary/5"
-                                )}
-                              >
-                                <DoorClosed className="h-4 w-4" />
-                                <div>
-                                  <div className="font-medium">{room.name}</div>
-                                  <div className="text-xs text-muted-foreground">Room {room.room_number}</div>
+                      {isLoadingRooms ? (
+                        <div className="flex items-center justify-center py-4">
+                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                        </div>
+                      ) : (
+                        <ScrollArea className="h-[200px]">
+                          <div className="pr-4">
+                            <RadioGroup
+                              value={form.watch('room_id') || ''}
+                              onValueChange={handleRoomSelect}
+                              className="grid grid-cols-1 md:grid-cols-2 gap-2 z-30"
+                            >
+                              {rooms.length > 0 ? (
+                                rooms.map((room) => (
+                                  <div key={room.id} className="relative">
+                                    <RadioGroupItem
+                                      value={room.id}
+                                      id={`room-${room.id}`}
+                                      className="peer sr-only"
+                                    />
+                                    <Label
+                                      htmlFor={`room-${room.id}`}
+                                      className={cn(
+                                        "flex items-center gap-2 p-4 rounded-lg border cursor-pointer",
+                                        "hover:bg-accent hover:text-accent-foreground",
+                                        "peer-data-[state=checked]:border-primary",
+                                        "peer-data-[state=checked]:bg-primary/5"
+                                      )}
+                                    >
+                                      <DoorClosed className="h-4 w-4" />
+                                      <div>
+                                        <div className="font-medium">{room.name}</div>
+                                        <div className="text-xs text-muted-foreground">Room {room.room_number}</div>
+                                      </div>
+                                    </Label>
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="col-span-full text-center text-muted-foreground py-2">
+                                  No rooms found on this floor
                                 </div>
-                              </Label>
-                            </div>
-                          ))}
-                        </RadioGroup>
-                      </ScrollArea>
+                              )}
+                            </RadioGroup>
+                          </div>
+                        </ScrollArea>
+                      )}
                     </div>
                   )}
                 </div>
@@ -513,6 +560,7 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
                       "relative p-6 rounded-lg border-2 transition-all duration-200",
                       "hover:scale-105 hover:shadow-lg",
                       "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+                      "z-0",
                       form.watch('issue_type') === type.id
                         ? "border-primary bg-primary/5"
                         : "border-muted bg-card hover:border-primary/50"
@@ -627,7 +675,7 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
             >
               {createIssueMutation.isPending ? (
                 <>
-                  <AlertTriangle className="mr-2 h-4 w-4" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Submitting...
                 </>
               ) : (
@@ -638,7 +686,7 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
             <Button
               type="button"
               onClick={handleNext}
-              disabled={!useAssignedRoom && !form.watch('room_id')}
+              disabled={isNextButtonDisabled()}
             >
               Next
               <ChevronRight className="ml-2 h-4 w-4" />

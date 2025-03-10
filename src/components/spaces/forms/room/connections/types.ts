@@ -50,3 +50,10 @@ export interface DirectionTypes {
   left: string;
   right: string;
 }
+
+export interface SelectableOption {
+  id: string;
+  value: string;
+  label: string;
+  disabled?: boolean;
+}
