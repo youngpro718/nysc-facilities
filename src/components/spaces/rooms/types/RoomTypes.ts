@@ -1,7 +1,6 @@
 
 import { StatusEnum, RoomTypeEnum, StorageTypeEnum, RoomTypeString, StorageTypeString } from "./roomEnums";
 
-// Accept either the enum or the string literal type
 export type RoomType = RoomTypeEnum | RoomTypeString;
 export type StorageType = StorageTypeEnum | StorageTypeString;
 
@@ -38,15 +37,14 @@ export interface Room {
   updated_at: string;
   function_change_date?: string;
   previous_functions?: any[];
-  position?: { x: number; y: number } | any;
-  size?: { width: number; height: number } | any;
+  position?: { x: number; y: number };
+  size?: { width: number; height: number };
   rotation?: number;
   courtroom_photos?: {
     judge_view?: string | null;
     audience_view?: string | null;
-  } | any;
+  };
   
-  // Relationships
   floor?: {
     id: string;
     name: string;
@@ -55,11 +53,5 @@ export interface Room {
       name: string;
     }
   };
-  
-  // Related data
-  lighting_fixture?: any;
   space_connections?: RoomConnection[];
-  issues?: any[];
-  room_history?: any[];
-  current_occupants?: any[];
 }

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -14,11 +13,12 @@ import { Room } from "../rooms/types/RoomTypes";
 import { Badge } from "@/components/ui/badge";
 
 interface RoomPageParams {
-  buildingId?: string;
-  floorId?: string;
+  [key: string]: string;
+  buildingId: string;
+  floorId: string;
 }
 
-export function RoomsPage() {
+export default function RoomsPage() {
   const params = useParams<RoomPageParams>();
   const [view, setView] = useState<"grid" | "list">("grid");
   const [activeTab, setActiveTab] = useState("all");
@@ -31,7 +31,6 @@ export function RoomsPage() {
     selectedFloor: params.floorId
   });
 
-  // Filter and sort rooms
   const filteredRooms = rooms?.filter(room => {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -49,7 +48,6 @@ export function RoomsPage() {
     return true;
   }) || [];
 
-  // Sort rooms
   const sortedRooms = [...filteredRooms].sort((a, b) => {
     if (sortBy === "name") {
       return sortOrder === "asc" 
@@ -81,7 +79,6 @@ export function RoomsPage() {
     }
   };
 
-  // List view row renderer
   const renderRow = (room: Room) => [
     <TableCell key="name">{room.name}</TableCell>,
     <TableCell key="number">{room.room_number}</TableCell>,

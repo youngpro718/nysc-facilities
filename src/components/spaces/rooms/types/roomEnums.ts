@@ -32,7 +32,6 @@ export enum StorageTypeEnum {
   ARCHIVE = "archive"
 }
 
-// Type definitions for string literals that match enum values
 export type RoomTypeString = 
   | "office" 
   | "courtroom" 
