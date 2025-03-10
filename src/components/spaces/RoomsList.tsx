@@ -126,7 +126,7 @@ const RoomsList = ({ selectedBuilding, selectedFloor }: RoomsListProps) => {
       <RoomsContent
         isLoading={isLoading}
         rooms={rooms || []}
-        filteredRooms={filteredAndSortedRooms} // Added the filteredRooms prop
+        filteredRooms={filteredAndSortedRooms} // Pass the filtered rooms
         view={view}
         onDelete={(id) => {
           if (window.confirm('Are you sure you want to delete this room? This action cannot be undone.')) {

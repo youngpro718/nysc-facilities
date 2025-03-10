@@ -1,152 +1,215 @@
 
-import React, { useState, useMemo } from 'react';
-import { useRoomsQuery } from "../hooks/queries/useRoomsQuery";
-import { filterSpaces, SortOption } from "../utils/spaceFilters";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
-import { FilterBar } from "../rooms/components/FilterBar";
-import { RoomsContent } from "../rooms/components/RoomsContent";
 import { Room } from "../rooms/types/RoomTypes";
+import { GridView } from "./GridView";
+import { ListView } from "./ListView";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Search, Plus, RefreshCcw, Grid, List } from "lucide-react";
+import { StatusEnum } from "../rooms/types/roomEnums";
+import { CreateSpaceDialog } from "../CreateSpaceDialog";
+import { RoomTable } from "../rooms/RoomTable";
 
-export function RoomsPage() {
+// Define SortOption type to include all possible sorting options
+type SortOption = 
+  | "name_asc" 
+  | "name_desc" 
+  | "status_asc" 
+  | "status_desc" 
+  | "room_number_asc" 
+  | "room_number_desc"
+  | "type_asc"
+  | "type_desc";
+
+interface RoomsPageProps {
+  selectedBuilding: string;
+  selectedFloor: string;
+}
+
+export function RoomsPage({ selectedBuilding, selectedFloor }: RoomsPageProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("name_asc");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [view, setView] = useState<"grid" | "list">("grid");
-  const [roomTypeFilter, setRoomTypeFilter] = useState("");
-  
-  const queryClient = useQueryClient();
-  const { data: rooms, isLoading, error } = useRoomsQuery();
+  const [view, setView] = useState<"grid" | "list" | "table">("grid");
 
-  const deleteRoomMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("rooms").delete().eq("id", id);
+  const { data: rooms, isLoading, refetch } = useQuery({
+    queryKey: ["rooms", selectedBuilding, selectedFloor],
+    queryFn: async () => {
+      let query = supabase
+        .from("rooms")
+        .select(`
+          *,
+          floor:floor_id (
+            id,
+            name,
+            building:building_id (
+              id,
+              name
+            )
+          ),
+          space_connections:space_connections (
+            id,
+            from_space_id,
+            to_space_id,
+            connection_type,
+            direction,
+            status,
+            to_space:to_space_id (
+              id,
+              name,
+              type
+            )
+          )
+        `);
+
+      if (selectedBuilding !== "all") {
+        query = query.eq("floor.building.id", selectedBuilding);
+      }
+
+      if (selectedFloor !== "all") {
+        query = query.eq("floor_id", selectedFloor);
+      }
+
+      const { data, error } = await query;
+
       if (error) throw error;
-      return id;
-    },
-    onSuccess: (id) => {
-      queryClient.invalidateQueries({ queryKey: ["rooms"] });
-      toast.success("Room deleted successfully");
-    },
-    onError: (error) => {
-      console.error("Error deleting room:", error);
-      toast.error("Failed to delete room");
+      return data as Room[];
     },
   });
 
-  const handleDelete = (id: string) => {
-    if (window.confirm("Are you sure you want to delete this room?")) {
-      deleteRoomMutation.mutate(id);
+  const filteredRooms = rooms
+    ? rooms.filter((room) => {
+        // Apply status filter
+        if (statusFilter !== "all" && room.status !== statusFilter) {
+          return false;
+        }
+
+        // Apply search filter
+        if (searchQuery) {
+          const query = searchQuery.toLowerCase();
+          return (
+            room.name.toLowerCase().includes(query) ||
+            room.room_number.toLowerCase().includes(query) ||
+            (room.description?.toLowerCase().includes(query) || false)
+          );
+        }
+
+        return true;
+      })
+    : [];
+
+  const sortedRooms = [...filteredRooms].sort((a, b) => {
+    if (sortBy === "name_asc") return a.name.localeCompare(b.name);
+    if (sortBy === "name_desc") return b.name.localeCompare(a.name);
+    if (sortBy === "status_asc") return a.status.localeCompare(b.status);
+    if (sortBy === "status_desc") return b.status.localeCompare(a.status);
+    if (sortBy === "room_number_asc") return a.room_number.localeCompare(b.room_number);
+    if (sortBy === "room_number_desc") return b.room_number.localeCompare(a.room_number);
+    if (sortBy === "type_asc") return (a.room_type || "").localeCompare(b.room_type || "");
+    if (sortBy === "type_desc") return (b.room_type || "").localeCompare(a.room_type || "");
+    return 0;
+  });
+
+  const renderContent = () => {
+    if (isLoading) {
+      return <div className="text-center p-8">Loading rooms...</div>;
     }
-  };
 
-  // Apply filters and sorting
-  const filteredRooms = useMemo(() => {
-    if (!rooms) return [];
-
-    let filtered = [...rooms];
-    
-    // Apply search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(room => 
-        room.name.toLowerCase().includes(query) || 
-        room.room_number?.toLowerCase().includes(query) ||
-        room.room_type.toLowerCase().includes(query)
+    if (!sortedRooms.length) {
+      return (
+        <div className="text-center p-8">
+          <p className="mb-4">No rooms found.</p>
+          <CreateSpaceDialog />
+        </div>
       );
     }
-    
-    // Apply status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(room => room.status.toLowerCase() === statusFilter.toLowerCase());
+
+    if (view === "grid") {
+      return <GridView rooms={sortedRooms} />;
+    } else if (view === "list") {
+      return <ListView rooms={sortedRooms} />;
+    } else {
+      return <RoomTable rooms={sortedRooms} onDelete={() => {}} />;
     }
-    
-    // Apply room type filter
-    if (roomTypeFilter) {
-      filtered = filtered.filter(room => 
-        room.room_type.toLowerCase() === roomTypeFilter.toLowerCase()
-      );
-    }
-    
-    // Apply sorting
-    filtered = sortRooms(filtered, sortBy);
-    
-    return filtered;
-  }, [rooms, searchQuery, statusFilter, sortBy, roomTypeFilter]);
-
-  // Sort rooms based on selected sort option
-  const sortRooms = (rooms: Room[], sortOption: SortOption): Room[] => {
-    return [...rooms].sort((a, b) => {
-      switch (sortOption) {
-        case 'name_asc':
-          return a.name.localeCompare(b.name);
-        case 'name_desc':
-          return b.name.localeCompare(a.name);
-        case 'room_number_asc':
-          return (a.room_number || '').localeCompare(b.room_number || '');
-        case 'room_number_desc':
-          return (b.room_number || '').localeCompare(a.room_number || '');
-        case 'created_desc':
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-        case 'created_asc':
-          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-        default:
-          return 0;
-      }
-    });
   };
-
-  // Count courtrooms for quick filter
-  const courtRoomCount = useMemo(() => {
-    return rooms?.filter(room => room.room_type.toLowerCase() === 'courtroom').length || 0;
-  }, [rooms]);
-
-  // Handle quick filter for specific room types
-  const handleQuickFilter = (filter: string) => {
-    setRoomTypeFilter(prev => prev === filter ? '' : filter);
-  };
-
-  if (error) {
-    return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>
-          Failed to load rooms: {error instanceof Error ? error.message : "Unknown error"}
-        </AlertDescription>
-      </Alert>
-    );
-  }
 
   return (
-    <div className="space-y-6">
-      <FilterBar
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        sortBy={sortBy}
-        onSortChange={setSortBy}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
-        view={view}
-        onViewChange={setView}
-        onRefresh={() => queryClient.invalidateQueries({ queryKey: ["rooms"] })}
-        roomTypeFilter={roomTypeFilter}
-        onRoomTypeFilterChange={setRoomTypeFilter}
-        onQuickFilter={handleQuickFilter}
-        courtRoomCount={courtRoomCount}
-      />
+    <div className="space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row justify-between">
+        <div className="flex-1 flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search rooms..."
+              className="pl-8"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <Select
+            value={sortBy}
+            onValueChange={(value: string) => setSortBy(value as SortOption)}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name_asc">Name (A-Z)</SelectItem>
+              <SelectItem value="name_desc">Name (Z-A)</SelectItem>
+              <SelectItem value="room_number_asc">Room Number (Asc)</SelectItem>
+              <SelectItem value="room_number_desc">Room Number (Desc)</SelectItem>
+              <SelectItem value="status_asc">Status (A-Z)</SelectItem>
+              <SelectItem value="status_desc">Status (Z-A)</SelectItem>
+              <SelectItem value="type_asc">Type (A-Z)</SelectItem>
+              <SelectItem value="type_desc">Type (Z-A)</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select
+            value={statusFilter}
+            onValueChange={setStatusFilter}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value={StatusEnum.ACTIVE}>Active</SelectItem>
+              <SelectItem value={StatusEnum.INACTIVE}>Inactive</SelectItem>
+              <SelectItem value={StatusEnum.UNDER_MAINTENANCE}>
+                Under Maintenance
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex gap-2 items-center">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setView("grid")}
+            className={view === "grid" ? "bg-muted" : ""}
+          >
+            <Grid className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setView("list")}
+            className={view === "list" ? "bg-muted" : ""}
+          >
+            <List className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="icon" onClick={() => refetch()}>
+            <RefreshCcw className="h-4 w-4" />
+          </Button>
+          <CreateSpaceDialog />
+        </div>
+      </div>
 
-      <RoomsContent
-        isLoading={isLoading}
-        rooms={rooms || []}
-        filteredRooms={filteredRooms}
-        view={view}
-        onDelete={handleDelete}
-        searchQuery={searchQuery}
-      />
+      {renderContent()}
     </div>
   );
 }
