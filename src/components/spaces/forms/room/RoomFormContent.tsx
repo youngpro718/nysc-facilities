@@ -9,6 +9,7 @@ import { ParentRoomField } from "./ParentRoomField";
 import { type RoomFormData } from "./RoomFormSchema";
 import { Separator } from "@/components/ui/separator";
 import { ConnectionsField } from "./ConnectionsField";
+import { CourtroomPhotoUpload } from "./CourtroomPhotoUpload";
 import { toast } from "sonner";
 import { FormButtons } from "@/components/ui/form-buttons";
 
@@ -28,6 +29,7 @@ export function RoomFormContent({
 }: RoomFormContentProps) {
   const isStorage = form.watch("isStorage");
   const floorId = form.watch("floorId");
+  const roomType = form.watch("roomType");
   
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,6 +77,14 @@ export function RoomFormContent({
           <>
             <Separator />
             <StorageFields form={form} />
+          </>
+        )}
+
+        {/* Add courtroom photo upload if room type is courtroom */}
+        {roomType === "courtroom" && (
+          <>
+            <Separator />
+            <CourtroomPhotoUpload form={form} />
           </>
         )}
 

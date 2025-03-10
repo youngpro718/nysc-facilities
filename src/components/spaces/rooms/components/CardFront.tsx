@@ -10,6 +10,7 @@ import { LightingStatusIndicator } from "./LightingStatusIndicator";
 import { HallwayConnections } from "./HallwayConnections";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRoomOccupants } from "../../hooks/useRoomOccupants";
+import { CourtroomPhotos } from "./CourtroomPhotos";
 
 interface CardFrontProps {
   room: Room;
@@ -56,7 +57,11 @@ export function CardFront({ room, onDelete }: CardFrontProps) {
     storageNotes: room.storage_notes || "",
     parentRoomId: room.parent_room_id || null,
     currentFunction: room.current_function || "",
+    courtRoomPhotos: room.courtroom_photos
   };
+
+  // Display courtroom photos if the room is a courtroom
+  const isCourtroom = room.room_type === RoomTypeEnum.COURTROOM;
 
   return (
     <Card className="absolute w-full h-full backface-hidden">
@@ -110,6 +115,11 @@ export function CardFront({ room, onDelete }: CardFrontProps) {
               <HallwayConnections connections={room.space_connections} />
             )}
           </div>
+
+          {/* Add courtroom photos if this is a courtroom */}
+          {isCourtroom && room.courtroom_photos && (
+            <CourtroomPhotos photos={room.courtroom_photos} />
+          )}
 
           <div className="space-y-2">
             <div className="flex items-center gap-2">

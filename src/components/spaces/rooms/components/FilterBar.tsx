@@ -1,10 +1,11 @@
 
 import React from 'react';
-import { RefreshCw, Search } from 'lucide-react';
+import { RefreshCw, Search, GavelSquare } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ViewToggle } from "../../ViewToggle";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface FilterBarProps {
   searchQuery: string;
@@ -16,6 +17,10 @@ interface FilterBarProps {
   view: "grid" | "list";
   onViewChange: (view: "grid" | "list") => void;
   onRefresh?: () => void;
+  roomTypeFilter?: string;
+  onRoomTypeFilterChange?: (value: string) => void;
+  onQuickFilter?: (filter: string) => void;
+  courtRoomCount?: number;
 }
 
 export function FilterBar({
@@ -27,7 +32,11 @@ export function FilterBar({
   onStatusFilterChange,
   view,
   onViewChange,
-  onRefresh
+  onRefresh,
+  roomTypeFilter,
+  onRoomTypeFilterChange,
+  onQuickFilter,
+  courtRoomCount = 0
 }: FilterBarProps) {
   return (
     <div className="space-y-4">
@@ -80,6 +89,37 @@ export function FilterBar({
             )}
           </div>
         </div>
+      </div>
+      
+      {/* Quick filters */}
+      <div className="flex flex-wrap gap-2">
+        {onQuickFilter && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onQuickFilter('courtroom')}
+            className="flex items-center gap-1"
+          >
+            <GavelSquare className="h-4 w-4" />
+            <span>Courtrooms</span>
+            {courtRoomCount > 0 && (
+              <Badge variant="secondary" className="ml-1 text-xs">
+                {courtRoomCount}
+              </Badge>
+            )}
+          </Button>
+        )}
+        
+        {roomTypeFilter && onRoomTypeFilterChange && (
+          <Badge 
+            variant="outline" 
+            className="flex items-center cursor-pointer"
+            onClick={() => onRoomTypeFilterChange('')}
+          >
+            {roomTypeFilter}
+            <span className="ml-1 text-xs">×</span>
+          </Badge>
+        )}
       </div>
     </div>
   );

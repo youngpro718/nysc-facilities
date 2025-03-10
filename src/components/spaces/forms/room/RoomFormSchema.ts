@@ -10,6 +10,12 @@ export const roomConnectionSchema = z.object({
   direction: z.string().optional()
 });
 
+// Define the courtroom photos schema
+export const courtRoomPhotosSchema = z.object({
+  judge_view: z.string().nullable().optional(),
+  audience_view: z.string().nullable().optional()
+});
+
 export const roomFormSchema = z.object({
   id: z.string().uuid().optional(),
   name: z.string().min(1, "Name is required"),
@@ -36,7 +42,8 @@ export const roomFormSchema = z.object({
     width: z.number(),
     height: z.number()
   }).optional(),
-  rotation: z.number().optional()
+  rotation: z.number().optional(),
+  courtRoomPhotos: courtRoomPhotosSchema.optional()
 });
 
 export type RoomFormData = z.infer<typeof roomFormSchema>;

@@ -5062,6 +5062,7 @@ export type Database = {
       rooms: {
         Row: {
           capacity: number | null
+          courtroom_photos: Json | null
           created_at: string | null
           current_function: string | null
           current_occupancy: number | null
@@ -5090,6 +5091,7 @@ export type Database = {
         }
         Insert: {
           capacity?: number | null
+          courtroom_photos?: Json | null
           created_at?: string | null
           current_function?: string | null
           current_occupancy?: number | null
@@ -5118,6 +5120,7 @@ export type Database = {
         }
         Update: {
           capacity?: number | null
+          courtroom_photos?: Json | null
           created_at?: string | null
           current_function?: string | null
           current_occupancy?: number | null
@@ -7155,6 +7158,12 @@ export type Database = {
       is_admin: {
         Args: {
           user_id: string
+        }
+        Returns: boolean
+      }
+      is_courtroom: {
+        Args: {
+          room_type: string
         }
         Returns: boolean
       }

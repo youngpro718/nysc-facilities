@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -41,12 +40,11 @@ export function EditSpaceDialog({
   const open = controlledOpen ?? internalOpen;
   const setOpen = controlledSetOpen ?? setInternalOpen;
 
-  // Prepare the form with the transformed data that matches the schema
   const form = useForm<RoomFormData>({
     resolver: zodResolver(roomFormSchema),
     defaultValues: {
       ...initialData,
-      type: type === "room" ? "room" : "hallway", // Ensure type is set correctly
+      type: type === "room" ? "room" : "hallway",
       connections: initialData?.space_connections || initialData?.connections || []
     },
   });
@@ -55,13 +53,11 @@ export function EditSpaceDialog({
     if (open && initialData) {
       console.log("Resetting form with initial data:", initialData);
       
-      // Transform connections data structure if needed
       const connections = initialData.space_connections || initialData.connections || [];
       
-      // Reset form with properly structured data
       form.reset({
         ...initialData,
-        type: type === "room" ? "room" : "hallway", // Ensure type is set
+        type: type === "room" ? "room" : "hallway",
         connections: connections.map((conn: any) => ({
           id: conn.id,
           toSpaceId: conn.to_space_id || conn.toSpaceId,
@@ -92,6 +88,7 @@ export function EditSpaceDialog({
         current_function: data.currentFunction,
         phone_number: data.phoneNumber,
         floor_id: data.floorId,
+        courtroom_photos: data.courtRoomPhotos
       };
 
       console.log("Room update data:", updateData);
