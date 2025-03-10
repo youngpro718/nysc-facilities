@@ -1,169 +1,124 @@
 
 import { useState } from "react";
-import { useRoomsQuery } from "../hooks/queries/useRoomsQuery";
-import { Room } from "../rooms/types/RoomTypes";
-import { RoomsList } from "../RoomsList";
-import { Button } from "@/components/ui/button";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { EditSpaceDialog } from "../EditSpaceDialog";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import { FilterBar } from "../rooms/components/FilterBar";
+import { RoomsContent } from "../rooms/components/RoomsContent";
+import { useRoomFilters } from "../hooks/useRoomFilters";
+import { useRoomsQuery } from "../hooks/queries/useRoomsQuery";
 import { deleteSpace } from "../services/deleteSpace";
+import RoomsList from "../RoomsList";
 
-// Define SortOption type for the sorting dropdown
-export type SortOption = "name_asc" | "name_desc" | "room_number_asc" | "room_number_desc" | "type_asc" | "type_desc";
+// Define a type for sort options to fix the TS error
+export type SortOption = 
+  | "name_asc" 
+  | "name_desc" 
+  | "status_asc" 
+  | "status_desc"
+  | "room_number_asc"
+  | "room_number_desc"
+  | "room_type_asc"
+  | "room_type_desc";
 
 interface RoomsPageProps {
-  selectedBuilding?: string;
-  selectedFloor?: string;
+  selectedBuilding: string;
+  selectedFloor: string;
 }
 
-export function RoomsPage({ selectedBuilding, selectedFloor }: RoomsPageProps) {
+const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
   const { toast } = useToast();
-  const [sortOption, setSortOption] = useState<SortOption>("name_asc");
-  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  
-  const { data: rooms = [], isLoading } = useRoomsQuery({
-    buildingId: selectedBuilding !== "all" ? selectedBuilding : undefined,
-    floorId: selectedFloor !== "all" ? selectedFloor : undefined,
+  const queryClient = useQueryClient();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("name_asc");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [view, setView] = useState<"grid" | "list">("grid");
+
+  const { data: rooms, isLoading, error, refetch } = useRoomsQuery({
+    buildingId: selectedBuilding === 'all' ? undefined : selectedBuilding,
+    floorId: selectedFloor === 'all' ? undefined : selectedFloor,
   });
   
-  const sortedRooms = [...rooms].sort((a, b) => {
-    if (sortOption === "name_asc") {
-      return a.name.localeCompare(b.name);
-    }
-    if (sortOption === "name_desc") {
-      return b.name.localeCompare(a.name);
-    }
-    if (sortOption === "room_number_asc") {
-      return a.room_number.localeCompare(b.room_number);
-    }
-    if (sortOption === "room_number_desc") {
-      return b.room_number.localeCompare(a.room_number);
-    }
-    if (sortOption === "type_asc") {
-      return a.room_type.localeCompare(b.room_type);
-    }
-    if (sortOption === "type_desc") {
-      return b.room_type.localeCompare(a.room_type);
-    }
-    return 0;
+  const { filteredAndSortedRooms } = useRoomFilters({
+    rooms,
+    searchQuery,
+    sortBy,
+    statusFilter,
+    selectedBuilding,
+    selectedFloor,
   });
 
-  const handleDeleteRoom = async (id: string) => {
-    if (!id) return;
-    
-    try {
-      setIsDeleting(true);
-      await deleteSpace(id, 'room');
+  const deleteRoomMutation = useMutation({
+    mutationFn: (roomId: string) => deleteSpace(roomId, 'room'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
       toast({
         title: "Room deleted",
-        description: "The room has been successfully deleted",
+        description: "The room has been successfully deleted.",
       });
-      // Clear selection if the deleted room was selected
-      if (selectedRoom?.id === id) {
-        setSelectedRoom(null);
-      }
-    } catch (error) {
-      console.error("Error deleting room:", error);
+    },
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: "Failed to delete room",
+        description: error.message || "Failed to delete room. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsDeleting(false);
-    }
+      console.error('Error deleting room:', error);
+    },
+  });
+
+  const handleRefresh = () => {
+    refetch();
+    toast({
+      title: "Refreshed",
+      description: "Room list has been refreshed.",
+    });
   };
 
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <h3 className="text-xl font-medium">
-          {rooms.length} Room{rooms.length !== 1 ? "s" : ""}
-        </h3>
-        <div className="flex items-center gap-2">
-          <Select 
-            value={sortOption} 
-            onValueChange={(value: SortOption) => setSortOption(value)}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Sort by..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="name_asc">Name (A-Z)</SelectItem>
-              <SelectItem value="name_desc">Name (Z-A)</SelectItem>
-              <SelectItem value="room_number_asc">Room # (Asc)</SelectItem>
-              <SelectItem value="room_number_desc">Room # (Desc)</SelectItem>
-              <SelectItem value="type_asc">Type (A-Z)</SelectItem>
-              <SelectItem value="type_desc">Type (Z-A)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+  const handleSort = (value: string) => {
+    setSortBy(value as SortOption);
+  };
 
-      <RoomsList
-        rooms={sortedRooms}
-        isLoading={isLoading}
-        onSelectRoom={setSelectedRoom}
-        selectedRoomId={selectedRoom?.id}
-        onDeleteRoom={handleDeleteRoom}
-        isDeleting={isDeleting}
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Error loading rooms: {(error as Error).message}
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <FilterBar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        sortBy={sortBy}
+        onSortChange={handleSort}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        view={view}
+        onViewChange={setView}
+        onRefresh={handleRefresh}
       />
 
-      {selectedRoom && (
-        <div className="mt-6 bg-card rounded-lg p-4 border">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-medium">{selectedRoom.name}</h3>
-            <div className="flex gap-2">
-              <EditSpaceDialog 
-                id={selectedRoom.id} 
-                type="room" 
-                initialData={selectedRoom}
-              />
-              <Button 
-                variant="destructive" 
-                size="sm" 
-                onClick={() => handleDeleteRoom(selectedRoom.id)}
-                disabled={isDeleting}
-              >
-                {isDeleting ? "Deleting..." : "Delete"}
-              </Button>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Room Number</p>
-              <p>{selectedRoom.room_number}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Type</p>
-              <p className="capitalize">{selectedRoom.room_type.replace(/_/g, ' ')}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Status</p>
-              <p className="capitalize">{selectedRoom.status.replace(/_/g, ' ')}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Floor</p>
-              <p>{selectedRoom.floor?.name}</p>
-            </div>
-            {selectedRoom.description && (
-              <div className="col-span-2">
-                <p className="text-sm text-muted-foreground">Description</p>
-                <p>{selectedRoom.description}</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <RoomsContent
+        isLoading={isLoading}
+        rooms={rooms || []}
+        filteredRooms={filteredAndSortedRooms}
+        view={view}
+        onDelete={(id) => {
+          if (window.confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
+            deleteRoomMutation.mutate(id);
+          }
+        }}
+        searchQuery={searchQuery}
+      />
     </div>
   );
-}
+};
+
+export default RoomsPage;

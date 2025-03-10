@@ -102,9 +102,11 @@ export function EditSpaceDialog({
       };
 
       console.log("Room update data:", updateData);
+      
+      // Cast room_type to any to bypass the type check for Supabase
       const { error: roomError } = await supabase
         .from("rooms")
-        .update(updateData)
+        .update(updateData as any)
         .eq('id', id);
 
       if (roomError) {
