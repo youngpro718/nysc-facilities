@@ -1,148 +1,184 @@
-import { useState, useMemo } from "react";
-import { useRoomsQuery } from "../hooks/queries/useRoomsQuery";
-import { SpaceListFilters } from "../SpaceListFilters";
-import { filterSpaces, sortSpaces } from "../utils/spaceFilters";
-import { Room } from "../rooms/types/RoomTypes";
-import { EditSpaceDialog } from "../EditSpaceDialog";
-import { Button } from "@/components/ui/button";
-import { GridView } from "../views/GridView";
-import { ListView } from "../views/ListView";
-import { TableCell, TableHead } from "@/components/ui/table";
-import RoomCard from "../rooms/RoomCard";
+import { useState, useEffect } from 'react';
+import { useParams, useLocation } from 'react-router-dom';
+import { GridView } from '../views/GridView';
+import { ListView } from '../views/ListView';
+import { RoomCard } from '../rooms/RoomCard';
+import { useRoomsQuery } from '../hooks/queries/useRoomsQuery';
+import { 
+  Alert,
+  AlertDescription 
+} from "@/components/ui/alert";
+import { AlertCircle, ArrowUp, ArrowDown } from 'lucide-react';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { Room } from '../../rooms/types/RoomTypes';
 
-// Define proper types for sort options
-type SortOption = 
-  | "name_asc" 
-  | "name_desc" 
-  | "status_asc" 
-  | "status_desc"
-  | "room_number_asc" 
-  | "room_number_desc"; 
+interface RoomParams {
+  buildingId: string;
+  floorId: string;
+}
+
+const sortRooms = (rooms: Room[], sortBy: string): Room[] => {
+  const sortedRooms = [...rooms];
+
+  switch (sortBy) {
+    case 'name_asc':
+      sortedRooms.sort((a, b) => a.name.localeCompare(b.name));
+      break;
+    case 'name_desc':
+      sortedRooms.sort((a, b) => b.name.localeCompare(a.name));
+      break;
+    case 'room_number_asc':
+      sortedRooms.sort((a, b) => a.room_number.localeCompare(b.room_number));
+      break;
+    case 'room_number_desc':
+      sortedRooms.sort((a, b) => b.room_number.localeCompare(a.room_number));
+      break;
+    default:
+      break;
+  }
+
+  return sortedRooms;
+};
 
 const RoomsPage = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState<SortOption>("name_asc");
-  const [view, setView] = useState<"grid" | "list">("grid");
-  const { buildingId, floorId } = useParams();
+  const { buildingId, floorId } = useParams<RoomParams>();
   const location = useLocation();
+  const [view, setView] = useState<'grid' | 'list'>('grid');
+  const [sortBy, setSortBy] = useState('name_asc');
+  const [statusFilter, setStatusFilter] = useState('all');
 
-  // Use the proper query hook
-  const { data: rooms, isLoading, error } = useRoomsQuery({
-    buildingId: buildingId === 'all' ? undefined : buildingId,
-    floorId: floorId === 'all' ? undefined : floorId,
+  const { data: rooms, isLoading, isError, error } = useRoomsQuery({
+    buildingId,
+    floorId,
   });
 
-  // Filtering function
-  const filteredRooms = rooms?.filter(room => 
-    room.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    room.room_number.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
-
-  // Sorting function
-  const sortedRooms = [...filteredRooms].sort((a, b) => {
-    if (sortBy === "name_asc") return a.name.localeCompare(b.name);
-    if (sortBy === "name_desc") return b.name.localeCompare(a.name);
-    if (sortBy === "status_asc") return a.status.localeCompare(b.status);
-    if (sortBy === "status_desc") return b.status.localeCompare(a.status);
-    if (sortBy === "room_number_asc") return a.room_number.localeCompare(b.room_number);
-    if (sortBy === "room_number_desc") return b.room_number.localeCompare(a.room_number);
-    return 0;
-  });
-  
-  // Reset search when location changes
   useEffect(() => {
-    setSearchTerm("");
-  }, [location]);
+    const params = new URLSearchParams(location.search);
+    const viewParam = params.get('view');
+    if (viewParam === 'grid' || viewParam === 'list') {
+      setView(viewParam);
+    }
+  }, [location.search]);
 
-  if (error) {
+  if (isLoading) {
+    return <div>Loading rooms...</div>;
+  }
+
+  if (isError) {
     return (
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          Error loading rooms: {(error as Error).message}
+          There was an error fetching rooms.
+        </AlertDescription>
+        <AlertDescription>
+          {error?.message}
         </AlertDescription>
       </Alert>
     );
   }
 
+  const sortedRooms = sortRooms(rooms || [], sortBy);
+
+  const filteredRooms = sortedRooms.filter((room) => {
+    if (statusFilter === 'all') return true;
+    return room.status === statusFilter;
+  });
+
+  const handleSortChange = (newSortBy: string) => {
+    setSortBy(newSortBy);
+  };
+
+  const handleStatusFilterChange = (newStatus: string) => {
+    setStatusFilter(newStatus);
+  };
+
+  const renderRoomRow = (room: Room) => (
+    <>
+      <td>{room.name}</td>
+      <td>{room.room_number}</td>
+      <td>{room.room_type}</td>
+      <td>{room.status}</td>
+    </>
+  );
+
+  const roomHeaders = (
+    <>
+      <th>Name</th>
+      <th>Room Number</th>
+      <th>Room Type</th>
+      <th>Status</th>
+    </>
+  );
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            placeholder="Search rooms..."
-            className="px-3 py-2 border rounded-md"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-          />
-          <Button
-            variant="outline"
-            onClick={() => setSortBy(sortBy === "name_asc" ? "name_desc" : "name_asc")}
-          >
-            Name {sortBy === "name_asc" ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setSortBy(sortBy === "room_number_asc" ? "room_number_desc" : "room_number_asc")}
-          >
-            Room # {sortBy === "room_number_asc" ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />}
-          </Button>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Button 
-            variant={view === "grid" ? "default" : "outline"} 
-            size="sm" 
-            onClick={() => setView("grid")}
-          >
-            <Grid className="h-4 w-4" />
-          </Button>
-          <Button 
-            variant={view === "list" ? "default" : "outline"} 
-            size="sm" 
-            onClick={() => setView("list")}
-          >
-            <List className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+      <Tabs defaultValue="all">
+        <TabsList>
+          <TabsTrigger value="all">All Rooms</TabsTrigger>
+          <TabsTrigger value="active">Active</TabsTrigger>
+          <TabsTrigger value="vacant">Vacant</TabsTrigger>
+        </TabsList>
 
-      {isLoading ? (
-        <div>Loading rooms...</div>
-      ) : (
-        <Tabs defaultValue="all">
-          <TabsList>
-            <TabsTrigger value="all">All Rooms ({sortedRooms.length})</TabsTrigger>
-            <TabsTrigger value="active">Active</TabsTrigger>
-            <TabsTrigger value="inactive">Inactive</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="all">
-            {view === "grid" ? (
-              <GridView data={sortedRooms} />
-            ) : (
-              <ListView data={sortedRooms} />
-            )}
-          </TabsContent>
-          
-          <TabsContent value="active">
-            {view === "grid" ? (
-              <GridView data={sortedRooms.filter(room => room.status === "active")} />
-            ) : (
-              <ListView data={sortedRooms.filter(room => room.status === "active")} />
-            )}
-          </TabsContent>
-          
-          <TabsContent value="inactive">
-            {view === "grid" ? (
-              <GridView data={sortedRooms.filter(room => room.status === "inactive")} />
-            ) : (
-              <ListView data={sortedRooms.filter(room => room.status === "inactive")} />
-            )}
-          </TabsContent>
-        </Tabs>
-      )}
+        <TabsContent value="all">
+          {view === 'grid' ? (
+            <GridView
+              items={rooms}
+              renderItem={(room) => <RoomCard room={room} />}
+              emptyMessage="No rooms found"
+              type="room"
+            />
+          ) : (
+            <ListView
+              items={rooms}
+              renderRow={renderRoomRow}
+              headers={roomHeaders}
+              type="room"
+            />
+          )}
+        </TabsContent>
+
+        <TabsContent value="active">
+          {view === 'grid' ? (
+            <GridView
+              items={rooms}
+              renderItem={(room) => <RoomCard room={room} />}
+              emptyMessage="No active rooms found"
+              type="room"
+            />
+          ) : (
+            <ListView
+              items={rooms}
+              renderRow={renderRoomRow}
+              headers={roomHeaders}
+              type="room"
+            />
+          )}
+        </TabsContent>
+
+        <TabsContent value="vacant">
+          {view === 'grid' ? (
+            <GridView
+              items={rooms}
+              renderItem={(room) => <RoomCard room={room} />}
+              emptyMessage="No vacant rooms found"
+              type="room"
+            />
+          ) : (
+            <ListView
+              items={rooms}
+              renderRow={renderRoomRow}
+              headers={roomHeaders}
+              type="room"
+            />
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

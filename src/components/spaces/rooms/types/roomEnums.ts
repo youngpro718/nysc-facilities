@@ -5,19 +5,9 @@ export enum StatusEnum {
   UNDER_MAINTENANCE = "under_maintenance"
 }
 
-// Modified to be string enums matching exactly what Supabase expects
 export enum RoomTypeEnum {
   OFFICE = "office",
-  MEETING = "meeting",
-  STORAGE = "storage",
   COURTROOM = "courtroom",
-  CHAMBERS = "chambers",
-  RECEPTION = "reception",
-  BREAKROOM = "breakroom",
-  LIBRARY = "library",
-  UTILITY = "utility",
-  SPECIAL = "special",
-  // Additional types to match the expected string literals in the database
   JUDGES_CHAMBERS = "judges_chambers",
   JURY_ROOM = "jury_room",
   CONFERENCE_ROOM = "conference_room",
@@ -27,8 +17,13 @@ export enum RoomTypeEnum {
   ROBING_ROOM = "robing_room",
   STAKE_HOLDER = "stake_holder",
   CONFERENCE = "conference",
-  LABORATORY = "laboratory",
-  UTILITY_ROOM = "utility_room"
+  STORAGE = "storage",
+  BREAKROOM = "breakroom",
+  LIBRARY = "library",
+  UTILITY = "utility_room",
+  SPECIAL = "special",
+  IT_ROOM = "it_room",
+  LABORATORY = "laboratory"
 }
 
 export enum StorageTypeEnum {

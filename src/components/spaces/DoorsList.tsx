@@ -1,15 +1,23 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import React from 'react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { SpaceListFilters } from "./SpaceListFilters";
-import { useState, useMemo } from "react";
-import { filterSpaces, sortSpaces } from "./utils/spaceFilters";
 import { GridView } from "./views/GridView";
 import { ListView } from "./views/ListView";
-import { Badge } from "@/components/ui/badge";
-import { TableCell } from "@/components/ui/table";
-import { format } from "date-fns";
+import { useState, useMemo } from "react";
+import { toast } from "sonner";
+import { filterSpaces, sortSpaces } from "./utils/spaceFilters";
 import { AlertTriangle, Wrench, ArrowLeftRight } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 
 interface DoorsListProps {
   selectedBuilding: string;
@@ -209,7 +217,8 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
               {view === 'grid' ? (
                 <GridView
                   items={groupedDoors.transition}
-                  renderItem={(door) => renderDoorContent(door)}
+                  renderItemContent={renderDoorContent}
+                  emptyMessage="No transition doors found"
                   type="door"
                 />
               ) : (
@@ -235,7 +244,8 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
               {view === 'grid' ? (
                 <GridView
                   items={groupedDoors.problem}
-                  renderItem={(door) => renderDoorContent(door)}
+                  renderItemContent={renderDoorContent}
+                  emptyMessage="No problem doors found"
                   type="door"
                 />
               ) : (
@@ -260,7 +270,8 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
             {view === 'grid' ? (
               <GridView
                 items={groupedDoors.standard}
-                renderItem={(door) => renderDoorContent(door)}
+                renderItemContent={renderDoorContent}
+                emptyMessage="No standard doors found"
                 type="door"
               />
             ) : (
