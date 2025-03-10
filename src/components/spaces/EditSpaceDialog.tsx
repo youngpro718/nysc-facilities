@@ -82,7 +82,6 @@ export function EditSpaceDialog({
     mutationFn: async (data: RoomFormData) => {
       console.log("Submitting data for room update:", data);
       
-      // Convert enum values to string values for Supabase
       const updateData = {
         name: data.name,
         room_number: data.roomNumber,
@@ -104,7 +103,7 @@ export function EditSpaceDialog({
       
       const { error: roomError } = await supabase
         .from("rooms")
-        .update(updateData)
+        .update(updateData as any)
         .eq('id', id);
 
       if (roomError) {

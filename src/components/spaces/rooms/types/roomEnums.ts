@@ -1,3 +1,4 @@
+
 export enum StatusEnum {
   ACTIVE = "active",
   INACTIVE = "inactive",
@@ -22,7 +23,8 @@ export enum RoomTypeEnum {
   BREAKROOM = "breakroom",
   LIBRARY = "library",
   UTILITY = "utility",
-  SPECIAL = "special"
+  SPECIAL = "special",
+  LABORATORY = "laboratory" // Adding laboratory type based on error message
 }
 
 export enum StorageTypeEnum {
@@ -51,8 +53,9 @@ export type RoomTypeString =
   | "reception"
   | "breakroom"
   | "library"
-  | "utility"
-  | "special";
+  | "utility" 
+  | "special"
+  | "laboratory"; // Added laboratory to match expected types
 
 export type StatusString = "active" | "inactive" | "under_maintenance";
 export type StorageTypeString = "general" | "secure" | "climate_controlled" | "hazardous" | "archive";
