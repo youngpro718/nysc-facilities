@@ -75,10 +75,11 @@ export function EditSpaceDialog({
     mutationFn: async (data: RoomFormData) => {
       console.log("Submitting data for room update:", data);
       
+      // Transform the room_type to string to ensure compatibility with Supabase
       const updateData = {
         name: data.name,
         room_number: data.roomNumber,
-        room_type: data.roomType,
+        room_type: data.roomType as string, // Cast to string to avoid type issues
         status: data.status,
         description: data.description,
         is_storage: data.isStorage,

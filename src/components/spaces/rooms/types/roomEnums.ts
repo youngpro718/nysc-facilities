@@ -5,6 +5,7 @@ export enum StatusEnum {
   UNDER_MAINTENANCE = "under_maintenance"
 }
 
+// Modified to be string enums matching exactly what Supabase expects
 export enum RoomTypeEnum {
   OFFICE = "office",
   MEETING = "meeting",

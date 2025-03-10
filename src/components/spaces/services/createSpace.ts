@@ -1,7 +1,5 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { CreateSpaceFormData } from "../schemas/createSpaceSchema";
-import { RoomTypeEnum, StorageTypeEnum } from "../rooms/types/roomEnums";
 import { toast } from "sonner";
 
 export async function createSpace(data: CreateSpaceFormData) {
@@ -12,7 +10,7 @@ export async function createSpace(data: CreateSpaceFormData) {
       const roomData = {
         name: data.name,
         room_number: data.roomNumber,
-        room_type: data.roomType,
+        room_type: data.roomType as string,
         status: data.status,
         floor_id: data.floorId,
         description: data.description,
@@ -25,7 +23,7 @@ export async function createSpace(data: CreateSpaceFormData) {
         position: data.position || { x: 0, y: 0 },
         size: data.size || { width: 150, height: 100 },
         rotation: data.rotation || 0,
-        courtroom_photos: data.roomType === RoomTypeEnum.COURTROOM ? 
+        courtroom_photos: data.roomType === 'courtroom' ? 
           { judge_view: null, audience_view: null } : null
       };
 
@@ -116,7 +114,6 @@ export async function createSpace(data: CreateSpaceFormData) {
           const isTransitionDoor = firstConnection.connectionType === 'transition' || 
                                   (targetSpaceData?.type === 'hallway' && firstConnection.connectionType === 'door');
           
-          // Convert the direction to a valid value for the database constraint
           let directionValue = validateDirection(firstConnection.direction);
           
           const hallwayConnectionData = {
@@ -191,7 +188,6 @@ export async function createSpace(data: CreateSpaceFormData) {
         const isTransitionDoor = firstConnection.connectionType === 'transition' || 
                                 (fromSpaceData?.type === 'hallway' && targetSpaceData?.type === 'hallway');
         
-        // Convert the direction to a valid value for the database constraint
         let directionValue = validateDirection(firstConnection.direction);
         
         const spaceConnectionData = {
@@ -227,18 +223,15 @@ export async function createSpace(data: CreateSpaceFormData) {
   }
 }
 
-// Function to validate and convert direction to acceptable database values
 function validateDirection(direction: string | undefined): string {
   if (!direction) return 'adjacent';
   
-  // Valid direction values that meet database constraints
   const validDirections = ['start', 'end', 'center', 'left', 'right', 'adjacent'];
   
   if (validDirections.includes(direction)) {
     return direction;
   }
   
-  // Default to adjacent if not valid
   return 'adjacent';
 }
 
