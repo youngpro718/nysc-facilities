@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Room } from "../rooms/types/RoomTypes";
+import { Room, RoomConnection } from "../rooms/types/RoomTypes";
 import { toast } from "sonner";
 
 interface UseRoomDataProps {
@@ -43,7 +43,45 @@ export function useRoomData({ selectedBuilding, selectedFloor }: UseRoomDataProp
         throw error;
       }
 
-      return data as Room[];
+      // Apply proper type casting with transformation to match Room interface
+      return (data || []).map((room: any): Room => {
+        // Transform space connections to match RoomConnection type
+        const connections: RoomConnection[] = (room.space_connections || []).map((conn: any) => {
+          // Handle the case where to_space might have an error
+          let toSpace = null;
+          if (conn.to_space && typeof conn.to_space === 'object' && !conn.to_space.error) {
+            toSpace = {
+              id: conn.to_space.id || '',
+              name: conn.to_space.name || '',
+              type: conn.to_space.type || ''
+            };
+          }
+          
+          return {
+            id: conn.id,
+            from_space_id: conn.from_space_id || room.id,
+            to_space_id: conn.to_space_id,
+            connection_type: conn.connection_type,
+            direction: conn.direction,
+            status: conn.status,
+            to_space: toSpace
+          };
+        });
+        
+        return {
+          ...room,
+          space_connections: connections,
+          // Ensure proper nesting for floor object
+          floor: room.floor ? {
+            id: room.floor.id,
+            name: room.floor.name,
+            building: room.floor.buildings ? {
+              id: room.floor.buildings.id,
+              name: room.floor.buildings.name
+            } : undefined
+          } : undefined
+        };
+      }) as Room[];
     }
   });
 

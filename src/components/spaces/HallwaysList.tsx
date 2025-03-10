@@ -30,7 +30,7 @@ const HallwaysList = ({ selectedBuilding, selectedFloor }: HallwaysListProps) =>
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteHallway(id),
+    mutationFn: deleteHallway,
     onSuccess: () => {
       toast.success('Hallway deleted successfully');
     },
