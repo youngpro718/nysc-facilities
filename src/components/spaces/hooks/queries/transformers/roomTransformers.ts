@@ -13,6 +13,12 @@ export const transformRoomData = (
     ...room,
     room_type: room.room_type as RoomType,
     storage_type: room.storage_type ? (room.storage_type as StorageType) : null,
+    // Ensure position and size are in the expected format
+    position: typeof room.position === 'object' ? room.position : 
+      (room.position ? JSON.parse(String(room.position)) : { x: 0, y: 0 }),
+    size: typeof room.size === 'object' ? room.size : 
+      (room.size ? JSON.parse(String(room.size)) : { width: 150, height: 100 }),
+    // Process relationships and related data
     lighting_fixture: fixturesByRoomId[room.id] ? {
       id: fixturesByRoomId[room.id].id,
       type: fixturesByRoomId[room.id].type,

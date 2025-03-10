@@ -26,7 +26,8 @@ export enum RoomTypeEnum {
   FEMALE_LOCKER_ROOM = "female_locker_room",
   ROBING_ROOM = "robing_room",
   STAKE_HOLDER = "stake_holder",
-  CONFERENCE = "conference"
+  CONFERENCE = "conference",
+  LABORATORY = "laboratory"
 }
 
 export enum StorageTypeEnum {

@@ -83,7 +83,7 @@ export function EditSpaceDialog({
         status: data.status,
         description: data.description,
         is_storage: data.isStorage,
-        storage_type: data.isStorage ? data.storageType : null,
+        storage_type: data.isStorage ? data.storageType as string : null,
         storage_capacity: data.storageCapacity,
         storage_notes: data.storageNotes,
         parent_room_id: data.parentRoomId,

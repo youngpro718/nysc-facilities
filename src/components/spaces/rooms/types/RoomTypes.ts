@@ -1,8 +1,8 @@
 
 import { StatusEnum, RoomTypeEnum, StorageTypeEnum } from "./roomEnums";
 
-export type RoomType = RoomTypeEnum;
-export type StorageType = StorageTypeEnum;
+export type RoomType = RoomTypeEnum | string;
+export type StorageType = StorageTypeEnum | string;
 
 export interface RoomConnection {
   id: string;
@@ -37,13 +37,13 @@ export interface Room {
   updated_at: string;
   function_change_date?: string;
   previous_functions?: any[];
-  position?: { x: number; y: number };
-  size?: { width: number; height: number };
+  position?: { x: number; y: number } | any;
+  size?: { width: number; height: number } | any;
   rotation?: number;
   courtroom_photos?: {
     judge_view?: string | null;
     audience_view?: string | null;
-  };
+  } | any;
   
   // Relationships
   floor?: {
