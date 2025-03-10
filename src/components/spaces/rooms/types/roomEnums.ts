@@ -8,7 +8,7 @@ export enum StatusEnum {
 export enum RoomTypeEnum {
   OFFICE = "office",
   COURTROOM = "courtroom",
-  JUDGES_CHAMBERS = "judges_chambers",
+  JUDGES_CHAMBERS = "judges_chambers", 
   JURY_ROOM = "jury_room",
   CONFERENCE_ROOM = "conference_room",
   FILING_ROOM = "filing_room",
@@ -16,19 +16,17 @@ export enum RoomTypeEnum {
   FEMALE_LOCKER_ROOM = "female_locker_room",
   ROBING_ROOM = "robing_room",
   STAKE_HOLDER = "stake_holder",
-  CONFERENCE = "conference",
   STORAGE = "storage",
   BREAKROOM = "breakroom",
   LIBRARY = "library",
   UTILITY = "utility_room",
   SPECIAL = "special",
-  IT_ROOM = "it_room",
-  LABORATORY = "laboratory"
+  IT_ROOM = "it_room"
 }
 
 export enum StorageTypeEnum {
   GENERAL = "general",
-  SECURE = "secure",
+  SECURE = "secure", 
   CLIMATE_CONTROLLED = "climate_controlled",
   HAZARDOUS = "hazardous",
   ARCHIVE = "archive"

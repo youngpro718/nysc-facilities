@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { SpaceListFilters } from "./SpaceListFilters";
@@ -10,6 +9,7 @@ import { ConnectedSpaces } from "./hallway/ConnectedSpaces";
 import { filterSpaces, sortSpaces } from "./utils/spaceFilters";
 import { Hallway } from "./types/hallwayTypes";
 import { Shield, ArrowRight, Accessibility } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
 
 interface HallwaysListProps {
   selectedBuilding: string;
@@ -26,6 +26,17 @@ const HallwaysList = ({ selectedBuilding, selectedFloor }: HallwaysListProps) =>
     selectedBuilding,
     selectedFloor
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteHallway(id),
+    onSuccess: () => {
+      console.log('Hallway deleted successfully');
+    }
+  });
+
+  const handleDelete = (id: string) => {
+    deleteMutation.mutate(id);
+  };
 
   const filteredAndSortedHallways = useMemo(() => {
     if (!hallways) return [];
@@ -134,7 +145,7 @@ const HallwaysList = ({ selectedBuilding, selectedFloor }: HallwaysListProps) =>
             items={filteredAndSortedHallways}
             renderItem={renderGridContent}
             type="hallway"
-            onDelete={deleteHallway}
+            onDelete={handleDelete}
           />
         ) : (
           <ListView
@@ -150,7 +161,7 @@ const HallwaysList = ({ selectedBuilding, selectedFloor }: HallwaysListProps) =>
               <TableHead>Actions</TableHead>
             </>}
             type="hallway"
-            onDelete={deleteHallway}
+            onDelete={handleDelete}
           />
         )
       )}
