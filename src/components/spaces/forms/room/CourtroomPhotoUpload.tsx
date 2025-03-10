@@ -1,193 +1,160 @@
 
-import { useState } from "react";
-import { UseFormReturn } from "react-hook-form";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Upload, X, Camera } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { RoomFormData } from "./RoomFormSchema";
+import { useState } from 'react';
+import { UseFormReturn } from 'react-hook-form';
+import { FormItem, FormLabel } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import { Image, Loader2, X } from 'lucide-react';
+import { toast } from 'sonner';
+import { RoomFormData } from './RoomFormSchema';
 
-interface PhotoUploadProps {
-  form: UseFormReturn<RoomFormData>;
-}
+export function CourtroomPhotoUpload({ form }: { form: UseFormReturn<RoomFormData> }) {
+  const [uploading, setUploading] = useState<{ judge?: boolean; audience?: boolean }>({});
+  const courtRoomPhotos = form.watch('courtRoomPhotos');
 
-export function CourtroomPhotoUpload({ form }: PhotoUploadProps) {
-  const [isUploading, setIsUploading] = useState(false);
-  const courtRoomPhotos = form.watch("courtRoomPhotos") || { judge_view: null, audience_view: null };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, viewType: 'judge_view' | 'audience_view') => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsUploading(true);
+  const uploadPhoto = async (file: File, type: 'judge_view' | 'audience_view') => {
     try {
-      // Create a unique file name with timestamp
+      setUploading(prev => ({ ...prev, [type === 'judge_view' ? 'judge' : 'audience']: true }));
+      
+      // Try to create the bucket if it doesn't exist
+      const { error: bucketError } = await supabase.storage.createBucket('courtroom-photos', {
+        public: true,
+        fileSizeLimit: 10485760 // 10MB
+      });
+      
+      if (bucketError && bucketError.message !== 'Duplicate name') {
+        console.error('Error creating bucket:', bucketError);
+        toast.error('Failed to create storage bucket');
+      }
+      
+      // Generate a unique filename
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `courtroom-photos/${fileName}`;
+      const fileName = `${type}-${Date.now()}.${fileExt}`;
+      
+      // Upload the file
+      const { data, error } = await supabase.storage
+        .from('courtroom-photos')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
 
-      // Upload to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('room-photos')
-        .upload(filePath, file);
-
-      if (uploadError) {
-        throw uploadError;
+      if (error) {
+        throw error;
       }
 
       // Get the public URL
       const { data: urlData } = supabase.storage
-        .from('room-photos')
-        .getPublicUrl(filePath);
+        .from('courtroom-photos')
+        .getPublicUrl(fileName);
 
-      if (urlData) {
-        // Update the form state with the new photo URL
-        const updatedPhotos = {
-          ...courtRoomPhotos,
-          [viewType]: urlData.publicUrl
-        };
-        form.setValue("courtRoomPhotos", updatedPhotos);
-        toast.success(`${viewType === 'judge_view' ? 'Judge' : 'Audience'} view photo uploaded successfully`);
-      }
-    } catch (error) {
-      console.error('Error uploading photo:', error);
-      toast.error('Failed to upload photo. Please try again.');
+      // Update the form with the photo URL
+      const currentPhotos = form.getValues('courtRoomPhotos') || {};
+      form.setValue('courtRoomPhotos', {
+        ...currentPhotos,
+        [type]: urlData.publicUrl
+      }, { shouldDirty: true });
+
+      toast.success(`${type === 'judge_view' ? 'Judge view' : 'Audience view'} photo uploaded`);
+    } catch (error: any) {
+      console.error(`Error uploading photo:`, error);
+      toast.error(`Failed to upload photo: ${error.message || 'Unknown error'}`);
     } finally {
-      setIsUploading(false);
+      setUploading(prev => ({ ...prev, [type === 'judge_view' ? 'judge' : 'audience']: false }));
     }
   };
 
-  const removePhoto = (viewType: 'judge_view' | 'audience_view') => {
-    const updatedPhotos = {
-      ...courtRoomPhotos,
-      [viewType]: null
-    };
-    form.setValue("courtRoomPhotos", updatedPhotos);
-    toast.success(`${viewType === 'judge_view' ? 'Judge' : 'Audience'} view photo removed`);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'judge_view' | 'audience_view') => {
+    if (e.target.files && e.target.files[0]) {
+      uploadPhoto(e.target.files[0], type);
+    }
+  };
+
+  const clearPhoto = (type: 'judge_view' | 'audience_view') => {
+    const currentPhotos = form.getValues('courtRoomPhotos') || {};
+    form.setValue('courtRoomPhotos', {
+      ...currentPhotos,
+      [type]: null
+    }, { shouldDirty: true });
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Courtroom Photos</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Judge View Upload */}
-          <FormField
-            control={form.control}
-            name="courtRoomPhotos.judge_view"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Judge View</FormLabel>
-                <FormControl>
-                  <div className="flex flex-col items-center">
-                    {courtRoomPhotos?.judge_view ? (
-                      <div className="relative w-full">
-                        <img 
-                          src={courtRoomPhotos.judge_view} 
-                          alt="Judge View" 
-                          className="w-full h-48 object-cover rounded-md" 
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="icon"
-                          className="absolute top-2 right-2"
-                          onClick={() => removePhoto('judge_view')}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="border-2 border-dashed border-gray-300 rounded-md p-8 w-full flex flex-col items-center">
-                        <Camera className="h-10 w-10 text-muted-foreground mb-2" />
-                        <p className="text-sm text-muted-foreground mb-2">Upload Judge View Photo</p>
-                        <div className="relative">
-                          <Button 
-                            type="button" 
-                            disabled={isUploading} 
-                            className="relative"
-                          >
-                            <Upload className="h-4 w-4 mr-2" />
-                            {isUploading ? 'Uploading...' : 'Upload'}
-                            <input
-                              type="file"
-                              className="absolute inset-0 opacity-0 cursor-pointer"
-                              accept="image/*"
-                              onChange={(e) => handleFileUpload(e, 'judge_view')}
-                              disabled={isUploading}
-                            />
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+    <div className="grid gap-4">
+      <h3 className="text-lg font-medium">Courtroom Photos</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <FormItem>
+          <FormLabel>Judge's View</FormLabel>
+          <div className="flex flex-col gap-2">
+            {courtRoomPhotos?.judge_view ? (
+              <div className="relative border rounded-md overflow-hidden h-40">
+                <img 
+                  src={courtRoomPhotos.judge_view} 
+                  alt="Judge's View" 
+                  className="object-cover w-full h-full"
+                />
+                <Button 
+                  type="button"
+                  variant="destructive" 
+                  size="icon"
+                  className="absolute top-2 right-2"
+                  onClick={() => clearPhoto('judge_view')}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleFileChange(e, 'judge_view')}
+                  disabled={uploading.judge}
+                />
+                {uploading.judge && (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )}
+              </div>
             )}
-          />
+          </div>
+        </FormItem>
 
-          {/* Audience View Upload */}
-          <FormField
-            control={form.control}
-            name="courtRoomPhotos.audience_view"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Audience View</FormLabel>
-                <FormControl>
-                  <div className="flex flex-col items-center">
-                    {courtRoomPhotos?.audience_view ? (
-                      <div className="relative w-full">
-                        <img 
-                          src={courtRoomPhotos.audience_view} 
-                          alt="Audience View" 
-                          className="w-full h-48 object-cover rounded-md" 
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="icon"
-                          className="absolute top-2 right-2"
-                          onClick={() => removePhoto('audience_view')}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="border-2 border-dashed border-gray-300 rounded-md p-8 w-full flex flex-col items-center">
-                        <Camera className="h-10 w-10 text-muted-foreground mb-2" />
-                        <p className="text-sm text-muted-foreground mb-2">Upload Audience View Photo</p>
-                        <div className="relative">
-                          <Button 
-                            type="button" 
-                            disabled={isUploading} 
-                            className="relative"
-                          >
-                            <Upload className="h-4 w-4 mr-2" />
-                            {isUploading ? 'Uploading...' : 'Upload'}
-                            <input
-                              type="file"
-                              className="absolute inset-0 opacity-0 cursor-pointer"
-                              accept="image/*"
-                              onChange={(e) => handleFileUpload(e, 'audience_view')}
-                              disabled={isUploading}
-                            />
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+        <FormItem>
+          <FormLabel>Audience View</FormLabel>
+          <div className="flex flex-col gap-2">
+            {courtRoomPhotos?.audience_view ? (
+              <div className="relative border rounded-md overflow-hidden h-40">
+                <img 
+                  src={courtRoomPhotos.audience_view} 
+                  alt="Audience View" 
+                  className="object-cover w-full h-full"
+                />
+                <Button 
+                  type="button"
+                  variant="destructive" 
+                  size="icon"
+                  className="absolute top-2 right-2"
+                  onClick={() => clearPhoto('audience_view')}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleFileChange(e, 'audience_view')}
+                  disabled={uploading.audience}
+                />
+                {uploading.audience && (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )}
+              </div>
             )}
-          />
-        </div>
-      </CardContent>
-    </Card>
+          </div>
+        </FormItem>
+      </div>
+    </div>
   );
 }

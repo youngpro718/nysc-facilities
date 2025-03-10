@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -103,7 +102,7 @@ export function EditSpaceDialog({
 
       console.log("Room update data:", updateData);
       
-      // Cast room_type to any to bypass the type check for Supabase
+      // Use type assertion to bypass type checking for Supabase
       const { error: roomError } = await supabase
         .from("rooms")
         .update(updateData as any)

@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { CreateSpaceFormData } from "../schemas/createSpaceSchema";
 import { 
@@ -14,6 +15,18 @@ export async function createSpace(data: CreateSpaceFormData) {
   
   try {
     if (data.type === 'room') {
+      // Create the storage bucket for courtroom photos if needed
+      if (data.roomType === RoomTypeEnum.COURTROOM) {
+        const { error: bucketError } = await supabase.storage.createBucket('courtroom-photos', {
+          public: true,
+          fileSizeLimit: 10485760 // 10MB
+        });
+        
+        if (bucketError && bucketError.message !== 'Duplicate name') {
+          console.error('Error creating bucket:', bucketError);
+        }
+      }
+      
       const roomData = {
         name: data.name,
         room_number: data.roomNumber,
@@ -33,6 +46,8 @@ export async function createSpace(data: CreateSpaceFormData) {
         courtroom_photos: data.roomType === RoomTypeEnum.COURTROOM ? 
           { judge_view: null, audience_view: null } : null
       };
+
+      console.log('Room data for creation:', roomData);
 
       const { data: room, error: roomError } = await supabase
         .from('rooms')
