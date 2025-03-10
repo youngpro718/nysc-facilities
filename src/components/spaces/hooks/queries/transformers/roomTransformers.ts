@@ -31,15 +31,27 @@ export const transformRoomData = (
       ballast_issue: fixturesByRoomId[room.id].ballast_issue,
       maintenance_notes: fixturesByRoomId[room.id].maintenance_notes
     } : null,
-    space_connections: (connectionsByRoomId[room.id] || []).map(conn => ({
-      id: conn.id,
-      from_space_id: conn.from_space_id || room.id, // Ensure from_space_id is set 
-      to_space_id: conn.to_space_id,
-      connection_type: conn.connection_type,
-      direction: conn.direction,
-      status: conn.status,
-      to_space: conn.to_space
-    })),
+    space_connections: (connectionsByRoomId[room.id] || []).map(conn => {
+      // Properly transform the to_space property to handle potential errors
+      let toSpace = null;
+      if (conn.to_space && typeof conn.to_space === 'object' && !conn.to_space.error) {
+        toSpace = {
+          id: conn.to_space.id || '',
+          name: conn.to_space.name || '',
+          type: conn.to_space.type || ''
+        };
+      }
+      
+      return {
+        id: conn.id,
+        from_space_id: conn.from_space_id || room.id, // Ensure from_space_id is set 
+        to_space_id: conn.to_space_id,
+        connection_type: conn.connection_type,
+        direction: conn.direction,
+        status: conn.status,
+        to_space: toSpace
+      };
+    }),
     issues: (issuesByRoomId[room.id] || []).map(issue => ({
       id: issue.id,
       title: issue.title,
