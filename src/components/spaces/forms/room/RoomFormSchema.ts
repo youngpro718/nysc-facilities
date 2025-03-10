@@ -1,6 +1,6 @@
 
 import { z } from "zod";
-import { RoomTypeEnum, StorageTypeEnum, StatusEnum } from "../../rooms/types/roomEnums";
+import { RoomTypeEnum, StatusEnum, StorageTypeEnum } from "../../rooms/types/roomEnums";
 
 // Define connection schema for form usage
 export const roomConnectionSchema = z.object({

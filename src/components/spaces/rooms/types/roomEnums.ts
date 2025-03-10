@@ -46,7 +46,7 @@ export type RoomTypeString =
   | "female_locker_room"
   | "robing_room"
   | "stake_holder"
-  | "conference"
+  | "conference" // Note: this is what RoomTypeEnum.MEETING maps to
   | "storage"
   | "chambers"
   | "reception"
@@ -59,11 +59,11 @@ export type StatusString = "active" | "inactive" | "under_maintenance";
 export type StorageTypeString = "general" | "secure" | "climate_controlled" | "hazardous" | "archive";
 
 // Helper functions for string conversions
-export const statusToString = (status: StatusEnum): StatusString => status;
+export const statusToString = (status: StatusEnum): StatusString => status.toString() as StatusString;
 export const stringToStatus = (str: string): StatusEnum => str as StatusEnum;
 
-export const roomTypeToString = (type: RoomTypeEnum): RoomTypeString => type;
+export const roomTypeToString = (type: RoomTypeEnum): RoomTypeString => type.toString() as RoomTypeString;
 export const stringToRoomType = (str: string): RoomTypeEnum => str as RoomTypeEnum;
 
-export const storageTypeToString = (type: StorageTypeEnum): StorageTypeString => type;
+export const storageTypeToString = (type: StorageTypeEnum): StorageTypeString => type.toString() as StorageTypeString;
 export const stringToStorageType = (str: string): StorageTypeEnum => str as StorageTypeEnum;

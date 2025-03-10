@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -16,7 +17,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { RoomFormContent } from "./forms/room/RoomFormContent";
 import { roomFormSchema, type RoomFormData } from "./forms/room/RoomFormSchema";
 import { EditHallwayForm } from "./forms/hallway/EditHallwayForm";
-import { StatusEnum, RoomTypeEnum, StorageTypeEnum, roomTypeToString, statusToString, storageTypeToString } from "./rooms/types/roomEnums";
+import { 
+  StatusEnum, 
+  RoomTypeEnum, 
+  StorageTypeEnum, 
+  roomTypeToString, 
+  statusToString, 
+  storageTypeToString 
+} from "./rooms/types/roomEnums";
 
 interface EditSpaceDialogProps {
   id: string;
@@ -75,14 +83,15 @@ export function EditSpaceDialog({
     mutationFn: async (data: RoomFormData) => {
       console.log("Submitting data for room update:", data);
       
+      // Convert enum values to string values for Supabase
       const updateData = {
         name: data.name,
         room_number: data.roomNumber,
-        room_type: roomTypeToString(data.roomType),
-        status: statusToString(data.status),
+        room_type: data.roomType ? roomTypeToString(data.roomType as RoomTypeEnum) : undefined,
+        status: data.status ? statusToString(data.status as StatusEnum) : undefined,
         description: data.description,
         is_storage: data.isStorage,
-        storage_type: data.isStorage ? storageTypeToString(data.storageType) : null,
+        storage_type: data.isStorage && data.storageType ? storageTypeToString(data.storageType as StorageTypeEnum) : null,
         storage_capacity: data.storageCapacity,
         storage_notes: data.storageNotes,
         parent_room_id: data.parentRoomId,
