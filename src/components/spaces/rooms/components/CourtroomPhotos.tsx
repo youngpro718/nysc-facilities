@@ -1,81 +1,94 @@
 
-import React, { useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Eye, Image } from "lucide-react";
+import { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Room } from '../types/RoomTypes';
+import { BadgeInfo } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface CourtroomPhotosProps {
-  photos: {
-    judge_view?: string | null;
-    audience_view?: string | null;
-  };
+  room: Room;
 }
 
-export function CourtroomPhotos({ photos }: CourtroomPhotosProps) {
-  const [activeTab, setActiveTab] = useState<string>("judge");
+export function CourtroomPhotos({ room }: CourtroomPhotosProps) {
+  const [open, setOpen] = useState(false);
+  const [activeView, setActiveView] = useState<'judge' | 'audience'>('judge');
   
-  // Check if any photos are available
-  const hasPhotos = photos?.judge_view || photos?.audience_view;
+  const hasPhotos = room.courtroom_photos &&
+    (room.courtroom_photos.judge_view || room.courtroom_photos.audience_view);
   
-  if (!hasPhotos) {
-    return (
-      <div className="flex items-center justify-center p-4 border rounded-md bg-muted/20">
-        <div className="flex flex-col items-center gap-2 text-muted-foreground">
-          <Image className="h-6 w-6" />
-          <p className="text-xs">No courtroom photos available</p>
-        </div>
-      </div>
-    );
-  }
-
+  if (!hasPhotos || room.room_type !== 'courtroom') return null;
+  
+  const handleTabChange = (view: 'judge' | 'audience') => {
+    setActiveView(view);
+  };
+  
+  const judgeViewUrl = room.courtroom_photos?.judge_view;
+  const audienceViewUrl = room.courtroom_photos?.audience_view;
+  
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <h4 className="text-sm font-medium flex items-center gap-2">
-          <Eye className="h-4 w-4" />
-          Courtroom Views
-        </h4>
-      </div>
-      
-      <Tabs defaultValue="judge" value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="judge" disabled={!photos?.judge_view}>
-            Judge View
-          </TabsTrigger>
-          <TabsTrigger value="audience" disabled={!photos?.audience_view}>
-            Audience View
-          </TabsTrigger>
-        </TabsList>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="mt-1 px-0 flex items-center"
+        >
+          <BadgeInfo className="h-4 w-4 mr-1" />
+          <span>View Courtroom Photos</span>
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Courtroom Photos - {room.name}</DialogTitle>
+        </DialogHeader>
         
-        <TabsContent value="judge" className="mt-2">
-          {photos?.judge_view && (
-            <div className="relative aspect-video overflow-hidden rounded-md border">
-              <img
-                src={photos.judge_view}
-                alt="View from judge's perspective"
-                className="object-cover w-full h-full"
-                loading="lazy"
+        <div className="space-y-4 mt-2">
+          <div className="flex space-x-2">
+            <Button
+              variant={activeView === 'judge' ? "default" : "outline"}
+              onClick={() => handleTabChange('judge')}
+              disabled={!judgeViewUrl}
+              className="flex-1"
+            >
+              Judge View
+            </Button>
+            <Button
+              variant={activeView === 'audience' ? "default" : "outline"}
+              onClick={() => handleTabChange('audience')}
+              disabled={!audienceViewUrl}
+              className="flex-1"
+            >
+              Audience View
+            </Button>
+          </div>
+          
+          <div className="rounded-md overflow-hidden bg-secondary/50 min-h-[250px] flex items-center justify-center">
+            {activeView === 'judge' && judgeViewUrl ? (
+              <img 
+                src={judgeViewUrl} 
+                alt="Judge View" 
+                className="w-full h-auto object-contain max-h-[350px]" 
               />
-              <Badge className="absolute top-2 right-2">Judge View</Badge>
-            </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="audience" className="mt-2">
-          {photos?.audience_view && (
-            <div className="relative aspect-video overflow-hidden rounded-md border">
-              <img
-                src={photos.audience_view}
-                alt="View from audience perspective"
-                className="object-cover w-full h-full"
-                loading="lazy"
+            ) : activeView === 'audience' && audienceViewUrl ? (
+              <img 
+                src={audienceViewUrl} 
+                alt="Audience View" 
+                className="w-full h-auto object-contain max-h-[350px]" 
               />
-              <Badge className="absolute top-2 right-2">Audience View</Badge>
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
-    </div>
+            ) : (
+              <div className="text-muted-foreground text-center p-4">
+                {activeView === 'judge' ? 'No judge view photo available' : 'No audience view photo available'}
+              </div>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -6,7 +6,7 @@ import { RoomCard } from "../RoomCard";
 import { RoomTable } from "../RoomTable";
 import { SearchResultsInfo } from "./SearchResultsInfo";
 
-interface RoomsContentProps {
+export interface RoomsContentProps {
   isLoading: boolean;
   rooms: Room[];
   filteredRooms: Room[];

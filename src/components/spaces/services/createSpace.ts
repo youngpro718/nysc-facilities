@@ -12,24 +12,26 @@ export async function createSpace(data: CreateSpaceFormData) {
       const roomData = {
         name: data.name,
         room_number: data.roomNumber,
-        room_type: data.roomType as RoomTypeEnum,
+        room_type: data.roomType,
         status: data.status,
         floor_id: data.floorId,
         description: data.description,
         phone_number: data.phoneNumber,
         current_function: data.currentFunction,
         is_storage: data.isStorage || false,
-        storage_type: data.isStorage ? data.storageType as StorageTypeEnum : null,
+        storage_type: data.isStorage ? data.storageType : null,
         storage_capacity: data.storageCapacity,
         parent_room_id: data.parentRoomId,
         position: data.position || { x: 0, y: 0 },
         size: data.size || { width: 150, height: 100 },
-        rotation: data.rotation || 0
+        rotation: data.rotation || 0,
+        courtroom_photos: data.roomType === RoomTypeEnum.COURTROOM ? 
+          { judge_view: null, audience_view: null } : null
       };
 
       const { data: room, error: roomError } = await supabase
         .from('rooms')
-        .insert([roomData])
+        .insert(roomData)
         .select()
         .single();
 

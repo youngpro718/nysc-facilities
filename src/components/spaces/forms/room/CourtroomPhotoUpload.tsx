@@ -1,166 +1,193 @@
 
-import React from "react";
+import { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FormField, FormItem, FormLabel, FormControl, FormDescription } from "@/components/ui/form";
-import { Card, CardContent } from "@/components/ui/card";
-import { Upload, Trash2, Image } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Upload, X, Camera } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { RoomFormData } from "./RoomFormSchema";
 
-interface CourtroomPhotoUploadProps {
+interface PhotoUploadProps {
   form: UseFormReturn<RoomFormData>;
 }
 
-export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
-  const roomType = form.watch("roomType");
+export function CourtroomPhotoUpload({ form }: PhotoUploadProps) {
+  const [isUploading, setIsUploading] = useState(false);
   const courtRoomPhotos = form.watch("courtRoomPhotos") || { judge_view: null, audience_view: null };
-  
-  // Only show for courtrooms
-  if (roomType !== "courtroom") {
-    return null;
-  }
 
-  const handlePhotoChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    viewType: "judge_view" | "audience_view"
-  ) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, viewType: 'judge_view' | 'audience_view') => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
-    // Convert to base64 for preview
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (event.target?.result) {
+
+    setIsUploading(true);
+    try {
+      // Create a unique file name with timestamp
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `courtroom-photos/${fileName}`;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('room-photos')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // Get the public URL
+      const { data: urlData } = supabase.storage
+        .from('room-photos')
+        .getPublicUrl(filePath);
+
+      if (urlData) {
+        // Update the form state with the new photo URL
         const updatedPhotos = {
           ...courtRoomPhotos,
-          [viewType]: event.target.result as string
+          [viewType]: urlData.publicUrl
         };
-        form.setValue("courtRoomPhotos", updatedPhotos, { shouldValidate: true });
+        form.setValue("courtRoomPhotos", updatedPhotos);
+        toast.success(`${viewType === 'judge_view' ? 'Judge' : 'Audience'} view photo uploaded successfully`);
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      toast.error('Failed to upload photo. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
-  const removePhoto = (viewType: "judge_view" | "audience_view") => {
+  const removePhoto = (viewType: 'judge_view' | 'audience_view') => {
     const updatedPhotos = {
       ...courtRoomPhotos,
       [viewType]: null
     };
-    form.setValue("courtRoomPhotos", updatedPhotos, { shouldValidate: true });
+    form.setValue("courtRoomPhotos", updatedPhotos);
+    toast.success(`${viewType === 'judge_view' ? 'Judge' : 'Audience'} view photo removed`);
   };
 
   return (
-    <div className="space-y-4">
-      <FormField
-        control={form.control}
-        name="courtRoomPhotos"
-        render={() => (
-          <FormItem>
-            <FormLabel>Courtroom Photos</FormLabel>
-            <FormDescription>
-              Upload photos showing different views of the courtroom
-            </FormDescription>
-            <FormControl>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Judge View Upload */}
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="space-y-4">
-                      <h4 className="text-sm font-medium">Judge's View</h4>
-                      {courtRoomPhotos?.judge_view ? (
-                        <div className="relative aspect-video rounded-md overflow-hidden border">
-                          <img
-                            src={courtRoomPhotos.judge_view}
-                            alt="Judge's View"
-                            className="object-cover w-full h-full"
-                          />
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            className="absolute top-2 right-2"
-                            onClick={() => removePhoto("judge_view")}
+    <Card>
+      <CardHeader>
+        <CardTitle>Courtroom Photos</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Judge View Upload */}
+          <FormField
+            control={form.control}
+            name="courtRoomPhotos.judge_view"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Judge View</FormLabel>
+                <FormControl>
+                  <div className="flex flex-col items-center">
+                    {courtRoomPhotos?.judge_view ? (
+                      <div className="relative w-full">
+                        <img 
+                          src={courtRoomPhotos.judge_view} 
+                          alt="Judge View" 
+                          className="w-full h-48 object-cover rounded-md" 
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2"
+                          onClick={() => removePhoto('judge_view')}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="border-2 border-dashed border-gray-300 rounded-md p-8 w-full flex flex-col items-center">
+                        <Camera className="h-10 w-10 text-muted-foreground mb-2" />
+                        <p className="text-sm text-muted-foreground mb-2">Upload Judge View Photo</p>
+                        <div className="relative">
+                          <Button 
+                            type="button" 
+                            disabled={isUploading} 
+                            className="relative"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Upload className="h-4 w-4 mr-2" />
+                            {isUploading ? 'Uploading...' : 'Upload'}
+                            <input
+                              type="file"
+                              className="absolute inset-0 opacity-0 cursor-pointer"
+                              accept="image/*"
+                              onChange={(e) => handleFileUpload(e, 'judge_view')}
+                              disabled={isUploading}
+                            />
                           </Button>
                         </div>
-                      ) : (
-                        <div className="flex flex-col items-center gap-2 p-4 border rounded-md border-dashed">
-                          <Image className="h-8 w-8 text-muted-foreground" />
-                          <p className="text-sm text-muted-foreground">Upload Judge's View Photo</p>
-                          <Input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            id="judge-view-upload"
-                            onChange={(e) => handlePhotoChange(e, "judge_view")}
-                          />
-                          <label htmlFor="judge-view-upload">
-                            <Button type="button" variant="outline" size="sm" asChild>
-                              <span>
-                                <Upload className="h-4 w-4 mr-2" />
-                                Upload
-                              </span>
-                            </Button>
-                          </label>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                {/* Audience View Upload */}
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="space-y-4">
-                      <h4 className="text-sm font-medium">Audience View</h4>
-                      {courtRoomPhotos?.audience_view ? (
-                        <div className="relative aspect-video rounded-md overflow-hidden border">
-                          <img
-                            src={courtRoomPhotos.audience_view}
-                            alt="Audience View"
-                            className="object-cover w-full h-full"
-                          />
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            className="absolute top-2 right-2"
-                            onClick={() => removePhoto("audience_view")}
+                      </div>
+                    )}
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Audience View Upload */}
+          <FormField
+            control={form.control}
+            name="courtRoomPhotos.audience_view"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Audience View</FormLabel>
+                <FormControl>
+                  <div className="flex flex-col items-center">
+                    {courtRoomPhotos?.audience_view ? (
+                      <div className="relative w-full">
+                        <img 
+                          src={courtRoomPhotos.audience_view} 
+                          alt="Audience View" 
+                          className="w-full h-48 object-cover rounded-md" 
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2"
+                          onClick={() => removePhoto('audience_view')}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="border-2 border-dashed border-gray-300 rounded-md p-8 w-full flex flex-col items-center">
+                        <Camera className="h-10 w-10 text-muted-foreground mb-2" />
+                        <p className="text-sm text-muted-foreground mb-2">Upload Audience View Photo</p>
+                        <div className="relative">
+                          <Button 
+                            type="button" 
+                            disabled={isUploading} 
+                            className="relative"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Upload className="h-4 w-4 mr-2" />
+                            {isUploading ? 'Uploading...' : 'Upload'}
+                            <input
+                              type="file"
+                              className="absolute inset-0 opacity-0 cursor-pointer"
+                              accept="image/*"
+                              onChange={(e) => handleFileUpload(e, 'audience_view')}
+                              disabled={isUploading}
+                            />
                           </Button>
                         </div>
-                      ) : (
-                        <div className="flex flex-col items-center gap-2 p-4 border rounded-md border-dashed">
-                          <Image className="h-8 w-8 text-muted-foreground" />
-                          <p className="text-sm text-muted-foreground">Upload Audience View Photo</p>
-                          <Input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            id="audience-view-upload"
-                            onChange={(e) => handlePhotoChange(e, "audience_view")}
-                          />
-                          <label htmlFor="audience-view-upload">
-                            <Button type="button" variant="outline" size="sm" asChild>
-                              <span>
-                                <Upload className="h-4 w-4 mr-2" />
-                                Upload
-                              </span>
-                            </Button>
-                          </label>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </FormControl>
-          </FormItem>
-        )}
-      />
-    </div>
+                      </div>
+                    )}
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+      </CardContent>
+    </Card>
   );
 }

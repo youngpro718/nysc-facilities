@@ -1,10 +1,9 @@
 
 import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Room } from "./types/RoomTypes";
 import { CardFront } from "./components/CardFront";
 import { CardBack } from "./components/CardBack";
-import { Button } from "@/components/ui/button";
-import { RotateCw } from "lucide-react";
 
 interface RoomCardProps {
   room: Room;
@@ -14,24 +13,36 @@ interface RoomCardProps {
 export function RoomCard({ room, onDelete }: RoomCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
 
+  const handleFlip = () => {
+    setIsFlipped(prev => !prev);
+  };
+
   return (
-    <div className="relative w-full h-[400px] perspective-1000">
-      <div className={`relative w-full h-full transition-transform duration-500 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
-        <div className="absolute bottom-4 right-4 z-10">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsFlipped(!isFlipped);
-            }}
-          >
-            <RotateCw className="h-4 w-4" />
-          </Button>
+    <Card className="overflow-hidden h-[320px] flex">
+      <CardContent className="p-0 flex-1 relative">
+        <div 
+          className="absolute inset-0 w-full h-full backface-hidden transition-transform duration-500"
+          style={{ 
+            transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+            opacity: isFlipped ? 0 : 1,
+            zIndex: isFlipped ? 0 : 1,
+            pointerEvents: isFlipped ? 'none' : 'auto'
+          }}
+        >
+          <CardFront room={room} onFlip={handleFlip} onDelete={onDelete} />
         </div>
-        <CardFront room={room} onDelete={onDelete} />
-        <CardBack room={room} />
-      </div>
-    </div>
+        <div 
+          className="absolute inset-0 w-full h-full backface-hidden transition-transform duration-500"
+          style={{ 
+            transform: isFlipped ? 'rotateY(0deg)' : 'rotateY(-180deg)',
+            opacity: isFlipped ? 1 : 0,
+            zIndex: isFlipped ? 1 : 0,
+            pointerEvents: isFlipped ? 'auto' : 'none'
+          }}
+        >
+          <CardBack room={room} onFlip={handleFlip} />
+        </div>
+      </CardContent>
+    </Card>
   );
 }

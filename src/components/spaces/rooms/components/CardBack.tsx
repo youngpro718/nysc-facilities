@@ -1,129 +1,118 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Room } from "../types/RoomTypes";
-import { RoomConnections } from "../RoomConnections";
-import { format } from "date-fns";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import React from 'react';
 import { Button } from "@/components/ui/button";
-import { RoomInventory } from "../../RoomInventory";
-import { Boxes } from "lucide-react";
+import { 
+  Building, 
+  ClipboardList, 
+  UserCheck, 
+  Phone, 
+  Layers, 
+  ExternalLink,
+  Lightbulb
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Room } from "../types/RoomTypes";
+import { HallwayConnections } from "./HallwayConnections";
 
 interface CardBackProps {
   room: Room;
+  onFlip: () => void;
 }
 
-export function CardBack({ room }: CardBackProps) {
+export function CardBack({ room, onFlip }: CardBackProps) {
   return (
-    <Card className="absolute w-full h-full backface-hidden rotate-y-180">
-      <CardHeader className="flex-none">
-        <CardTitle>Room Details</CardTitle>
-      </CardHeader>
-      <ScrollArea className="h-[calc(100%-5rem)] px-6">
-        <div className="space-y-4 pb-6">
-          {room.parent_room_id && (
-            <div className="p-2 rounded-md bg-muted/50">
-              <p className="text-sm font-medium">Parent Room</p>
-              <p className="text-sm text-muted-foreground break-words">
-                {room.parent_room?.name || 'Loading...'}
-              </p>
-            </div>
-          )}
-          
-          {room.space_connections && room.space_connections.length > 0 && (
-            <RoomConnections connections={room.space_connections} />
-          )}
+    <div className="p-5 flex flex-col h-full">
+      {/* Floor & Building */}
+      <div className="flex items-center mb-3 text-sm text-muted-foreground">
+        <Building className="h-4 w-4 mr-1" />
+        <span>
+          {room.floor?.building?.name} • {room.floor?.name}
+        </span>
+      </div>
 
-          {room.description && (
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Description</p>
-              <p className="text-sm text-muted-foreground break-words">{room.description}</p>
+      {/* Additional Details */}
+      <div className="space-y-2 flex-1">
+        {/* Parent Room */}
+        {room.parent_room_id && (
+          <div className="flex items-start">
+            <Layers className="h-4 w-4 mr-2 mt-0.5 text-muted-foreground" />
+            <div>
+              <span className="text-sm font-medium">Parent Room</span>
+              <div className="text-sm">{room.parent_room_id}</div>
             </div>
-          )}
-          
-          {room.is_storage && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium">Inventory</h4>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                  >
-                    <Boxes className="h-4 w-4 mr-2" />
-                    View Inventory
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-4xl h-[80vh]">
-                  <DialogHeader>
-                    <DialogTitle>Room Inventory - {room.name}</DialogTitle>
-                  </DialogHeader>
-                  <div className="flex-1 overflow-y-auto">
-                    <RoomInventory roomId={room.id} />
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-          )}
+          </div>
+        )}
 
-          {room.current_function && (
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Current Function</p>
-              <p className="text-sm text-muted-foreground">{room.current_function}</p>
-              {room.function_change_date && (
-                <p className="text-xs text-muted-foreground">
-                  Since {format(new Date(room.function_change_date), 'MMM d, yyyy')}
-                </p>
-              )}
+        {/* Phone */}
+        {room.phone_number && (
+          <div className="flex items-start">
+            <Phone className="h-4 w-4 mr-2 mt-0.5 text-muted-foreground" />
+            <div>
+              <span className="text-sm font-medium">Phone</span>
+              <div className="text-sm">{room.phone_number}</div>
             </div>
-          )}
+          </div>
+        )}
 
-          {room.issues && room.issues.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium">Issues</h4>
-              <div className="space-y-2">
-                {room.issues.slice(0, 5).map((issue) => (
-                  <div 
-                    key={issue.id} 
-                    className="text-sm p-2 bg-muted rounded-lg"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                      <span className="break-words">{issue.title}</span>
-                      <Badge 
-                        variant={issue.status === 'resolved' ? 'default' : 'destructive'}
-                        className="w-fit"
-                      >
-                        {issue.status}
-                      </Badge>
-                    </div>
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-1 gap-2">
-                      <Badge variant="outline" className="w-fit">{issue.type}</Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(issue.created_at), 'MMM d, yyyy')}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+        {/* Room Function */}
+        {room.current_function && (
+          <div className="flex items-start">
+            <ClipboardList className="h-4 w-4 mr-2 mt-0.5 text-muted-foreground" />
+            <div>
+              <span className="text-sm font-medium">Function</span>
+              <div className="text-sm">{room.current_function}</div>
             </div>
-          )}
+          </div>
+        )}
 
-          {room.current_occupants && room.current_occupants.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium">Current Occupants</h4>
-              <div className="space-y-1">
+        {/* Occupants */}
+        {room.current_occupants && room.current_occupants.length > 0 && (
+          <div className="flex items-start">
+            <UserCheck className="h-4 w-4 mr-2 mt-0.5 text-muted-foreground" />
+            <div>
+              <span className="text-sm font-medium">Occupants</span>
+              <div className="flex flex-wrap gap-1 mt-1">
                 {room.current_occupants.map((occupant, index) => (
-                  <div key={index} className="text-sm p-2 bg-muted rounded-lg">
-                    <p>{occupant.first_name} {occupant.last_name}</p>
-                    {occupant.title && <p className="text-xs text-muted-foreground">{occupant.title}</p>}
-                  </div>
+                  <Badge key={index} variant="outline" className="text-xs">
+                    {occupant.first_name} {occupant.last_name}
+                  </Badge>
                 ))}
               </div>
             </div>
-          )}
-        </div>
-      </ScrollArea>
-    </Card>
+          </div>
+        )}
+
+        {/* Lighting Fixtures */}
+        {room.lighting_fixture && (
+          <div className="flex items-start">
+            <Lightbulb className="h-4 w-4 mr-2 mt-0.5 text-muted-foreground" />
+            <div>
+              <span className="text-sm font-medium">Lighting</span>
+              <div className="text-sm">
+                {room.lighting_fixture.type} • {room.lighting_fixture.status}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Hallway Connections */}
+        {room.space_connections && room.space_connections.length > 0 && (
+          <HallwayConnections connections={room.space_connections} />
+        )}
+      </div>
+
+      {/* Actions */}
+      <div className="mt-4 flex justify-between">
+        <Button variant="ghost" size="sm" onClick={onFlip}>
+          Back to Details
+        </Button>
+        <Button variant="outline" size="sm" asChild>
+          <a href={`/spaces/rooms/${room.id}`} target="_blank" rel="noopener noreferrer">
+            <ExternalLink className="h-4 w-4 mr-1" />
+            View Full Details
+          </a>
+        </Button>
+      </div>
+    </div>
   );
 }

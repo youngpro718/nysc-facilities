@@ -4,6 +4,20 @@ import { StatusEnum, RoomTypeEnum, StorageTypeEnum } from "./roomEnums";
 export type RoomType = RoomTypeEnum;
 export type StorageType = StorageTypeEnum;
 
+export interface RoomConnection {
+  id: string;
+  from_space_id: string;
+  to_space_id: string;
+  connection_type: string;
+  direction?: string | null;
+  status: string;
+  to_space?: {
+    id: string;
+    name: string;
+    type: string;
+  };
+}
+
 export interface Room {
   id: string;
   name: string;
@@ -43,7 +57,7 @@ export interface Room {
   
   // Related data
   lighting_fixture?: any;
-  space_connections?: any[];
+  space_connections?: RoomConnection[];
   issues?: any[];
   room_history?: any[];
   current_occupants?: any[];

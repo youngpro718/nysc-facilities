@@ -1,3 +1,4 @@
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -124,13 +125,15 @@ const RoomsList = ({ selectedBuilding, selectedFloor }: RoomsListProps) => {
 
       <RoomsContent
         isLoading={isLoading}
-        rooms={filteredAndSortedRooms}
+        rooms={rooms || []}
+        filteredRooms={filteredAndSortedRooms}
         view={view}
         onDelete={(id) => {
           if (window.confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
             deleteRoom.mutate(id);
           }
         }}
+        searchQuery={searchQuery}
       />
     </div>
   );
