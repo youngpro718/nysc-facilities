@@ -8,7 +8,7 @@ export enum StatusEnum {
 export enum RoomTypeEnum {
   OFFICE = "office",
   COURTROOM = "courtroom",
-  JUDGES_CHAMBERS = "judges_chambers", 
+  JUDGES_CHAMBERS = "judges_chambers",
   JURY_ROOM = "jury_room",
   CONFERENCE_ROOM = "conference_room",
   FILING_ROOM = "filing_room",
@@ -21,35 +21,37 @@ export enum RoomTypeEnum {
   LIBRARY = "library",
   UTILITY = "utility_room",
   SPECIAL = "special",
-  IT_ROOM = "it_room"
+  IT_ROOM = "it_room",
+  LABORATORY = "laboratory"
 }
 
 export enum StorageTypeEnum {
   GENERAL = "general",
-  SECURE = "secure", 
+  SECURE = "secure",
   CLIMATE_CONTROLLED = "climate_controlled",
   HAZARDOUS = "hazardous",
   ARCHIVE = "archive"
 }
 
+// This must match exactly the string literals accepted by the API
 export type RoomTypeString = 
-  | "office" 
-  | "courtroom" 
-  | "judges_chambers" 
-  | "jury_room" 
-  | "conference_room" 
-  | "filing_room" 
-  | "male_locker_room" 
-  | "female_locker_room" 
-  | "robing_room" 
-  | "stake_holder" 
-  | "storage" 
-  | "breakroom" 
-  | "library" 
-  | "utility_room" 
-  | "special" 
+  | "office"
+  | "courtroom"
+  | "judges_chambers"
+  | "jury_room"
+  | "conference_room"
+  | "filing_room"
+  | "male_locker_room"
+  | "female_locker_room"
+  | "robing_room"
+  | "stake_holder"
+  | "storage"
+  | "breakroom"
+  | "library"
+  | "utility_room"
+  | "special"
   | "it_room"
-  | "conference";
+  | "laboratory";
 
 export type StorageTypeString = 
   | "general"

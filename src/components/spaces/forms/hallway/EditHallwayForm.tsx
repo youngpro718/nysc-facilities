@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -74,7 +73,8 @@ export function EditHallwayForm({
         accessibility: data.accessibility || 'fully_accessible',
         emergency_route: data.emergencyRoute || 'not_designated',
         maintenance_priority: data.maintenancePriority || 'low',
-        capacity_limit: data.capacityLimit
+        capacity_limit: data.capacityLimit,
+        space_type: 'hallway'
       };
 
       // Check if hallway properties exist for this space
