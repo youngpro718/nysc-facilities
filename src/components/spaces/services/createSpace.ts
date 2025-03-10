@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { CreateSpaceFormData } from "../schemas/createSpaceSchema";
 import { RoomTypeEnum, StorageTypeEnum, roomTypeToString, statusToString, storageTypeToString } from "../rooms/types/roomEnums";
@@ -227,18 +226,15 @@ export async function createSpace(data: CreateSpaceFormData) {
   }
 }
 
-// Function to validate and convert direction to acceptable database values
 function validateDirection(direction: string | undefined): string {
   if (!direction) return 'adjacent';
   
-  // Valid direction values that meet database constraints
   const validDirections = ['start', 'end', 'center', 'left', 'right', 'adjacent'];
   
   if (validDirections.includes(direction)) {
     return direction;
   }
   
-  // Default to adjacent if not valid
   return 'adjacent';
 }
 
