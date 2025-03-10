@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -78,27 +79,27 @@ export const SpacesList = () => {
 
       <ScrollArea className="flex-grow mt-6">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 p-1">
-          {spaces?.map((item: any) => (
-            <div key={item.id} className="space-y-2">
+          {spaces?.map((space: any) => (
+            <div key={space.id} className="space-y-2">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">{item.name}</h3>
-                <Badge variant={item.status === StatusEnum.ACTIVE ? 'default' : 'destructive'}>
-                  {item.status}
+                <h3 className="text-lg font-semibold">{space.name}</h3>
+                <Badge variant={space.status === StatusEnum.ACTIVE ? 'default' : 'destructive'}>
+                  {space.status}
                 </Badge>
               </div>
               <p className="text-sm text-muted-foreground">
-                {item.floors?.buildings?.name} &gt; {item.floors?.name}
+                {space.floors?.buildings?.name} &gt; {space.floors?.name}
               </p>
               <div className="flex items-center gap-2">
                 <EditSpaceDialog 
-                  id={item.id}
+                  id={space.id}
+                  type="room"
                   initialData={{
-                    id: item.id,
-                    name: item.name,
-                    status: item.status as StatusEnum,
-                    floorId: item.floorId
+                    id: space.id,
+                    name: space.name,
+                    status: space.status as StatusEnum,
+                    floorId: space.floor_id,
                   }}
-                  spaceType="room"
                 />
                 <Button
                   variant="destructive"
@@ -108,7 +109,7 @@ export const SpacesList = () => {
                       const { error } = await supabase
                         .from('rooms')
                         .delete()
-                        .eq('id', item.id);
+                        .eq('id', space.id);
                       
                       if (error) throw error;
                       

@@ -1,264 +1,152 @@
-import { useState } from "react";
-import { useParams } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PlusCircle, Search, ArrowUpDown, Grid, List } from "lucide-react";
-import { GridView } from "./GridView";
-import { ListView } from "./ListView";
-import { TableHead, TableCell } from "@/components/ui/table";
-import { RoomCard } from "../rooms/RoomCard";
-import { useRoomData } from "../hooks/useRoomData";
+
+import React, { useState, useMemo } from 'react';
+import { useRoomsQuery } from "../hooks/queries/useRoomsQuery";
+import { filterSpaces, SortOption } from "../utils/spaceFilters";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import { FilterBar } from "../rooms/components/FilterBar";
+import { RoomsContent } from "../rooms/components/RoomsContent";
 import { Room } from "../rooms/types/RoomTypes";
-import { Badge } from "@/components/ui/badge";
 
-interface RoomPageParams {
-  [key: string]: string;
-  buildingId: string;
-  floorId: string;
-}
-
-export default function RoomsPage() {
-  const params = useParams<RoomPageParams>();
-  const [view, setView] = useState<"grid" | "list">("grid");
-  const [activeTab, setActiveTab] = useState("all");
+export function RoomsPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<"name" | "type" | "status">("name");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [sortBy, setSortBy] = useState<SortOption>("name_asc");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [view, setView] = useState<"grid" | "list">("grid");
+  const [roomTypeFilter, setRoomTypeFilter] = useState("");
+  
+  const queryClient = useQueryClient();
+  const { data: rooms, isLoading, error } = useRoomsQuery();
 
-  const { rooms, isLoading, deleteRoom } = useRoomData({
-    selectedBuilding: params.buildingId,
-    selectedFloor: params.floorId
+  const deleteRoomMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("rooms").delete().eq("id", id);
+      if (error) throw error;
+      return id;
+    },
+    onSuccess: (id) => {
+      queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      toast.success("Room deleted successfully");
+    },
+    onError: (error) => {
+      console.error("Error deleting room:", error);
+      toast.error("Failed to delete room");
+    },
   });
 
-  const filteredRooms = rooms?.filter(room => {
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      return (
-        room.name.toLowerCase().includes(query) ||
-        room.room_number.toLowerCase().includes(query)
-      );
-    }
-
-    if (activeTab === "all") return true;
-    if (activeTab === "storage") return room.is_storage;
-    if (activeTab === "offices") return room.room_type.toString().includes("office");
-    if (activeTab === "courtrooms") return room.room_type.toString().includes("courtroom");
-    
-    return true;
-  }) || [];
-
-  const sortedRooms = [...filteredRooms].sort((a, b) => {
-    if (sortBy === "name") {
-      return sortOrder === "asc" 
-        ? a.name.localeCompare(b.name)
-        : b.name.localeCompare(a.name);
-    }
-    
-    if (sortBy === "type") {
-      return sortOrder === "asc"
-        ? a.room_type.toString().localeCompare(b.room_type.toString())
-        : b.room_type.toString().localeCompare(a.room_type.toString());
-    }
-    
-    if (sortBy === "status") {
-      return sortOrder === "asc"
-        ? a.status.localeCompare(b.status)
-        : b.status.localeCompare(a.status);
-    }
-    
-    return 0;
-  });
-
-  const toggleSortOrder = (field: "name" | "type" | "status") => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortBy(field);
-      setSortOrder("asc");
+  const handleDelete = (id: string) => {
+    if (window.confirm("Are you sure you want to delete this room?")) {
+      deleteRoomMutation.mutate(id);
     }
   };
 
-  const renderRow = (room: Room) => [
-    <TableCell key="name">{room.name}</TableCell>,
-    <TableCell key="number">{room.room_number}</TableCell>,
-    <TableCell key="type">{room.room_type.toString()}</TableCell>,
-    <TableCell key="floor">{room.floor?.name}</TableCell>,
-    <TableCell key="building">{room.floor?.building?.name}</TableCell>,
-    <TableCell key="status">
-      <Badge variant={room.status === "active" ? "default" : "destructive"}>
-        {room.status}
-      </Badge>
-    </TableCell>
-  ];
+  // Apply filters and sorting
+  const filteredRooms = useMemo(() => {
+    if (!rooms) return [];
+
+    let filtered = [...rooms];
+    
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(room => 
+        room.name.toLowerCase().includes(query) || 
+        room.room_number?.toLowerCase().includes(query) ||
+        room.room_type.toLowerCase().includes(query)
+      );
+    }
+    
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(room => room.status.toLowerCase() === statusFilter.toLowerCase());
+    }
+    
+    // Apply room type filter
+    if (roomTypeFilter) {
+      filtered = filtered.filter(room => 
+        room.room_type.toLowerCase() === roomTypeFilter.toLowerCase()
+      );
+    }
+    
+    // Apply sorting
+    filtered = sortRooms(filtered, sortBy);
+    
+    return filtered;
+  }, [rooms, searchQuery, statusFilter, sortBy, roomTypeFilter]);
+
+  // Sort rooms based on selected sort option
+  const sortRooms = (rooms: Room[], sortOption: SortOption): Room[] => {
+    return [...rooms].sort((a, b) => {
+      switch (sortOption) {
+        case 'name_asc':
+          return a.name.localeCompare(b.name);
+        case 'name_desc':
+          return b.name.localeCompare(a.name);
+        case 'room_number_asc':
+          return (a.room_number || '').localeCompare(b.room_number || '');
+        case 'room_number_desc':
+          return (b.room_number || '').localeCompare(a.room_number || '');
+        case 'created_desc':
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case 'created_asc':
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        default:
+          return 0;
+      }
+    });
+  };
+
+  // Count courtrooms for quick filter
+  const courtRoomCount = useMemo(() => {
+    return rooms?.filter(room => room.room_type.toLowerCase() === 'courtroom').length || 0;
+  }, [rooms]);
+
+  // Handle quick filter for specific room types
+  const handleQuickFilter = (filter: string) => {
+    setRoomTypeFilter(prev => prev === filter ? '' : filter);
+  };
+
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>
+          Failed to load rooms: {error instanceof Error ? error.message : "Unknown error"}
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Rooms</h1>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add New Room
-        </Button>
-      </div>
+    <div className="space-y-6">
+      <FilterBar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        view={view}
+        onViewChange={setView}
+        onRefresh={() => queryClient.invalidateQueries({ queryKey: ["rooms"] })}
+        roomTypeFilter={roomTypeFilter}
+        onRoomTypeFilterChange={setRoomTypeFilter}
+        onQuickFilter={handleQuickFilter}
+        courtRoomCount={courtRoomCount}
+      />
 
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full md:w-64">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search rooms..."
-            className="pl-8"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => toggleSortOrder("name")}
-          >
-            Name {sortBy === "name" && (sortOrder === "asc" ? <ArrowUpDown className="ml-2 h-4 w-4" /> : <ArrowUpDown className="ml-2 h-4 w-4" />)}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => toggleSortOrder("type")}
-          >
-            Type {sortBy === "type" && (sortOrder === "asc" ? <ArrowUpDown className="ml-2 h-4 w-4" /> : <ArrowUpDown className="ml-2 h-4 w-4" />)}
-          </Button>
-          <div className="flex ml-auto">
-            <Button
-              variant={view === "grid" ? "default" : "outline"}
-              size="icon"
-              onClick={() => setView("grid")}
-            >
-              <Grid className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={view === "list" ? "default" : "outline"}
-              size="icon"
-              onClick={() => setView("list")}
-            >
-              <List className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="all">All Rooms</TabsTrigger>
-          <TabsTrigger value="offices">Offices</TabsTrigger>
-          <TabsTrigger value="courtrooms">Courtrooms</TabsTrigger>
-          <TabsTrigger value="storage">Storage</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="all" className="mt-6">
-          {view === "grid" ? (
-            <GridView
-              items={sortedRooms}
-              renderItem={(room) => <RoomCard room={room} onDelete={deleteRoom} />}
-              emptyMessage="No rooms found"
-            />
-          ) : (
-            <ListView
-              items={sortedRooms}
-              renderRow={renderRow}
-              headers={<>
-                <TableHead>Name</TableHead>
-                <TableHead>Number</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Floor</TableHead>
-                <TableHead>Building</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </>}
-              emptyMessage="No rooms found"
-              onDelete={deleteRoom}
-            />
-          )}
-        </TabsContent>
-
-        <TabsContent value="offices" className="mt-6">
-          {view === "grid" ? (
-            <GridView
-              items={sortedRooms}
-              renderItem={(room) => <RoomCard room={room} onDelete={deleteRoom} />}
-              emptyMessage="No office rooms found"
-            />
-          ) : (
-            <ListView
-              items={sortedRooms}
-              renderRow={renderRow}
-              headers={<>
-                <TableHead>Name</TableHead>
-                <TableHead>Number</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Floor</TableHead>
-                <TableHead>Building</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </>}
-              emptyMessage="No office rooms found"
-              onDelete={deleteRoom}
-            />
-          )}
-        </TabsContent>
-
-        <TabsContent value="courtrooms" className="mt-6">
-          {view === "grid" ? (
-            <GridView
-              items={sortedRooms}
-              renderItem={(room) => <RoomCard room={room} onDelete={deleteRoom} />}
-              emptyMessage="No courtrooms found"
-            />
-          ) : (
-            <ListView
-              items={sortedRooms}
-              renderRow={renderRow}
-              headers={<>
-                <TableHead>Name</TableHead>
-                <TableHead>Number</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Floor</TableHead>
-                <TableHead>Building</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </>}
-              emptyMessage="No courtrooms found"
-              onDelete={deleteRoom}
-            />
-          )}
-        </TabsContent>
-
-        <TabsContent value="storage" className="mt-6">
-          {view === "grid" ? (
-            <GridView
-              items={sortedRooms}
-              renderItem={(room) => <RoomCard room={room} onDelete={deleteRoom} />}
-              emptyMessage="No storage rooms found"
-            />
-          ) : (
-            <ListView
-              items={sortedRooms}
-              renderRow={renderRow}
-              headers={<>
-                <TableHead>Name</TableHead>
-                <TableHead>Number</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Floor</TableHead>
-                <TableHead>Building</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </>}
-              emptyMessage="No storage rooms found" 
-              onDelete={deleteRoom}
-            />
-          )}
-        </TabsContent>
-      </Tabs>
+      <RoomsContent
+        isLoading={isLoading}
+        rooms={rooms || []}
+        filteredRooms={filteredRooms}
+        view={view}
+        onDelete={handleDelete}
+        searchQuery={searchQuery}
+      />
     </div>
   );
 }

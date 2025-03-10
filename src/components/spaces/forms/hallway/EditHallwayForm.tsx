@@ -15,8 +15,7 @@ interface EditHallwayFormProps {
   id: string;
   initialData: Partial<EditSpaceFormData>;
   onSuccess?: () => void;
-  onCancel?: () => void;
-  onClose?: () => void;
+  onCancel: () => void;
 }
 
 export function EditHallwayForm({
@@ -24,7 +23,6 @@ export function EditHallwayForm({
   initialData,
   onSuccess,
   onCancel,
-  onClose,
 }: EditHallwayFormProps) {
   const queryClient = useQueryClient();
   
@@ -76,8 +74,7 @@ export function EditHallwayForm({
         accessibility: data.accessibility || 'fully_accessible',
         emergency_route: data.emergencyRoute || 'not_designated',
         maintenance_priority: data.maintenancePriority || 'low',
-        capacity_limit: data.capacityLimit,
-        space_type: 'hallway'
+        capacity_limit: data.capacityLimit
       };
 
       // Check if hallway properties exist for this space
@@ -123,11 +120,6 @@ export function EditHallwayForm({
     await hallwayMutation.mutateAsync(data);
   };
 
-  const handleCancel = () => {
-    if (onCancel) onCancel();
-    if (onClose) onClose();
-  };
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
@@ -137,7 +129,7 @@ export function EditHallwayForm({
           <Button
             type="button"
             variant="outline"
-            onClick={handleCancel}
+            onClick={onCancel}
           >
             Cancel
           </Button>

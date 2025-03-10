@@ -1,24 +1,15 @@
-
-import React from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { SpaceListFilters } from "./SpaceListFilters";
-import { GridView } from "./views/GridView";
-import { ListView } from "./views/ListView";
-import { useState, useMemo } from "react";
-import { toast, useToast } from "@/components/ui/use-toast";
-import { filterSpaces, sortSpaces } from "./utils/spaceFilters";
-import { AlertTriangle, Wrench, ArrowLeftRight } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { SpaceListFilters } from "./SpaceListFilters";
+import { useState, useMemo } from "react";
+import { filterSpaces, sortSpaces } from "./utils/spaceFilters";
+import { GridView } from "./views/GridView";
+import { ListView } from "./views/ListView";
+import { Badge } from "@/components/ui/badge";
+import { TableCell } from "@/components/ui/table";
 import { format } from "date-fns";
+import { AlertTriangle, Wrench, ArrowLeftRight } from "lucide-react";
 
 interface DoorsListProps {
   selectedBuilding: string;
@@ -195,10 +186,6 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
     </TableCell>
   ];
 
-  const handleDeleteDoor = (id: string) => {
-    deleteDoor.mutate(id);
-  };
-
   return (
     <div className="space-y-6">
       <SpaceListFilters
@@ -222,24 +209,16 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
               {view === 'grid' ? (
                 <GridView
                   items={groupedDoors.transition}
-                  renderItem={renderDoorContent}
-                  emptyMessage="No transition doors found"
+                  onDelete={(id) => deleteDoor.mutate(id)}
+                  renderItemContent={renderDoorContent}
                   type="door"
-                  onDelete={handleDeleteDoor}
                 />
               ) : (
                 <ListView
                   items={groupedDoors.transition}
+                  onDelete={(id) => deleteDoor.mutate(id)}
                   renderRow={renderDoorRow}
-                  headers={<>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Issues</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </>}
                   type="door"
-                  onDelete={handleDeleteDoor}
                 />
               )}
             </div>
@@ -251,24 +230,16 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
               {view === 'grid' ? (
                 <GridView
                   items={groupedDoors.problem}
-                  renderItem={renderDoorContent}
-                  emptyMessage="No problem doors found"
+                  onDelete={(id) => deleteDoor.mutate(id)}
+                  renderItemContent={renderDoorContent}
                   type="door"
-                  onDelete={handleDeleteDoor}
                 />
               ) : (
                 <ListView
                   items={groupedDoors.problem}
+                  onDelete={(id) => deleteDoor.mutate(id)}
                   renderRow={renderDoorRow}
-                  headers={<>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Issues</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </>}
                   type="door"
-                  onDelete={handleDeleteDoor}
                 />
               )}
             </div>
@@ -279,24 +250,16 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
             {view === 'grid' ? (
               <GridView
                 items={groupedDoors.standard}
-                renderItem={renderDoorContent}
-                emptyMessage="No standard doors found"
+                onDelete={(id) => deleteDoor.mutate(id)}
+                renderItemContent={renderDoorContent}
                 type="door"
-                onDelete={handleDeleteDoor}
               />
             ) : (
               <ListView
                 items={groupedDoors.standard}
+                onDelete={(id) => deleteDoor.mutate(id)}
                 renderRow={renderDoorRow}
-                headers={<>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Issues</TableHead>
-                  <TableHead>Actions</TableHead>
-                </>}
                 type="door"
-                onDelete={handleDeleteDoor}
               />
             )}
           </div>

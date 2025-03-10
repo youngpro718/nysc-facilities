@@ -1,12 +1,12 @@
 
-import { StatusEnum, RoomTypeEnum, StorageTypeEnum, RoomTypeString, StorageTypeString } from "./roomEnums";
+import { StatusEnum, RoomTypeEnum, StorageTypeEnum } from "./roomEnums";
 
-export type RoomType = RoomTypeEnum | RoomTypeString;
-export type StorageType = StorageTypeEnum | StorageTypeString;
+export type RoomType = RoomTypeEnum;
+export type StorageType = StorageTypeEnum;
 
 export interface RoomConnection {
   id: string;
-  from_space_id?: string; // Optional since it might be missing from server response
+  from_space_id: string;
   to_space_id: string;
   connection_type: string;
   direction?: string | null;
@@ -15,7 +15,7 @@ export interface RoomConnection {
     id: string;
     name: string;
     type: string;
-  } | null;
+  };
 }
 
 export interface Room {
@@ -23,7 +23,7 @@ export interface Room {
   name: string;
   room_number: string;
   room_type: RoomType;
-  status: StatusEnum | string;
+  status: StatusEnum;
   description?: string | null;
   phone_number?: string | null;
   is_storage: boolean;
@@ -37,14 +37,15 @@ export interface Room {
   updated_at: string;
   function_change_date?: string;
   previous_functions?: any[];
-  position?: { x: number; y: number } | any;
-  size?: { width: number; height: number } | any;
+  position?: { x: number; y: number };
+  size?: { width: number; height: number };
   rotation?: number;
   courtroom_photos?: {
     judge_view?: string | null;
     audience_view?: string | null;
-  } | any;
+  };
   
+  // Relationships
   floor?: {
     id: string;
     name: string;
@@ -53,13 +54,11 @@ export interface Room {
       name: string;
     }
   };
-  space_connections?: RoomConnection[];
   
-  // Additional properties needed by components
+  // Related data
   lighting_fixture?: any;
-  current_occupants?: any[];
+  space_connections?: RoomConnection[];
   issues?: any[];
   room_history?: any[];
-  capacity?: number;
-  current_occupancy?: number;
+  current_occupants?: any[];
 }

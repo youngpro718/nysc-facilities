@@ -13,15 +13,6 @@ export const transformRoomData = (
     ...room,
     room_type: room.room_type as RoomType,
     storage_type: room.storage_type ? (room.storage_type as StorageType) : null,
-    // Ensure position and size are in the expected format
-    position: typeof room.position === 'object' ? room.position : 
-      (room.position ? (typeof room.position === 'string' ? JSON.parse(room.position) : { x: 0, y: 0 }) : { x: 0, y: 0 }),
-    size: typeof room.size === 'object' ? room.size : 
-      (room.size ? (typeof room.size === 'string' ? JSON.parse(room.size) : { width: 150, height: 100 }) : { width: 150, height: 100 }),
-    // Convert courtroom_photos from Json if needed
-    courtroom_photos: typeof room.courtroom_photos === 'object' ? room.courtroom_photos :
-      (room.courtroom_photos ? (typeof room.courtroom_photos === 'string' ? JSON.parse(room.courtroom_photos) : null) : null),
-    // Process relationships and related data
     lighting_fixture: fixturesByRoomId[room.id] ? {
       id: fixturesByRoomId[room.id].id,
       type: fixturesByRoomId[room.id].type,
@@ -31,27 +22,8 @@ export const transformRoomData = (
       ballast_issue: fixturesByRoomId[room.id].ballast_issue,
       maintenance_notes: fixturesByRoomId[room.id].maintenance_notes
     } : null,
-    space_connections: (connectionsByRoomId[room.id] || []).map(conn => {
-      // Properly transform the to_space property to handle potential errors
-      let toSpace = null;
-      if (conn.to_space && typeof conn.to_space === 'object' && !conn.to_space.error) {
-        toSpace = {
-          id: conn.to_space.id || '',
-          name: conn.to_space.name || '',
-          type: conn.to_space.type || ''
-        };
-      }
-      
-      return {
-        id: conn.id,
-        from_space_id: conn.from_space_id || room.id, // Ensure from_space_id is set 
-        to_space_id: conn.to_space_id,
-        connection_type: conn.connection_type,
-        direction: conn.direction,
-        status: conn.status,
-        to_space: toSpace
-      };
-    }),
+    space_connections: connectionsByRoomId[room.id] || [],
+    courtroom_photos: room.courtroom_photos ? room.courtroom_photos : null,
     issues: (issuesByRoomId[room.id] || []).map(issue => ({
       id: issue.id,
       title: issue.title,

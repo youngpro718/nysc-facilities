@@ -1,19 +1,18 @@
 
-import { RoomCard } from "../RoomCard";
+import React, { useMemo } from 'react';
+import { Skeleton } from "@/components/ui/skeleton";
 import { Room } from "../types/RoomTypes";
+import { RoomCard } from "../RoomCard";
 import { RoomTable } from "../RoomTable";
-import { FlippableRoomCard } from "./FlippableRoomCard";
 import { SearchResultsInfo } from "./SearchResultsInfo";
-import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
-interface RoomsContentProps {
+export interface RoomsContentProps {
   isLoading: boolean;
   rooms: Room[];
   filteredRooms: Room[];
   view: "grid" | "list";
   onDelete: (id: string) => void;
-  searchQuery: string;
-  cardType?: "standard" | "flippable";
+  searchQuery?: string;
 }
 
 export function RoomsContent({
@@ -23,60 +22,65 @@ export function RoomsContent({
   view,
   onDelete,
   searchQuery,
-  cardType = "standard"
 }: RoomsContentProps) {
+  // Calculate room type counts for the filtered rooms
+  const roomTypeCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    
+    filteredRooms.forEach(room => {
+      const type = room.room_type;
+      counts[type] = (counts[type] || 0) + 1;
+    });
+    
+    return counts;
+  }, [filteredRooms]);
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <LoadingSpinner />
-      </div>
-    );
-  }
-
-  if (rooms.length === 0) {
-    return (
-      <div className="text-center p-8 bg-muted/20 rounded-lg">
-        <h3 className="text-lg font-medium">No Rooms Found</h3>
-        <p className="text-muted-foreground">
-          There are no rooms added to the system yet.
-        </p>
+      <div className="space-y-6">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-[300px]" />
+          ))}
+        </div>
       </div>
     );
   }
 
   if (filteredRooms.length === 0) {
     return (
-      <div className="text-center p-8 bg-muted/20 rounded-lg">
-        <h3 className="text-lg font-medium">No Results</h3>
-        <p className="text-muted-foreground">
-          No rooms match your search criteria. Try adjusting your filters.
-        </p>
+      <div className="text-center py-10 text-muted-foreground">
+        {searchQuery ? 
+          `No rooms found for "${searchQuery}"` : 
+          'No rooms found matching your criteria'}
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <SearchResultsInfo 
-        totalCount={rooms.length} 
-        filteredCount={filteredRooms.length} 
-        searchQuery={searchQuery} 
+        totalCount={rooms.length}
+        filteredCount={filteredRooms.length}
+        searchQuery={searchQuery}
+        roomTypeCounts={roomTypeCounts}
       />
 
-      {view === "grid" ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {view === 'grid' ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredRooms.map((room) => (
-            <div key={room.id} className="h-full">
-              {cardType === "flippable" ? (
-                <FlippableRoomCard room={room} onDelete={onDelete} />
-              ) : (
-                <RoomCard room={room} onDelete={onDelete} />
-              )}
-            </div>
+            <RoomCard
+              key={room.id}
+              room={room}
+              onDelete={onDelete}
+            />
           ))}
         </div>
       ) : (
-        <RoomTable rooms={filteredRooms} onDelete={onDelete} />
+        <RoomTable
+          rooms={filteredRooms}
+          onDelete={onDelete}
+        />
       )}
     </div>
   );

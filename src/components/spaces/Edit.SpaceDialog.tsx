@@ -1,102 +1,63 @@
-
-// Import necessary components and libraries
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { supabase } from "@/integrations/supabase/client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Pencil } from "lucide-react";
 import { toast } from "sonner";
-import { RoomTypeEnum, StatusEnum, StorageTypeEnum } from "./rooms/types/roomEnums";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { supabase } from "@/integrations/supabase/client";
 import { RoomFormContent } from "./forms/room/RoomFormContent";
 import { roomFormSchema, type RoomFormData } from "./forms/room/RoomFormSchema";
 import { EditHallwayForm } from "./forms/hallway/EditHallwayForm";
-import { RoomType } from "./rooms/types/RoomTypes";
 
 interface EditSpaceDialogProps {
   id: string;
   type: "room" | "hallway";
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onUpdate?: () => void;
+  initialData?: any;
+  open?: boolean;
+  setOpen?: (open: boolean) => void;
+  variant?: "button" | "custom";
+  onSpaceUpdated?: () => void;
 }
 
-export function EditSpaceDialog({ id, type, open, onOpenChange, onUpdate }: EditSpaceDialogProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  
-  const roomForm = useForm<RoomFormData>({
+export function EditSpaceDialog({
+  id,
+  type,
+  initialData,
+  open: controlledOpen,
+  setOpen: controlledSetOpen,
+  variant = "button",
+  onSpaceUpdated,
+}: EditSpaceDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = controlledSetOpen ?? setInternalOpen;
+
+  const form = useForm<RoomFormData>({
     resolver: zodResolver(roomFormSchema),
-    defaultValues: {
-      name: "",
-      roomNumber: "",
-      roomType: RoomTypeEnum.OFFICE,
-      status: StatusEnum.ACTIVE,
-      description: "",
-      isStorage: false,
-      storageType: null,
-      storageCapacity: null,
-      storageNotes: null,
-      parentRoomId: null,
-      floorId: "",
-      type: "room",
-      connections: []
-    }
+    defaultValues: initialData,
   });
 
   useEffect(() => {
-    if (open && id) {
-      loadSpaceData();
+    if (open && initialData) {
+      console.log("Resetting form with initial data:", initialData);
+      form.reset(initialData);
     }
-  }, [open, id]);
+  }, [open, form, initialData]);
 
-  const loadSpaceData = async () => {
-    if (type === "room") {
-      // Load room data
-      const { data: room, error } = await supabase
-        .from("rooms")
-        .select(`
-          *,
-          space_connections(*)
-        `)
-        .eq("id", id)
-        .single();
+  const queryClient = useQueryClient();
 
-      if (error) {
-        toast.error("Failed to load room data");
-        console.error(error);
-        return;
-      }
-
-      // Transform the data to match form structure
-      roomForm.reset({
-        id: room.id,
-        name: room.name,
-        roomNumber: room.room_number,
-        roomType: room.room_type as RoomTypeEnum,
-        status: room.status as StatusEnum,
-        description: room.description || "",
-        isStorage: room.is_storage || false,
-        storageType: room.storage_type as StorageTypeEnum,
-        storageCapacity: room.storage_capacity,
-        storageNotes: room.storage_notes,
-        parentRoomId: room.parent_room_id,
-        floorId: room.floor_id,
-        type: "room",
-        connections: (room.space_connections || []).map((conn: any) => ({
-          id: conn.id,
-          toSpaceId: conn.to_space_id,
-          connectionType: conn.connection_type,
-          direction: conn.direction
-        }))
-      });
-    }
-  };
-
-  const handleUpdateRoom = async (data: RoomFormData) => {
-    try {
-      setIsLoading(true);
-      console.log("Updating room with data:", data);
+  const editSpaceMutation = useMutation({
+    mutationFn: async (data: RoomFormData) => {
+      console.log("Submitting data for room update:", data);
       
-      // Prepare room data for update
       const updateData = {
         name: data.name,
         room_number: data.roomNumber,
@@ -104,128 +65,181 @@ export function EditSpaceDialog({ id, type, open, onOpenChange, onUpdate }: Edit
         status: data.status,
         description: data.description,
         is_storage: data.isStorage,
-        storage_type: data.storageType,
+        storage_type: data.isStorage ? data.storageType : null,
         storage_capacity: data.storageCapacity,
         storage_notes: data.storageNotes,
         parent_room_id: data.parentRoomId,
-        floor_id: data.floorId
+        current_function: data.currentFunction,
+        phone_number: data.phoneNumber,
+        floor_id: data.floorId,
       };
-      
-      console.log("Room update payload:", updateData);
-      
-      // Update room
+
+      console.log("Room update data:", updateData);
       const { error: roomError } = await supabase
         .from("rooms")
         .update(updateData)
-        .eq("id", data.id);
-      
+        .eq('id', id);
+
       if (roomError) {
+        console.error("Room update error:", roomError);
         throw roomError;
       }
 
+      // Handle connections
       if (data.connections && data.connections.length > 0) {
         console.log("Processing connections:", data.connections);
         
+        // Get existing connections
         const { data: existingConnections, error: fetchError } = await supabase
           .from("space_connections")
           .select("id")
-          .eq("from_space_id", data.id);
-        
+          .eq("from_space_id", id)
+          .eq("status", "active");
+          
         if (fetchError) {
+          console.error("Error fetching connections:", fetchError);
           throw fetchError;
         }
         
-        // Get existing connection IDs
-        const existingIds = existingConnections.map((conn: any) => conn.id);
+        const existingIds = (existingConnections || []).map(c => c.id);
         console.log("Existing connection IDs:", existingIds);
         
         const keepConnectionIds: string[] = [];
         
+        // Process each connection
         for (const connection of data.connections) {
           if (connection.id) {
             keepConnectionIds.push(connection.id);
             
+            // Update existing connection
+            console.log("Updating connection:", connection);
             const { error: updateError } = await supabase
               .from("space_connections")
               .update({
                 to_space_id: connection.toSpaceId,
                 connection_type: connection.connectionType,
-                direction: connection.direction
+                direction: connection.direction,
               })
               .eq("id", connection.id);
-            
+              
             if (updateError) {
-              console.error("Error updating connection:", updateError);
+              console.error("Connection update error:", updateError);
               throw updateError;
             }
           } else if (connection.toSpaceId && connection.connectionType) {
+            // Create new connection
+            console.log("Creating new connection:", connection);
             const { error: insertError } = await supabase
               .from("space_connections")
               .insert({
-                from_space_id: data.id,
+                from_space_id: id,
                 to_space_id: connection.toSpaceId,
+                space_type: "room",
                 connection_type: connection.connectionType,
                 direction: connection.direction,
                 status: "active"
               });
-            
+              
             if (insertError) {
-              console.error("Error creating connection:", insertError);
+              console.error("Connection insert error:", insertError);
               throw insertError;
             }
           }
         }
         
+        // Handle connections to be removed
         const connectionsToDelete = existingIds.filter(id => !keepConnectionIds.includes(id));
         console.log("Connections to delete:", connectionsToDelete);
         
         if (connectionsToDelete.length > 0) {
           const { error: deleteError } = await supabase
             .from("space_connections")
-            .delete()
+            .update({ status: "inactive" })
             .in("id", connectionsToDelete);
-          
+            
           if (deleteError) {
-            console.error("Error deleting connections:", deleteError);
+            console.error("Connection delete error:", deleteError);
             throw deleteError;
           }
         }
       }
-
+      
+      return data;
+    },
+    onSuccess: () => {
+      console.log("Update successful, invalidating queries");
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      queryClient.invalidateQueries({ queryKey: ['room-connections', id] });
+      queryClient.invalidateQueries({ queryKey: ['floorplan-objects'] });
       toast.success("Room updated successfully");
-      onUpdate?.();
-      onOpenChange(false);
-    } catch (error) {
-      console.error("Failed to update room:", error);
-      toast.error("Failed to update room");
-    } finally {
-      setIsLoading(false);
+      setOpen(false);
+      if (onSpaceUpdated) {
+        console.log("Calling onSpaceUpdated callback");
+        onSpaceUpdated();
+      }
+    },
+    onError: (error) => {
+      console.error("Update error:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to update room");
+    },
+  });
+
+  const handleSubmit = async (data: RoomFormData) => {
+    console.log("Handling submit with data:", data);
+    await editSpaceMutation.mutateAsync(data);
+  };
+
+  const renderContent = () => {
+    if (type === 'hallway') {
+      return (
+        <EditHallwayForm 
+          id={id}
+          initialData={initialData}
+          onSuccess={() => {
+            setOpen(false);
+            if (onSpaceUpdated) onSpaceUpdated();
+          }}
+          onCancel={() => setOpen(false)}
+        />
+      );
     }
+    
+    return (
+      <RoomFormContent
+        form={form}
+        onSubmit={handleSubmit}
+        isPending={editSpaceMutation.isPending}
+        onCancel={() => setOpen(false)}
+        roomId={id}
+      />
+    );
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Edit {type === "room" ? "Room" : "Hallway"}</DialogTitle>
-        </DialogHeader>
-        
-        {type === "room" ? (
-          <RoomFormContent
-            form={roomForm}
-            onSubmit={handleUpdateRoom}
-            isPending={isLoading}
-            onCancel={() => onOpenChange(false)}
-            roomId={id}
-          />
-        ) : (
-          <EditHallwayForm
-            id={id}
-            onClose={() => onOpenChange(false)}
-            onSuccess={onUpdate}
-          />
-        )}
-      </DialogContent>
-    </Dialog>
+    <>
+      {variant === "button" && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-2"
+          onClick={() => setOpen(true)}
+        >
+          <Pencil className="h-4 w-4" />
+          Edit
+        </Button>
+      )}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{type === 'hallway' ? 'Edit Hallway' : 'Edit Room'}</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[80vh] overflow-y-auto">
+            <div className="p-1">
+              {renderContent()}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

@@ -1,3 +1,4 @@
+
 import { TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -44,13 +45,8 @@ export function SpaceRow<T extends { id: string; name: string; status: string; f
         {type === "room" && (
           <EditSpaceDialog
             id={item.id}
-            initialData={{
-              id: item.id,
-              name: item.name,
-              status: item.status as StatusEnum, 
-              floorId: item.floorId
-            }}
-            spaceType={type}
+            type="room"
+            initialData={initialData}
           />
         )}
         <Button

@@ -1,16 +1,15 @@
+
 import { useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { SpaceListFilters } from "./SpaceListFilters";
 import { GridView } from "./views/GridView";
 import { ListView } from "./views/ListView";
-import { TableCell, TableHead } from "@/components/ui/table";
+import { TableCell } from "@/components/ui/table";
 import { useHallwayData } from "./hooks/useHallwayData";
 import { ConnectedSpaces } from "./hallway/ConnectedSpaces";
 import { filterSpaces, sortSpaces } from "./utils/spaceFilters";
 import { Hallway } from "./types/hallwayTypes";
 import { Shield, ArrowRight, Accessibility } from "lucide-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 
 interface HallwaysListProps {
   selectedBuilding: string;
@@ -22,28 +21,11 @@ const HallwaysList = ({ selectedBuilding, selectedFloor }: HallwaysListProps) =>
   const [sortBy, setSortBy] = useState("name_asc");
   const [statusFilter, setStatusFilter] = useState("all");
   const [view, setView] = useState<"grid" | "list">("grid");
-  const queryClient = useQueryClient();
 
   const { hallways, isLoading, deleteHallway } = useHallwayData({
     selectedBuilding,
     selectedFloor
   });
-
-  const deleteHallwayMutation = useMutation({
-    mutationFn: (id: string) => deleteHallway(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['hallways'] });
-      toast.success('Hallway deleted successfully');
-    },
-    onError: (error) => {
-      toast.error('Failed to delete hallway');
-      console.error('Delete error:', error);
-    }
-  });
-
-  const handleDelete = (id: string) => {
-    deleteHallwayMutation.mutate(id);
-  };
 
   const filteredAndSortedHallways = useMemo(() => {
     if (!hallways) return [];
@@ -150,27 +132,16 @@ const HallwaysList = ({ selectedBuilding, selectedFloor }: HallwaysListProps) =>
         view === 'grid' ? (
           <GridView
             items={filteredAndSortedHallways}
-            renderItem={renderGridContent}
+            onDelete={(id) => deleteHallway.mutate(id)}
+            renderItemContent={renderGridContent}
             type="hallway"
-            onDelete={handleDelete}
-            emptyMessage="No hallways found"
           />
         ) : (
           <ListView
             items={filteredAndSortedHallways}
+            onDelete={(id) => deleteHallway.mutate(id)}
             renderRow={renderListRow}
-            headers={<>
-              <TableHead>Name</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Building</TableHead>
-              <TableHead>Floor</TableHead>
-              <TableHead>Accessibility</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Actions</TableHead>
-            </>}
             type="hallway"
-            onDelete={handleDelete}
-            emptyMessage="No hallways found"
           />
         )
       )}

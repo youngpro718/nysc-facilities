@@ -1,265 +1,257 @@
 
 import { useState, useEffect } from "react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { useForm } from "react-hook-form";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { EditHallwayForm } from "./forms/hallway/EditHallwayForm";
-import { RoomTypeEnum, StatusEnum, StorageTypeEnum, RoomType, StorageType, roomTypeToString, storageTypeToString } from "./rooms/types/roomEnums";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Pencil } from "lucide-react";
 import { toast } from "sonner";
-import { EditSpaceFormData } from "./schemas/editSpaceSchema";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { supabase } from "@/integrations/supabase/client";
+import { RoomFormContent } from "./forms/room/RoomFormContent";
+import { roomFormSchema, type RoomFormData } from "./forms/room/RoomFormSchema";
+import { EditHallwayForm } from "./forms/hallway/EditHallwayForm";
 
 interface EditSpaceDialogProps {
   id: string;
-  spaceType?: string;
+  type: "room" | "hallway";
+  initialData?: any;
+  open?: boolean;
+  setOpen?: (open: boolean) => void;
+  variant?: "button" | "custom";
   onSpaceUpdated?: () => void;
-  initialData?: Partial<EditSpaceFormData>;
-  onClose?: () => void;
 }
 
-export function EditSpaceDialog({ id, spaceType, onSpaceUpdated, initialData, onClose }: EditSpaceDialogProps) {
-  const [open, setOpen] = useState(false);
-  const [isHallway, setIsHallway] = useState(false);
-  const [spaceData, setSpaceData] = useState<EditSpaceFormData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export function EditSpaceDialog({
+  id,
+  type,
+  initialData,
+  open: controlledOpen,
+  setOpen: controlledSetOpen,
+  variant = "button",
+  onSpaceUpdated,
+}: EditSpaceDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = controlledSetOpen ?? setInternalOpen;
+
+  const form = useForm<RoomFormData>({
+    resolver: zodResolver(roomFormSchema),
+    defaultValues: {
+      ...initialData,
+      type: type === "room" ? "room" : "hallway",
+      connections: initialData?.space_connections || initialData?.connections || []
+    },
+  });
 
   useEffect(() => {
-    const fetchSpaceData = async () => {
-      setIsLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('new_spaces')
-          .select('*')
-          .eq('id', id)
-          .single();
-
-        if (error) throw error;
-
-        // Check if the space is a hallway
-        setIsHallway(data.type === 'hallway');
-
-        // Fetch additional properties based on space type
-        if (data.type === 'room') {
-          const { data: roomData, error: roomError } = await supabase
-            .from('rooms')
-            .select('*')
-            .eq('id', id)
-            .single();
-
-          if (roomError) throw roomError;
-
-          // Since properties is a json field, carefully handle description
-          const description = typeof data.properties === 'object' && data.properties !== null 
-            ? (data.properties as any).description || ''
-            : '';
-
-          setSpaceData({
-            ...data,
-            name: data.name,
-            roomNumber: roomData.room_number,
-            roomType: roomData.room_type as RoomType,
-            status: roomData.status as StatusEnum,
-            description: description,
-            isStorage: roomData.is_storage,
-            storageType: roomData.storage_type as StorageType,
-            storageCapacity: roomData.storage_capacity,
-            storageNotes: roomData.storage_notes,
-            parentRoomId: roomData.parent_room_id,
-            floorId: data.floor_id,
-            type: "room"
-          } as EditSpaceFormData);
-        } else if (data.type === 'hallway') {
-          const { data: hallwayData, error: hallwayError } = await supabase
-            .from('hallway_properties')
-            .select('*')
-            .eq('space_id', id)
-            .single();
-
-          if (hallwayError) throw hallwayError;
-
-          // Since properties is a json field, carefully handle description
-          const description = typeof data.properties === 'object' && data.properties !== null 
-            ? (data.properties as any).description || ''
-            : '';
-
-          setSpaceData({
-            ...data,
-            name: data.name,
-            description: description,
-            status: data.status as StatusEnum,
-            floorId: data.floor_id,
-            section: hallwayData.section,
-            trafficFlow: hallwayData.traffic_flow,
-            accessibility: hallwayData.accessibility,
-            emergencyRoute: hallwayData.emergency_route,
-            maintenancePriority: hallwayData.maintenance_priority,
-            capacityLimit: hallwayData.capacity_limit,
-            type: "hallway"
-          } as EditSpaceFormData);
-        }
-      } catch (error) {
-        console.error('Error fetching space data:', error);
-        toast.error('Failed to fetch space data');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (open && !initialData) {
-      fetchSpaceData();
-    } else if (initialData) {
-      setSpaceData(initialData as EditSpaceFormData);
-      setIsHallway(initialData.type === 'hallway');
-      setIsLoading(false);
+    if (open && initialData) {
+      console.log("Resetting form with initial data:", initialData);
+      
+      const connections = initialData.space_connections || initialData.connections || [];
+      
+      form.reset({
+        ...initialData,
+        type: type === "room" ? "room" : "hallway",
+        connections: connections.map((conn: any) => ({
+          id: conn.id,
+          toSpaceId: conn.to_space_id || conn.toSpaceId,
+          connectionType: conn.connection_type || conn.connectionType,
+          direction: conn.direction
+        }))
+      });
     }
-  }, [id, open, initialData]);
+  }, [open, form, initialData, type]);
 
-  const handleUpdateConnections = async (spaceId: string, connections: any[]) => {
-    try {
-      // Delete existing connections
-      await supabase
-        .from('space_connections')
-        .delete()
-        .eq('from_space_id', spaceId);
+  const queryClient = useQueryClient();
 
-      // Insert new connections if there are any
-      if (connections.length > 0) {
-        const newConnections = connections.map(conn => ({
-          from_space_id: spaceId,
-          to_space_id: conn.to_space_id,
-          connection_type: conn.connection_type,
-          direction: conn.direction || null,
-          status: 'active',
-          space_type: 'room' // Explicitly set the space type
-        }));
-
-        const { error: insertError } = await supabase
-          .from('space_connections')
-          .upsert(newConnections);
-
-        if (insertError) throw insertError;
-      }
-    } catch (error) {
-      console.error('Error updating connections:', error);
-      throw error;
-    }
-  };
-
-  const handleUpdateRoom = async (updatedData: EditSpaceFormData) => {
-    try {
-      if (updatedData.type !== 'room') {
-        throw new Error('Invalid space type for room update');
-      }
-
-      // Update the space data in the new_spaces table
-      const { error: spaceError } = await supabase
-        .from('new_spaces')
-        .update({
-          name: updatedData.name,
-          floor_id: updatedData.floorId,
-          properties: {
-            description: updatedData.description
-          },
-          position: updatedData.position,
-          size: updatedData.size,
-          rotation: updatedData.rotation,
-          status: updatedData.status
-        })
-        .eq('id', id);
-
-      if (spaceError) throw spaceError;
-
-      // Update the room-specific data in the rooms table
-      const roomUpdateData = {
-        room_number: updatedData.roomNumber,
-        room_type: roomTypeToString(updatedData.roomType),
-        status: updatedData.status,
-        is_storage: updatedData.isStorage,
-        storage_type: updatedData.storageType ? storageTypeToString(updatedData.storageType) : null,
-        storage_capacity: updatedData.storageCapacity,
-        storage_notes: updatedData.storageNotes,
-        parent_room_id: updatedData.parentRoomId,
+  const editSpaceMutation = useMutation({
+    mutationFn: async (data: RoomFormData) => {
+      console.log("Submitting data for room update:", data);
+      
+      const updateData = {
+        name: data.name,
+        room_number: data.roomNumber,
+        room_type: data.roomType,
+        status: data.status,
+        description: data.description,
+        is_storage: data.isStorage,
+        storage_type: data.isStorage ? data.storageType : null,
+        storage_capacity: data.storageCapacity,
+        storage_notes: data.storageNotes,
+        parent_room_id: data.parentRoomId,
+        current_function: data.currentFunction,
+        phone_number: data.phoneNumber,
+        floor_id: data.floorId,
+        courtroom_photos: data.courtRoomPhotos
       };
 
+      console.log("Room update data:", updateData);
       const { error: roomError } = await supabase
-        .from('rooms')
-        .update(roomUpdateData)
+        .from("rooms")
+        .update(updateData)
         .eq('id', id);
 
-      if (roomError) throw roomError;
-
-      // Update space connections
-      if (updatedData.connections) {
-        await handleUpdateConnections(id, updatedData.connections);
+      if (roomError) {
+        console.error("Room update error:", roomError);
+        throw roomError;
       }
+      
+      if (data.connections && data.connections.length > 0) {
+        console.log("Processing connections:", data.connections);
+        
+        const { data: existingConnections, error: fetchError } = await supabase
+          .from("space_connections")
+          .select("id")
+          .eq("from_space_id", id)
+          .eq("status", "active");
+          
+        if (fetchError) {
+          console.error("Error fetching connections:", fetchError);
+          throw fetchError;
+        }
+        
+        const existingIds = (existingConnections || []).map(c => c.id);
+        console.log("Existing connection IDs:", existingIds);
+        
+        const keepConnectionIds: string[] = [];
+        
+        for (const connection of data.connections) {
+          if (connection.id) {
+            keepConnectionIds.push(connection.id);
+            
+            console.log("Updating connection:", connection);
+            const { error: updateError } = await supabase
+              .from("space_connections")
+              .update({
+                to_space_id: connection.toSpaceId,
+                connection_type: connection.connectionType,
+                direction: connection.direction,
+              })
+              .eq("id", connection.id);
+              
+            if (updateError) {
+              console.error("Connection update error:", updateError);
+              throw updateError;
+            }
+          } else if (connection.toSpaceId && connection.connectionType) {
+            console.log("Creating new connection:", connection);
+            const { error: insertError } = await supabase
+              .from("space_connections")
+              .insert({
+                from_space_id: id,
+                to_space_id: connection.toSpaceId,
+                space_type: "room",
+                connection_type: connection.connectionType,
+                direction: connection.direction,
+                status: "active"
+              });
+              
+            if (insertError) {
+              console.error("Connection insert error:", insertError);
+              throw insertError;
+            }
+          }
+        }
+        
+        const connectionsToDelete = existingIds.filter(id => !keepConnectionIds.includes(id));
+        console.log("Connections to delete:", connectionsToDelete);
+        
+        if (connectionsToDelete.length > 0) {
+          const { error: deleteError } = await supabase
+            .from("space_connections")
+            .update({ status: "inactive" })
+            .in("id", connectionsToDelete);
+            
+          if (deleteError) {
+            console.error("Connection delete error:", deleteError);
+            throw deleteError;
+          }
+        }
+      }
+      
+      return data;
+    },
+    onSuccess: () => {
+      console.log("Update successful, invalidating queries");
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      queryClient.invalidateQueries({ queryKey: ['room-connections', id] });
+      queryClient.invalidateQueries({ queryKey: ['floorplan-objects'] });
+      toast.success("Room updated successfully");
+      setOpen(false);
+      if (onSpaceUpdated) {
+        console.log("Calling onSpaceUpdated callback");
+        onSpaceUpdated();
+      }
+    },
+    onError: (error) => {
+      console.error("Update error:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to update room");
+    },
+  });
 
-      toast.success('Room updated successfully');
-      if (onSpaceUpdated) onSpaceUpdated();
-      handleClose();
-    } catch (error) {
-      console.error('Update error:', error);
-      toast.error('Failed to update room');
-    }
+  const handleSubmit = async (data: RoomFormData) => {
+    console.log("Handling submit with data:", data);
+    await editSpaceMutation.mutateAsync(data);
   };
 
-  const handleClose = () => {
-    setOpen(false);
-    if (onClose) onClose();
+  const renderContent = () => {
+    if (type === 'hallway') {
+      return (
+        <EditHallwayForm 
+          id={id}
+          initialData={initialData}
+          onSuccess={() => {
+            setOpen(false);
+            if (onSpaceUpdated) onSpaceUpdated();
+          }}
+          onCancel={() => setOpen(false)}
+        />
+      );
+    }
+    
+    return (
+      <RoomFormContent
+        form={form}
+        onSubmit={handleSubmit}
+        isPending={editSpaceMutation.isPending}
+        onCancel={() => setOpen(false)}
+        roomId={id}
+      />
+    );
   };
 
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger asChild>
-        <Button variant="ghost" size="sm">
+    <>
+      {variant === "button" && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-2"
+          onClick={() => setOpen(true)}
+        >
+          <Pencil className="h-4 w-4" />
           Edit
         </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Edit Space</AlertDialogTitle>
-          <AlertDialogDescription>
-            {isLoading
-              ? 'Loading space details...'
-              : `You are editing ${isHallway ? 'a Hallway' : 'a Room'}.`}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        {isLoading ? (
-          <div>Loading...</div>
-        ) : (
-          <>
-            {spaceData && isHallway ? (
-              <EditHallwayForm
-                id={id}
-                initialData={spaceData}
-                onSuccess={onSpaceUpdated}
-                onClose={handleClose}
-              />
-            ) : spaceData ? (
-              <EditHallwayForm
-                id={id}
-                initialData={spaceData}
-                onSuccess={onSpaceUpdated}
-                onClose={handleClose}
-              />
-            ) : (
-              <div>No data available.</div>
-            )}
-          </>
-        )}
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={handleClose}>Cancel</AlertDialogCancel>
-          <AlertDialogAction>Okay</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      )}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{type === 'hallway' ? 'Edit Hallway' : 'Edit Room'}</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[80vh] overflow-y-auto">
+            <div className="p-1">
+              {renderContent()}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
