@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { SpaceListFilters } from "./SpaceListFilters";
@@ -30,7 +29,7 @@ const HallwaysList = ({ selectedBuilding, selectedFloor }: HallwaysListProps) =>
     selectedFloor
   });
 
-  const deleteMutation = useMutation({
+  const deleteHallwayMutation = useMutation({
     mutationFn: (id: string) => deleteHallway(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['hallways'] });
@@ -43,7 +42,7 @@ const HallwaysList = ({ selectedBuilding, selectedFloor }: HallwaysListProps) =>
   });
 
   const handleDelete = (id: string) => {
-    deleteMutation.mutate(id);
+    deleteHallwayMutation.mutate(id);
   };
 
   const filteredAndSortedHallways = useMemo(() => {

@@ -1,3 +1,4 @@
+
 import { Room } from "./types/RoomTypes";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Edit, Trash2, Phone, MapPin, Users, ArrowRightLeft, Lightbulb } from "lucide-react";
 import { EditSpaceDialog } from "../EditSpaceDialog";
 import { format } from "date-fns";
+import { StatusEnum } from "./types/roomEnums";
 
 export interface RoomCardProps {
   room: Room;

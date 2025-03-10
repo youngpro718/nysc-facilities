@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { EditHallwayForm } from "./forms/hallway/EditHallwayForm";
-import { RoomTypeEnum, StatusEnum, StorageTypeEnum, RoomType } from "./rooms/types/roomEnums";
+import { RoomTypeEnum, StatusEnum, StorageTypeEnum, RoomType, StorageType, roomTypeToString, storageTypeToString } from "./rooms/types/roomEnums";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { EditSpaceFormData } from "./schemas/editSpaceSchema";
@@ -57,15 +57,20 @@ export function EditSpaceDialog({ id, spaceType, onSpaceUpdated, initialData, on
 
           if (roomError) throw roomError;
 
+          // Since properties is a json field, carefully handle description
+          const description = typeof data.properties === 'object' && data.properties !== null 
+            ? (data.properties as any).description || ''
+            : '';
+
           setSpaceData({
             ...data,
             name: data.name,
             roomNumber: roomData.room_number,
             roomType: roomData.room_type as RoomType,
             status: roomData.status as StatusEnum,
-            description: data.properties?.description || '',
+            description: description,
             isStorage: roomData.is_storage,
-            storageType: roomData.storage_type as StorageTypeEnum,
+            storageType: roomData.storage_type as StorageType,
             storageCapacity: roomData.storage_capacity,
             storageNotes: roomData.storage_notes,
             parentRoomId: roomData.parent_room_id,
@@ -81,10 +86,15 @@ export function EditSpaceDialog({ id, spaceType, onSpaceUpdated, initialData, on
 
           if (hallwayError) throw hallwayError;
 
+          // Since properties is a json field, carefully handle description
+          const description = typeof data.properties === 'object' && data.properties !== null 
+            ? (data.properties as any).description || ''
+            : '';
+
           setSpaceData({
             ...data,
             name: data.name,
-            description: data.properties?.description || '',
+            description: description,
             status: data.status as StatusEnum,
             floorId: data.floor_id,
             section: hallwayData.section,
@@ -134,7 +144,7 @@ export function EditSpaceDialog({ id, spaceType, onSpaceUpdated, initialData, on
 
         const { error: insertError } = await supabase
           .from('space_connections')
-          .insert(newConnections);
+          .upsert(newConnections);
 
         if (insertError) throw insertError;
       }
@@ -171,10 +181,10 @@ export function EditSpaceDialog({ id, spaceType, onSpaceUpdated, initialData, on
       // Update the room-specific data in the rooms table
       const roomUpdateData = {
         room_number: updatedData.roomNumber,
-        room_type: updatedData.roomType,
+        room_type: roomTypeToString(updatedData.roomType),
         status: updatedData.status,
         is_storage: updatedData.isStorage,
-        storage_type: updatedData.storageType,
+        storage_type: updatedData.storageType ? storageTypeToString(updatedData.storageType) : null,
         storage_capacity: updatedData.storageCapacity,
         storage_notes: updatedData.storageNotes,
         parent_room_id: updatedData.parentRoomId,

@@ -61,3 +61,22 @@ export type StorageTypeString =
   | "climate_controlled"
   | "hazardous"
   | "archive";
+
+// Export a union type for broader compatibility
+export type RoomType = RoomTypeEnum | RoomTypeString;
+export type StorageType = StorageTypeEnum | StorageTypeString;
+
+// Helper to convert between enum and string types
+export const roomTypeToString = (type: RoomType): RoomTypeString => {
+  if (typeof type === 'string') {
+    return type as RoomTypeString;
+  }
+  return type.toString() as RoomTypeString;
+};
+
+export const storageTypeToString = (type: StorageType): StorageTypeString => {
+  if (typeof type === 'string') {
+    return type as StorageTypeString;
+  }
+  return type.toString() as StorageTypeString;
+};
