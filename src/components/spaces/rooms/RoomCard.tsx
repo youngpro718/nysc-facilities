@@ -5,7 +5,7 @@ import { Room } from "./types/RoomTypes";
 import { CardFront } from "./components/CardFront";
 import { CardBack } from "./components/CardBack";
 
-interface RoomCardProps {
+export interface RoomCardProps {
   room: Room;
   onDelete: (id: string) => void;
 }

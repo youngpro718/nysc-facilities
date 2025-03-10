@@ -43,7 +43,11 @@ export function ListView<T>({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {items.map((item, index) => renderRow(item))}
+          {items.map((item, index) => (
+            <TableRow key={index}>
+              {renderRow(item)}
+            </TableRow>
+          ))}
         </TableBody>
       </Table>
     </div>

@@ -1,9 +1,10 @@
+
 import { useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { SpaceListFilters } from "./SpaceListFilters";
 import { GridView } from "./views/GridView";
 import { ListView } from "./views/ListView";
-import { TableCell } from "@/components/ui/table";
+import { TableCell, TableHead } from "@/components/ui/table";
 import { useHallwayData } from "./hooks/useHallwayData";
 import { ConnectedSpaces } from "./hallway/ConnectedSpaces";
 import { filterSpaces, sortSpaces } from "./utils/spaceFilters";
@@ -131,8 +132,9 @@ const HallwaysList = ({ selectedBuilding, selectedFloor }: HallwaysListProps) =>
         view === 'grid' ? (
           <GridView
             items={filteredAndSortedHallways}
-            renderItem={(hallway) => renderGridContent(hallway)}
+            renderItem={renderGridContent}
             type="hallway"
+            onDelete={deleteHallway}
           />
         ) : (
           <ListView
@@ -148,6 +150,7 @@ const HallwaysList = ({ selectedBuilding, selectedFloor }: HallwaysListProps) =>
               <TableHead>Actions</TableHead>
             </>}
             type="hallway"
+            onDelete={deleteHallway}
           />
         )
       )}

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -77,11 +78,11 @@ export function EditSpaceDialog({
       const updateData = {
         name: data.name,
         room_number: data.roomNumber,
-        room_type: data.roomType as string, // Explicitly cast to string for Supabase
+        room_type: data.roomType as string, // Cast to string to match database expectation
         status: data.status,
         description: data.description,
         is_storage: data.isStorage,
-        storage_type: data.isStorage ? data.storageType as string : null, // Explicitly cast to string
+        storage_type: data.isStorage ? data.storageType as string : null, // Cast to string
         storage_capacity: data.storageCapacity,
         storage_notes: data.storageNotes,
         parent_room_id: data.parentRoomId,

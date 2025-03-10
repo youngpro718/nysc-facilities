@@ -1,180 +1,207 @@
-import { useState, useEffect } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
-import { GridView } from '../views/GridView';
-import { ListView } from '../views/ListView';
-import { RoomCard } from '../rooms/RoomCard';
-import { useRoomsQuery } from '../hooks/queries/useRoomsQuery';
+
+import { useState, useEffect } from "react";
+import { useParams, useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { CreateRoomDialog } from "../dialogs/CreateRoomDialog";
+import { Separator } from "@/components/ui/separator";
+import { GridView } from "../views/GridView";
+import { ListView } from "../views/ListView";
+import { RoomCard } from "../rooms/RoomCard";
+import { Room } from "../rooms/types/RoomTypes";
+import { 
+  Tabs, 
+  TabsList, 
+  TabsTrigger, 
+  TabsContent 
+} from "@/components/ui/tabs";
 import { 
   Alert,
-  AlertDescription 
+  AlertDescription
 } from "@/components/ui/alert";
-import { AlertCircle, ArrowUp, ArrowDown } from 'lucide-react';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import { Room } from '../../rooms/types/RoomTypes';
+import { AlertCircle, ArrowUp, ArrowDown } from "lucide-react";
 
 interface RoomParams {
-  buildingId: string;
-  floorId: string;
+  buildingId?: string;
+  floorId?: string;
 }
 
-const sortRooms = (rooms: Room[], sortBy: string): Room[] => {
-  const sortedRooms = [...rooms];
-
-  switch (sortBy) {
-    case 'name_asc':
-      sortedRooms.sort((a, b) => a.name.localeCompare(b.name));
-      break;
-    case 'name_desc':
-      sortedRooms.sort((a, b) => b.name.localeCompare(a.name));
-      break;
-    case 'room_number_asc':
-      sortedRooms.sort((a, b) => a.room_number.localeCompare(b.room_number));
-      break;
-    case 'room_number_desc':
-      sortedRooms.sort((a, b) => b.room_number.localeCompare(a.room_number));
-      break;
-    default:
-      break;
-  }
-
-  return sortedRooms;
+// Simple mock deleteRoom function for testing
+const mockDeleteRoom = (id: string) => {
+  console.log(`Deleting room ${id}`);
+  // In a real app, this would call an API
+  return Promise.resolve();
 };
 
 const RoomsPage = () => {
-  const { buildingId, floorId } = useParams<RoomParams>();
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [sortField, setSortField] = useState<string>('name');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const params = useParams<Record<string, string>>();
   const location = useLocation();
-  const [view, setView] = useState<'grid' | 'list'>('grid');
-  const [sortBy, setSortBy] = useState('name_asc');
-  const [statusFilter, setStatusFilter] = useState('all');
-
-  const { data: rooms, isLoading, isError, error } = useRoomsQuery({
-    buildingId,
-    floorId,
-  });
-
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const viewParam = params.get('view');
-    if (viewParam === 'grid' || viewParam === 'list') {
-      setView(viewParam);
+  
+  // Extract building and floor IDs from URL
+  const buildingId = params.buildingId || 'all';
+  const floorId = params.floorId || 'all';
+  
+  // Fetch rooms data based on URL parameters
+  const { data: rooms, isLoading, error } = useQuery({
+    queryKey: ['rooms', buildingId, floorId],
+    queryFn: async () => {
+      let query = supabase.from('rooms').select('*');
+      
+      if (buildingId !== 'all') {
+        query = query.eq('building_id', buildingId);
+      }
+      
+      if (floorId !== 'all') {
+        query = query.eq('floor_id', floorId);
+      }
+      
+      const { data, error } = await query;
+      if (error) throw error;
+      return data as Room[];
     }
-  }, [location.search]);
-
-  if (isLoading) {
-    return <div>Loading rooms...</div>;
-  }
-
-  if (isError) {
+  });
+  
+  useEffect(() => {
+    // Reset sort order when route changes
+    setSortField('name');
+    setSortOrder('asc');
+  }, [location.pathname]);
+  
+  if (error) {
     return (
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          There was an error fetching rooms.
-        </AlertDescription>
-        <AlertDescription>
-          {error?.message}
+          Error loading rooms: {(error as Error).message}
         </AlertDescription>
       </Alert>
     );
   }
-
-  const sortedRooms = sortRooms(rooms || [], sortBy);
-
-  const filteredRooms = sortedRooms.filter((room) => {
-    if (statusFilter === 'all') return true;
-    return room.status === statusFilter;
-  });
-
-  const handleSortChange = (newSortBy: string) => {
-    setSortBy(newSortBy);
+  
+  const toggleSortOrder = () => {
+    setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
   };
-
-  const handleStatusFilterChange = (newStatus: string) => {
-    setStatusFilter(newStatus);
+  
+  const handleSort = (field: string) => {
+    if (field === sortField) {
+      toggleSortOrder();
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
   };
-
-  const renderRoomRow = (room: Room) => (
-    <>
-      <td>{room.name}</td>
-      <td>{room.room_number}</td>
-      <td>{room.room_type}</td>
-      <td>{room.status}</td>
-    </>
+  
+  const sortedRooms = rooms ? [...rooms].sort((a, b) => {
+    const aValue = a[sortField as keyof Room];
+    const bValue = b[sortField as keyof Room];
+    
+    if (sortOrder === 'asc') {
+      return String(aValue).localeCompare(String(bValue));
+    } else {
+      return String(bValue).localeCompare(String(aValue));
+    }
+  }) : [];
+  
+  const courtrooms = sortedRooms.filter(room => room.room_type === 'courtroom');
+  const storageRooms = sortedRooms.filter(room => room.is_storage);
+  const otherRooms = sortedRooms.filter(room => 
+    room.room_type !== 'courtroom' && !room.is_storage
   );
-
-  const roomHeaders = (
-    <>
-      <th>Name</th>
-      <th>Room Number</th>
-      <th>Room Type</th>
-      <th>Status</th>
-    </>
-  );
-
+  
+  const renderSortIndicator = (field: string) => {
+    if (field !== sortField) return null;
+    return sortOrder === 'asc' ? <ArrowUp className="inline h-4 w-4 ml-1" /> : <ArrowDown className="inline h-4 w-4 ml-1" />;
+  };
+  
+  const handleViewChange = (mode: 'grid' | 'list') => {
+    setViewMode(mode);
+  };
+  
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="all">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Rooms</h1>
+        <div className="flex space-x-2">
+          <Button 
+            variant={viewMode === 'grid' ? 'default' : 'outline'} 
+            onClick={() => handleViewChange('grid')}
+          >
+            Grid
+          </Button>
+          <Button 
+            variant={viewMode === 'list' ? 'default' : 'outline'} 
+            onClick={() => handleViewChange('list')}
+          >
+            List
+          </Button>
+          <CreateRoomDialog />
+        </div>
+      </div>
+      
+      <Tabs defaultValue="all" className="w-full">
         <TabsList>
-          <TabsTrigger value="all">All Rooms</TabsTrigger>
-          <TabsTrigger value="active">Active</TabsTrigger>
-          <TabsTrigger value="vacant">Vacant</TabsTrigger>
+          <TabsTrigger value="all">All Rooms ({sortedRooms.length})</TabsTrigger>
+          <TabsTrigger value="court">Courtrooms ({courtrooms.length})</TabsTrigger>
+          <TabsTrigger value="storage">Storage ({storageRooms.length})</TabsTrigger>
         </TabsList>
-
+        
         <TabsContent value="all">
-          {view === 'grid' ? (
-            <GridView
-              items={rooms}
-              renderItem={(room) => <RoomCard room={room} />}
-              emptyMessage="No rooms found"
-              type="room"
+          {viewMode === 'grid' ? (
+            <GridView 
+              items={sortedRooms}
+              renderItem={(room) => (
+                <RoomCard room={room} onDelete={mockDeleteRoom} />
+              )}
             />
           ) : (
-            <ListView
-              items={rooms}
-              renderRow={renderRoomRow}
-              headers={roomHeaders}
-              type="room"
+            <ListView 
+              items={sortedRooms}
+              renderRow={(room) => (
+                <RoomCard room={room} onDelete={mockDeleteRoom} />
+              )}
+              headers={<>Rooms</>}
             />
           )}
         </TabsContent>
-
-        <TabsContent value="active">
-          {view === 'grid' ? (
-            <GridView
-              items={rooms}
-              renderItem={(room) => <RoomCard room={room} />}
-              emptyMessage="No active rooms found"
-              type="room"
+        
+        <TabsContent value="court">
+          {viewMode === 'grid' ? (
+            <GridView 
+              items={courtrooms}
+              renderItem={(room) => (
+                <RoomCard room={room} onDelete={mockDeleteRoom} />
+              )}
             />
           ) : (
-            <ListView
-              items={rooms}
-              renderRow={renderRoomRow}
-              headers={roomHeaders}
-              type="room"
+            <ListView 
+              items={courtrooms}
+              renderRow={(room) => (
+                <RoomCard room={room} onDelete={mockDeleteRoom} />
+              )}
+              headers={<>Courtrooms</>}
             />
           )}
         </TabsContent>
-
-        <TabsContent value="vacant">
-          {view === 'grid' ? (
-            <GridView
-              items={rooms}
-              renderItem={(room) => <RoomCard room={room} />}
-              emptyMessage="No vacant rooms found"
-              type="room"
+        
+        <TabsContent value="storage">
+          {viewMode === 'grid' ? (
+            <GridView 
+              items={storageRooms}
+              renderItem={(room) => (
+                <RoomCard room={room} onDelete={mockDeleteRoom} />
+              )}
             />
           ) : (
-            <ListView
-              items={rooms}
-              renderRow={renderRoomRow}
-              headers={roomHeaders}
-              type="room"
+            <ListView 
+              items={storageRooms}
+              renderRow={(room) => (
+                <RoomCard room={room} onDelete={mockDeleteRoom} />
+              )}
+              headers={<>Storage Rooms</>}
             />
           )}
         </TabsContent>

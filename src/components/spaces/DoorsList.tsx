@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   Table,
@@ -12,7 +13,7 @@ import { SpaceListFilters } from "./SpaceListFilters";
 import { GridView } from "./views/GridView";
 import { ListView } from "./views/ListView";
 import { useState, useMemo } from "react";
-import { toast } from "sonner";
+import { toast, useToast } from "@/components/ui/use-toast";
 import { filterSpaces, sortSpaces } from "./utils/spaceFilters";
 import { AlertTriangle, Wrench, ArrowLeftRight } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -194,6 +195,10 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
     </TableCell>
   ];
 
+  const handleDeleteDoor = (id: string) => {
+    deleteDoor.mutate(id);
+  };
+
   return (
     <div className="space-y-6">
       <SpaceListFilters
@@ -217,9 +222,10 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
               {view === 'grid' ? (
                 <GridView
                   items={groupedDoors.transition}
-                  renderItemContent={renderDoorContent}
+                  renderItem={renderDoorContent}
                   emptyMessage="No transition doors found"
                   type="door"
+                  onDelete={handleDeleteDoor}
                 />
               ) : (
                 <ListView
@@ -233,6 +239,7 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
                     <TableHead>Actions</TableHead>
                   </>}
                   type="door"
+                  onDelete={handleDeleteDoor}
                 />
               )}
             </div>
@@ -244,9 +251,10 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
               {view === 'grid' ? (
                 <GridView
                   items={groupedDoors.problem}
-                  renderItemContent={renderDoorContent}
+                  renderItem={renderDoorContent}
                   emptyMessage="No problem doors found"
                   type="door"
+                  onDelete={handleDeleteDoor}
                 />
               ) : (
                 <ListView
@@ -260,6 +268,7 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
                     <TableHead>Actions</TableHead>
                   </>}
                   type="door"
+                  onDelete={handleDeleteDoor}
                 />
               )}
             </div>
@@ -270,9 +279,10 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
             {view === 'grid' ? (
               <GridView
                 items={groupedDoors.standard}
-                renderItemContent={renderDoorContent}
+                renderItem={renderDoorContent}
                 emptyMessage="No standard doors found"
                 type="door"
+                onDelete={handleDeleteDoor}
               />
             ) : (
               <ListView
@@ -286,6 +296,7 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
                   <TableHead>Actions</TableHead>
                 </>}
                 type="door"
+                onDelete={handleDeleteDoor}
               />
             )}
           </div>
