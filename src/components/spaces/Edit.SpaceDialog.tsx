@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { RoomFormContent } from "./forms/room/RoomFormContent";
 import { roomFormSchema, type RoomFormData } from "./forms/room/RoomFormSchema";
 import { EditHallwayForm } from "./forms/hallway/EditHallwayForm";
+import { RoomType } from "./rooms/types/RoomTypes";
 
 interface EditSpaceDialogProps {
   id: string;
@@ -61,7 +62,7 @@ export function EditSpaceDialog({
       const updateData = {
         name: data.name,
         room_number: data.roomNumber,
-        room_type: data.roomType,
+        room_type: data.roomType as RoomType,
         status: data.status,
         description: data.description,
         is_storage: data.isStorage,
@@ -85,11 +86,9 @@ export function EditSpaceDialog({
         throw roomError;
       }
 
-      // Handle connections
       if (data.connections && data.connections.length > 0) {
         console.log("Processing connections:", data.connections);
         
-        // Get existing connections
         const { data: existingConnections, error: fetchError } = await supabase
           .from("space_connections")
           .select("id")
@@ -106,13 +105,10 @@ export function EditSpaceDialog({
         
         const keepConnectionIds: string[] = [];
         
-        // Process each connection
         for (const connection of data.connections) {
           if (connection.id) {
             keepConnectionIds.push(connection.id);
             
-            // Update existing connection
-            console.log("Updating connection:", connection);
             const { error: updateError } = await supabase
               .from("space_connections")
               .update({
@@ -127,8 +123,6 @@ export function EditSpaceDialog({
               throw updateError;
             }
           } else if (connection.toSpaceId && connection.connectionType) {
-            // Create new connection
-            console.log("Creating new connection:", connection);
             const { error: insertError } = await supabase
               .from("space_connections")
               .insert({
@@ -147,7 +141,6 @@ export function EditSpaceDialog({
           }
         }
         
-        // Handle connections to be removed
         const connectionsToDelete = existingIds.filter(id => !keepConnectionIds.includes(id));
         console.log("Connections to delete:", connectionsToDelete);
         

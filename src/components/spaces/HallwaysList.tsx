@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { SpaceListFilters } from "./SpaceListFilters";
@@ -30,7 +29,7 @@ const HallwaysList = ({ selectedBuilding, selectedFloor }: HallwaysListProps) =>
   });
 
   const deleteMutation = useMutation({
-    mutationFn: deleteHallway,
+    mutationFn: (id: string) => deleteHallway(id),
     onSuccess: () => {
       toast.success('Hallway deleted successfully');
     },
