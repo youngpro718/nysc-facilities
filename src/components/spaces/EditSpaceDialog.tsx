@@ -86,8 +86,8 @@ export function EditSpaceDialog({
       const updateData = {
         name: data.name,
         room_number: data.roomNumber,
-        room_type: data.roomType ? roomTypeToString(data.roomType as RoomTypeEnum) : undefined,
-        status: data.status ? statusToString(data.status as StatusEnum) : undefined,
+        room_type: roomTypeToString(data.roomType as RoomTypeEnum),
+        status: statusToString(data.status as StatusEnum),
         description: data.description,
         is_storage: data.isStorage,
         storage_type: data.isStorage && data.storageType ? storageTypeToString(data.storageType as StorageTypeEnum) : null,
@@ -102,10 +102,9 @@ export function EditSpaceDialog({
 
       console.log("Room update data:", updateData);
       
-      // Use type assertion to bypass type checking for Supabase
       const { error: roomError } = await supabase
         .from("rooms")
-        .update(updateData as any)
+        .update(updateData)
         .eq('id', id);
 
       if (roomError) {

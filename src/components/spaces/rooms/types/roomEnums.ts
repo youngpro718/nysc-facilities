@@ -1,4 +1,3 @@
-
 export enum StatusEnum {
   ACTIVE = "active",
   INACTIVE = "inactive",
@@ -46,7 +45,7 @@ export type RoomTypeString =
   | "female_locker_room"
   | "robing_room"
   | "stake_holder"
-  | "conference" // This is what RoomTypeEnum.MEETING maps to
+  | "conference"
   | "storage"
   | "chambers"
   | "reception"
@@ -90,7 +89,7 @@ export const roomTypeToString = (type: RoomTypeEnum): RoomTypeString => {
     case RoomTypeEnum.FEMALE_LOCKER_ROOM: return "female_locker_room";
     case RoomTypeEnum.ROBING_ROOM: return "robing_room";
     case RoomTypeEnum.STAKE_HOLDER: return "stake_holder";
-    case RoomTypeEnum.MEETING: return "conference"; // Important mapping difference
+    case RoomTypeEnum.MEETING: return "conference";
     case RoomTypeEnum.STORAGE: return "storage";
     case RoomTypeEnum.CHAMBERS: return "chambers";
     case RoomTypeEnum.RECEPTION: return "reception";
@@ -115,7 +114,7 @@ export const stringToRoomType = (str: string): RoomTypeEnum => {
     case "female_locker_room": return RoomTypeEnum.FEMALE_LOCKER_ROOM;
     case "robing_room": return RoomTypeEnum.ROBING_ROOM;
     case "stake_holder": return RoomTypeEnum.STAKE_HOLDER;
-    case "conference": return RoomTypeEnum.MEETING; // Important mapping difference
+    case "conference": return RoomTypeEnum.MEETING;
     case "storage": return RoomTypeEnum.STORAGE;
     case "chambers": return RoomTypeEnum.CHAMBERS;
     case "reception": return RoomTypeEnum.RECEPTION;
