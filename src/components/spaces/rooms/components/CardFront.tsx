@@ -3,7 +3,7 @@ import React from 'react';
 import { Room } from "../types/RoomTypes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trash2, RefreshCw, Users, ArrowRightFromLine } from "lucide-react";
+import { Trash2, RefreshCw, Users, ArrowRightFromLine, Phone, MapPin, Lightbulb } from "lucide-react";
 import { EditSpaceDialog } from "../../EditSpaceDialog";
 import { CourtroomPhotos } from './CourtroomPhotos';
 
@@ -14,6 +14,25 @@ interface CardFrontProps {
 }
 
 export function CardFront({ room, onFlip, onDelete }: CardFrontProps) {
+  // Determine lighting status
+  const hasLightingFixture = room.lighting_fixture !== undefined;
+  const lightingStatus = hasLightingFixture 
+    ? (room.lighting_fixture?.status === 'functional' ? 'working' : 'maintenance')
+    : 'unknown';
+  
+  // Format phone number if exists
+  const formattedPhone = room.phone_number 
+    ? `${room.phone_number.slice(0, 3)}-${room.phone_number.slice(3, 6)}-${room.phone_number.slice(6)}`
+    : null;
+  
+  // Calculate occupancy percentage
+  const occupancyPercentage = room.capacity && room.current_occupancy 
+    ? Math.round((room.current_occupancy / room.capacity) * 100) 
+    : null;
+  
+  // Show courtroom photos only for courtroom type
+  const isCourtroom = room.room_type.toString().toLowerCase() === 'courtroom';
+  
   return (
     <div className="p-5 flex flex-col h-full">
       <div className="mb-3">
@@ -29,43 +48,80 @@ export function CardFront({ room, onFlip, onDelete }: CardFrontProps) {
             }
             className="ml-2"
           >
-            {room.status.split('_').map(word => 
+            {String(room.status).split('_').map(word => 
               word.charAt(0).toUpperCase() + word.slice(1)
             ).join(' ')}
           </Badge>
         </div>
         
-        <div className="flex items-center mt-1">
+        <div className="flex items-center mt-1 gap-2">
           <Badge 
             variant="secondary" 
             className="text-xs"
           >
-            {room.room_type.replace(/_/g, ' ')}
+            {String(room.room_type).replace(/_/g, ' ')}
           </Badge>
           
           {room.is_storage && (
             <Badge 
               variant="secondary" 
-              className="ml-2 text-xs"
+              className="text-xs"
             >
               Storage
+            </Badge>
+          )}
+          
+          {room.current_function && (
+            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+              {room.current_function}
+            </Badge>
+          )}
+          
+          {lightingStatus !== 'unknown' && (
+            <Badge 
+              variant={lightingStatus === 'working' ? "default" : "outline"} 
+              className="flex items-center gap-1 text-xs"
+            >
+              <Lightbulb className="h-3 w-3" />
+              {lightingStatus}
             </Badge>
           )}
         </div>
         
         {/* Display CourtroomPhotos component if room is a courtroom */}
-        {room.room_type === 'courtroom' && <CourtroomPhotos room={room} />}
+        {isCourtroom && <CourtroomPhotos room={room} />}
       </div>
 
-      <div className="flex-1">
+      <div className="flex-1 space-y-3">
         {room.description ? (
-          <p className="text-sm text-muted-foreground line-clamp-5">
+          <p className="text-sm text-muted-foreground line-clamp-2">
             {room.description}
           </p>
         ) : (
           <p className="text-sm text-muted-foreground italic">
             No description available
           </p>
+        )}
+
+        {/* Location information */}
+        <div className="flex items-start gap-2 text-sm">
+          <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+          <div>
+            {room.floor?.building?.name && (
+              <p className="text-muted-foreground">{room.floor.building.name}</p>
+            )}
+            {room.floor?.name && (
+              <p className="text-muted-foreground">{room.floor.name}</p>
+            )}
+          </div>
+        </div>
+        
+        {/* Phone number if available */}
+        {formattedPhone && (
+          <div className="flex items-center gap-2 text-sm">
+            <Phone className="h-4 w-4 text-muted-foreground" />
+            <span className="text-muted-foreground">{formattedPhone}</span>
+          </div>
         )}
 
         {/* Occupants Preview */}

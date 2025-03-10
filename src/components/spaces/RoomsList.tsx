@@ -22,6 +22,7 @@ const RoomsList = ({ selectedBuilding, selectedFloor }: RoomsListProps) => {
   const [sortBy, setSortBy] = useState("name_asc");
   const [statusFilter, setStatusFilter] = useState("all");
   const [view, setView] = useState<"grid" | "list">("grid");
+  const [cardType, setCardType] = useState<"standard" | "flippable">("standard");
 
   const { data: rooms, isLoading, error, refetch } = useRoomsQuery({
     buildingId: selectedBuilding === 'all' ? undefined : selectedBuilding,
@@ -33,8 +34,8 @@ const RoomsList = ({ selectedBuilding, selectedFloor }: RoomsListProps) => {
     searchQuery,
     sortBy,
     statusFilter,
-    selectedBuilding: 'all',
-    selectedFloor: 'all',
+    selectedBuilding,
+    selectedFloor,
   });
 
   const deleteRoom = useMutation({
@@ -109,6 +110,8 @@ const RoomsList = ({ selectedBuilding, selectedFloor }: RoomsListProps) => {
     );
   }
 
+  const roomCount = rooms?.length || 0;
+
   return (
     <div className="space-y-6">
       <FilterBar
@@ -121,12 +124,23 @@ const RoomsList = ({ selectedBuilding, selectedFloor }: RoomsListProps) => {
         view={view}
         onViewChange={setView}
         onRefresh={handleRefresh}
+        cardType={cardType}
+        onCardTypeChange={setCardType}
       />
+
+      <div className="bg-muted/20 p-2 px-4 rounded-md text-sm flex justify-between">
+        <span>
+          Total Rooms: <strong>{roomCount}</strong>
+        </span>
+        <span>
+          Filtered Results: <strong>{filteredAndSortedRooms.length}</strong>
+        </span>
+      </div>
 
       <RoomsContent
         isLoading={isLoading}
         rooms={rooms || []}
-        filteredRooms={filteredAndSortedRooms} // Pass the filtered rooms
+        filteredRooms={filteredAndSortedRooms}
         view={view}
         onDelete={(id) => {
           if (window.confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
@@ -134,6 +148,7 @@ const RoomsList = ({ selectedBuilding, selectedFloor }: RoomsListProps) => {
           }
         }}
         searchQuery={searchQuery}
+        cardType={cardType}
       />
     </div>
   );
