@@ -48,7 +48,8 @@ export type RoomTypeString =
   | "library" 
   | "utility_room" 
   | "special" 
-  | "it_room";
+  | "it_room"
+  | "conference";
 
 export type StorageTypeString = 
   | "general"
