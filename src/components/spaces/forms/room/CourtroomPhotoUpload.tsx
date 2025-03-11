@@ -13,19 +13,41 @@ export function CourtroomPhotoUpload({ form }: { form: UseFormReturn<RoomFormDat
   const [uploading, setUploading] = useState<{ judge?: boolean; audience?: boolean }>({});
   const courtRoomPhotos = form.watch('courtRoomPhotos');
 
+  // Create bucket if it doesn't exist
+  const createBucketIfNeeded = async () => {
+    try {
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const bucketExists = buckets?.some(bucket => bucket.name === 'courtroom-photos');
+
+      if (!bucketExists) {
+        const { error } = await supabase.storage.createBucket('courtroom-photos', {
+          public: true,
+          fileSizeLimit: 10485760 // 10MB
+        });
+        
+        if (error && error.message !== 'Duplicate name') {
+          console.error('Error creating bucket:', error);
+          toast.error('Failed to create storage bucket');
+          return false;
+        }
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error checking/creating bucket:', error);
+      toast.error('Storage initialization failed');
+      return false;
+    }
+  };
+  
   const uploadPhoto = async (file: File, type: 'judge_view' | 'audience_view') => {
     try {
       setUploading(prev => ({ ...prev, [type === 'judge_view' ? 'judge' : 'audience']: true }));
       
-      // Try to create the bucket if it doesn't exist
-      const { error: bucketError } = await supabase.storage.createBucket('courtroom-photos', {
-        public: true,
-        fileSizeLimit: 10485760 // 10MB
-      });
-      
-      if (bucketError && bucketError.message !== 'Duplicate name') {
-        console.error('Error creating bucket:', bucketError);
-        toast.error('Failed to create storage bucket');
+      // First ensure the bucket exists
+      const bucketReady = await createBucketIfNeeded();
+      if (!bucketReady) {
+        throw new Error('Storage not available');
       }
       
       // Generate a unique filename

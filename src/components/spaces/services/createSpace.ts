@@ -15,15 +15,30 @@ export async function createSpace(data: CreateSpaceFormData) {
   
   try {
     if (data.type === 'room') {
-      // Create the storage bucket for courtroom photos if needed
+      // Check for courtroom type and ensure bucket exists
       if (data.roomType === RoomTypeEnum.COURTROOM) {
-        const { error: bucketError } = await supabase.storage.createBucket('courtroom-photos', {
-          public: true,
-          fileSizeLimit: 10485760 // 10MB
-        });
-        
-        if (bucketError && bucketError.message !== 'Duplicate name') {
-          console.error('Error creating bucket:', bucketError);
+        try {
+          // Check if bucket exists
+          const { data: buckets } = await supabase.storage.listBuckets();
+          const bucketExists = buckets?.some(bucket => bucket.name === 'courtroom-photos');
+          
+          if (!bucketExists) {
+            // Create the storage bucket for courtroom photos if needed
+            const { error: bucketError } = await supabase.storage.createBucket('courtroom-photos', {
+              public: true,
+              fileSizeLimit: 10485760 // 10MB
+            });
+            
+            if (bucketError && bucketError.message !== 'Duplicate name') {
+              console.error('Error creating bucket:', bucketError);
+              toast.error('Failed to create courtroom photos storage bucket');
+            } else {
+              console.log('Successfully created courtroom-photos bucket');
+            }
+          }
+        } catch (bucketError) {
+          console.error('Error checking/creating bucket:', bucketError);
+          toast.error('Storage initialization failed');
         }
       }
       
