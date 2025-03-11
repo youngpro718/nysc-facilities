@@ -27,15 +27,13 @@ export const RoomFormSchema = z.object({
   floorId: z.string().min(1, "Floor is required"),
   roomNumber: z.string().optional(),
   roomType: z.enum([
-    RoomTypeEnum.DEFAULT,
     RoomTypeEnum.OFFICE,
     RoomTypeEnum.COURTROOM,
     RoomTypeEnum.STORAGE,
-    RoomTypeEnum.CONFERENCE,
+    RoomTypeEnum.MEETING, // Using MEETING instead of CONFERENCE
     RoomTypeEnum.UTILITY,
-    RoomTypeEnum.RESTROOM,
-    RoomTypeEnum.SECURITY,
     RoomTypeEnum.RECEPTION,
+    // Removed DEFAULT, RESTROOM, SECURITY as they don't exist in the enum
   ]),
   status: z.enum([
     StatusEnum.ACTIVE,
@@ -49,10 +47,10 @@ export const RoomFormSchema = z.object({
   storageType: z.enum([
     StorageTypeEnum.GENERAL,
     StorageTypeEnum.SECURE,
-    StorageTypeEnum.FILE,
-    StorageTypeEnum.EQUIPMENT,
-    StorageTypeEnum.SUPPLIES,
+    StorageTypeEnum.CLIMATE_CONTROLLED,
+    StorageTypeEnum.HAZARDOUS,
     StorageTypeEnum.ARCHIVE,
+    // Removed FILE, EQUIPMENT, SUPPLIES as they don't exist in the enum
   ]).optional(),
   storageCapacity: z.number().optional(),
   parentRoomId: z.string().optional(),

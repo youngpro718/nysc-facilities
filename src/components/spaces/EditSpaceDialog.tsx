@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -71,7 +72,7 @@ export function EditSpaceDialog({
       }
       
       // Ensure connections have valid directions
-      const mappedConnections = connections.map((conn: any) => {
+      const mappedConnections = Array.isArray(connections) ? connections.map((conn: any) => {
         // Map the direction to a valid value if it's not already
         let direction = conn.direction || conn.connectionDirection;
         if (!direction || !ConnectionDirections.includes(direction)) {
@@ -84,7 +85,7 @@ export function EditSpaceDialog({
           connectionType: conn.connection_type || conn.connectionType,
           direction: direction
         };
-      });
+      }) : [];
       
       form.reset({
         ...initialData,
@@ -128,7 +129,7 @@ export function EditSpaceDialog({
         try {
           // Check if bucket exists
           const { data: buckets } = await supabase.storage.listBuckets();
-          const bucketExists = buckets?.some(bucket => bucket.name === 'courtroom-photos');
+          const bucketExists = buckets ? buckets.some(bucket => bucket.name === 'courtroom-photos') : false;
           
           if (!bucketExists) {
             // Create the storage bucket for courtroom photos if needed

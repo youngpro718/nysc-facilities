@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -8,7 +7,6 @@ import { RoomFormData } from "./RoomFormSchema";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
-import Image from 'next/image';
 
 interface CourtroomPhotoUploadProps {
   form: UseFormReturn<RoomFormData>;
@@ -27,18 +25,15 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
     if (!file) return;
 
     try {
-      // Start upload loading state
       setUploading(prev => ({
         ...prev,
         [view === 'judge_view' ? 'judge' : 'audience']: true
       }));
 
-      // Generate a unique file name
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
       const filePath = `${fileName}`;
 
-      // Upload to Supabase storage
       const { error: uploadError, data } = await supabase.storage
         .from('courtroom-photos')
         .upload(filePath, file, {
@@ -50,12 +45,10 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
         throw uploadError;
       }
 
-      // Get the public URL for the uploaded file
       const { data: { publicUrl } } = supabase.storage
         .from('courtroom-photos')
         .getPublicUrl(filePath);
 
-      // Update form value
       const updatedPhotos = {
         ...(courtRoomPhotos || { judge_view: null, audience_view: null }),
         [view]: publicUrl
@@ -67,13 +60,11 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
       console.error('Error uploading photo:', error);
       toast.error(`Failed to upload photo: ${error.message}`);
     } finally {
-      // End upload loading state
       setUploading(prev => ({
         ...prev,
         [view === 'judge_view' ? 'judge' : 'audience']: false
       }));
       
-      // Clear the input value to allow uploading the same file again
       event.target.value = '';
     }
   };
@@ -82,11 +73,9 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
     if (!courtRoomPhotos?.[view]) return;
     
     try {
-      // Get the filename from the URL
       const url = courtRoomPhotos[view] as string;
       const fileName = url.split('/').pop();
       
-      // Delete the file from storage if it exists
       if (fileName) {
         supabase.storage
           .from('courtroom-photos')
@@ -98,7 +87,6 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
           });
       }
       
-      // Update form state (immediately, don't wait for storage deletion)
       const updatedPhotos = { ...courtRoomPhotos, [view]: null };
       form.setValue("courtRoomPhotos", updatedPhotos, { shouldValidate: true });
       toast.success(`${view === 'judge_view' ? 'Judge view' : 'Audience view'} photo removed`);
@@ -115,7 +103,6 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Judge View Photo */}
           <FormField
             control={form.control}
             name="courtRoomPhotos.judge_view"
@@ -170,7 +157,6 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
             )}
           />
 
-          {/* Audience View Photo */}
           <FormField
             control={form.control}
             name="courtRoomPhotos.audience_view"
