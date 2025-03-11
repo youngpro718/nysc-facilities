@@ -23,7 +23,8 @@ import {
   StorageTypeEnum, 
   roomTypeToString, 
   statusToString, 
-  storageTypeToString 
+  storageTypeToString,
+  stringToRoomType
 } from "./rooms/types/roomEnums";
 
 interface EditSpaceDialogProps {
@@ -64,9 +65,17 @@ export function EditSpaceDialog({
       
       const connections = initialData.space_connections || initialData.connections || [];
       
+      // Handle courtroom photos if necessary
+      let courtRoomPhotos = initialData.courtroom_photos;
+      if (initialData.room_type === "courtroom" && !courtRoomPhotos) {
+        courtRoomPhotos = { judge_view: null, audience_view: null };
+      }
+      
       form.reset({
         ...initialData,
         type: type === "room" ? "room" : "hallway",
+        roomType: initialData.room_type ? stringToRoomType(initialData.room_type) : undefined,
+        courtRoomPhotos: courtRoomPhotos,
         connections: connections.map((conn: any) => ({
           id: conn.id,
           toSpaceId: conn.to_space_id || conn.toSpaceId,
@@ -99,10 +108,35 @@ export function EditSpaceDialog({
         current_function: data.currentFunction,
         phone_number: data.phoneNumber,
         floor_id: data.floorId,
-        courtroom_photos: data.courtRoomPhotos
+        courtroom_photos: data.courtRoomPhotos || null
       };
 
       console.log("Room update data:", updateData);
+      
+      // Make sure courtroom-photos bucket exists if needed
+      if (data.roomType === RoomTypeEnum.COURTROOM) {
+        try {
+          // Check if bucket exists
+          const { data: buckets } = await supabase.storage.listBuckets();
+          const bucketExists = buckets?.some(bucket => bucket.name === 'courtroom-photos');
+          
+          if (!bucketExists) {
+            // Create the storage bucket for courtroom photos if needed
+            const { error: bucketError } = await supabase.storage.createBucket('courtroom-photos', {
+              public: true,
+              fileSizeLimit: 10485760 // 10MB
+            });
+            
+            if (bucketError && bucketError.message !== 'Duplicate name') {
+              console.error('Error creating bucket:', bucketError);
+              toast.error('Failed to create courtroom photos storage bucket');
+            }
+          }
+        } catch (bucketError) {
+          console.error('Error checking/creating bucket:', bucketError);
+          toast.error('Storage initialization failed');
+        }
+      }
       
       const { error: roomError } = await supabase
         .from("rooms")

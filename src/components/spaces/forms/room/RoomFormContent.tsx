@@ -12,6 +12,8 @@ import { ConnectionsField } from "./ConnectionsField";
 import { CourtroomPhotoUpload } from "./CourtroomPhotoUpload";
 import { toast } from "sonner";
 import { FormButtons } from "@/components/ui/form-buttons";
+import { useEffect } from "react";
+import { RoomTypeEnum } from "../../rooms/types/roomEnums";
 
 interface RoomFormContentProps extends RoomFormProps {
   onSubmit: (data: RoomFormData) => Promise<void>;
@@ -30,6 +32,17 @@ export function RoomFormContent({
   const isStorage = form.watch("isStorage");
   const floorId = form.watch("floorId");
   const roomType = form.watch("roomType");
+  
+  // Initialize or reset courtRoomPhotos when room type changes
+  useEffect(() => {
+    if (roomType === "courtroom") {
+      // Make sure courtRoomPhotos is initialized as an object for courtrooms
+      const currentValue = form.getValues("courtRoomPhotos");
+      if (!currentValue) {
+        form.setValue("courtRoomPhotos", { judge_view: null, audience_view: null }, { shouldValidate: true });
+      }
+    }
+  }, [roomType, form]);
   
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,6 +64,11 @@ export function RoomFormContent({
       form.setValue("type", "room", { shouldValidate: true });
     }
     
+    // For courtrooms, ensure courtRoomPhotos exists
+    if (roomType === "courtroom" && !formValues.courtRoomPhotos) {
+      form.setValue("courtRoomPhotos", { judge_view: null, audience_view: null }, { shouldValidate: true });
+    }
+    
     // Validate connections
     const connections = form.getValues("connections") || [];
     const validConnections = connections.filter(conn => conn.toSpaceId && conn.connectionType);
@@ -61,6 +79,14 @@ export function RoomFormContent({
     }
     
     try {
+      // Check for any validation errors directly
+      const isValid = await form.trigger();
+      if (!isValid) {
+        console.error("Form validation failed:", form.formState.errors);
+        toast.error("Please correct the errors in the form before submitting.");
+        return;
+      }
+      
       await form.handleSubmit(onSubmit)(e);
     } catch (error) {
       console.error("Form submission error:", error);
