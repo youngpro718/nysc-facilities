@@ -35,23 +35,8 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
       const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
       const filePath = `${fileName}`;
 
-      // First check if the bucket exists
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const bucketExists = buckets ? buckets.some(bucket => bucket.name === 'courtroom-photos') : false;
-      
-      if (!bucketExists) {
-        // Create the bucket if it doesn't exist
-        const { error: bucketError } = await supabase.storage
-          .createBucket('courtroom-photos', {
-            public: true,
-            fileSizeLimit: 10485760 // 10MB
-          });
-        
-        if (bucketError && bucketError.message !== 'Duplicate name') {
-          throw bucketError;
-        }
-      }
-
+      // Upload directly to the courtroom-photos bucket
+      // The bucket and RLS policies have been created via SQL
       const { error: uploadError, data } = await supabase.storage
         .from('courtroom-photos')
         .upload(filePath, file, {
@@ -60,7 +45,8 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
         });
 
       if (uploadError) {
-        throw uploadError;
+        console.error('Storage upload error:', uploadError);
+        throw new Error(`Upload failed: ${uploadError.message}`);
       }
 
       const { data: { publicUrl } } = supabase.storage
@@ -101,6 +87,7 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
           .then(({ error }) => {
             if (error) {
               console.error('Error removing file from storage:', error);
+              toast.error(`Failed to remove photo: ${error.message}`);
             }
           });
       }
