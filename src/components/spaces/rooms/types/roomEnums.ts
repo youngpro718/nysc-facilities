@@ -100,6 +100,7 @@ export const roomTypeToString = (type: RoomTypeEnum): RoomTypeString => {
     case RoomTypeEnum.LIBRARY: return "library";
     case RoomTypeEnum.UTILITY: return "utility";
     case RoomTypeEnum.SPECIAL: return "special";
+    case RoomTypeEnum.LABORATORY: return "laboratory"; // Added laboratory case
     default: return "office"; // Default fallback
   }
 };
@@ -125,6 +126,7 @@ export const stringToRoomType = (str: string): RoomTypeEnum => {
     case "library": return RoomTypeEnum.LIBRARY;
     case "utility": return RoomTypeEnum.UTILITY;
     case "special": return RoomTypeEnum.SPECIAL;
+    case "laboratory": return RoomTypeEnum.LABORATORY; // Added laboratory case
     default: return RoomTypeEnum.OFFICE; // Default fallback
   }
 };
