@@ -1,17 +1,23 @@
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormItem, FormLabel } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { NewConnectionForm } from "./NewConnectionForm";
+import { Plus, Trash2 } from "lucide-react";
+import { RoomConnectionData, ConnectionDirections } from "../RoomFormSchema";
+import { SpaceOption } from "./types";
+import { Select } from "@/components/ui/select";
 import { ConnectionItem } from "./ConnectionItem";
-import { RoomConnectionData } from "../RoomFormSchema";
-import { ConnectionFieldsProps, SpaceOption } from "./types";
+import { NewConnectionForm } from "./NewConnectionForm";
 
-interface ExtendedConnectionFieldsProps extends ConnectionFieldsProps {
+interface ConnectionFieldsProps {
+  floorId: string;
+  roomId?: string;
+  connections: RoomConnectionData[];
+  onAddConnection: (connection: RoomConnectionData) => void;
+  onRemoveConnection: (index: number) => void;
   spaces?: SpaceOption[];
-  isLoading: boolean;
-  connectedSpaceNames: Record<string, string>;
+  isLoading?: boolean;
+  connectedSpaceNames?: Record<string, string>;
 }
 
 export function ConnectionFields({
@@ -22,80 +28,75 @@ export function ConnectionFields({
   onRemoveConnection,
   spaces,
   isLoading,
-  connectedSpaceNames,
-}: ExtendedConnectionFieldsProps) {
-  const [isAddingConnection, setIsAddingConnection] = useState(false);
-  const [newConnection, setNewConnection] = useState<RoomConnectionData>({
-    toSpaceId: undefined,
-    connectionType: "doorway",
-    direction: "north",
-  });
-
-  const handleConnectionChange = (field: keyof RoomConnectionData, value: string) => {
-    setNewConnection(prev => ({ ...prev, [field]: value }));
+  connectedSpaceNames = {}
+}: ConnectionFieldsProps) {
+  const [showNewForm, setShowNewForm] = useState(false);
+  
+  const handleAddClick = () => {
+    setShowNewForm(true);
   };
-
-  const handleAddConnection = () => {
-    onAddConnection(newConnection);
-    setNewConnection({
-      toSpaceId: undefined,
-      connectionType: "doorway",
-      direction: "north",
+  
+  const handleFormSubmit = (data: RoomConnectionData) => {
+    onAddConnection({
+      ...data,
+      // Ensure direction is valid, default to north if not
+      direction: ConnectionDirections.includes(data.direction as any) ? data.direction : "north"
     });
-    setIsAddingConnection(false);
+    setShowNewForm(false);
+  };
+  
+  const handleFormCancel = () => {
+    setShowNewForm(false);
   };
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle>Connections</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
+    <div className="space-y-4">
+      <FormItem>
+        <FormLabel>Space Connections</FormLabel>
+        
+        <div className="space-y-2 mt-2">
           {connections.length > 0 ? (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {connections.map((connection, index) => (
                 <ConnectionItem
                   key={index}
                   connection={connection}
-                  index={index}
-                  spaceName={
-                    connection.toSpaceId && connectedSpaceNames[connection.toSpaceId]
-                      ? connectedSpaceNames[connection.toSpaceId]
-                      : "Unknown Space"
-                  }
-                  onRemove={onRemoveConnection}
+                  spaceName={connectedSpaceNames[connection.toSpaceId] || "Unknown Space"}
+                  onRemove={() => onRemoveConnection(index)}
                 />
               ))}
             </div>
           ) : (
-            <div className="text-sm text-muted-foreground py-2">
-              No connections added yet.
+            <div className="p-4 border rounded-md text-center text-muted-foreground">
+              No connections configured
             </div>
           )}
-
-          {isAddingConnection ? (
-            <NewConnectionForm
-              spaces={spaces}
-              isLoading={isLoading}
-              newConnection={newConnection}
-              onConnectionChange={handleConnectionChange}
-              onAddConnection={handleAddConnection}
-              onCancel={() => setIsAddingConnection(false)}
-            />
-          ) : (
+          
+          {!showNewForm && (
             <Button
+              type="button"
               variant="outline"
-              size="sm"
-              className="w-full mt-2"
-              onClick={() => setIsAddingConnection(true)}
+              className="mt-2"
+              onClick={handleAddClick}
+              disabled={isLoading}
             >
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="h-4 w-4 mr-2" />
               Add Connection
             </Button>
           )}
+          
+          {showNewForm && (
+            <NewConnectionForm
+              floorId={floorId}
+              roomId={roomId}
+              onSubmit={handleFormSubmit}
+              onCancel={handleFormCancel}
+              spaces={spaces}
+              isLoading={isLoading}
+            />
+          )}
         </div>
-      </CardContent>
-    </Card>
+      </FormItem>
+    </div>
   );
 }

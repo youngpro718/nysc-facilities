@@ -1,96 +1,144 @@
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { NewConnectionFormProps } from "./types";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RoomConnectionData, ConnectionDirections } from "../RoomFormSchema";
+import { SpaceOption } from "./types";
+import { Loader2 } from "lucide-react";
 
-export function NewConnectionForm({ 
-  spaces, 
-  isLoading, 
-  newConnection, 
-  onConnectionChange, 
-  onAddConnection, 
-  onCancel 
+interface NewConnectionFormProps {
+  floorId: string;
+  roomId?: string;
+  onSubmit: (connection: RoomConnectionData) => void;
+  onCancel: () => void;
+  spaces?: SpaceOption[];
+  isLoading?: boolean;
+}
+
+export function NewConnectionForm({
+  floorId,
+  roomId,
+  onSubmit,
+  onCancel,
+  spaces = [],
+  isLoading = false
 }: NewConnectionFormProps) {
-  if (isLoading) {
-    return <div className="text-sm text-muted-foreground">Loading spaces...</div>;
-  }
-
-  // Determine if selected space is a hallway
-  const selectedSpace = spaces?.find(space => space.id === newConnection.toSpaceId);
-  const isHallway = selectedSpace?.type === 'hallway';
+  const [toSpaceId, setToSpaceId] = useState("");
+  const [connectionType, setConnectionType] = useState("");
+  const [direction, setDirection] = useState<string>("north"); // Default to north
+  const [submitting, setSubmitting] = useState(false);
   
+  const handleSubmit = () => {
+    setSubmitting(true);
+    
+    // Make sure direction is valid
+    const validDirection = ConnectionDirections.includes(direction as any) 
+      ? direction 
+      : "north";
+      
+    onSubmit({
+      toSpaceId,
+      connectionType,
+      direction: validDirection as any
+    });
+    
+    setSubmitting(false);
+  };
+  
+  const isValid = toSpaceId && connectionType;
+
   return (
-    <div className="space-y-3 p-3 border rounded-md">
-      <div className="space-y-2">
-        <Select
-          value={newConnection.toSpaceId}
-          onValueChange={(value) => onConnectionChange("toSpaceId", value)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select space to connect to" />
-          </SelectTrigger>
-          <SelectContent>
-            {spaces?.map(space => (
-              <SelectItem key={space.id} value={space.id}>
-                {space.room_number 
-                  ? `${space.name} (${space.room_number})`
-                  : space.name} ({space.type})
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select
-          value={newConnection.connectionType}
-          onValueChange={(value) => onConnectionChange("connectionType", value)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select connection type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="door">Door</SelectItem>
-            <SelectItem value="direct">Direct</SelectItem>
-            <SelectItem value="secured">Secured</SelectItem>
-            {isHallway && (
-              <SelectItem value="transition">Transition Door</SelectItem>
-            )}
-          </SelectContent>
-        </Select>
-
-        {isHallway && (
+    <div className="border p-4 rounded-md space-y-4">
+      <h4 className="font-medium text-sm">New Connection</h4>
+      
+      <div className="space-y-4">
+        <div>
+          <label className="text-sm font-medium mb-1 block">Connected Space</label>
           <Select
-            value={newConnection.direction}
-            onValueChange={(value) => onConnectionChange("direction", value)}
+            value={toSpaceId}
+            onValueChange={setToSpaceId}
+            disabled={isLoading}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Position on hallway" />
+              <SelectValue placeholder="Select space" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="start">Start of Hallway</SelectItem>
-              <SelectItem value="center">Middle of Hallway</SelectItem>
-              <SelectItem value="end">End of Hallway</SelectItem>
-              <SelectItem value="right">Right Side of Hallway</SelectItem>
-              <SelectItem value="left">Left Side of Hallway</SelectItem>
+              {spaces.map((space) => (
+                <SelectItem key={space.id} value={space.id}>
+                  {space.room_number
+                    ? `${space.name} (${space.room_number})`
+                    : `${space.name} (${space.type})`}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
-        )}
+        </div>
+        
+        <div>
+          <label className="text-sm font-medium mb-1 block">Connection Type</label>
+          <Select
+            value={connectionType}
+            onValueChange={setConnectionType}
+            disabled={isLoading}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="door">Door</SelectItem>
+              <SelectItem value="opening">Open Access</SelectItem>
+              <SelectItem value="window">Window</SelectItem>
+              <SelectItem value="restricted">Restricted Access</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div>
+          <label className="text-sm font-medium mb-1 block">Direction</label>
+          <Select
+            value={direction}
+            onValueChange={setDirection}
+            disabled={isLoading}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select direction" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="north">North</SelectItem>
+              <SelectItem value="south">South</SelectItem>
+              <SelectItem value="east">East</SelectItem>
+              <SelectItem value="west">West</SelectItem>
+              <SelectItem value="northeast">Northeast</SelectItem>
+              <SelectItem value="northwest">Northwest</SelectItem>
+              <SelectItem value="southeast">Southeast</SelectItem>
+              <SelectItem value="southwest">Southwest</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
-
-      <div className="flex gap-2 justify-end">
-        <Button 
-          type="button" 
-          variant="outline" 
-          size="sm"
+      
+      <div className="flex justify-end gap-2">
+        <Button
+          type="button"
+          variant="outline"
           onClick={onCancel}
+          disabled={submitting}
         >
           Cancel
         </Button>
-        <Button 
-          type="button" 
-          size="sm"
-          onClick={onAddConnection}
+        <Button
+          type="button"
+          onClick={handleSubmit}
+          disabled={!isValid || submitting}
         >
-          Add Connection
+          {submitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Adding...
+            </>
+          ) : (
+            "Add Connection"
+          )}
         </Button>
       </div>
     </div>

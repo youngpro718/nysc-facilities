@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -15,7 +14,7 @@ import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
 import { RoomFormContent } from "./forms/room/RoomFormContent";
-import { roomFormSchema, type RoomFormData } from "./forms/room/RoomFormSchema";
+import { roomFormSchema, type RoomFormData, ConnectionDirections } from "./forms/room/RoomFormSchema";
 import { EditHallwayForm } from "./forms/hallway/EditHallwayForm";
 import { 
   StatusEnum, 
@@ -71,17 +70,28 @@ export function EditSpaceDialog({
         courtRoomPhotos = { judge_view: null, audience_view: null };
       }
       
+      // Ensure connections have valid directions
+      const mappedConnections = connections.map((conn: any) => {
+        // Map the direction to a valid value if it's not already
+        let direction = conn.direction || conn.connectionDirection;
+        if (!direction || !ConnectionDirections.includes(direction)) {
+          direction = "north"; // Default to north if invalid or missing
+        }
+        
+        return {
+          id: conn.id,
+          toSpaceId: conn.to_space_id || conn.toSpaceId,
+          connectionType: conn.connection_type || conn.connectionType,
+          direction: direction
+        };
+      });
+      
       form.reset({
         ...initialData,
         type: type === "room" ? "room" : "hallway",
         roomType: initialData.room_type ? stringToRoomType(initialData.room_type) : undefined,
         courtRoomPhotos: courtRoomPhotos,
-        connections: connections.map((conn: any) => ({
-          id: conn.id,
-          toSpaceId: conn.to_space_id || conn.toSpaceId,
-          connectionType: conn.connection_type || conn.connectionType,
-          direction: conn.direction
-        }))
+        connections: mappedConnections
       });
     }
   }, [open, form, initialData, type]);
@@ -168,6 +178,11 @@ export function EditSpaceDialog({
         const keepConnectionIds: string[] = [];
         
         for (const connection of data.connections) {
+          // Ensure direction is valid
+          const direction = ConnectionDirections.includes(connection.direction as any) 
+            ? connection.direction 
+            : "north"; // Default to north if invalid
+          
           if (connection.id) {
             keepConnectionIds.push(connection.id);
             
@@ -177,7 +192,7 @@ export function EditSpaceDialog({
               .update({
                 to_space_id: connection.toSpaceId,
                 connection_type: connection.connectionType,
-                direction: connection.direction,
+                direction: direction,
               })
               .eq("id", connection.id);
               
@@ -194,7 +209,7 @@ export function EditSpaceDialog({
                 to_space_id: connection.toSpaceId,
                 space_type: "room",
                 connection_type: connection.connectionType,
-                direction: connection.direction,
+                direction: direction,
                 status: "active"
               });
               
