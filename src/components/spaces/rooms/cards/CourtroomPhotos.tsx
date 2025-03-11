@@ -1,85 +1,94 @@
 
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Images, Info } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose
+} from "@/components/ui/dialog";
+import { X } from "lucide-react";
 
 interface CourtroomPhotosProps {
   photos: {
-    judge_view: string | null;
-    audience_view: string | null;
-  } | null;
+    judge_view?: string | null;
+    audience_view?: string | null;
+  };
 }
 
 export function CourtroomPhotos({ photos }: CourtroomPhotosProps) {
-  const [openDialog, setOpenDialog] = useState(false);
+  const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
+  const [viewType, setViewType] = useState<string>("");
   
-  if (!photos || (!photos.judge_view && !photos.audience_view)) {
-    return null;
+  const hasPhotos = photos?.judge_view || photos?.audience_view;
+  
+  if (!hasPhotos) {
+    return <div className="text-sm text-muted-foreground">No photos available</div>;
   }
-
-  const hasJudgeView = !!photos.judge_view;
-  const hasAudienceView = !!photos.audience_view;
+  
+  const openPhotoDialog = (photoUrl: string | null | undefined, type: string) => {
+    if (photoUrl) {
+      setViewingPhoto(photoUrl);
+      setViewType(type);
+    }
+  };
   
   return (
-    <div className="mt-4">
-      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-        <DialogTrigger asChild>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="flex items-center gap-1 w-full"
+    <div>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        {photos.judge_view && (
+          <div 
+            className="relative h-20 w-32 rounded border overflow-hidden cursor-pointer" 
+            onClick={() => openPhotoDialog(photos.judge_view, "Judge View")}
           >
-            <Images className="h-4 w-4 mr-1" />
-            View Courtroom Photos
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="max-w-4xl">
-          <CardTitle className="text-xl mb-4">Courtroom Photos</CardTitle>
-          <Tabs defaultValue={hasJudgeView ? "judge" : "audience"} className="w-full">
-            <TabsList className="w-full mb-4">
-              <TabsTrigger 
-                value="judge" 
-                className="flex-1"
-                disabled={!hasJudgeView}
-              >
-                Judge View
-              </TabsTrigger>
-              <TabsTrigger 
-                value="audience" 
-                className="flex-1"
-                disabled={!hasAudienceView}
-              >
-                Audience View
-              </TabsTrigger>
-            </TabsList>
-            
-            {hasJudgeView && (
-              <TabsContent value="judge" className="mt-0">
-                <div className="overflow-hidden rounded-md border">
-                  <img 
-                    src={photos.judge_view as string} 
-                    alt="Judge View" 
-                    className="w-full h-auto max-h-[70vh] object-contain"
-                  />
-                </div>
-              </TabsContent>
-            )}
-            
-            {hasAudienceView && (
-              <TabsContent value="audience" className="mt-0">
-                <div className="overflow-hidden rounded-md border">
-                  <img 
-                    src={photos.audience_view as string} 
-                    alt="Audience View" 
-                    className="w-full h-auto max-h-[70vh] object-contain"
-                  />
-                </div>
-              </TabsContent>
-            )}
-          </Tabs>
+            <img
+              src={photos.judge_view}
+              alt="Judge View"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black bg-opacity-20 hover:bg-opacity-30 transition-all flex items-center justify-center">
+              <span className="text-white text-xs font-medium px-2 py-1 bg-black bg-opacity-50 rounded">Judge View</span>
+            </div>
+          </div>
+        )}
+        
+        {photos.audience_view && (
+          <div 
+            className="relative h-20 w-32 rounded border overflow-hidden cursor-pointer" 
+            onClick={() => openPhotoDialog(photos.audience_view, "Audience View")}
+          >
+            <img
+              src={photos.audience_view}
+              alt="Audience View"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black bg-opacity-20 hover:bg-opacity-30 transition-all flex items-center justify-center">
+              <span className="text-white text-xs font-medium px-2 py-1 bg-black bg-opacity-50 rounded">Audience View</span>
+            </div>
+          </div>
+        )}
+      </div>
+      
+      <Dialog open={!!viewingPhoto} onOpenChange={(open) => !open && setViewingPhoto(null)}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{viewType}</DialogTitle>
+            <DialogClose asChild>
+              <Button variant="ghost" size="icon" className="absolute right-4 top-4">
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogClose>
+          </DialogHeader>
+          {viewingPhoto && (
+            <div className="mt-2 w-full h-96 relative">
+              <img
+                src={viewingPhoto}
+                alt={viewType}
+                className="w-full h-full object-contain"
+              />
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

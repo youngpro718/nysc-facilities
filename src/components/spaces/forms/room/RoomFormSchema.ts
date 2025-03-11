@@ -18,6 +18,7 @@ export const RoomConnectionSchema = z.object({
   toSpaceId: z.string().min(1, "Connected space is required"),
   connectionType: z.string().min(1, "Connection type is required"),
   direction: z.enum(ConnectionDirections).optional(),
+  id: z.string().uuid().optional(), // Add id field for existing connections
 });
 
 // Define the room form schema with all fields
@@ -30,10 +31,10 @@ export const RoomFormSchema = z.object({
     RoomTypeEnum.OFFICE,
     RoomTypeEnum.COURTROOM,
     RoomTypeEnum.STORAGE,
-    RoomTypeEnum.MEETING, // Using MEETING instead of CONFERENCE
+    RoomTypeEnum.MEETING,
     RoomTypeEnum.UTILITY,
     RoomTypeEnum.RECEPTION,
-    // Removed DEFAULT, RESTROOM, SECURITY as they don't exist in the enum
+    // Removed the enum values that don't exist
   ]),
   status: z.enum([
     StatusEnum.ACTIVE,
@@ -50,9 +51,10 @@ export const RoomFormSchema = z.object({
     StorageTypeEnum.CLIMATE_CONTROLLED,
     StorageTypeEnum.HAZARDOUS,
     StorageTypeEnum.ARCHIVE,
-    // Removed FILE, EQUIPMENT, SUPPLIES as they don't exist in the enum
+    // Removed the enum values that don't exist
   ]).optional(),
   storageCapacity: z.number().optional(),
+  storageNotes: z.string().optional(), // Add storage notes field
   parentRoomId: z.string().optional(),
   connections: z.array(RoomConnectionSchema).optional(),
   position: z

@@ -1,75 +1,71 @@
 
-import { RoomTypeEnum } from "../rooms/types/roomEnums";
+import { StatusEnum, RoomTypeEnum } from "../rooms/types/roomEnums";
 
-/**
- * Gets a human-readable display name for a room type
- */
-export const getRoomTypeDisplayName = (roomType: RoomTypeEnum | string): string => {
-  switch (roomType) {
-    case RoomTypeEnum.OFFICE:
-      return "Office";
-    case RoomTypeEnum.COURTROOM:
-      return "Courtroom";
-    case RoomTypeEnum.JUDGES_CHAMBERS:
-      return "Judge's Chambers";
-    case RoomTypeEnum.JURY_ROOM:
-      return "Jury Room";
-    case RoomTypeEnum.CONFERENCE_ROOM:
-      return "Conference Room";
-    case RoomTypeEnum.FILING_ROOM:
-      return "Filing Room";
-    case RoomTypeEnum.MALE_LOCKER_ROOM:
-      return "Male Locker Room";
-    case RoomTypeEnum.FEMALE_LOCKER_ROOM:
-      return "Female Locker Room";
-    case RoomTypeEnum.ROBING_ROOM:
-      return "Robing Room";
-    case RoomTypeEnum.STAKE_HOLDER:
-      return "Stakeholder Room";
-    case RoomTypeEnum.MEETING:
-      return "Meeting Room";
-    case RoomTypeEnum.STORAGE:
-      return "Storage Room";
-    case RoomTypeEnum.CHAMBERS:
-      return "Chambers";
-    case RoomTypeEnum.RECEPTION:
-      return "Reception";
-    case RoomTypeEnum.BREAKROOM:
-      return "Break Room";
-    case RoomTypeEnum.LIBRARY:
-      return "Library";
-    case RoomTypeEnum.UTILITY:
-      return "Utility Room";
-    case RoomTypeEnum.SPECIAL:
-      return "Special Room";
-    case RoomTypeEnum.LABORATORY:
-      return "Laboratory";
+// Function to get status color
+export const getStatusColor = (status: StatusEnum | string): string => {
+  switch (status) {
+    case StatusEnum.ACTIVE:
+    case "active":
+      return "bg-green-100 text-green-800 border-green-300";
+    case StatusEnum.INACTIVE:
+    case "inactive":
+      return "bg-gray-100 text-gray-800 border-gray-300";
+    case StatusEnum.UNDER_MAINTENANCE:
+    case "under_maintenance":
+      return "bg-amber-100 text-amber-800 border-amber-300";
     default:
-      return String(roomType).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      return "bg-gray-100 text-gray-800 border-gray-300";
   }
 };
 
-/**
- * Gets icon class or identifier for a room type
- */
-export const getRoomTypeIcon = (roomType: RoomTypeEnum | string): string => {
-  switch (roomType) {
+// Function to get room type color
+export const getRoomTypeColor = (type: RoomTypeEnum | string): string => {
+  switch (type) {
     case RoomTypeEnum.OFFICE:
-      return "briefcase";
+    case "office":
+      return "bg-blue-100 text-blue-800 border-blue-300";
     case RoomTypeEnum.COURTROOM:
-      return "gavel";
+    case "courtroom":
+      return "bg-purple-100 text-purple-800 border-purple-300";
     case RoomTypeEnum.STORAGE:
-      return "archive";
+    case "storage":
+      return "bg-gray-100 text-gray-800 border-gray-300";
     case RoomTypeEnum.MEETING:
-    case RoomTypeEnum.CONFERENCE_ROOM:
-      return "users";
-    case RoomTypeEnum.RECEPTION:
-      return "info";
-    case RoomTypeEnum.LIBRARY:
-      return "book";
+    case "conference":
+      return "bg-emerald-100 text-emerald-800 border-emerald-300";
     case RoomTypeEnum.UTILITY:
-      return "tool";
+    case "utility":
+      return "bg-orange-100 text-orange-800 border-orange-300";
+    case RoomTypeEnum.RECEPTION:
+    case "reception":
+      return "bg-pink-100 text-pink-800 border-pink-300";
     default:
-      return "home";
+      return "bg-gray-100 text-gray-800 border-gray-300";
+  }
+};
+
+// Function to get a human-readable room type name
+export const getRoomTypeName = (type: RoomTypeEnum | string): string => {
+  switch (type) {
+    case RoomTypeEnum.OFFICE:
+    case "office":
+      return "Office";
+    case RoomTypeEnum.COURTROOM:
+    case "courtroom":
+      return "Courtroom";
+    case RoomTypeEnum.STORAGE:
+    case "storage":
+      return "Storage";
+    case RoomTypeEnum.MEETING:
+    case "conference":
+      return "Meeting Room";
+    case RoomTypeEnum.UTILITY:
+    case "utility":
+      return "Utility";
+    case RoomTypeEnum.RECEPTION:
+    case "reception":
+      return "Reception";
+    default:
+      return type.toString().replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   }
 };
