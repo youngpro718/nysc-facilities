@@ -1,97 +1,100 @@
 
-import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { getStatusColor, getRoomTypeColor, getRoomTypeName } from "../../utils/roomTypeUtils";
-import { Room } from "../../rooms/types/RoomTypes";
-import { CourtroomPhotos } from "./CourtroomPhotos";
+import { Room } from '../types/RoomTypes';
+import { getRoomTypeColor, getRoomTypeName } from "../../utils/roomTypeUtils";
+import { CourtroomPhotos } from "../components/CourtroomPhotos";
 
 interface RoomDetailsProps {
   room: Room;
 }
 
-const RoomDetails: React.FC<RoomDetailsProps> = ({ room }) => {
+export function RoomDetails({ room }: RoomDetailsProps) {
+  if (!room) return null;
+  
+  const roomTypeName = getRoomTypeName(room.room_type);
+  const roomTypeColor = getRoomTypeColor(room.room_type);
+  
   return (
-    <div className="px-4 py-2">
-      <div className="space-y-4">
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="outline" className={getStatusColor(room.status)}>
-              {room.status === "under_maintenance" ? "Under Maintenance" : room.status}
-            </Badge>
-            <Badge variant="outline" className={getRoomTypeColor(room.room_type)}>
-              {getRoomTypeName(room.room_type)}
-            </Badge>
-          </div>
+    <div className="space-y-4">
+      <div className="flex flex-col space-y-2">
+        <h3 className="font-medium text-lg">Room Details</h3>
+        
+        <div className="flex flex-wrap gap-2">
+          <Badge variant="outline" className={`${roomTypeColor} font-medium`}>
+            {roomTypeName}
+          </Badge>
           
-          {room.room_number && (
-            <div className="text-sm text-muted-foreground">
-              Room Number: <span className="font-medium">{room.room_number}</span>
-            </div>
-          )}
-
-          {room.phone_number && (
-            <div className="text-sm text-muted-foreground">
-              Phone: <span className="font-medium">{room.phone_number}</span>
-            </div>
+          <Badge variant="outline" className={room.status === 'active' ? 'bg-green-500/20 text-green-700' : 'bg-yellow-500/20 text-yellow-700'}>
+            {room.status === 'active' ? 'Active' : room.status === 'inactive' ? 'Inactive' : 'Under Maintenance'}
+          </Badge>
+          
+          {room.is_storage && (
+            <Badge variant="outline" className="bg-blue-500/20 text-blue-700">
+              Storage
+            </Badge>
           )}
         </div>
-        
-        {room.description && (
-          <>
-            <Separator />
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">Description:</p>
-              <p className="text-sm">{room.description}</p>
-            </div>
-          </>
-        )}
-        
-        {room.current_function && (
-          <>
-            <Separator />
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">Current Function:</p>
-              <p className="text-sm">{room.current_function}</p>
-            </div>
-          </>
-        )}
-        
-        {room.room_type === "courtroom" && room.courtroom_photos && (
-          <>
-            <Separator />
-            <div>
-              <p className="text-sm text-muted-foreground mb-2">Courtroom Photos:</p>
-              <CourtroomPhotos photos={room.courtroom_photos} />
-            </div>
-          </>
-        )}
-
-        {room.is_storage && (
-          <>
-            <Separator />
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground mb-1">Storage Information:</p>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                {room.storage_type && (
-                  <div>
-                    <span className="text-muted-foreground">Type:</span>{" "}
-                    <span className="capitalize">{room.storage_type.replace(/_/g, " ")}</span>
-                  </div>
-                )}
-                {room.storage_capacity && (
-                  <div>
-                    <span className="text-muted-foreground">Capacity:</span>{" "}
-                    <span>{room.storage_capacity} cu. ft.</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </>
+      </div>
+      
+      <Separator />
+      
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <p className="text-sm text-muted-foreground">Room Number</p>
+          <p className="font-medium">{room.room_number || 'N/A'}</p>
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Current Function</p>
+          <p className="font-medium">{room.current_function || 'N/A'}</p>
+        </div>
+        {room.phone_number && (
+          <div>
+            <p className="text-sm text-muted-foreground">Phone Number</p>
+            <p className="font-medium">{room.phone_number}</p>
+          </div>
         )}
       </div>
+      
+      {room.description && (
+        <>
+          <Separator />
+          <div>
+            <p className="text-sm text-muted-foreground mb-1">Description</p>
+            <p className="text-sm">{room.description}</p>
+          </div>
+        </>
+      )}
+      
+      {room.is_storage && (
+        <>
+          <Separator />
+          <div className="space-y-3">
+            <h4 className="font-medium">Storage Information</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Storage Type</p>
+                <p className="font-medium">{room.storage_type || 'General'}</p>
+              </div>
+              {room.storage_capacity !== null && room.storage_capacity !== undefined && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Capacity</p>
+                  <p className="font-medium">{room.storage_capacity} cubic ft</p>
+                </div>
+              )}
+            </div>
+            {room.storage_notes && (
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Storage Notes</p>
+                <p className="text-sm">{room.storage_notes}</p>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+      
+      {/* Add the Courtroom Photos component when room is a courtroom */}
+      {room.room_type === 'courtroom' && <CourtroomPhotos room={room} />}
     </div>
   );
-};
-
-export default RoomDetails;
+}

@@ -35,6 +35,23 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
       const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
       const filePath = `${fileName}`;
 
+      // First check if the bucket exists
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const bucketExists = buckets ? buckets.some(bucket => bucket.name === 'courtroom-photos') : false;
+      
+      if (!bucketExists) {
+        // Create the bucket if it doesn't exist
+        const { error: bucketError } = await supabase.storage
+          .createBucket('courtroom-photos', {
+            public: true,
+            fileSizeLimit: 10485760 // 10MB
+          });
+        
+        if (bucketError && bucketError.message !== 'Duplicate name') {
+          throw bucketError;
+        }
+      }
+
       const { error: uploadError, data } = await supabase.storage
         .from('courtroom-photos')
         .upload(filePath, file, {

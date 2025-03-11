@@ -34,7 +34,6 @@ export const RoomFormSchema = z.object({
     RoomTypeEnum.MEETING,
     RoomTypeEnum.UTILITY,
     RoomTypeEnum.RECEPTION,
-    // Removed the enum values that don't exist
   ]),
   status: z.enum([
     StatusEnum.ACTIVE,
@@ -51,10 +50,9 @@ export const RoomFormSchema = z.object({
     StorageTypeEnum.CLIMATE_CONTROLLED,
     StorageTypeEnum.HAZARDOUS,
     StorageTypeEnum.ARCHIVE,
-    // Removed the enum values that don't exist
   ]).optional(),
   storageCapacity: z.number().optional(),
-  storageNotes: z.string().optional(), // Add storage notes field
+  storageNotes: z.string().optional(), // Storage notes field
   parentRoomId: z.string().optional(),
   connections: z.array(RoomConnectionSchema).optional(),
   position: z

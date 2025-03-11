@@ -75,7 +75,7 @@ export function EditSpaceDialog({
       const mappedConnections = Array.isArray(connections) ? connections.map((conn: any) => {
         // Map the direction to a valid value if it's not already
         let direction = conn.direction || conn.connectionDirection;
-        if (!direction || !ConnectionDirections.includes(direction)) {
+        if (!direction || !ConnectionDirections.includes(direction as any)) {
           direction = "north"; // Default to north if invalid or missing
         }
         
@@ -183,7 +183,8 @@ export function EditSpaceDialog({
           const direction = ConnectionDirections.includes(connection.direction as any) 
             ? connection.direction 
             : "north"; // Default to north if invalid
-          
+            
+          // Only proceed if we have an id or valid toSpaceId and connectionType
           if (connection.id) {
             keepConnectionIds.push(connection.id);
             
