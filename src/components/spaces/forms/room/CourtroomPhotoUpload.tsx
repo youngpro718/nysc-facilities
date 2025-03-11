@@ -36,8 +36,7 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
       const filePath = `${fileName}`;
 
       // Upload directly to the courtroom-photos bucket
-      // The bucket and RLS policies have been created via SQL
-      const { error: uploadError, data } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('courtroom-photos')
         .upload(filePath, file, {
           upsert: true,
@@ -49,20 +48,24 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
         throw new Error(`Upload failed: ${uploadError.message}`);
       }
 
+      // Get the public URL with the correct domain
       const { data: { publicUrl } } = supabase.storage
         .from('courtroom-photos')
         .getPublicUrl(filePath);
+
+      console.log('Generated public URL:', publicUrl);
 
       const updatedPhotos = {
         ...(courtRoomPhotos || { judge_view: null, audience_view: null }),
         [view]: publicUrl
       };
       
+      console.log('Setting form value with photos:', updatedPhotos);
       form.setValue("courtRoomPhotos", updatedPhotos, { shouldValidate: true });
       toast.success(`${view === 'judge_view' ? 'Judge view' : 'Audience view'} photo uploaded successfully`);
     } catch (error) {
       console.error('Error uploading photo:', error);
-      toast.error(`Failed to upload photo: ${error.message}`);
+      toast.error(`Failed to upload photo: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setUploading(prev => ({
         ...prev,
@@ -78,9 +81,11 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
     
     try {
       const url = courtRoomPhotos[view] as string;
+      // Extract filename from URL
       const fileName = url.split('/').pop();
       
       if (fileName) {
+        console.log('Removing file from storage:', fileName);
         supabase.storage
           .from('courtroom-photos')
           .remove([fileName])
@@ -97,7 +102,7 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
       toast.success(`${view === 'judge_view' ? 'Judge view' : 'Audience view'} photo removed`);
     } catch (error) {
       console.error('Error removing photo:', error);
-      toast.error(`Failed to remove photo: ${error.message}`);
+      toast.error(`Failed to remove photo: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
