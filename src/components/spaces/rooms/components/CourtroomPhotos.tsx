@@ -22,10 +22,8 @@ export function CourtroomPhotos({ room }: CourtroomPhotosProps) {
   // Check if room has courtroom photos
   // This is important - we need to handle both snake_case (from DB) and camelCase (from form)
   const hasPhotos = 
-    (room.courtroom_photos && 
-      (room.courtroom_photos.judge_view || room.courtroom_photos.audience_view)) ||
-    (room.courtRoomPhotos && 
-      (room.courtRoomPhotos.judge_view || room.courtRoomPhotos.audience_view));
+    room.courtroom_photos && 
+    (room.courtroom_photos.judge_view || room.courtroom_photos.audience_view);
   
   // If no photos or not a courtroom, don't render anything
   if (!hasPhotos || room.room_type !== 'courtroom') return null;
@@ -34,8 +32,8 @@ export function CourtroomPhotos({ room }: CourtroomPhotosProps) {
     setActiveView(view);
   };
   
-  // Get photos from either snake_case or camelCase property
-  const photos = room.courtroom_photos || room.courtRoomPhotos;
+  // Get photos from the snake_case property according to the Room type
+  const photos = room.courtroom_photos;
   
   // Safely access photo URLs
   const judgeViewUrl = photos?.judge_view;
