@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useFieldArray } from "react-hook-form";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import { ConnectionItem } from "./ConnectionItem";
 import { NewConnectionForm } from "./NewConnectionForm";
 import { useSpacesQuery } from "@/components/spaces/hooks/queries/useSpacesQuery";
@@ -21,7 +21,7 @@ export function ConnectionsField({ form, floorId, roomId }: ConnectionFieldsProp
   });
   
   // Fetch spaces for the selected floor
-  const { data: spaces, isLoading } = useSpacesQuery({ floorId });
+  const { data: spaces, isLoading } = useSpacesQuery(floorId);
   
   // Filter out the current room to prevent self-connection
   const availableSpaces = spaces?.filter(space => 
@@ -61,15 +61,18 @@ export function ConnectionsField({ form, floorId, roomId }: ConnectionFieldsProp
       <CardContent className="space-y-4">
         {fields.length > 0 ? (
           <div className="space-y-2">
-            {fields.map((field, index) => (
-              <ConnectionItem
-                key={field.id}
-                connection={field as RoomConnectionData}
-                spaceName={getSpaceName(field.toSpaceId)}
-                onRemove={() => handleRemoveConnection(index)}
-                index={index}
-              />
-            ))}
+            {fields.map((field, index) => {
+              const connectionData = field as RoomConnectionData;
+              return (
+                <ConnectionItem
+                  key={field.id}
+                  connection={connectionData}
+                  spaceName={getSpaceName(connectionData.toSpaceId)}
+                  onRemove={() => handleRemoveConnection(index)}
+                  index={index}
+                />
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-4 text-sm text-muted-foreground">

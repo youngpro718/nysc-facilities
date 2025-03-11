@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { RoomFormData, RoomConnectionData } from "../RoomFormSchema";
 import { UseFormReturn } from "react-hook-form";
-import { ConnectionFields } from "./ConnectionFields";
+import { ConnectionsField } from "./ConnectionFields";
 import { SpaceOption } from "./types";
 
 export interface ConnectionsContainerProps {
@@ -90,33 +90,11 @@ export function ConnectionsContainer({ form, floorId, roomId }: ConnectionsConta
     }
   }, [connections]);
 
-  const handleAddConnection = (connection: RoomConnectionData) => {
-    // Validate connection before adding
-    if (!connection.toSpaceId || !connection.connectionType) {
-      return;
-    }
-    
-    const updatedConnections = [...(form.getValues("connections") || []), connection];
-    form.setValue("connections", updatedConnections, { shouldDirty: true });
-  };
-
-  const handleRemoveConnection = (indexToRemove: number) => {
-    const updatedConnections = (form.getValues("connections") || []).filter(
-      (_, index) => index !== indexToRemove
-    );
-    form.setValue("connections", updatedConnections, { shouldDirty: true });
-  };
-
   return (
-    <ConnectionFields
+    <ConnectionsField
+      form={form}
       floorId={floorId}
       roomId={roomId}
-      connections={connections}
-      onAddConnection={handleAddConnection}
-      onRemoveConnection={handleRemoveConnection}
-      spaces={spaces}
-      isLoading={isLoading}
-      connectedSpaceNames={connectedSpaceNames}
     />
   );
 }

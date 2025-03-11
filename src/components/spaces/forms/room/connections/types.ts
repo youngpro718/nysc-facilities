@@ -1,5 +1,7 @@
 
 import { RoomConnectionData } from "../RoomFormSchema";
+import { UseFormReturn } from "react-hook-form";
+import { RoomFormData } from "../RoomFormSchema";
 
 export interface SpaceOption {
   id: string;
@@ -25,14 +27,9 @@ export interface NewConnectionFormProps {
 }
 
 export interface ConnectionFieldsProps {
+  form: UseFormReturn<RoomFormData>;
   floorId: string;
   roomId?: string;
-  connections: RoomConnectionData[];
-  onAddConnection: (connection: RoomConnectionData) => void;
-  onRemoveConnection: (index: number) => void;
-  spaces?: SpaceOption[];
-  isLoading?: boolean;
-  connectedSpaceNames?: Record<string, string>;
 }
 
 export interface ConnectionTypes {
