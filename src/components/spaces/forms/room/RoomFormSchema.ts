@@ -15,6 +15,7 @@ export const RoomConnectionSchema = z.object({
 export type RoomConnectionData = z.infer<typeof RoomConnectionSchema>;
 
 export const RoomFormSchema = z.object({
+  id: z.string().optional(), // Add id to the schema
   name: z.string().min(1, "Name is required"),
   roomNumber: z.string().optional(),
   roomType: z.string().optional(),

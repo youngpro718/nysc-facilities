@@ -13,7 +13,7 @@ interface FormFieldsProps {
 }
 
 export function RoomFormFields({ form, floorId }: FormFieldsProps) {
-  const roomIdValue = form.getValues().id; // Using getValues() to access non-reactive id value if needed
+  const roomIdValue = form.getValues()?.id || undefined; // Safe access with fallback
 
   return (
     <div className="space-y-6">

@@ -8,7 +8,7 @@ import { ConnectionsField } from "./ConnectionsField";
 
 export function RoomFormFields({ form }: RoomFormProps) {
   const floorId = form.watch("floorId");
-  const roomIdValue = form.getValues().id; // Using getValues() to access non-reactive id value if needed
+  const roomIdValue = form.getValues()?.id || undefined; // Safe access with fallback
 
   return (
     <div className="space-y-6">
