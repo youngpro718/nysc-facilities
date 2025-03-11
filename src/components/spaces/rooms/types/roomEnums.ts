@@ -24,7 +24,7 @@ export enum RoomTypeEnum {
   LIBRARY = "library",
   UTILITY = "utility",
   SPECIAL = "special",
-  LABORATORY = "laboratory" // Adding laboratory type based on error message
+  LABORATORY = "laboratory" // Added laboratory type based on error message
 }
 
 export enum StorageTypeEnum {
@@ -100,7 +100,7 @@ export const roomTypeToString = (type: RoomTypeEnum): RoomTypeString => {
     case RoomTypeEnum.LIBRARY: return "library";
     case RoomTypeEnum.UTILITY: return "utility";
     case RoomTypeEnum.SPECIAL: return "special";
-    case RoomTypeEnum.LABORATORY: return "laboratory"; // Added laboratory case
+    case RoomTypeEnum.LABORATORY: return "laboratory";
     default: return "office"; // Default fallback
   }
 };
@@ -126,7 +126,7 @@ export const stringToRoomType = (str: string): RoomTypeEnum => {
     case "library": return RoomTypeEnum.LIBRARY;
     case "utility": return RoomTypeEnum.UTILITY;
     case "special": return RoomTypeEnum.SPECIAL;
-    case "laboratory": return RoomTypeEnum.LABORATORY; // Added laboratory case
+    case "laboratory": return RoomTypeEnum.LABORATORY;
     default: return RoomTypeEnum.OFFICE; // Default fallback
   }
 };

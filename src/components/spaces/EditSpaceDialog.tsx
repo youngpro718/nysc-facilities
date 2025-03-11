@@ -83,11 +83,13 @@ export function EditSpaceDialog({
     mutationFn: async (data: RoomFormData) => {
       console.log("Submitting data for room update:", data);
       
+      // Convert enum values to strings for database compatibility
       const updateData = {
         name: data.name,
         room_number: data.roomNumber,
-        room_type: roomTypeToString(data.roomType as RoomTypeEnum),
-        status: statusToString(data.status as StatusEnum),
+        // Convert room type from enum to string to match database expectations
+        room_type: data.roomType ? roomTypeToString(data.roomType as RoomTypeEnum) : null,
+        status: data.status ? statusToString(data.status as StatusEnum) : null,
         description: data.description,
         is_storage: data.isStorage,
         storage_type: data.isStorage && data.storageType ? storageTypeToString(data.storageType as StorageTypeEnum) : null,
