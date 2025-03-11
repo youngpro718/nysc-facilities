@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
 import { RoomFormContent } from "./forms/room/RoomFormContent";
-import { roomFormSchema, type RoomFormData, ConnectionDirections } from "./forms/room/RoomFormSchema";
+import { RoomFormSchema, type RoomFormData, ConnectionDirections } from "./forms/room/RoomFormSchema";
 import { EditHallwayForm } from "./forms/hallway/EditHallwayForm";
 import { 
   StatusEnum, 
@@ -50,7 +50,7 @@ export function EditSpaceDialog({
   const setOpen = controlledSetOpen ?? setInternalOpen;
 
   const form = useForm<RoomFormData>({
-    resolver: zodResolver(roomFormSchema),
+    resolver: zodResolver(RoomFormSchema),
     defaultValues: {
       ...initialData,
       type: type === "room" ? "room" : "hallway",

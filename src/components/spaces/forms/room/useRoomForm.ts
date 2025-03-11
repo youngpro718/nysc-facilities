@@ -1,26 +1,15 @@
 
-import { UseFormReturn, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { RoomFormData, roomFormSchema } from "./RoomFormSchema";
-import { RoomTypeEnum, StatusEnum } from "../../rooms/types/roomEnums";
+import { RoomFormSchema, RoomFormData } from "./RoomFormSchema";
 
-export function useRoomForm(initialData?: Partial<RoomFormData>): UseFormReturn<RoomFormData> {
+export const useRoomForm = (defaultValues?: Partial<RoomFormData>) => {
   return useForm<RoomFormData>({
-    resolver: zodResolver(roomFormSchema),
+    resolver: zodResolver(RoomFormSchema),
     defaultValues: {
-      type: "room" as const,
-      status: StatusEnum.ACTIVE,
-      roomType: RoomTypeEnum.OFFICE,
-      name: "",
-      roomNumber: "",
-      description: "",
-      isStorage: false,
-      storageType: null,
-      storageCapacity: null,
-      storageNotes: "",
-      parentRoomId: null,
+      type: "room",
       connections: [],
-      ...initialData
-    },
+      ...defaultValues
+    }
   });
-}
+};

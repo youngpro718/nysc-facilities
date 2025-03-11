@@ -36,4 +36,7 @@ export const RoomFormSchema = z.object({
   }).nullable().optional()
 });
 
+// Export RoomFormSchema as roomFormSchema for compatibility with existing imports
+export const roomFormSchema = RoomFormSchema;
+
 export type RoomFormData = z.infer<typeof RoomFormSchema>;

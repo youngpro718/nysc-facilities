@@ -3,9 +3,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
-import { ConnectionItemProps } from "./types";
+import { RoomConnectionData } from "../RoomFormSchema";
 
-export function ConnectionItem({ connection, index, spaceName, onRemove }: ConnectionItemProps) {
+export interface ConnectionItemProps {
+  connection: RoomConnectionData;
+  spaceName: string;
+  onRemove: (index: number) => void;
+  index: number;
+}
+
+export function ConnectionItem({ connection, spaceName, onRemove, index }: ConnectionItemProps) {
   // Helper function to format direction for display
   const formatDirection = (direction: string | undefined) => {
     if (!direction) return null;
@@ -23,7 +30,7 @@ export function ConnectionItem({ connection, index, spaceName, onRemove }: Conne
   };
 
   return (
-    <Card key={index} className="overflow-hidden">
+    <Card className="overflow-hidden">
       <CardContent className="p-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-xs">

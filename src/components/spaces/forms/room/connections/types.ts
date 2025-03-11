@@ -16,12 +16,12 @@ export interface ConnectionItemProps {
 }
 
 export interface NewConnectionFormProps {
-  spaces?: SpaceOption[];
-  isLoading: boolean;
-  newConnection: RoomConnectionData;
-  onConnectionChange: (field: keyof RoomConnectionData, value: string) => void;
-  onAddConnection: () => void;
+  floorId: string;
+  roomId?: string;
+  onSubmit: (connection: RoomConnectionData) => void;
   onCancel: () => void;
+  spaces?: SpaceOption[];
+  isLoading?: boolean;
 }
 
 export interface ConnectionFieldsProps {
@@ -30,6 +30,9 @@ export interface ConnectionFieldsProps {
   connections: RoomConnectionData[];
   onAddConnection: (connection: RoomConnectionData) => void;
   onRemoveConnection: (index: number) => void;
+  spaces?: SpaceOption[];
+  isLoading?: boolean;
+  connectedSpaceNames?: Record<string, string>;
 }
 
 export interface ConnectionTypes {

@@ -13,7 +13,7 @@ interface FormFieldsProps {
 }
 
 export function RoomFormFields({ form, floorId }: FormFieldsProps) {
-  const currentRoomId = form.getValues("id");
+  const roomIdValue = form.getValues().id; // Using getValues() to access non-reactive id value if needed
 
   return (
     <div className="space-y-6">
@@ -22,7 +22,7 @@ export function RoomFormFields({ form, floorId }: FormFieldsProps) {
       <ParentRoomField 
         form={form} 
         floorId={floorId} 
-        currentRoomId={currentRoomId} 
+        currentRoomId={roomIdValue} 
       />
       
       <StorageFields form={form} />
@@ -31,7 +31,7 @@ export function RoomFormFields({ form, floorId }: FormFieldsProps) {
         <ConnectionsField
           form={form}
           floorId={floorId}
-          roomId={currentRoomId}
+          roomId={roomIdValue}
         />
       )}
       

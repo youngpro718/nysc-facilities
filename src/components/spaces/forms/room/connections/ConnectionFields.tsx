@@ -60,6 +60,7 @@ export function ConnectionFields({
               {connections.map((connection, index) => (
                 <ConnectionItem
                   key={index}
+                  index={index}
                   connection={connection}
                   spaceName={connectedSpaceNames[connection.toSpaceId] || "Unknown Space"}
                   onRemove={() => onRemoveConnection(index)}

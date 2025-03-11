@@ -7,8 +7,8 @@ import { StatusField } from "./StatusField";
 import { ConnectionsField } from "./ConnectionsField";
 
 export function RoomFormFields({ form }: RoomFormProps) {
-  const currentRoomId = form.getValues("id");
   const floorId = form.watch("floorId");
+  const roomIdValue = form.getValues().id; // Using getValues() to access non-reactive id value if needed
 
   return (
     <div className="space-y-6">
@@ -17,7 +17,7 @@ export function RoomFormFields({ form }: RoomFormProps) {
       <ParentRoomField 
         form={form} 
         floorId={floorId} 
-        currentRoomId={currentRoomId} 
+        currentRoomId={roomIdValue} 
       />
       
       <StorageFields form={form} />
@@ -26,7 +26,7 @@ export function RoomFormFields({ form }: RoomFormProps) {
         <ConnectionsField
           form={form}
           floorId={floorId}
-          roomId={currentRoomId}
+          roomId={roomIdValue}
         />
       )}
       
