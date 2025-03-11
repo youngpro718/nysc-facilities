@@ -1,42 +1,43 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Space } from "../../types/SpaceTypes";
+import { SpaceOption } from "../../forms/room/connections/types";
 
-export function useSpacesQuery(floorId: string | null) {
+export function useSpacesQuery(floorId: string) {
   return useQuery({
-    queryKey: ['spaces', floorId],
+    queryKey: ["spaces-for-connections", floorId],
     queryFn: async () => {
       if (!floorId) return [];
       
-      console.log('Fetching spaces for floor:', floorId);
-      
-      const { data, error } = await supabase
-        .from('spaces')
+      // Fetch all active spaces from the floor
+      const { data: spaceData, error: spaceError } = await supabase
+        .from("new_spaces")
         .select(`
           id,
           name,
           type,
-          status,
-          floor_id,
-          room_number,
-          position,
-          size,
-          rotation,
-          created_at,
-          updated_at,
-          subtype
+          room_number
         `)
-        .eq('floor_id', floorId)
-        .eq('status', 'active');
-
-      if (error) {
-        console.error('Error fetching spaces:', error);
-        throw error;
+        .eq("floor_id", floorId)
+        .neq("status", "inactive");
+      
+      if (spaceError) {
+        console.error("Error fetching spaces for connections:", spaceError);
+        throw spaceError;
       }
-
-      return data as Space[];
+      
+      // Format spaces for dropdown
+      const formattedSpaces: SpaceOption[] = (spaceData || []).map(space => ({
+        id: space.id,
+        name: space.name,
+        type: space.type,
+        room_number: space.room_number
+      }));
+      
+      return formattedSpaces;
     },
-    enabled: !!floorId
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    enabled: !!floorId,
+    retry: 3
   });
 }

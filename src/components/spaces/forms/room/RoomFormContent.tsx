@@ -11,7 +11,6 @@ import { Separator } from "@/components/ui/separator";
 import { ConnectionsField } from "./ConnectionsField";
 import { CourtroomPhotoUpload } from "./CourtroomPhotoUpload";
 import { toast } from "sonner";
-import { FormButtons } from "@/components/ui/form-buttons";
 import { useEffect } from "react";
 import { RoomTypeEnum } from "../../rooms/types/roomEnums";
 
@@ -35,18 +34,20 @@ export function RoomFormContent({
   
   // Initialize or reset courtRoomPhotos when room type changes
   useEffect(() => {
-    if (roomType === "courtroom") {
+    if (roomType === RoomTypeEnum.COURTROOM) {
       // Make sure courtRoomPhotos is initialized as an object for courtrooms
       const currentValue = form.getValues("courtRoomPhotos");
       if (!currentValue) {
-        form.setValue("courtRoomPhotos", { judge_view: null, audience_view: null }, { shouldValidate: true });
+        form.setValue("courtRoomPhotos", { judge_view: null, audience_view: null });
       }
+    } else {
+      // Clear courtRoomPhotos if room type is not courtroom
+      form.setValue("courtRoomPhotos", null);
     }
   }, [roomType, form]);
   
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submitted, calling form.handleSubmit");
     
     // Get current form state
     console.log("Form state:", {
@@ -65,7 +66,7 @@ export function RoomFormContent({
     }
     
     // For courtrooms, ensure courtRoomPhotos exists
-    if (roomType === "courtroom" && !formValues.courtRoomPhotos) {
+    if (roomType === RoomTypeEnum.COURTROOM && !formValues.courtRoomPhotos) {
       form.setValue("courtRoomPhotos", { judge_view: null, audience_view: null }, { shouldValidate: true });
     }
     
@@ -107,7 +108,7 @@ export function RoomFormContent({
         )}
 
         {/* Add courtroom photo upload if room type is courtroom */}
-        {roomType === "courtroom" && (
+        {roomType === RoomTypeEnum.COURTROOM && (
           <>
             <Separator />
             <CourtroomPhotoUpload form={form} />
