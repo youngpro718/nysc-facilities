@@ -1,182 +1,231 @@
 
-import { useState } from 'react';
-import { UseFormReturn } from 'react-hook-form';
-import { FormItem, FormLabel } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
-import { Image, Loader2, X } from 'lucide-react';
-import { toast } from 'sonner';
-import { RoomFormData } from './RoomFormSchema';
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { UseFormReturn } from "react-hook-form";
+import { RoomFormData } from "./RoomFormSchema";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2, Upload, X } from "lucide-react";
+import { toast } from "sonner";
+import Image from 'next/image';
 
-export function CourtroomPhotoUpload({ form }: { form: UseFormReturn<RoomFormData> }) {
-  const [uploading, setUploading] = useState<{ judge?: boolean; audience?: boolean }>({});
-  const courtRoomPhotos = form.watch('courtRoomPhotos');
+interface CourtroomPhotoUploadProps {
+  form: UseFormReturn<RoomFormData>;
+}
 
-  // Create bucket if it doesn't exist
-  const createBucketIfNeeded = async () => {
-    try {
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const bucketExists = buckets?.some(bucket => bucket.name === 'courtroom-photos');
-
-      if (!bucketExists) {
-        const { error } = await supabase.storage.createBucket('courtroom-photos', {
-          public: true,
-          fileSizeLimit: 10485760 // 10MB
-        });
-        
-        if (error && error.message !== 'Duplicate name') {
-          console.error('Error creating bucket:', error);
-          toast.error('Failed to create storage bucket');
-          return false;
-        }
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('Error checking/creating bucket:', error);
-      toast.error('Storage initialization failed');
-      return false;
-    }
-  };
+export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
+  const [uploading, setUploading] = useState({
+    judge: false,
+    audience: false
+  });
   
-  const uploadPhoto = async (file: File, type: 'judge_view' | 'audience_view') => {
+  const courtRoomPhotos = form.watch("courtRoomPhotos");
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, view: 'judge_view' | 'audience_view') => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
     try {
-      setUploading(prev => ({ ...prev, [type === 'judge_view' ? 'judge' : 'audience']: true }));
-      
-      // First ensure the bucket exists
-      const bucketReady = await createBucketIfNeeded();
-      if (!bucketReady) {
-        throw new Error('Storage not available');
-      }
-      
-      // Generate a unique filename
+      // Start upload loading state
+      setUploading(prev => ({
+        ...prev,
+        [view === 'judge_view' ? 'judge' : 'audience']: true
+      }));
+
+      // Generate a unique file name
       const fileExt = file.name.split('.').pop();
-      const fileName = `${type}-${Date.now()}.${fileExt}`;
-      
-      // Upload the file
-      const { data, error } = await supabase.storage
+      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      // Upload to Supabase storage
+      const { error: uploadError, data } = await supabase.storage
         .from('courtroom-photos')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: true
+        .upload(filePath, file, {
+          upsert: true,
+          contentType: file.type
         });
 
-      if (error) {
-        throw error;
+      if (uploadError) {
+        throw uploadError;
       }
 
-      // Get the public URL
-      const { data: urlData } = supabase.storage
+      // Get the public URL for the uploaded file
+      const { data: { publicUrl } } = supabase.storage
         .from('courtroom-photos')
-        .getPublicUrl(fileName);
+        .getPublicUrl(filePath);
 
-      // Update the form with the photo URL
-      const currentPhotos = form.getValues('courtRoomPhotos') || {};
-      form.setValue('courtRoomPhotos', {
-        ...currentPhotos,
-        [type]: urlData.publicUrl
-      }, { shouldDirty: true });
-
-      toast.success(`${type === 'judge_view' ? 'Judge view' : 'Audience view'} photo uploaded`);
-    } catch (error: any) {
-      console.error(`Error uploading photo:`, error);
-      toast.error(`Failed to upload photo: ${error.message || 'Unknown error'}`);
+      // Update form value
+      const updatedPhotos = {
+        ...(courtRoomPhotos || { judge_view: null, audience_view: null }),
+        [view]: publicUrl
+      };
+      
+      form.setValue("courtRoomPhotos", updatedPhotos, { shouldValidate: true });
+      toast.success(`${view === 'judge_view' ? 'Judge view' : 'Audience view'} photo uploaded successfully`);
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      toast.error(`Failed to upload photo: ${error.message}`);
     } finally {
-      setUploading(prev => ({ ...prev, [type === 'judge_view' ? 'judge' : 'audience']: false }));
+      // End upload loading state
+      setUploading(prev => ({
+        ...prev,
+        [view === 'judge_view' ? 'judge' : 'audience']: false
+      }));
+      
+      // Clear the input value to allow uploading the same file again
+      event.target.value = '';
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'judge_view' | 'audience_view') => {
-    if (e.target.files && e.target.files[0]) {
-      uploadPhoto(e.target.files[0], type);
+  const handleRemovePhoto = (view: 'judge_view' | 'audience_view') => {
+    if (!courtRoomPhotos?.[view]) return;
+    
+    try {
+      // Get the filename from the URL
+      const url = courtRoomPhotos[view] as string;
+      const fileName = url.split('/').pop();
+      
+      // Delete the file from storage if it exists
+      if (fileName) {
+        supabase.storage
+          .from('courtroom-photos')
+          .remove([fileName])
+          .then(({ error }) => {
+            if (error) {
+              console.error('Error removing file from storage:', error);
+            }
+          });
+      }
+      
+      // Update form state (immediately, don't wait for storage deletion)
+      const updatedPhotos = { ...courtRoomPhotos, [view]: null };
+      form.setValue("courtRoomPhotos", updatedPhotos, { shouldValidate: true });
+      toast.success(`${view === 'judge_view' ? 'Judge view' : 'Audience view'} photo removed`);
+    } catch (error) {
+      console.error('Error removing photo:', error);
+      toast.error(`Failed to remove photo: ${error.message}`);
     }
-  };
-
-  const clearPhoto = (type: 'judge_view' | 'audience_view') => {
-    const currentPhotos = form.getValues('courtRoomPhotos') || {};
-    form.setValue('courtRoomPhotos', {
-      ...currentPhotos,
-      [type]: null
-    }, { shouldDirty: true });
   };
 
   return (
-    <div className="grid gap-4">
-      <h3 className="text-lg font-medium">Courtroom Photos</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <FormItem>
-          <FormLabel>Judge's View</FormLabel>
-          <div className="flex flex-col gap-2">
-            {courtRoomPhotos?.judge_view ? (
-              <div className="relative border rounded-md overflow-hidden h-40">
-                <img 
-                  src={courtRoomPhotos.judge_view} 
-                  alt="Judge's View" 
-                  className="object-cover w-full h-full"
-                />
-                <Button 
-                  type="button"
-                  variant="destructive" 
-                  size="icon"
-                  className="absolute top-2 right-2"
-                  onClick={() => clearPhoto('judge_view')}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleFileChange(e, 'judge_view')}
-                  disabled={uploading.judge}
-                />
-                {uploading.judge && (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                )}
-              </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg font-medium">Courtroom Photos</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Judge View Photo */}
+          <FormField
+            control={form.control}
+            name="courtRoomPhotos.judge_view"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Judge View</FormLabel>
+                <div className="mt-2">
+                  {courtRoomPhotos?.judge_view ? (
+                    <div className="relative w-full h-48 rounded-md overflow-hidden border">
+                      <img 
+                        src={courtRoomPhotos.judge_view as string} 
+                        alt="Judge View" 
+                        className="w-full h-full object-cover"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2"
+                        onClick={() => handleRemovePhoto('judge_view')}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center w-full h-48 border border-dashed rounded-md cursor-pointer bg-background hover:bg-accent/50">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">
+                          {uploading.judge ? (
+                            <span className="flex items-center">
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Uploading...
+                            </span>
+                          ) : (
+                            <span>Click to upload judge view photo</span>
+                          )}
+                        </p>
+                      </div>
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={(e) => handleFileUpload(e, 'judge_view')}
+                        disabled={uploading.judge}
+                      />
+                    </label>
+                  )}
+                </div>
+                <FormMessage />
+              </FormItem>
             )}
-          </div>
-        </FormItem>
+          />
 
-        <FormItem>
-          <FormLabel>Audience View</FormLabel>
-          <div className="flex flex-col gap-2">
-            {courtRoomPhotos?.audience_view ? (
-              <div className="relative border rounded-md overflow-hidden h-40">
-                <img 
-                  src={courtRoomPhotos.audience_view} 
-                  alt="Audience View" 
-                  className="object-cover w-full h-full"
-                />
-                <Button 
-                  type="button"
-                  variant="destructive" 
-                  size="icon"
-                  className="absolute top-2 right-2"
-                  onClick={() => clearPhoto('audience_view')}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleFileChange(e, 'audience_view')}
-                  disabled={uploading.audience}
-                />
-                {uploading.audience && (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                )}
-              </div>
+          {/* Audience View Photo */}
+          <FormField
+            control={form.control}
+            name="courtRoomPhotos.audience_view"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Audience View</FormLabel>
+                <div className="mt-2">
+                  {courtRoomPhotos?.audience_view ? (
+                    <div className="relative w-full h-48 rounded-md overflow-hidden border">
+                      <img 
+                        src={courtRoomPhotos.audience_view as string} 
+                        alt="Audience View" 
+                        className="w-full h-full object-cover"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2"
+                        onClick={() => handleRemovePhoto('audience_view')}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center w-full h-48 border border-dashed rounded-md cursor-pointer bg-background hover:bg-accent/50">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">
+                          {uploading.audience ? (
+                            <span className="flex items-center">
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Uploading...
+                            </span>
+                          ) : (
+                            <span>Click to upload audience view photo</span>
+                          )}
+                        </p>
+                      </div>
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={(e) => handleFileUpload(e, 'audience_view')}
+                        disabled={uploading.audience}
+                      />
+                    </label>
+                  )}
+                </div>
+                <FormMessage />
+              </FormItem>
             )}
-          </div>
-        </FormItem>
-      </div>
-    </div>
+          />
+        </div>
+      </CardContent>
+    </Card>
   );
 }
