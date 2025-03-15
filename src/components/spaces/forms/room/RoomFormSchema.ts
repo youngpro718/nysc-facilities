@@ -21,20 +21,16 @@ export const RoomConnectionSchema = z.object({
   id: z.string().uuid().optional(), // Add id field for existing connections
 });
 
+// Get all enum values for RoomTypeEnum to use in the schema
+const roomTypeValues = Object.values(RoomTypeEnum);
+
 // Define the room form schema with all fields
 export const RoomFormSchema = z.object({
   id: z.string().uuid().optional(),
   name: z.string().min(1, "Name is required"),
   floorId: z.string().min(1, "Floor is required"),
   roomNumber: z.string().optional(),
-  roomType: z.enum([
-    RoomTypeEnum.OFFICE,
-    RoomTypeEnum.COURTROOM,
-    RoomTypeEnum.STORAGE,
-    RoomTypeEnum.MEETING,
-    RoomTypeEnum.UTILITY,
-    RoomTypeEnum.RECEPTION,
-  ]),
+  roomType: z.enum(roomTypeValues as [RoomTypeEnum, ...RoomTypeEnum[]]),
   status: z.enum([
     StatusEnum.ACTIVE,
     StatusEnum.INACTIVE,

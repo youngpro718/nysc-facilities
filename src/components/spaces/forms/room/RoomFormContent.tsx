@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { BasicRoomFields } from "./BasicRoomFields";
 import { StorageFields } from "./StorageFields";
-import { ParentRoomField } from "./ParentRoomField";
+import { ParentRoomField, CAN_HAVE_PARENT_ROOM_TYPES } from "./ParentRoomField";
 import { type RoomFormData } from "./RoomFormSchema";
 import { Separator } from "@/components/ui/separator";
 import { ConnectionsField } from "./ConnectionsField";
@@ -95,6 +95,9 @@ export function RoomFormContent({
     }
   };
 
+  // Determine if this room can have a parent room
+  const canHaveParent = CAN_HAVE_PARENT_ROOM_TYPES.includes(roomType);
+
   return (
     <Form {...form}>
       <form onSubmit={handleFormSubmit} className="space-y-6">
@@ -115,13 +118,17 @@ export function RoomFormContent({
           </>
         )}
 
-        <Separator />
-        
-        <ParentRoomField 
-          form={form} 
-          floorId={floorId}
-          currentRoomId={roomId}
-        />
+        {/* Only show parent room field if this room type can have a parent */}
+        {canHaveParent && (
+          <>
+            <Separator />
+            <ParentRoomField 
+              form={form} 
+              floorId={floorId}
+              currentRoomId={roomId}
+            />
+          </>
+        )}
 
         <Separator />
 
