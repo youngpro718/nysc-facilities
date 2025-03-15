@@ -46,45 +46,62 @@ export function RoomFormContent({
     }
   }, [roomType, form]);
   
+  // Handle parent room field based on room type
+  useEffect(() => {
+    if (!CAN_HAVE_PARENT_ROOM_TYPES.includes(roomType) && form.getValues("parentRoomId")) {
+      form.setValue("parentRoomId", null);
+    }
+  }, [roomType, form]);
+  
+  // Handle storage fields based on isStorage flag
+  useEffect(() => {
+    if (!isStorage) {
+      // If not storage, ensure these values are null
+      form.setValue("storageType", null);
+      form.setValue("storageCapacity", null);
+      form.setValue("storageNotes", null);
+    }
+  }, [isStorage, form]);
+  
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Get current form state
-    console.log("Form state:", {
-      isDirty: form.formState.isDirty,
-      isValid: form.formState.isValid,
-      errors: form.formState.errors
-    });
-    
-    // Get current form values for debugging
-    const formValues = form.getValues();
-    console.log("Current form values:", formValues);
-    
-    // Ensure type field is set
-    if (!formValues.type) {
-      form.setValue("type", "room", { shouldValidate: true });
-    }
-    
-    // For courtrooms, ensure courtRoomPhotos exists
-    if (roomType === RoomTypeEnum.COURTROOM && !formValues.courtRoomPhotos) {
-      form.setValue("courtRoomPhotos", { judge_view: null, audience_view: null }, { shouldValidate: true });
-    }
-    
-    // Validate connections
-    const connections = form.getValues("connections") || [];
-    const validConnections = connections.filter(conn => conn.toSpaceId && conn.connectionType);
-    
-    if (connections.length !== validConnections.length) {
-      toast.error("Some connections are invalid. Please check all connections have a space and type selected.");
-      return;
-    }
-    
     try {
-      // Check for any validation errors directly
+      // Pre-validation cleanup to ensure proper values for validation
+      const formValues = form.getValues();
+      
+      // Ensure type field is set
+      if (!formValues.type) {
+        form.setValue("type", "room", { shouldValidate: false });
+      }
+      
+      // For courtrooms, ensure courtRoomPhotos exists
+      if (roomType === RoomTypeEnum.COURTROOM && !formValues.courtRoomPhotos) {
+        form.setValue("courtRoomPhotos", { judge_view: null, audience_view: null }, { shouldValidate: false });
+      }
+      
+      // Validate connections
+      const connections = form.getValues("connections") || [];
+      const validConnections = connections.filter(conn => conn.toSpaceId && conn.connectionType);
+      
+      if (connections.length !== validConnections.length) {
+        toast.error("Some connections are invalid. Please check all connections have a space and type selected.");
+        return;
+      }
+      
+      // Trigger validation
       const isValid = await form.trigger();
       if (!isValid) {
-        console.error("Form validation failed:", form.formState.errors);
-        toast.error("Please correct the errors in the form before submitting.");
+        const errors = form.formState.errors;
+        console.error("Form validation errors:", errors);
+        
+        // Show specific error messages
+        const errorMessages = Object.entries(errors)
+          .filter(([_, error]) => error?.message)
+          .map(([field, error]) => `${field}: ${error?.message}`)
+          .join(', ');
+        
+        toast.error(`Please correct the following errors: ${errorMessages || "Invalid form data"}`);
         return;
       }
       

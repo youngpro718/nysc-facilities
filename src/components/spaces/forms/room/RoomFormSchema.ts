@@ -40,16 +40,18 @@ export const RoomFormSchema = z.object({
   phoneNumber: z.string().optional(),
   currentFunction: z.string().optional(),
   isStorage: z.boolean().default(false),
+  // Make storage fields properly optional
   storageType: z.enum([
     StorageTypeEnum.GENERAL,
     StorageTypeEnum.SECURE,
     StorageTypeEnum.CLIMATE_CONTROLLED,
     StorageTypeEnum.HAZARDOUS,
     StorageTypeEnum.ARCHIVE,
-  ]).optional(),
-  storageCapacity: z.number().optional(),
-  storageNotes: z.string().optional(), // Storage notes field
-  parentRoomId: z.string().optional(),
+  ]).nullable().optional(),
+  storageCapacity: z.number().nullable().optional(),
+  storageNotes: z.string().nullable().optional(),
+  // Make parentRoomId properly optional
+  parentRoomId: z.string().nullable().optional(),
   connections: z.array(RoomConnectionSchema).optional(),
   position: z
     .object({
