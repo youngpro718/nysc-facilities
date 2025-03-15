@@ -5,7 +5,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { RoomFormData } from "./RoomFormSchema";
-import { RoomTypeEnum, roomTypeToString } from "../../rooms/types/roomEnums";
+import { RoomTypeEnum } from "../../rooms/types/roomEnums";
 
 // Define which room types can be parents
 export const PARENT_ROOM_TYPES = [
@@ -43,8 +43,8 @@ export function ParentRoomField({ form, floorId, currentRoomId }: ParentRoomFiel
     return null;
   }
 
-  // Convert enum values to strings for the Supabase query
-  const parentRoomTypeStrings = PARENT_ROOM_TYPES.map(roomType => roomTypeToString(roomType));
+  // Convert enum values to simple strings for the Supabase query
+  const parentRoomTypeStrings = PARENT_ROOM_TYPES.map(type => type.toString());
 
   const { data: parentRooms, isLoading } = useQuery({
     queryKey: ["parent-rooms", floorId, currentRoomId, roomType],
@@ -53,7 +53,7 @@ export function ParentRoomField({ form, floorId, currentRoomId }: ParentRoomFiel
         .from("rooms")
         .select("id, name, room_number, room_type")
         .eq("floor_id", floorId)
-        .in("room_type", parentRoomTypeStrings)
+        .in("room_type", parentRoomTypeStrings as any) // Use type assertion here
         .order("name");
       
       if (currentRoomId) {
