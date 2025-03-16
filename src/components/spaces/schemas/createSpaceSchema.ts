@@ -40,6 +40,12 @@ const emergencyExitSchema = z.object({
   notes: z.string().optional()
 });
 
+// Define courtroom photos schema
+const courtRoomPhotosSchema = z.object({
+  judge_view: z.string().nullable().optional(),
+  audience_view: z.string().nullable().optional()
+}).nullable().optional();
+
 // Base schema for all space types
 const baseSpaceSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -70,7 +76,8 @@ const roomSchema = baseSpaceSchema.extend({
   storageType: z.nativeEnum(StorageTypeEnum).nullable(),
   storageCapacity: z.number().nullable(), // This must be a number
   storageNotes: z.string().optional(),
-  parentRoomId: z.string().nullable()
+  parentRoomId: z.string().nullable(),
+  courtRoomPhotos: courtRoomPhotosSchema
 });
 
 // Hallway-specific schema - enhanced with more specific hallway fields and proper enums
