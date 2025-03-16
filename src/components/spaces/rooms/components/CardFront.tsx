@@ -15,8 +15,9 @@ interface CardFrontProps {
 }
 
 export function CardFront({ room, onFlip, onDelete }: CardFrontProps) {
-  // Use a consistent field for courtroom photos
-  const courtRoomPhotos = room.courtroom_photos || room.courtRoomPhotos;
+  console.log(`Rendering CardFront for room ${room.name} (type: ${room.room_type})`, {
+    courtroom_photos: room.courtroom_photos
+  });
   
   return (
     <div className="p-5 flex flex-col h-full">
@@ -58,7 +59,9 @@ export function CardFront({ room, onFlip, onDelete }: CardFrontProps) {
         </div>
         
         {/* Show photo thumbnail on card if room is a courtroom and has photos */}
-        {room.room_type === 'courtroom' && <CourtroomPhotoThumbnail photos={courtRoomPhotos} />}
+        {room.room_type === 'courtroom' && (
+          <CourtroomPhotoThumbnail photos={room.courtroom_photos} />
+        )}
         
         {/* Display CourtroomPhotos dialog component if room is a courtroom */}
         {room.room_type === 'courtroom' && <CourtroomPhotos room={room} />}
@@ -122,7 +125,7 @@ export function CardFront({ room, onFlip, onDelete }: CardFrontProps) {
               parentRoomId: room.parent_room_id || null,
               currentFunction: room.current_function || null,
               phoneNumber: room.phone_number || null,
-              courtRoomPhotos: courtRoomPhotos || null,
+              courtRoomPhotos: room.courtroom_photos || null,
               connections: room.space_connections?.map(conn => ({
                 id: conn.id,
                 connectionType: conn.connection_type,

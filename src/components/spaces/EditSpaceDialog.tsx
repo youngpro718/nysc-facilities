@@ -64,15 +64,10 @@ export function EditSpaceDialog({
       
       const connections = initialData.space_connections || initialData.connections || [];
       
-      // Handle courtroom photos if necessary
-      let courtRoomPhotos = initialData.courtroom_photos;
-      if (initialData.room_type === "courtroom" && !courtRoomPhotos) {
-        courtRoomPhotos = { judge_view: null, audience_view: null };
-      }
+      const courtRoomPhotos = initialData.courtroom_photos;
+      console.log("Courtroom photos from initialData:", courtRoomPhotos);
       
-      // Ensure connections have valid directions
       const mappedConnections = Array.isArray(connections) ? connections.map((conn: any) => {
-        // Map the direction to a valid value if it's not already
         let direction = conn.direction || conn.connectionDirection;
         if (!direction || !ConnectionDirections.includes(direction as any)) {
           direction = "north"; // Default to north if invalid or missing
@@ -105,7 +100,6 @@ export function EditSpaceDialog({
       const updateData = {
         name: data.name,
         room_number: data.roomNumber,
-        // Convert room type from enum to string to match database expectations
         room_type: data.roomType ? roomTypeToString(data.roomType as RoomTypeEnum) : null,
         status: data.status ? statusToString(data.status as StatusEnum) : null,
         description: data.description,
@@ -122,18 +116,15 @@ export function EditSpaceDialog({
 
       console.log("Room update data:", updateData);
       
-      // Make sure courtroom-photos bucket exists if needed
       if (data.roomType === RoomTypeEnum.COURTROOM) {
         try {
-          // Check if bucket exists
           const { data: buckets } = await supabase.storage.listBuckets();
           const bucketExists = buckets ? buckets.some(bucket => bucket.name === 'courtroom-photos') : false;
           
           if (!bucketExists) {
-            // Create the storage bucket for courtroom photos if needed
             const { error: bucketError } = await supabase.storage.createBucket('courtroom-photos', {
               public: true,
-              fileSizeLimit: 10485760 // 10MB
+              fileSizeLimit: 10485760
             });
             
             if (bucketError && bucketError.message !== 'Duplicate name') {
@@ -177,12 +168,10 @@ export function EditSpaceDialog({
         const keepConnectionIds: string[] = [];
         
         for (const connection of data.connections) {
-          // Ensure direction is valid
           const direction = ConnectionDirections.includes(connection.direction as any) 
             ? connection.direction 
-            : "north"; // Default to north if invalid
+            : "north";
             
-          // Only proceed if we have an id or valid toSpaceId and connectionType
           if (connection.id) {
             keepConnectionIds.push(connection.id);
             

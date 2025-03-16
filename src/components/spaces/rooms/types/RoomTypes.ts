@@ -54,12 +54,8 @@ export interface Room {
   size?: { width: number; height: number };
   rotation?: number;
   
-  // Standardize on snake_case for database field
+  // Use the consistent CourtroomPhotos type
   courtroom_photos?: CourtroomPhotos | null;
-  
-  // For form handling - camelCase version
-  // This is a duplicate of courtroom_photos but with camelCase name for forms
-  courtRoomPhotos?: CourtroomPhotos | null;
   
   // Relationships
   floor?: {

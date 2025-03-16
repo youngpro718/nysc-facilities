@@ -20,6 +20,7 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
   });
   
   const courtRoomPhotos = form.watch("courtRoomPhotos");
+  console.log("Current courtRoomPhotos in form:", courtRoomPhotos);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, view: 'judge_view' | 'audience_view') => {
     const file = event.target.files?.[0];
@@ -44,7 +45,8 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
 
       console.log('Generated public URL:', publicUrl);
 
-      // Create or update the courtRoomPhotos object
+      // Create or update the courtRoomPhotos object with the correct field structure
+      // This structure must match the database field structure (snake_case)
       const updatedPhotos = {
         ...(courtRoomPhotos || { judge_view: null, audience_view: null }),
         [view]: publicUrl
@@ -87,6 +89,7 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
       }
       
       const updatedPhotos = { ...courtRoomPhotos, [view]: null };
+      console.log('Updated photos after removal:', updatedPhotos);
       form.setValue("courtRoomPhotos", updatedPhotos, { shouldValidate: true });
       toast.success(`${view === 'judge_view' ? 'Judge view' : 'Audience view'} photo removed`);
     } catch (error) {
@@ -115,6 +118,10 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
                         src={courtRoomPhotos.judge_view as string} 
                         alt="Judge View" 
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          console.error('Error loading judge view image:', courtRoomPhotos.judge_view);
+                          e.currentTarget.src = "/placeholder.svg";
+                        }}
                       />
                       <Button
                         type="button"
@@ -169,6 +176,10 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
                         src={courtRoomPhotos.audience_view as string} 
                         alt="Audience View" 
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          console.error('Error loading audience view image:', courtRoomPhotos.audience_view);
+                          e.currentTarget.src = "/placeholder.svg";
+                        }}
                       />
                       <Button
                         type="button"
