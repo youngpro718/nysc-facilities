@@ -52,6 +52,12 @@ export interface Room {
     audience_view?: string | null;
   } | null;
   
+  // For form handling - camelCase version
+  courtRoomPhotos?: {
+    judge_view?: string | null;
+    audience_view?: string | null;
+  } | null;
+  
   // Relationships
   floor?: {
     id: string;
