@@ -37,6 +37,25 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
 
       console.log('Uploading file to courtroom-photos bucket:', fileName);
       
+      // Ensure the bucket exists before uploading
+      const { data: buckets } = await supabase.storage.listBuckets();
+      if (!buckets?.some(bucket => bucket.name === 'courtroom-photos')) {
+        try {
+          const { error: bucketError } = await supabase.storage.createBucket('courtroom-photos', {
+            public: true,
+            fileSizeLimit: 10485760 // 10MB
+          });
+          
+          if (bucketError && bucketError.message !== 'Duplicate name') {
+            console.warn('Warning: Could not create bucket:', bucketError);
+            // Continue anyway - the upload might still work if the bucket was created elsewhere
+          }
+        } catch (bucketError) {
+          console.warn('Warning: Error checking/creating bucket:', bucketError);
+          // Continue with upload attempt - might work if bucket exists but we don't have permission to create buckets
+        }
+      }
+      
       // Upload directly to the courtroom-photos bucket
       const { data, error: uploadError } = await supabase.storage
         .from('courtroom-photos')
