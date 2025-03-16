@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { LocationFields } from "../../form-sections/LocationFields";
 import { ProblemTypeField } from "../../form-sections/ProblemTypeField";
@@ -67,16 +68,18 @@ export function DetailsStep({ form, onNext }: WizardStepProps) {
         </Alert>
       )}
 
-      {/* Location Fields */}
-      <LocationFields
-        form={form}
-        disableFields={useAssignedRoom}
-      />
-
       {/* Problem Type */}
       <ProblemTypeField
         form={form}
       />
+
+      {/* Location Fields */}
+      <div className="bg-background py-2 z-40">
+        <LocationFields
+          form={form}
+          disableFields={useAssignedRoom}
+        />
+      </div>
 
       {/* Description */}
       <DescriptionField form={form} />

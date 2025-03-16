@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -25,31 +26,34 @@ export function TypeStep({ form, onNext }: WizardStepProps) {
         className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
       >
         {ISSUE_TYPES.map((type) => (
-          <Label
-            key={type.id}
-            className={cn(
-              "cursor-pointer",
-              selectedIssueType === type.id && "ring-2 ring-primary"
-            )}
-          >
+          <div key={type.id} className="relative">
             <RadioGroupItem
               value={type.id}
-              className="sr-only"
+              id={`type-${type.id}`}
+              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
             />
-            <Card className="p-4 hover:bg-accent transition-colors">
-              <div className="flex flex-col items-center text-center gap-2">
-                <span className={cn("rounded-full p-2", type.color)}>
-                  {type.icon}
-                </span>
-                <div>
-                  <h3 className="font-medium">{type.label}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {type.description}
-                  </p>
+            <Label
+              htmlFor={`type-${type.id}`}
+              className={cn(
+                "cursor-pointer block h-full",
+                selectedIssueType === type.id && "ring-2 ring-primary"
+              )}
+            >
+              <Card className="p-4 hover:bg-accent transition-colors h-full">
+                <div className="flex flex-col items-center text-center gap-2">
+                  <span className={cn("rounded-full p-2", type.color)}>
+                    {type.icon}
+                  </span>
+                  <div>
+                    <h3 className="font-medium">{type.label}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {type.description}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </Card>
-          </Label>
+              </Card>
+            </Label>
+          </div>
         ))}
       </RadioGroup>
     </div>

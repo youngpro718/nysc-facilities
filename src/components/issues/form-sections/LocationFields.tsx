@@ -63,7 +63,7 @@ export function LocationFields({ form, disableFields = false }: LocationFieldsPr
   });
 
   return (
-    <>
+    <div className="space-y-4">
       <FormField
         control={form.control}
         name="building_id"
@@ -73,18 +73,19 @@ export function LocationFields({ form, disableFields = false }: LocationFieldsPr
             <Select 
               onValueChange={(value) => {
                 field.onChange(value);
-                form.setValue('floor_id', undefined);
-                form.setValue('room_id', undefined);
+                // Clear dependent fields when building changes
+                form.setValue('floor_id', "");
+                form.setValue('room_id', "");
               }} 
-              value={field.value}
+              value={field.value || ""}
               disabled={disableFields || isLoadingBuildings}
             >
               <FormControl>
-                <SelectTrigger className="z-30">
+                <SelectTrigger>
                   <SelectValue placeholder={isLoadingBuildings ? "Loading buildings..." : "Select building"} />
                 </SelectTrigger>
               </FormControl>
-              <SelectContent position="popper" className="z-50">
+              <SelectContent className="bg-popover">
                 {buildings?.map((building) => (
                   <SelectItem key={building.id} value={building.id}>
                     {building.name}
@@ -106,13 +107,14 @@ export function LocationFields({ form, disableFields = false }: LocationFieldsPr
             <Select 
               onValueChange={(value) => {
                 field.onChange(value);
-                form.setValue('room_id', undefined);
+                // Clear dependent field when floor changes
+                form.setValue('room_id', "");
               }} 
-              value={field.value}
+              value={field.value || ""}
               disabled={disableFields || !buildingId || isLoadingFloors}
             >
               <FormControl>
-                <SelectTrigger className="z-20">
+                <SelectTrigger>
                   {isLoadingFloors ? (
                     <div className="flex items-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -123,7 +125,7 @@ export function LocationFields({ form, disableFields = false }: LocationFieldsPr
                   )}
                 </SelectTrigger>
               </FormControl>
-              <SelectContent position="popper" className="z-50">
+              <SelectContent className="bg-popover">
                 {floors?.length ? (
                   floors.map((floor) => (
                     <SelectItem key={floor.id} value={floor.id}>
@@ -150,11 +152,11 @@ export function LocationFields({ form, disableFields = false }: LocationFieldsPr
             <FormLabel>Room</FormLabel>
             <Select 
               onValueChange={field.onChange} 
-              value={field.value}
+              value={field.value || ""}
               disabled={disableFields || !floorId || isLoadingRooms}
             >
               <FormControl>
-                <SelectTrigger className="z-10">
+                <SelectTrigger>
                   {isLoadingRooms ? (
                     <div className="flex items-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -165,7 +167,7 @@ export function LocationFields({ form, disableFields = false }: LocationFieldsPr
                   )}
                 </SelectTrigger>
               </FormControl>
-              <SelectContent position="popper" className="z-50">
+              <SelectContent className="bg-popover">
                 {rooms?.length ? (
                   rooms.map((room) => (
                     <SelectItem key={room.id} value={room.id}>
@@ -183,6 +185,6 @@ export function LocationFields({ form, disableFields = false }: LocationFieldsPr
           </FormItem>
         )}
       />
-    </>
+    </div>
   );
 }
