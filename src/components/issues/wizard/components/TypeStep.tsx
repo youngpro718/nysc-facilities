@@ -21,7 +21,7 @@ export function TypeStep({ form, onNext }: WizardStepProps) {
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">What type of issue are you reporting?</h2>
       <RadioGroup
-        value={selectedIssueType || undefined}
+        value={selectedIssueType || ""}
         onValueChange={handleTypeSelect}
         className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
       >
@@ -30,7 +30,7 @@ export function TypeStep({ form, onNext }: WizardStepProps) {
             <RadioGroupItem
               value={type.id}
               id={`type-${type.id}`}
-              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+              className="absolute opacity-0 w-full h-full cursor-pointer inset-0"
             />
             <Label
               htmlFor={`type-${type.id}`}

@@ -27,7 +27,7 @@ export function ProblemTypeField({ form }: ProblemTypeFieldProps) {
       control={form.control}
       name="problem_type"
       render={({ field }) => (
-        <FormItem className="relative z-50">
+        <FormItem className="relative">
           <FormLabel>Problem Type</FormLabel>
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
@@ -43,7 +43,7 @@ export function ProblemTypeField({ form }: ProblemTypeFieldProps) {
                 <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-full p-0 bg-popover">
+            <PopoverContent className="w-full p-0 bg-popover z-50">
               <Command>
                 <CommandInput placeholder="Search problem type..." />
                 <CommandList>

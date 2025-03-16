@@ -14,8 +14,8 @@ interface LocationFieldsProps {
 }
 
 export function LocationFields({ form, disableFields = false }: LocationFieldsProps) {
-  const buildingId = form.watch('building_id');
-  const floorId = form.watch('floor_id');
+  const buildingId = form.watch('building_id') || "";
+  const floorId = form.watch('floor_id') || "";
 
   const { data: buildings, isLoading: isLoadingBuildings } = useQuery({
     queryKey: ['buildings'],
@@ -85,7 +85,7 @@ export function LocationFields({ form, disableFields = false }: LocationFieldsPr
                   <SelectValue placeholder={isLoadingBuildings ? "Loading buildings..." : "Select building"} />
                 </SelectTrigger>
               </FormControl>
-              <SelectContent className="bg-popover">
+              <SelectContent className="z-50 bg-background">
                 {buildings?.map((building) => (
                   <SelectItem key={building.id} value={building.id}>
                     {building.name}
@@ -125,7 +125,7 @@ export function LocationFields({ form, disableFields = false }: LocationFieldsPr
                   )}
                 </SelectTrigger>
               </FormControl>
-              <SelectContent className="bg-popover">
+              <SelectContent className="z-50 bg-background">
                 {floors?.length ? (
                   floors.map((floor) => (
                     <SelectItem key={floor.id} value={floor.id}>
@@ -167,7 +167,7 @@ export function LocationFields({ form, disableFields = false }: LocationFieldsPr
                   )}
                 </SelectTrigger>
               </FormControl>
-              <SelectContent className="bg-popover">
+              <SelectContent className="z-50 bg-background">
                 {rooms?.length ? (
                   rooms.map((room) => (
                     <SelectItem key={room.id} value={room.id}>

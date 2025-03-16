@@ -74,7 +74,7 @@ export function DetailsStep({ form, onNext }: WizardStepProps) {
       />
 
       {/* Location Fields */}
-      <div className="bg-background py-2 z-40">
+      <div className="bg-background py-2">
         <LocationFields
           form={form}
           disableFields={useAssignedRoom}
