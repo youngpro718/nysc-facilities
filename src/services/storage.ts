@@ -98,6 +98,7 @@ export const storageService = {
         
       if (uploadError) {
         console.error(`Error uploading file to ${bucketName}:`, uploadError);
+        toast.error(`Error uploading file: ${uploadError.message}`);
         return null;
       }
       
@@ -109,6 +110,7 @@ export const storageService = {
       return publicUrl;
     } catch (error) {
       console.error(`Unexpected error uploading file to ${bucketName}:`, error);
+      toast.error(`Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return null;
     }
   },
@@ -127,12 +129,14 @@ export const storageService = {
         
       if (error) {
         console.error(`Error removing file from ${bucketName}:`, error);
+        toast.error(`Error removing file: ${error.message}`);
         return false;
       }
       
       return true;
     } catch (error) {
       console.error(`Unexpected error removing file from ${bucketName}:`, error);
+      toast.error(`Failed to remove file: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return false;
     }
   },
@@ -144,6 +148,17 @@ export const storageService = {
    */
   getFilenameFromUrl(url: string): string | null {
     try {
+      // Extract just the filename path from the full URL
+      const urlObj = new URL(url);
+      const pathParts = urlObj.pathname.split('/');
+      const bucketPart = pathParts.findIndex(part => part === 'object');
+      
+      if (bucketPart !== -1 && bucketPart + 2 < pathParts.length) {
+        // Return everything after the bucket name in the path
+        return pathParts.slice(bucketPart + 2).join('/');
+      }
+      
+      // Fallback to just the last part if we can't extract properly
       return url.split('/').pop() || null;
     } catch {
       return null;

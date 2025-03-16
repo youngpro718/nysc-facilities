@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2, RefreshCw, Users, ArrowRightFromLine } from "lucide-react";
 import { EditSpaceDialog } from "../../EditSpaceDialog";
 import { CourtroomPhotos } from './CourtroomPhotos';
+import { CourtroomPhotoThumbnail } from './CourtroomPhotoThumbnail';
 
 interface CardFrontProps {
   room: Room;
@@ -14,6 +15,9 @@ interface CardFrontProps {
 }
 
 export function CardFront({ room, onFlip, onDelete }: CardFrontProps) {
+  // Use a consistent field for courtroom photos
+  const courtRoomPhotos = room.courtroom_photos || room.courtRoomPhotos;
+  
   return (
     <div className="p-5 flex flex-col h-full">
       <div className="mb-3">
@@ -53,7 +57,10 @@ export function CardFront({ room, onFlip, onDelete }: CardFrontProps) {
           )}
         </div>
         
-        {/* Display CourtroomPhotos component if room is a courtroom */}
+        {/* Show photo thumbnail on card if room is a courtroom and has photos */}
+        {room.room_type === 'courtroom' && <CourtroomPhotoThumbnail photos={courtRoomPhotos} />}
+        
+        {/* Display CourtroomPhotos dialog component if room is a courtroom */}
         {room.room_type === 'courtroom' && <CourtroomPhotos room={room} />}
       </div>
 
@@ -115,7 +122,7 @@ export function CardFront({ room, onFlip, onDelete }: CardFrontProps) {
               parentRoomId: room.parent_room_id || null,
               currentFunction: room.current_function || null,
               phoneNumber: room.phone_number || null,
-              courtRoomPhotos: room.courtroom_photos || null,
+              courtRoomPhotos: courtRoomPhotos || null,
               connections: room.space_connections?.map(conn => ({
                 id: conn.id,
                 connectionType: conn.connection_type,

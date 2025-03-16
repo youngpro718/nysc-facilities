@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -6,7 +7,6 @@ import { UseFormReturn } from "react-hook-form";
 import { RoomFormData } from "./RoomFormSchema";
 import { Loader2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { storageService } from "@/services/storage";
 
 interface CourtroomPhotoUploadProps {

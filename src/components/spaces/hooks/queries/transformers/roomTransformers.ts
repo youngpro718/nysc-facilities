@@ -23,7 +23,8 @@ export const transformRoomData = (
       maintenance_notes: fixturesByRoomId[room.id].maintenance_notes
     } : null,
     space_connections: connectionsByRoomId[room.id] || [],
-    courtroom_photos: room.courtroom_photos ? room.courtroom_photos : null,
+    // Ensure courtroom_photos exists and normalize the property name
+    courtroom_photos: room.courtroom_photos || null,
     issues: (issuesByRoomId[room.id] || []).map(issue => ({
       id: issue.id,
       title: issue.title,

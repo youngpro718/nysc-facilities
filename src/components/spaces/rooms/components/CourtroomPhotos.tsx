@@ -19,14 +19,11 @@ export function CourtroomPhotos({ room }: CourtroomPhotosProps) {
   const [open, setOpen] = useState(false);
   const [activeView, setActiveView] = useState<'judge' | 'audience'>('judge');
   
+  // Use a consistent property for photos (handle both snake_case and camelCase)
+  const photos = room.courtroom_photos || room.courtRoomPhotos;
+  
   // Check if room has courtroom photos
-  // This is important - we need to handle both snake_case (from DB) and camelCase (from form)
-  const hasPhotos = room && (
-    (room.courtroom_photos && 
-      (room.courtroom_photos.judge_view || room.courtroom_photos.audience_view)) ||
-    (room.courtRoomPhotos && 
-      (room.courtRoomPhotos.judge_view || room.courtRoomPhotos.audience_view))
-  );
+  const hasPhotos = photos && (photos.judge_view || photos.audience_view);
   
   // If no photos or not a courtroom, don't render anything
   if (!hasPhotos || room.room_type !== 'courtroom') return null;
@@ -35,14 +32,9 @@ export function CourtroomPhotos({ room }: CourtroomPhotosProps) {
     setActiveView(view);
   };
   
-  // Get photos from either property (snake_case or camelCase)
-  const photos = room.courtroom_photos || room.courtRoomPhotos;
-  
   // Safely access photo URLs
   const judgeViewUrl = photos?.judge_view;
   const audienceViewUrl = photos?.audience_view;
-  
-  console.log('Courtroom photos:', { judgeViewUrl, audienceViewUrl });
   
   return (
     <Dialog open={open} onOpenChange={setOpen}>

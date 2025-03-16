@@ -25,6 +25,12 @@ export interface RoomConnection {
   };
 }
 
+// Define the courtroom photos interface for reuse
+export interface CourtroomPhotos {
+  judge_view?: string | null;
+  audience_view?: string | null;
+}
+
 export interface Room {
   id: string;
   name: string;
@@ -47,16 +53,13 @@ export interface Room {
   position?: { x: number; y: number };
   size?: { width: number; height: number };
   rotation?: number;
-  courtroom_photos?: {
-    judge_view?: string | null;
-    audience_view?: string | null;
-  } | null;
+  
+  // Standardize on snake_case for database field
+  courtroom_photos?: CourtroomPhotos | null;
   
   // For form handling - camelCase version
-  courtRoomPhotos?: {
-    judge_view?: string | null;
-    audience_view?: string | null;
-  } | null;
+  // This is a duplicate of courtroom_photos but with camelCase name for forms
+  courtRoomPhotos?: CourtroomPhotos | null;
   
   // Relationships
   floor?: {
