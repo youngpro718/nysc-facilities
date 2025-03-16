@@ -25,9 +25,6 @@ export function CourtroomPhotos({ room }: CourtroomPhotosProps) {
   // Check if room has courtroom photos
   const hasPhotos = photos && (photos.judge_view || photos.audience_view);
   
-  // Add debug logs to help troubleshoot
-  console.log(`CourtroomPhotos for room ${room.name}:`, { photos, hasPhotos });
-  
   // If no photos or not a courtroom, don't render anything
   if (!hasPhotos || room.room_type !== 'courtroom') return null;
   

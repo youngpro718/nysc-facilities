@@ -1,9 +1,8 @@
 
-import React from 'react';
 import { Room } from "../types/RoomTypes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trash2, RefreshCw, Users, ArrowRightFromLine } from "lucide-react";
+import { Trash2, ArrowRightFromLine, Users } from "lucide-react";
 import { EditSpaceDialog } from "../../EditSpaceDialog";
 import { CourtroomPhotos } from './CourtroomPhotos';
 import { CourtroomPhotoThumbnail } from './CourtroomPhotoThumbnail';
@@ -15,10 +14,6 @@ interface CardFrontProps {
 }
 
 export function CardFront({ room, onFlip, onDelete }: CardFrontProps) {
-  console.log(`Rendering CardFront for room ${room.name} (type: ${room.room_type})`, {
-    courtroom_photos: room.courtroom_photos
-  });
-  
   return (
     <div className="p-5 flex flex-col h-full">
       <div className="mb-3">

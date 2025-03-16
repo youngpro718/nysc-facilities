@@ -9,25 +9,16 @@ export const transformRoomData = (
   occupantsByRoomId: Record<string, any[]>,
   connectionsByRoomId: Record<string, any[]>
 ): Room[] => {
-  console.log('Transforming room data:', roomsData);
-  
   return roomsData.map(room => {
     // Handle courtroom photos - normalize to consistent format
     let courtroom_photos: CourtroomPhotos | null = null;
     
     if (room.courtroom_photos) {
-      console.log(`Room ${room.name} has courtroom_photos:`, room.courtroom_photos);
-      
       // Make sure we have the correct structure regardless of input format
       courtroom_photos = {
         judge_view: room.courtroom_photos.judge_view || null,
         audience_view: room.courtroom_photos.audience_view || null
       };
-    }
-    
-    // Add debug for courtroom type
-    if (room.room_type === 'courtroom') {
-      console.log(`Room ${room.name} is a courtroom with photos:`, courtroom_photos);
     }
     
     return {

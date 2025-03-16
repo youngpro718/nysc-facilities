@@ -65,7 +65,6 @@ export function EditSpaceDialog({
       const connections = initialData.space_connections || initialData.connections || [];
       
       const courtRoomPhotos = initialData.courtroom_photos;
-      console.log("Courtroom photos from initialData:", courtRoomPhotos);
       
       const mappedConnections = Array.isArray(connections) ? connections.map((conn: any) => {
         let direction = conn.direction || conn.connectionDirection;

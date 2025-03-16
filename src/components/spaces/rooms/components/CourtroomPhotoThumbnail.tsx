@@ -1,5 +1,4 @@
 
-import React from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Image } from "lucide-react";
 import { CourtroomPhotos } from '../types/RoomTypes';
@@ -13,8 +12,6 @@ export function CourtroomPhotoThumbnail({ photos }: CourtroomPhotoThumbnailProps
   if (!photos || (!photos.judge_view && !photos.audience_view)) {
     return null;
   }
-  
-  console.log('Rendering courtroom thumbnail with photos:', photos);
   
   // Select the first available photo
   const photoUrl = photos.judge_view || photos.audience_view;
@@ -30,7 +27,6 @@ export function CourtroomPhotoThumbnail({ photos }: CourtroomPhotoThumbnailProps
                 alt="Courtroom View"
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  console.error('Error loading courtroom photo:', photoUrl);
                   e.currentTarget.src = "/placeholder.svg";
                 }}
               />

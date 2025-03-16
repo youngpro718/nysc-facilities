@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -20,7 +19,6 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
   });
   
   const courtRoomPhotos = form.watch("courtRoomPhotos");
-  console.log("Current courtRoomPhotos in form:", courtRoomPhotos);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, view: 'judge_view' | 'audience_view') => {
     const file = event.target.files?.[0];
@@ -31,8 +29,6 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
         ...prev,
         [view === 'judge_view' ? 'judge' : 'audience']: true
       }));
-
-      console.log('Uploading file to courtroom-photos bucket');
       
       // Use the storageService to upload the file
       const publicUrl = await storageService.uploadFile('courtroom-photos', file, {
@@ -43,8 +39,6 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
         throw new Error('Failed to get public URL for uploaded file');
       }
 
-      console.log('Generated public URL:', publicUrl);
-
       // Create or update the courtRoomPhotos object with the correct field structure
       // This structure must match the database field structure (snake_case)
       const updatedPhotos = {
@@ -52,7 +46,6 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
         [view]: publicUrl
       };
       
-      console.log('Setting form value with photos:', updatedPhotos);
       form.setValue("courtRoomPhotos", updatedPhotos, { shouldValidate: true });
       toast.success(`${view === 'judge_view' ? 'Judge view' : 'Audience view'} photo uploaded successfully`);
     } catch (error) {
