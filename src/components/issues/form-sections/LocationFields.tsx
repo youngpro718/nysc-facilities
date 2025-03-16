@@ -85,7 +85,7 @@ export function LocationFields({ form, disableFields = false }: LocationFieldsPr
                   <SelectValue placeholder={isLoadingBuildings ? "Loading buildings..." : "Select building"} />
                 </SelectTrigger>
               </FormControl>
-              <SelectContent className="z-50 bg-background">
+              <SelectContent className="z-[100] bg-background">
                 {buildings?.map((building) => (
                   <SelectItem key={building.id} value={building.id}>
                     {building.name}
@@ -125,7 +125,7 @@ export function LocationFields({ form, disableFields = false }: LocationFieldsPr
                   )}
                 </SelectTrigger>
               </FormControl>
-              <SelectContent className="z-50 bg-background">
+              <SelectContent className="z-[90] bg-background">
                 {floors?.length ? (
                   floors.map((floor) => (
                     <SelectItem key={floor.id} value={floor.id}>
@@ -149,11 +149,15 @@ export function LocationFields({ form, disableFields = false }: LocationFieldsPr
         name="room_id"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Room</FormLabel>
+            <FormLabel className="flex items-center gap-1">
+              Room
+              <span className="text-destructive">*</span>
+            </FormLabel>
             <Select 
               onValueChange={field.onChange} 
               value={field.value || ""}
               disabled={disableFields || !floorId || isLoadingRooms}
+              required
             >
               <FormControl>
                 <SelectTrigger>
@@ -167,7 +171,7 @@ export function LocationFields({ form, disableFields = false }: LocationFieldsPr
                   )}
                 </SelectTrigger>
               </FormControl>
-              <SelectContent className="z-50 bg-background">
+              <SelectContent className="z-[80] bg-background">
                 {rooms?.length ? (
                   rooms.map((room) => (
                     <SelectItem key={room.id} value={room.id}>

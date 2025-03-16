@@ -73,12 +73,17 @@ export function DetailsStep({ form, onNext }: WizardStepProps) {
         form={form}
       />
 
-      {/* Location Fields */}
+      {/* Location Fields - Room selection is required */}
       <div className="bg-background py-2">
         <LocationFields
           form={form}
           disableFields={useAssignedRoom}
         />
+        {!useAssignedRoom && !form.getValues('room_id') && (
+          <p className="text-sm text-destructive mt-2">
+            Room selection is required to submit an issue
+          </p>
+        )}
       </div>
 
       {/* Description */}

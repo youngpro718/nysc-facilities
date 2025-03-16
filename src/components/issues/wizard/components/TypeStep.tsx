@@ -9,12 +9,14 @@ import { useWizardContext } from '../hooks/useWizardContext';
 import { WizardStepProps } from '../types';
 
 export function TypeStep({ form, onNext }: WizardStepProps) {
-  const { selectedIssueType, setSelectedIssueType } = useWizardContext();
+  const { selectedIssueType, setSelectedIssueType, useAssignedRoom } = useWizardContext();
 
   const handleTypeSelect = (typeId: string) => {
     setSelectedIssueType(typeId as any);
     form.setValue('issue_type', typeId);
-    onNext();
+
+    // Don't auto-proceed - let user click "Next" to ensure location selection
+    // This ensures room_id must be selected before proceeding
   };
 
   return (
