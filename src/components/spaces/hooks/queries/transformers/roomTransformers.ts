@@ -17,6 +17,8 @@ export const transformRoomData = (
     
     if (room.courtroom_photos) {
       console.log(`Room ${room.name} has courtroom_photos:`, room.courtroom_photos);
+      
+      // Make sure we have the correct structure regardless of input format
       courtroom_photos = {
         judge_view: room.courtroom_photos.judge_view || null,
         audience_view: room.courtroom_photos.audience_view || null
