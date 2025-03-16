@@ -5,9 +5,9 @@ import { FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/for
 import { Button } from "@/components/ui/button";
 import { UseFormReturn } from "react-hook-form";
 import { RoomFormData } from "./RoomFormSchema";
-import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
+import { uploadFile, removeFile } from "@/integrations/supabase/storage";
 
 interface CourtroomPhotoUploadProps {
   form: UseFormReturn<RoomFormData>;
@@ -37,23 +37,8 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
 
       console.log('Uploading file to courtroom-photos bucket:', fileName);
       
-      // Upload directly to the courtroom-photos bucket
-      const { data, error: uploadError } = await supabase.storage
-        .from('courtroom-photos')
-        .upload(filePath, file, {
-          upsert: true,
-          contentType: file.type
-        });
-
-      if (uploadError) {
-        console.error('Storage upload error:', uploadError);
-        throw new Error(`Upload failed: ${uploadError.message}`);
-      }
-
-      // Get the public URL with the correct domain
-      const { data: { publicUrl } } = supabase.storage
-        .from('courtroom-photos')
-        .getPublicUrl(filePath);
+      // Use the new storage service to upload the file
+      const { publicUrl } = await uploadFile('courtroom-photos', filePath, file);
 
       console.log('Generated public URL:', publicUrl);
 
@@ -90,9 +75,8 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
       
       if (fileName) {
         console.log('Removing file from storage:', fileName);
-        supabase.storage
-          .from('courtroom-photos')
-          .remove([fileName])
+        // Use the storage service to remove the file
+        removeFile('courtroom-photos', fileName)
           .then(({ error }) => {
             if (error) {
               console.error('Error removing file from storage:', error);
