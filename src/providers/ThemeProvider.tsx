@@ -5,6 +5,8 @@ type Theme = "light" | "dark";
 
 interface ThemeProviderProps {
   children: React.ReactNode;
+  defaultTheme?: Theme;
+  storageKey?: string;
 }
 
 interface ThemeContextType {
@@ -17,17 +19,21 @@ const ThemeContext = createContext<ThemeContextType>({
   setTheme: () => null,
 });
 
-export function ThemeProvider({ children }: ThemeProviderProps) {
+export function ThemeProvider({ 
+  children,
+  defaultTheme = "light",
+  storageKey = "theme"
+}: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(
-    (localStorage.getItem("theme") as Theme) || "light"
+    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
   );
 
   useEffect(() => {
     const root = window.document.documentElement;
     root.classList.remove("light", "dark");
     root.classList.add(theme);
-    localStorage.setItem("theme", theme);
-  }, [theme]);
+    localStorage.setItem(storageKey, theme);
+  }, [theme, storageKey]);
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>
