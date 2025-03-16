@@ -19,8 +19,8 @@ export function CourtroomPhotos({ room }: CourtroomPhotosProps) {
   const [open, setOpen] = useState(false);
   const [activeView, setActiveView] = useState<'judge' | 'audience'>('judge');
   
-  // Use a consistent property for photos (handle both snake_case and camelCase)
-  const photos = room.courtroom_photos || room.courtRoomPhotos;
+  // Use the correct property name from the Room type
+  const photos = room.courtroom_photos;
   
   // Check if room has courtroom photos
   const hasPhotos = photos && (photos.judge_view || photos.audience_view);
