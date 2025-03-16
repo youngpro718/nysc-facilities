@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { CreateSpaceFormData } from "../schemas/createSpaceSchema";
 import { 
@@ -29,20 +28,16 @@ export async function createSpace(data: CreateSpaceFormData) {
               fileSizeLimit: 10485760 // 10MB
             });
             
-            // Only show an error if it's not a "Duplicate name" error, which is actually expected
-            // when multiple requests try to create the same bucket
+            // Only log errors, don't show toasts for bucket operations
             if (bucketError && bucketError.message !== 'Duplicate name') {
               console.error('Error creating bucket:', bucketError);
-              // Don't toast this error as it's not critical - photos can still be uploaded
-              // if the bucket already exists
             } else {
               console.log('Successfully created or confirmed courtroom-photos bucket');
             }
           }
         } catch (bucketError) {
-          // Just log the error but continue - photos might still work if bucket already exists
+          // Just log the error but continue with room creation
           console.error('Error checking/creating bucket:', bucketError);
-          // Don't toast this error as it's not critical to the room creation
         }
       }
       
