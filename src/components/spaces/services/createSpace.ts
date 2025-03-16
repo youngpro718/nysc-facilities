@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { CreateSpaceFormData } from "../schemas/createSpaceSchema";
 import { 
@@ -15,37 +14,6 @@ export async function createSpace(data: CreateSpaceFormData) {
   
   try {
     if (data.type === 'room') {
-      // Only attempt bucket operations for courtroom type
-      if (data.roomType === RoomTypeEnum.COURTROOM) {
-        try {
-          // Check if bucket exists silently - no need to show errors for this check
-          const { data: buckets } = await supabase.storage.listBuckets();
-          const bucketExists = buckets?.some(bucket => bucket.name === 'courtroom-photos');
-          
-          if (!bucketExists) {
-            // Only create the bucket if it doesn't exist
-            const { error: bucketError } = await supabase.storage.createBucket('courtroom-photos', {
-              public: true,
-              fileSizeLimit: 10485760 // 10MB
-            });
-            
-            // Only log error if it's not a duplicate name error (which shouldn't happen due to our check)
-            if (bucketError && bucketError.message !== 'Duplicate name') {
-              console.error('Error creating bucket:', bucketError);
-              // Don't show toast for bucket operations - it's a background operation
-            } else {
-              console.log('Successfully created courtroom-photos bucket');
-            }
-          } else {
-            console.log('Courtroom-photos bucket already exists, skipping creation');
-          }
-        } catch (bucketError) {
-          // Just log the error but continue with room creation
-          console.error('Error checking/creating bucket:', bucketError);
-          // Don't show toast for bucket errors, as photos can still be uploaded later
-        }
-      }
-      
       const roomData = {
         name: data.name,
         room_number: data.roomNumber,

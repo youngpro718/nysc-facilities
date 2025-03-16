@@ -1,13 +1,13 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { UseFormReturn } from "react-hook-form";
 import { RoomFormData } from "./RoomFormSchema";
-import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { storageService } from "@/services/storage";
 
 interface CourtroomPhotoUploadProps {
   form: UseFormReturn<RoomFormData>;
@@ -31,48 +31,16 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
         [view === 'judge_view' ? 'judge' : 'audience']: true
       }));
 
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
-      const filePath = `${fileName}`;
-
-      console.log('Uploading file to courtroom-photos bucket:', fileName);
+      console.log('Uploading file to courtroom-photos bucket');
       
-      // Ensure the bucket exists before uploading
-      const { data: buckets } = await supabase.storage.listBuckets();
-      if (!buckets?.some(bucket => bucket.name === 'courtroom-photos')) {
-        try {
-          const { error: bucketError } = await supabase.storage.createBucket('courtroom-photos', {
-            public: true,
-            fileSizeLimit: 10485760 // 10MB
-          });
-          
-          if (bucketError && bucketError.message !== 'Duplicate name') {
-            console.warn('Warning: Could not create bucket:', bucketError);
-            // Continue anyway - the upload might still work if the bucket was created elsewhere
-          }
-        } catch (bucketError) {
-          console.warn('Warning: Error checking/creating bucket:', bucketError);
-          // Continue with upload attempt - might work if bucket exists but we don't have permission to create buckets
-        }
-      }
-      
-      // Upload directly to the courtroom-photos bucket
-      const { data, error: uploadError } = await supabase.storage
-        .from('courtroom-photos')
-        .upload(filePath, file, {
-          upsert: true,
-          contentType: file.type
-        });
+      // Use the storageService to upload the file
+      const publicUrl = await storageService.uploadFile('courtroom-photos', file, {
+        createBucketIfMissing: true
+      });
 
-      if (uploadError) {
-        console.error('Storage upload error:', uploadError);
-        throw new Error(`Upload failed: ${uploadError.message}`);
+      if (!publicUrl) {
+        throw new Error('Failed to get public URL for uploaded file');
       }
-
-      // Get the public URL with the correct domain
-      const { data: { publicUrl } } = supabase.storage
-        .from('courtroom-photos')
-        .getPublicUrl(filePath);
 
       console.log('Generated public URL:', publicUrl);
 
@@ -105,17 +73,15 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
     try {
       const url = courtRoomPhotos[view] as string;
       // Extract filename from URL
-      const fileName = url.split('/').pop();
+      const fileName = storageService.getFilenameFromUrl(url);
       
       if (fileName) {
         console.log('Removing file from storage:', fileName);
-        supabase.storage
-          .from('courtroom-photos')
-          .remove([fileName])
-          .then(({ error }) => {
-            if (error) {
-              console.error('Error removing file from storage:', error);
-              toast.error(`Failed to remove photo: ${error.message}`);
+        storageService.removeFile('courtroom-photos', fileName)
+          .then(success => {
+            if (!success) {
+              console.error('Error removing file from storage');
+              // Continue anyway, as we're still removing it from the form
             }
           });
       }
