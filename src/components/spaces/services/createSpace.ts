@@ -8,20 +8,37 @@ import {
   storageTypeToString 
 } from "../rooms/types/roomEnums";
 import { toast } from "sonner";
-import { initializeStorageBuckets } from "@/integrations/supabase/storage";
 
 export async function createSpace(data: CreateSpaceFormData) {
   console.log('Creating space with data:', data);
   
   try {
     if (data.type === 'room') {
-      // For courtrooms, ensure the storage bucket exists but don't report errors to the user
+      // Check for courtroom type and ensure bucket exists
       if (data.roomType === RoomTypeEnum.COURTROOM) {
-        // Initialize storage buckets in the background without waiting for it
-        initializeStorageBuckets().catch(error => {
-          // Just log errors, don't show to user as it's not critical for room creation
-          console.error('Error initializing storage buckets:', error);
-        });
+        try {
+          // Check if bucket exists
+          const { data: buckets } = await supabase.storage.listBuckets();
+          const bucketExists = buckets?.some(bucket => bucket.name === 'courtroom-photos');
+          
+          if (!bucketExists) {
+            // Create the storage bucket for courtroom photos if needed
+            const { error: bucketError } = await supabase.storage.createBucket('courtroom-photos', {
+              public: true,
+              fileSizeLimit: 10485760 // 10MB
+            });
+            
+            // Only log errors, don't show toasts for bucket operations
+            if (bucketError && bucketError.message !== 'Duplicate name') {
+              console.error('Error creating bucket:', bucketError);
+            } else {
+              console.log('Successfully created or confirmed courtroom-photos bucket');
+            }
+          }
+        } catch (bucketError) {
+          // Just log the error but continue with room creation
+          console.error('Error checking/creating bucket:', bucketError);
+        }
       }
       
       const roomData = {
