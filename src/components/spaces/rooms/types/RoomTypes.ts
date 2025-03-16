@@ -50,7 +50,7 @@ export interface Room {
   courtroom_photos?: {
     judge_view?: string | null;
     audience_view?: string | null;
-  };
+  } | null;
   
   // Relationships
   floor?: {

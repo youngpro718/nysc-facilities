@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -103,7 +102,6 @@ export function EditSpaceDialog({
     mutationFn: async (data: RoomFormData) => {
       console.log("Submitting data for room update:", data);
       
-      // Convert enum values to strings for database compatibility
       const updateData = {
         name: data.name,
         room_number: data.roomNumber,

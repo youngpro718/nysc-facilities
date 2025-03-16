@@ -35,8 +35,10 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
       const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
       const filePath = `${fileName}`;
 
+      console.log('Uploading file to courtroom-photos bucket:', fileName);
+      
       // Upload directly to the courtroom-photos bucket
-      const { error: uploadError } = await supabase.storage
+      const { data, error: uploadError } = await supabase.storage
         .from('courtroom-photos')
         .upload(filePath, file, {
           upsert: true,
@@ -55,6 +57,7 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
 
       console.log('Generated public URL:', publicUrl);
 
+      // Create or update the courtRoomPhotos object
       const updatedPhotos = {
         ...(courtRoomPhotos || { judge_view: null, audience_view: null }),
         [view]: publicUrl
@@ -72,6 +75,7 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
         [view === 'judge_view' ? 'judge' : 'audience']: false
       }));
       
+      // Reset the file input
       event.target.value = '';
     }
   };

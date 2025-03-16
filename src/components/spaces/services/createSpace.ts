@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { CreateSpaceFormData } from "../schemas/createSpaceSchema";
 import { 
@@ -59,7 +58,7 @@ export async function createSpace(data: CreateSpaceFormData) {
         size: data.size || { width: 150, height: 100 },
         rotation: data.rotation || 0,
         courtroom_photos: data.roomType === RoomTypeEnum.COURTROOM ? 
-          { judge_view: null, audience_view: null } : null
+          (data.courtRoomPhotos || { judge_view: null, audience_view: null }) : null
       };
 
       console.log('Room data for creation:', roomData);
