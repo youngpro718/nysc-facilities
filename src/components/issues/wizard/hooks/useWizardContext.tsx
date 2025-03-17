@@ -1,52 +1,86 @@
-import React, { createContext, useContext, useState } from 'react';
-import { WizardContextType, WizardStep } from '../types';
-import { StandardizedIssueType } from '../../constants/issueTypes';
+
+import React, { createContext, useState, useContext, ReactNode } from 'react';
+import { UserAssignment } from '@/types/dashboard';
+
+type WizardStep = 'type' | 'location' | 'details' | 'review';
+
+interface WizardContextType {
+  currentStep: WizardStep;
+  setCurrentStep: (step: WizardStep) => void;
+  selectedIssueType: string | null;
+  setSelectedIssueType: (type: string | null) => void;
+  isEmergency: boolean;
+  setIsEmergency: (isEmergency: boolean) => void;
+  useAssignedRoom: boolean;
+  setUseAssignedRoom: (useAssignedRoom: boolean) => void;
+  handlePhotoUpload: (files: FileList) => Promise<void>;
+  selectedPhotos: string[];
+  setSelectedPhotos: (photos: string[]) => void;
+  uploading: boolean;
+  assignedRooms?: UserAssignment[];
+}
 
 const WizardContext = createContext<WizardContextType | undefined>(undefined);
 
-export function WizardProvider({ children }: { children: React.ReactNode }) {
+export function WizardProvider({ children, assignedRooms }: { children: ReactNode, assignedRooms?: UserAssignment[] }) {
   const [currentStep, setCurrentStep] = useState<WizardStep>('type');
+  const [selectedIssueType, setSelectedIssueType] = useState<string | null>(null);
   const [isEmergency, setIsEmergency] = useState(false);
-  const [selectedIssueType, setSelectedIssueType] = useState<StandardizedIssueType | null>(null);
-  const [useAssignedRoom, setUseAssignedRoom] = useState(false);
+  const [useAssignedRoom, setUseAssignedRoom] = useState(!!assignedRooms?.length);
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
 
   const handlePhotoUpload = async (files: FileList) => {
+    setUploading(true);
     try {
-      setUploading(true);
-      // Implement photo upload logic here
-      const uploadedUrls = await Promise.all(
-        Array.from(files).map(async (file) => {
-          // Mock upload - replace with actual upload logic
-          return URL.createObjectURL(file);
-        })
-      );
-      setSelectedPhotos((prev) => [...prev, ...uploadedUrls]);
+      const uploadedUrls: string[] = [];
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+        const filePath = `issue-photos/${fileName}`;
+        
+        const { error: uploadError, data } = await supabase.storage
+          .from('issue-photos')
+          .upload(filePath, file);
+          
+        if (uploadError) {
+          console.error('Error uploading photo:', uploadError);
+          continue;
+        }
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('issue-photos')
+          .getPublicUrl(filePath);
+          
+        uploadedUrls.push(publicUrl);
+      }
+      
+      setSelectedPhotos(prev => [...prev, ...uploadedUrls]);
     } catch (error) {
-      console.error('Error uploading photos:', error);
+      console.error('Error in handlePhotoUpload:', error);
     } finally {
       setUploading(false);
     }
   };
 
-  const value = {
-    currentStep,
-    setCurrentStep,
-    isEmergency,
-    setIsEmergency,
-    selectedIssueType,
-    setSelectedIssueType,
-    useAssignedRoom,
-    setUseAssignedRoom,
-    selectedPhotos,
-    setSelectedPhotos,
-    handlePhotoUpload,
-    uploading,
-  };
-
   return (
-    <WizardContext.Provider value={value}>
+    <WizardContext.Provider value={{
+      currentStep,
+      setCurrentStep,
+      selectedIssueType,
+      setSelectedIssueType,
+      isEmergency,
+      setIsEmergency,
+      useAssignedRoom,
+      setUseAssignedRoom,
+      handlePhotoUpload,
+      selectedPhotos,
+      setSelectedPhotos,
+      uploading,
+      assignedRooms
+    }}>
       {children}
     </WizardContext.Provider>
   );
@@ -62,15 +96,32 @@ export function useWizardContext() {
 
 export function useWizardNavigation() {
   const { currentStep, setCurrentStep } = useWizardContext();
-
-  const steps: WizardStep[] = ['type', 'details', 'review'];
+  
+  const steps: WizardStep[] = ['type', 'location', 'details', 'review'];
   const currentIndex = steps.indexOf(currentStep);
-
+  
+  const canGoBack = currentIndex > 0;
+  const canGoForward = currentIndex < steps.length - 1;
+  
+  const goBack = () => {
+    if (canGoBack) {
+      setCurrentStep(steps[currentIndex - 1]);
+    }
+  };
+  
+  const goForward = () => {
+    if (canGoForward) {
+      setCurrentStep(steps[currentIndex + 1]);
+    }
+  };
+  
   return {
     currentStep,
-    canGoBack: currentIndex > 0,
-    canGoForward: currentIndex < steps.length - 1,
-    goBack: () => setCurrentStep(steps[currentIndex - 1]),
-    goForward: () => setCurrentStep(steps[currentIndex + 1]),
+    canGoBack,
+    canGoForward,
+    goBack,
+    goForward,
   };
 }
+
+import { supabase } from '@/integrations/supabase/client';

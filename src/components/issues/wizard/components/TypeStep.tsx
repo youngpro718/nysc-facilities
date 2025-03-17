@@ -9,19 +9,16 @@ import { useWizardContext } from '../hooks/useWizardContext';
 import { WizardStepProps } from '../types';
 
 export function TypeStep({ form, onNext }: WizardStepProps) {
-  const { selectedIssueType, setSelectedIssueType, useAssignedRoom } = useWizardContext();
+  const { selectedIssueType, setSelectedIssueType } = useWizardContext();
 
   const handleTypeSelect = (typeId: string) => {
     setSelectedIssueType(typeId as any);
     form.setValue('issue_type', typeId);
-
-    // Don't auto-proceed - let user click "Next" to ensure location selection
-    // This ensures room_id must be selected before proceeding
   };
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold">What type of issue are you reporting?</h2>
+    <Card className="p-6 animate-fade-in">
+      <h2 className="text-lg font-semibold mb-4">What type of issue are you reporting?</h2>
       <RadioGroup
         value={selectedIssueType || ""}
         onValueChange={handleTypeSelect}
@@ -58,6 +55,6 @@ export function TypeStep({ form, onNext }: WizardStepProps) {
           </div>
         ))}
       </RadioGroup>
-    </div>
+    </Card>
   );
 }

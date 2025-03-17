@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -12,6 +13,7 @@ import { WizardProvider, useWizardContext, useWizardNavigation } from "../hooks/
 import { TypeStep } from "./TypeStep";
 import { DetailsStep } from "./DetailsStep";
 import { ReviewStep } from "./ReviewStep";
+import { LocationStep } from "./LocationStep";
 
 function IssueWizardContent({ onSuccess, onCancel }: IssueWizardProps) {
   const {
@@ -75,6 +77,11 @@ function IssueWizardContent({ onSuccess, onCancel }: IssueWizardProps) {
   const handleNext = async () => {
     const isValid = await form.trigger(getFieldsForStep(currentStep));
     if (isValid) {
+      // If we're on the location step, make sure room_id is selected
+      if (currentStep === 'location' && !form.getValues('room_id')) {
+        toast.error("Room selection is required");
+        return;
+      }
       goForward();
     }
   };
@@ -82,9 +89,11 @@ function IssueWizardContent({ onSuccess, onCancel }: IssueWizardProps) {
   const getFieldsForStep = (step: typeof currentStep): (keyof FormData)[] => {
     switch (step) {
       case 'type':
-        return ['issue_type', 'problem_type'];
+        return ['issue_type'];
+      case 'location':
+        return ['building_id', 'floor_id', 'room_id'];
       case 'details':
-        return ['description', 'building_id', 'floor_id', 'room_id'];
+        return ['description', 'problem_type'];
       case 'review':
         return [];
       default:
@@ -102,6 +111,13 @@ function IssueWizardContent({ onSuccess, onCancel }: IssueWizardProps) {
         <div className="min-h-[400px]">
           {currentStep === 'type' && (
             <TypeStep
+              form={form}
+              onNext={handleNext}
+              onBack={goBack}
+            />
+          )}
+          {currentStep === 'location' && (
+            <LocationStep
               form={form}
               onNext={handleNext}
               onBack={goBack}
@@ -146,7 +162,7 @@ function IssueWizardContent({ onSuccess, onCancel }: IssueWizardProps) {
               <Button
                 type="button"
                 onClick={handleNext}
-                disabled={!selectedIssueType}
+                disabled={!selectedIssueType || (currentStep === 'location' && !form.getValues('room_id'))}
               >
                 Next
               </Button>
