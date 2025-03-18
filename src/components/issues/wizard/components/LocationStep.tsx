@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useWizardContext } from '../hooks/useWizardContext';
 import { WizardStepProps } from '../types';
 
-export function LocationStep({ form, onNext }: WizardStepProps) {
+export function LocationStep({ form }: WizardStepProps) {
   const { useAssignedRoom, setUseAssignedRoom } = useWizardContext();
   
   const buildingId = form.watch('building_id') || "";

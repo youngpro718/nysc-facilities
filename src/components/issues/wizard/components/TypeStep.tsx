@@ -8,7 +8,7 @@ import { ISSUE_TYPES } from '../constants/issueTypes';
 import { useWizardContext } from '../hooks/useWizardContext';
 import { WizardStepProps } from '../types';
 
-export function TypeStep({ form, onNext }: WizardStepProps) {
+export function TypeStep({ form }: WizardStepProps) {
   const { selectedIssueType, setSelectedIssueType } = useWizardContext();
 
   const handleTypeSelect = (typeId: string) => {

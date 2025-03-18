@@ -11,9 +11,9 @@ import { StandardizedIssueType } from "../../constants/issueTypes";
 import { IssueWizardProps } from "../types";
 import { WizardProvider, useWizardContext, useWizardNavigation } from "../hooks/useWizardContext";
 import { TypeStep } from "./TypeStep";
+import { LocationStep } from "./LocationStep";
 import { DetailsStep } from "./DetailsStep";
 import { ReviewStep } from "./ReviewStep";
-import { LocationStep } from "./LocationStep";
 
 function IssueWizardContent({ onSuccess, onCancel }: IssueWizardProps) {
   const {

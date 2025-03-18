@@ -1,6 +1,7 @@
 
 import React, { createContext, useState, useContext, ReactNode } from 'react';
 import { UserAssignment } from '@/types/dashboard';
+import { supabase } from '@/integrations/supabase/client';
 
 type WizardStep = 'type' | 'location' | 'details' | 'review';
 
@@ -123,5 +124,3 @@ export function useWizardNavigation() {
     goForward,
   };
 }
-
-import { supabase } from '@/integrations/supabase/client';
