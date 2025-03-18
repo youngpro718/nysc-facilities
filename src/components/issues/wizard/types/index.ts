@@ -1,10 +1,11 @@
+
 import { ReactElement } from 'react';
 import { StandardizedIssueType } from "../../constants/issueTypes";
 import { UserAssignment } from "@/types/dashboard";
 import { FormData } from "../../types/formTypes";
 import { LucideProps } from 'lucide-react';
 
-export type WizardStep = 'type' | 'details' | 'review';
+export type WizardStep = 'type' | 'location' | 'details' | 'review';
 
 export interface IssueWizardProps {
   onSuccess?: () => void;
@@ -40,4 +41,5 @@ export interface WizardContextType {
   setSelectedPhotos: (photos: string[]) => void;
   handlePhotoUpload: (files: FileList) => Promise<void>;
   uploading: boolean;
+  assignedRooms?: UserAssignment[];
 }

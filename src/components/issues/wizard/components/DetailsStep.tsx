@@ -10,7 +10,7 @@ import { useWizardContext } from '../hooks/useWizardContext';
 import { WizardStepProps } from '../types';
 import { Card } from "@/components/ui/card";
 
-export function DetailsStep({ form }: WizardStepProps) {
+export function DetailsStep({ form, onNext }: WizardStepProps) {
   const { 
     isEmergency, 
     setIsEmergency,

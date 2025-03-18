@@ -183,7 +183,7 @@ function IssueWizardContent({ onSuccess, onCancel }: IssueWizardProps) {
 
 export function IssueWizard(props: IssueWizardProps) {
   return (
-    <WizardProvider>
+    <WizardProvider assignedRooms={props.assignedRooms}>
       <IssueWizardContent {...props} />
     </WizardProvider>
   );
