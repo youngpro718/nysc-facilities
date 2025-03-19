@@ -39,7 +39,7 @@ export function CardBack({ room, onFlip }: CardBackProps) {
             </h4>
             <div className="text-sm text-muted-foreground">
               <p>Room {room.room_number}</p>
-              <p>{room.floor?.building?.name}, Floor {room.floor?.floor_number}</p>
+              <p>{room.floor?.building?.name}, Floor {room.floor?.name}</p>
             </div>
           </div>
           
@@ -119,22 +119,7 @@ export function CardBack({ room, onFlip }: CardBackProps) {
             </div>
           )}
           
-          {/* Key Access */}
-          {room.key_access && room.key_access.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium flex items-center gap-1">
-                <Key className="h-3.5 w-3.5 text-muted-foreground" />
-                Key Access
-              </h4>
-              <div className="flex flex-wrap gap-1.5">
-                {room.key_access.map((key, index) => (
-                  <Badge key={index} variant="outline" className="text-xs">
-                    {key.name}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Key Access - Removing since it's not in the Room type */}
           
           {/* Issue History (if any) */}
           {room.issues && room.issues.length > 0 && (
@@ -170,38 +155,9 @@ export function CardBack({ room, onFlip }: CardBackProps) {
             </div>
           )}
           
-          {/* Activity History */}
-          {room.activity_history && room.activity_history.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium flex items-center gap-1">
-                <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                Recent Activity
-              </h4>
-              <div className="space-y-1.5">
-                {room.activity_history.slice(0, 3).map((activity, index) => (
-                  <div key={index} className="text-xs text-muted-foreground flex justify-between">
-                    <span>{activity.action}</span>
-                    <span>
-                      {format(new Date(activity.timestamp), 'MMM d, yyyy')}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Activity History - Removing since it's not in the Room type */}
           
-          {/* Schedule */}
-          {room.schedule && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium flex items-center gap-1">
-                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                Room Schedule
-              </h4>
-              <p className="text-sm text-muted-foreground">
-                {room.schedule}
-              </p>
-            </div>
-          )}
+          {/* Schedule - Removing since it's not in the Room type */}
         </div>
       </ScrollArea>
     </div>
