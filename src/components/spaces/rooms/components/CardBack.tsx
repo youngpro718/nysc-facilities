@@ -1,25 +1,11 @@
 
 import React from 'react';
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { 
-  Building, 
-  ClipboardList, 
-  UserCheck, 
-  Phone, 
-  Layers, 
-  ExternalLink,
-  Lightbulb,
-  CalendarClock,
-  Ruler,
-  AlertTriangle,
-  Info,
-  Archive
-} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Room } from "../types/RoomTypes";
-import { HallwayConnections } from "./HallwayConnections";
-import { CourtroomPhotos } from "./CourtroomPhotos";
+import { X, Calendar, Clock, Building, Phone, ShoppingBag, Users, Key, Clipboard, CircleAlert } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 
 interface CardBackProps {
@@ -27,194 +13,197 @@ interface CardBackProps {
   onFlip: () => void;
 }
 
-// Helper function to safely format dates
-const safeFormatDate = (dateString: string | undefined) => {
-  if (!dateString) return "Not specified";
-  try {
-    return format(new Date(dateString), 'MMM d, yyyy');
-  } catch (error) {
-    console.error("Invalid date:", dateString, error);
-    return "Invalid date";
-  }
-};
-
 export function CardBack({ room, onFlip }: CardBackProps) {
   return (
     <div className="p-5 flex flex-col h-full">
-      {/* Floor & Building Navigation */}
-      <div className="flex items-center mb-3 text-sm text-muted-foreground">
-        <Building className="h-4 w-4 mr-1" />
-        <span>
-          {room.floor?.building?.name} • {room.floor?.name}
-        </span>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-lg font-semibold text-foreground">
+          Room Details
+        </h3>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onFlip}
+        >
+          <X className="h-4 w-4" />
+        </Button>
       </div>
-
-      {/* Scrollable content area */}
-      <div className="space-y-3 flex-1 overflow-y-auto pr-1">
-        {/* Room dimensions and basic info */}
-        <div className="flex items-start">
-          <Ruler className="h-4 w-4 mr-2 mt-0.5 text-muted-foreground" />
-          <div>
-            <span className="text-sm font-medium">Dimensions</span>
-            <div className="text-sm">
-              {room.size ? 
-                `${room.size.width} × ${room.size.height} units` : 
-                "Dimensions not specified"}
+      
+      <ScrollArea className="h-[calc(100%-2rem)] pr-2">
+        <div className="space-y-4">
+          {/* Room Location */}
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium flex items-center gap-1">
+              <Building className="h-3.5 w-3.5 text-muted-foreground" />
+              Location
+            </h4>
+            <div className="text-sm text-muted-foreground">
+              <p>Room {room.room_number}</p>
+              <p>{room.floor?.building?.name}, Floor {room.floor?.floor_number}</p>
             </div>
           </div>
-        </div>
-        
-        {/* Room capacity if available */}
-        {room.storage_capacity && (
-          <div className="flex items-start">
-            <Info className="h-4 w-4 mr-2 mt-0.5 text-muted-foreground" />
-            <div>
-              <span className="text-sm font-medium">Capacity</span>
-              <div className="text-sm">{room.storage_capacity}</div>
-            </div>
-          </div>
-        )}
-
-        {/* Parent Room */}
-        {room.parent_room_id && (
-          <div className="flex items-start">
-            <Layers className="h-4 w-4 mr-2 mt-0.5 text-muted-foreground" />
-            <div>
-              <span className="text-sm font-medium">Parent Room</span>
-              <div className="text-sm">{room.parent_room_id}</div>
-            </div>
-          </div>
-        )}
-
-        {/* Phone */}
-        {room.phone_number && (
-          <div className="flex items-start">
-            <Phone className="h-4 w-4 mr-2 mt-0.5 text-muted-foreground" />
-            <div>
-              <span className="text-sm font-medium">Phone</span>
-              <div className="text-sm">{room.phone_number}</div>
-            </div>
-          </div>
-        )}
-
-        {/* Room Function */}
-        {room.current_function && (
-          <div className="flex items-start">
-            <ClipboardList className="h-4 w-4 mr-2 mt-0.5 text-muted-foreground" />
-            <div>
-              <span className="text-sm font-medium">Function</span>
-              <div className="text-sm">{room.current_function}</div>
-              {room.function_change_date && (
-                <div className="text-xs text-muted-foreground mt-1">
-                  Changed: {safeFormatDate(room.function_change_date)}
-                </div>
+          
+          {/* Type Information */}
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium flex items-center gap-1">
+              <Clipboard className="h-3.5 w-3.5 text-muted-foreground" />
+              Type Information
+            </h4>
+            <div className="flex flex-wrap gap-1.5">
+              <Badge variant="outline" className="text-xs capitalize">
+                {room.room_type.replace(/_/g, ' ')}
+              </Badge>
+              {room.current_function && (
+                <Badge variant="outline" className="text-xs capitalize">
+                  {room.current_function.replace(/_/g, ' ')}
+                </Badge>
+              )}
+              {room.is_storage && (
+                <Badge variant="outline" className="text-xs">
+                  Storage
+                </Badge>
               )}
             </div>
           </div>
-        )}
+          
+          {/* Contact Information */}
+          {room.phone_number && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium flex items-center gap-1">
+                <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                Contact
+              </h4>
+              <p className="text-sm text-muted-foreground">
+                {room.phone_number}
+              </p>
+            </div>
+          )}
 
-        {/* Storage details if room is storage */}
-        {room.is_storage && room.storage_type && (
-          <div className="flex items-start">
-            <Archive className="h-4 w-4 mr-2 mt-0.5 text-muted-foreground" />
-            <div>
-              <span className="text-sm font-medium">Storage Type</span>
-              <div className="text-sm">
-                {room.storage_type}
-                {room.storage_notes && (
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Notes: {room.storage_notes}
-                  </div>
-                )}
+          {/* Storage Information (if storage room) */}
+          {room.is_storage && room.storage_type && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium flex items-center gap-1">
+                <ShoppingBag className="h-3.5 w-3.5 text-muted-foreground" />
+                Storage Information
+              </h4>
+              <div className="text-sm text-muted-foreground space-y-1">
+                <p>Type: {room.storage_type.replace(/_/g, ' ')}</p>
+                {room.storage_capacity && <p>Capacity: {room.storage_capacity}</p>}
+                {room.storage_notes && <p>Notes: {room.storage_notes}</p>}
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Timestamps */}
-        <div className="flex items-start">
-          <CalendarClock className="h-4 w-4 mr-2 mt-0.5 text-muted-foreground" />
-          <div>
-            <span className="text-sm font-medium">Dates</span>
-            <div className="text-xs">
-              Created: {safeFormatDate(room.created_at)}
-              <br />
-              Updated: {safeFormatDate(room.updated_at)}
-            </div>
-          </div>
-        </div>
-
-        {/* Issues */}
-        {room.issues && room.issues.length > 0 && (
-          <div className="flex items-start">
-            <AlertTriangle className="h-4 w-4 mr-2 mt-0.5 text-muted-foreground" />
-            <div>
-              <span className="text-sm font-medium">Issues</span>
-              <div className="flex flex-wrap gap-1 mt-1">
-                <Badge variant="outline" className="text-xs">
-                  {room.issues.length} issue{room.issues.length !== 1 ? 's' : ''}
-                </Badge>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Occupants */}
-        {room.current_occupants && room.current_occupants.length > 0 && (
-          <div className="flex items-start">
-            <UserCheck className="h-4 w-4 mr-2 mt-0.5 text-muted-foreground" />
-            <div>
-              <span className="text-sm font-medium">Occupants</span>
-              <div className="flex flex-wrap gap-1 mt-1">
+          )}
+          
+          {/* Occupants Information */}
+          {room.current_occupants && room.current_occupants.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium flex items-center gap-1">
+                <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                Occupants ({room.current_occupants.length})
+              </h4>
+              <div className="space-y-2">
                 {room.current_occupants.map((occupant, index) => (
+                  <div key={index} className="text-sm text-muted-foreground">
+                    <p className="font-medium">
+                      {occupant.first_name} {occupant.last_name}
+                    </p>
+                    {occupant.assignment_type && (
+                      <p className="text-xs capitalize">
+                        {occupant.assignment_type.replace(/_/g, ' ')}
+                        {occupant.is_primary && ' (Primary)'}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Key Access */}
+          {room.key_access && room.key_access.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium flex items-center gap-1">
+                <Key className="h-3.5 w-3.5 text-muted-foreground" />
+                Key Access
+              </h4>
+              <div className="flex flex-wrap gap-1.5">
+                {room.key_access.map((key, index) => (
                   <Badge key={index} variant="outline" className="text-xs">
-                    {occupant.first_name} {occupant.last_name}
+                    {key.name}
                   </Badge>
                 ))}
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Lighting Fixtures */}
-        {room.lighting_fixture && (
-          <div className="flex items-start">
-            <Lightbulb className="h-4 w-4 mr-2 mt-0.5 text-muted-foreground" />
-            <div>
-              <span className="text-sm font-medium">Lighting</span>
-              <div className="text-sm">
-                {room.lighting_fixture.type} • {room.lighting_fixture.status}
+          )}
+          
+          {/* Issue History (if any) */}
+          {room.issues && room.issues.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium flex items-center gap-1">
+                <CircleAlert className="h-3.5 w-3.5 text-muted-foreground" />
+                Recent Issues ({room.issues.length})
+              </h4>
+              <div className="space-y-2">
+                {room.issues.slice(0, 3).map((issue, index) => (
+                  <div key={index} className="text-sm bg-muted/50 p-2 rounded-md">
+                    <div className="flex justify-between">
+                      <Badge variant={
+                        issue.status === 'open' ? 'default' :
+                        issue.status === 'in_progress' ? 'secondary' :
+                        issue.status === 'resolved' ? 'outline' : 'destructive'
+                      } className="text-xs">
+                        {issue.status.replace(/_/g, ' ')}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(issue.created_at), 'MMM d, yyyy')}
+                      </span>
+                    </div>
+                    <p className="mt-1 line-clamp-2">{issue.description}</p>
+                  </div>
+                ))}
+                {room.issues.length > 3 && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    + {room.issues.length - 3} more issues
+                  </p>
+                )}
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Hallway Connections with Separator */}
-        {room.space_connections && room.space_connections.length > 0 && (
-          <>
-            <Separator className="my-2" />
-            <HallwayConnections connections={room.space_connections} />
-          </>
-        )}
-        
-        {/* Courtroom Photos */}
-        {room.room_type === 'courtroom' && room.courtroom_photos && (
-          <CourtroomPhotos room={room} />
-        )}
-      </div>
-
-      {/* Actions */}
-      <div className="mt-4 flex justify-between">
-        <Button variant="ghost" size="sm" onClick={onFlip}>
-          Back to Details
-        </Button>
-        <Button variant="outline" size="sm" asChild>
-          <a href={`/spaces/rooms/${room.id}`} target="_blank" rel="noopener noreferrer">
-            <ExternalLink className="h-4 w-4 mr-1" />
-            View Full Details
-          </a>
-        </Button>
-      </div>
+          )}
+          
+          {/* Activity History */}
+          {room.activity_history && room.activity_history.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                Recent Activity
+              </h4>
+              <div className="space-y-1.5">
+                {room.activity_history.slice(0, 3).map((activity, index) => (
+                  <div key={index} className="text-xs text-muted-foreground flex justify-between">
+                    <span>{activity.action}</span>
+                    <span>
+                      {format(new Date(activity.timestamp), 'MMM d, yyyy')}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Schedule */}
+          {room.schedule && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium flex items-center gap-1">
+                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                Room Schedule
+              </h4>
+              <p className="text-sm text-muted-foreground">
+                {room.schedule}
+              </p>
+            </div>
+          )}
+        </div>
+      </ScrollArea>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { IssueWizard } from "./wizard/IssueWizard";
+import { IssueWizard } from "./wizard/components/IssueWizard";
 import type { UserAssignment } from "@/types/dashboard";
 
 export interface IssueDialogProps {
