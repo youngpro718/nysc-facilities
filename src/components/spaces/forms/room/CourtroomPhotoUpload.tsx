@@ -31,7 +31,7 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
         [view === 'judge_view' ? 'judge' : 'audience']: true
       }));
       
-      // Use the storageService to upload the file
+      // Use the storageService to upload the file with the corrected bucket name
       const publicUrl = await storageService.uploadFile('courtroom-photos', file);
 
       if (!publicUrl) {

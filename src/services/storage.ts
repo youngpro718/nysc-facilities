@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -108,8 +109,8 @@ export const storageService = {
  */
 export async function initializeStorage(): Promise<void> {
   try {
-    // List of buckets required by the app
-    const requiredBuckets = ['courtroom_photos'];
+    // List of buckets required by the app - use hyphens instead of underscores
+    const requiredBuckets = ['courtroom-photos'];
     
     // Check if buckets exist, create if they don't
     for (const bucketName of requiredBuckets) {
@@ -120,14 +121,18 @@ export async function initializeStorage(): Promise<void> {
           // Check if error message indicates bucket doesn't exist
           if (error.message === 'Bucket not found') {
             // Bucket doesn't exist, create it
-            const { error: createError } = await supabase.storage.createBucket(bucketName, {
-              public: true // Make the bucket public by default
-            });
-            
-            if (createError) {
-              console.error(`Failed to create ${bucketName} bucket:`, createError);
-            } else {
-              console.log(`Created ${bucketName} bucket successfully`);
+            try {
+              const { error: createError } = await supabase.storage.createBucket(bucketName, {
+                public: true // Make the bucket public by default
+              });
+              
+              if (createError) {
+                console.error(`Failed to create ${bucketName} bucket:`, createError);
+              } else {
+                console.log(`Created ${bucketName} bucket successfully`);
+              }
+            } catch (createErr) {
+              console.error(`Exception creating ${bucketName} bucket:`, createErr);
             }
           } else {
             console.error(`Error checking ${bucketName} bucket:`, error);
