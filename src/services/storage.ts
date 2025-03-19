@@ -102,3 +102,36 @@ export const storageService = {
     }
   }
 };
+
+/**
+ * Initialize storage buckets required by the application
+ * This function ensures required storage buckets exist
+ */
+export async function initializeStorage(): Promise<void> {
+  try {
+    // List of buckets required by the app
+    const requiredBuckets = ['courtroom_photos'];
+    
+    // Check if buckets exist, create if they don't
+    for (const bucketName of requiredBuckets) {
+      const { data, error } = await supabase.storage.getBucket(bucketName);
+      
+      if (error && error.code === '404') {
+        // Bucket doesn't exist, create it
+        const { error: createError } = await supabase.storage.createBucket(bucketName, {
+          public: true // Make the bucket public by default
+        });
+        
+        if (createError) {
+          console.error(`Failed to create ${bucketName} bucket:`, createError);
+        } else {
+          console.log(`Created ${bucketName} bucket successfully`);
+        }
+      } else if (error) {
+        console.error(`Error checking ${bucketName} bucket:`, error);
+      }
+    }
+  } catch (error) {
+    console.error('Failed to initialize storage buckets:', error);
+  }
+}
