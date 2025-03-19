@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -18,7 +19,7 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
     audience: false
   });
   
-  const courtRoomPhotos = form.watch("courtRoomPhotos");
+  const courtroom_photos = form.watch("courtroom_photos");
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, view: 'judge_view' | 'audience_view') => {
     const file = event.target.files?.[0];
@@ -31,22 +32,19 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
       }));
       
       // Use the storageService to upload the file
-      const publicUrl = await storageService.uploadFile('courtroom-photos', file, {
-        createBucketIfMissing: true
-      });
+      const publicUrl = await storageService.uploadFile('courtroom-photos', file);
 
       if (!publicUrl) {
         throw new Error('Failed to get public URL for uploaded file');
       }
 
-      // Create or update the courtRoomPhotos object with the correct field structure
-      // This structure must match the database field structure (snake_case)
+      // Create or update the courtroom_photos object with the correct field structure
       const updatedPhotos = {
-        ...(courtRoomPhotos || { judge_view: null, audience_view: null }),
+        ...(courtroom_photos || { judge_view: null, audience_view: null }),
         [view]: publicUrl
       };
       
-      form.setValue("courtRoomPhotos", updatedPhotos, { shouldValidate: true });
+      form.setValue("courtroom_photos", updatedPhotos, { shouldValidate: true });
       toast.success(`${view === 'judge_view' ? 'Judge view' : 'Audience view'} photo uploaded successfully`);
     } catch (error) {
       console.error('Error uploading photo:', error);
@@ -63,10 +61,10 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
   };
 
   const handleRemovePhoto = (view: 'judge_view' | 'audience_view') => {
-    if (!courtRoomPhotos?.[view]) return;
+    if (!courtroom_photos?.[view]) return;
     
     try {
-      const url = courtRoomPhotos[view] as string;
+      const url = courtroom_photos[view] as string;
       // Extract filename from URL
       const fileName = storageService.getFilenameFromUrl(url);
       
@@ -81,9 +79,9 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
           });
       }
       
-      const updatedPhotos = { ...courtRoomPhotos, [view]: null };
+      const updatedPhotos = { ...courtroom_photos, [view]: null };
       console.log('Updated photos after removal:', updatedPhotos);
-      form.setValue("courtRoomPhotos", updatedPhotos, { shouldValidate: true });
+      form.setValue("courtroom_photos", updatedPhotos, { shouldValidate: true });
       toast.success(`${view === 'judge_view' ? 'Judge view' : 'Audience view'} photo removed`);
     } catch (error) {
       console.error('Error removing photo:', error);
@@ -100,19 +98,19 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
         <div className="grid gap-6 md:grid-cols-2">
           <FormField
             control={form.control}
-            name="courtRoomPhotos.judge_view"
+            name="courtroom_photos.judge_view"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Judge View</FormLabel>
                 <div className="mt-2">
-                  {courtRoomPhotos?.judge_view ? (
+                  {courtroom_photos?.judge_view ? (
                     <div className="relative w-full h-48 rounded-md overflow-hidden border">
                       <img 
-                        src={courtRoomPhotos.judge_view as string} 
+                        src={courtroom_photos.judge_view as string} 
                         alt="Judge View" 
                         className="w-full h-full object-cover"
                         onError={(e) => {
-                          console.error('Error loading judge view image:', courtRoomPhotos.judge_view);
+                          console.error('Error loading judge view image:', courtroom_photos.judge_view);
                           e.currentTarget.src = "/placeholder.svg";
                         }}
                       />
@@ -158,19 +156,19 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
 
           <FormField
             control={form.control}
-            name="courtRoomPhotos.audience_view"
+            name="courtroom_photos.audience_view"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Audience View</FormLabel>
                 <div className="mt-2">
-                  {courtRoomPhotos?.audience_view ? (
+                  {courtroom_photos?.audience_view ? (
                     <div className="relative w-full h-48 rounded-md overflow-hidden border">
                       <img 
-                        src={courtRoomPhotos.audience_view as string} 
+                        src={courtroom_photos.audience_view as string} 
                         alt="Audience View" 
                         className="w-full h-full object-cover"
                         onError={(e) => {
-                          console.error('Error loading audience view image:', courtRoomPhotos.audience_view);
+                          console.error('Error loading audience view image:', courtroom_photos.audience_view);
                           e.currentTarget.src = "/placeholder.svg";
                         }}
                       />

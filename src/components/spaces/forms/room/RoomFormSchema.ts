@@ -67,7 +67,7 @@ export const RoomFormSchema = z.object({
     .optional(),
   rotation: z.number().optional(),
   type: z.literal("room").default("room"),
-  courtRoomPhotos: z.object({
+  courtroom_photos: z.object({
     judge_view: z.string().nullable().optional(),
     audience_view: z.string().nullable().optional()
   }).nullable().optional(),

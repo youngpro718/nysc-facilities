@@ -64,7 +64,7 @@ export function EditSpaceDialog({
       
       const connections = initialData.space_connections || initialData.connections || [];
       
-      const courtRoomPhotos = initialData.courtroom_photos;
+      const courtroom_photos = initialData.courtroom_photos;
       
       const mappedConnections = Array.isArray(connections) ? connections.map((conn: any) => {
         let direction = conn.direction || conn.connectionDirection;
@@ -84,7 +84,7 @@ export function EditSpaceDialog({
         ...initialData,
         type: type === "room" ? "room" : "hallway",
         roomType: initialData.room_type ? stringToRoomType(initialData.room_type) : undefined,
-        courtRoomPhotos: courtRoomPhotos,
+        courtroom_photos: courtroom_photos,
         connections: mappedConnections
       });
     }
@@ -110,7 +110,7 @@ export function EditSpaceDialog({
         current_function: data.currentFunction,
         phone_number: data.phoneNumber,
         floor_id: data.floorId,
-        courtroom_photos: data.courtRoomPhotos || null
+        courtroom_photos: data.courtroom_photos || null
       };
 
       console.log("Room update data:", updateData);

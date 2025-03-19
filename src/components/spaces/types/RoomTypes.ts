@@ -22,7 +22,7 @@ export interface Room {
   connections?: RoomConnection[];
   parentRoomId?: string;
   parentRoomName?: string;
-  courtRoomPhotos?: {
+  courtroom_photos?: {
     judge_view: string | null;
     audience_view: string | null;
   } | null;

@@ -7,58 +7,6 @@ import { toast } from "sonner";
  */
 export const storageService = {
   /**
-   * Ensures a bucket exists, creating it if necessary
-   * @param bucketName Name of the bucket to ensure
-   * @param options Bucket creation options
-   * @returns True if bucket exists or was created, false if there was an error
-   */
-  async ensureBucketExists(
-    bucketName: string, 
-    options: { 
-      public?: boolean, 
-      fileSizeLimit?: number 
-    } = { public: true }
-  ): Promise<boolean> {
-    try {
-      // Check if bucket exists
-      const { data: buckets, error: listError } = await supabase.storage.listBuckets();
-      
-      if (listError) {
-        console.error(`Error checking if bucket ${bucketName} exists:`, listError);
-        return false;
-      }
-      
-      const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
-      if (bucketExists) {
-        console.log(`Bucket ${bucketName} already exists, skipping creation`);
-        return true;
-      }
-      
-      // Create bucket if it doesn't exist
-      const { error: createError } = await supabase.storage.createBucket(bucketName, {
-        public: options.public ?? true,
-        fileSizeLimit: options.fileSizeLimit ?? 10485760 // 10MB default
-      });
-      
-      if (createError) {
-        if (createError.message === 'Duplicate name') {
-          console.log(`Bucket ${bucketName} already exists (race condition)`);
-          return true;
-        }
-        
-        console.error(`Error creating bucket ${bucketName}:`, createError);
-        return false;
-      }
-      
-      console.log(`Successfully created bucket ${bucketName}`);
-      return true;
-    } catch (error) {
-      console.error(`Unexpected error ensuring bucket ${bucketName} exists:`, error);
-      return false;
-    }
-  },
-  
-  /**
    * Uploads a file to a specified bucket
    * @param bucketName Bucket to upload to
    * @param file File to upload
@@ -69,20 +17,10 @@ export const storageService = {
     bucketName: string,
     file: File,
     options: {
-      path?: string,
-      createBucketIfMissing?: boolean
+      path?: string
     } = {}
   ): Promise<string | null> {
     try {
-      // Ensure bucket exists if requested
-      if (options.createBucketIfMissing) {
-        const bucketExists = await this.ensureBucketExists(bucketName);
-        if (!bucketExists) {
-          console.warn(`Continuing with upload attempt despite bucket issue`);
-          // Continue anyway - the upload might still work if someone else created the bucket
-        }
-      }
-      
       // Generate file path if not provided
       const fileExt = file.name.split('.').pop();
       const filePath = options.path || 
@@ -98,8 +36,7 @@ export const storageService = {
         
       if (uploadError) {
         console.error(`Error uploading file to ${bucketName}:`, uploadError);
-        toast.error(`Error uploading file: ${uploadError.message}`);
-        return null;
+        throw uploadError;
       }
       
       // Get the public URL
@@ -164,11 +101,4 @@ export const storageService = {
       return null;
     }
   }
-};
-
-// Initialize required buckets
-export const initializeStorage = async () => {
-  // Initialize all required buckets here
-  await storageService.ensureBucketExists('courtroom-photos');
-  await storageService.ensureBucketExists('issue-photos');
 };
