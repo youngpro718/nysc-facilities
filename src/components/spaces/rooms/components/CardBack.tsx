@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Room } from "../types/RoomTypes";
-import { X, Calendar, Clock, Building, Phone, ShoppingBag, Users, Key, Clipboard, CircleAlert } from "lucide-react";
+import { X, Building, Phone, ShoppingBag, Users, CircleAlert } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 
@@ -46,12 +46,12 @@ export function CardBack({ room, onFlip }: CardBackProps) {
           {/* Type Information */}
           <div className="space-y-2">
             <h4 className="text-sm font-medium flex items-center gap-1">
-              <Clipboard className="h-3.5 w-3.5 text-muted-foreground" />
+              <Users className="h-3.5 w-3.5 text-muted-foreground" />
               Type Information
             </h4>
             <div className="flex flex-wrap gap-1.5">
               <Badge variant="outline" className="text-xs capitalize">
-                {room.room_type.replace(/_/g, ' ')}
+                {typeof room.room_type === 'string' ? room.room_type.replace(/_/g, ' ') : ''}
               </Badge>
               {room.current_function && (
                 <Badge variant="outline" className="text-xs capitalize">
@@ -87,7 +87,7 @@ export function CardBack({ room, onFlip }: CardBackProps) {
                 Storage Information
               </h4>
               <div className="text-sm text-muted-foreground space-y-1">
-                <p>Type: {room.storage_type.replace(/_/g, ' ')}</p>
+                <p>Type: {typeof room.storage_type === 'string' ? room.storage_type.replace(/_/g, ' ') : ''}</p>
                 {room.storage_capacity && <p>Capacity: {room.storage_capacity}</p>}
                 {room.storage_notes && <p>Notes: {room.storage_notes}</p>}
               </div>
@@ -118,8 +118,6 @@ export function CardBack({ room, onFlip }: CardBackProps) {
               </div>
             </div>
           )}
-          
-          {/* Key Access - Removing since it's not in the Room type */}
           
           {/* Issue History (if any) */}
           {room.issues && room.issues.length > 0 && (
@@ -154,10 +152,6 @@ export function CardBack({ room, onFlip }: CardBackProps) {
               </div>
             </div>
           )}
-          
-          {/* Activity History - Removing since it's not in the Room type */}
-          
-          {/* Schedule - Removing since it's not in the Room type */}
         </div>
       </ScrollArea>
     </div>

@@ -1,7 +1,7 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from "react-hook-form";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -9,29 +9,63 @@ import { Form } from "@/components/ui/form";
 import { FormData } from "../../types/formTypes";
 import { StandardizedIssueType } from "../../constants/issueTypes";
 import { IssueWizardProps } from "../types";
-import { WizardProvider, useWizardContext, useWizardNavigation } from "../hooks/useWizardContext";
+import { Card } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import { TypeStep } from "./TypeStep";
 import { LocationStep } from "./LocationStep";
 import { DetailsStep } from "./DetailsStep";
-import { ReviewStep } from "./ReviewStep";
 
-function IssueWizardContent({ onSuccess, onCancel }: IssueWizardProps) {
-  const {
-    selectedIssueType,
-    selectedPhotos,
-    isEmergency,
-  } = useWizardContext();
+export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardProps) {
+  const [currentStep, setCurrentStep] = useState<'type' | 'location' | 'details'>('type');
+  const [selectedIssueType, setSelectedIssueType] = useState<StandardizedIssueType | null>(null);
+  const [isEmergency, setIsEmergency] = useState(false);
+  const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
   
-  const {
-    currentStep,
-    canGoBack,
-    canGoForward,
-    goBack,
-    goForward,
-  } = useWizardNavigation();
-
   const queryClient = useQueryClient();
-  const form = useForm<FormData>();
+  const form = useForm<FormData>({
+    defaultValues: {
+      priority: 'medium',
+      description: '',
+    }
+  });
+
+  // Handle photo upload
+  const handlePhotoUpload = async (files: FileList) => {
+    setUploading(true);
+    try {
+      const uploadedUrls: string[] = [];
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+        const filePath = `issue-photos/${fileName}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('issue-photos')
+          .upload(filePath, file);
+          
+        if (uploadError) {
+          console.error('Error uploading photo:', uploadError);
+          continue;
+        }
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('issue-photos')
+          .getPublicUrl(filePath);
+          
+        uploadedUrls.push(publicUrl);
+      }
+      
+      setSelectedPhotos(prev => [...prev, ...uploadedUrls]);
+    } catch (error) {
+      console.error('Error in handlePhotoUpload:', error);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const createIssueMutation = useMutation({
     mutationFn: async (data: FormData) => {
@@ -43,7 +77,7 @@ function IssueWizardContent({ onSuccess, onCancel }: IssueWizardProps) {
       const { error } = await supabase
         .from('issues')
         .insert({
-          title: data.title || `${data.issue_type} Issue ${data.problem_type ? `- ${data.problem_type}` : ''} - ${data.priority.toUpperCase()} Priority`,
+          title: data.title || `${data.issue_type} Issue ${data.problem_type ? `- ${data.problem_type}` : ''} - ${isEmergency ? 'HIGH' : data.priority.toUpperCase()} Priority`,
           description: data.description,
           type: data.issue_type as StandardizedIssueType,
           priority: isEmergency ? 'high' : data.priority,
@@ -66,6 +100,9 @@ function IssueWizardContent({ onSuccess, onCancel }: IssueWizardProps) {
     onSuccess: () => {
       toast.success("Issue reported successfully");
       form.reset();
+      setSelectedIssueType(null);
+      setCurrentStep('type');
+      setSelectedPhotos([]);
       onSuccess?.();
     },
     onError: (error: any) => {
@@ -76,13 +113,31 @@ function IssueWizardContent({ onSuccess, onCancel }: IssueWizardProps) {
 
   const handleNext = async () => {
     const isValid = await form.trigger(getFieldsForStep(currentStep));
-    if (isValid) {
-      // If we're on the location step, make sure room_id is selected
-      if (currentStep === 'location' && !form.getValues('room_id')) {
+    if (!isValid) return;
+    
+    if (currentStep === 'type') {
+      if (!selectedIssueType) {
+        toast.error("Please select an issue type");
+        return;
+      }
+      setCurrentStep('location');
+    } else if (currentStep === 'location') {
+      if (!form.getValues('room_id')) {
         toast.error("Room selection is required");
         return;
       }
-      goForward();
+      setCurrentStep('details');
+    } else {
+      // Submit the form
+      form.handleSubmit(onSubmit)();
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep === 'location') {
+      setCurrentStep('type');
+    } else if (currentStep === 'details') {
+      setCurrentStep('location');
     }
   };
 
@@ -94,8 +149,6 @@ function IssueWizardContent({ onSuccess, onCancel }: IssueWizardProps) {
         return ['building_id', 'floor_id', 'room_id'];
       case 'details':
         return ['description', 'problem_type'];
-      case 'review':
-        return [];
       default:
         return [];
     }
@@ -105,38 +158,71 @@ function IssueWizardContent({ onSuccess, onCancel }: IssueWizardProps) {
     createIssueMutation.mutate(data);
   };
 
+  const wizardContext = {
+    selectedIssueType,
+    setSelectedIssueType,
+    isEmergency,
+    setIsEmergency,
+    selectedPhotos,
+    setSelectedPhotos,
+    uploading,
+    handlePhotoUpload,
+    assignedRooms
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {isEmergency && (
+          <Alert variant="destructive" className="animate-fade-in">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              This issue has been marked as emergency. It will be prioritized.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="min-h-[400px]">
           {currentStep === 'type' && (
-            <TypeStep
-              form={form}
-              onNext={handleNext}
-              onBack={goBack}
-            />
+            <Card className="p-6">
+              <h2 className="text-lg font-semibold mb-4">What type of issue are you reporting?</h2>
+              <TypeStep 
+                form={form} 
+                onNext={handleNext} 
+                onBack={onCancel}
+                selectedIssueType={selectedIssueType}
+                setSelectedIssueType={setSelectedIssueType}
+              />
+            </Card>
           )}
+          
           {currentStep === 'location' && (
-            <LocationStep
-              form={form}
-              onNext={handleNext}
-              onBack={goBack}
-            />
+            <Card className="p-6">
+              <h2 className="text-lg font-semibold mb-4">Where is the issue located?</h2>
+              <LocationStep 
+                form={form} 
+                onNext={handleNext} 
+                onBack={handleBack}
+                assignedRooms={assignedRooms}
+              />
+            </Card>
           )}
+          
           {currentStep === 'details' && (
-            <DetailsStep
-              form={form}
-              onNext={handleNext}
-              onBack={goBack}
-            />
-          )}
-          {currentStep === 'review' && (
-            <ReviewStep
-              form={form}
-              onNext={handleNext}
-              onBack={goBack}
-              isLoading={createIssueMutation.isPending}
-            />
+            <Card className="p-6">
+              <h2 className="text-lg font-semibold mb-4">Describe the issue</h2>
+              <DetailsStep 
+                form={form} 
+                onNext={handleNext} 
+                onBack={handleBack}
+                isEmergency={isEmergency}
+                setIsEmergency={setIsEmergency}
+                selectedPhotos={selectedPhotos}
+                setSelectedPhotos={setSelectedPhotos}
+                uploading={uploading}
+                handlePhotoUpload={handlePhotoUpload}
+              />
+            </Card>
           )}
         </div>
 
@@ -144,47 +230,27 @@ function IssueWizardContent({ onSuccess, onCancel }: IssueWizardProps) {
           <Button
             type="button"
             variant="outline"
-            onClick={onCancel}
+            onClick={currentStep === 'type' ? onCancel : handleBack}
           >
-            Cancel
+            {currentStep === 'type' ? 'Cancel' : 'Back'}
           </Button>
-          <div className="flex gap-2">
-            {canGoBack && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={goBack}
-              >
-                Back
-              </Button>
-            )}
-            {canGoForward ? (
-              <Button
-                type="button"
-                onClick={handleNext}
-                disabled={!selectedIssueType || (currentStep === 'location' && !form.getValues('room_id'))}
-              >
-                Next
-              </Button>
-            ) : (
-              <Button
-                type="submit"
-                disabled={createIssueMutation.isPending}
-              >
-                Submit Issue
-              </Button>
-            )}
-          </div>
+
+          <Button
+            type="button"
+            onClick={handleNext}
+            disabled={createIssueMutation.isPending || (currentStep === 'type' && !selectedIssueType)}
+          >
+            {currentStep === 'details' ? (
+              createIssueMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Submitting...
+                </>
+              ) : 'Submit Issue'
+            ) : 'Next'}
+          </Button>
         </div>
       </form>
     </Form>
-  );
-}
-
-export function IssueWizard(props: IssueWizardProps) {
-  return (
-    <WizardProvider assignedRooms={props.assignedRooms}>
-      <IssueWizardContent {...props} />
-    </WizardProvider>
   );
 }
