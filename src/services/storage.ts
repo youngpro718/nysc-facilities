@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -114,21 +113,30 @@ export async function initializeStorage(): Promise<void> {
     
     // Check if buckets exist, create if they don't
     for (const bucketName of requiredBuckets) {
-      const { data, error } = await supabase.storage.getBucket(bucketName);
-      
-      if (error && error.code === '404') {
-        // Bucket doesn't exist, create it
-        const { error: createError } = await supabase.storage.createBucket(bucketName, {
-          public: true // Make the bucket public by default
-        });
+      try {
+        const { data, error } = await supabase.storage.getBucket(bucketName);
         
-        if (createError) {
-          console.error(`Failed to create ${bucketName} bucket:`, createError);
+        if (error) {
+          // Check if error message indicates bucket doesn't exist
+          if (error.message === 'Bucket not found') {
+            // Bucket doesn't exist, create it
+            const { error: createError } = await supabase.storage.createBucket(bucketName, {
+              public: true // Make the bucket public by default
+            });
+            
+            if (createError) {
+              console.error(`Failed to create ${bucketName} bucket:`, createError);
+            } else {
+              console.log(`Created ${bucketName} bucket successfully`);
+            }
+          } else {
+            console.error(`Error checking ${bucketName} bucket:`, error);
+          }
         } else {
-          console.log(`Created ${bucketName} bucket successfully`);
+          console.log(`Bucket ${bucketName} already exists`);
         }
-      } else if (error) {
-        console.error(`Error checking ${bucketName} bucket:`, error);
+      } catch (err) {
+        console.error(`Unexpected error handling bucket ${bucketName}:`, err);
       }
     }
   } catch (error) {
