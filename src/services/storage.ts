@@ -21,6 +21,9 @@ export const storageService = {
     } = {}
   ): Promise<string | null> {
     try {
+      // Make sure the bucket exists
+      await ensureBucketExists(bucketName);
+      
       // Generate file path if not provided
       const fileExt = file.name.split('.').pop();
       const filePath = options.path || 
@@ -60,6 +63,9 @@ export const storageService = {
    */
   async removeFile(bucketName: string, filePath: string): Promise<boolean> {
     try {
+      // Make sure the bucket exists
+      await ensureBucketExists(bucketName);
+      
       const { error } = await supabase.storage
         .from(bucketName)
         .remove([filePath]);
@@ -104,44 +110,54 @@ export const storageService = {
 };
 
 /**
+ * Helper function to ensure a bucket exists before using it
+ * @param bucketName Name of the bucket to check/create
+ */
+async function ensureBucketExists(bucketName: string): Promise<void> {
+  try {
+    // Check if bucket exists
+    const { data, error } = await supabase.storage.getBucket(bucketName);
+    
+    if (error) {
+      if (error.message === 'Bucket not found') {
+        // Create the bucket if it doesn't exist
+        const { data: newBucket, error: createError } = await supabase.storage.createBucket(bucketName, {
+          public: true
+        });
+        
+        if (createError) {
+          console.error(`Failed to create bucket ${bucketName}:`, createError);
+          throw createError;
+        }
+        
+        console.log(`Successfully created bucket: ${bucketName}`);
+      } else {
+        console.error(`Error checking bucket ${bucketName}:`, error);
+        throw error;
+      }
+    }
+  } catch (error) {
+    console.error(`Error ensuring bucket ${bucketName} exists:`, error);
+    throw error;
+  }
+}
+
+/**
  * Initialize storage buckets required by the application
  * This function ensures required storage buckets exist
  */
 export async function initializeStorage(): Promise<void> {
   try {
-    // List of buckets required by the app - use hyphens instead of underscores
+    // Define the required buckets with hyphens (not underscores)
     const requiredBuckets = ['courtroom-photos'];
     
-    // Check if buckets exist, create if they don't
+    // Check and initialize each bucket
     for (const bucketName of requiredBuckets) {
       try {
-        const { data, error } = await supabase.storage.getBucket(bucketName);
-        
-        if (error) {
-          // Check if error message indicates bucket doesn't exist
-          if (error.message === 'Bucket not found') {
-            // Bucket doesn't exist, create it
-            try {
-              const { error: createError } = await supabase.storage.createBucket(bucketName, {
-                public: true // Make the bucket public by default
-              });
-              
-              if (createError) {
-                console.error(`Failed to create ${bucketName} bucket:`, createError);
-              } else {
-                console.log(`Created ${bucketName} bucket successfully`);
-              }
-            } catch (createErr) {
-              console.error(`Exception creating ${bucketName} bucket:`, createErr);
-            }
-          } else {
-            console.error(`Error checking ${bucketName} bucket:`, error);
-          }
-        } else {
-          console.log(`Bucket ${bucketName} already exists`);
-        }
-      } catch (err) {
-        console.error(`Unexpected error handling bucket ${bucketName}:`, err);
+        await ensureBucketExists(bucketName);
+        console.log(`✅ Verified bucket exists: ${bucketName}`);
+      } catch (error) {
+        console.error(`⚠️ Error initializing bucket ${bucketName}:`, error);
       }
     }
   } catch (error) {

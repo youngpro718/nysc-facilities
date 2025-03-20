@@ -31,12 +31,18 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
         [view === 'judge_view' ? 'judge' : 'audience']: true
       }));
       
-      // Use the storageService to upload the file with the corrected bucket name
-      const publicUrl = await storageService.uploadFile('courtroom-photos', file);
+      // The correct bucket name with hyphens
+      const BUCKET_NAME = 'courtroom-photos';
+      console.log(`Uploading file to bucket: ${BUCKET_NAME}`);
+      
+      // Upload the file
+      const publicUrl = await storageService.uploadFile(BUCKET_NAME, file);
 
       if (!publicUrl) {
         throw new Error('Failed to get public URL for uploaded file');
       }
+      
+      console.log(`File uploaded successfully, public URL: ${publicUrl}`);
 
       // Create or update the courtroom_photos object with the correct field structure
       const updatedPhotos = {
@@ -60,23 +66,28 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
     }
   };
 
-  const handleRemovePhoto = (view: 'judge_view' | 'audience_view') => {
+  const handleRemovePhoto = async (view: 'judge_view' | 'audience_view') => {
     if (!courtroom_photos?.[view]) return;
     
     try {
       const url = courtroom_photos[view] as string;
+      console.log('Removing photo with URL:', url);
+      
       // Extract filename from URL
       const fileName = storageService.getFilenameFromUrl(url);
       
       if (fileName) {
         console.log('Removing file from storage:', fileName);
-        storageService.removeFile('courtroom-photos', fileName)
-          .then(success => {
-            if (!success) {
-              console.error('Error removing file from storage');
-              // Continue anyway, as we're still removing it from the form
-            }
-          });
+        const success = await storageService.removeFile('courtroom-photos', fileName);
+        
+        if (!success) {
+          console.error('Error removing file from storage');
+          // Continue anyway, as we're still removing it from the form
+        } else {
+          console.log('File successfully removed from storage');
+        }
+      } else {
+        console.warn('Could not extract filename from URL:', url);
       }
       
       const updatedPhotos = { ...courtroom_photos, [view]: null };
