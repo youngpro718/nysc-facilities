@@ -117,23 +117,10 @@ export function EditSpaceDialog({
       
       if (data.roomType === RoomTypeEnum.COURTROOM) {
         try {
-          const { data: buckets } = await supabase.storage.listBuckets();
-          const bucketExists = buckets ? buckets.some(bucket => bucket.name === 'courtroom-photos') : false;
-          
-          if (!bucketExists) {
-            const { error: bucketError } = await supabase.storage.createBucket('courtroom-photos', {
-              public: true,
-              fileSizeLimit: 10485760
-            });
-            
-            if (bucketError && bucketError.message !== 'Duplicate name') {
-              console.error('Error creating bucket:', bucketError);
-              toast.error('Failed to create courtroom photos storage bucket');
-            }
-          }
+          await storageService.ensureBucketsExist(['courtroom-photos']);
         } catch (bucketError) {
-          console.error('Error checking/creating bucket:', bucketError);
-          toast.error('Storage initialization failed');
+          console.error('Error setting up storage bucket:', bucketError);
+          toast.error('Failed to initialize storage');
         }
       }
       

@@ -29,6 +29,33 @@ export const storageService = {
         return null;
       }
       
+      // Check if bucket exists and create it if it doesn't
+      try {
+        const { data: bucketExists, error: bucketCheckError } = await supabase.storage.getBucket(bucketName);
+        
+        if (bucketCheckError && bucketCheckError.message.includes('not found')) {
+          console.log(`Bucket ${bucketName} not found, attempting to create it...`);
+          const { data: newBucket, error: createError } = await supabase.storage
+            .createBucket(bucketName, {
+              public: true,
+              fileSizeLimit: 10485760 // 10MB
+            });
+            
+          if (createError) {
+            console.error(`Error creating bucket ${bucketName}:`, createError);
+            // Continue anyway, as the bucket might exist but we don't have permissions to check
+          } else {
+            console.log(`Successfully created bucket: ${bucketName}`);
+          }
+        } else if (bucketCheckError) {
+          console.error(`Error checking bucket ${bucketName}:`, bucketCheckError);
+          // Continue anyway, as we'll try the upload regardless
+        }
+      } catch (bucketError) {
+        console.error('Unexpected error checking/creating bucket:', bucketError);
+        // Continue with upload attempt
+      }
+      
       // Generate file path if not provided
       const fileExt = file.name.split('.').pop();
       const filePath = options.path || 
@@ -116,6 +143,52 @@ export const storageService = {
     } catch {
       return null;
     }
+  },
+
+  /**
+   * Ensures required storage buckets exist
+   * Creates them if they don't exist
+   */
+  async ensureBucketsExist(bucketNames: string[]): Promise<void> {
+    try {
+      // Check authentication first
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        console.log('Skipping bucket initialization: User not authenticated');
+        return;
+      }
+      
+      for (const bucketName of bucketNames) {
+        try {
+          // Try to get the bucket info
+          const { data, error } = await supabase.storage.getBucket(bucketName);
+          
+          if (error && error.message.includes('not found')) {
+            console.log(`Bucket ${bucketName} not found, creating it...`);
+            const { data: newBucket, error: createError } = await supabase.storage
+              .createBucket(bucketName, {
+                public: true,
+                fileSizeLimit: 10485760 // 10MB
+              });
+              
+            if (createError) {
+              console.error(`❌ Error creating bucket ${bucketName}:`, createError);
+              toast.error(`Failed to create storage bucket: ${createError.message}`);
+            } else {
+              console.log(`✅ Successfully created bucket: ${bucketName}`);
+            }
+          } else if (error) {
+            console.error(`⚠️ Error checking bucket ${bucketName}:`, error);
+          } else {
+            console.log(`✅ Verified bucket exists: ${bucketName}`);
+          }
+        } catch (error) {
+          console.error(`⚠️ Error initializing bucket ${bucketName}:`, error);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to initialize storage buckets:', error);
+    }
   }
 };
 
@@ -125,33 +198,5 @@ export const storageService = {
  * Note: Should only be called after authentication is confirmed
  */
 export async function initializeStorage(): Promise<void> {
-  try {
-    // Check authentication first
-    const { data: session } = await supabase.auth.getSession();
-    if (!session.session) {
-      console.log('Skipping storage initialization: User not authenticated');
-      return;
-    }
-
-    // Define the required buckets with hyphens (not underscores)
-    const requiredBuckets = ['courtroom-photos'];
-    
-    // Check and initialize each bucket
-    for (const bucketName of requiredBuckets) {
-      try {
-        // Just check if the bucket exists, no need to create it as it's handled by SQL migrations
-        const { data, error } = await supabase.storage.getBucket(bucketName);
-        
-        if (error && error.message !== 'Bucket not found') {
-          console.error(`⚠️ Error checking bucket ${bucketName}:`, error);
-        } else if (data || !error) {
-          console.log(`✅ Verified bucket exists: ${bucketName}`);
-        }
-      } catch (error) {
-        console.error(`⚠️ Error initializing bucket ${bucketName}:`, error);
-      }
-    }
-  } catch (error) {
-    console.error('Failed to initialize storage buckets:', error);
-  }
+  await storageService.ensureBucketsExist(['courtroom-photos']);
 }
