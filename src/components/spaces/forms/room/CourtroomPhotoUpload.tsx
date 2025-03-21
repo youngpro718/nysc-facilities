@@ -131,7 +131,7 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
       </CardHeader>
       <CardContent className="space-y-6">
         {!isAuthenticated && (
-          <Alert variant="warning">
+          <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
               You must be logged in to upload or remove photos
@@ -269,3 +269,4 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
     </Card>
   );
 }
+
