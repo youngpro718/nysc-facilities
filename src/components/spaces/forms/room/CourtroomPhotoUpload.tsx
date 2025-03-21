@@ -1,35 +1,53 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { UseFormReturn } from "react-hook-form";
 import { RoomFormData } from "./RoomFormSchema";
-import { Loader2, Upload, X } from "lucide-react";
+import { Loader2, Upload, X, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { storageService } from "@/services/storage";
+import { useAuth } from "@/contexts/AuthContext";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface CourtroomPhotoUploadProps {
   form: UseFormReturn<RoomFormData>;
 }
 
 export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
+  const { isAuthenticated } = useAuth();
   const [uploading, setUploading] = useState({
     judge: false,
     audience: false
   });
+  const [error, setError] = useState<string | null>(null);
   
   const courtroom_photos = form.watch("courtroom_photos");
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setError("You must be logged in to upload photos");
+    } else {
+      setError(null);
+    }
+  }, [isAuthenticated]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, view: 'judge_view' | 'audience_view') => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    if (!isAuthenticated) {
+      toast.error("You must be logged in to upload photos");
+      return;
+    }
 
     try {
       setUploading(prev => ({
         ...prev,
         [view === 'judge_view' ? 'judge' : 'audience']: true
       }));
+      setError(null);
       
       // The correct bucket name with hyphens
       const BUCKET_NAME = 'courtroom-photos';
@@ -54,6 +72,7 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
       toast.success(`${view === 'judge_view' ? 'Judge view' : 'Audience view'} photo uploaded successfully`);
     } catch (error) {
       console.error('Error uploading photo:', error);
+      setError(`Failed to upload photo: ${error instanceof Error ? error.message : 'Unknown error'}`);
       toast.error(`Failed to upload photo: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setUploading(prev => ({
@@ -68,6 +87,11 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
 
   const handleRemovePhoto = async (view: 'judge_view' | 'audience_view') => {
     if (!courtroom_photos?.[view]) return;
+    
+    if (!isAuthenticated) {
+      toast.error("You must be logged in to remove photos");
+      return;
+    }
     
     try {
       const url = courtroom_photos[view] as string;
@@ -106,6 +130,22 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
         <CardTitle className="text-lg font-medium">Courtroom Photos</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {!isAuthenticated && (
+          <Alert variant="warning">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              You must be logged in to upload or remove photos
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {error && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
         <div className="grid gap-6 md:grid-cols-2">
           <FormField
             control={form.control}
@@ -131,12 +171,13 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
                         size="icon"
                         className="absolute top-2 right-2"
                         onClick={() => handleRemovePhoto('judge_view')}
+                        disabled={!isAuthenticated}
                       >
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
                   ) : (
-                    <label className="flex flex-col items-center justify-center w-full h-48 border border-dashed rounded-md cursor-pointer bg-background hover:bg-accent/50">
+                    <label className={`flex flex-col items-center justify-center w-full h-48 border border-dashed rounded-md cursor-pointer bg-background hover:bg-accent/50 ${!isAuthenticated ? 'opacity-50' : ''}`}>
                       <div className="flex flex-col items-center justify-center pt-5 pb-6">
                         <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
                         <p className="text-sm text-muted-foreground">
@@ -155,7 +196,7 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
                         className="hidden"
                         accept="image/*"
                         onChange={(e) => handleFileUpload(e, 'judge_view')}
-                        disabled={uploading.judge}
+                        disabled={uploading.judge || !isAuthenticated}
                       />
                     </label>
                   )}
@@ -189,12 +230,13 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
                         size="icon"
                         className="absolute top-2 right-2"
                         onClick={() => handleRemovePhoto('audience_view')}
+                        disabled={!isAuthenticated}
                       >
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
                   ) : (
-                    <label className="flex flex-col items-center justify-center w-full h-48 border border-dashed rounded-md cursor-pointer bg-background hover:bg-accent/50">
+                    <label className={`flex flex-col items-center justify-center w-full h-48 border border-dashed rounded-md cursor-pointer bg-background hover:bg-accent/50 ${!isAuthenticated ? 'opacity-50' : ''}`}>
                       <div className="flex flex-col items-center justify-center pt-5 pb-6">
                         <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
                         <p className="text-sm text-muted-foreground">
@@ -213,7 +255,7 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
                         className="hidden"
                         accept="image/*"
                         onChange={(e) => handleFileUpload(e, 'audience_view')}
-                        disabled={uploading.audience}
+                        disabled={uploading.audience || !isAuthenticated}
                       />
                     </label>
                   )}

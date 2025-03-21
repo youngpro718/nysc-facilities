@@ -21,8 +21,13 @@ export const storageService = {
     } = {}
   ): Promise<string | null> {
     try {
-      // Make sure the bucket exists
-      await ensureBucketExists(bucketName);
+      // Check authentication first
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        console.error('User not authenticated for upload');
+        toast.error('You must be logged in to upload files');
+        return null;
+      }
       
       // Generate file path if not provided
       const fileExt = file.name.split('.').pop();
@@ -63,8 +68,13 @@ export const storageService = {
    */
   async removeFile(bucketName: string, filePath: string): Promise<boolean> {
     try {
-      // Make sure the bucket exists
-      await ensureBucketExists(bucketName);
+      // Check authentication first
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        console.error('User not authenticated for file removal');
+        toast.error('You must be logged in to remove files');
+        return false;
+      }
       
       const { error } = await supabase.storage
         .from(bucketName)
@@ -110,52 +120,33 @@ export const storageService = {
 };
 
 /**
- * Helper function to ensure a bucket exists before using it
- * @param bucketName Name of the bucket to check/create
- */
-async function ensureBucketExists(bucketName: string): Promise<void> {
-  try {
-    // Check if bucket exists
-    const { data, error } = await supabase.storage.getBucket(bucketName);
-    
-    if (error) {
-      if (error.message === 'Bucket not found') {
-        // Create the bucket if it doesn't exist
-        const { data: newBucket, error: createError } = await supabase.storage.createBucket(bucketName, {
-          public: true
-        });
-        
-        if (createError) {
-          console.error(`Failed to create bucket ${bucketName}:`, createError);
-          throw createError;
-        }
-        
-        console.log(`Successfully created bucket: ${bucketName}`);
-      } else {
-        console.error(`Error checking bucket ${bucketName}:`, error);
-        throw error;
-      }
-    }
-  } catch (error) {
-    console.error(`Error ensuring bucket ${bucketName} exists:`, error);
-    throw error;
-  }
-}
-
-/**
  * Initialize storage buckets required by the application
  * This function ensures required storage buckets exist
+ * Note: Should only be called after authentication is confirmed
  */
 export async function initializeStorage(): Promise<void> {
   try {
+    // Check authentication first
+    const { data: session } = await supabase.auth.getSession();
+    if (!session.session) {
+      console.log('Skipping storage initialization: User not authenticated');
+      return;
+    }
+
     // Define the required buckets with hyphens (not underscores)
     const requiredBuckets = ['courtroom-photos'];
     
     // Check and initialize each bucket
     for (const bucketName of requiredBuckets) {
       try {
-        await ensureBucketExists(bucketName);
-        console.log(`✅ Verified bucket exists: ${bucketName}`);
+        // Just check if the bucket exists, no need to create it as it's handled by SQL migrations
+        const { data, error } = await supabase.storage.getBucket(bucketName);
+        
+        if (error && error.message !== 'Bucket not found') {
+          console.error(`⚠️ Error checking bucket ${bucketName}:`, error);
+        } else if (data || !error) {
+          console.log(`✅ Verified bucket exists: ${bucketName}`);
+        }
       } catch (error) {
         console.error(`⚠️ Error initializing bucket ${bucketName}:`, error);
       }
