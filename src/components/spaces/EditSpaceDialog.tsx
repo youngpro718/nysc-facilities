@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -17,7 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { RoomFormContent } from "./forms/room/RoomFormContent";
 import { RoomFormSchema, type RoomFormData, ConnectionDirections } from "./forms/room/RoomFormSchema";
 import { EditHallwayForm } from "./forms/hallway/EditHallwayForm";
-import { storageService } from "@/services/storage"; // Add this import
+import { storageService } from "@/services/storage"; 
 import { 
   StatusEnum, 
   RoomTypeEnum, 
@@ -119,10 +118,9 @@ export function EditSpaceDialog({
       
       if (data.roomType === RoomTypeEnum.COURTROOM) {
         try {
-          await storageService.ensureBucketsExist(['courtroom-photos']);
+          await storageService.checkBucketExists('courtroom-photos');
         } catch (bucketError) {
-          console.error('Error setting up storage bucket:', bucketError);
-          toast.error('Failed to initialize storage');
+          console.error('Error verifying storage bucket:', bucketError);
         }
       }
       

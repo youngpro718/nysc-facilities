@@ -53,6 +53,12 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
       const BUCKET_NAME = 'courtroom-photos';
       console.log(`Uploading file to bucket: ${BUCKET_NAME}`);
       
+      // Verify the bucket exists first
+      const bucketExists = await storageService.checkBucketExists(BUCKET_NAME);
+      if (!bucketExists) {
+        throw new Error(`Storage bucket '${BUCKET_NAME}' does not exist. Please contact your administrator.`);
+      }
+      
       // Upload the file
       const publicUrl = await storageService.uploadFile(BUCKET_NAME, file);
 
@@ -269,4 +275,3 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
     </Card>
   );
 }
-
