@@ -29,7 +29,15 @@ export const storageService = {
         return null;
       }
       
-      // Assume the bucket exists and try the upload directly
+      // Verify bucket exists before attempting upload
+      const bucketExists = await this.checkBucketExists(bucketName);
+      if (!bucketExists) {
+        const errorMessage = `Storage bucket '${bucketName}' does not exist. Please contact your administrator.`;
+        console.error(errorMessage);
+        toast.error(errorMessage);
+        return null;
+      }
+      
       // Generate file path if not provided
       const fileExt = file.name.split('.').pop();
       const filePath = options.path || 
@@ -74,6 +82,15 @@ export const storageService = {
       if (!session.session) {
         console.error('User not authenticated for file removal');
         toast.error('You must be logged in to remove files');
+        return false;
+      }
+      
+      // Verify bucket exists before attempting removal
+      const bucketExists = await this.checkBucketExists(bucketName);
+      if (!bucketExists) {
+        const errorMessage = `Storage bucket '${bucketName}' does not exist. Please contact your administrator.`;
+        console.error(errorMessage);
+        toast.error(errorMessage);
         return false;
       }
       
@@ -126,10 +143,18 @@ export const storageService = {
    */
   async checkBucketExists(bucketName: string): Promise<boolean> {
     try {
+      console.log(`Checking if bucket ${bucketName} exists...`);
       const { data, error } = await supabase.storage.getBucket(bucketName);
-      return !error && !!data;
+      
+      if (error) {
+        console.error(`Error checking bucket existence: ${error.message}`, error);
+        return false;
+      }
+      
+      console.log(`Bucket check result:`, data);
+      return !!data;
     } catch (error) {
-      console.error(`Error checking if bucket ${bucketName} exists:`, error);
+      console.error(`Exception checking if bucket ${bucketName} exists:`, error);
       return false;
     }
   },
@@ -169,5 +194,7 @@ export const storageService = {
  * Note: Should only be called after authentication is confirmed
  */
 export async function initializeStorage(): Promise<void> {
-  await storageService.checkBucketExists('courtroom-photos');
+  // Verify the courtroom-photos bucket exists
+  const exists = await storageService.checkBucketExists('courtroom-photos');
+  console.log(`Storage initialization - courtroom-photos bucket exists: ${exists}`);
 }
