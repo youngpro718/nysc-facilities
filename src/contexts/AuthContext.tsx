@@ -143,12 +143,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('Starting session refresh...');
       setAuthState(prev => ({ ...prev, isLoading: true }));
       
+      // First try to refresh the token
+      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+      
+      if (refreshError) {
+        console.error("Error refreshing token:", refreshError);
+        // Continue with getSession to see if we have a valid session anyway
+      } else if (refreshData.session) {
+        console.log("Successfully refreshed auth token");
+      }
+      
+      // Get current session state
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) throw sessionError;
 
       if (!session) {
-        console.log('No session found');
+        console.log('No session found after refresh');
         setAuthState({
           isAuthenticated: false,
           isAdmin: false,
@@ -340,4 +351,4 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-} 
+}
