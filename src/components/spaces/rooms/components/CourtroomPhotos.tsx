@@ -8,8 +8,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Room } from '../types/RoomTypes';
-import { BadgeInfo } from 'lucide-react';
+import { BadgeInfo, Download, Maximize2, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface CourtroomPhotosProps {
   room: Room;
@@ -18,6 +19,7 @@ interface CourtroomPhotosProps {
 export function CourtroomPhotos({ room }: CourtroomPhotosProps) {
   const [open, setOpen] = useState(false);
   const [activeView, setActiveView] = useState<'judge' | 'audience'>('judge');
+  const [fullscreen, setFullscreen] = useState(false);
   
   // Use the correct property name from the Room type
   const photos = room.courtroom_photos;
@@ -36,6 +38,26 @@ export function CourtroomPhotos({ room }: CourtroomPhotosProps) {
   const judgeViewUrl = photos?.judge_view;
   const audienceViewUrl = photos?.audience_view;
   
+  // Determine which image to show as the primary one
+  const activeImageUrl = activeView === 'judge' ? judgeViewUrl : audienceViewUrl;
+  
+  // Download the current active photo
+  const handleDownload = () => {
+    if (!activeImageUrl) return;
+    
+    const link = document.createElement('a');
+    link.href = activeImageUrl;
+    link.download = `courtroom-${room.id}-${activeView}-view.jpg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  
+  // Toggle fullscreen mode
+  const handleFullscreen = () => {
+    setFullscreen(!fullscreen);
+  };
+  
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -48,12 +70,28 @@ export function CourtroomPhotos({ room }: CourtroomPhotosProps) {
           <span>View Courtroom Photos</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className={cn(
+        "transition-all duration-300 ease-in-out",
+        fullscreen ? "max-w-[90vw] h-[90vh]" : "sm:max-w-md"
+      )}>
         <DialogHeader>
-          <DialogTitle>Courtroom Photos - {room.name}</DialogTitle>
+          <DialogTitle className="flex items-center justify-between">
+            <span>Courtroom Photos - {room.name}</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleFullscreen}
+              className="h-8 w-8"
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4 mt-2">
+        <div className={cn(
+          "space-y-4 mt-2",
+          fullscreen && "flex flex-col h-[calc(90vh-80px)]"
+        )}>
           <div className="flex space-x-2">
             <Button
               variant={activeView === 'judge' ? "default" : "outline"}
@@ -73,25 +111,49 @@ export function CourtroomPhotos({ room }: CourtroomPhotosProps) {
             </Button>
           </div>
           
-          <div className="rounded-md overflow-hidden bg-secondary/50 min-h-[250px] flex items-center justify-center">
+          <div className={cn(
+            "rounded-md overflow-hidden bg-secondary/50 relative flex items-center justify-center",
+            fullscreen ? "flex-1" : "min-h-[250px]"
+          )}>
             {activeView === 'judge' && judgeViewUrl ? (
               <img 
                 src={judgeViewUrl} 
                 alt="Judge View" 
-                className="w-full h-auto object-contain max-h-[350px]" 
+                className={cn(
+                  "object-contain", 
+                  fullscreen ? "max-h-full max-w-full" : "max-h-[350px] w-full"
+                )}
               />
             ) : activeView === 'audience' && audienceViewUrl ? (
               <img 
                 src={audienceViewUrl} 
                 alt="Audience View" 
-                className="w-full h-auto object-contain max-h-[350px]" 
+                className={cn(
+                  "object-contain", 
+                  fullscreen ? "max-h-full max-w-full" : "max-h-[350px] w-full"
+                )}
               />
             ) : (
-              <div className="text-muted-foreground text-center p-4">
+              <div className="text-muted-foreground text-center p-4 flex flex-col items-center">
+                <ImageIcon className="h-10 w-10 mb-2 opacity-30" />
                 {activeView === 'judge' ? 'No judge view photo available' : 'No audience view photo available'}
               </div>
             )}
           </div>
+          
+          {activeImageUrl && (
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownload}
+                className="flex items-center gap-1"
+              >
+                <Download className="h-4 w-4" />
+                Download
+              </Button>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

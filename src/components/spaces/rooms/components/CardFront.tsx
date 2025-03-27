@@ -120,7 +120,7 @@ export function CardFront({ room, onFlip, onDelete }: CardFrontProps) {
               parentRoomId: room.parent_room_id || null,
               currentFunction: room.current_function || null,
               phoneNumber: room.phone_number || null,
-              courtRoomPhotos: room.courtroom_photos || null,
+              courtroom_photos: room.courtroom_photos || null,
               connections: room.space_connections?.map(conn => ({
                 id: conn.id,
                 connectionType: conn.connection_type,

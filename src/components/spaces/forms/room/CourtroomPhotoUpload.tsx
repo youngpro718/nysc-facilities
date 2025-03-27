@@ -5,7 +5,7 @@ import { FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/for
 import { Button } from "@/components/ui/button";
 import { UseFormReturn } from "react-hook-form";
 import { RoomFormData } from "./RoomFormSchema";
-import { Loader2, Upload, X, AlertTriangle } from "lucide-react";
+import { Loader2, Upload, X, AlertTriangle, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { storageService } from "@/services/storage";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,6 +24,7 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
   const [error, setError] = useState<string | null>(null);
   
   const courtroom_photos = form.watch("courtroom_photos");
+  const roomId = form.watch("id");
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -33,12 +34,25 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
     }
   }, [isAuthenticated]);
 
+  // Ensure courtroom_photos is initialized correctly
+  useEffect(() => {
+    if (!courtroom_photos && roomId) {
+      form.setValue("courtroom_photos", { judge_view: null, audience_view: null }, { shouldValidate: true });
+    }
+  }, [roomId, courtroom_photos, form]);
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, view: 'judge_view' | 'audience_view') => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     if (!isAuthenticated) {
       toast.error("You must be logged in to upload photos");
+      return;
+    }
+
+    // Validate room ID exists
+    if (!roomId) {
+      toast.error("Room ID is required for uploads. Please save the room first.");
       return;
     }
 
@@ -51,7 +65,7 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
       
       // The correct bucket name with hyphens
       const BUCKET_NAME = 'courtroom-photos';
-      console.log(`Uploading file to bucket: ${BUCKET_NAME}`);
+      console.log(`Uploading ${view} photo for room ${roomId} to bucket: ${BUCKET_NAME}`);
       
       // Verify the bucket exists first
       const bucketExists = await storageService.checkBucketExists(BUCKET_NAME);
@@ -59,8 +73,15 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
         throw new Error(`Storage bucket '${BUCKET_NAME}' does not exist. Please contact your administrator.`);
       }
       
-      // Upload the file
-      const publicUrl = await storageService.uploadFile(BUCKET_NAME, file);
+      // Upload the file with structured path
+      const publicUrl = await storageService.uploadFile(BUCKET_NAME, file, {
+        entityId: roomId, 
+        metadata: { 
+          roomId: roomId,
+          view: view,
+          uploadedAt: new Date().toISOString()
+        }
+      });
 
       if (!publicUrl) {
         throw new Error('Failed to get public URL for uploaded file');
@@ -76,6 +97,19 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
       
       form.setValue("courtroom_photos", updatedPhotos, { shouldValidate: true });
       toast.success(`${view === 'judge_view' ? 'Judge view' : 'Audience view'} photo uploaded successfully`);
+      
+      // Clean up any orphaned files
+      try {
+        const validUrls = Object.values(updatedPhotos).filter(Boolean) as string[];
+        const cleanedCount = await storageService.cleanupOrphanedFiles(BUCKET_NAME, roomId, validUrls);
+        
+        if (cleanedCount > 0) {
+          console.log(`Cleaned up ${cleanedCount} orphaned files for room ${roomId}`);
+        }
+      } catch (cleanupError) {
+        console.error('Error during cleanup:', cleanupError);
+        // Don't throw here - the upload still succeeded
+      }
     } catch (error) {
       console.error('Error uploading photo:', error);
       setError(`Failed to upload photo: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -130,6 +164,11 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
     }
   };
 
+  const handleViewFullSize = (url: string | null) => {
+    if (!url) return;
+    window.open(url, '_blank');
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -161,26 +200,39 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
                 <FormLabel>Judge View</FormLabel>
                 <div className="mt-2">
                   {courtroom_photos?.judge_view ? (
-                    <div className="relative w-full h-48 rounded-md overflow-hidden border">
+                    <div className="relative w-full h-48 rounded-md overflow-hidden border group">
                       <img 
                         src={courtroom_photos.judge_view as string} 
                         alt="Judge View" 
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
                         onError={(e) => {
                           console.error('Error loading judge view image:', courtroom_photos.judge_view);
                           e.currentTarget.src = "/placeholder.svg";
                         }}
                       />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-2 right-2"
-                        onClick={() => handleRemovePhoto('judge_view')}
-                        disabled={!isAuthenticated}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          className="mx-1"
+                          onClick={() => handleViewFullSize(courtroom_photos.judge_view as string)}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          className="mx-1"
+                          onClick={() => handleRemovePhoto('judge_view')}
+                          disabled={!isAuthenticated}
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Remove
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     <label className={`flex flex-col items-center justify-center w-full h-48 border border-dashed rounded-md cursor-pointer bg-background hover:bg-accent/50 ${!isAuthenticated ? 'opacity-50' : ''}`}>
@@ -202,7 +254,7 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
                         className="hidden"
                         accept="image/*"
                         onChange={(e) => handleFileUpload(e, 'judge_view')}
-                        disabled={uploading.judge || !isAuthenticated}
+                        disabled={uploading.judge || !isAuthenticated || !roomId}
                       />
                     </label>
                   )}
@@ -220,26 +272,39 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
                 <FormLabel>Audience View</FormLabel>
                 <div className="mt-2">
                   {courtroom_photos?.audience_view ? (
-                    <div className="relative w-full h-48 rounded-md overflow-hidden border">
+                    <div className="relative w-full h-48 rounded-md overflow-hidden border group">
                       <img 
                         src={courtroom_photos.audience_view as string} 
                         alt="Audience View" 
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
                         onError={(e) => {
                           console.error('Error loading audience view image:', courtroom_photos.audience_view);
                           e.currentTarget.src = "/placeholder.svg";
                         }}
                       />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-2 right-2"
-                        onClick={() => handleRemovePhoto('audience_view')}
-                        disabled={!isAuthenticated}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          className="mx-1"
+                          onClick={() => handleViewFullSize(courtroom_photos.audience_view as string)}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          className="mx-1"
+                          onClick={() => handleRemovePhoto('audience_view')}
+                          disabled={!isAuthenticated}
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Remove
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     <label className={`flex flex-col items-center justify-center w-full h-48 border border-dashed rounded-md cursor-pointer bg-background hover:bg-accent/50 ${!isAuthenticated ? 'opacity-50' : ''}`}>
@@ -261,7 +326,7 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
                         className="hidden"
                         accept="image/*"
                         onChange={(e) => handleFileUpload(e, 'audience_view')}
-                        disabled={uploading.audience || !isAuthenticated}
+                        disabled={uploading.audience || !isAuthenticated || !roomId}
                       />
                     </label>
                   )}
@@ -271,6 +336,15 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
             )}
           />
         </div>
+
+        {!roomId && (
+          <Alert variant="warning" className="mt-2">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              Please save the room first before uploading photos to ensure they are properly associated with this courtroom.
+            </AlertDescription>
+          </Alert>
+        )}
       </CardContent>
     </Card>
   );

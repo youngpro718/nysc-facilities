@@ -118,7 +118,14 @@ export function EditSpaceDialog({
       
       if (data.roomType === RoomTypeEnum.COURTROOM) {
         try {
-          await storageService.checkBucketExists('courtroom-photos');
+          await storageService.ensureBucketsExist(['courtroom-photos']);
+          
+          if (data.courtroom_photos && data.id) {
+            const validUrls = Object.values(data.courtroom_photos).filter(Boolean) as string[];
+            if (validUrls.length > 0) {
+              await storageService.cleanupOrphanedFiles('courtroom-photos', data.id, validUrls);
+            }
+          }
         } catch (bucketError) {
           console.error('Error verifying storage bucket:', bucketError);
         }

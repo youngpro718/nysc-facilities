@@ -10,14 +10,16 @@ export const storageService = {
    * Uploads a file to a specified bucket
    * @param bucketName Bucket to upload to
    * @param file File to upload
-   * @param options Upload options
+   * @param options Upload options including path and metadata
    * @returns Public URL of the uploaded file or null if error
    */
   async uploadFile(
     bucketName: string,
     file: File,
     options: {
-      path?: string
+      path?: string;
+      metadata?: Record<string, any>;
+      entityId?: string; // Entity ID (like room ID) for structured storage
     } = {}
   ): Promise<string | null> {
     try {
@@ -38,17 +40,32 @@ export const storageService = {
         return null;
       }
       
-      // Generate file path if not provided
+      // Generate structured file path if not provided
       const fileExt = file.name.split('.').pop();
-      const filePath = options.path || 
-        `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+      
+      let filePath = options.path;
+      if (!filePath) {
+        // Create structured paths to organize files
+        if (options.entityId) {
+          // If entityId is provided, structure files by entity (e.g., rooms/[roomId]/...)
+          const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+          const entityType = bucketName === 'courtroom-photos' ? 'rooms' : 'entities';
+          filePath = `${entityType}/${options.entityId}/${fileName}`;
+        } else {
+          // Default fallback behavior
+          filePath = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+        }
+      }
+      
+      console.log(`Uploading file to ${bucketName} at path: ${filePath}`);
       
       // Upload the file
       const { data, error: uploadError } = await supabase.storage
         .from(bucketName)
         .upload(filePath, file, {
           upsert: true,
-          contentType: file.type
+          contentType: file.type,
+          ...(options.metadata ? { cacheControl: '3600', metadata: options.metadata } : {})
         });
         
       if (uploadError) {
@@ -109,6 +126,63 @@ export const storageService = {
       console.error(`Unexpected error removing file from ${bucketName}:`, error);
       toast.error(`Failed to remove file: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return false;
+    }
+  },
+  
+  /**
+   * Lists files in a specific path of a bucket
+   * @param bucketName Bucket to list files from
+   * @param path Path within the bucket
+   * @returns Array of file objects or null if error
+   */
+  async listFiles(bucketName: string, path: string = ''): Promise<any[] | null> {
+    try {
+      const { data, error } = await supabase.storage
+        .from(bucketName)
+        .list(path);
+      
+      if (error) {
+        console.error(`Error listing files in ${bucketName}/${path}:`, error);
+        return null;
+      }
+      
+      return data;
+    } catch (error) {
+      console.error(`Unexpected error listing files in ${bucketName}/${path}:`, error);
+      return null;
+    }
+  },
+  
+  /**
+   * Gets files for a specific entity (e.g., room)
+   * @param bucketName Bucket to search in
+   * @param entityId ID of the entity (e.g., room ID)
+   * @returns Array of file URLs or null if error
+   */
+  async getEntityFiles(bucketName: string, entityId: string): Promise<string[] | null> {
+    try {
+      // Determine the path prefix for this entity
+      const entityType = bucketName === 'courtroom-photos' ? 'rooms' : 'entities';
+      const path = `${entityType}/${entityId}`;
+      
+      // List files in the entity's directory
+      const files = await this.listFiles(bucketName, path);
+      
+      if (!files) return null;
+      
+      // Convert file objects to public URLs
+      return files
+        .filter(file => !file.id.endsWith('/')) // Filter out folders
+        .map(file => {
+          const filePath = `${path}/${file.name}`;
+          const { data: { publicUrl } } = supabase.storage
+            .from(bucketName)
+            .getPublicUrl(filePath);
+          return publicUrl;
+        });
+    } catch (error) {
+      console.error(`Error getting entity files for ${entityId} in ${bucketName}:`, error);
+      return null;
     }
   },
   
@@ -185,6 +259,59 @@ export const storageService = {
     } catch (error) {
       console.error('Failed to verify storage buckets:', error);
     }
+  },
+  
+  /**
+   * Cleans up orphaned files for an entity
+   * @param bucketName Bucket containing the files
+   * @param entityId ID of the entity (e.g., room ID)
+   * @param validUrls Array of URLs that should be kept
+   * @returns Number of files cleaned up or -1 if error
+   */
+  async cleanupOrphanedFiles(bucketName: string, entityId: string, validUrls: string[]): Promise<number> {
+    try {
+      // Determine the path prefix for this entity
+      const entityType = bucketName === 'courtroom-photos' ? 'rooms' : 'entities';
+      const path = `${entityType}/${entityId}`;
+      
+      // List all files for this entity
+      const files = await this.listFiles(bucketName, path);
+      
+      if (!files) return -1;
+      
+      // Convert valid URLs to filenames
+      const validFilenames = validUrls
+        .map(url => this.getFilenameFromUrl(url))
+        .filter(filename => filename !== null) as string[];
+      
+      // Find files that aren't in the valid list
+      const filesToDelete = files
+        .filter(file => !file.id.endsWith('/')) // Filter out folders
+        .filter(file => {
+          const filePath = `${path}/${file.name}`;
+          return !validFilenames.some(validFile => validFile.includes(filePath));
+        })
+        .map(file => `${path}/${file.name}`);
+      
+      if (filesToDelete.length === 0) {
+        return 0;
+      }
+      
+      // Delete orphaned files
+      const { error } = await supabase.storage
+        .from(bucketName)
+        .remove(filesToDelete);
+        
+      if (error) {
+        console.error(`Error cleaning up orphaned files in ${bucketName}:`, error);
+        return -1;
+      }
+      
+      return filesToDelete.length;
+    } catch (error) {
+      console.error(`Error cleaning up orphaned files for ${entityId} in ${bucketName}:`, error);
+      return -1;
+    }
   }
 };
 
@@ -195,6 +322,5 @@ export const storageService = {
  */
 export async function initializeStorage(): Promise<void> {
   // Verify the courtroom-photos bucket exists
-  const exists = await storageService.checkBucketExists('courtroom-photos');
-  console.log(`Storage initialization - courtroom-photos bucket exists: ${exists}`);
+  await storageService.ensureBucketsExist(['courtroom-photos']);
 }
