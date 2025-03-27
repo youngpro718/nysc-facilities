@@ -118,7 +118,7 @@ export function EditSpaceDialog({
       
       if (data.roomType === RoomTypeEnum.COURTROOM) {
         try {
-          await storageService.ensureBucketExists('courtroom-photos');
+          await storageService.checkBucketExists('courtroom-photos');
         } catch (bucketError) {
           console.error('Error verifying storage bucket:', bucketError);
         }
