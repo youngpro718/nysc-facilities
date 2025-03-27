@@ -67,6 +67,7 @@ export function EditSpaceDialog({
       const connections = initialData.space_connections || initialData.connections || [];
       
       const courtroom_photos = initialData.courtroom_photos;
+      console.log("Initial courtroom photos:", courtroom_photos);
       
       const mappedConnections = Array.isArray(connections) ? connections.map((conn: any) => {
         let direction = conn.direction || conn.connectionDirection;
@@ -88,11 +89,16 @@ export function EditSpaceDialog({
       
       console.log("Converted room type:", initialData.room_type, "->", roomType);
       
+      // Prepare a structured courtroom_photos object
+      const formattedPhotos = courtroom_photos 
+        ? (typeof courtroom_photos === 'object' ? courtroom_photos : { judge_view: null, audience_view: null })
+        : (roomType === RoomTypeEnum.COURTROOM ? { judge_view: null, audience_view: null } : null);
+      
       form.reset({
         ...initialData,
         type: type === "room" ? "room" : "hallway",
         roomType: roomType,
-        courtroom_photos: courtroom_photos,
+        courtroom_photos: formattedPhotos,
         connections: mappedConnections
       });
     }
@@ -123,12 +129,15 @@ export function EditSpaceDialog({
 
       console.log("Room update data:", updateData);
       
+      // For courtrooms, ensure the storage bucket exists and handle orphaned files
       if (data.roomType === RoomTypeEnum.COURTROOM) {
         try {
           await storageService.ensureBucketsExist(['courtroom-photos']);
           
           if (data.courtroom_photos && data.id) {
-            const validUrls = Object.values(data.courtroom_photos).filter(Boolean) as string[];
+            const validUrls = Object.values(data.courtroom_photos)
+              .filter(Boolean) as string[];
+              
             if (validUrls.length > 0) {
               await storageService.cleanupOrphanedFiles('courtroom-photos', data.id, validUrls);
             }

@@ -11,7 +11,10 @@ import { initializeStorage } from "./services/storage";
 function App() {
   // Initialize required storage buckets when app loads
   useEffect(() => {
-    initializeStorage().catch(console.error);
+    // Initialize storage buckets and handle any initialization errors
+    initializeStorage().catch(error => {
+      console.error("Failed to initialize storage buckets:", error);
+    });
   }, []);
 
   return (

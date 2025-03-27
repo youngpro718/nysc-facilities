@@ -20,7 +20,7 @@ export function CourtroomPhotoThumbnail({
     return null;
   }
   
-  // Select both views if they exist
+  // Determine which views exist
   const hasJudgeView = !!photos.judge_view;
   const hasAudienceView = !!photos.audience_view;
   

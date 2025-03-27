@@ -11,20 +11,34 @@ export interface UploadOptions {
   metadata?: Record<string, any>;
 }
 
+/**
+ * Hook for handling photo uploads to Supabase storage
+ * Provides state and methods for handling uploads, error reporting, and file removal
+ */
 export function usePhotoUpload() {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /**
+   * Verifies user is authenticated before allowing uploads
+   * @returns boolean indicating if user is authenticated
+   */
   const checkUserAuthentication = async (): Promise<boolean> => {
     const { data: session } = await supabase.auth.getSession();
     if (!session?.session) {
-      setError("You must be logged in to upload photos");
-      toast.error("You must be logged in to upload photos");
+      const errorMessage = "You must be logged in to upload photos";
+      setError(errorMessage);
+      toast.error(errorMessage);
       return false;
     }
     return true;
   };
 
+  /**
+   * Ensures the specified storage bucket exists before upload
+   * @param bucketName Name of the bucket to verify
+   * @returns boolean indicating if bucket exists or was created
+   */
   const ensureBucketExists = async (bucketName: string): Promise<boolean> => {
     try {
       // Use the storage service to ensure the bucket exists
@@ -36,6 +50,12 @@ export function usePhotoUpload() {
     }
   };
 
+  /**
+   * Uploads a file to Supabase storage
+   * @param file File to upload
+   * @param options Upload options including entityId, bucketName, category, and metadata
+   * @returns URL of the uploaded file or null if upload failed
+   */
   const uploadFile = async (
     file: File,
     options: UploadOptions
@@ -100,6 +120,12 @@ export function usePhotoUpload() {
     }
   };
 
+  /**
+   * Removes a file from Supabase storage
+   * @param url Public URL of the file to remove
+   * @param bucketName Name of the bucket containing the file
+   * @returns boolean indicating success or failure
+   */
   const removeFile = async (url: string, bucketName: string): Promise<boolean> => {
     try {
       // Check authentication
