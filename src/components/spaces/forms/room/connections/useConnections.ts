@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { RoomConnectionData } from "../../room/RoomFormSchema";
+import { RoomConnectionData } from "../RoomFormSchema";
 import { SpaceOption } from "./types";
 
 export function useConnections(floorId: string, roomId?: string) {

@@ -55,5 +55,8 @@ export const RoomFormSchema = z.object({
 // Define the type from the schema
 export type RoomFormData = z.infer<typeof RoomFormSchema>;
 
+// Export the connection data type that was missing
+export type RoomConnectionData = z.infer<typeof connectionSchema>;
+
 // Ensure all room types are accounted for in the schema
 export type RoomType = RoomTypeEnum;
