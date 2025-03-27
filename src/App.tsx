@@ -1,8 +1,9 @@
+
 import { Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
 import Spaces from "./pages/Spaces";
-import { Layout } from "./components/Layout";
-import { ThemeProvider } from "./components/ThemeProvider";
+import Layout from "./components/layout/Layout";
+import { ThemeProvider } from "./providers/ThemeProvider";
 import { AuthProvider } from "./contexts/AuthContext";
 import { useEffect } from "react";
 import { initializeStorage } from "./services/storage";
