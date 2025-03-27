@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { storageService } from "@/services/storage";
 
 export interface UploadOptions {
   entityId: string;
@@ -26,29 +27,8 @@ export function usePhotoUpload() {
 
   const ensureBucketExists = async (bucketName: string): Promise<boolean> => {
     try {
-      // First check if the bucket exists
-      const { data: bucket, error: getBucketError } = await supabase.storage.getBucket(bucketName);
-      
-      if (getBucketError) {
-        console.log(`Bucket ${bucketName} doesn't exist, attempting to create it`);
-        
-        // Try to create the bucket if it doesn't exist
-        const { data: newBucket, error: createError } = await supabase.storage.createBucket(bucketName, {
-          public: true
-        });
-        
-        if (createError) {
-          console.error(`Failed to create bucket ${bucketName}:`, createError);
-          setError(`Storage bucket '${bucketName}' does not exist and could not be created. Please contact your administrator.`);
-          toast.error(`Storage bucket '${bucketName}' does not exist and could not be created.`);
-          return false;
-        }
-        
-        console.log(`Successfully created bucket ${bucketName}`);
-        return true;
-      }
-      
-      return !!bucket;
+      // Use the storage service to ensure the bucket exists
+      return await storageService.ensureBucketExists(bucketName);
     } catch (error) {
       console.error(`Exception checking/creating bucket ${bucketName}:`, error);
       setError(`Storage error: ${error instanceof Error ? error.message : 'Unknown error'}`);
