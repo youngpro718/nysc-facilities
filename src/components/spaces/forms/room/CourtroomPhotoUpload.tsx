@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -47,8 +46,8 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
           await refreshSession();
         }
         
-        // Verify bucket exists
-        const bucketExists = await storageService.checkBucketExists('courtroom-photos');
+        // Verify bucket exists using ensureBucketExists instead of checkBucketExists
+        const bucketExists = await storageService.ensureBucketExists('courtroom-photos');
         setStorageVerified(bucketExists);
         
         if (!bucketExists) {
@@ -172,8 +171,8 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
       // Force refresh the session
       await refreshSession();
       
-      // Verify bucket exists
-      const bucketExists = await storageService.checkBucketExists('courtroom-photos');
+      // Verify bucket exists using ensureBucketExists instead of checkBucketExists
+      const bucketExists = await storageService.ensureBucketExists('courtroom-photos');
       setStorageVerified(bucketExists);
       
       if (bucketExists) {

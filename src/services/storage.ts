@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -140,6 +141,7 @@ export const storageService = {
 
   /**
    * Checks if a bucket exists and creates it if it doesn't
+   * This is the main method to verify bucket existence
    * @param bucketName Name of the bucket to check/create
    * @returns True if bucket exists or was created, false otherwise
    */
@@ -181,6 +183,15 @@ export const storageService = {
       console.error(`Exception checking/creating bucket ${bucketName}:`, error);
       return false;
     }
+  },
+
+  /**
+   * Alias for ensureBucketExists for compatibility with components using checkBucketExists
+   * @param bucketName Name of the bucket to check/create
+   * @returns True if bucket exists or was created, false otherwise
+   */
+  async checkBucketExists(bucketName: string): Promise<boolean> {
+    return this.ensureBucketExists(bucketName);
   },
 
   /**
