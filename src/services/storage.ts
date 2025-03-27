@@ -38,11 +38,8 @@ export const storageService = {
           throw new Error('You must be logged in to upload files');
         }
         
-        // Verify bucket exists before attempting upload
-        const bucketExists = await this.checkBucketExists(bucketName);
-        if (!bucketExists) {
-          throw new Error(`Storage bucket '${bucketName}' does not exist. Please contact your administrator.`);
-        }
+        // Create bucket if it doesn't exist
+        await this.ensureBucketExists(bucketName);
         
         // Generate file path if not provided
         const fileExt = file.name.split('.').pop();
@@ -97,11 +94,8 @@ export const storageService = {
           throw new Error('You must be logged in to remove files');
         }
         
-        // Verify bucket exists before attempting removal
-        const bucketExists = await this.checkBucketExists(bucketName);
-        if (!bucketExists) {
-          throw new Error(`Storage bucket '${bucketName}' does not exist. Please contact your administrator.`);
-        }
+        // Ensure bucket exists
+        await this.ensureBucketExists(bucketName);
         
         const { error } = await supabase.storage
           .from(bucketName)
@@ -145,44 +139,48 @@ export const storageService = {
   },
 
   /**
-   * Checks if a bucket exists with retry logic
-   * @param bucketName Name of the bucket to check
-   * @returns True if bucket exists, false otherwise
+   * Checks if a bucket exists and creates it if it doesn't
+   * @param bucketName Name of the bucket to check/create
+   * @returns True if bucket exists or was created, false otherwise
    */
-  async checkBucketExists(bucketName: string): Promise<boolean> {
-    return this.withRetries(async () => {
-      try {
-        console.log(`Checking if bucket ${bucketName} exists...`);
-        
-        // First refresh the session to ensure we have valid tokens
-        await this.refreshSessionIfNeeded();
-        
-        const { data, error } = await supabase.storage.getBucket(bucketName);
-        
-        if (error) {
-          if (error.message.includes('unauthorized') || error.message.includes('JWT')) {
-            console.warn('Authorization error checking bucket, attempting session refresh');
-            await this.forceRefreshSession();
-            // Retry after refresh
-            const { data: retryData, error: retryError } = await supabase.storage.getBucket(bucketName);
-            if (retryError) {
-              console.error(`Error checking bucket after refresh: ${retryError.message}`, retryError);
-              throw retryError;
-            }
-            return !!retryData;
+  async ensureBucketExists(bucketName: string): Promise<boolean> {
+    try {
+      console.log(`Checking if bucket ${bucketName} exists...`);
+      
+      // First refresh the session to ensure we have valid tokens
+      await this.refreshSessionIfNeeded();
+      
+      // Check if bucket exists
+      const { data, error } = await supabase.storage.getBucket(bucketName);
+      
+      if (error) {
+        if (error.message.includes('not found') || error.message.includes('does not exist')) {
+          console.log(`Bucket ${bucketName} does not exist, creating it...`);
+          
+          // Create the bucket
+          const { data: createData, error: createError } = await supabase.storage.createBucket(bucketName, {
+            public: true
+          });
+          
+          if (createError) {
+            console.error(`Error creating bucket: ${createError.message}`, createError);
+            return false;
           }
           
-          console.error(`Error checking bucket existence: ${error.message}`, error);
-          throw error;
+          console.log(`Bucket ${bucketName} created successfully`);
+          return true;
         }
         
-        console.log(`Bucket check result:`, data);
-        return !!data;
-      } catch (error) {
-        console.error(`Exception checking if bucket ${bucketName} exists:`, error);
-        throw error; // Rethrow for retry handling
+        console.error(`Error checking bucket existence: ${error.message}`, error);
+        return false;
       }
-    }, false); // false = return false on failure after retries
+      
+      console.log(`Bucket ${bucketName} exists`);
+      return true;
+    } catch (error) {
+      console.error(`Exception checking/creating bucket ${bucketName}:`, error);
+      return false;
+    }
   },
 
   /**
@@ -269,55 +267,34 @@ export const storageService = {
   },
 
   /**
-   * Ensures required storage buckets exist - for direct use in components
-   * Note: This is now just a verification step as buckets should be created via SQL
+   * Initialize storage buckets required by the application
    */
-  async ensureBucketsExist(bucketNames: string[]): Promise<void> {
+  async initializeStorage(): Promise<void> {
     try {
-      // Check authentication first
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session) {
-        console.log('Skipping bucket verification: User not authenticated');
+      // Make sure we have a valid session first
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        console.log('Skipping storage initialization: No active session');
         return;
       }
       
-      for (const bucketName of bucketNames) {
-        const exists = await this.checkBucketExists(bucketName);
-        
-        if (exists) {
-          console.log(`✅ Verified bucket exists: ${bucketName}`);
-        } else {
-          console.warn(`⚠️ Storage bucket not found: ${bucketName}`);
-          // We don't try to create it as it should be created via SQL
-        }
-      }
+      // Create the courtroom-photos bucket if it doesn't exist
+      await this.ensureBucketExists('courtroom-photos');
+      
+      console.log('Storage initialization complete');
     } catch (error) {
-      console.error('Failed to verify storage buckets:', error);
+      console.error('Failed to initialize storage:', error);
     }
   }
 };
 
 /**
  * Initialize storage buckets required by the application
- * This function verifies required storage buckets exist
  * Note: Should only be called after authentication is confirmed
  */
 export async function initializeStorage(): Promise<void> {
   try {
-    // Make sure we have a valid session first
-    const { data } = await supabase.auth.getSession();
-    if (!data.session) {
-      console.log('Skipping storage initialization: No active session');
-      return;
-    }
-    
-    // Verify the courtroom-photos bucket exists
-    const exists = await storageService.checkBucketExists('courtroom-photos');
-    console.log(`Storage initialization - courtroom-photos bucket exists: ${exists}`);
-    
-    if (!exists) {
-      console.warn('⚠️ courtroom-photos bucket does not exist! This will cause upload failures.');
-    }
+    await storageService.initializeStorage();
   } catch (error) {
     console.error('Failed to initialize storage:', error);
   }

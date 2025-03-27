@@ -1,7 +1,9 @@
+
 import { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { initializeStorage } from '@/services/storage';
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -32,6 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const tokenRefreshInProgress = useRef(false);
   const lastAuthEvent = useRef<string | null>(null);
   const authTimeout = useRef<NodeJS.Timeout | null>(null);
+  const initializationDone = useRef(false);
   
   const [authState, setAuthState] = useState<AuthState>({
     isAuthenticated: false,
@@ -61,6 +64,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('Token refreshed, updating ref...');
       tokenRefreshInProgress.current = true;
       lastAuthEvent.current = event;
+      
+      // Force storage initialization after token refresh
+      try {
+        await initializeStorage();
+      } catch (error) {
+        console.error('Error initializing storage after token refresh:', error);
+      }
       return;
     }
 
@@ -82,6 +92,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === 'SIGNED_IN' && session) {
         try {
           setAuthState(prev => ({ ...prev, isLoading: true }));
+          
+          // Initialize storage after auth
+          try {
+            await initializeStorage();
+          } catch (storageError) {
+            console.error('Error initializing storage:', storageError);
+            // Continue with auth flow despite storage error
+          }
           
           // Get user role and profile
           const [roleResponse, profileResponse] = await Promise.all([
@@ -107,6 +125,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             user: session.user,
             profile: profileResponse.data,
           });
+          
+          // Mark initialization as complete
+          initializationDone.current = true;
 
           // Navigate based on role and verification status
           if (profileResponse.data?.verification_status === 'pending') {
@@ -117,6 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } catch (error) {
           console.error('Error handling sign in:', error);
           setAuthState(prev => ({ ...prev, isLoading: false }));
+          initializationDone.current = true;
         }
       } else if (event === 'SIGNED_OUT') {
         setAuthState({
@@ -126,6 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           user: null,
           profile: null,
         });
+        initializationDone.current = true;
         navigate('/login');
       }
     }, 100); // Small delay to debounce multiple rapid auth state changes
@@ -151,6 +174,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Continue with getSession to see if we have a valid session anyway
       } else if (refreshData.session) {
         console.log("Successfully refreshed auth token");
+        
+        // Initialize storage after successful token refresh
+        try {
+          await initializeStorage();
+        } catch (storageError) {
+          console.error('Error initializing storage after token refresh:', storageError);
+        }
       }
       
       // Get current session state
@@ -167,6 +197,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           user: null,
           profile: null,
         });
+        initializationDone.current = true;
         return;
       }
 
@@ -201,6 +232,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user: session.user,
         profile: profileResponse.data,
       });
+      
+      // Mark initialization as complete
+      initializationDone.current = true;
 
       // Update session tracking in the background without awaiting
       const deviceInfo = {
@@ -209,6 +243,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         language: navigator.language,
       };
 
+      // Don't wait for this to complete
       void (async () => {
         try {
           const { data: existingSession } = await supabase
@@ -249,6 +284,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user: null,
         profile: null,
       });
+      initializationDone.current = true;
     } finally {
       refreshInProgress.current = false;
     }
@@ -318,12 +354,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Initial session check
+    // Set timeouts to ensure we don't stay in loading state forever
+    const loadingTimeout = setTimeout(() => {
+      if (authState.isLoading && !initializationDone.current) {
+        console.warn('Auth initialization is taking too long, forcing complete');
+        setAuthState(prev => ({ 
+          ...prev, 
+          isLoading: false 
+        }));
+        initializationDone.current = true;
+      }
+    }, 5000); // 5 second timeout for loading state
+    
+    // Initial session check - don't need to await since it'll happen in the background
     refreshSession();
 
+    // Set up auth state change subscription 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
 
     return () => {
+      clearTimeout(loadingTimeout);
       if (authTimeout.current) {
         clearTimeout(authTimeout.current);
       }
