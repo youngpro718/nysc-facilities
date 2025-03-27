@@ -338,7 +338,7 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
         </div>
 
         {!roomId && (
-          <Alert variant="warning" className="mt-2">
+          <Alert variant="default" className="mt-2">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
               Please save the room first before uploading photos to ensure they are properly associated with this courtroom.
