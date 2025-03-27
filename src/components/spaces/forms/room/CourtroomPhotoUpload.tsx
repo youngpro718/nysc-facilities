@@ -7,9 +7,9 @@ import { UseFormReturn } from "react-hook-form";
 import { RoomFormData } from "./RoomFormSchema";
 import { Loader2, Upload, X, AlertTriangle, Eye } from "lucide-react";
 import { toast } from "sonner";
-import { storageService } from "@/services/storage";
 import { useAuth } from "@/contexts/AuthContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { usePhotoUpload } from "@/hooks/usePhotoUpload";
 
 interface CourtroomPhotoUploadProps {
   form: UseFormReturn<RoomFormData>;
@@ -17,11 +17,8 @@ interface CourtroomPhotoUploadProps {
 
 export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
   const { isAuthenticated } = useAuth();
-  const [uploading, setUploading] = useState({
-    judge: false,
-    audience: false
-  });
-  const [error, setError] = useState<string | null>(null);
+  const { isUploading, error, uploadFile, removeFile, setError } = usePhotoUpload();
+  const [uploadingView, setUploadingView] = useState<'judge_view' | 'audience_view' | null>(null);
   
   const courtroom_photos = form.watch("courtroom_photos");
   const roomId = form.watch("id");
@@ -32,7 +29,7 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
     } else {
       setError(null);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, setError]);
 
   // Ensure courtroom_photos is initialized correctly
   useEffect(() => {
@@ -57,25 +54,12 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
     }
 
     try {
-      setUploading(prev => ({
-        ...prev,
-        [view === 'judge_view' ? 'judge' : 'audience']: true
-      }));
-      setError(null);
+      setUploadingView(view);
       
-      // The correct bucket name with hyphens
-      const BUCKET_NAME = 'courtroom-photos';
-      console.log(`Uploading ${view} photo for room ${roomId} to bucket: ${BUCKET_NAME}`);
-      
-      // Verify the bucket exists first
-      const bucketExists = await storageService.checkBucketExists(BUCKET_NAME);
-      if (!bucketExists) {
-        throw new Error(`Storage bucket '${BUCKET_NAME}' does not exist. Please contact your administrator.`);
-      }
-      
-      // Upload the file with structured path
-      const publicUrl = await storageService.uploadFile(BUCKET_NAME, file, {
-        entityId: roomId, 
+      const publicUrl = await uploadFile(file, {
+        entityId: roomId,
+        bucketName: 'courtroom-photos',
+        category: view,
         metadata: { 
           roomId: roomId,
           view: view,
@@ -98,27 +82,11 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
       form.setValue("courtroom_photos", updatedPhotos, { shouldValidate: true });
       toast.success(`${view === 'judge_view' ? 'Judge view' : 'Audience view'} photo uploaded successfully`);
       
-      // Clean up any orphaned files
-      try {
-        const validUrls = Object.values(updatedPhotos).filter(Boolean) as string[];
-        const cleanedCount = await storageService.cleanupOrphanedFiles(BUCKET_NAME, roomId, validUrls);
-        
-        if (cleanedCount > 0) {
-          console.log(`Cleaned up ${cleanedCount} orphaned files for room ${roomId}`);
-        }
-      } catch (cleanupError) {
-        console.error('Error during cleanup:', cleanupError);
-        // Don't throw here - the upload still succeeded
-      }
     } catch (error) {
-      console.error('Error uploading photo:', error);
-      setError(`Failed to upload photo: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      toast.error(`Failed to upload photo: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('Error handling file upload:', error);
+      toast.error(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
-      setUploading(prev => ({
-        ...prev,
-        [view === 'judge_view' ? 'judge' : 'audience']: false
-      }));
+      setUploadingView(null);
       
       // Reset the file input
       event.target.value = '';
@@ -135,29 +103,13 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
     
     try {
       const url = courtroom_photos[view] as string;
-      console.log('Removing photo with URL:', url);
+      const success = await removeFile(url, 'courtroom-photos');
       
-      // Extract filename from URL
-      const fileName = storageService.getFilenameFromUrl(url);
-      
-      if (fileName) {
-        console.log('Removing file from storage:', fileName);
-        const success = await storageService.removeFile('courtroom-photos', fileName);
-        
-        if (!success) {
-          console.error('Error removing file from storage');
-          // Continue anyway, as we're still removing it from the form
-        } else {
-          console.log('File successfully removed from storage');
-        }
-      } else {
-        console.warn('Could not extract filename from URL:', url);
+      if (success) {
+        const updatedPhotos = { ...courtroom_photos, [view]: null };
+        form.setValue("courtroom_photos", updatedPhotos, { shouldValidate: true });
+        toast.success(`${view === 'judge_view' ? 'Judge view' : 'Audience view'} photo removed`);
       }
-      
-      const updatedPhotos = { ...courtroom_photos, [view]: null };
-      console.log('Updated photos after removal:', updatedPhotos);
-      form.setValue("courtroom_photos", updatedPhotos, { shouldValidate: true });
-      toast.success(`${view === 'judge_view' ? 'Judge view' : 'Audience view'} photo removed`);
     } catch (error) {
       console.error('Error removing photo:', error);
       toast.error(`Failed to remove photo: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -239,7 +191,7 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
                       <div className="flex flex-col items-center justify-center pt-5 pb-6">
                         <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
                         <p className="text-sm text-muted-foreground">
-                          {uploading.judge ? (
+                          {uploadingView === 'judge_view' ? (
                             <span className="flex items-center">
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                               Uploading...
@@ -254,7 +206,7 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
                         className="hidden"
                         accept="image/*"
                         onChange={(e) => handleFileUpload(e, 'judge_view')}
-                        disabled={uploading.judge || !isAuthenticated || !roomId}
+                        disabled={!!uploadingView || !isAuthenticated || !roomId}
                       />
                     </label>
                   )}
@@ -311,7 +263,7 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
                       <div className="flex flex-col items-center justify-center pt-5 pb-6">
                         <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
                         <p className="text-sm text-muted-foreground">
-                          {uploading.audience ? (
+                          {uploadingView === 'audience_view' ? (
                             <span className="flex items-center">
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                               Uploading...
@@ -326,7 +278,7 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
                         className="hidden"
                         accept="image/*"
                         onChange={(e) => handleFileUpload(e, 'audience_view')}
-                        disabled={uploading.audience || !isAuthenticated || !roomId}
+                        disabled={!!uploadingView || !isAuthenticated || !roomId}
                       />
                     </label>
                   )}
