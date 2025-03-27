@@ -24,18 +24,34 @@ export function usePhotoUpload() {
     return true;
   };
 
-  const checkBucketExists = async (bucketName: string): Promise<boolean> => {
+  const ensureBucketExists = async (bucketName: string): Promise<boolean> => {
     try {
-      const { data, error } = await supabase.storage.getBucket(bucketName);
+      // First check if the bucket exists
+      const { data: bucket, error: getBucketError } = await supabase.storage.getBucket(bucketName);
       
-      if (error) {
-        console.error(`Error checking bucket existence: ${error.message}`, error);
-        return false;
+      if (getBucketError) {
+        console.log(`Bucket ${bucketName} doesn't exist, attempting to create it`);
+        
+        // Try to create the bucket if it doesn't exist
+        const { data: newBucket, error: createError } = await supabase.storage.createBucket(bucketName, {
+          public: true
+        });
+        
+        if (createError) {
+          console.error(`Failed to create bucket ${bucketName}:`, createError);
+          setError(`Storage bucket '${bucketName}' does not exist and could not be created. Please contact your administrator.`);
+          toast.error(`Storage bucket '${bucketName}' does not exist and could not be created.`);
+          return false;
+        }
+        
+        console.log(`Successfully created bucket ${bucketName}`);
+        return true;
       }
       
-      return !!data;
+      return !!bucket;
     } catch (error) {
-      console.error(`Exception checking if bucket ${bucketName} exists:`, error);
+      console.error(`Exception checking/creating bucket ${bucketName}:`, error);
+      setError(`Storage error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return false;
     }
   };
@@ -57,10 +73,10 @@ export function usePhotoUpload() {
         throw new Error("Entity ID is required for uploads");
       }
 
-      // Verify bucket exists 
-      const bucketExists = await checkBucketExists(options.bucketName);
+      // Ensure bucket exists 
+      const bucketExists = await ensureBucketExists(options.bucketName);
       if (!bucketExists) {
-        throw new Error(`Storage bucket '${options.bucketName}' does not exist. Please contact your administrator.`);
+        throw new Error(`Storage bucket '${options.bucketName}' does not exist or could not be created.`);
       }
 
       // Generate a structured file path
