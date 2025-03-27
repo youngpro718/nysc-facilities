@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -45,6 +44,7 @@ export const storageService = {
       
       let filePath = options.path;
       if (!filePath) {
+        // Create structured paths to organize files
         if (options.entityId) {
           // If entityId is provided, structure files by entity (e.g., rooms/[roomId]/...)
           const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
@@ -102,7 +102,7 @@ export const storageService = {
         
         // Try to create the bucket if it doesn't exist
         const { data: newBucket, error: createError } = await supabase.storage.createBucket(bucketName, {
-          public: true, // Make bucket public by default
+          public: true,
           fileSizeLimit: 10485760 // 10MB limit
         });
         
@@ -366,14 +366,6 @@ export const storageService = {
  * Note: Should only be called after authentication is confirmed
  */
 export async function initializeStorage(): Promise<void> {
-  try {
-    console.log("Initializing required storage buckets");
-    
-    // Verify the courtroom-photos bucket exists
-    await storageService.ensureBucketsExist(['courtroom-photos']);
-    
-    console.log("Storage initialization complete");
-  } catch (error) {
-    console.error("Failed to initialize storage:", error);
-  }
+  // Verify the courtroom-photos bucket exists
+  await storageService.ensureBucketsExist(['courtroom-photos']);
 }

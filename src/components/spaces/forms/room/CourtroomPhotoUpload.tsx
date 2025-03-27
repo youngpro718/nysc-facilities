@@ -20,11 +20,9 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
   const { isUploading, error, uploadFile, removeFile, setError } = usePhotoUpload();
   const [uploadingView, setUploadingView] = useState<'judge_view' | 'audience_view' | null>(null);
   
+  const courtroom_photos = form.watch("courtroom_photos");
   const roomId = form.watch("id");
-  const roomType = form.watch("roomType");
-  const courtroom_photos = form.watch("courtroom_photos") || { judge_view: null, audience_view: null };
 
-  // Check authentication status when component mounts
   useEffect(() => {
     if (!isAuthenticated) {
       setError("You must be logged in to upload photos");
@@ -33,18 +31,13 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
     }
   }, [isAuthenticated, setError]);
 
-  // Ensure courtroom_photos object is initialized correctly
+  // Ensure courtroom_photos is initialized correctly
   useEffect(() => {
-    // Initialize courtroom_photos if it doesn't exist and we have a roomId
-    if (!form.getValues("courtroom_photos") && roomId) {
-      form.setValue("courtroom_photos", { 
-        judge_view: null, 
-        audience_view: null 
-      }, { shouldValidate: true });
+    if (!courtroom_photos && roomId) {
+      form.setValue("courtroom_photos", { judge_view: null, audience_view: null }, { shouldValidate: true });
     }
-  }, [roomId, form]);
+  }, [roomId, courtroom_photos, form]);
 
-  // Handle file upload for courtroom photos
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, view: 'judge_view' | 'audience_view') => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -100,7 +93,6 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
     }
   };
 
-  // Handle removing an existing photo
   const handleRemovePhoto = async (view: 'judge_view' | 'audience_view') => {
     if (!courtroom_photos?.[view]) return;
     
@@ -124,16 +116,10 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
     }
   };
 
-  // Handle viewing a photo in full size in a new tab
   const handleViewFullSize = (url: string | null) => {
     if (!url) return;
     window.open(url, '_blank');
   };
-
-  // Only show the component if this is a courtroom
-  if (roomType !== 'courtroom') {
-    return null;
-  }
 
   return (
     <Card>
@@ -201,21 +187,19 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
                       </div>
                     </div>
                   ) : (
-                    <label className={`flex flex-col items-center justify-center w-full h-48 border border-dashed rounded-md cursor-pointer bg-background hover:bg-accent/50 ${!isAuthenticated || !roomId ? 'opacity-50' : ''}`}>
+                    <label className={`flex flex-col items-center justify-center w-full h-48 border border-dashed rounded-md cursor-pointer bg-background hover:bg-accent/50 ${!isAuthenticated ? 'opacity-50' : ''}`}>
                       <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        {uploadingView === 'judge_view' ? (
-                          <>
-                            <Loader2 className="w-8 h-8 mb-4 animate-spin text-primary" />
-                            <p className="text-sm text-muted-foreground">Uploading...</p>
-                          </>
-                        ) : (
-                          <>
-                            <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
-                            <p className="text-sm text-muted-foreground">
-                              Click to upload judge view photo
-                            </p>
-                          </>
-                        )}
+                        <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">
+                          {uploadingView === 'judge_view' ? (
+                            <span className="flex items-center">
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Uploading...
+                            </span>
+                          ) : (
+                            <span>Click to upload judge view photo</span>
+                          )}
+                        </p>
                       </div>
                       <input
                         type="file"
@@ -275,21 +259,19 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
                       </div>
                     </div>
                   ) : (
-                    <label className={`flex flex-col items-center justify-center w-full h-48 border border-dashed rounded-md cursor-pointer bg-background hover:bg-accent/50 ${!isAuthenticated || !roomId ? 'opacity-50' : ''}`}>
+                    <label className={`flex flex-col items-center justify-center w-full h-48 border border-dashed rounded-md cursor-pointer bg-background hover:bg-accent/50 ${!isAuthenticated ? 'opacity-50' : ''}`}>
                       <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        {uploadingView === 'audience_view' ? (
-                          <>
-                            <Loader2 className="w-8 h-8 mb-4 animate-spin text-primary" />
-                            <p className="text-sm text-muted-foreground">Uploading...</p>
-                          </>
-                        ) : (
-                          <>
-                            <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
-                            <p className="text-sm text-muted-foreground">
-                              Click to upload audience view photo
-                            </p>
-                          </>
-                        )}
+                        <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">
+                          {uploadingView === 'audience_view' ? (
+                            <span className="flex items-center">
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Uploading...
+                            </span>
+                          ) : (
+                            <span>Click to upload audience view photo</span>
+                          )}
+                        </p>
                       </div>
                       <input
                         type="file"

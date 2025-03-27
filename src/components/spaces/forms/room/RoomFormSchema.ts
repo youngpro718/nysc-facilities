@@ -2,61 +2,77 @@
 import { z } from "zod";
 import { RoomTypeEnum, StatusEnum, StorageTypeEnum } from "../../rooms/types/roomEnums";
 
-// Define allowed connection directions
-export const ConnectionDirections = ['north', 'south', 'east', 'west', 'above', 'below'] as const;
+export const ConnectionDirections = [
+  "north",
+  "south",
+  "east",
+  "west",
+  "northeast",
+  "northwest",
+  "southeast",
+  "southwest",
+] as const;
 
-// Schema for courtroom photos
-const courtroomPhotosSchema = z.object({
-  judge_view: z.string().url().nullable(),
-  audience_view: z.string().url().nullable(),
-}).nullable().optional();
-
-// Schema definition for space connections
-const connectionSchema = z.object({
-  id: z.string().optional(),
-  toSpaceId: z.string().uuid().optional().nullable(),
-  connectionType: z.string().optional().nullable(),
+// Define the schema for room connections
+export const RoomConnectionSchema = z.object({
+  toSpaceId: z.string().min(1, "Connected space is required"),
+  connectionType: z.string().min(1, "Connection type is required"),
   direction: z.enum(ConnectionDirections).optional(),
+  id: z.string().uuid().optional(), // Add id field for existing connections
 });
 
-// Define the schema for the room form
+// Get all enum values for RoomTypeEnum to use in the schema
+const roomTypeValues = Object.values(RoomTypeEnum);
+
+// Define the room form schema with all fields
 export const RoomFormSchema = z.object({
   id: z.string().uuid().optional(),
-  
-  // Basic Details
-  type: z.literal("room"),
   name: z.string().min(1, "Name is required"),
-  roomNumber: z.string().min(1, "Room number is required"),
-  description: z.string().optional().nullable(),
-  
-  // Room Properties
-  roomType: z.nativeEnum(RoomTypeEnum).optional().nullable(),
-  status: z.nativeEnum(StatusEnum).default(StatusEnum.ACTIVE),
-  floorId: z.string().uuid().optional(),
-  parentRoomId: z.string().uuid().optional().nullable(),
-  
-  // For storage rooms
+  floorId: z.string().min(1, "Floor is required"),
+  roomNumber: z.string().optional(),
+  roomType: z.enum(roomTypeValues as [RoomTypeEnum, ...RoomTypeEnum[]]),
+  status: z.enum([
+    StatusEnum.ACTIVE,
+    StatusEnum.INACTIVE,
+    StatusEnum.UNDER_MAINTENANCE,
+  ]),
+  description: z.string().optional(),
+  phoneNumber: z.string().optional(),
+  currentFunction: z.string().optional(),
   isStorage: z.boolean().default(false),
-  storageType: z.nativeEnum(StorageTypeEnum).optional().nullable(),
-  storageCapacity: z.number().optional().nullable(),
-  storageNotes: z.string().optional().nullable(),
-  
-  // Additional fields
-  currentFunction: z.string().optional().nullable(),
-  phoneNumber: z.string().optional().nullable(),
-  
-  // For courtrooms
-  courtroom_photos: courtroomPhotosSchema,
-  
-  // Connections to other spaces
-  connections: z.array(connectionSchema).default([]),
+  // Make storage fields properly optional
+  storageType: z.enum([
+    StorageTypeEnum.GENERAL,
+    StorageTypeEnum.SECURE,
+    StorageTypeEnum.CLIMATE_CONTROLLED,
+    StorageTypeEnum.HAZARDOUS,
+    StorageTypeEnum.ARCHIVE,
+  ]).nullable().optional(),
+  storageCapacity: z.number().nullable().optional(),
+  storageNotes: z.string().nullable().optional(),
+  // Make parentRoomId properly optional
+  parentRoomId: z.string().nullable().optional(),
+  connections: z.array(RoomConnectionSchema).optional(),
+  position: z
+    .object({
+      x: z.number(),
+      y: z.number(),
+    })
+    .optional(),
+  size: z
+    .object({
+      width: z.number(),
+      height: z.number(),
+    })
+    .optional(),
+  rotation: z.number().optional(),
+  type: z.literal("room").default("room"),
+  courtroom_photos: z.object({
+    judge_view: z.string().nullable().optional(),
+    audience_view: z.string().nullable().optional()
+  }).nullable().optional(),
 });
 
-// Define the type from the schema
+// Export types derived from the schema
 export type RoomFormData = z.infer<typeof RoomFormSchema>;
-
-// Export the connection data type that was missing
-export type RoomConnectionData = z.infer<typeof connectionSchema>;
-
-// Ensure all room types are accounted for in the schema
-export type RoomType = RoomTypeEnum;
+export type RoomConnectionData = z.infer<typeof RoomConnectionSchema>;

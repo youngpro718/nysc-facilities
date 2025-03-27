@@ -1,6 +1,7 @@
 
+import { RoomConnectionData } from "../RoomFormSchema";
 import { UseFormReturn } from "react-hook-form";
-import { RoomFormData, RoomConnectionData } from "../RoomFormSchema";
+import { RoomFormData } from "../RoomFormSchema";
 
 export interface SpaceOption {
   id: string;

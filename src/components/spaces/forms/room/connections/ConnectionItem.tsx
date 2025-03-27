@@ -35,7 +35,7 @@ export function ConnectionItem({ connection, spaceName, onRemove, index }: Conne
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-xs">
             {connection.connectionType === 'transition' ? 'Transition Door' : 
-             connection.connectionType?.charAt(0).toUpperCase() + connection.connectionType?.slice(1)}
+             connection.connectionType.charAt(0).toUpperCase() + connection.connectionType.slice(1)}
           </Badge>
           <span className="text-sm">{spaceName}</span>
           {connection.direction && (
