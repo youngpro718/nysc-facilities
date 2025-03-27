@@ -1,5 +1,6 @@
 
 import { createRoot } from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
 import App from './App.tsx'
 import './index.css'
 import { initializeStorage } from './services/storage.ts'
@@ -10,4 +11,8 @@ initializeStorage().catch(err => {
   // Continue loading the app even if bucket initialization fails
 });
 
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(
+  <BrowserRouter>
+    <App />
+  </BrowserRouter>
+);
