@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -31,9 +32,9 @@ export const storageService = {
       }
       
       // Verify bucket exists before attempting upload
-      const bucketExists = await this.ensureBucketExists(bucketName);
+      const bucketExists = await this.checkBucketExists(bucketName);
       if (!bucketExists) {
-        const errorMessage = `Storage bucket '${bucketName}' does not exist or could not be created.`;
+        const errorMessage = `Storage bucket '${bucketName}' does not exist. Please contact your administrator.`;
         console.error(errorMessage);
         toast.error(errorMessage);
         return null;
@@ -82,54 +83,6 @@ export const storageService = {
       console.error(`Unexpected error uploading file to ${bucketName}:`, error);
       toast.error(`Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return null;
-    }
-  },
-  
-  /**
-   * Ensures a storage bucket exists, creating it if necessary
-   * @param bucketName Name of the bucket to check/create
-   * @returns True if bucket exists or was created, false otherwise
-   */
-  async ensureBucketExists(bucketName: string): Promise<boolean> {
-    try {
-      console.log(`Checking if bucket ${bucketName} exists...`);
-      
-      // First check if the bucket exists
-      const { data: bucket, error: getBucketError } = await supabase.storage.getBucket(bucketName);
-      
-      if (getBucketError) {
-        console.log(`Bucket ${bucketName} doesn't exist, attempting to create it`);
-        
-        // Try to create the bucket if it doesn't exist
-        const { data: newBucket, error: createError } = await supabase.storage.createBucket(bucketName, {
-          public: true,
-          fileSizeLimit: 10485760 // 10MB limit
-        });
-        
-        if (createError) {
-          console.error(`Failed to create bucket ${bucketName}:`, createError);
-          return false;
-        }
-        
-        // Set bucket public access policy
-        const { error: policyError } = await supabase.storage.updateBucket(bucketName, {
-          public: true
-        });
-        
-        if (policyError) {
-          console.error(`Error setting bucket policy for ${bucketName}:`, policyError);
-          // Continue anyway as the bucket was created
-        }
-        
-        console.log(`Successfully created bucket ${bucketName}`);
-        return true;
-      }
-      
-      console.log(`Bucket ${bucketName} exists:`, bucket);
-      return !!bucket;
-    } catch (error) {
-      console.error(`Exception checking/creating bucket ${bucketName}:`, error);
-      return false;
     }
   },
   
@@ -282,6 +235,7 @@ export const storageService = {
 
   /**
    * Ensures required storage buckets exist - for direct use in components
+   * Note: This is now just a verification step as buckets should be created via SQL
    */
   async ensureBucketsExist(bucketNames: string[]): Promise<void> {
     try {
@@ -293,12 +247,13 @@ export const storageService = {
       }
       
       for (const bucketName of bucketNames) {
-        const exists = await this.ensureBucketExists(bucketName);
+        const exists = await this.checkBucketExists(bucketName);
         
         if (exists) {
           console.log(`✅ Verified bucket exists: ${bucketName}`);
         } else {
-          console.warn(`⚠️ Failed to create or verify bucket: ${bucketName}`);
+          console.warn(`⚠️ Storage bucket not found: ${bucketName}`);
+          // We don't try to create it as it should be created via SQL
         }
       }
     } catch (error) {

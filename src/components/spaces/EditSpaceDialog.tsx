@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -82,16 +81,10 @@ export function EditSpaceDialog({
         };
       }) : [];
       
-      // Convert room_type string to RoomTypeEnum value
-      const roomType = initialData.room_type ? 
-        stringToRoomType(initialData.room_type) : undefined;
-      
-      console.log("Converted room type:", initialData.room_type, "->", roomType);
-      
       form.reset({
         ...initialData,
         type: type === "room" ? "room" : "hallway",
-        roomType: roomType,
+        roomType: initialData.room_type ? stringToRoomType(initialData.room_type) : undefined,
         courtroom_photos: courtroom_photos,
         connections: mappedConnections
       });

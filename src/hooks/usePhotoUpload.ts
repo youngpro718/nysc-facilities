@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { storageService } from "@/services/storage";
 
 export interface UploadOptions {
   entityId: string;
@@ -25,13 +24,18 @@ export function usePhotoUpload() {
     return true;
   };
 
-  const ensureBucketExists = async (bucketName: string): Promise<boolean> => {
+  const checkBucketExists = async (bucketName: string): Promise<boolean> => {
     try {
-      // Use the storage service to ensure the bucket exists
-      return await storageService.ensureBucketExists(bucketName);
+      const { data, error } = await supabase.storage.getBucket(bucketName);
+      
+      if (error) {
+        console.error(`Error checking bucket existence: ${error.message}`, error);
+        return false;
+      }
+      
+      return !!data;
     } catch (error) {
-      console.error(`Exception checking/creating bucket ${bucketName}:`, error);
-      setError(`Storage error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error(`Exception checking if bucket ${bucketName} exists:`, error);
       return false;
     }
   };
@@ -53,10 +57,10 @@ export function usePhotoUpload() {
         throw new Error("Entity ID is required for uploads");
       }
 
-      // Ensure bucket exists 
-      const bucketExists = await ensureBucketExists(options.bucketName);
+      // Verify bucket exists 
+      const bucketExists = await checkBucketExists(options.bucketName);
       if (!bucketExists) {
-        throw new Error(`Storage bucket '${options.bucketName}' does not exist or could not be created.`);
+        throw new Error(`Storage bucket '${options.bucketName}' does not exist. Please contact your administrator.`);
       }
 
       // Generate a structured file path

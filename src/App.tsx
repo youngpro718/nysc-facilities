@@ -1,32 +1,119 @@
 
-import { Routes, Route } from "react-router-dom";
-import { Toaster } from "sonner";
-import Spaces from "./pages/Spaces";
-import Layout from "./components/layout/Layout";
-import { ThemeProvider } from "./providers/ThemeProvider";
-import { AuthProvider } from "./contexts/AuthContext";
-import { useEffect } from "react";
-import { initializeStorage } from "./services/storage";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import Layout from "@/components/layout/Layout";
+import AdminDashboard from "@/pages/AdminDashboard";
+import LoginPage from "@/pages/LoginPage";
+import NotFound from "@/pages/NotFound";
+import Spaces from "@/pages/Spaces";
+import Issues from "@/pages/Issues";
+import Occupants from "@/pages/Occupants";
+import Keys from "@/pages/Keys";
+import Profile from "@/pages/Profile";
+import Lighting from "@/pages/Lighting";
+import UserDashboard from "@/pages/UserDashboard";
+import AdminProfile from "@/pages/AdminProfile";
+import VerificationPending from "@/pages/VerificationPending";
+import { ThemeProvider } from "@/providers/ThemeProvider";
+import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import Relocations from "@/pages/Relocations";
+import CreateRelocation from "@/pages/CreateRelocation";
+
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function App() {
-  // Initialize required storage buckets when app loads
-  useEffect(() => {
-    initializeStorage().catch(console.error);
-  }, []);
-
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <Toaster position="top-right" />
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Spaces />} />
-            <Route path="spaces" element={<Spaces />} />
-            {/* Add other routes as needed */}
-          </Route>
-        </Routes>
-      </AuthProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <Routes>
+              <Route element={<Layout />}>
+                {/* Admin Routes */}
+                <Route path="/" element={
+                  <ProtectedRoute requireAdmin>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="spaces" element={
+                  <ProtectedRoute requireAdmin>
+                    <Spaces />
+                  </ProtectedRoute>
+                } />
+                <Route path="issues" element={
+                  <ProtectedRoute requireAdmin>
+                    <Issues />
+                  </ProtectedRoute>
+                } />
+                <Route path="occupants" element={
+                  <ProtectedRoute requireAdmin>
+                    <Occupants />
+                  </ProtectedRoute>
+                } />
+                <Route path="keys" element={
+                  <ProtectedRoute requireAdmin>
+                    <Keys />
+                  </ProtectedRoute>
+                } />
+                <Route path="lighting" element={
+                  <ProtectedRoute requireAdmin>
+                    <Lighting />
+                  </ProtectedRoute>
+                } />
+                <Route path="relocations" element={
+                  <ProtectedRoute requireAdmin>
+                    <Relocations />
+                  </ProtectedRoute>
+                } />
+                <Route path="relocations/create" element={
+                  <ProtectedRoute requireAdmin>
+                    <CreateRelocation />
+                  </ProtectedRoute>
+                } />
+                <Route path="relocations/:id" element={
+                  <ProtectedRoute requireAdmin>
+                    <CreateRelocation />
+                  </ProtectedRoute>
+                } />
+                <Route path="admin-profile" element={
+                  <ProtectedRoute requireAdmin>
+                    <AdminProfile />
+                  </ProtectedRoute>
+                } />
+
+                {/* User Routes */}
+                <Route path="dashboard" element={
+                  <ProtectedRoute>
+                    <UserDashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="profile" element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                } />
+
+                {/* Public Routes */}
+                <Route path="login" element={<LoginPage />} />
+                <Route path="verification-pending" element={<VerificationPending />} />
+                <Route path="*" element={<NotFound />} />
+              </Route>
+            </Routes>
+          </AuthProvider>
+        </BrowserRouter>
+        <Toaster />
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 
