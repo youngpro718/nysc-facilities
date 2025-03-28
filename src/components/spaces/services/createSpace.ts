@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CreateSpaceFormData } from "../schemas/createSpaceSchema";
 import { 
   RoomTypeEnum, 
+  StatusEnum,
   StorageTypeEnum, 
   roomTypeToString, 
   statusToString, 
@@ -31,7 +32,7 @@ export async function createSpace(data: CreateSpaceFormData) {
         size: data.size || { width: 150, height: 100 },
         rotation: data.rotation || 0,
         courtroom_photos: data.roomType === RoomTypeEnum.COURTROOM ? 
-          (data.courtRoomPhotos || { judge_view: null, audience_view: null }) : null
+          (data.courtroomPhotos || { judge_view: null, audience_view: null }) : null
       };
 
       console.log('Room data for creation:', roomData);
@@ -61,9 +62,9 @@ export async function createSpace(data: CreateSpaceFormData) {
       
       const hallwayData = {
         name: data.name,
-        type: data.type,
+        type: 'hallway',
         floor_id: data.floorId,
-        status: data.status,
+        status: statusToString(data.status),
         position: data.position || { x: 0, y: 0 },
         size: data.size || { width: 300, height: 50 },
         rotation: data.rotation || 0,
@@ -77,8 +78,8 @@ export async function createSpace(data: CreateSpaceFormData) {
       };
 
       const { data: hallway, error: hallwayError } = await supabase
-        .from('new_spaces')
-        .insert([hallwayData])
+        .from("new_spaces")
+        .insert(hallwayData)
         .select()
         .single();
 
@@ -128,29 +129,27 @@ export async function createSpace(data: CreateSpaceFormData) {
           const hallwayConnectionData = {
             from_space_id: hallway.id,
             to_space_id: firstConnection.toSpaceId,
-            space_type: data.type,
+            space_type: 'hallway',
             connection_type: firstConnection.connectionType,
             direction: directionValue,
-            status: data.status as 'active' | 'inactive' | 'under_maintenance',
+            status: StatusEnum.ACTIVE, 
             connection_status: 'active',
             hallway_position: getHallwayPosition(firstConnection.direction),
-            offset_distance: 50,
             position: getPositionFromDirection(firstConnection.direction),
             is_transition_door: isTransitionDoor
           };
 
           console.log('Creating connection with data:', hallwayConnectionData);
 
-          const { data: connectionData, error: connectionError } = await supabase
-            .from('space_connections')
-            .insert([hallwayConnectionData])
-            .select();
+          const { error: connectionError } = await supabase
+            .from("space_connections")
+            .insert(hallwayConnectionData);
 
           if (connectionError) {
             console.error('Connection error:', connectionError);
             toast.error(`Space created but connection failed: ${connectionError.message}`);
           } else {
-            console.log('Created space connection:', connectionData);
+            console.log('Created space connection:', hallwayConnectionData);
           }
         }
       }

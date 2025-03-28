@@ -65,7 +65,7 @@ export function EditSpaceDialog({
       
       const connections = initialData.space_connections || initialData.connections || [];
       
-      const courtroom_photos = initialData.courtroom_photos;
+      const courtroomPhotos = initialData.courtroom_photos;
       
       const mappedConnections = Array.isArray(connections) ? connections.map((conn: any) => {
         let direction = conn.direction || conn.connectionDirection;
@@ -99,7 +99,7 @@ export function EditSpaceDialog({
         parentRoomId: initialData.parent_room_id,
         currentFunction: initialData.current_function,
         phoneNumber: initialData.phone_number,
-        courtroom_photos: courtroom_photos,
+        courtroomPhotos: courtroomPhotos,
         connections: mappedConnections
       };
       
@@ -135,7 +135,7 @@ export function EditSpaceDialog({
         current_function: data.currentFunction || null,
         phone_number: data.phoneNumber || null,
         floor_id: data.floorId,
-        courtroom_photos: data.courtroom_photos || null
+        courtroom_photos: data.courtroomPhotos || null
       };
 
       console.log("Room update data:", updateData);
@@ -144,8 +144,8 @@ export function EditSpaceDialog({
         try {
           await storageService.ensureBucketsExist(['courtroom-photos']);
           
-          if (data.courtroom_photos && data.id) {
-            const validUrls = Object.values(data.courtroom_photos).filter(Boolean) as string[];
+          if (data.courtroomPhotos && data.id) {
+            const validUrls = Object.values(data.courtroomPhotos).filter(Boolean) as string[];
             if (validUrls.length > 0) {
               await storageService.cleanupOrphanedFiles('courtroom-photos', data.id, validUrls);
             }

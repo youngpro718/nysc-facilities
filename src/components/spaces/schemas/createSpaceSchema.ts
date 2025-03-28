@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { RoomTypeEnum, StatusEnum, StorageTypeEnum } from "../rooms/types/roomEnums";
 import { 
@@ -8,13 +7,16 @@ import {
   Accessibility,
   EmergencyRoute
 } from "../types/hallwayTypes";
+import { ConnectionDirections } from "../forms/room/RoomFormSchema";
 
-// Define connection schema
+// Define connection schema with improved validation
 const connectionSchema = z.object({
-  toSpaceId: z.string().uuid().optional(),
+  toSpaceId: z.string().uuid("Invalid space ID").optional(),
   connectionType: z.string().optional(),
-  direction: z.string().optional(),
-  id: z.string().uuid().optional()
+  direction: z.enum(ConnectionDirections, {
+    errorMap: () => ({ message: "Please select a valid direction" })
+  }).optional(),
+  id: z.string().uuid("Invalid connection ID").optional()
 });
 
 // Define hardware status schema
@@ -40,18 +42,20 @@ const emergencyExitSchema = z.object({
   notes: z.string().optional()
 });
 
-// Define courtroom photos schema
-const courtRoomPhotosSchema = z.object({
+// Define courtroom photos schema - standardized name to match database
+const courtroomPhotosSchema = z.object({
   judge_view: z.string().nullable().optional(),
   audience_view: z.string().nullable().optional()
 }).nullable().optional();
 
-// Base schema for all space types
+// Base schema for all space types with improved validation
 const baseSpaceSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+  name: z.string().min(1, "Name is required").max(100, "Name cannot exceed 100 characters"),
   buildingId: z.string().min(1, "Building is required"),
   floorId: z.string().min(1, "Floor is required"),
-  status: z.nativeEnum(StatusEnum),
+  status: z.nativeEnum(StatusEnum, {
+    errorMap: () => ({ message: "Please select a valid status" })
+  }),
   description: z.string().optional(),
   position: z.object({
     x: z.number(),
@@ -63,42 +67,75 @@ const baseSpaceSchema = z.object({
   }).optional(),
   rotation: z.number().optional(),
   connections: z.array(connectionSchema).default([])
+    .refine(connections => {
+      // Check for duplicate connections to the same space
+      const spaceIds = connections.filter(c => c.toSpaceId).map(conn => conn.toSpaceId);
+      return new Set(spaceIds).size === spaceIds.length;
+    }, {
+      message: "Duplicate connections to the same space are not allowed"
+    })
 });
 
-// Room-specific schema
+// Room-specific schema with improved validation
 const roomSchema = baseSpaceSchema.extend({
   type: z.literal("room"),
-  roomType: z.nativeEnum(RoomTypeEnum),
+  roomType: z.nativeEnum(RoomTypeEnum, {
+    errorMap: () => ({ message: "Please select a valid room type" })
+  }),
   roomNumber: z.string().optional(),
   currentFunction: z.string().optional(),
-  isStorage: z.boolean().optional(),
-  phoneNumber: z.string().optional(),
-  storageType: z.nativeEnum(StorageTypeEnum).nullable(),
-  storageCapacity: z.number().nullable(), // This must be a number
-  storageNotes: z.string().optional(),
-  parentRoomId: z.string().nullable(),
-  courtRoomPhotos: courtRoomPhotosSchema
+  isStorage: z.boolean().default(false),
+  phoneNumber: z.string().optional()
+    .refine(val => !val || /^(\+\d{1,3})?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$/.test(val), {
+      message: "Invalid phone number format"
+    }),
+  storageType: z.nativeEnum(StorageTypeEnum, {
+    errorMap: () => ({ message: "Please select a valid storage type" })
+  }).nullable().optional(),
+  storageCapacity: z.number().nullable().optional(),
+  storageNotes: z.string().nullable().optional(),
+  parentRoomId: z.string().nullable().optional(),
+  // Standardize property name to match database
+  courtroomPhotos: courtroomPhotosSchema
+}).refine(data => {
+  // If isStorage is true, storageType should be provided
+  return !data.isStorage || data.storageType !== null;
+}, {
+  message: "Storage type is required for storage rooms",
+  path: ["storageType"]
 });
 
 // Hallway-specific schema - enhanced with more specific hallway fields and proper enums
 const hallwaySchema = baseSpaceSchema.extend({
   type: z.literal("hallway"),
   // Use proper enum types from hallwayTypes.ts for better type safety
-  hallwayType: z.enum(["public_main", "private"]).optional(),
-  section: z.enum(["left_wing", "right_wing", "connector"]).optional(),
+  hallwayType: z.enum(["public_main", "private"], {
+    errorMap: () => ({ message: "Please select a valid hallway type" })
+  }).optional(),
+  section: z.enum(["left_wing", "right_wing", "connector"], {
+    errorMap: () => ({ message: "Please select a valid section" })
+  }).optional(),
   maintenanceSchedule: z.array(maintenanceScheduleEntrySchema).optional(),
   emergencyExits: z.array(emergencyExitSchema).optional(),
-  maintenancePriority: z.enum(["low", "medium", "high"]).optional(),
+  maintenancePriority: z.enum(["low", "medium", "high"], {
+    errorMap: () => ({ message: "Please select a valid maintenance priority" })
+  }).optional(),
   maintenanceNotes: z.string().optional(),
-  emergencyRoute: z.enum(["primary", "secondary", "not_designated"]).optional(),
-  accessibility: z.enum(["fully_accessible", "limited_access", "stairs_only", "restricted"]).optional(),
-  trafficFlow: z.enum(["one_way", "two_way", "restricted"]).optional(),
+  emergencyRoute: z.enum(["primary", "secondary", "not_designated"], {
+    errorMap: () => ({ message: "Please select a valid emergency route" })
+  }).optional(),
+  accessibility: z.enum(["fully_accessible", "limited_access", "stairs_only", "restricted"], {
+    errorMap: () => ({ message: "Please select a valid accessibility option" })
+  }).optional(),
+  trafficFlow: z.enum(["one_way", "two_way", "restricted"], {
+    errorMap: () => ({ message: "Please select a valid traffic flow" })
+  }).optional(),
   capacityLimit: z.number().optional(),
   width: z.number().optional(),
   length: z.number().optional()
 });
 
-// Door-specific schema
+// Door-specific schema with improved validation
 const doorSchema = baseSpaceSchema.extend({
   type: z.literal("door"),
   doorType: z.string().optional(),
@@ -112,10 +149,14 @@ const doorSchema = baseSpaceSchema.extend({
   statusHistory: z.array(z.any()).optional()
 });
 
+// Fix the discriminated union to use the correct types
 export const createSpaceSchema = z.discriminatedUnion("type", [
-  roomSchema,
-  hallwaySchema,
-  doorSchema
+  roomSchema as any,
+  hallwaySchema as any,
+  doorSchema as any
 ]);
 
 export type CreateSpaceFormData = z.infer<typeof createSpaceSchema>;
+
+// Export the connection schema type for reuse
+export type ConnectionData = z.infer<typeof connectionSchema>;
