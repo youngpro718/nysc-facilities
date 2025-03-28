@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -9,7 +8,7 @@ import { Loader2, Upload, X, AlertTriangle, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { usePhotoUpload } from "@/hooks/usePhotoUpload";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CourtroomPhotoUploadProps {
   form: UseFormReturn<RoomFormData>;
@@ -17,7 +16,6 @@ interface CourtroomPhotoUploadProps {
 
 export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
   const { isAuthenticated } = useAuth();
-  const { isUploading, error, uploadFile, removeFile, setError } = usePhotoUpload();
   const [uploadingView, setUploadingView] = useState<'judge_view' | 'audience_view' | null>(null);
   
   const courtroom_photos = form.watch("courtroom_photos");
@@ -25,11 +23,11 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      setError("You must be logged in to upload photos");
+      // setError("You must be logged in to upload photos");
     } else {
-      setError(null);
+      // setError(null);
     }
-  }, [isAuthenticated, setError]);
+  }, [isAuthenticated]);
 
   // Ensure courtroom_photos is initialized correctly
   useEffect(() => {
@@ -56,17 +54,66 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
     try {
       setUploadingView(view);
       
-      const publicUrl = await uploadFile(file, {
-        entityId: roomId,
-        bucketName: 'courtroom-photos',
-        category: view,
-        metadata: { 
-          roomId: roomId,
-          view: view,
-          uploadedAt: new Date().toISOString()
+      // Check if bucket exists and create it if it doesn't
+      try {
+        const { data: buckets } = await supabase.storage.listBuckets();
+        const bucketExists = buckets?.some(bucket => bucket.name === 'courtroom-photos');
+        
+        if (!bucketExists) {
+          console.log('Creating courtroom-photos bucket...');
+          try {
+            const { error: createError } = await supabase.storage.createBucket('courtroom-photos', {
+              public: true
+            });
+            
+            if (createError) {
+              // Handle row-level security policy violations gracefully
+              if (createError.message?.includes('row-level security policy')) {
+                console.log('Bucket creation failed due to permissions, but will continue with upload anyway');
+                // Continue with upload as if bucket exists - it might be accessible even if we can't create it
+              } else {
+                console.error('Error creating bucket:', createError);
+              }
+            } else {
+              console.log('Successfully created courtroom-photos bucket');
+            }
+          } catch (bucketCreateError) {
+            // Catch and log but continue with upload
+            console.error('Exception creating bucket:', bucketCreateError);
+          }
         }
-      });
-
+      } catch (bucketError) {
+        console.error('Error checking/creating bucket:', bucketError);
+        // Continue anyway as the upload might still work
+      }
+      
+      // Generate a unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+      
+      // Create a structured path using roomId and view
+      const filePath = `rooms/${roomId}/${view}/${fileName}`;
+      
+      console.log(`Uploading file to courtroom-photos at path: ${filePath}`);
+      
+      // Upload directly using Supabase client
+      const { error: uploadError } = await supabase.storage
+        .from('courtroom-photos')
+        .upload(filePath, file, {
+          upsert: true,
+          contentType: file.type
+        });
+      
+      if (uploadError) {
+        console.error('Error uploading file:', uploadError);
+        throw uploadError;
+      }
+      
+      // Get the public URL
+      const { data: { publicUrl } } = await supabase.storage
+        .from('courtroom-photos')
+        .getPublicUrl(filePath);
+      
       if (!publicUrl) {
         throw new Error('Failed to get public URL for uploaded file');
       }
@@ -103,13 +150,19 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
     
     try {
       const url = courtroom_photos[view] as string;
-      const success = await removeFile(url, 'courtroom-photos');
+      const filePath = url.split('/').pop();
+      const { error } = await supabase.storage
+        .from('courtroom-photos')
+        .remove([filePath]);
       
-      if (success) {
-        const updatedPhotos = { ...courtroom_photos, [view]: null };
-        form.setValue("courtroom_photos", updatedPhotos, { shouldValidate: true });
-        toast.success(`${view === 'judge_view' ? 'Judge view' : 'Audience view'} photo removed`);
+      if (error) {
+        console.error('Error removing photo:', error);
+        throw error;
       }
+      
+      const updatedPhotos = { ...courtroom_photos, [view]: null };
+      form.setValue("courtroom_photos", updatedPhotos, { shouldValidate: true });
+      toast.success(`${view === 'judge_view' ? 'Judge view' : 'Audience view'} photo removed`);
     } catch (error) {
       console.error('Error removing photo:', error);
       toast.error(`Failed to remove photo: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -136,12 +189,12 @@ export function CourtroomPhotoUpload({ form }: CourtroomPhotoUploadProps) {
           </Alert>
         )}
         
-        {error && (
+        {/* {error && (
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
-        )}
+        )} */}
 
         <div className="grid gap-6 md:grid-cols-2">
           <FormField

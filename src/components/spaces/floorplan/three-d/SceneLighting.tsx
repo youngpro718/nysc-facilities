@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface SceneLightingProps {
@@ -19,8 +18,7 @@ export function SceneLighting({ intensity = 0.8 }: SceneLightingProps) {
         position={[300, 500, 300]} 
         intensity={scaleIntensity(0.9)}
         castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
+        shadow-mapSize={[2048, 2048]}
         shadow-camera-far={2000}
         shadow-camera-left={-500}
         shadow-camera-right={500}
@@ -39,7 +37,9 @@ export function SceneLighting({ intensity = 0.8 }: SceneLightingProps) {
       
       {/* Hemisphere light for more natural environment lighting */}
       <hemisphereLight 
-        args={['#d1e5f0', '#f8eed4', scaleIntensity(0.6)]}
+        color="#d1e5f0"
+        groundColor="#f8eed4"
+        intensity={scaleIntensity(0.6)}
       />
       
       {/* Soft spot light for highlighting objects from above */}

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clear Courtroom Photos</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 { color: #333; }
+    button {
+      background-color: #e53e3e;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 10px 0;
+    }
+    button:hover { background-color: #c53030; }
+    button:disabled { background-color: #ccc; cursor: not-allowed; }
+    .room-list {
+      margin: 20px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 10px;
+    }
+    .room-item {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .room-item:last-child { border-bottom: none; }
+    .success { color: green; }
+    .error { color: red; }
+    #status { margin: 20px 0; }
+  </style>
+</head>
+<body>
+  <h1>Clear Courtroom Photos</h1>
+  <p>This tool helps you clear courtroom photo references from the database.</p>
+  
+  <div>
+    <button id="clearAll">Clear ALL Courtroom Photos</button>
+    <p><small>This will clear photo references for all courtrooms in the database.</small></p>
+  </div>
+  
+  <div id="status"></div>
+  
+  <h2>Individual Rooms</h2>
+  <div id="roomList" class="room-list">
+    <p>Loading rooms...</p>
+  </div>
+  
+  <script>
+    // Initialize Supabase client - replace with your actual values
+    // These will be loaded from your .env.local file when the page loads
+    let SUPABASE_URL = '';
+    let SUPABASE_KEY = '';
+    
+    // Try to load from localStorage if saved previously
+    if (localStorage.getItem('supabase_url') && localStorage.getItem('supabase_key')) {
+      SUPABASE_URL = localStorage.getItem('supabase_url');
+      SUPABASE_KEY = localStorage.getItem('supabase_key');
+      initializeApp();
+    } else {
+      // Prompt for credentials
+      promptForCredentials();
+    }
+    
+    function promptForCredentials() {
+      const url = prompt('Enter your Supabase URL:');
+      const key = prompt('Enter your Supabase anon key:');
+      
+      if (url && key) {
+        SUPABASE_URL = url;
+        SUPABASE_KEY = key;
+        
+        // Save to localStorage for future use
+        localStorage.setItem('supabase_url', url);
+        localStorage.setItem('supabase_key', key);
+        
+        initializeApp();
+      } else {
+        setStatus('Error: Supabase credentials are required.', 'error');
+      }
+    }
+    
+    function initializeApp() {
+      const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      
+      // Load rooms with courtroom photos
+      loadRooms(supabase);
+      
+      // Set up clear all button
+      document.getElementById('clearAll').addEventListener('click', async () => {
+        if (confirm('Are you sure you want to clear ALL courtroom photos? This cannot be undone.')) {
+          setStatus('Clearing all courtroom photos...', '');
+          
+          try {
+            const { error } = await supabase
+              .from('rooms')
+              .update({ courtroom_photos: { judge_view: null, audience_view: null } })
+              .eq('room_type', 'courtroom');
+              
+            if (error) throw error;
+            
+            setStatus('Successfully cleared all courtroom photos!', 'success');
+            loadRooms(supabase); // Refresh the room list
+          } catch (error) {
+            setStatus(`Error: ${error.message || 'Unknown error'}`, 'error');
+          }
+        }
+      });
+    }
+    
+    async function loadRooms(supabase) {
+      try {
+        const { data: rooms, error } = await supabase
+          .from('rooms')
+          .select('id, name, room_number, courtroom_photos')
+          .eq('room_type', 'courtroom')
+          .not('courtroom_photos', 'is', null);
+          
+        if (error) throw error;
+        
+        const roomListEl = document.getElementById('roomList');
+        
+        if (!rooms || rooms.length === 0) {
+          roomListEl.innerHTML = '<p>No courtrooms with photos found.</p>';
+          return;
+        }
+        
+        roomListEl.innerHTML = rooms.map(room => `
+          <div class="room-item">
+            <div>
+              <strong>${room.name || room.room_number || 'Unnamed Room'}</strong>
+              <div><small>ID: ${room.id}</small></div>
+              <div><small>Photos: ${room.courtroom_photos?.judge_view ? 'Judge View' : ''}${room.courtroom_photos?.judge_view && room.courtroom_photos?.audience_view ? ' & ' : ''}${room.courtroom_photos?.audience_view ? 'Audience View' : ''}</small></div>
+            </div>
+            <button onclick="clearRoom('${room.id}')">Clear Photos</button>
+          </div>
+        `).join('');
+      } catch (error) {
+        setStatus(`Error loading rooms: ${error.message || 'Unknown error'}`, 'error');
+      }
+    }
+    
+    async function clearRoom(roomId) {
+      if (!confirm('Are you sure you want to clear photos for this room? This cannot be undone.')) {
+        return;
+      }
+      
+      setStatus(`Clearing photos for room ${roomId}...`, '');
+      
+      try {
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        const { error } = await supabase
+          .from('rooms')
+          .update({ courtroom_photos: { judge_view: null, audience_view: null } })
+          .eq('id', roomId);
+          
+        if (error) throw error;
+        
+        setStatus(`Successfully cleared photos for room ${roomId}!`, 'success');
+        loadRooms(supabase); // Refresh the room list
+      } catch (error) {
+        setStatus(`Error: ${error.message || 'Unknown error'}`, 'error');
+      }
+    }
+    
+    function setStatus(message, type) {
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = message;
+      statusEl.className = type;
+    }
+    
+    // Make clearRoom available globally
+    window.clearRoom = clearRoom;
+  </script>
+</body>
+</html>

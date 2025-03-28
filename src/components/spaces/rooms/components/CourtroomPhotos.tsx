@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import {
   Dialog,
@@ -8,15 +7,17 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Room } from '../types/RoomTypes';
-import { BadgeInfo, Download, Maximize2, Image as ImageIcon } from 'lucide-react';
+import { BadgeInfo, Download, Maximize2, Image as ImageIcon, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { toast } from "sonner";
 
 interface CourtroomPhotosProps {
   room: Room;
+  onPhotosCleared?: () => void;
 }
 
-export function CourtroomPhotos({ room }: CourtroomPhotosProps) {
+export function CourtroomPhotos({ room, onPhotosCleared }: CourtroomPhotosProps) {
   const [open, setOpen] = useState(false);
   const [activeView, setActiveView] = useState<'judge' | 'audience'>('judge');
   const [fullscreen, setFullscreen] = useState(false);
@@ -77,14 +78,40 @@ export function CourtroomPhotos({ room }: CourtroomPhotosProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <span>Courtroom Photos - {room.name}</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleFullscreen}
-              className="h-8 w-8"
-            >
-              <Maximize2 className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (window.confirm('Are you sure you want to clear all courtroom photos? This cannot be undone.')) {
+                    try {
+                      // Simply notify the parent component that photos should be cleared
+                      if (onPhotosCleared) {
+                        onPhotosCleared();
+                      }
+                      
+                      toast.success('Photos cleared successfully');
+                      setOpen(false); // Close the dialog
+                    } catch (err) {
+                      console.error('Error clearing photos:', err);
+                      toast.error('An unexpected error occurred');
+                    }
+                  }
+                }}
+                className="text-red-500 hover:bg-red-100 dark:hover:bg-red-900/20"
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Clear All Photos
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleFullscreen}
+                className="h-8 w-8"
+              >
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+            </div>
           </DialogTitle>
         </DialogHeader>
         

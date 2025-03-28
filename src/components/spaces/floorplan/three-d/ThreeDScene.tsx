@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { useThree } from '@react-three/fiber';
 import { OrbitControls, Grid, Stats } from '@react-three/drei';
@@ -23,8 +22,8 @@ interface ThreeDSceneProps {
 }
 
 export function ThreeDScene({ 
-  objects, 
-  connections,
+  objects = [], 
+  connections = [],
   onObjectSelect, 
   selectedObjectId = null,
   previewData = null,
@@ -38,9 +37,9 @@ export function ThreeDScene({
   const [hasInitialized, setHasInitialized] = useState(false);
   
   // Group objects by type for better rendering
-  const roomObjects = objects.filter(obj => obj.type === 'room');
-  const hallwayObjects = objects.filter(obj => obj.type === 'hallway');
-  const doorObjects = objects.filter(obj => obj.type === 'door');
+  const roomObjects = objects?.filter(obj => obj.type === 'room') || [];
+  const hallwayObjects = objects?.filter(obj => obj.type === 'hallway') || [];
+  const doorObjects = objects?.filter(obj => obj.type === 'door') || [];
   
   // Filter objects based on view mode
   const visibleObjects = {
@@ -50,12 +49,12 @@ export function ThreeDScene({
   };
   
   // Find visible connections between spaces
-  const visibleConnections = connections.filter(conn => {
+  const visibleConnections = connections?.filter(conn => {
     // Skip if connections are hidden
     if (!showConnections) return false;
     
-    const sourceObj = objects.find(obj => obj.id === conn.source);
-    const targetObj = objects.find(obj => obj.id === conn.target);
+    const sourceObj = objects?.find(obj => obj.id === conn.source);
+    const targetObj = objects?.find(obj => obj.id === conn.target);
     
     // If either object is filtered out by view mode, don't show the connection
     if (!sourceObj || !targetObj) return false;
@@ -71,26 +70,28 @@ export function ThreeDScene({
       (targetObj.type === 'door' && visibleObjects.doors);
     
     return sourceVisible && targetVisible;
-  });
+  }) || [];
 
   // Prepare connection data for spaces
   const objectConnectionMap = new Map<string, string[]>();
   
-  connections.forEach(conn => {
-    if (conn.source && conn.target) {
-      // Add target to source's connections
-      if (!objectConnectionMap.has(conn.source)) {
-        objectConnectionMap.set(conn.source, []);
+  if (connections) {
+    connections.forEach(conn => {
+      if (conn.source && conn.target) {
+        // Add target to source's connections
+        if (!objectConnectionMap.has(conn.source)) {
+          objectConnectionMap.set(conn.source, []);
+        }
+        objectConnectionMap.get(conn.source)?.push(conn.target);
+        
+        // Add source to target's connections
+        if (!objectConnectionMap.has(conn.target)) {
+          objectConnectionMap.set(conn.target, []);
+        }
+        objectConnectionMap.get(conn.target)?.push(conn.source);
       }
-      objectConnectionMap.get(conn.source)?.push(conn.target);
-      
-      // Add source to target's connections
-      if (!objectConnectionMap.has(conn.target)) {
-        objectConnectionMap.set(conn.target, []);
-      }
-      objectConnectionMap.get(conn.target)?.push(conn.source);
-    }
-  });
+    });
+  }
   
   // Initialize camera position based on scene contents
   useEffect(() => {

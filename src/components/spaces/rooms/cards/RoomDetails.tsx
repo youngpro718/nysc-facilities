@@ -1,9 +1,9 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Room } from '../types/RoomTypes';
 import { getRoomTypeColor, getRoomTypeName } from "../../utils/roomTypeUtils";
 import { CourtroomPhotos } from "../components/CourtroomPhotos";
+import { ClearCourtroomPhotos } from "../components/ClearCourtroomPhotos";
 
 interface RoomDetailsProps {
   room: Room;
@@ -94,7 +94,15 @@ export function RoomDetails({ room }: RoomDetailsProps) {
       )}
       
       {/* Add the Courtroom Photos component when room is a courtroom */}
-      {room.room_type === 'courtroom' && <CourtroomPhotos room={room} />}
+      {room.room_type === 'courtroom' && (
+        <div className="space-y-2">
+          <div className="flex justify-between items-center">
+            <h4 className="font-medium">Courtroom Photos</h4>
+            <ClearCourtroomPhotos roomId={room.id} />
+          </div>
+          <CourtroomPhotos room={room} />
+        </div>
+      )}
     </div>
   );
 }

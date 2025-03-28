@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -32,12 +31,30 @@ export const storageService = {
       }
       
       // Verify bucket exists before attempting upload
-      const bucketExists = await this.checkBucketExists(bucketName);
+      let bucketExists = await this.checkBucketExists(bucketName);
+      
+      // If bucket doesn't exist, try to create it
       if (!bucketExists) {
-        const errorMessage = `Storage bucket '${bucketName}' does not exist. Please contact your administrator.`;
-        console.error(errorMessage);
-        toast.error(errorMessage);
-        return null;
+        try {
+          console.log(`Attempting to create bucket: ${bucketName}`);
+          const { error } = await supabase.storage.createBucket(bucketName, {
+            public: true,  // Make it public to allow direct access to files
+            fileSizeLimit: 10485760, // 10MB
+          });
+          
+          if (!error) {
+            console.log(`Successfully created bucket: ${bucketName}`);
+            bucketExists = true;
+          } else {
+            console.error(`Failed to create bucket ${bucketName}:`, error);
+            toast.error(`Storage bucket '${bucketName}' could not be created. Please contact your administrator.`);
+            return null;
+          }
+        } catch (createError) {
+          console.error(`Error creating bucket ${bucketName}:`, createError);
+          toast.error(`Failed to create storage bucket. Please contact your administrator.`);
+          return null;
+        }
       }
       
       // Generate structured file path if not provided
@@ -218,15 +235,19 @@ export const storageService = {
   async checkBucketExists(bucketName: string): Promise<boolean> {
     try {
       console.log(`Checking if bucket ${bucketName} exists...`);
-      const { data, error } = await supabase.storage.getBucket(bucketName);
+      
+      // Use listBuckets instead of getBucket to avoid permission issues
+      const { data: buckets, error } = await supabase.storage.listBuckets();
       
       if (error) {
-        console.error(`Error checking bucket existence: ${error.message}`, error);
+        console.error(`Error listing buckets: ${error.message}`, error);
         return false;
       }
       
-      console.log(`Bucket check result:`, data);
-      return !!data;
+      // Check if the bucket exists in the list
+      const bucketExists = buckets?.some(bucket => bucket.name === bucketName) || false;
+      console.log(`Bucket '${bucketName}' exists: ${bucketExists}`);
+      return bucketExists;
     } catch (error) {
       console.error(`Exception checking if bucket ${bucketName} exists:`, error);
       return false;

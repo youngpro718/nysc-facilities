@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
@@ -24,6 +23,7 @@ export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
       current_function,
       function_change_date,
       previous_functions,
+      courtroom_photos,
       floors!inner (
         id,
         name,
@@ -115,10 +115,10 @@ export const fetchRelatedRoomData = async (roomIds: string[]) => {
         connection_type,
         direction,
         status,
-        to_space:to_space_id (
+        to_space:rooms!space_connections_to_space_id_rooms_fkey (
           id,
           name,
-          type
+          room_type
         )
       `)
       .in('from_space_id', roomIds)

@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Canvas } from '@react-three/fiber';
@@ -51,7 +50,7 @@ export function ThreeDViewer({
   const [showConnections, setShowConnections] = useState<boolean>(true);
   const [lightIntensity, setLightIntensity] = useState<number>(0.8);
   const [viewMode, setViewMode] = useState<'default' | 'rooms' | 'hallways' | 'doors'>('default');
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef = useRef<any>(null);
 
   useEffect(() => {
     setIsMounted(true);
@@ -78,10 +77,10 @@ export function ThreeDViewer({
     }
   };
 
-  const handleCanvasError = (err: Error) => {
-    console.error('ThreeDViewer error:', err);
-    setViewerError(err);
-    toast.error('Error rendering 3D view');
+  const handleCanvasError = (error: any) => {
+    console.error('Canvas error:', error);
+    setViewerError(error);
+    toast.error('Error loading 3D view. Please try refreshing the page.');
   };
 
   const handleTakeScreenshot = () => {
@@ -102,6 +101,40 @@ export function ThreeDViewer({
   const toggleFocusMode = () => {
     setFocusMode(!focusMode);
     toast.info(focusMode ? 'Focus mode disabled' : 'Focus mode enabled');
+  };
+
+  const CanvasWrapper = () => {
+    return (
+      <ErrorBoundary>
+        <Canvas
+          shadows
+          gl={{ 
+            antialias: true,
+            alpha: false,
+            preserveDrawingBuffer: true
+          }}
+          camera={{ 
+            position: [0, 600, 600] as [number, number, number], 
+            fov: 45,
+            near: 0.1,
+            far: 2000
+          }}
+          style={{ width: '100%', height: '100%' }}
+        >
+          <ThreeDScene 
+            objects={objects || []} 
+            connections={edges || []} 
+            onObjectSelect={handleObjectSelect}
+            selectedObjectId={selectedObjectId}
+            showLabels={showLabels}
+            showConnections={showConnections}
+            lightIntensity={lightIntensity}
+            previewData={previewData}
+            viewMode={viewMode}
+          />
+        </Canvas>
+      </ErrorBoundary>
+    );
   };
 
   if (!floorId) {
@@ -164,214 +197,177 @@ export function ThreeDViewer({
 
   return (
     <Card className={`w-full h-full overflow-hidden relative ${focusMode ? 'bg-black' : ''}`}>
-      <ErrorBoundary>
-        {isMounted && (
-          <Canvas
-            ref={canvasRef}
-            shadows
-            onError={handleCanvasError as any}
-            gl={{ 
-              antialias: true,
-              alpha: false,
-              preserveDrawingBuffer: true
-            }}
-            camera={{ 
-              position: [0, 600, 600], 
-              fov: 45,
-              near: 0.1,
-              far: 10000
-            }}
-            style={{ 
-              background: focusMode 
-                ? 'linear-gradient(to bottom, #111827, #000000)' 
-                : 'linear-gradient(to bottom, #e0f2fe, #f8fafc)' 
-            }}
-          >
-            <ThreeDScene 
-              objects={objects} 
-              connections={edges}
-              onObjectSelect={handleObjectSelect} 
-              selectedObjectId={selectedObjectId} 
-              previewData={previewData}
-              showLabels={showLabels}
-              showConnections={showConnections}
-              lightIntensity={lightIntensity}
-              viewMode={viewMode}
-            />
-          </Canvas>
-        )}
-        
-        {/* Enhanced UI controls panel */}
-        <div className={`absolute bottom-4 right-4 ${focusMode ? 'opacity-30 hover:opacity-100' : 'opacity-100'} transition-opacity bg-white/90 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-gray-100`}>
-          <div className="mb-3 flex justify-between items-center border-b pb-2">
-            <span className="text-sm font-medium text-gray-900">Floor Plan Viewer</span>
-            <div className="flex gap-1.5">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-7 w-7" 
-                      onClick={() => setShowLabels(!showLabels)}
-                    >
-                      {showLabels ? <EyeIcon size={14} /> : <EyeOffIcon size={14} />}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{showLabels ? "Hide labels" : "Show labels"}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+      {isMounted && <CanvasWrapper />}
+      {/* Enhanced UI controls panel */}
+      <div className={`absolute bottom-4 right-4 ${focusMode ? 'opacity-30 hover:opacity-100' : 'opacity-100'} transition-opacity bg-white/90 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-gray-100`}>
+        <div className="mb-3 flex justify-between items-center border-b pb-2">
+          <span className="text-sm font-medium text-gray-900">Floor Plan Viewer</span>
+          <div className="flex gap-1.5">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-7 w-7" 
+                    onClick={() => setShowLabels(!showLabels)}
+                  >
+                    {showLabels ? <EyeIcon size={14} /> : <EyeOffIcon size={14} />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{showLabels ? "Hide labels" : "Show labels"}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
 
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-7 w-7" 
-                      onClick={toggleFocusMode}
-                    >
-                      <Maximize2Icon size={14} />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{focusMode ? "Exit focus mode" : "Enter focus mode"}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-7 w-7" 
-                      onClick={handleTakeScreenshot}
-                    >
-                      <BookIcon size={14} />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Take Screenshot</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-          </div>
-          
-          {/* View filter options */}
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            <Button 
-              variant={viewMode === 'default' ? "default" : "outline"} 
-              size="sm" 
-              className="h-7 text-xs px-2"
-              onClick={() => setViewMode('default')}
-            >
-              All ({objectCounts.rooms + objectCounts.hallways + objectCounts.doors})
-            </Button>
-            <Button 
-              variant={viewMode === 'rooms' ? "default" : "outline"} 
-              size="sm" 
-              className="h-7 text-xs px-2"
-              onClick={() => setViewMode('rooms')}
-            >
-              <HomeIcon className="h-3 w-3 mr-1" />
-              Rooms ({objectCounts.rooms})
-            </Button>
-            <Button 
-              variant={viewMode === 'hallways' ? "default" : "outline"} 
-              size="sm" 
-              className="h-7 text-xs px-2"
-              onClick={() => setViewMode('hallways')}
-            >
-              Hallways ({objectCounts.hallways})
-            </Button>
-            <Button 
-              variant={viewMode === 'doors' ? "default" : "outline"} 
-              size="sm" 
-              className="h-7 text-xs px-2"
-              onClick={() => setViewMode('doors')}
-            >
-              Doors ({objectCounts.doors})
-            </Button>
-          </div>
-          
-          {/* Additional controls */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs text-gray-600 whitespace-nowrap">Connections:</span>
-              <Button 
-                variant={showConnections ? "default" : "outline"} 
-                size="sm" 
-                className="h-6 text-xs"
-                onClick={() => setShowConnections(!showConnections)}
-              >
-                {showConnections ? "Visible" : "Hidden"}
-              </Button>
-            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-7 w-7" 
+                    onClick={toggleFocusMode}
+                  >
+                    <Maximize2Icon size={14} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{focusMode ? "Exit focus mode" : "Enter focus mode"}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             
-            <Popover>
-              <PopoverTrigger asChild>
-                <div className="flex items-center justify-between gap-2 cursor-pointer hover:bg-gray-100 rounded px-1">
-                  <span className="text-xs text-gray-600 whitespace-nowrap flex items-center">
-                    <SunIcon className="h-3 w-3 mr-1 text-amber-500" />
-                    Lighting:
-                  </span>
-                  <div className="bg-gray-200 rounded-full px-2 py-0.5 text-xs text-gray-700">
-                    {Math.round(lightIntensity * 100)}%
-                  </div>
-                </div>
-              </PopoverTrigger>
-              <PopoverContent className="w-64 p-3">
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium text-gray-900">Adjust Lighting</h4>
-                  <Slider
-                    defaultValue={[lightIntensity * 100]}
-                    max={150}
-                    step={5}
-                    onValueChange={(values) => setLightIntensity(values[0] / 100)}
-                  />
-                  <div className="flex justify-between text-xs text-gray-500">
-                    <span>Dim</span>
-                    <span>Bright</span>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-7 w-7" 
+                    onClick={handleTakeScreenshot}
+                  >
+                    <BookIcon size={14} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Take Screenshot</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        </div>
+        
+        {/* View filter options */}
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          <Button 
+            variant={viewMode === 'default' ? "default" : "outline"} 
+            size="sm" 
+            className="h-7 text-xs px-2"
+            onClick={() => setViewMode('default')}
+          >
+            All ({objectCounts.rooms + objectCounts.hallways + objectCounts.doors})
+          </Button>
+          <Button 
+            variant={viewMode === 'rooms' ? "default" : "outline"} 
+            size="sm" 
+            className="h-7 text-xs px-2"
+            onClick={() => setViewMode('rooms')}
+          >
+            <HomeIcon className="h-3 w-3 mr-1" />
+            Rooms ({objectCounts.rooms})
+          </Button>
+          <Button 
+            variant={viewMode === 'hallways' ? "default" : "outline"} 
+            size="sm" 
+            className="h-7 text-xs px-2"
+            onClick={() => setViewMode('hallways')}
+          >
+            Hallways ({objectCounts.hallways})
+          </Button>
+          <Button 
+            variant={viewMode === 'doors' ? "default" : "outline"} 
+            size="sm" 
+            className="h-7 text-xs px-2"
+            onClick={() => setViewMode('doors')}
+          >
+            Doors ({objectCounts.doors})
+          </Button>
+        </div>
+        
+        {/* Additional controls */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs text-gray-600 whitespace-nowrap">Connections:</span>
+            <Button 
+              variant={showConnections ? "default" : "outline"} 
+              size="sm" 
+              className="h-6 text-xs"
+              onClick={() => setShowConnections(!showConnections)}
+            >
+              {showConnections ? "Visible" : "Hidden"}
+            </Button>
           </div>
           
-          <div className="mt-3 pt-3 border-t border-gray-200">
-            <div className="flex flex-wrap gap-1.5 mb-2">
-              <div className="flex items-center gap-1 text-xs text-gray-600">
-                <span className="w-3 h-3 rounded-full bg-blue-500"></span>
-                <span>Rooms</span>
+          <Popover>
+            <PopoverTrigger asChild>
+              <div className="flex items-center justify-between gap-2 cursor-pointer hover:bg-gray-100 rounded px-1">
+                <span className="text-xs text-gray-600 whitespace-nowrap flex items-center">
+                  <SunIcon className="h-3 w-3 mr-1 text-amber-500" />
+                  Lighting:
+                </span>
+                <div className="bg-gray-200 rounded-full px-2 py-0.5 text-xs text-gray-700">
+                  {Math.round(lightIntensity * 100)}%
+                </div>
               </div>
-              <div className="flex items-center gap-1 text-xs text-gray-600">
-                <span className="w-3 h-3 rounded-full bg-green-500"></span>
-                <span>Hallways</span>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-3">
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-gray-900">Adjust Lighting</h4>
+                <Slider
+                  defaultValue={[lightIntensity * 100]}
+                  max={150}
+                  step={5}
+                  onValueChange={(values) => setLightIntensity(values[0] / 100)}
+                />
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>Dim</span>
+                  <span>Bright</span>
+                </div>
               </div>
-              <div className="flex items-center gap-1 text-xs text-gray-600">
-                <span className="w-3 h-3 rounded-full bg-amber-500"></span>
-                <span>Doors</span>
-              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+        
+        <div className="mt-3 pt-3 border-t border-gray-200">
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            <div className="flex items-center gap-1 text-xs text-gray-600">
+              <span className="w-3 h-3 rounded-full bg-blue-500"></span>
+              <span>Rooms</span>
             </div>
-            
-            <div className="text-xs text-gray-600 space-y-1">
-              <div className="flex items-center gap-1">
-                <span className="w-3 h-3 rounded-sm bg-blue-500"></span>
-                <span>Direct</span>
-                <span className="w-3 h-3 rounded-sm bg-amber-500 ml-2"></span>
-                <span>Door</span>
-                <span className="w-3 h-3 rounded-sm bg-red-500 ml-2"></span>
-                <span>Emergency</span>
-              </div>
+            <div className="flex items-center gap-1 text-xs text-gray-600">
+              <span className="w-3 h-3 rounded-full bg-green-500"></span>
+              <span>Hallways</span>
+            </div>
+            <div className="flex items-center gap-1 text-xs text-gray-600">
+              <span className="w-3 h-3 rounded-full bg-amber-500"></span>
+              <span>Doors</span>
+            </div>
+          </div>
+          
+          <div className="text-xs text-gray-600 space-y-1">
+            <div className="flex items-center gap-1">
+              <span className="w-3 h-3 rounded-sm bg-blue-500"></span>
+              <span>Direct</span>
+              <span className="w-3 h-3 rounded-sm bg-amber-500 ml-2"></span>
+              <span>Door</span>
+              <span className="w-3 h-3 rounded-sm bg-red-500 ml-2"></span>
+              <span>Emergency</span>
             </div>
           </div>
         </div>
-      </ErrorBoundary>
+      </div>
     </Card>
   );
 }

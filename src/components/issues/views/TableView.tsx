@@ -1,6 +1,5 @@
-
 import { format } from "date-fns";
-import { MoreVertical } from "lucide-react";
+import { MoreVertical, MoreHorizontal } from "lucide-react";
 import { Issue, IssueStatus } from "../types/IssueTypes";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getTypeColor, getStatusColor, getPriorityColor } from "../utils/issueStyles";
+import { DeleteIssueButton } from "../components/DeleteIssueButton";
 
 interface TableViewProps {
   issues: Issue[];
@@ -111,52 +111,31 @@ export const TableView = ({
               <TableCell className="text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      className="h-8 w-8 p-0"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation(); // Prevent triggering row click
-                      }}
-                    >
-                      <MoreVertical className="h-4 w-4" />
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                      <span className="sr-only">Open menu</span>
+                      <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                    {issue.status !== 'in_progress' && (
-                      <DropdownMenuItem
-                        onClick={(e) => {
-                          handleActionClick(e, (id) => onStatusChange(id, 'in_progress'), issue.id);
-                        }}
-                      >
-                        Mark In Progress
-                      </DropdownMenuItem>
-                    )}
-                    {issue.status !== 'resolved' && (
-                      <DropdownMenuItem
-                        onClick={(e) => {
-                          handleActionClick(e, (id) => onStatusChange(id, 'resolved'), issue.id);
-                        }}
-                      >
-                        Resolve Issue
-                      </DropdownMenuItem>
-                    )}
-                    {issue.status !== 'open' && (
-                      <DropdownMenuItem
-                        onClick={(e) => {
-                          handleActionClick(e, (id) => onStatusChange(id, 'open'), issue.id);
-                        }}
-                      >
-                        Reopen Issue
-                      </DropdownMenuItem>
-                    )}
+                  <DropdownMenuContent align="end">
                     <DropdownMenuItem
                       onClick={(e) => {
-                        handleActionClick(e, onDelete, issue.id);
+                        e.stopPropagation();
+                        e.preventDefault();
+                        window.location.href = `/issues/${issue.id}`;
                       }}
-                      className="text-red-600"
                     >
-                      Delete
+                      View details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <DeleteIssueButton 
+                        issueId={issue.id} 
+                        standalone={false}
+                        onDelete={() => {
+                          if (onDelete) {
+                            onDelete(issue.id);
+                          }
+                        }}
+                      />
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
