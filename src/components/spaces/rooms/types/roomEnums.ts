@@ -1,4 +1,3 @@
-
 export enum StatusEnum {
   ACTIVE = "active",
   INACTIVE = "inactive",
@@ -17,13 +16,18 @@ export enum RoomTypeEnum {
   ROBING_ROOM = "robing_room",
   STAKE_HOLDER = "stake_holder",
   MEETING = "conference", // This maps to "conference" in the database
-  STORAGE = "storage",
-  CHAMBERS = "chambers",
-  RECEPTION = "reception",
-  BREAKROOM = "breakroom",
-  LIBRARY = "library",
-  UTILITY = "utility",
-  SPECIAL = "special",
+  RECORDS_ROOM = "records_room", // Added to match database enum
+  ADMINISTRATIVE_OFFICE = "administrative_office", // Added to match database enum
+  BREAK_ROOM = "break_room", // Added to match database enum
+  IT_ROOM = "it_room", // Added to match database enum
+  UTILITY_ROOM = "utility_room", // Added to match database enum
+  STORAGE = "utility_room", // Changed from "storage" to "utility_room" since storage isn't in the database enum
+  CHAMBERS = "judges_chambers", // Map to existing enum value
+  RECEPTION = "office", // Map to existing enum value
+  BREAKROOM = "break_room", // Map to existing enum value
+  LIBRARY = "filing_room", // Map to existing enum value
+  UTILITY = "utility_room", // Map to existing enum value
+  SPECIAL = "office", // Map to existing enum value
   LABORATORY = "laboratory" // Added laboratory type based on error message
 }
 
@@ -48,14 +52,12 @@ export type RoomTypeString =
   | "robing_room"
   | "stake_holder"
   | "conference"
-  | "storage"
-  | "chambers"
-  | "reception"
-  | "breakroom"
-  | "library"
-  | "utility" 
-  | "special"
-  | "laboratory"; // Added laboratory to match expected types
+  | "records_room"
+  | "administrative_office"
+  | "break_room"
+  | "it_room"
+  | "utility_room"
+  | "laboratory";
 
 export type StatusString = "active" | "inactive" | "under_maintenance";
 export type StorageTypeString = "general" | "secure" | "climate_controlled" | "hazardous" | "archive";
@@ -93,13 +95,18 @@ export const roomTypeToString = (type: RoomTypeEnum): RoomTypeString => {
     case RoomTypeEnum.ROBING_ROOM: return "robing_room";
     case RoomTypeEnum.STAKE_HOLDER: return "stake_holder";
     case RoomTypeEnum.MEETING: return "conference";
-    case RoomTypeEnum.STORAGE: return "storage";
-    case RoomTypeEnum.CHAMBERS: return "chambers";
-    case RoomTypeEnum.RECEPTION: return "reception";
-    case RoomTypeEnum.BREAKROOM: return "breakroom";
-    case RoomTypeEnum.LIBRARY: return "library";
-    case RoomTypeEnum.UTILITY: return "utility";
-    case RoomTypeEnum.SPECIAL: return "special";
+    case RoomTypeEnum.RECORDS_ROOM: return "records_room";
+    case RoomTypeEnum.ADMINISTRATIVE_OFFICE: return "administrative_office";
+    case RoomTypeEnum.BREAK_ROOM: return "break_room";
+    case RoomTypeEnum.IT_ROOM: return "it_room";
+    case RoomTypeEnum.UTILITY_ROOM: return "utility_room";
+    case RoomTypeEnum.STORAGE: return "utility_room"; // Map to utility_room
+    case RoomTypeEnum.CHAMBERS: return "judges_chambers";
+    case RoomTypeEnum.RECEPTION: return "office";
+    case RoomTypeEnum.BREAKROOM: return "break_room";
+    case RoomTypeEnum.LIBRARY: return "filing_room";
+    case RoomTypeEnum.UTILITY: return "utility_room";
+    case RoomTypeEnum.SPECIAL: return "office";
     case RoomTypeEnum.LABORATORY: return "laboratory";
     default: return "office"; // Default fallback
   }
@@ -119,13 +126,11 @@ export const stringToRoomType = (str: string): RoomTypeEnum => {
     case "robing_room": return RoomTypeEnum.ROBING_ROOM;
     case "stake_holder": return RoomTypeEnum.STAKE_HOLDER;
     case "conference": return RoomTypeEnum.MEETING;
-    case "storage": return RoomTypeEnum.STORAGE;
-    case "chambers": return RoomTypeEnum.CHAMBERS;
-    case "reception": return RoomTypeEnum.RECEPTION;
-    case "breakroom": return RoomTypeEnum.BREAKROOM;
-    case "library": return RoomTypeEnum.LIBRARY;
-    case "utility": return RoomTypeEnum.UTILITY;
-    case "special": return RoomTypeEnum.SPECIAL;
+    case "records_room": return RoomTypeEnum.RECORDS_ROOM;
+    case "administrative_office": return RoomTypeEnum.ADMINISTRATIVE_OFFICE;
+    case "break_room": return RoomTypeEnum.BREAK_ROOM;
+    case "it_room": return RoomTypeEnum.IT_ROOM;
+    case "utility_room": return RoomTypeEnum.UTILITY_ROOM;
     case "laboratory": return RoomTypeEnum.LABORATORY;
     default: return RoomTypeEnum.OFFICE; // Default fallback
   }

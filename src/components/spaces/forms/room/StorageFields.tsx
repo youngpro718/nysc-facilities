@@ -1,4 +1,3 @@
-
 import { UseFormReturn } from "react-hook-form";
 import {
   FormControl,
@@ -85,15 +84,16 @@ export function StorageFields({ form }: StorageFieldsProps) {
             name="storageCapacity"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Storage Capacity (cubic feet)</FormLabel>
+                <FormLabel>Storage Capacity</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
                     {...field}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
+                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
                     value={field.value || ''}
                   />
                 </FormControl>
+                <FormDescription>Optional - leave blank if unknown</FormDescription>
                 <FormMessage />
               </FormItem>
             )}

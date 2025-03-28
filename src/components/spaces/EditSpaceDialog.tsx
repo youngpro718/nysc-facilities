@@ -81,13 +81,37 @@ export function EditSpaceDialog({
         };
       }) : [];
       
-      form.reset({
+      // Log the room type from database for debugging
+      console.log("Room type from database:", initialData.room_type);
+      const convertedRoomType = initialData.room_type ? stringToRoomType(initialData.room_type) : undefined;
+      console.log("Converted room type:", convertedRoomType);
+      
+      // Create a complete reset object with all form fields properly mapped
+      const resetData = {
         ...initialData,
         type: type === "room" ? "room" : "hallway",
-        roomType: initialData.room_type ? stringToRoomType(initialData.room_type) : undefined,
+        roomNumber: initialData.room_number,
+        roomType: convertedRoomType,
+        isStorage: initialData.is_storage || false,
+        storageType: initialData.storage_type ? initialData.storage_type : undefined,
+        storageCapacity: initialData.storage_capacity,
+        storageNotes: initialData.storage_notes,
+        parentRoomId: initialData.parent_room_id,
+        currentFunction: initialData.current_function,
+        phoneNumber: initialData.phone_number,
         courtroom_photos: courtroom_photos,
         connections: mappedConnections
-      });
+      };
+      
+      console.log("Form reset data:", resetData);
+      form.reset(resetData);
+      
+      // Use setTimeout to ensure the form values are properly set after the initial render
+      setTimeout(() => {
+        if (convertedRoomType) {
+          form.setValue("roomType", convertedRoomType);
+        }
+      }, 0);
     }
   }, [open, form, initialData, type]);
 
@@ -102,14 +126,14 @@ export function EditSpaceDialog({
         room_number: data.roomNumber,
         room_type: data.roomType ? roomTypeToString(data.roomType as RoomTypeEnum) : null,
         status: data.status ? statusToString(data.status as StatusEnum) : null,
-        description: data.description,
+        description: data.description || null,
         is_storage: data.isStorage,
         storage_type: data.isStorage && data.storageType ? storageTypeToString(data.storageType as StorageTypeEnum) : null,
-        storage_capacity: data.storageCapacity,
-        storage_notes: data.storageNotes,
-        parent_room_id: data.parentRoomId,
-        current_function: data.currentFunction,
-        phone_number: data.phoneNumber,
+        storage_capacity: data.storageCapacity || null,
+        storage_notes: data.storageNotes || null,
+        parent_room_id: data.parentRoomId || null,
+        current_function: data.currentFunction || null,
+        phone_number: data.phoneNumber || null,
         floor_id: data.floorId,
         courtroom_photos: data.courtroom_photos || null
       };

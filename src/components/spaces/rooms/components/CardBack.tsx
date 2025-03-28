@@ -1,12 +1,13 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Room } from "../types/RoomTypes";
-import { X, Building, Phone, ShoppingBag, Users, CircleAlert } from "lucide-react";
+import { X, Building, Phone, ShoppingBag, Users, CircleAlert, Clipboard } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { RoomInventory } from "../../RoomInventory";
 
 interface CardBackProps {
   room: Room;
@@ -14,6 +15,8 @@ interface CardBackProps {
 }
 
 export function CardBack({ room, onFlip }: CardBackProps) {
+  const [isInventoryDialogOpen, setIsInventoryDialogOpen] = useState(false);
+
   return (
     <div className="p-5 flex flex-col h-full">
       <div className="flex items-center justify-between mb-3">
@@ -80,17 +83,26 @@ export function CardBack({ room, onFlip }: CardBackProps) {
           )}
 
           {/* Storage Information (if storage room) */}
-          {room.is_storage && room.storage_type && (
+          {room.is_storage && (
             <div className="space-y-2">
               <h4 className="text-sm font-medium flex items-center gap-1">
                 <ShoppingBag className="h-3.5 w-3.5 text-muted-foreground" />
                 Storage Information
               </h4>
               <div className="text-sm text-muted-foreground space-y-1">
-                <p>Type: {typeof room.storage_type === 'string' ? room.storage_type.replace(/_/g, ' ') : ''}</p>
+                {room.storage_type && <p>Type: {typeof room.storage_type === 'string' ? room.storage_type.replace(/_/g, ' ') : ''}</p>}
                 {room.storage_capacity && <p>Capacity: {room.storage_capacity}</p>}
                 {room.storage_notes && <p>Notes: {room.storage_notes}</p>}
               </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-2 w-full flex items-center gap-2"
+                onClick={() => setIsInventoryDialogOpen(true)}
+              >
+                <Clipboard className="h-4 w-4" />
+                View Inventory
+              </Button>
             </div>
           )}
           
@@ -154,6 +166,20 @@ export function CardBack({ room, onFlip }: CardBackProps) {
           )}
         </div>
       </ScrollArea>
+      
+      {/* Inventory Dialog */}
+      {room.is_storage && (
+        <Dialog open={isInventoryDialogOpen} onOpenChange={setIsInventoryDialogOpen}>
+          <DialogContent className="max-w-5xl max-h-[90vh]">
+            <DialogHeader>
+              <DialogTitle>Inventory for {room.name}</DialogTitle>
+            </DialogHeader>
+            <div className="h-[calc(90vh-8rem)] overflow-hidden">
+              <RoomInventory roomId={room.id} />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
