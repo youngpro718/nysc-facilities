@@ -1,8 +1,8 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 import { useRouter } from 'next/navigation';
 
 interface ClearCourtroomPhotosProps {
@@ -23,21 +23,29 @@ export function ClearCourtroomPhotos({ roomId }: ClearCourtroomPhotosProps) {
     try {
       console.log('Clearing courtroom photos for room:', roomId);
       
-      // Direct update approach
-      const { data, error } = await supabase
-        .from('rooms')
-        .update({ 
-          courtroom_photos: { judge_view: null, audience_view: null } 
-        })
-        .eq('id', roomId)
-        .select();
-        
-      if (error) {
-        throw error;
+      // Call our server API endpoint to handle both database updates and storage deletion
+      const response = await fetch('/api/courtroom-photos/clear', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ roomId }),
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Failed to clear photos');
       }
       
-      console.log('Update result:', data);
-      toast.success('Photos cleared successfully');
+      console.log('Clear photos result:', result);
+      
+      if (result.stats?.errors?.length > 0) {
+        // Some operations succeeded but there were also errors
+        toast.warning(`Photos cleared with ${result.stats.errors.length} errors. Some files may need manual cleanup.`);
+      } else {
+        toast.success(`Photos cleared successfully (${result.stats?.filesDeleted || 0} files removed)`);
+      }
       
       // Force refresh the page to show changes
       router.refresh();

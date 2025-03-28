@@ -11,16 +11,18 @@ import { BadgeInfo, Download, Maximize2, Image as ImageIcon, Trash2 } from 'luci
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { toast } from "sonner";
+import { useRouter } from 'next/navigation';
 
 interface CourtroomPhotosProps {
   room: Room;
-  onPhotosCleared?: () => void;
 }
 
-export function CourtroomPhotos({ room, onPhotosCleared }: CourtroomPhotosProps) {
+export function CourtroomPhotos({ room }: CourtroomPhotosProps) {
   const [open, setOpen] = useState(false);
   const [activeView, setActiveView] = useState<'judge' | 'audience'>('judge');
   const [fullscreen, setFullscreen] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
+  const router = useRouter();
   
   // Use the correct property name from the Room type
   const photos = room.courtroom_photos;
@@ -59,6 +61,59 @@ export function CourtroomPhotos({ room, onPhotosCleared }: CourtroomPhotosProps)
     setFullscreen(!fullscreen);
   };
   
+  // Clear photos via API
+  const clearPhotos = async () => {
+    if (!confirm('Are you sure you want to clear all courtroom photos? This cannot be undone.')) {
+      return;
+    }
+
+    setIsClearing(true);
+    
+    try {
+      console.log('Clearing courtroom photos for room:', room.id);
+      
+      // Call our server API endpoint to handle both database updates and storage deletion
+      const response = await fetch('/api/courtroom-photos/clear', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ roomId: room.id }),
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Failed to clear photos');
+      }
+      
+      console.log('Clear photos result:', result);
+      
+      if (result.stats?.errors?.length > 0) {
+        // Some operations succeeded but there were also errors
+        toast.warning(`Photos cleared with ${result.stats.errors.length} errors. Some files may need manual cleanup.`);
+      } else {
+        toast.success(`Photos cleared successfully (${result.stats?.filesDeleted || 0} files removed)`);
+      }
+      
+      // Close the dialog
+      setOpen(false);
+      
+      // Force refresh the page to show changes
+      router.refresh();
+      
+      // Also do a hard refresh after a short delay to ensure data is reloaded
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    } catch (error: any) {
+      console.error('Failed to clear photos:', error);
+      toast.error(`Failed to clear photos: ${error.message || 'Unknown error'}`);
+    } finally {
+      setIsClearing(false);
+    }
+  };
+  
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -82,26 +137,12 @@ export function CourtroomPhotos({ room, onPhotosCleared }: CourtroomPhotosProps)
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  if (window.confirm('Are you sure you want to clear all courtroom photos? This cannot be undone.')) {
-                    try {
-                      // Simply notify the parent component that photos should be cleared
-                      if (onPhotosCleared) {
-                        onPhotosCleared();
-                      }
-                      
-                      toast.success('Photos cleared successfully');
-                      setOpen(false); // Close the dialog
-                    } catch (err) {
-                      console.error('Error clearing photos:', err);
-                      toast.error('An unexpected error occurred');
-                    }
-                  }
-                }}
+                onClick={clearPhotos}
+                disabled={isClearing}
                 className="text-red-500 hover:bg-red-100 dark:hover:bg-red-900/20"
               >
                 <Trash2 className="h-4 w-4 mr-1" />
-                Clear All Photos
+                {isClearing ? 'Clearing...' : 'Clear All Photos'}
               </Button>
               <Button
                 variant="ghost"
@@ -114,6 +155,8 @@ export function CourtroomPhotos({ room, onPhotosCleared }: CourtroomPhotosProps)
             </div>
           </DialogTitle>
         </DialogHeader>
+        
+        
         
         <div className={cn(
           "space-y-4 mt-2",

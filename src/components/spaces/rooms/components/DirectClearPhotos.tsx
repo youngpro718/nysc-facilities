@@ -1,9 +1,10 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 import { useRouter } from 'next/navigation';
+import { courtroomPhotoService } from '@/services/courtroom-photos';
 
 interface DirectClearPhotosProps {
   roomId: string;
@@ -23,38 +24,20 @@ export function DirectClearPhotos({ roomId }: DirectClearPhotosProps) {
     try {
       console.log('Directly clearing courtroom photos for room:', roomId);
       
-      // Get the current room data to find the photo URLs
-      const { data: room, error: roomError } = await supabase
-        .from('rooms')
-        .select('courtroom_photos')
-        .eq('id', roomId)
-        .single();
-        
-      if (roomError) {
-        console.error('Error fetching room data:', roomError);
-        toast.error('Failed to fetch room data');
-        setIsClearing(false);
-        return;
+      const result = await courtroomPhotoService.clearPhotos(roomId);
+      
+      if (!result.success) {
+        throw new Error(result.message);
       }
       
-      console.log('Current room data:', room);
+      console.log('Clear photos result:', result);
       
-      // Update the database to null out the photo references
-      const { error: updateError } = await supabase
-        .from('rooms')
-        .update({
-          courtroom_photos: { judge_view: null, audience_view: null }
-        })
-        .eq('id', roomId);
-        
-      if (updateError) {
-        console.error('Error updating room data:', updateError);
-        toast.error('Failed to update room data');
-        setIsClearing(false);
-        return;
+      if (result.errors?.length > 0) {
+        // Some operations succeeded but there were also errors
+        toast.warning(`Photos cleared with ${result.errors.length} errors. Some files may need manual cleanup.`);
+      } else {
+        toast.success(`Photos cleared successfully (${result.filesDeleted} files removed)`);
       }
-      
-      toast.success('Photos cleared successfully');
       
       // Force a refresh to show the changes
       router.refresh();
