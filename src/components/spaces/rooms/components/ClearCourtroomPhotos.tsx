@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
+import { courtroomPhotoService } from '@/services/courtroom-photos';
 
 interface ClearCourtroomPhotosProps {
   roomId: string;
@@ -11,7 +11,6 @@ interface ClearCourtroomPhotosProps {
 
 export function ClearCourtroomPhotos({ roomId }: ClearCourtroomPhotosProps) {
   const [isClearing, setIsClearing] = useState(false);
-  const router = useRouter();
 
   const clearPhotos = async () => {
     if (!confirm('Are you sure you want to clear all courtroom photos? This cannot be undone.')) {
@@ -23,34 +22,22 @@ export function ClearCourtroomPhotos({ roomId }: ClearCourtroomPhotosProps) {
     try {
       console.log('Clearing courtroom photos for room:', roomId);
       
-      // Call our server API endpoint to handle both database updates and storage deletion
-      const response = await fetch('/api/courtroom-photos/clear', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ roomId }),
-      });
+      const result = await courtroomPhotoService.clearPhotos(roomId);
       
-      const result = await response.json();
-      
-      if (!response.ok || !result.success) {
+      if (!result.success) {
         throw new Error(result.message || 'Failed to clear photos');
       }
       
       console.log('Clear photos result:', result);
       
-      if (result.stats?.errors?.length > 0) {
+      if (result.errors?.length > 0) {
         // Some operations succeeded but there were also errors
-        toast.warning(`Photos cleared with ${result.stats.errors.length} errors. Some files may need manual cleanup.`);
+        toast.warning(`Photos cleared with ${result.errors.length} errors. Some files may need manual cleanup.`);
       } else {
-        toast.success(`Photos cleared successfully (${result.stats?.filesDeleted || 0} files removed)`);
+        toast.success(`Photos cleared successfully (${result.filesDeleted || 0} files removed)`);
       }
       
       // Force refresh the page to show changes
-      router.refresh();
-      
-      // Also do a hard refresh after a short delay to ensure data is reloaded
       setTimeout(() => {
         window.location.reload();
       }, 500);

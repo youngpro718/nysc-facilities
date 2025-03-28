@@ -52,9 +52,9 @@ export const courtroomPhotoService = {
       const errors = [];
       
       // Parse URLs to get file paths
-      if (photos.judge_view) {
+      if (photos && typeof photos === 'object' && 'judge_view' in photos && photos.judge_view) {
         try {
-          const judgeUrl = new URL(photos.judge_view);
+          const judgeUrl = new URL(photos.judge_view as string);
           const pathParts = judgeUrl.pathname.split('/');
           const objectIndex = pathParts.indexOf('object');
           const publicIndex = pathParts.indexOf('public');
@@ -72,9 +72,9 @@ export const courtroomPhotoService = {
         }
       }
       
-      if (photos.audience_view) {
+      if (photos && typeof photos === 'object' && 'audience_view' in photos && photos.audience_view) {
         try {
-          const audienceUrl = new URL(photos.audience_view);
+          const audienceUrl = new URL(photos.audience_view as string);
           const pathParts = audienceUrl.pathname.split('/');
           const objectIndex = pathParts.indexOf('object');
           const publicIndex = pathParts.indexOf('public');
@@ -106,7 +106,7 @@ export const courtroomPhotoService = {
           } else {
             filesDeleted++;
           }
-        } catch (e) {
+        } catch (e: any) {
           console.error(`Error in storage deletion:`, e);
           errors.push(`Unexpected error deleting file: ${e.message}`);
         }

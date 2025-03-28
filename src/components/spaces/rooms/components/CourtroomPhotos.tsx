@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import {
   Dialog,
@@ -11,7 +12,7 @@ import { BadgeInfo, Download, Maximize2, Image as ImageIcon, Trash2 } from 'luci
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { toast } from "sonner";
-import { useRouter } from 'next/navigation';
+import { courtroomPhotoService } from '@/services/courtroom-photos';
 
 interface CourtroomPhotosProps {
   room: Room;
@@ -22,7 +23,6 @@ export function CourtroomPhotos({ room }: CourtroomPhotosProps) {
   const [activeView, setActiveView] = useState<'judge' | 'audience'>('judge');
   const [fullscreen, setFullscreen] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
-  const router = useRouter();
   
   // Use the correct property name from the Room type
   const photos = room.courtroom_photos;
@@ -61,7 +61,7 @@ export function CourtroomPhotos({ room }: CourtroomPhotosProps) {
     setFullscreen(!fullscreen);
   };
   
-  // Clear photos via API
+  // Clear photos directly using the service
   const clearPhotos = async () => {
     if (!confirm('Are you sure you want to clear all courtroom photos? This cannot be undone.')) {
       return;
@@ -72,37 +72,25 @@ export function CourtroomPhotos({ room }: CourtroomPhotosProps) {
     try {
       console.log('Clearing courtroom photos for room:', room.id);
       
-      // Call our server API endpoint to handle both database updates and storage deletion
-      const response = await fetch('/api/courtroom-photos/clear', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ roomId: room.id }),
-      });
+      const result = await courtroomPhotoService.clearPhotos(room.id);
       
-      const result = await response.json();
-      
-      if (!response.ok || !result.success) {
+      if (!result.success) {
         throw new Error(result.message || 'Failed to clear photos');
       }
       
       console.log('Clear photos result:', result);
       
-      if (result.stats?.errors?.length > 0) {
+      if (result.errors?.length > 0) {
         // Some operations succeeded but there were also errors
-        toast.warning(`Photos cleared with ${result.stats.errors.length} errors. Some files may need manual cleanup.`);
+        toast.warning(`Photos cleared with ${result.errors.length} errors. Some files may need manual cleanup.`);
       } else {
-        toast.success(`Photos cleared successfully (${result.stats?.filesDeleted || 0} files removed)`);
+        toast.success(`Photos cleared successfully (${result.filesDeleted || 0} files removed)`);
       }
       
       // Close the dialog
       setOpen(false);
       
       // Force refresh the page to show changes
-      router.refresh();
-      
-      // Also do a hard refresh after a short delay to ensure data is reloaded
       setTimeout(() => {
         window.location.reload();
       }, 500);

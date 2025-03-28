@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
 import { courtroomPhotoService } from '@/services/courtroom-photos';
 
 interface DirectClearPhotosProps {
@@ -12,7 +11,6 @@ interface DirectClearPhotosProps {
 
 export function DirectClearPhotos({ roomId }: DirectClearPhotosProps) {
   const [isClearing, setIsClearing] = useState(false);
-  const router = useRouter();
 
   const clearPhotos = async () => {
     if (!confirm('Are you sure you want to clear all courtroom photos? This cannot be undone.')) {
@@ -40,9 +38,6 @@ export function DirectClearPhotos({ roomId }: DirectClearPhotosProps) {
       }
       
       // Force a refresh to show the changes
-      router.refresh();
-      
-      // Also do a hard refresh after a short delay
       setTimeout(() => {
         window.location.reload();
       }, 500);
