@@ -1,3 +1,4 @@
+
 import { UseFormReturn } from "react-hook-form";
 import {
   FormControl,
@@ -18,6 +19,8 @@ import {
 } from "@/components/ui/select";
 import { StorageTypeEnum } from "../../rooms/types/roomEnums";
 import { RoomFormData } from "./RoomFormSchema";
+import { useEffect } from "react";
+import { Textarea } from "@/components/ui/textarea";
 
 interface StorageFieldsProps {
   form: UseFormReturn<RoomFormData>;
@@ -25,6 +28,19 @@ interface StorageFieldsProps {
 
 export function StorageFields({ form }: StorageFieldsProps) {
   const isStorage = form.watch("isStorage");
+  const storageType = form.watch("storageType");
+
+  // Reset storage fields when isStorage is toggled off
+  useEffect(() => {
+    if (!isStorage) {
+      form.setValue("storageType", null, { shouldValidate: true });
+      form.setValue("storageCapacity", null, { shouldValidate: true });
+      form.setValue("storageNotes", null, { shouldValidate: true });
+    } else if (!storageType) {
+      // Set default storage type when toggling on
+      form.setValue("storageType", StorageTypeEnum.GENERAL, { shouldValidate: true });
+    }
+  }, [isStorage, form, storageType]);
 
   return (
     <div className="space-y-4">
@@ -58,8 +74,8 @@ export function StorageFields({ form }: StorageFieldsProps) {
               <FormItem>
                 <FormLabel>Storage Type</FormLabel>
                 <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value || undefined}
+                  onValueChange={(value) => field.onChange(value || null)}
+                  value={field.value || undefined}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -69,11 +85,12 @@ export function StorageFields({ form }: StorageFieldsProps) {
                   <SelectContent>
                     {Object.values(StorageTypeEnum).map((type) => (
                       <SelectItem key={type} value={type}>
-                        {type}
+                        {type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                <FormDescription>Type of storage for inventory management</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -90,10 +107,32 @@ export function StorageFields({ form }: StorageFieldsProps) {
                     type="number"
                     {...field}
                     onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
-                    value={field.value || ''}
+                    value={field.value ?? ''}
+                    placeholder="Enter capacity value"
+                    min={0}
                   />
                 </FormControl>
-                <FormDescription>Optional - leave blank if unknown</FormDescription>
+                <FormDescription>Capacity in cubic feet (optional)</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="storageNotes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Storage Notes</FormLabel>
+                <FormControl>
+                  <Textarea
+                    {...field}
+                    value={field.value || ''}
+                    placeholder="Add notes about storage requirements or contents"
+                    className="resize-vertical"
+                  />
+                </FormControl>
+                <FormDescription>Additional storage information (optional)</FormDescription>
                 <FormMessage />
               </FormItem>
             )}

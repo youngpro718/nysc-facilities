@@ -3503,14 +3503,20 @@ export type Database = {
       new_spaces: {
         Row: {
           created_at: string | null
+          description: string | null
           floor_id: string
           id: string
+          is_transition: boolean | null
+          level: string | null
           maintenance_status: string | null
           name: string
+          parent_room_id: string | null
           position: Json | null
           properties: Json | null
           room_number: string | null
+          room_type: string | null
           rotation: number | null
+          section: string | null
           size: Json | null
           status: Database["public"]["Enums"]["status_enum"] | null
           type: string
@@ -3518,14 +3524,20 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          description?: string | null
           floor_id: string
           id?: string
+          is_transition?: boolean | null
+          level?: string | null
           maintenance_status?: string | null
           name: string
+          parent_room_id?: string | null
           position?: Json | null
           properties?: Json | null
           room_number?: string | null
+          room_type?: string | null
           rotation?: number | null
+          section?: string | null
           size?: Json | null
           status?: Database["public"]["Enums"]["status_enum"] | null
           type: string
@@ -3533,20 +3545,40 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          description?: string | null
           floor_id?: string
           id?: string
+          is_transition?: boolean | null
+          level?: string | null
           maintenance_status?: string | null
           name?: string
+          parent_room_id?: string | null
           position?: Json | null
           properties?: Json | null
           room_number?: string | null
+          room_type?: string | null
           rotation?: number | null
+          section?: string | null
           size?: Json | null
           status?: Database["public"]["Enums"]["status_enum"] | null
           type?: string
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_new_spaces_parent"
+            columns: ["parent_room_id"]
+            isOneToOne: false
+            referencedRelation: "new_spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_new_spaces_parent"
+            columns: ["parent_room_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "new_spaces_floor_id_fkey"
             columns: ["floor_id"]
@@ -4565,6 +4597,78 @@ export type Database = {
           },
         ]
       }
+      room_inventory: {
+        Row: {
+          category: string | null
+          condition: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          last_updated: string | null
+          name: string
+          quantity: number
+          room_id: string
+        }
+        Insert: {
+          category?: string | null
+          condition?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          last_updated?: string | null
+          name: string
+          quantity?: number
+          room_id: string
+        }
+        Update: {
+          category?: string | null
+          condition?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          last_updated?: string | null
+          name?: string
+          quantity?: number
+          room_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_inventory_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_health_overview"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "room_inventory_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_issue_analytics"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "room_inventory_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_occupancy_stats"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "room_inventory_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_selection_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_inventory_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       room_issue_categories: {
         Row: {
           color: string | null
@@ -5487,6 +5591,34 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_space_connections_from_new_spaces"
+            columns: ["from_space_id"]
+            isOneToOne: false
+            referencedRelation: "new_spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_space_connections_from_new_spaces"
+            columns: ["from_space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_space_connections_to_new_spaces"
+            columns: ["to_space_id"]
+            isOneToOne: false
+            referencedRelation: "new_spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_space_connections_to_new_spaces"
+            columns: ["to_space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "space_connections_connected_door_id_fkey"
             columns: ["connected_door_id"]
             isOneToOne: false
@@ -5520,146 +5652,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "key_door_locations"
             referencedColumns: ["floor_id"]
-          },
-          {
-            foreignKeyName: "space_connections_from_space_id_doors_fkey"
-            columns: ["from_space_id"]
-            isOneToOne: false
-            referencedRelation: "doors"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "space_connections_from_space_id_doors_fkey"
-            columns: ["from_space_id"]
-            isOneToOne: false
-            referencedRelation: "key_door_locations"
-            referencedColumns: ["door_id"]
-          },
-          {
-            foreignKeyName: "space_connections_from_space_id_fkey"
-            columns: ["from_space_id"]
-            isOneToOne: false
-            referencedRelation: "new_spaces"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "space_connections_from_space_id_fkey"
-            columns: ["from_space_id"]
-            isOneToOne: false
-            referencedRelation: "spaces"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "space_connections_from_space_id_hallways_fkey"
-            columns: ["from_space_id"]
-            isOneToOne: false
-            referencedRelation: "hallways"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "space_connections_from_space_id_rooms_fkey"
-            columns: ["from_space_id"]
-            isOneToOne: false
-            referencedRelation: "room_health_overview"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "space_connections_from_space_id_rooms_fkey"
-            columns: ["from_space_id"]
-            isOneToOne: false
-            referencedRelation: "room_issue_analytics"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "space_connections_from_space_id_rooms_fkey"
-            columns: ["from_space_id"]
-            isOneToOne: false
-            referencedRelation: "room_occupancy_stats"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "space_connections_from_space_id_rooms_fkey"
-            columns: ["from_space_id"]
-            isOneToOne: false
-            referencedRelation: "room_selection_details"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "space_connections_from_space_id_rooms_fkey"
-            columns: ["from_space_id"]
-            isOneToOne: false
-            referencedRelation: "rooms"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "space_connections_to_space_id_doors_fkey"
-            columns: ["to_space_id"]
-            isOneToOne: false
-            referencedRelation: "doors"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "space_connections_to_space_id_doors_fkey"
-            columns: ["to_space_id"]
-            isOneToOne: false
-            referencedRelation: "key_door_locations"
-            referencedColumns: ["door_id"]
-          },
-          {
-            foreignKeyName: "space_connections_to_space_id_fkey"
-            columns: ["to_space_id"]
-            isOneToOne: false
-            referencedRelation: "new_spaces"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "space_connections_to_space_id_fkey"
-            columns: ["to_space_id"]
-            isOneToOne: false
-            referencedRelation: "spaces"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "space_connections_to_space_id_hallways_fkey"
-            columns: ["to_space_id"]
-            isOneToOne: false
-            referencedRelation: "hallways"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "space_connections_to_space_id_rooms_fkey"
-            columns: ["to_space_id"]
-            isOneToOne: false
-            referencedRelation: "room_health_overview"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "space_connections_to_space_id_rooms_fkey"
-            columns: ["to_space_id"]
-            isOneToOne: false
-            referencedRelation: "room_issue_analytics"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "space_connections_to_space_id_rooms_fkey"
-            columns: ["to_space_id"]
-            isOneToOne: false
-            referencedRelation: "room_occupancy_stats"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "space_connections_to_space_id_rooms_fkey"
-            columns: ["to_space_id"]
-            isOneToOne: false
-            referencedRelation: "room_selection_details"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "space_connections_to_space_id_rooms_fkey"
-            columns: ["to_space_id"]
-            isOneToOne: false
-            referencedRelation: "rooms"
-            referencedColumns: ["id"]
           },
         ]
       }
