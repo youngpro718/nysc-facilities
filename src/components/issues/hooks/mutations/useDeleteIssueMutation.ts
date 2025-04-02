@@ -1,3 +1,4 @@
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -10,7 +11,7 @@ export const useDeleteIssueMutation = () => {
   const queryClient = useQueryClient();
   const [isDeleteInProgress, setIsDeleteInProgress] = useState(false);
 
-  const deleteIssueMutation = useMutation({
+  const mutation = useMutation({
     mutationFn: async ({ issueId, force = false }: { issueId: string; force?: boolean }) => {
       setIsDeleteInProgress(true);
       console.log(`Deleting issue with ID: ${issueId}${force ? ' (force mode)' : ''}`);
@@ -51,7 +52,7 @@ export const useDeleteIssueMutation = () => {
   });
 
   return { 
-    deleteIssueMutation, 
+    deleteIssueMutation: mutation,
     isDeleteInProgress 
   };
 };

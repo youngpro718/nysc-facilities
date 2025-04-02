@@ -65,7 +65,7 @@ export const IssueListContent = ({
 
   const handleDelete = (id: string) => {
     if (window.confirm("Are you sure you want to delete this issue?")) {
-      deleteIssueMutation.mutate(id, {
+      deleteIssueMutation.mutate({ issueId: id }, {
         onSuccess: () => {
           toast({
             title: "Issue deleted",
