@@ -4,10 +4,11 @@ import { useDeleteIssueMutation } from "./useDeleteIssueMutation";
 
 export const useIssueMutations = () => {
   const updateIssueMutation = useUpdateIssueMutation();
-  const deleteIssueMutation = useDeleteIssueMutation();
+  const { deleteIssueMutation, isDeleteInProgress } = useDeleteIssueMutation();
 
   return {
     updateIssueMutation,
     deleteIssueMutation,
+    isDeleteInProgress
   };
 };

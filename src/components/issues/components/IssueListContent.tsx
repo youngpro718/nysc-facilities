@@ -36,6 +36,7 @@ export const IssueListContent = ({
     isLoading,
     updateIssueMutation,
     deleteIssueMutation,
+    isDeleteInProgress
   } = useIssueQueries({ filters, searchQuery });
 
   const handleFilterChange = (newFilters: Partial<IssueFiltersType>) => {
@@ -83,7 +84,7 @@ export const IssueListContent = ({
     }, 10);
   };
 
-  if (isLoading) {
+  if (isLoading || isDeleteInProgress) {
     return (
       <div className="flex items-center justify-center min-h-[200px]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
