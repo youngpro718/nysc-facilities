@@ -82,7 +82,6 @@ export function ExpandableTabs({
           return <Separator key={`separator-${index}`} />;
         }
 
-        // Type assertion to tell TypeScript this is a Tab
         const currentTab = tab as Tab;
         const TabIcon = currentTab.icon;
         
