@@ -22,32 +22,56 @@ export const useDeleteIssueMutation = () => {
       console.log(`Attempting to delete issue with ID: ${issueId}${force ? ' (force mode)' : ''}`);
       
       try {
-        // First delete comments to avoid foreign key constraint issues
-        console.log('Step 1: Deleting comments for issue:', issueId);
-        const { error: commentsError } = await supabase
-          .from('issue_comments')
-          .delete()
-          .eq('issue_id', issueId);
+        // First check if the issue exists before attempting any operations
+        const { data: issueData, error: checkError } = await supabase
+          .from('issues')
+          .select('id')
+          .eq('id', issueId)
+          .single();
           
-        if (commentsError) {
-          console.warn('Error deleting comments:', commentsError);
-          if (!force) throw new Error(`Failed to delete comments: ${commentsError.message}`);
+        if (checkError || !issueData) {
+          console.error('Issue not found:', checkError);
+          throw new Error('Issue not found or already deleted');
         }
-
-        // Then delete history entries
-        console.log('Step 2: Deleting history entries for issue:', issueId);
-        const { error: historyError } = await supabase
-          .from('issue_history')
-          .delete()
-          .eq('issue_id', issueId);
+        
+        if (force) {
+          // In force mode, first handle related tables one by one
           
-        if (historyError) {
-          console.warn('Error deleting history:', historyError);
-          if (!force) throw new Error(`Failed to delete history: ${historyError.message}`);
+          // First delete comments to avoid foreign key constraint issues
+          console.log('Step 1: Deleting comments for issue:', issueId);
+          const { error: commentsError } = await supabase
+            .from('issue_comments')
+            .delete()
+            .eq('issue_id', issueId);
+            
+          if (commentsError) {
+            console.warn('Error deleting comments:', commentsError);
+          }
+
+          // Then delete history entries
+          console.log('Step 2: Deleting history entries for issue:', issueId);
+          const { error: historyError } = await supabase
+            .from('issue_history')
+            .delete()
+            .eq('issue_id', issueId);
+            
+          if (historyError) {
+            console.warn('Error deleting history:', historyError);
+          }
+
+          // If other operations failed, try setting issue as resolved
+          console.log('Step 3: Marking issue as resolved before deletion');
+          await supabase
+            .from('issues')
+            .update({ 
+              status: 'resolved',
+              resolution_notes: 'Automatically resolved before deletion'
+            })
+            .eq('id', issueId);
         }
 
         // Finally delete the issue itself
-        console.log('Step 3: Deleting issue:', issueId);
+        console.log('Attempting to delete issue:', issueId);
         const { error: issueError } = await supabase
           .from('issues')
           .delete()
@@ -55,37 +79,7 @@ export const useDeleteIssueMutation = () => {
           
         if (issueError) {
           console.error('Error deleting issue:', issueError);
-          
-          if (force) {
-            // If force is true, we'll try a different approach
-            console.log('Attempting force delete approach...');
-            
-            // This is a more aggressive approach that might help in case of complex DB constraints
-            // We'll try updating the issue to mark it as resolved instead of using "deleted"
-            // since "deleted" is not in the allowed enum values
-            const { error: updateError } = await supabase
-              .from('issues')
-              .update({ status: 'resolved' }) // Using 'resolved' instead of 'deleted'
-              .eq('id', issueId);
-              
-            if (updateError) {
-              console.error('Force update failed:', updateError);
-              throw new Error(`Failed to delete issue even with force mode: ${issueError.message}`);
-            }
-            
-            // Try deletion again after marking as resolved
-            const { error: secondDeleteError } = await supabase
-              .from('issues')
-              .delete()
-              .eq('id', issueId);
-              
-            if (secondDeleteError) {
-              console.error('Second delete attempt failed:', secondDeleteError);
-              throw new Error(`Failed to delete issue even with force mode: ${secondDeleteError.message}`);
-            }
-          } else {
-            throw new Error(issueError.message || 'Failed to delete issue');
-          }
+          throw new Error(issueError.message || 'Failed to delete issue');
         }
         
         console.log('Issue successfully deleted:', issueId);

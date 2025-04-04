@@ -159,6 +159,7 @@ export function DeleteIssueButton({
           size="sm"
           className={`text-destructive hover:text-destructive hover:bg-destructive/10 ${className}`}
           disabled={isDeleteInProgress}
+          onClick={(e) => e.stopPropagation()} // Stop event propagation
         >
           <Trash className="h-4 w-4 mr-2" />
           {text}

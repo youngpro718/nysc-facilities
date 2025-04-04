@@ -68,7 +68,7 @@ export function CardFront({ issue, onMarkAsSeen, actions }: CardFrontProps) {
             assigned_to={issue.assigned_to || "Unassigned"}
           />
           {actions && (
-            <div className="flex justify-end mt-2">
+            <div className="flex justify-end mt-2" onClick={(e) => e.stopPropagation()}>
               {actions}
             </div>
           )}

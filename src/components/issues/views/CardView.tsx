@@ -28,14 +28,16 @@ export const CardView = ({ issues, onIssueSelect }: CardViewProps) => {
             issue={issue}
             onMarkAsSeen={() => {}}
             actions={
-              <DeleteIssueButton 
-                issueId={issue.id}
-                className="mt-2"
-                onDelete={() => {
-                  console.log(`Issue deleted successfully in CardView: ${issue.id}`);
-                  // The query invalidation in the mutation hook will handle UI updates
-                }}
-              />
+              <div onClick={(e) => e.stopPropagation()} className="mt-2">
+                <DeleteIssueButton 
+                  issueId={issue.id}
+                  className=""
+                  onDelete={() => {
+                    console.log(`Issue deleted successfully in CardView: ${issue.id}`);
+                    // The query invalidation in the mutation hook will handle UI updates
+                  }}
+                />
+              </div>
             }
           />
         </div>
