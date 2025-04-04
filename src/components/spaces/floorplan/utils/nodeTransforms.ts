@@ -1,10 +1,11 @@
-import { FloorPlanNode, ROOM_COLORS } from "../types/floorPlanTypes";
+
+import { FloorPlanNode, ROOM_COLORS, RawFloorPlanObject } from "../types/floorPlanTypes";
 
 export function getSpaceColor(space: any): string {
   if (!space) return '#e2e8f0'; // Default color for undefined spaces
   
   if (space.object_type === 'room' || space.type === 'room') {
-    const baseColor = ROOM_COLORS[space.type] || ROOM_COLORS.default;
+    const baseColor = ROOM_COLORS[space.room_type] || ROOM_COLORS.default;
     return space.status === 'active' ? baseColor : `${baseColor}80`;
   } else if (space.object_type === 'hallway' || space.type === 'hallway') {
     // Different color based on hallway type

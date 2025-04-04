@@ -1,247 +1,276 @@
-import { useState, useEffect, useCallback } from 'react';
-import { FloorPlanCanvas } from './FloorPlanCanvas';
-import { PropertiesPanel } from './components/PropertiesPanel';
-import { EditPropertiesPanel } from './components/EditPropertiesPanel';
-import { ThreeDViewer } from './components/ThreeDViewer';
-import { useDialogManager } from '@/hooks/useDialogManager';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { ZoomIn, ZoomOut, Maximize, RefreshCw } from 'lucide-react';
-import { SimpleFloorSelector } from './components/SimpleFloorSelector';
+import React, { useState, useCallback } from 'react';
+import ReactFlow, {
+  ReactFlowProvider,
+  addEdge,
+  useNodesState,
+  useEdgesState,
+  Controls,
+  Background,
+  useReactFlow,
+} from 'reactflow';
+import 'reactflow/dist/style.css';
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { cn } from "@/lib/utils";
 
-export function FloorPlanView() {
-  const [selectedFloor, setSelectedFloor] = useState<string | null>(null);
-  const [selectedObject, setSelectedObject] = useState<any | null>(null);
-  const [previewData, setPreviewData] = useState<any | null>(null);
-  const { dialogState, openDialog, closeDialog } = useDialogManager();
-  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
-  const [floors, setFloors] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [zoom, setZoom] = useState<number>(1);
-  const [refreshKey, setRefreshKey] = useState<number>(0);
+import { Building2, Eye, EyeOff, Layers2, Lock, LockOpen, Plus, RotateCcw, Save, Search, Trash2, Upload, X } from "lucide-react";
+import { FloorPlanProperties } from "./components/FloorPlanProperties";
+import { useToast } from "@/hooks/use-toast";
+import { FloorPlanNode, FloorPlanEdge } from "./types/floorPlanTypes";
+import { useFloorPlanData } from "./hooks/useFloorPlanData";
+import { ThreeDViewer } from "./components/ThreeDViewer";
 
-  // Fetch floors data
-  useEffect(() => {
-    const fetchFloors = async () => {
-      setIsLoading(true);
-      try {
-      const { data, error } = await supabase
-        .from('floors')
-          .select('*, buildings(name)')
-        .order('floor_number', { ascending: false });
+const initialNodes: FloorPlanNode[] = [
+  {
+    id: '1',
+    type: 'input',
+    data: { label: 'Input Node' },
+    position: { x: 250, y: 25 },
+  },
+];
 
-        if (error) throw error;
-        
-        setFloors(data || []);
-        // If we have floors and no selected floor, select the first one
-        if (data && data.length > 0 && !selectedFloor) {
-          setSelectedFloor(data[0].id);
-        }
-      } catch (error) {
-        console.error('Error fetching floors:', error);
-        toast.error('Failed to load floors');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+const initialEdges: FloorPlanEdge[] = [
+  { id: 'e1-2', source: '1', target: '2', animated: true },
+];
 
-    fetchFloors();
-  }, [selectedFloor]);
+interface FloorPlanViewProps {
+  selectedFloor: string;
+  onFloorChange: (floorId: string) => void;
+  onObjectSelect?: (object: any) => void;
+  selectedObjectId?: string;
+  previewData?: any;
+  editable?: boolean;
+}
 
-  // Handle object selection
-  const handleObjectSelect = useCallback((object: any) => {
-    console.log('Selected object:', object);
-    setSelectedObject(object);
-    // Reset preview data when selecting a new object
-    setPreviewData(null);
-  }, []);
+const FloorPlanView: React.FC<FloorPlanViewProps> = ({ 
+  selectedFloor,
+  onFloorChange,
+  onObjectSelect,
+  selectedObjectId,
+  previewData,
+  editable = false
+}) => {
+  const { toast } = useToast();
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [zoom, setZoom] = useState(1);
+  const [isLayersPanelOpen, setIsLayersPanelOpen] = useState(false);
+  const [isPropertiesPanelOpen, setIsPropertiesPanelOpen] = useState(true);
+  const [isLocked, setIsLocked] = useState(false);
+  const { setViewport } = useReactFlow();
 
-  // Reset selected object when floor changes
-  useEffect(() => {
-    setSelectedObject(null);
-    setPreviewData(null);
-  }, [selectedFloor]);
+  const {
+    layers,
+    spaces,
+    isLoading,
+    isError,
+    error,
+  } = useFloorPlanData(selectedFloor, previewData);
 
-  // Handle property updates during edit
-  const handlePropertyUpdate = useCallback((updates: any) => {
-    console.log('Property updates:', updates);
-    
-    // Transform form values to proper object structure
-    const position = {
-      x: parseFloat(updates.positionX),
-      y: parseFloat(updates.positionY)
-    };
-    
-    const size = {
-      width: parseFloat(updates.width),
-      height: parseFloat(updates.height)
-    };
-    
-    const rotation = parseFloat(updates.rotation);
-    
-    // Build properties object based on object type
-    let properties: Record<string, any> = {};
-    
-    if (selectedObject?.type === 'room') {
-      properties = {
-        room_number: updates.room_number,
-        room_type: updates.room_type,
-        status: updates.status
-      };
-    } else if (selectedObject?.type === 'hallway') {
-      properties = {
-        section: updates.section,
-        hallwayType: updates.hallwayType,
-        traffic_flow: updates.traffic_flow,
-        accessibility: updates.accessibility,
-        emergency_route: updates.emergency_route
-      };
-    } else if (selectedObject?.type === 'door') {
-      properties = {
-        security_level: updates.security_level,
-        status: updates.status
-      };
-    }
-    
-    // Preserve lighting data if available
-    if (selectedObject?.properties?.lighting_fixtures) {
-      properties.lighting_fixtures = selectedObject.properties.lighting_fixtures;
-      properties.functional_lights = selectedObject.properties.functional_lights;
-      properties.total_lights = selectedObject.properties.total_lights;
-      properties.lighting_status = selectedObject.properties.lighting_status;
-    }
-    
-    setPreviewData({
-      id: selectedObject?.id,
-      position,
-      rotation,
-      data: {
-        size,
-        properties
-      }
-    });
-  }, [selectedObject]);
+  // Update nodes when spaces change
+  React.useEffect(() => {
+    setNodes(spaces);
+  }, [spaces, setNodes]);
 
-  // When dialog closes, clear preview data
-  useEffect(() => {
-    if (!dialogState.isOpen) {
-      setPreviewData(null);
-    }
-  }, [dialogState.isOpen]);
+  const onConnect = useCallback(
+    (params) => setEdges((eds) => addEdge(params, eds)),
+    [setEdges]
+  );
 
-  // Handle zoom controls
   const handleZoomIn = () => {
-    setZoom(prev => Math.min(prev + 0.25, 2));
+    setZoom((prev) => Math.min(prev + 0.1, 2));
+    setViewport({ zoom: zoom + 0.1 });
   };
 
   const handleZoomOut = () => {
-    setZoom(prev => Math.max(prev - 0.25, 0.5));
+    setZoom((prev) => Math.max(prev - 0.1, 0.5));
+    setViewport({ zoom: zoom - 0.1 });
   };
 
-  const handleZoomReset = () => {
+  const handleReset = () => {
     setZoom(1);
+    setViewport({ zoom: 1 });
   };
 
-  const handleRefresh = () => {
-    setRefreshKey(prev => prev + 1);
-    toast.success('Floor plan refreshed');
+  const handleFitView = () => {
+    setViewport({ zoom: 1 });
   };
 
+  const handleLockToggle = () => {
+    setIsLocked(!isLocked);
+  };
+
+  const handleSave = () => {
+    toast({
+      title: "Saved",
+      description: "Floor plan has been saved.",
+    });
+  };
+
+  const handleUpload = () => {
+    toast({
+      title: "Uploaded",
+      description: "Floor plan has been uploaded.",
+    });
+  };
+
+  const handleDelete = () => {
+    toast({
+      title: "Deleted",
+      description: "Floor plan has been deleted.",
+    });
+  };
+
+  // Render the view
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col">
-      {/* Top Bar with Controls */}
-      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
-        <div className="flex items-center justify-between px-4 h-14">
-          <div className="flex items-center space-x-4">
-            <SimpleFloorSelector
-              selectedFloorId={selectedFloor}
-              onFloorSelect={setSelectedFloor}
-            />
-            <div className="h-6 w-px bg-border" />
-            <Tabs 
-              value={viewMode} 
-              onValueChange={(value) => setViewMode(value as '2d' | '3d')}
-              className="w-full"
-            >
-              <TabsList className="h-9 bg-muted/50">
-                <TabsTrigger value="2d">2D View</TabsTrigger>
+    <div className="h-full flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Label htmlFor="email">Select Floor</Label>
+          <Select value={selectedFloor} onValueChange={onFloorChange}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select floor" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Floors</SelectItem>
+              <SelectItem value="floor-1">Floor 1</SelectItem>
+              <SelectItem value="floor-2">Floor 2</SelectItem>
+              <SelectItem value="floor-3">Floor 3</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleZoomOut}
+            className="h-8 w-8"
+          >
+            <Search className="h-4 w-4 rotate-45" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleZoomIn}
+            className="h-8 w-8"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleReset}
+            className="h-8 w-8"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleFitView}
+            className="h-8 w-8"
+          >
+            <Building2 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleLockToggle}
+            className="h-8 w-8"
+          >
+            {isLocked ? <Lock className="h-4 w-4" /> : <LockOpen className="h-4 w-4" />}
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleSave}
+            className="h-8 w-8"
+          >
+            <Save className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleUpload}
+            className="h-8 w-8"
+          >
+            <Upload className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleDelete}
+            className="h-8 w-8"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+      
+      <div className={cn("grid flex-1 gap-4", editable ? "grid-cols-1 lg:grid-cols-3" : "")}>
+        <div className={cn("h-full min-h-[300px]", editable ? "lg:col-span-2" : "")}>
+          <ReactFlowProvider>
+            <div className="h-full rounded-md border bg-card">
+              <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onConnect={onConnect}
+                fitView
+                zoomOnScroll={false}
+                panOnScroll={false}
+                minZoom={0.5}
+                maxZoom={2}
+                className="bg-background"
+              >
+                <Controls />
+                <Background color="#aaa" gap={16} />
+              </ReactFlow>
+            </div>
+          </ReactFlowProvider>
+        </div>
+        
+        {editable && (
+          <div className="h-full">
+            <Tabs defaultValue="properties" className="h-full flex flex-col">
+              <TabsList>
+                <TabsTrigger value="properties">Properties</TabsTrigger>
                 <TabsTrigger value="3d">3D View</TabsTrigger>
               </TabsList>
+              <TabsContent value="properties" className="flex-1">
+                <FloorPlanProperties />
+              </TabsContent>
+              <TabsContent value="3d" className="flex-1">
+                <ThreeDViewer 
+                  key={selectedFloor}
+                  floorId={selectedFloor}
+                  selectedObjectId={selectedObjectId}
+                  previewData={previewData}
+                  onObjectSelect={onObjectSelect}
+                />
+              </TabsContent>
             </Tabs>
           </div>
-          
-          <div className="flex items-center space-x-2">
-            <div className="bg-muted/50 rounded-md p-1 flex items-center space-x-1">
-              <Button variant="ghost" size="sm" onClick={handleZoomOut} disabled={zoom <= 0.5} className="h-7 px-2">
-                <ZoomOut className="h-4 w-4" />
-              </Button>
-              <span className="text-sm px-2 min-w-[3rem] text-center">{(zoom * 100).toFixed(0)}%</span>
-              <Button variant="ghost" size="sm" onClick={handleZoomIn} disabled={zoom >= 2} className="h-7 px-2">
-                <ZoomIn className="h-4 w-4" />
-              </Button>
-            </div>
-            <Button variant="ghost" size="sm" onClick={handleZoomReset} className="h-7 px-2">
-              <Maximize className="h-4 w-4" />
-            </Button>
-            <div className="h-6 w-px bg-border" />
-            <Button variant="ghost" size="sm" onClick={handleRefresh} title="Refresh floor plan" className="h-7 px-2">
-              <RefreshCw className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content Area */}
-      <div className="flex-1 flex min-h-0">
-        {/* Floor Plan View */}
-        <div className="flex-1 relative">
-          <div className="absolute inset-0">
-            {viewMode === '2d' ? (
-              <FloorPlanCanvas 
-                key={`2d-${refreshKey}`}
-                floorId={selectedFloor} 
-                onObjectSelect={handleObjectSelect}
-                previewData={previewData}
-                zoom={zoom}
-              />
-            ) : (
-              <ThreeDViewer 
-                key={`3d-${refreshKey}`}
-                floorId={selectedFloor}
-                onObjectSelect={handleObjectSelect}
-                selectedObjectId={selectedObject?.id}
-                previewData={previewData}
-              />
-            )}
-          </div>
-        </div>
-
-        {/* Properties Panel */}
-        <div className="w-80 border-l bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="h-full overflow-auto">
-            <PropertiesPanel 
-              selectedObject={selectedObject}
-              onUpdate={() => {
-                if (selectedObject) {
-                  openDialog('propertyEdit', selectedObject);
-                }
-              }}
-              onPreviewChange={handlePropertyUpdate}
+        )}
+        
+        {!editable && (
+          <div className="h-full">
+            <ThreeDViewer 
+              key={selectedFloor}
+              floorId={selectedFloor}
+              selectedObjectId={selectedObjectId}
+              previewData={previewData}
+              onObjectSelect={onObjectSelect}
             />
           </div>
-        </div>
+        )}
       </div>
-
-      {dialogState.isOpen && dialogState.type === 'propertyEdit' && (
-        <EditPropertiesPanel
-          object={dialogState.data}
-          onClose={closeDialog}
-          onUpdate={handlePropertyUpdate}
-          onPreview={handlePropertyUpdate}
-        />
-      )}
     </div>
   );
-}
+};
+
+export default FloorPlanView;
