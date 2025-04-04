@@ -1,7 +1,4 @@
 
-// This file contains the particle configuration for the sparkles component
-// Note: We're using a simpler type definition to avoid issues with the ISourceOptions import
-
 export interface ParticleConfigOptions {
   background?: string;
   particleColor?: string;
@@ -11,12 +8,12 @@ export interface ParticleConfigOptions {
   particleDensity?: number;
 }
 
-export const createParticleConfig = (options: ParticleConfigOptions = {}): any => {
+export const createParticleConfig = (options: ParticleConfigOptions = {}) => {
   const {
-    background = "#000000",
+    background = "transparent",
     particleColor = "#ffffff",
-    minSize = 0.1,
-    maxSize = 2,
+    minSize = 0.6,
+    maxSize = 3,
     speed = 1,
     particleDensity = 100
   } = options;
@@ -24,52 +21,41 @@ export const createParticleConfig = (options: ParticleConfigOptions = {}): any =
   return {
     background: {
       color: {
-        value: background
-      }
+        value: background,
+      },
     },
     fpsLimit: 120,
     particles: {
       color: {
-        value: particleColor
+        value: particleColor,
       },
       move: {
         enable: true,
         direction: "none",
         outModes: {
-          default: "out"
+          default: "out",
         },
         random: true,
         speed: speed,
-        straight: false
+        straight: false,
       },
       number: {
         density: {
           enable: true,
-          area: particleDensity
+          area: particleDensity,
         },
-        value: 120
+        value: 100,
       },
       opacity: {
-        animation: {
-          enable: true,
-          speed: 1,
-          sync: false
-        },
-        value: {
-          min: 0,
-          max: 1
-        }
+        value: 0.8,
       },
       shape: {
-        type: "circle"
+        type: "circle",
       },
       size: {
-        value: {
-          min: minSize,
-          max: maxSize
-        }
-      }
+        value: { min: minSize, max: maxSize },
+      },
     },
-    detectRetina: true
+    detectRetina: true,
   };
 };

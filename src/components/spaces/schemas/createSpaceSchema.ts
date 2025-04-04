@@ -1,8 +1,52 @@
 
 import { z } from "zod";
-import { RoomTypeEnum, StatusEnum } from "../rooms/types/roomEnums";
+import { RoomTypeEnum, StatusEnum, StorageTypeEnum } from "../rooms/types/roomEnums";
+import { 
+  HallwaySection,
+  HallwayType,
+  TrafficFlow,
+  Accessibility,
+  EmergencyRoute
+} from "../types/hallwayTypes";
 
-// Base space schema with common fields
+// Define connection schema
+const connectionSchema = z.object({
+  toSpaceId: z.string().uuid().optional(),
+  connectionType: z.string().optional(),
+  direction: z.string().optional(),
+  id: z.string().uuid().optional()
+});
+
+// Define hardware status schema
+const hardwareStatusSchema = z.object({
+  frame: z.string(),
+  hinges: z.string(),
+  doorknob: z.string(),
+  lock: z.string()
+});
+
+// Define maintenance schedule entry schema
+const maintenanceScheduleEntrySchema = z.object({
+  date: z.string(), // Changed from z.date() to z.string()
+  type: z.string(),
+  status: z.string(),
+  assignedTo: z.string().optional()
+});
+
+// Define emergency exit schema
+const emergencyExitSchema = z.object({
+  location: z.string(),
+  type: z.string(),
+  notes: z.string().optional()
+});
+
+// Define courtroom photos schema
+const courtRoomPhotosSchema = z.object({
+  judge_view: z.string().nullable().optional(),
+  audience_view: z.string().nullable().optional()
+}).nullable().optional();
+
+// Base schema for all space types
 const baseSpaceSchema = z.object({
   name: z.string().min(1, "Name is required"),
   buildingId: z.string().min(1, "Building is required"),
@@ -18,58 +62,56 @@ const baseSpaceSchema = z.object({
     height: z.number()
   }).optional(),
   rotation: z.number().optional(),
-  connections: z.array(
-    z.object({
-      toSpaceId: z.string().optional(),
-      connectionType: z.string().optional(),
-      direction: z.string().optional()
-    })
-  ).transform(connections => 
-    connections.filter(conn => conn.toSpaceId && conn.connectionType)
-  ).optional(),
+  connections: z.array(connectionSchema).default([])
 });
 
-// Room specific schema
+// Room-specific schema
 const roomSchema = baseSpaceSchema.extend({
   type: z.literal("room"),
-  roomNumber: z.string().optional(),
   roomType: z.nativeEnum(RoomTypeEnum),
+  roomNumber: z.string().optional(),
   currentFunction: z.string().optional(),
-  isStorage: z.boolean().default(false),
-  storageType: z.string().nullable().optional(),
-  storageCapacity: z.number().nullable().optional(),
-  storageNotes: z.string().nullable().optional(),
-  parentRoomId: z.string().nullable().optional(),
+  isStorage: z.boolean().optional(),
   phoneNumber: z.string().optional(),
-  courtroomPhotos: z.object({
-    judge_view: z.string().nullable().optional(),
-    audience_view: z.string().nullable().optional()
-  }).nullable().optional(),
+  storageType: z.nativeEnum(StorageTypeEnum).nullable(),
+  storageCapacity: z.number().nullable(), // This must be a number
+  storageNotes: z.string().optional(),
+  parentRoomId: z.string().nullable(),
+  courtRoomPhotos: courtRoomPhotosSchema
 });
 
-// Hallway specific schema
+// Hallway-specific schema - enhanced with more specific hallway fields and proper enums
 const hallwaySchema = baseSpaceSchema.extend({
   type: z.literal("hallway"),
-  section: z.string().optional(),
-  hallwayType: z.string().optional(),
-  trafficFlow: z.string().optional(),
-  accessibility: z.string().optional(),
-  emergencyRoute: z.string().optional(),
-  maintenancePriority: z.string().optional(),
+  // Use proper enum types from hallwayTypes.ts for better type safety
+  hallwayType: z.enum(["public_main", "private"]).optional(),
+  section: z.enum(["left_wing", "right_wing", "connector"]).optional(),
+  maintenanceSchedule: z.array(maintenanceScheduleEntrySchema).optional(),
+  emergencyExits: z.array(emergencyExitSchema).optional(),
+  maintenancePriority: z.enum(["low", "medium", "high"]).optional(),
+  maintenanceNotes: z.string().optional(),
+  emergencyRoute: z.enum(["primary", "secondary", "not_designated"]).optional(),
+  accessibility: z.enum(["fully_accessible", "limited_access", "stairs_only", "restricted"]).optional(),
+  trafficFlow: z.enum(["one_way", "two_way", "restricted"]).optional(),
   capacityLimit: z.number().optional(),
+  width: z.number().optional(),
+  length: z.number().optional()
 });
 
-// Door specific schema
+// Door-specific schema
 const doorSchema = baseSpaceSchema.extend({
   type: z.literal("door"),
   doorType: z.string().optional(),
-  isTransitionDoor: z.boolean().optional(),
   securityLevel: z.string().optional(),
-  hasClosingIssue: z.boolean().optional(),
-  hasHandleIssue: z.boolean().optional(),
+  passkeyEnabled: z.boolean().optional(),
+  closerStatus: z.string().optional(),
+  windPressureIssues: z.boolean().optional(),
+  hardwareStatus: hardwareStatusSchema.optional(),
+  nextMaintenanceDate: z.string().optional(), // Changed from z.date() to z.string()
+  maintenanceNotes: z.string().optional(),
+  statusHistory: z.array(z.any()).optional()
 });
 
-// Complete discriminated union
 export const createSpaceSchema = z.discriminatedUnion("type", [
   roomSchema,
   hallwaySchema,
@@ -77,6 +119,3 @@ export const createSpaceSchema = z.discriminatedUnion("type", [
 ]);
 
 export type CreateSpaceFormData = z.infer<typeof createSpaceSchema>;
-export type RoomFormData = z.infer<typeof roomSchema>;
-export type HallwayFormData = z.infer<typeof hallwaySchema>;
-export type DoorFormData = z.infer<typeof doorSchema>;

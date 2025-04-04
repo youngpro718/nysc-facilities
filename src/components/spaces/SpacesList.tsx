@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,9 +15,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 export const SpacesList = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("name_asc");
-  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [view, setView] = useState<"grid" | "list">("grid");
-  const [editingSpace, setEditingSpace] = useState<string | null>(null);
 
   const { data: spaces, isLoading, refetch } = useQuery({
     queryKey: ['spaces'],
@@ -66,12 +66,12 @@ export const SpacesList = () => {
         </div>
 
         <SpaceListFilters
-          selectedStatus={selectedStatus}
-          onStatusChange={setSelectedStatus}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           sortBy={sortBy}
           onSortChange={setSortBy}
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
           view={view}
           onViewChange={setView}
         />
@@ -91,13 +91,16 @@ export const SpacesList = () => {
                 {space.floors?.buildings?.name} &gt; {space.floors?.name}
               </p>
               <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setEditingSpace(space.id)}
-                >
-                  Edit
-                </Button>
+                <EditSpaceDialog 
+                  id={space.id}
+                  type="room"
+                  initialData={{
+                    id: space.id,
+                    name: space.name,
+                    status: space.status as StatusEnum,
+                    floorId: space.floor_id,
+                  }}
+                />
                 <Button
                   variant="destructive"
                   size="sm"
@@ -124,20 +127,6 @@ export const SpacesList = () => {
           ))}
         </div>
       </ScrollArea>
-      
-      {editingSpace && (
-        <EditSpaceDialog 
-          id={editingSpace}
-          type="room"
-          open={!!editingSpace}
-          onOpenChange={(isOpen) => {
-            if (!isOpen) {
-              setEditingSpace(null);
-              refetch();
-            }
-          }}
-        />
-      )}
     </div>
   );
 }

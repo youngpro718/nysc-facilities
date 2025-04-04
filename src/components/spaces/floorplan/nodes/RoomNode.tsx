@@ -1,58 +1,54 @@
 
 import { Handle, NodeProps, NodeResizer } from 'reactflow';
-import { getNodeBaseStyle, getResizerConfig } from '../utils/nodeStyles';
+import { FloorPlanObjectData } from '../types/floorPlanTypes';
 import { useNodeHandles } from '../hooks/useNodeHandles';
+import { getNodeBaseStyle, getResizerConfig } from '../utils/nodeStyles';
 
-export function RoomNode({ data, selected }: NodeProps<any>) {
+export function RoomNode({ data, selected }: NodeProps<FloorPlanObjectData>) {
   if (!data) return null;
 
-  const { handleStyle, roomHandles } = useNodeHandles(selected);
+  const { handleStyle, standardHandles } = useNodeHandles(selected);
   const style = getNodeBaseStyle('room', data, selected);
   const resizerConfig = getResizerConfig('room');
+  
+  // Check if this is a child room
+  const isChildRoom = !!data.properties?.parent_room_id;
 
-  // Get room status and type info for visualization
-  const roomStatus = data.properties?.status || 'active';
-  const roomType = data.properties?.room_type || 'office';
-  const isStorage = data.properties?.is_storage;
-
-  // Custom styling based on room properties
-  const roomStyle = {
+  // Modify style if it's a child room
+  const nodeStyle = isChildRoom ? {
     ...style,
-    ...(isStorage && { backgroundColor: '#d1fae5' }),
-    ...(roomType === 'courtroom' && { 
-      backgroundImage: 'linear-gradient(45deg, rgba(255,255,255,0.1) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.1) 75%, transparent 75%, transparent)',
-      backgroundSize: '10px 10px' 
-    })
-  };
+    border: '1px dashed #64748b',
+    boxShadow: 'inset 0 0 0 1px rgba(100, 116, 139, 0.2)'
+  } : style;
 
   return (
-    <div style={roomStyle}>
+    <div style={nodeStyle}>
       <NodeResizer {...resizerConfig} />
       
-      {roomHandles.map((handle, index) => (
+      {standardHandles.map((handle, index) => (
         <Handle
           key={`${handle.position}-${index}`}
-          type={index % 2 === 0 ? "source" : "target"}
+          type={index % 2 === 0 ? "target" : "source"}
           position={handle.position}
-          style={handleStyle}
+          style={{ ...handleStyle, top: handle.top, left: handle.left }}
         />
       ))}
       
-      <div style={{ 
-        display: 'flex', 
-        flexDirection: 'column',
-        alignItems: 'center', 
-        textAlign: 'center', 
-        fontSize: '0.75rem', 
-        fontWeight: 500, 
-        whiteSpace: 'nowrap', 
-        overflow: 'hidden', 
-        textOverflow: 'ellipsis' 
-      }}>
-        <div>{data.label || 'Room'}</div>
+      <div style={{ fontSize: '0.875rem', fontWeight: 500, color: '#1f2937' }}>
+        {data.label || 'Unnamed Room'}
         {data.properties?.room_number && (
-          <div style={{ fontSize: '0.7rem', opacity: 0.7 }}>
-            {data.properties.room_number}
+          <div style={{ fontSize: '0.75rem', color: '#4b5563' }}>
+            Room {data.properties.room_number}
+          </div>
+        )}
+        {isChildRoom && (
+          <div style={{ 
+            fontSize: '0.7rem', 
+            color: '#64748b', 
+            fontStyle: 'italic',
+            marginTop: '2px'
+          }}>
+            Child Room
           </div>
         )}
       </div>

@@ -1,125 +1,191 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 
-export const useHallwayData = () => {
-  const [hallways, setHallways] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Hallway, HallwayConnection, EmergencyExit, MaintenanceSchedule, UsageStatistics } from "../types/hallwayTypes";
 
-  useEffect(() => {
-    const fetchHallways = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const { data, error } = await supabase
-          .from('spaces')
-          .select(`
-            id, 
-            name,
-            type,
-            status,
-            room_number,
-            floor_id,
-            position,
-            properties,
-            hallway_properties (
-              id,
-              hallway_id,
-              section,
-              traffic_flow,
-              accessibility,
-              emergency_route
-            ),
-            floors (
-              id,
-              name,
-              floor_number,
-              building_id,
-              buildings (
-                id,
-                name
-              )
-            )
-          `)
-          .eq('type', 'hallway');
+interface UseHallwayDataProps {
+  selectedBuilding: string;
+  selectedFloor: string;
+}
 
-        if (error) {
-          console.error('Error fetching hallways:', error.message || 'Unknown error');
-          setError(error.message || 'Failed to fetch hallways');
-          return;
-        }
+export const useHallwayData = ({ selectedBuilding, selectedFloor }: UseHallwayDataProps) => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-        setHallways(data || []);
-      } catch (err) {
-        const errorMessage = err && typeof err === 'object' && 'message' in err
-          ? String(err.message)
-          : 'Unknown error fetching hallways';
-
-        console.error('Exception in fetchHallways:', errorMessage);
-        setError(errorMessage);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchHallways();
-  }, []);
-
-  const getHallwaysForFloor = async (floorId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('spaces')
+  const { data: hallways, isLoading } = useQuery({
+    queryKey: ['hallways', selectedBuilding, selectedFloor],
+    queryFn: async () => {
+      console.log("Fetching hallways with filters:", { selectedBuilding, selectedFloor });
+      
+      let query = supabase
+        .from('hallways')
         .select(`
-          id, 
-          name,
-          type,
-          status,
-          room_number,
-          floor_id,
-          position,
-          properties,
-          hallway_properties (
-            id,
-            hallway_id,
-            section,
-            traffic_flow,
-            accessibility,
-            emergency_route
-          ),
-          floors (
-            id,
+          *,
+          floors:floor_id (
             name,
-            floor_number,
-            building_id,
-            buildings (
-              id,
+            buildings:building_id (
               name
             )
+          ),
+          space_connections!from_space_id (
+            id,
+            position,
+            connection_type,
+            door_details,
+            access_requirements,
+            is_emergency_exit,
+            to_space_id,
+            space_type
           )
-        `)
-        .eq('type', 'hallway')
-        .eq('floor_id', floorId);
+        `);
 
-      if (error) {
-        console.error('Error fetching hallways:', error.message || 'Unknown error');
-        return [];
+      // Apply filters
+      if (selectedFloor !== 'all') {
+        query = query.eq('floor_id', selectedFloor);
+      }
+      
+      if (selectedBuilding !== 'all') {
+        query = query.eq('floors.buildings.id', selectedBuilding);
       }
 
-      return data || [];
-    } catch (err) {
-      const errorMessage = err && typeof err === 'object' && 'message' in err
-        ? String(err.message)
-        : 'Unknown error fetching hallways';
+      const { data: hallwaysData, error: hallwaysError } = await query;
 
-      console.error('Exception in getHallwaysForFloor:', errorMessage);
-      return [];
-    }
-  };
+      if (hallwaysError) {
+        console.error('Error fetching hallways:', hallwaysError);
+        toast({
+          title: "Error",
+          description: "Failed to fetch hallways. Please try again.",
+          variant: "destructive",
+        });
+        throw hallwaysError;
+      }
+
+      // Fetch connected space names in a separate query
+      const spaceConnections = hallwaysData?.flatMap(h => h.space_connections || []) || [];
+      const connectedSpaceNames: Record<string, string> = {};
+
+      for (const connection of spaceConnections) {
+        if (!connection?.to_space_id) continue;
+        
+        let spaceType = connection?.space_type;
+        if (!spaceType) continue;
+        
+        // Normalize space type to table name
+        spaceType = spaceType === 'room' ? 'rooms' : 
+                   spaceType === 'hallway' ? 'hallways' : 'doors';
+
+        try {
+          const { data, error } = await supabase
+            .from(spaceType)
+            .select('name')
+            .eq('id', connection.to_space_id)
+            .single();
+
+          if (!error && data) {
+            connectedSpaceNames[connection.to_space_id] = data.name;
+          }
+        } catch (err) {
+          console.error(`Error fetching connected space name (${spaceType}):`, err);
+        }
+      }
+
+      // Transform and type the response data
+      const transformedHallways: Hallway[] = (hallwaysData || []).map(hallway => {
+        // Cast emergency_exits with type assertion
+        const emergencyExits = (hallway.emergency_exits as any[] || []).map((exit): EmergencyExit => ({
+          location: exit.location || '',
+          type: exit.type || '',
+          notes: exit.notes
+        }));
+
+        // Cast maintenance_schedule with type assertion
+        const maintenanceSchedule = (hallway.maintenance_schedule as any[] || []).map((schedule): MaintenanceSchedule => ({
+          date: schedule.date || '',
+          type: schedule.type || '',
+          status: schedule.status || '',
+          assigned_to: schedule.assigned_to
+        }));
+
+        // Cast usage_statistics with type assertion
+        const usageStats: UsageStatistics = {
+          daily_traffic: (hallway.usage_statistics as any)?.daily_traffic || 0,
+          peak_hours: (hallway.usage_statistics as any)?.peak_hours || [],
+          last_updated: (hallway.usage_statistics as any)?.last_updated || null
+        };
+
+        // Transform space connections to include the correct connected space name
+        const transformedConnections: HallwayConnection[] = ((hallway.space_connections || []) as any[]).map(conn => {
+          // Skip invalid connections
+          if (!conn) return null;
+          
+          return {
+            id: conn.id,
+            position: conn.position,
+            connection_type: conn.connection_type,
+            door_details: conn.door_details,
+            access_requirements: conn.access_requirements,
+            is_emergency_exit: conn.is_emergency_exit,
+            to_space: {
+              name: conn.to_space_id ? (connectedSpaceNames[conn.to_space_id] || 'Unknown Space') : 'Unknown Space'
+            }
+          };
+        }).filter(Boolean) as HallwayConnection[];
+
+        return {
+          ...hallway,
+          type: hallway.type as Hallway['type'],
+          status: hallway.status as Hallway['status'],
+          section: hallway.section as Hallway['section'],
+          traffic_flow: hallway.traffic_flow as Hallway['traffic_flow'],
+          accessibility: hallway.accessibility as Hallway['accessibility'],
+          emergency_route: hallway.emergency_route as Hallway['emergency_route'],
+          emergency_exits: emergencyExits,
+          maintenance_schedule: maintenanceSchedule,
+          usage_statistics: usageStats,
+          space_connections: transformedConnections,
+          floors: hallway.floors ? {
+            name: hallway.floors.name,
+            buildings: hallway.floors.buildings ? {
+              name: hallway.floors.buildings.name
+            } : undefined
+          } : undefined
+        };
+      });
+
+      return transformedHallways;
+    },
+    enabled: true
+  });
+
+  const deleteHallway = useMutation({
+    mutationFn: async (hallwayId: string) => {
+      const { error } = await supabase
+        .from('hallways')
+        .delete()
+        .eq('id', hallwayId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hallways'] });
+      toast({
+        title: "Success",
+        description: "Hallway has been deleted successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete hallway. Please try again.",
+        variant: "destructive",
+      });
+      console.error('Error deleting hallway:', error);
+    },
+  });
 
   return {
     hallways,
-    loading,
-    error,
-    getHallwaysForFloor
+    isLoading,
+    deleteHallway
   };
 };

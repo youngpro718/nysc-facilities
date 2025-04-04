@@ -1,152 +1,152 @@
 
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Edit, PlusCircle, Trash2 } from "lucide-react";
-import { useHallwayData } from "./hooks/useHallwayData";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { Badge } from "@/components/ui/badge";
 import { SpaceListFilters } from "./SpaceListFilters";
-import { EditSpaceDialog } from "./EditSpaceDialog";
-import { useSpacesQuery } from "./hooks/queries/useSpacesQuery";
-import { StatusBadge } from "./StatusBadge";
-import { EmptyState } from "./EmptyState";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { GridView } from "./views/GridView";
+import { ListView } from "./views/ListView";
+import { TableCell } from "@/components/ui/table";
+import { useHallwayData } from "./hooks/useHallwayData";
+import { ConnectedSpaces } from "./hallway/ConnectedSpaces";
+import { filterSpaces, sortSpaces } from "./utils/spaceFilters";
+import { Hallway } from "./types/hallwayTypes";
+import { Shield, ArrowRight, Accessibility } from "lucide-react";
 
 interface HallwaysListProps {
-  floorId?: string;
+  selectedBuilding: string;
+  selectedFloor: string;
 }
 
-export function HallwaysList({ floorId }: HallwaysListProps) {
+const HallwaysList = ({ selectedBuilding, selectedFloor }: HallwaysListProps) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState("all");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  
-  const { hallways, loading, error } = useHallwayData();
-  
-  // Handle delete action with confirmation
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this hallway?")) {
-      try {
-        const { error } = await supabase
-          .from("new_spaces")
-          .delete()
-          .eq("id", id);
-          
-        if (error) {
-          toast.error(`Failed to delete: ${error.message}`);
-          throw error;
-        }
-        
-        toast.success("Hallway deleted successfully");
-      } catch (error) {
-        console.error("Failed to delete hallway:", error);
-      }
+  const [sortBy, setSortBy] = useState("name_asc");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [view, setView] = useState<"grid" | "list">("grid");
+
+  const { hallways, isLoading, deleteHallway } = useHallwayData({
+    selectedBuilding,
+    selectedFloor
+  });
+
+  const filteredAndSortedHallways = useMemo(() => {
+    if (!hallways) return [];
+    const filtered = filterSpaces(hallways, searchQuery, statusFilter);
+    return sortSpaces(filtered, sortBy as any);
+  }, [hallways, searchQuery, sortBy, statusFilter]);
+
+  const getAccessibilityColor = (accessibility?: string) => {
+    switch (accessibility) {
+      case 'fully_accessible': return 'bg-green-500';
+      case 'limited_access': return 'bg-yellow-500';
+      case 'stairs_only': return 'bg-orange-500';
+      case 'restricted': return 'bg-red-500';
+      default: return 'bg-gray-500';
     }
   };
-  
-  // Filter hallways by search query and status
-  const filteredHallways = hallways.filter((hallway) => {
-    const matchesSearch = hallway.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = selectedStatus === "all" || hallway.status === selectedStatus;
-    const matchesFloor = !floorId || hallway.floor_id === floorId;
-    return matchesSearch && matchesStatus && matchesFloor;
-  });
-  
-  if (loading) {
-    return <div className="text-center py-10">Loading hallways...</div>;
-  }
-  
-  if (error) {
-    return <div className="text-center py-10 text-red-500">{error}</div>;
-  }
-  
-  if (filteredHallways.length === 0) {
-    return (
-      <EmptyState
-        title="No hallways found"
-        description={searchQuery || selectedStatus !== "all" ? "Try adjusting your filters" : "Create your first hallway to get started"}
-        icon={<PlusCircle className="h-10 w-10" />}
-      />
-    );
-  }
-  
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-4">
-        <Input
-          placeholder="Search hallways..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="max-w-sm"
-        />
-        
-        <SpaceListFilters
-          selectedStatus={selectedStatus}
-          onStatusChange={setSelectedStatus}
-        />
+
+  const getEmergencyRouteColor = (route?: string) => {
+    switch (route) {
+      case 'primary': return 'bg-red-500';
+      case 'secondary': return 'bg-orange-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  const renderGridContent = (hallway: Hallway) => (
+    <div className="space-y-2">
+      <p className="text-sm text-muted-foreground">Type: {hallway.type}</p>
+      <div className="flex gap-2 items-center">
+        <Badge className={getAccessibilityColor(hallway.accessibility)}>
+          <Accessibility className="h-3 w-3 mr-1" />
+          {hallway.accessibility || 'Not specified'}
+        </Badge>
+        {hallway.emergency_route !== 'not_designated' && (
+          <Badge className={getEmergencyRouteColor(hallway.emergency_route)}>
+            <ArrowRight className="h-3 w-3 mr-1" />
+            {hallway.emergency_route} route
+          </Badge>
+        )}
+        {hallway.security_level && (
+          <Badge variant="outline">
+            <Shield className="h-3 w-3 mr-1" />
+            {hallway.security_level}
+          </Badge>
+        )}
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredHallways.map((hallway) => (
-          <Card key={hallway.id} className="p-4">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="font-semibold text-lg">{hallway.name}</h3>
-                <StatusBadge status={hallway.status} />
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setEditingId(hallway.id)}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-destructive"
-                  onClick={() => handleDelete(hallway.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            
-            <div className="mt-2 text-sm text-muted-foreground">
-              {hallway.properties?.description && (
-                <p className="line-clamp-2">{hallway.properties.description}</p>
-              )}
-            </div>
-            
-            <div className="mt-2">
-              <div className="text-xs">
-                <span className="font-semibold">Floor:</span> {hallway.floors?.name || 'Unknown'}
-              </div>
-              {hallway.properties?.section && (
-                <div className="text-xs">
-                  <span className="font-semibold">Section:</span> {hallway.properties.section}
-                </div>
-              )}
-              {hallway.properties?.hallwayType && (
-                <div className="text-xs">
-                  <span className="font-semibold">Type:</span> {hallway.properties.hallwayType.replace('_', ' ')}
-                </div>
-              )}
-            </div>
-          </Card>
-        ))}
-      </div>
-      
-      {editingId && (
-        <EditSpaceDialog
-          id={editingId}
-          type="hallway"
-          open={!!editingId}
-          onOpenChange={() => setEditingId(null)}
-        />
+      {hallway.floors?.buildings?.name && (
+        <p className="text-sm text-muted-foreground">
+          Building: {hallway.floors.buildings.name}
+        </p>
+      )}
+      {hallway.floors?.name && (
+        <p className="text-sm text-muted-foreground">
+          Floor: {hallway.floors.name}
+        </p>
+      )}
+      <ConnectedSpaces connections={hallway.space_connections} />
+      {hallway.capacity_limit && (
+        <p className="text-sm text-muted-foreground">
+          Capacity: {hallway.capacity_limit} people
+        </p>
+      )}
+      {hallway.width_meters && hallway.length_meters && (
+        <p className="text-sm text-muted-foreground">
+          Dimensions: {hallway.width_meters}m × {hallway.length_meters}m
+        </p>
       )}
     </div>
   );
-}
+
+  const renderListRow = (hallway: Hallway) => [
+    <TableCell key="name">{hallway.name}</TableCell>,
+    <TableCell key="type">{hallway.type}</TableCell>,
+    <TableCell key="building">{hallway.floors?.buildings?.name}</TableCell>,
+    <TableCell key="floor">{hallway.floors?.name}</TableCell>,
+    <TableCell key="accessibility">
+      <Badge className={getAccessibilityColor(hallway.accessibility)}>
+        {hallway.accessibility || 'Not specified'}
+      </Badge>
+    </TableCell>,
+    <TableCell key="status">
+      <Badge variant={hallway.status === 'active' ? 'default' : 'destructive'}>
+        {hallway.status}
+      </Badge>
+    </TableCell>
+  ];
+
+  return (
+    <div className="space-y-6">
+      <SpaceListFilters
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        view={view}
+        onViewChange={setView}
+      />
+
+      {isLoading ? (
+        <div className="text-center">Loading hallways...</div>
+      ) : (
+        view === 'grid' ? (
+          <GridView
+            items={filteredAndSortedHallways}
+            onDelete={(id) => deleteHallway.mutate(id)}
+            renderItemContent={renderGridContent}
+            type="hallway"
+          />
+        ) : (
+          <ListView
+            items={filteredAndSortedHallways}
+            onDelete={(id) => deleteHallway.mutate(id)}
+            renderRow={renderListRow}
+            type="hallway"
+          />
+        )
+      )}
+    </div>
+  );
+};
+
+export default HallwaysList;

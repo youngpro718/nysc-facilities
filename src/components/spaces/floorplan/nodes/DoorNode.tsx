@@ -1,9 +1,9 @@
-
 import { Handle, NodeProps, NodeResizer } from 'reactflow';
-import { getNodeBaseStyle, getResizerConfig } from '../utils/nodeStyles';
+import { FloorPlanObjectData } from '../types/floorPlanTypes';
 import { useNodeHandles } from '../hooks/useNodeHandles';
+import { getNodeBaseStyle, getResizerConfig } from '../utils/nodeStyles';
 
-export function DoorNode({ data, selected }: NodeProps<any>) {
+export function DoorNode({ data, selected }: NodeProps<FloorPlanObjectData>) {
   if (!data) return null;
 
   const { handleStyle, doorHandles } = useNodeHandles(selected);

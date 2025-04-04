@@ -1,43 +1,44 @@
-
+import { useMemo } from 'react';
 import { Position } from 'reactflow';
-import { useState, useEffect } from 'react';
 
-export function useNodeHandles(selected: boolean) {
-  const [handleStyle, setHandleStyle] = useState({
+interface HandleConfig {
+  position: Position;
+  top?: string;
+  left?: string;
+}
+
+export const useNodeHandles = (selected: boolean) => {
+  const handleStyle = useMemo(() => ({
     width: 8,
     height: 8,
-    background: '#3b82f6',
-    border: '1px solid white',
-    borderRadius: '50%',
-    opacity: selected ? 1 : 0
-  });
-  
-  useEffect(() => {
-    setHandleStyle(prev => ({
-      ...prev,
-      opacity: selected ? 1 : 0
-    }));
-  }, [selected]);
+    background: selected ? '#3b82f6' : '#64748b'
+  }), [selected]);
 
-  // Predefined handle positions for each node type
-  const roomHandles = [
-    { position: Position.Top },
-    { position: Position.Right },
-    { position: Position.Bottom },
-    { position: Position.Left }
-  ];
-  
-  const doorHandles = [
+  const standardHandles: HandleConfig[] = useMemo(() => [
+    // Left handles
+    { position: Position.Left, top: '25%' },
+    { position: Position.Left, top: '75%' },
+    // Right handles
+    { position: Position.Right, top: '25%' },
+    { position: Position.Right, top: '75%' },
+    // Top handles
+    { position: Position.Top, left: '25%' },
+    { position: Position.Top, left: '75%' },
+    // Bottom handles
+    { position: Position.Bottom, left: '25%' },
+    { position: Position.Bottom, left: '75%' }
+  ], []);
+
+  const doorHandles: HandleConfig[] = useMemo(() => [
     { position: Position.Left },
-    { position: Position.Right }
-  ];
-  
-  const hallwayHandles = [
-    { position: Position.Top },
     { position: Position.Right },
-    { position: Position.Bottom },
-    { position: Position.Left }
-  ];
+    { position: Position.Top },
+    { position: Position.Bottom }
+  ], []);
 
-  return { handleStyle, roomHandles, doorHandles, hallwayHandles };
-}
+  return {
+    handleStyle,
+    standardHandles,
+    doorHandles
+  };
+}; 

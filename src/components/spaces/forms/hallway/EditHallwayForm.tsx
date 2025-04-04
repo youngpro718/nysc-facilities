@@ -10,7 +10,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { EditSpaceFormData, editSpaceSchema } from "../../schemas/editSpaceSchema";
 import { supabase } from "@/integrations/supabase/client";
 import { CreateHallwayFields } from "../../forms/space/CreateHallwayFields";
-import { ExtendedFormSchema } from "../../schemas/extendedFormSchema";
 
 interface EditHallwayFormProps {
   id: string;
@@ -28,7 +27,7 @@ export function EditHallwayForm({
   const queryClient = useQueryClient();
   
   const form = useForm<EditSpaceFormData>({
-    resolver: zodResolver(ExtendedFormSchema),
+    resolver: zodResolver(editSpaceSchema),
     defaultValues: {
       ...initialData,
       type: "hallway", // Force type to be hallway for the edit form
@@ -69,16 +68,13 @@ export function EditHallwayForm({
       if (spaceError) throw spaceError;
 
       // Then update the hallway-specific properties
-      // Convert string values to proper types where needed
-      // Need to explicitly cast values to match database enum types
       const hallwayProps = {
-        space_id: id,
         section: data.section || 'connector',
-        traffic_flow: data.trafficFlow as any || 'two_way',
-        accessibility: data.accessibility as any || 'fully_accessible',
-        emergency_route: data.emergencyRoute as any || 'not_designated',
+        traffic_flow: data.trafficFlow || 'two_way',
+        accessibility: data.accessibility || 'fully_accessible',
+        emergency_route: data.emergencyRoute || 'not_designated',
         maintenance_priority: data.maintenancePriority || 'low',
-        capacity_limit: data.capacityLimit || 0
+        capacity_limit: data.capacityLimit
       };
 
       // Check if hallway properties exist for this space
@@ -101,7 +97,7 @@ export function EditHallwayForm({
       } else {
         const { error: insertError } = await supabase
           .from('hallway_properties')
-          .insert([hallwayProps]);
+          .insert([{ ...hallwayProps, space_id: id }]);
 
         if (insertError) throw insertError;
       }

@@ -1,7 +1,6 @@
 
 import { z } from "zod";
 import { createSpaceSchema, type CreateSpaceFormData } from "./createSpaceSchema";
-import { ExtendedFormSchema } from "./extendedFormSchema";
 
 const positionSchema = z.object({
   x: z.number(),
@@ -22,9 +21,14 @@ export const editSpaceSchema = z.preprocess(
     rotation: (data as any)?.rotation || 0,
     connections: (data as any)?.connections || []
   }),
-  ExtendedFormSchema.extend({
-    id: z.string().uuid("Invalid space ID"),
-  })
+  createSpaceSchema.and(
+    z.object({
+      id: z.string().uuid("Invalid space ID"),
+      position: positionSchema,
+      size: sizeSchema,
+      rotation: z.number().default(0)
+    })
+  )
 );
 
 export type EditSpaceFormData = z.infer<typeof editSpaceSchema>;

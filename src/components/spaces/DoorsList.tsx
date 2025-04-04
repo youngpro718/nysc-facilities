@@ -8,6 +8,7 @@ import { GridView } from "./views/GridView";
 import { ListView } from "./views/ListView";
 import { Badge } from "@/components/ui/badge";
 import { TableCell } from "@/components/ui/table";
+import { format } from "date-fns";
 import { AlertTriangle, Wrench, ArrowLeftRight } from "lucide-react";
 
 interface DoorsListProps {
@@ -35,7 +36,7 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("name_asc");
-  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [view, setView] = useState<"grid" | "list">("grid");
 
   const { data: doors, isLoading } = useQuery({
@@ -80,8 +81,8 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
   }, [doors]);
 
   const filteredDoors = useMemo(() => 
-    filterSpaces(doors, searchQuery, selectedStatus),
-    [doors, searchQuery, selectedStatus]
+    filterSpaces(doors, searchQuery, statusFilter),
+    [doors, searchQuery, statusFilter]
   );
 
   const sortedDoors = useMemo(() => 
@@ -185,21 +186,17 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
     </TableCell>
   ];
 
-  const setViewChange = (value: "grid" | "list") => {
-    setView(value);
-  };
-
   return (
     <div className="space-y-6">
       <SpaceListFilters
-        selectedStatus={selectedStatus}
-        onStatusChange={setSelectedStatus}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         sortBy={sortBy}
         onSortChange={setSortBy}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
         view={view}
-        onViewChange={setViewChange}
+        onViewChange={setView}
       />
 
       {isLoading ? (

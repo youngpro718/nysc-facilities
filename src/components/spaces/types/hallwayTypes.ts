@@ -1,44 +1,34 @@
 
-// Hallway type definitions
-
-export const HallwaySection = ["left_wing", "right_wing", "connector"] as const;
-
-export const HallwayType = ["public_main", "private"] as const;
-
-export const TrafficFlow = ["one_way", "two_way", "restricted"] as const;
-
-export const Accessibility = ["fully_accessible", "limited_access", "stairs_only", "restricted"] as const;
-
-export const EmergencyRoute = ["primary", "secondary", "not_designated"] as const;
-
-// Type definitions
-export type HallwaySectionType = typeof HallwaySection[number];
-export type HallwayTypeEnum = typeof HallwayType[number];
-export type TrafficFlowType = typeof TrafficFlow[number];
-export type AccessibilityType = typeof Accessibility[number];
-export type EmergencyRouteType = typeof EmergencyRoute[number];
-
-// Interface for hallway properties
-export interface HallwayProperties {
-  section?: HallwaySectionType;
-  hallwayType?: HallwayTypeEnum;
-  trafficFlow?: TrafficFlowType;
-  accessibility?: AccessibilityType;
-  emergencyRoute?: EmergencyRouteType;
-  maintenancePriority?: 'low' | 'medium' | 'high';
-  capacityLimit?: number;
-  description?: string;
-  width?: number;
-  length?: number;
-  maintenanceSchedule?: MaintenanceEntry[];
-  emergencyExits?: EmergencyExit[];
+export interface HallwayConnection {
+  id: string;
+  position: string;
+  connection_type: string;
+  door_details?: Record<string, any>;
+  access_requirements?: Record<string, any>;
+  is_emergency_exit?: boolean;
+  to_space?: {
+    name: string;
+  };
 }
 
-export interface MaintenanceEntry {
+export type HallwaySection = 'left_wing' | 'right_wing' | 'connector';
+export type HallwayType = 'public_main' | 'private';
+export type HallwayStatus = 'active' | 'inactive' | 'under_maintenance';
+export type TrafficFlow = 'one_way' | 'two_way' | 'restricted';
+export type Accessibility = 'fully_accessible' | 'limited_access' | 'stairs_only' | 'restricted';
+export type EmergencyRoute = 'primary' | 'secondary' | 'not_designated';
+
+export interface MaintenanceSchedule {
   date: string;
   type: string;
+  assigned_to?: string;
   status: string;
-  assignedTo?: string;
+}
+
+export interface UsageStatistics {
+  daily_traffic: number;
+  peak_hours: string[];
+  last_updated: string | null;
 }
 
 export interface EmergencyExit {
@@ -47,13 +37,44 @@ export interface EmergencyExit {
   notes?: string;
 }
 
-export interface HallwayConnection {
+export interface Hallway {
   id: string;
-  to_space?: {
+  name: string;
+  type: HallwayType;
+  status: HallwayStatus;
+  section: HallwaySection;
+  notes: string;
+  description?: string;
+  maintenance_status?: string;
+  last_inspection_date?: string;
+  floor_id: string;
+  created_at: string;
+  updated_at: string;
+  maintenance_history?: any[];
+  next_maintenance_date?: string;
+  last_maintenance_date?: string;
+  maintenance_priority?: string;
+  inspection_history?: any[];
+  next_inspection_date?: string;
+  maintenance_notes?: string;
+  inspected_by?: string;
+  // New fields
+  capacity_limit?: number;
+  traffic_flow?: TrafficFlow;
+  accessibility?: Accessibility;
+  emergency_route?: EmergencyRoute;
+  width_meters?: number;
+  length_meters?: number;
+  last_inspection_notes?: string;
+  emergency_exits?: EmergencyExit[];
+  security_level?: string;
+  maintenance_schedule?: MaintenanceSchedule[];
+  usage_statistics?: UsageStatistics;
+  floors?: {
     name: string;
-    id: string;
-    type: string;
+    buildings?: {
+      name: string;
+    };
   };
-  position?: string;
-  connection_type?: string;
+  space_connections?: HallwayConnection[] | null;
 }

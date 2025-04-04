@@ -14,7 +14,7 @@ export const ConnectedSpaces = ({ connections }: ConnectedSpacesProps) => {
         {connections?.map((conn) => (
           <div key={conn.id} className="flex items-center gap-2">
             <Badge variant="outline" className="text-xs">
-              {conn.position || 'Adjacent'}
+              {conn.position}
             </Badge>
             <span className="text-sm text-muted-foreground">
               {conn.to_space?.name || 'Unknown Space'}

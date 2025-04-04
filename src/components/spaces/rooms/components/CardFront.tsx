@@ -1,17 +1,11 @@
 
-import { useState } from "react";
+import { Room } from "../types/RoomTypes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Edit, MoreHorizontal, Trash2 } from "lucide-react";
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
-import { Room } from "../types/RoomTypes";
-import { StatusBadge } from "../../StatusBadge";
+import { Trash2, ArrowRightFromLine, Users } from "lucide-react";
 import { EditSpaceDialog } from "../../EditSpaceDialog";
+import { CourtroomPhotos } from './CourtroomPhotos';
+import { CourtroomPhotoThumbnail } from './CourtroomPhotoThumbnail';
 
 interface CardFrontProps {
   room: Room;
@@ -20,118 +14,132 @@ interface CardFrontProps {
 }
 
 export function CardFront({ room, onFlip, onDelete }: CardFrontProps) {
-  const [isEditing, setIsEditing] = useState(false);
-
-  const handleEditClick = () => {
-    setIsEditing(true);
-  };
-
-  const handleDeleteClick = () => {
-    if (window.confirm("Are you sure you want to delete this room?")) {
-      onDelete(room.id);
-    }
-  };
-
   return (
-    <div className="h-full flex flex-col p-4">
-      {/* Card Header */}
-      <div className="flex items-start justify-between mb-3">
-        <div className="space-y-1">
-          <h3 className="text-lg font-semibold line-clamp-2">
-            {room.name}
-          </h3>
-          <div className="flex items-center text-xs text-muted-foreground">
-            {room.room_number && (
-              <span className="mr-2">#{room.room_number}</span>
-            )}
-            <StatusBadge status={room.status} />
+    <div className="p-5 flex flex-col h-full">
+      <div className="mb-3">
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className="text-lg font-semibold text-foreground">{room.name}</h3>
+            <p className="text-sm text-muted-foreground">Room {room.room_number}</p>
           </div>
-        </div>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <MoreHorizontal className="h-4 w-4" />
-              <span className="sr-only">More options</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={onFlip}>
-              View Details
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleEditClick}>
-              <Edit className="mr-2 h-4 w-4" /> Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              className="text-destructive"
-              onClick={handleDeleteClick}
-            >
-              <Trash2 className="mr-2 h-4 w-4" /> Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      {/* Quick Info */}
-      <div className="flex flex-col gap-2 text-sm mb-3 flex-grow">
-        <div className="flex items-center text-muted-foreground">
-          <span className="font-medium mr-2">Type:</span>
-          <span>{room.room_type?.replace(/_/g, ' ')}</span>
+          <Badge 
+            variant={
+              room.status === 'active' ? 'default' :
+              room.status === 'inactive' ? 'destructive' : 'outline'
+            }
+            className="ml-2"
+          >
+            {room.status.split('_').map(word => 
+              word.charAt(0).toUpperCase() + word.slice(1)
+            ).join(' ')}
+          </Badge>
         </div>
         
-        {room.current_function && (
-          <div className="flex items-center text-muted-foreground">
-            <span className="font-medium mr-2">Function:</span>
-            <span>{room.current_function}</span>
-          </div>
+        <div className="flex items-center mt-1">
+          <Badge 
+            variant="secondary" 
+            className="text-xs"
+          >
+            {room.room_type.replace(/_/g, ' ')}
+          </Badge>
+          
+          {room.is_storage && (
+            <Badge 
+              variant="secondary" 
+              className="ml-2 text-xs"
+            >
+              Storage
+            </Badge>
+          )}
+        </div>
+        
+        {/* Show photo thumbnail on card if room is a courtroom and has photos */}
+        {room.room_type === 'courtroom' && (
+          <CourtroomPhotoThumbnail photos={room.courtroom_photos} />
         )}
+        
+        {/* Display CourtroomPhotos dialog component if room is a courtroom */}
+        {room.room_type === 'courtroom' && <CourtroomPhotos room={room} />}
+      </div>
 
-        {room.is_storage && (
-          <div className="mt-1 flex items-center">
-            <Badge variant="outline" className="text-xs">Storage</Badge>
-            {room.storage_type && (
-              <Badge variant="secondary" className="ml-1 text-xs">
-                {room.storage_type?.replace(/_/g, ' ')}
-              </Badge>
-            )}
-          </div>
-        )}
-
-        {room.description && (
-          <p className="text-muted-foreground text-xs line-clamp-3 mt-2">
+      <div className="flex-1">
+        {room.description ? (
+          <p className="text-sm text-muted-foreground line-clamp-5">
             {room.description}
           </p>
+        ) : (
+          <p className="text-sm text-muted-foreground italic">
+            No description available
+          </p>
+        )}
+
+        {/* Occupants Preview */}
+        {room.current_occupants && room.current_occupants.length > 0 && (
+          <div className="mt-4">
+            <div className="flex items-center mb-1">
+              <Users className="h-4 w-4 mr-1 text-muted-foreground" />
+              <span className="text-sm font-medium">Occupants</span>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {room.current_occupants.slice(0, 2).map((occupant, index) => (
+                <Badge key={index} variant="outline" className="text-xs">
+                  {occupant.first_name} {occupant.last_name}
+                </Badge>
+              ))}
+              {room.current_occupants.length > 2 && (
+                <Badge variant="outline" className="text-xs">
+                  +{room.current_occupants.length - 2} more
+                </Badge>
+              )}
+            </div>
+          </div>
         )}
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex justify-between mt-auto pt-2 border-t">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={onFlip}
-        >
+      <div className="mt-4 flex justify-between">
+        <Button variant="ghost" size="sm" onClick={onFlip}>
+          <ArrowRightFromLine className="h-4 w-4 mr-1" />
           More Details
         </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleEditClick}
-        >
-          <Edit className="mr-1 h-4 w-4" />
-          Edit
-        </Button>
+        <div className="flex gap-2">
+          <EditSpaceDialog
+            id={room.id}
+            type="room"
+            initialData={{
+              id: room.id,
+              name: room.name,
+              roomNumber: room.room_number || '',
+              roomType: room.room_type,
+              description: room.description || '',
+              status: room.status,
+              floorId: room.floor_id,
+              isStorage: room.is_storage || false,
+              storageType: room.storage_type || null,
+              storageCapacity: room.storage_capacity || null,
+              storageNotes: room.storage_notes || null,
+              parentRoomId: room.parent_room_id || null,
+              currentFunction: room.current_function || null,
+              phoneNumber: room.phone_number || null,
+              courtroom_photos: room.courtroom_photos || null,
+              connections: room.space_connections?.map(conn => ({
+                id: conn.id,
+                connectionType: conn.connection_type,
+                toSpaceId: conn.to_space_id,
+                direction: conn.direction || null
+              })) || [],
+              type: "room"
+            }}
+          />
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => onDelete(room.id)}
+            title="Delete Room"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
-
-      {/* Edit Dialog */}
-      {isEditing && (
-        <EditSpaceDialog
-          id={room.id}
-          type="room"
-          open={isEditing}
-          onOpenChange={setIsEditing}
-        />
-      )}
     </div>
   );
 }

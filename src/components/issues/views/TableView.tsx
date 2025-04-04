@@ -27,20 +27,20 @@ interface TableViewProps {
   onDelete: (id: string) => void;
 }
 
-export const TableView = ({
-  issues,
-  onIssueSelect,
-  onStatusChange,
-  onDelete
+export const TableView = ({ 
+  issues, 
+  onIssueSelect, 
+  onStatusChange, 
+  onDelete 
 }: TableViewProps) => {
   const handleActionClick = (
-    e: React.MouseEvent,
-    action: (id: string) => void,
+    e: React.MouseEvent, 
+    action: (id: string) => void, 
     id: string
   ) => {
     e.preventDefault();
     e.stopPropagation();
-
+    
     // Use a small delay to ensure event propagation is complete
     // before running the action
     setTimeout(() => {
@@ -65,7 +65,7 @@ export const TableView = ({
         </TableHeader>
         <TableBody>
           {issues?.map((issue) => (
-            <TableRow
+            <TableRow 
               key={issue.id}
               className="cursor-pointer hover:bg-muted/50"
               onClick={(e) => {
@@ -126,9 +126,9 @@ export const TableView = ({
                     >
                       View details
                     </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="p-0">
-                      <DeleteIssueButton
-                        issueId={issue.id}
+                    <DropdownMenuItem>
+                      <DeleteIssueButton 
+                        issueId={issue.id} 
                         standalone={false}
                         onDelete={() => {
                           if (onDelete) {
