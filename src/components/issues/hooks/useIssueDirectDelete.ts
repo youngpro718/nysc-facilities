@@ -33,7 +33,10 @@ export const useIssueDirectDelete = () => {
       console.log('Delete response:', response.data);
 
       if (response.data.success) {
+        // Invalidate all relevant queries
         queryClient.invalidateQueries({ queryKey: ['issues'] });
+        queryClient.invalidateQueries({ queryKey: ['userIssues'] });
+
         toast.success(response.data.message || 'Issue deleted successfully');
         return true;
       } else {
@@ -42,9 +45,24 @@ export const useIssueDirectDelete = () => {
     } catch (error: any) {
       console.error('Error in deleteIssue:', error);
 
-      // Handle different error types
+      // Create a custom error object with additional properties
+      const enhancedError: any = new Error(
+        error.response?.data?.message || error.message || 'Failed to delete issue'
+      );
+
+      // Add additional properties from the response
+      if (error.response?.data) {
+        enhancedError.requiresForce = error.response.data.requiresForce;
+        enhancedError.response = error.response;
+      }
+
+      // Handle different error types for toast messages
       if (error.code === 'ERR_NETWORK') {
         toast.error('Network error. Please check your connection and try again.');
+      } else if (error.response?.status === 404) {
+        toast.error('Issue not found. It may have already been deleted.');
+      } else if (error.response?.status === 409 || error.response?.data?.requiresForce) {
+        toast.error('Cannot delete due to related records. Try using force delete.');
       } else if (error.response?.data?.message) {
         toast.error(`Failed to delete issue: ${error.response.data.message}`);
       } else if (error.message) {
@@ -53,7 +71,8 @@ export const useIssueDirectDelete = () => {
         toast.error('Failed to delete issue. Please try again later.');
       }
 
-      return false;
+      // Throw the enhanced error for the component to handle
+      throw enhancedError;
     } finally {
       setIsDeleting(false);
     }
@@ -63,4 +82,4 @@ export const useIssueDirectDelete = () => {
     deleteIssue,
     isDeleting
   };
-}; 
+};

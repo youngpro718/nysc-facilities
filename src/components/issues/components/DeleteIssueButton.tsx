@@ -39,7 +39,7 @@ export function DeleteIssueButton({
   const [forceDelete, setForceDelete] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { deleteIssue, isDeleting } = useIssueDirectDelete();
-  
+
   // Reset state when dialog closes
   const handleOpenChange = (open: boolean) => {
     setOpen(open);
@@ -51,34 +51,49 @@ export function DeleteIssueButton({
 
   const handleDelete = async () => {
     setErrorMessage(null);
-    
+
     try {
       console.log(`Attempting to delete issue with ID: ${issueId}, force: ${forceDelete}`);
-      const success = await deleteIssue(issueId, forceDelete);
-      
-      if (success) {
+
+      try {
+        // This will throw an enhanced error if it fails
+        await deleteIssue(issueId, forceDelete);
+
+        // If we get here, the delete was successful
         setOpen(false);
         if (onDelete) {
           onDelete();
         }
-      } else {
-        setErrorMessage("Failed to delete issue. Check console for details.");
+      } catch (error: any) {
+        console.error("Error deleting issue:", error);
+
+        // Check if this is a constraint error that requires force delete
+        if (error.requiresForce ||
+            (error.response?.data?.requiresForce) ||
+            error.message?.includes('constraints') ||
+            error.message?.includes('force=true')) {
+
+          setForceDelete(true);
+          setErrorMessage(
+            "Unable to delete due to database constraints. The force delete option has been automatically selected. Click Delete again to attempt to remove all references to this issue."
+          );
+        } else if (error.response?.status === 404) {
+          // Issue not found
+          setErrorMessage("This issue may have already been deleted. Please refresh the page.");
+        } else {
+          // Generic error
+          setErrorMessage(error.message || error.response?.data?.message || "An unknown error occurred");
+        }
       }
-    } catch (error: any) {
-      console.error("Error deleting issue:", error);
-      setErrorMessage(error.message || "An unknown error occurred");
-      
-      // If the error message suggests using force=true
-      if (error.message?.includes('force=true')) {
-        setErrorMessage(
-          "Unable to delete due to database constraints. You can try force deletion, which will attempt to remove all references to this issue."
-        );
-      }
+    } catch (outerError: any) {
+      // This catches any errors in our error handling itself
+      console.error("Unexpected error in delete handler:", outerError);
+      setErrorMessage("An unexpected error occurred. Please try again.");
     }
   };
 
   const renderDialogContent = () => (
-    <AlertDialogContent>
+    <AlertDialogContent onClick={(e) => e.stopPropagation()} className="z-[100]">
       <AlertDialogHeader>
         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
         <AlertDialogDescription>
@@ -86,32 +101,35 @@ export function DeleteIssueButton({
           and remove it from our servers.
         </AlertDialogDescription>
       </AlertDialogHeader>
-      
+
       {errorMessage && (
         <div className="bg-destructive/10 p-3 rounded-md flex items-start gap-2 text-sm text-destructive">
           <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
           <div>{errorMessage}</div>
         </div>
       )}
-      
+
       <div className="flex items-center space-x-2 pt-2">
-        <Checkbox 
-          id="force-delete" 
-          checked={forceDelete} 
+        <Checkbox
+          id={`force-delete-${issueId}`}
+          checked={forceDelete}
           onCheckedChange={(checked) => setForceDelete(checked === true)}
         />
-        <Label 
-          htmlFor="force-delete" 
+        <Label
+          htmlFor={`force-delete-${issueId}`}
           className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
         >
           Force delete (bypass constraints)
         </Label>
       </div>
-      
+
       <AlertDialogFooter>
-        <AlertDialogCancel>Cancel</AlertDialogCancel>
+        <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancel</AlertDialogCancel>
         <AlertDialogAction
-          onClick={handleDelete}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDelete();
+          }}
           className="bg-destructive hover:bg-destructive/90"
           disabled={isDeleting}
         >
@@ -124,22 +142,20 @@ export function DeleteIssueButton({
   // If used inside a DropdownMenuItem (not standalone)
   if (!standalone) {
     return (
-      <>
-        <div 
-          onClick={(e) => {
-            e.stopPropagation();
-            setOpen(true);
-          }}
-          className="w-full cursor-pointer px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10 flex items-center rounded-sm"
-        >
-          <Trash className="h-4 w-4 mr-2" />
-          {text}
-        </div>
-        
-        <AlertDialog open={open} onOpenChange={handleOpenChange}>
-          {renderDialogContent()}
-        </AlertDialog>
-      </>
+      <AlertDialog open={open} onOpenChange={handleOpenChange}>
+        <AlertDialogTrigger asChild>
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+            className="w-full cursor-pointer px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10 flex items-center rounded-sm"
+          >
+            <Trash className="h-4 w-4 mr-2" />
+            {text}
+          </div>
+        </AlertDialogTrigger>
+        {renderDialogContent()}
+      </AlertDialog>
     );
   }
 
@@ -160,4 +176,4 @@ export function DeleteIssueButton({
       {renderDialogContent()}
     </AlertDialog>
   );
-} 
+}
