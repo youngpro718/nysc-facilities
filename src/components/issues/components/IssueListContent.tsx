@@ -36,7 +36,6 @@ export const IssueListContent = ({
     isLoading,
     updateIssueMutation,
     deleteIssueMutation,
-    isDeleteInProgress
   } = useIssueQueries({ filters, searchQuery });
 
   const handleFilterChange = (newFilters: Partial<IssueFiltersType>) => {
@@ -66,7 +65,7 @@ export const IssueListContent = ({
 
   const handleDelete = (id: string) => {
     if (window.confirm("Are you sure you want to delete this issue?")) {
-      deleteIssueMutation.mutate({ issueId: id }, {
+      deleteIssueMutation.mutate(id, {
         onSuccess: () => {
           toast({
             title: "Issue deleted",
@@ -84,7 +83,7 @@ export const IssueListContent = ({
     }, 10);
   };
 
-  if (isLoading || isDeleteInProgress) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[200px]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

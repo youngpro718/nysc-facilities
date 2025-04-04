@@ -20,7 +20,7 @@ export const useIssueQueries = ({ filters, searchQuery }: UseIssueQueriesProps) 
   }), [filters, filters.status]);
 
   const { data: queryResponse, isLoading, error } = useIssueList(adjustedFilters, searchQuery);
-  const { updateIssueMutation, deleteIssueMutation, isDeleteInProgress } = useIssueMutations();
+  const { updateIssueMutation, deleteIssueMutation } = useIssueMutations();
 
   // Only log in development environment and when values actually change
   if (process.env.NODE_ENV === 'development') {
@@ -39,6 +39,5 @@ export const useIssueQueries = ({ filters, searchQuery }: UseIssueQueriesProps) 
     error,
     updateIssueMutation,
     deleteIssueMutation,
-    isDeleteInProgress
   };
 };

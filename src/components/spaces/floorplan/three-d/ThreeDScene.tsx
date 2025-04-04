@@ -1,194 +1,409 @@
-import React, { useRef, useEffect, useState } from "react";
-import * as THREE from "three";
-// Let's create a simple placeholder 3D scene for now and we'll add proper integration later
+import React, { useEffect, useRef, useState } from 'react';
+import { useThree } from '@react-three/fiber';
+import { OrbitControls, Grid, Stats } from '@react-three/drei';
+import { FloorPlanNode } from '../types/floorPlanTypes';
+import { Room3D } from './spaces/Room3D';
+import { Hallway3D } from './spaces/Hallway3D';
+import { Door3D } from './spaces/Door3D';
+import { SpaceConnection } from './SpaceConnection';
+import { SceneLighting } from './SceneLighting';
+import * as THREE from 'three';
 
 interface ThreeDSceneProps {
-  floorId: string;
-  selectedObjectId?: string;
-  zoom?: number;
+  objects: FloorPlanNode[];
+  connections: any[];
+  onObjectSelect: (object: any) => void;
+  selectedObjectId?: string | null;
+  previewData?: any | null;
   showLabels?: boolean;
-  previewData?: any;
-  onObjectSelect?: (object: any) => void;
+  showConnections?: boolean;
+  lightIntensity?: number;
+  viewMode?: 'default' | 'rooms' | 'hallways' | 'doors';
 }
 
-const ThreeDScene: React.FC<ThreeDSceneProps> = ({
-  floorId,
-  selectedObjectId,
-  zoom = 1,
+export function ThreeDScene({ 
+  objects = [], 
+  connections = [],
+  onObjectSelect, 
+  selectedObjectId = null,
+  previewData = null,
   showLabels = true,
-  previewData,
-  onObjectSelect
-}) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  showConnections = true,
+  lightIntensity = 0.8,
+  viewMode = 'default'
+}: ThreeDSceneProps) {
+  const { camera } = useThree();
+  const controlsRef = useRef<any>(null);
+  const [hasInitialized, setHasInitialized] = useState(false);
   
-  useEffect(() => {
-    if (!containerRef.current) return;
+  // Group objects by type for better rendering
+  const roomObjects = objects?.filter(obj => obj.type === 'room') || [];
+  const hallwayObjects = objects?.filter(obj => obj.type === 'hallway') || [];
+  const doorObjects = objects?.filter(obj => obj.type === 'door') || [];
+  
+  // Filter objects based on view mode
+  const visibleObjects = {
+    rooms: viewMode === 'default' || viewMode === 'rooms',
+    hallways: viewMode === 'default' || viewMode === 'hallways',
+    doors: viewMode === 'default' || viewMode === 'doors'
+  };
+  
+  // Find visible connections between spaces
+  const visibleConnections = connections?.filter(conn => {
+    // Skip if connections are hidden
+    if (!showConnections) return false;
     
-    // Create a simple Three.js scene as a placeholder
-    try {
-      const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0xf0f0f0);
+    const sourceObj = objects?.find(obj => obj.id === conn.source);
+    const targetObj = objects?.find(obj => obj.id === conn.target);
+    
+    // If either object is filtered out by view mode, don't show the connection
+    if (!sourceObj || !targetObj) return false;
+    
+    const sourceVisible = 
+      (sourceObj.type === 'room' && visibleObjects.rooms) ||
+      (sourceObj.type === 'hallway' && visibleObjects.hallways) ||
+      (sourceObj.type === 'door' && visibleObjects.doors);
       
-      const camera = new THREE.PerspectiveCamera(
-        75,
-        containerRef.current.clientWidth / containerRef.current.clientHeight,
-        0.1,
-        1000
-      );
-      camera.position.set(0, 5, 10);
-      camera.lookAt(0, 0, 0);
-      
-      const renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
-      
-      // Clear the container before adding the canvas
-      while (containerRef.current.firstChild) {
-        containerRef.current.removeChild(containerRef.current.firstChild);
-      }
-      containerRef.current.appendChild(renderer.domElement);
-      
-      // Add some basic lighting
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-      scene.add(ambientLight);
-      
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-      directionalLight.position.set(1, 1, 1);
-      scene.add(directionalLight);
-      
-      // Add a grid to represent the floor
-      const gridHelper = new THREE.GridHelper(20, 20);
-      scene.add(gridHelper);
-      
-      // Add a simple placeholder for the floor
-      const floorGeometry = new THREE.PlaneGeometry(20, 20);
-      const floorMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0xcccccc, 
-        side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 0.7
-      });
-      const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-      floor.rotation.x = -Math.PI / 2;
-      scene.add(floor);
-      
-      // Create a simple box to represent each room
-      // This is placeholder functionality - we'd load actual data in a real implementation
-      const createBox = (x: number, z: number, width: number, depth: number, color: number, name: string) => {
-        const geometry = new THREE.BoxGeometry(width, 0.1, depth);
-        const material = new THREE.MeshStandardMaterial({ color });
-        const box = new THREE.Mesh(geometry, material);
-        box.position.set(x, 0.05, z);
-        box.userData = { id: `room-${x}-${z}`, name, type: 'room' };
-        scene.add(box);
-        return box;
-      };
-      
-      // Create sample rooms
-      const rooms = [
-        createBox(-3, -2, 2, 3, 0x9fdfbf, 'Office 101'),
-        createBox(0, -2, 2, 3, 0xaad9ff, 'Meeting Room'),
-        createBox(3, -2, 2, 3, 0xffb6c1, 'Storage'),
-        createBox(-3, 2, 2, 3, 0xffffb0, 'Office 102'),
-        createBox(0, 2, 2, 3, 0xd8bfd8, 'Hallway'),
-        createBox(3, 2, 2, 3, 0xffcba4, 'Reception')
-      ];
-      
-      // Highlight the selected object if any
-      if (selectedObjectId) {
-        rooms.forEach(room => {
-          if (room.userData.id === selectedObjectId) {
-            const highlightMaterial = new THREE.MeshStandardMaterial({ 
-              color: 0xff9900,
-              emissive: 0xff6600,
-              emissiveIntensity: 0.2
-            });
-            room.material = highlightMaterial;
-          }
-        });
-      }
-      
-      // Handle window resize
-      const handleResize = () => {
-        if (!containerRef.current) return;
-        
-        camera.aspect = containerRef.current.clientWidth / containerRef.current.clientHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
-      };
-      
-      window.addEventListener('resize', handleResize);
-      
-      // Simple animation loop
-      const animate = () => {
-        requestAnimationFrame(animate);
-        renderer.render(scene, camera);
-      };
-      
-      animate();
-      setIsLoading(false);
-      
-      // Handle clicks
-      const raycaster = new THREE.Raycaster();
-      const mouse = new THREE.Vector2();
-      
-      const handleClick = (event: MouseEvent) => {
-        if (!containerRef.current) return;
-        
-        // Calculate mouse position in normalized device coordinates
-        const rect = containerRef.current.getBoundingClientRect();
-        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-        
-        // Update the picking ray with the camera and mouse position
-        raycaster.setFromCamera(mouse, camera);
-        
-        // Calculate objects intersecting the picking ray
-        const intersects = raycaster.intersectObjects(scene.children);
-        
-        if (intersects.length > 0) {
-          const selectedObject = intersects[0].object;
-          if (selectedObject.userData && selectedObject.userData.id && onObjectSelect) {
-            onObjectSelect(selectedObject.userData);
-          }
-        }
-      };
-      
-      containerRef.current.addEventListener('click', handleClick);
-      
-      // Cleanup
-      return () => {
-        window.removeEventListener('resize', handleResize);
-        if (containerRef.current) {
-          containerRef.current.removeEventListener('click', handleClick);
-        }
-        renderer.dispose();
-      };
-    } catch (err) {
-      console.error('Error initializing 3D scene:', err);
-      setError('Failed to initialize 3D scene');
-      setIsLoading(false);
-    }
-  }, [floorId, selectedObjectId, zoom, showLabels, previewData, onObjectSelect]);
-  
-  return (
-    <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-        </div>
-      )}
-      
-      {error && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="bg-destructive/10 p-4 rounded-md text-destructive">
-            {error}. Please try refreshing the page.
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+    const targetVisible = 
+      (targetObj.type === 'room' && visibleObjects.rooms) ||
+      (targetObj.type === 'hallway' && visibleObjects.hallways) ||
+      (targetObj.type === 'door' && visibleObjects.doors);
+    
+    return sourceVisible && targetVisible;
+  }) || [];
 
-export default ThreeDScene;
+  // Prepare connection data for spaces
+  const objectConnectionMap = new Map<string, string[]>();
+  
+  if (connections) {
+    connections.forEach(conn => {
+      if (conn.source && conn.target) {
+        // Add target to source's connections
+        if (!objectConnectionMap.has(conn.source)) {
+          objectConnectionMap.set(conn.source, []);
+        }
+        objectConnectionMap.get(conn.source)?.push(conn.target);
+        
+        // Add source to target's connections
+        if (!objectConnectionMap.has(conn.target)) {
+          objectConnectionMap.set(conn.target, []);
+        }
+        objectConnectionMap.get(conn.target)?.push(conn.source);
+      }
+    });
+  }
+  
+  // Initialize camera position based on scene contents
+  useEffect(() => {
+    if (camera && objects.length > 0 && !hasInitialized) {
+      let minX = Infinity, maxX = -Infinity;
+      let minY = Infinity, maxY = -Infinity;
+      
+      objects.forEach(obj => {
+        const x = obj.position.x;
+        const y = obj.position.y;
+        const width = obj.data.size?.width || 100;
+        const height = obj.data.size?.height || 100;
+        
+        minX = Math.min(minX, x - width/2);
+        maxX = Math.max(maxX, x + width/2);
+        minY = Math.min(minY, y - height/2);
+        maxY = Math.max(maxY, y + height/2);
+      });
+      
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+      
+      const sceneWidth = maxX - minX;
+      const sceneDepth = maxY - minY;
+      const maxDimension = Math.max(sceneWidth, sceneDepth, 600);
+      const cameraDistance = maxDimension * 1.2;
+      
+      camera.position.set(centerX, cameraDistance * 0.7, centerY + cameraDistance * 0.7);
+      camera.lookAt(centerX, 0, centerY);
+      
+      if (controlsRef.current) {
+        controlsRef.current.target.set(centerX, 0, centerY);
+        controlsRef.current.update();
+      }
+      
+      setHasInitialized(true);
+    }
+  }, [camera, objects, hasInitialized]);
+
+  // Focus camera on selected object
+  useEffect(() => {
+    if (controlsRef.current && selectedObjectId) {
+      const selectedObject = objects.find(obj => obj.id === selectedObjectId);
+      
+      if (selectedObject) {
+        const targetX = selectedObject.position.x;
+        const targetY = selectedObject.position.y;
+        const targetZ = 0;
+        
+        // Animate camera movement for better UX
+        const currentPosition = new THREE.Vector3().copy(camera.position);
+        const targetPosition = new THREE.Vector3(
+          targetX + 200, 
+          camera.position.y * 0.8, 
+          targetY + 200
+        );
+        
+        let startTime = Date.now();
+        const duration = 1000; // 1 second animation
+        
+        const animateCamera = () => {
+          const elapsed = Date.now() - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          const easeProgress = 1 - Math.pow(1 - progress, 3); // Cubic ease out
+          
+          camera.position.lerpVectors(currentPosition, targetPosition, easeProgress);
+          
+          if (controlsRef.current) {
+            controlsRef.current.target.set(targetX, targetZ, targetY);
+            controlsRef.current.update();
+          }
+          
+          if (progress < 1) {
+            requestAnimationFrame(animateCamera);
+          }
+        };
+        
+        animateCamera();
+      }
+    }
+  }, [selectedObjectId, objects, camera]);
+
+  // Determine connection type
+  const getConnectionType = (conn: any) => {
+    if (!conn) return 'standard';
+    
+    const sourceObj = objects.find(obj => obj.id === conn.source);
+    const targetObj = objects.find(obj => obj.id === conn.target);
+    
+    if (!sourceObj || !targetObj) return 'standard';
+    
+    if (conn.connection_type === 'door' || conn.data?.type === 'door') return 'door';
+    if (conn.is_emergency_exit || conn.data?.type === 'emergency') return 'emergency';
+    
+    if (sourceObj.type === 'hallway' && targetObj.type === 'hallway') {
+      return 'hallway';
+    }
+    
+    if (sourceObj.type === 'hallway' || targetObj.type === 'hallway') {
+      return 'hallway';
+    }
+    
+    return 'direct';
+  };
+
+  return (
+    <>
+      <SceneLighting intensity={lightIntensity} />
+      <OrbitControls 
+        ref={controlsRef} 
+        enableDamping={true}
+        dampingFactor={0.1}
+        rotateSpeed={0.5}
+        maxPolarAngle={Math.PI / 2 - 0.1}
+        minDistance={100}
+        maxDistance={3000}
+      />
+      
+      <group>
+        {/* Improved floor plane with gradient */}
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} receiveShadow>
+          <planeGeometry args={[6000, 6000]} />
+          <meshStandardMaterial 
+            color="#f8fafc" 
+            roughness={0.8} 
+            metalness={0.1}
+            transparent={true}
+            opacity={0.8} 
+          />
+        </mesh>
+        
+        {/* Enhanced grid for better spatial awareness */}
+        <Grid 
+          infiniteGrid 
+          cellSize={50} 
+          cellThickness={0.6} 
+          cellColor="#cbd5e1" 
+          sectionSize={200}
+          sectionThickness={1.2}
+          sectionColor="#64748b"
+          fadeDistance={2000}
+          fadeStrength={1.5}
+          position={[0, -1, 0]}
+        />
+        
+        {/* Render connections between spaces */}
+        {visibleConnections.map((conn, idx) => {
+          const sourceObj = objects.find(obj => obj.id === conn.source);
+          const targetObj = objects.find(obj => obj.id === conn.target);
+          
+          if (!sourceObj || !targetObj) return null;
+          
+          const connectionType = getConnectionType(conn);
+          const isHighlighted = selectedObjectId && 
+            (conn.source === selectedObjectId || conn.target === selectedObjectId);
+          
+          return (
+            <SpaceConnection 
+              key={`conn-${idx}`}
+              from={sourceObj}
+              to={targetObj}
+              type={connectionType}
+              isDashed={connectionType !== 'hallway' && connectionType !== 'direct'}
+              showLabels={isHighlighted && showLabels}
+            />
+          );
+        })}
+        
+        {/* Render hallways first (lower) */}
+        {visibleObjects.hallways && hallwayObjects.map(obj => {
+          let objectData = obj;
+          if (previewData && previewData.id === obj.id) {
+            objectData = {
+              ...obj,
+              position: previewData.position || obj.position,
+              rotation: previewData.rotation ?? obj.rotation,
+              data: {
+                ...obj.data,
+                size: previewData.data?.size || obj.data.size,
+                properties: previewData.data?.properties || obj.data.properties,
+                rotation: previewData.data?.rotation ?? obj.data.rotation
+              }
+            };
+          }
+          
+          const isSelected = selectedObjectId === obj.id;
+          const rotation = objectData.data?.rotation !== undefined 
+            ? objectData.data.rotation 
+            : (objectData.rotation || 0);
+          
+          // Add connection data to properties
+          const enhancedProperties = {
+            ...objectData.data?.properties,
+            connected_spaces: objectConnectionMap.get(obj.id) || []
+          };
+          
+          // Find spaces connected to this hallway
+          const connectedSpaces = objects.filter(otherObj => {
+            return objectConnectionMap.get(obj.id)?.includes(otherObj.id);
+          });
+          
+          return (
+            <Hallway3D
+              key={obj.id}
+              id={obj.id}
+              position={objectData.position}
+              size={objectData.data.size}
+              rotation={rotation}
+              color={obj.data?.style?.backgroundColor || '#e5e7eb'}
+              onClick={onObjectSelect}
+              isSelected={isSelected}
+              properties={enhancedProperties}
+              label={obj.data?.label || 'Hallway'}
+              showLabels={showLabels}
+              connectedSpaces={connectedSpaces}
+            />
+          );
+        })}
+        
+        {/* Render doors */}
+        {visibleObjects.doors && doorObjects.map(obj => {
+          let objectData = obj;
+          if (previewData && previewData.id === obj.id) {
+            objectData = {
+              ...obj,
+              position: previewData.position || obj.position,
+              rotation: previewData.rotation ?? obj.rotation,
+              data: {
+                ...obj.data,
+                size: previewData.data?.size || obj.data.size,
+                properties: previewData.data?.properties || obj.data.properties,
+                rotation: previewData.data?.rotation ?? obj.data.rotation
+              }
+            };
+          }
+          
+          const isSelected = selectedObjectId === obj.id;
+          const rotation = objectData.data?.rotation !== undefined 
+            ? objectData.data.rotation 
+            : (objectData.rotation || 0);
+            
+          // Add connection data to properties
+          const enhancedProperties = {
+            ...objectData.data?.properties,
+            connected_spaces: objectConnectionMap.get(obj.id) || []
+          };
+          
+          return (
+            <Door3D
+              key={obj.id}
+              id={obj.id}
+              position={objectData.position}
+              size={objectData.data.size || {width: 40, height: 15}}
+              rotation={rotation}
+              color={obj.data?.style?.backgroundColor || '#94a3b8'}
+              onClick={onObjectSelect}
+              isSelected={isSelected}
+              properties={enhancedProperties}
+              label={obj.data?.label}
+              showLabels={showLabels}
+            />
+          );
+        })}
+        
+        {/* Render rooms */}
+        {visibleObjects.rooms && roomObjects.map(obj => {
+          let objectData = obj;
+          if (previewData && previewData.id === obj.id) {
+            objectData = {
+              ...obj,
+              position: previewData.position || obj.position,
+              rotation: previewData.rotation ?? obj.rotation,
+              data: {
+                ...obj.data,
+                size: previewData.data?.size || obj.data.size,
+                properties: previewData.data?.properties || obj.data.properties,
+                rotation: previewData.data?.rotation ?? obj.data.rotation
+              }
+            };
+          }
+          
+          const isSelected = selectedObjectId === obj.id;
+          const rotation = objectData.data?.rotation !== undefined 
+            ? objectData.data.rotation 
+            : (objectData.rotation || 0);
+            
+          // Add connection data to properties
+          const enhancedProperties = {
+            ...objectData.data?.properties,
+            connected_spaces: objectConnectionMap.get(obj.id) || []
+          };
+          
+          return (
+            <Room3D 
+              key={obj.id}
+              id={obj.id}
+              position={objectData.position}
+              size={objectData.data.size}
+              rotation={rotation}
+              color={obj.data?.style?.backgroundColor || '#e2e8f0'}
+              onClick={onObjectSelect}
+              isSelected={isSelected}
+              properties={enhancedProperties}
+              label={obj.data?.label || ''}
+              showLabels={showLabels}
+            />
+          );
+        })}
+      </group>
+      
+      {/* Stats for performance monitoring (only in development) */}
+      {process.env.NODE_ENV === 'development' && <Stats />}
+    </>
+  );
+}

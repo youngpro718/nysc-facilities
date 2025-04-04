@@ -1,63 +1,7 @@
 
-import { Node, Edge } from 'reactflow';
+export type LayerType = 'rooms' | 'doors' | 'grid' | 'hallways' | 'annotations';
 
-export interface FloorPlanNode extends Node {
-  id: string;
-  type: string;
-  position: {
-    x: number;
-    y: number;
-  };
-  data: {
-    label: string;
-    type: string;
-    size: {
-      width: number;
-      height: number;
-    };
-    style: {
-      backgroundColor: string;
-      border: string;
-      [key: string]: any;
-    };
-    properties: {
-      [key: string]: any;
-    };
-    rotation: number;
-    [key: string]: any;
-  };
-  rotation?: number;
-  zIndex?: number;
-}
-
-export interface FloorPlanEdge extends Edge {
-  id: string;
-  source: string;
-  target: string;
-  type?: string;
-  animated?: boolean;
-  style?: object;
-}
-
-export interface FloorPlanLayerDB {
-  id: string;
-  name: string;
-  type: string;
-  visible: boolean;
-  order_index: number;
-  floor_id: string;
-  data: Record<string, any>;
-}
-
-export interface FloorPlanLayer {
-  id: string;
-  name: string;
-  type: string;
-  visible: boolean;
-  order_index: number;
-  floorId: string;
-  data: Record<string, any>;
-}
+export type SpaceType = 'room' | 'door' | 'hallway' | 'annotation';
 
 export interface Position {
   x: number;
@@ -69,29 +13,100 @@ export interface Size {
   height: number;
 }
 
+export interface FloorPlanObjectData {
+  label?: string;
+  type: string;
+  size: Size;
+  style: Record<string, any>;
+  properties: Record<string, any>;
+  position?: Position;
+  rotation?: number;
+}
+
+export interface FloorPlanNode {
+  id: string;
+  type: string;
+  position: Position;
+  data: FloorPlanObjectData;
+  rotation?: number;
+  zIndex?: number;
+}
+
+export interface FloorPlanEdge {
+  id: string;
+  source: string;
+  target: string;
+  data?: {
+    type: string;
+    style?: Record<string, any>;
+  };
+}
+
+export interface FloorPlanLayerDB {
+  id: string;
+  floor_id: string;
+  type: LayerType;
+  name: string;
+  order_index: number;
+  visible: boolean;
+  data: any;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FloorPlanLayer {
+  id: string;
+  floor_id: string;
+  type: LayerType;
+  name: string;
+  order_index: number;
+  visible: boolean;
+  data: Record<string, any>;
+}
+
+// Raw object structure from API - made all properties optional except id
 export interface RawFloorPlanObject {
+  id: string;
+  name?: string;
+  room_number?: string;
+  type?: string;
+  object_type?: string;
+  room_type?: string;
+  status?: string;
+  floor_id?: string;
+  position?: Position | string | any; // Allow any for parsing flexibility
+  size?: Size | string | any; // Allow any for parsing flexibility
+  rotation?: number; 
+  properties?: Record<string, any> | null;
+  parent_room_id?: string | null;
+  hallway_properties?: any[];
+}
+
+// 3D visualization specific types
+export interface Object3D {
   id: string;
   type: string;
   position: Position;
   size: Size;
+  rotation?: number;
+  color?: string;
   properties?: Record<string, any>;
-  object_type?: string;
-  rotation: number;
-  [key: string]: any;
 }
 
-// Define room colors for different space types
-export const ROOM_COLORS = {
-  'courtroom': '#c1e1c1',        // Light green
-  'judges_chambers': '#c7d5ed',  // Light blue
-  'office': '#e5e1c1',           // Light tan
-  'conference': '#d5c1e1',       // Light purple
-  'storage': '#e1c1c7',          // Light pink
-  'utility': '#c1e1e5',          // Light cyan
-  'reception': '#e1d5c1',        // Light brown
-  'restroom': '#c1c7e1',         // Light lavender
-  'security': '#e1c1a0',         // Light orange
-  'default': '#e2e8f0'           // Default gray
+export interface Connection3D {
+  id: string;
+  source: string;
+  target: string;
+  type: string;
+}
+
+export const ROOM_COLORS: Record<string, string> = {
+  office: '#e2e8f0',
+  courtroom: '#dbeafe',
+  storage: '#f1f5f9',
+  conference: '#fef3c7',
+  default: '#e2e8f0'
 };
 
-export type FloorPlanObjectType = "room" | "hallway" | "door" | "furniture" | "annotation";
+export const GRID_SIZE = 20;
+export const MIN_ROOM_SIZE = { width: 100, height: 100 };
