@@ -4,12 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Edit, PlusCircle, Trash2 } from "lucide-react";
 import { useHallwayData } from "./hooks/useHallwayData";
-import { EmptyState } from "../ui/empty-state";
+import { EmptyState } from "@/components/ui/empty-state";
 import { useState } from "react";
 import { SpaceListFilters } from "./SpaceListFilters";
 import { EditSpaceDialog } from "./EditSpaceDialog";
 import { useSpacesQuery } from "./hooks/queries/useSpacesQuery";
 import { StatusBadge } from "./StatusBadge";
+import { toast } from "sonner";
+import { deleteSpace } from "./services/deleteSpace";
 
 export function HallwaysList({ floorId }: { floorId?: string }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -17,15 +19,17 @@ export function HallwaysList({ floorId }: { floorId?: string }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   
   const { hallways, loading, error } = useHallwayData();
-  const { deleteSpace } = useSpacesQuery();
+  const spacesQuery = useSpacesQuery(floorId || "");
 
   // Handle delete action with confirmation
   const handleDelete = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this hallway?")) {
       try {
-        await deleteSpace(id);
+        await deleteSpace(id, "hallway");
+        toast.success("Hallway deleted successfully");
       } catch (error) {
         console.error("Failed to delete hallway:", error);
+        toast.error("Failed to delete hallway");
       }
     }
   };
@@ -129,7 +133,7 @@ export function HallwaysList({ floorId }: { floorId?: string }) {
       {editingId && (
         <EditSpaceDialog 
           id={editingId} 
-          spaceType="hallway"
+          type="hallway"
           open={!!editingId}
           onOpenChange={() => setEditingId(null)} 
         />

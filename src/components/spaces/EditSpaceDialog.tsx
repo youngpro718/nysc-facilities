@@ -1,323 +1,125 @@
-import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Pencil } from "lucide-react";
-import { toast } from "sonner";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { supabase } from "@/integrations/supabase/client";
-import { RoomFormContent } from "./forms/room/RoomFormContent";
-import { RoomFormSchema, type RoomFormData, ConnectionDirections } from "./forms/room/RoomFormSchema";
-import { EditHallwayForm } from "./forms/hallway/EditHallwayForm";
-import { storageService } from "@/services/storage"; 
-import { 
-  StatusEnum, 
-  RoomTypeEnum, 
-  StorageTypeEnum, 
-  roomTypeToString, 
-  statusToString, 
-  storageTypeToString,
-  stringToRoomType
-} from "./rooms/types/roomEnums";
 
-interface EditSpaceDialogProps {
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
+import { EditRoomForm } from "./forms/room/EditRoomForm";
+import { EditHallwayForm } from "./forms/hallway/EditHallwayForm";
+
+export interface EditSpaceDialogProps {
   id: string;
-  type: "room" | "hallway";
-  initialData?: any;
-  open?: boolean;
-  setOpen?: (open: boolean) => void;
-  variant?: "button" | "custom";
-  onSpaceUpdated?: () => void;
+  type?: string; // Use type instead of spaceType
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export function EditSpaceDialog({
-  id,
-  type,
-  initialData,
-  open: controlledOpen,
-  setOpen: controlledSetOpen,
-  variant = "button",
-  onSpaceUpdated,
-}: EditSpaceDialogProps) {
-  const [internalOpen, setInternalOpen] = useState(false);
-  const open = controlledOpen ?? internalOpen;
-  const setOpen = controlledSetOpen ?? setInternalOpen;
-
-  const form = useForm<RoomFormData>({
-    resolver: zodResolver(RoomFormSchema),
-    defaultValues: {
-      ...initialData,
-      type: type === "room" ? "room" : "hallway",
-      connections: initialData?.space_connections || initialData?.connections || []
-    },
-  });
-
-  useEffect(() => {
-    if (open && initialData) {
-      console.log("Resetting form with initial data:", initialData);
+export function EditSpaceDialog({ id, type, open, onOpenChange }: EditSpaceDialogProps) {
+  const [spaceType, setSpaceType] = useState<string | null>(type || null);
+  
+  // Query to fetch the space details
+  const { data: space, isLoading } = useQuery({
+    queryKey: ["space", id],
+    queryFn: async () => {
+      if (!id) return null;
       
-      const connections = initialData.space_connections || initialData.connections || [];
+      const { data, error } = await supabase
+        .from("new_spaces")
+        .select("*, room_properties(*), hallway_properties(*)")
+        .eq("id", id)
+        .single();
       
-      const courtroomPhotos = initialData.courtroom_photos;
-      
-      const mappedConnections = Array.isArray(connections) ? connections.map((conn: any) => {
-        let direction = conn.direction || conn.connectionDirection;
-        if (!direction || !ConnectionDirections.includes(direction as any)) {
-          direction = "north"; // Default to north if invalid or missing
-        }
-        
-        return {
-          id: conn.id,
-          toSpaceId: conn.to_space_id || conn.toSpaceId,
-          connectionType: conn.connection_type || conn.connectionType,
-          direction: direction
-        };
-      }) : [];
-      
-      // Log the room type from database for debugging
-      console.log("Room type from database:", initialData.room_type);
-      const convertedRoomType = initialData.room_type ? stringToRoomType(initialData.room_type) : undefined;
-      console.log("Converted room type:", convertedRoomType);
-      
-      // Create a complete reset object with all form fields properly mapped
-      const resetData = {
-        ...initialData,
-        type: type === "room" ? "room" : "hallway",
-        roomNumber: initialData.room_number,
-        roomType: convertedRoomType,
-        isStorage: initialData.is_storage || false,
-        storageType: initialData.storage_type ? initialData.storage_type : undefined,
-        storageCapacity: initialData.storage_capacity,
-        storageNotes: initialData.storage_notes,
-        parentRoomId: initialData.parent_room_id,
-        currentFunction: initialData.current_function,
-        phoneNumber: initialData.phone_number,
-        courtroomPhotos: courtroomPhotos,
-        connections: mappedConnections
-      };
-      
-      console.log("Form reset data:", resetData);
-      form.reset(resetData);
-      
-      // Use setTimeout to ensure the form values are properly set after the initial render
-      setTimeout(() => {
-        if (convertedRoomType) {
-          form.setValue("roomType", convertedRoomType);
-        }
-      }, 0);
-    }
-  }, [open, form, initialData, type]);
-
-  const queryClient = useQueryClient();
-
-  const editSpaceMutation = useMutation({
-    mutationFn: async (data: RoomFormData) => {
-      console.log("Submitting data for room update:", data);
-      
-      const updateData = {
-        name: data.name,
-        room_number: data.roomNumber,
-        room_type: data.roomType ? roomTypeToString(data.roomType as RoomTypeEnum) : null,
-        status: data.status ? statusToString(data.status as StatusEnum) : null,
-        description: data.description || null,
-        is_storage: data.isStorage,
-        storage_type: data.isStorage && data.storageType ? storageTypeToString(data.storageType as StorageTypeEnum) : null,
-        storage_capacity: data.storageCapacity || null,
-        storage_notes: data.storageNotes || null,
-        parent_room_id: data.parentRoomId || null,
-        current_function: data.currentFunction || null,
-        phone_number: data.phoneNumber || null,
-        floor_id: data.floorId,
-        courtroom_photos: data.courtroomPhotos || null
-      };
-
-      console.log("Room update data:", updateData);
-      
-      if (data.roomType === RoomTypeEnum.COURTROOM) {
-        try {
-          await storageService.ensureBucketsExist(['courtroom-photos']);
-          
-          if (data.courtroomPhotos && data.id) {
-            const validUrls = Object.values(data.courtroomPhotos).filter(Boolean) as string[];
-            if (validUrls.length > 0) {
-              await storageService.cleanupOrphanedFiles('courtroom-photos', data.id, validUrls);
-            }
-          }
-        } catch (bucketError) {
-          console.error('Error verifying storage bucket:', bucketError);
-        }
-      }
-      
-      const { error: roomError } = await supabase
-        .from("rooms")
-        .update(updateData as any)
-        .eq('id', id);
-
-      if (roomError) {
-        console.error("Room update error:", roomError);
-        throw roomError;
-      }
-      
-      if (data.connections && data.connections.length > 0) {
-        console.log("Processing connections:", data.connections);
-        
-        const { data: existingConnections, error: fetchError } = await supabase
-          .from("space_connections")
-          .select("id")
-          .eq("from_space_id", id)
-          .eq("status", "active");
-          
-        if (fetchError) {
-          console.error("Error fetching connections:", fetchError);
-          throw fetchError;
-        }
-        
-        const existingIds = (existingConnections || []).map(c => c.id);
-        console.log("Existing connection IDs:", existingIds);
-        
-        const keepConnectionIds: string[] = [];
-        
-        for (const connection of data.connections) {
-          const direction = ConnectionDirections.includes(connection.direction as any) 
-            ? connection.direction 
-            : "north";
-            
-          if (connection.id) {
-            keepConnectionIds.push(connection.id);
-            
-            console.log("Updating connection:", connection);
-            const { error: updateError } = await supabase
-              .from("space_connections")
-              .update({
-                to_space_id: connection.toSpaceId,
-                connection_type: connection.connectionType,
-                direction: direction,
-              })
-              .eq("id", connection.id);
-              
-            if (updateError) {
-              console.error("Connection update error:", updateError);
-              throw updateError;
-            }
-          } else if (connection.toSpaceId && connection.connectionType) {
-            console.log("Creating new connection:", connection);
-            const { error: insertError } = await supabase
-              .from("space_connections")
-              .insert({
-                from_space_id: id,
-                to_space_id: connection.toSpaceId,
-                space_type: "room",
-                connection_type: connection.connectionType,
-                direction: direction,
-                status: "active"
-              });
-              
-            if (insertError) {
-              console.error("Connection insert error:", insertError);
-              throw insertError;
-            }
-          }
-        }
-        
-        const connectionsToDelete = existingIds.filter(id => !keepConnectionIds.includes(id));
-        console.log("Connections to delete:", connectionsToDelete);
-        
-        if (connectionsToDelete.length > 0) {
-          const { error: deleteError } = await supabase
-            .from("space_connections")
-            .update({ status: "inactive" })
-            .in("id", connectionsToDelete);
-            
-          if (deleteError) {
-            console.error("Connection delete error:", deleteError);
-            throw deleteError;
-          }
-        }
-      }
-      
+      if (error) throw error;
+      setSpaceType(data.type);
       return data;
     },
-    onSuccess: () => {
-      console.log("Update successful, invalidating queries");
-      queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      queryClient.invalidateQueries({ queryKey: ['room-connections', id] });
-      queryClient.invalidateQueries({ queryKey: ['floorplan-objects'] });
-      toast.success("Room updated successfully");
-      setOpen(false);
-      if (onSpaceUpdated) {
-        console.log("Calling onSpaceUpdated callback");
-        onSpaceUpdated();
-      }
-    },
-    onError: (error) => {
-      console.error("Update error:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to update room");
-    },
+    enabled: !!id && open,
   });
 
-  const handleSubmit = async (data: RoomFormData) => {
-    console.log("Handling submit with data:", data);
-    await editSpaceMutation.mutateAsync(data);
+  const handleClose = () => {
+    onOpenChange(false);
   };
 
-  const renderContent = () => {
-    if (type === 'hallway') {
-      return (
-        <EditHallwayForm 
-          id={id}
-          initialData={initialData}
-          onSuccess={() => {
-            setOpen(false);
-            if (onSpaceUpdated) onSpaceUpdated();
-          }}
-          onCancel={() => setOpen(false)}
-        />
-      );
+  // Prepare form data based on space type
+  const getInitialData = () => {
+    if (!space) return {};
+    
+    const baseData = {
+      id: space.id,
+      name: space.name,
+      type: space.type,
+      status: space.status,
+      floorId: space.floor_id,
+      position: space.position,
+      size: space.size,
+      rotation: space.rotation || 0,
+      description: space.properties?.description
+    };
+    
+    if (space.type === "hallway") {
+      return {
+        ...baseData,
+        section: space.properties?.section || space.hallway_properties?.section,
+        hallwayType: space.properties?.hallwayType || space.hallway_properties?.hallway_type,
+        trafficFlow: space.properties?.trafficFlow || space.hallway_properties?.traffic_flow,
+        accessibility: space.properties?.accessibility || space.hallway_properties?.accessibility,
+        emergencyRoute: space.properties?.emergencyRoute || space.hallway_properties?.emergency_route,
+        maintenancePriority: space.properties?.maintenancePriority || space.hallway_properties?.maintenance_priority,
+        capacityLimit: space.properties?.capacityLimit || space.hallway_properties?.capacity_limit
+      };
     }
     
-    return (
-      <RoomFormContent
-        form={form}
-        onSubmit={handleSubmit}
-        isPending={editSpaceMutation.isPending}
-        onCancel={() => setOpen(false)}
-        roomId={id}
-      />
-    );
+    if (space.type === "room") {
+      return {
+        ...baseData,
+        roomNumber: space.room_number,
+        roomType: space.room_properties?.room_type,
+        currentFunction: space.room_properties?.current_function,
+        isStorage: space.room_properties?.is_storage || false,
+        storageType: space.room_properties?.storage_type,
+        parentRoomId: space.room_properties?.parent_room_id,
+        phoneNumber: space.room_properties?.phone_number
+      };
+    }
+    
+    return baseData;
   };
 
   return (
-    <>
-      {variant === "button" && (
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex items-center gap-2"
-          onClick={() => setOpen(true)}
-        >
-          <Pencil className="h-4 w-4" />
-          Edit
-        </Button>
-      )}
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{type === 'hallway' ? 'Edit Hallway' : 'Edit Room'}</DialogTitle>
-          </DialogHeader>
-          <ScrollArea className="max-h-[80vh] overflow-y-auto">
-            <div className="p-1">
-              {renderContent()}
-            </div>
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
-    </>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>
+            Edit {spaceType ? spaceType.charAt(0).toUpperCase() + spaceType.slice(1) : 'Space'}
+          </DialogTitle>
+        </DialogHeader>
+        
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <>
+            {spaceType === "room" && (
+              <EditRoomForm 
+                id={id}
+                initialData={getInitialData()}
+                onSuccess={handleClose}
+                onCancel={handleClose}
+              />
+            )}
+            
+            {spaceType === "hallway" && (
+              <EditHallwayForm 
+                id={id}
+                initialData={getInitialData()}
+                onSuccess={handleClose}
+                onCancel={handleClose}
+              />
+            )}
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

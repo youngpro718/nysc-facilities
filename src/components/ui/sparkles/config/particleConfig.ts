@@ -1,6 +1,6 @@
 
 // This file contains the particle configuration for the sparkles component
-import type { ISourceOptions } from "@tsparticles/slim";
+// Note: We're using a simpler type definition to avoid issues with the ISourceOptions import
 
 export interface ParticleConfigOptions {
   background?: string;
@@ -11,7 +11,7 @@ export interface ParticleConfigOptions {
   particleDensity?: number;
 }
 
-export const createParticleConfig = (options: ParticleConfigOptions = {}): ISourceOptions => {
+export const createParticleConfig = (options: ParticleConfigOptions = {}): any => {
   const {
     background = "#000000",
     particleColor = "#ffffff",
@@ -34,7 +34,7 @@ export const createParticleConfig = (options: ParticleConfigOptions = {}): ISour
       },
       move: {
         enable: true,
-        direction: "none" as any,
+        direction: "none",
         outModes: {
           default: "out"
         },

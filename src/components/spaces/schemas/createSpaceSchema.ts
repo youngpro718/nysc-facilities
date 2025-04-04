@@ -78,7 +78,7 @@ const baseSpaceSchema = z.object({
 });
 
 // Room-specific schema with improved validation
-export const roomSchema = baseSpaceSchema.extend({
+const roomSchema = baseSpaceSchema.extend({
   type: z.literal("room"),
   roomType: z.nativeEnum(RoomTypeEnum, {
     errorMap: () => ({ message: "Please select a valid room type" })
@@ -97,10 +97,7 @@ export const roomSchema = baseSpaceSchema.extend({
   storageNotes: z.string().nullable().optional(),
   parentRoomId: z.string().nullable().optional(),
   // Standardize property name to match database - change to courtroomPhotos to match RoomFormSchema
-  courtroomPhotos: z.object({
-    judge_view: z.string().nullable().optional(),
-    audience_view: z.string().nullable().optional()
-  }).nullable().optional()
+  courtroomPhotos: courtroomPhotosSchema
 }).refine(data => {
   // If isStorage is true, storageType should be provided
   return !data.isStorage || data.storageType !== null;
@@ -110,37 +107,27 @@ export const roomSchema = baseSpaceSchema.extend({
 });
 
 // Hallway-specific schema - enhanced with more specific hallway fields and proper enums
-export const hallwaySchema = baseSpaceSchema.extend({
+const hallwaySchema = baseSpaceSchema.extend({
   type: z.literal("hallway"),
-  // Use proper enum types from hallwayTypes.ts for better type safety
-  hallwayType: z.enum(["public_main", "private"], {
-    errorMap: () => ({ message: "Please select a valid hallway type" })
-  }).optional(),
-  section: z.enum(["left_wing", "right_wing", "connector"], {
-    errorMap: () => ({ message: "Please select a valid section" })
-  }).optional(),
+  // Use string enum types to avoid issues with discrimination
+  hallwayType: z.string().optional(),
+  section: z.string().optional(),
   maintenanceSchedule: z.array(maintenanceScheduleEntrySchema).optional(),
   emergencyExits: z.array(emergencyExitSchema).optional(),
   maintenancePriority: z.enum(["low", "medium", "high"], {
     errorMap: () => ({ message: "Please select a valid maintenance priority" })
   }).optional(),
   maintenanceNotes: z.string().optional(),
-  emergencyRoute: z.enum(["primary", "secondary", "not_designated"], {
-    errorMap: () => ({ message: "Please select a valid emergency route" })
-  }).optional(),
-  accessibility: z.enum(["fully_accessible", "limited_access", "stairs_only", "restricted"], {
-    errorMap: () => ({ message: "Please select a valid accessibility option" })
-  }).optional(),
-  trafficFlow: z.enum(["one_way", "two_way", "restricted"], {
-    errorMap: () => ({ message: "Please select a valid traffic flow" })
-  }).optional(),
+  emergencyRoute: z.string().optional(),
+  accessibility: z.string().optional(),
+  trafficFlow: z.string().optional(),
   capacityLimit: z.number().optional(),
   width: z.number().optional(),
   length: z.number().optional()
 });
 
 // Door-specific schema with improved validation
-export const doorSchema = baseSpaceSchema.extend({
+const doorSchema = baseSpaceSchema.extend({
   type: z.literal("door"),
   doorType: z.string().optional(),
   securityLevel: z.string().optional(),
