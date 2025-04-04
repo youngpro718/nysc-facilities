@@ -1,7 +1,13 @@
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useState } from "react";
 import axios from "axios";
+
+interface DeleteIssueParams {
+  issueId: string;
+  force?: boolean;
+}
 
 /**
  * Hook for deleting issues with proper error handling and loading state
@@ -11,7 +17,7 @@ export const useDeleteIssueMutation = () => {
   const [isDeleteInProgress, setIsDeleteInProgress] = useState(false);
 
   const deleteIssueMutation = useMutation({
-    mutationFn: async ({ issueId, force = false }: { issueId: string; force?: boolean }) => {
+    mutationFn: async ({ issueId, force = false }: DeleteIssueParams) => {
       setIsDeleteInProgress(true);
       console.log(`Deleting issue with ID: ${issueId}${force ? ' (force mode)' : ''}`);
       

@@ -38,111 +38,83 @@ export default async function handler(
     const forceDelete = force === 'true';
     console.log(`Deleting issue ${issueId}${forceDelete ? ' with force mode' : ''}`);
 
-    // Begin a transaction for the delete operation
-    const { error: transactionError } = await supabase.rpc('begin');
-    if (transactionError) {
-      console.error('Transaction begin error:', transactionError);
+    // Step 1: Delete related comments first
+    const { error: commentsDeleteError } = await supabase
+      .from('issue_comments')
+      .delete()
+      .eq('issue_id', issueId);
+
+    if (commentsDeleteError && !forceDelete) {
+      console.error('Error deleting comments:', commentsDeleteError);
       return res.status(500).json({
         success: false,
-        message: 'Failed to start transaction',
-        error: transactionError.message
+        message: 'Failed to delete related comments',
+        error: commentsDeleteError.message
       });
     }
 
-    try {
-      // Step 1: Delete related comments first
-      const { error: commentsDeleteError } = await supabase
-        .from('issue_comments')
-        .delete()
-        .eq('issue_id', issueId);
+    // Step 2: Delete related history records
+    const { error: historyDeleteError } = await supabase
+      .from('issue_history')
+      .delete()
+      .eq('issue_id', issueId);
 
-      if (commentsDeleteError && !forceDelete) {
-        await supabase.rpc('rollback');
-        console.error('Error deleting comments:', commentsDeleteError);
-        return res.status(500).json({
-          success: false,
-          message: 'Failed to delete related comments',
-          error: commentsDeleteError.message
-        });
-      }
+    if (historyDeleteError && !forceDelete) {
+      console.error('Error deleting history:', historyDeleteError);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to delete related history records',
+        error: historyDeleteError.message
+      });
+    }
 
-      // Step 2: Delete related history records
-      const { error: historyDeleteError } = await supabase
-        .from('issue_history')
-        .delete()
-        .eq('issue_id', issueId);
+    // Step 3: Delete the issue itself
+    const { error: issueDeleteError } = await supabase
+      .from('issues')
+      .delete()
+      .eq('id', issueId);
 
-      if (historyDeleteError && !forceDelete) {
-        await supabase.rpc('rollback');
-        console.error('Error deleting history:', historyDeleteError);
-        return res.status(500).json({
-          success: false,
-          message: 'Failed to delete related history records',
-          error: historyDeleteError.message
-        });
-      }
-
-      // Step 3: Delete the issue itself
-      const { error: issueDeleteError } = await supabase
-        .from('issues')
-        .delete()
-        .eq('id', issueId);
-
-      if (issueDeleteError) {
-        await supabase.rpc('rollback');
-        console.error('Error deleting issue:', issueDeleteError);
+    if (issueDeleteError) {
+      console.error('Error deleting issue:', issueDeleteError);
+      
+      if (issueDeleteError.code === '23503' && forceDelete) {
+        // If foreign key constraint violation in force mode, try different approach
+        console.log('Force deleting issue with constraints, bypassing transaction');
         
-        if (issueDeleteError.code === '23503' && forceDelete) {
-          // If foreign key constraint violation in force mode, try different approach
-          console.log('Force deleting issue with constraints, bypassing transaction');
+        // Attempt a direct delete with cascade option (if supported)
+        const { error: forceDeleteError } = await supabase
+          .from('issues')
+          .delete()
+          .eq('id', issueId)
+          .select();
           
-          // Attempt a direct delete with cascade option (if supported)
-          const { error: forceDeleteError } = await supabase
-            .from('issues')
-            .delete()
-            .eq('id', issueId)
-            .select();
-            
-          if (forceDeleteError) {
-            console.error('Force delete error:', forceDeleteError);
-            return res.status(500).json({
-              success: false,
-              message: 'Failed to delete issue even in force mode',
-              error: forceDeleteError.message
-            });
-          }
-        } else {
-          // Regular error, not in force mode or not a constraint issue
+        if (forceDeleteError) {
+          console.error('Force delete error:', forceDeleteError);
           return res.status(500).json({
             success: false,
-            message: 'Failed to delete issue',
-            error: issueDeleteError.message,
-            code: issueDeleteError.code,
-            details: issueDeleteError.details,
-            hint: 'You may need to use force=true if there are referential constraints'
+            message: 'Failed to delete issue even in force mode',
+            error: forceDeleteError.message
           });
         }
+      } else {
+        // Regular error, not in force mode or not a constraint issue
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to delete issue',
+          error: issueDeleteError.message,
+          code: issueDeleteError.code,
+          details: issueDeleteError.details,
+          hint: 'You may need to use force=true if there are referential constraints'
+        });
       }
-
-      // Commit the transaction if we've reached this point
-      await supabase.rpc('commit');
-
-      // Return success
-      return res.status(200).json({
-        success: true,
-        message: 'Issue and related records deleted successfully',
-        issueId
-      });
-    } catch (error: any) {
-      // Rollback transaction on any unexpected error
-      await supabase.rpc('rollback');
-      console.error('Unexpected error during delete transaction:', error);
-      return res.status(500).json({
-        success: false,
-        message: 'An unexpected error occurred',
-        error: error.message
-      });
     }
+
+    // Return success
+    return res.status(200).json({
+      success: true,
+      message: 'Issue and related records deleted successfully',
+      issueId
+    });
   } catch (error: any) {
     // Handle any other errors outside the transaction
     console.error('Error in delete-issue handler:', error);
