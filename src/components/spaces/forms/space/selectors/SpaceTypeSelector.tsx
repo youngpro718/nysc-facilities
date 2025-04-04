@@ -1,6 +1,6 @@
 
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { UseFormReturn } from "react-hook-form";
 import { CreateSpaceFormData } from "../../../schemas/createSpaceSchema";
 
@@ -14,21 +14,34 @@ export function SpaceTypeSelector({ form }: SpaceTypeSelectorProps) {
       control={form.control}
       name="type"
       render={({ field }) => (
-        <FormItem>
-          <FormLabel>Type</FormLabel>
-          <Select onValueChange={field.onChange} value={field.value}>
-            <FormControl>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              <SelectItem value="room">Room</SelectItem>
-              <SelectItem value="hallway">Hallway</SelectItem>
-              <SelectItem value="door">Door</SelectItem>
-            </SelectContent>
-          </Select>
-          <FormMessage />
+        <FormItem className="space-y-2">
+          <FormLabel>Space Type</FormLabel>
+          <FormControl>
+            <RadioGroup
+              onValueChange={(value: string) => field.onChange(value)}
+              defaultValue={field.value as string}
+              className="flex space-x-4"
+            >
+              <FormItem className="flex items-center space-x-2">
+                <FormControl>
+                  <RadioGroupItem value="room" />
+                </FormControl>
+                <FormLabel className="font-normal">Room</FormLabel>
+              </FormItem>
+              <FormItem className="flex items-center space-x-2">
+                <FormControl>
+                  <RadioGroupItem value="hallway" />
+                </FormControl>
+                <FormLabel className="font-normal">Hallway</FormLabel>
+              </FormItem>
+              <FormItem className="flex items-center space-x-2">
+                <FormControl>
+                  <RadioGroupItem value="door" />
+                </FormControl>
+                <FormLabel className="font-normal">Door</FormLabel>
+              </FormItem>
+            </RadioGroup>
+          </FormControl>
         </FormItem>
       )}
     />

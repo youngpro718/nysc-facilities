@@ -15,8 +15,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 export const SpacesList = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("name_asc");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState("all");
   const [view, setView] = useState<"grid" | "list">("grid");
+  const [editingSpace, setEditingSpace] = useState<string | null>(null);
 
   const { data: spaces, isLoading, refetch } = useQuery({
     queryKey: ['spaces'],
@@ -70,8 +71,8 @@ export const SpacesList = () => {
           onSearchChange={setSearchQuery}
           sortBy={sortBy}
           onSortChange={setSortBy}
-          statusFilter={statusFilter}
-          onStatusFilterChange={setStatusFilter}
+          selectedStatus={selectedStatus}
+          onStatusChange={setSelectedStatus}
           view={view}
           onViewChange={setView}
         />
@@ -91,16 +92,13 @@ export const SpacesList = () => {
                 {space.floors?.buildings?.name} &gt; {space.floors?.name}
               </p>
               <div className="flex items-center gap-2">
-                <EditSpaceDialog 
-                  id={space.id}
-                  type="room"
-                  initialData={{
-                    id: space.id,
-                    name: space.name,
-                    status: space.status as StatusEnum,
-                    floorId: space.floor_id,
-                  }}
-                />
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditingSpace(space.id)}
+                >
+                  Edit
+                </Button>
                 <Button
                   variant="destructive"
                   size="sm"
@@ -127,6 +125,20 @@ export const SpacesList = () => {
           ))}
         </div>
       </ScrollArea>
+      
+      {editingSpace && (
+        <EditSpaceDialog 
+          id={editingSpace}
+          type="room"
+          open={!!editingSpace}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) {
+              setEditingSpace(null);
+              refetch();
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

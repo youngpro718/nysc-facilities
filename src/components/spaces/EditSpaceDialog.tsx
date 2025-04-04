@@ -9,19 +9,21 @@ import { EditHallwayForm } from "./forms/hallway/EditHallwayForm";
 
 export interface EditSpaceDialogProps {
   id: string;
-  type?: string; // Use type instead of spaceType
+  type?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialData?: Record<string, any>;
+  onSpaceUpdated?: () => void;
 }
 
-export function EditSpaceDialog({ id, type, open, onOpenChange }: EditSpaceDialogProps) {
+export function EditSpaceDialog({ id, type, open, onOpenChange, initialData, onSpaceUpdated }: EditSpaceDialogProps) {
   const [spaceType, setSpaceType] = useState<string | null>(type || null);
   
-  // Query to fetch the space details
+  // Query to fetch the space details if initialData is not provided
   const { data: space, isLoading } = useQuery({
     queryKey: ["space", id],
     queryFn: async () => {
-      if (!id) return null;
+      if (!id || initialData) return initialData || null;
       
       const { data, error } = await supabase
         .from("new_spaces")
@@ -33,15 +35,17 @@ export function EditSpaceDialog({ id, type, open, onOpenChange }: EditSpaceDialo
       setSpaceType(data.type);
       return data;
     },
-    enabled: !!id && open,
+    enabled: !!id && open && !initialData,
   });
 
   const handleClose = () => {
     onOpenChange(false);
+    if (onSpaceUpdated) onSpaceUpdated();
   };
 
   // Prepare form data based on space type
   const getInitialData = () => {
+    if (initialData) return initialData;
     if (!space) return {};
     
     const baseData = {
@@ -56,29 +60,31 @@ export function EditSpaceDialog({ id, type, open, onOpenChange }: EditSpaceDialo
       description: space.properties?.description
     };
     
-    if (space.type === "hallway") {
+    if (space.type === "hallway" && space.hallway_properties) {
+      const hallwayProps = space.hallway_properties || {};
       return {
         ...baseData,
-        section: space.properties?.section || space.hallway_properties?.section,
-        hallwayType: space.properties?.hallwayType || space.hallway_properties?.hallway_type,
-        trafficFlow: space.properties?.trafficFlow || space.hallway_properties?.traffic_flow,
-        accessibility: space.properties?.accessibility || space.hallway_properties?.accessibility,
-        emergencyRoute: space.properties?.emergencyRoute || space.hallway_properties?.emergency_route,
-        maintenancePriority: space.properties?.maintenancePriority || space.hallway_properties?.maintenance_priority,
-        capacityLimit: space.properties?.capacityLimit || space.hallway_properties?.capacity_limit
+        section: hallwayProps.section,
+        hallwayType: hallwayProps.hallway_type,
+        trafficFlow: hallwayProps.traffic_flow,
+        accessibility: hallwayProps.accessibility,
+        emergencyRoute: hallwayProps.emergency_route,
+        maintenancePriority: hallwayProps.maintenance_priority,
+        capacityLimit: hallwayProps.capacity_limit
       };
     }
     
-    if (space.type === "room") {
+    if (space.type === "room" && space.room_properties) {
+      const roomProps = space.room_properties || {};
       return {
         ...baseData,
         roomNumber: space.room_number,
-        roomType: space.room_properties?.room_type,
-        currentFunction: space.room_properties?.current_function,
-        isStorage: space.room_properties?.is_storage || false,
-        storageType: space.room_properties?.storage_type,
-        parentRoomId: space.room_properties?.parent_room_id,
-        phoneNumber: space.room_properties?.phone_number
+        roomType: roomProps.room_type,
+        currentFunction: roomProps.current_function,
+        isStorage: roomProps.is_storage || false,
+        storageType: roomProps.storage_type,
+        parentRoomId: roomProps.parent_room_id,
+        phoneNumber: roomProps.phone_number
       };
     }
     

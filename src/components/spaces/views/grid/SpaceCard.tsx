@@ -19,13 +19,6 @@ export function SpaceCard<T extends { id: string; name: string; status: string; 
   renderContent,
   type
 }: SpaceCardProps<T>) {
-  const initialData = {
-    id: item.id,
-    name: item.name,
-    status: item.status as StatusEnum,
-    floorId: item.floor_id,
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -44,7 +37,8 @@ export function SpaceCard<T extends { id: string; name: string; status: string; 
               <EditSpaceDialog
                 id={item.id}
                 type="room"
-                initialData={initialData}
+                open={false}
+                onOpenChange={() => {}}
               />
             )}
             <Button

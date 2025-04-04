@@ -46,3 +46,14 @@ export interface EmergencyExit {
   type: string;
   notes?: string;
 }
+
+export interface HallwayConnection {
+  id: string;
+  to_space?: {
+    name: string;
+    id: string;
+    type: string;
+  };
+  position?: string;
+  connection_type?: string;
+}

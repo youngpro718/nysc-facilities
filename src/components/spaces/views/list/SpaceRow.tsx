@@ -19,13 +19,6 @@ export function SpaceRow<T extends { id: string; name: string; status: string; f
   renderCells,
   type
 }: SpaceRowProps<T>) {
-  const initialData = {
-    id: item.id,
-    name: item.name,
-    status: item.status as StatusEnum,
-    floorId: item.floor_id,
-  };
-
   return (
     <>
       {renderCells ? (
@@ -46,7 +39,8 @@ export function SpaceRow<T extends { id: string; name: string; status: string; f
           <EditSpaceDialog
             id={item.id}
             type="room"
-            initialData={initialData}
+            open={false}
+            onOpenChange={() => {}}
           />
         )}
         <Button

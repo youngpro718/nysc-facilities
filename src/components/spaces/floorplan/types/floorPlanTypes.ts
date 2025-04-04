@@ -1,95 +1,105 @@
 
-import { Node, Edge } from 'reactflow';
+// Basic types for floor plan objects
+export type Position = { x: number; y: number };
+export type Size = { width: number; height: number };
+export type Style = Record<string, string | number>;
 
-// Room color definitions
-export const ROOM_COLORS = {
-  classroom: '#e2e8f0',
-  office: '#dbeafe',
-  meeting: '#fae8ff',
-  storage: '#f5f5f4',
-  restroom: '#dcfce7',
-  courtroom: '#fef9c3',
-  lobby: '#f3e8ff',
-  default: '#e2e8f0'
-};
-
-export interface FloorPlanObjectData {
-  label: string;
-  type: string;
-  size: {
-    width: number;
-    height: number;
-  };
-  style: {
-    backgroundColor: string;
-    border: string;
-    [key: string]: any;
-  };
-  properties: {
-    [key: string]: any;
-  };
-  rotation: number;
-  [key: string]: any;
+export enum FloorPlanObjectType {
+  ROOM = "room",
+  HALLWAY = "hallway",
+  DOOR = "door",
+  WALL = "wall",
+  WINDOW = "window",
+  STAIR = "stair",
+  ELEVATOR = "elevator",
+  FURNITURE = "furniture",
+  TEXT = "text"
 }
 
-export interface FloorPlanNode extends Node<FloorPlanObjectData> {
+export enum LayerType {
+  BASE = "base",
+  WALLS = "walls",
+  ROOMS = "rooms",
+  FURNITURE = "furniture",
+  ANNOTATIONS = "annotations",
+  MEASUREMENTS = "measurements"
+}
+
+export interface FloorPlanNodeData {
+  label?: string;
+  type: FloorPlanObjectType | string;
+  size?: Size;
+  style?: Style;
+  properties?: Record<string, any>;
+  rotation?: number;
+}
+
+export interface FloorPlanNode {
   id: string;
-  type: string;
-  position: {
-    x: number;
-    y: number;
-  };
-  data: FloorPlanObjectData;
+  type: FloorPlanObjectType | string;
+  position: Position;
+  data: FloorPlanNodeData;
   rotation?: number;
   zIndex?: number;
 }
 
-export interface FloorPlanEdge extends Edge {
+export interface FloorPlanEdge {
   id: string;
   source: string;
   target: string;
   type?: string;
-  animated?: boolean;
-  style?: object;
+  data?: Record<string, any>;
 }
 
-export interface FloorPlanLayerDB {
+export interface FloorPlanLayerBase {
   id: string;
   name: string;
-  type: string;
+  type: LayerType;
   visible: boolean;
   order_index: number;
+  data?: Record<string, any>;
+}
+
+export interface FloorPlanLayerDB extends FloorPlanLayerBase {
   floor_id: string;
-  data: Record<string, any>;
+  created_at?: string;
+  updated_at?: string;
 }
 
-export interface FloorPlanLayer {
-  id: string;
-  name: string;
-  type: string;
-  visible: boolean;
-  order_index: number;
-  floor_id: string;
-  data: Record<string, any>;
+export interface FloorPlanLayer extends FloorPlanLayerBase {
+  floorId: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface Position {
-  x: number;
-  y: number;
-}
+// Define object colors
+export const COLORS = {
+  ROOM: {
+    DEFAULT: '#e2e8f0', // slate-200
+    SELECTED: '#cbd5e1', // slate-300
+    HOVER: '#f8fafc', // slate-50
+  },
+  HALLWAY: {
+    DEFAULT: '#f1f5f9', // slate-100
+    SELECTED: '#e2e8f0', // slate-200
+    HOVER: '#f8fafc', // slate-50
+  },
+  DOOR: {
+    DEFAULT: '#94a3b8', // slate-400
+    SELECTED: '#64748b', // slate-500
+    HOVER: '#cbd5e1', // slate-300
+  },
+  WALL: {
+    DEFAULT: '#475569', // slate-600
+    SELECTED: '#334155', // slate-700
+    HOVER: '#64748b', // slate-500
+  }
+};
 
-export interface Size {
-  width: number;
-  height: number;
-}
-
-export interface RawFloorPlanObject {
-  id: string;
-  type: string;
-  position: Position;
-  size: Size;
-  properties?: Record<string, any>;
-  object_type?: string;
-  rotation: number;
-  [key: string]: any;
+// Special type for React Flow onConnect handler
+export interface Connection {
+  source: string | null;
+  target: string | null;
+  sourceHandle: string | null;
+  targetHandle: string | null;
 }
