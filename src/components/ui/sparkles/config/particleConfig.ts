@@ -1,5 +1,8 @@
 
-export interface ParticleConfigOptions {
+// This file contains the particle configuration for the sparkles component
+import { type ISourceOptions } from "@tsparticles/slim";
+
+interface ParticleConfigOptions {
   background?: string;
   particleColor?: string;
   minSize?: number;
@@ -8,12 +11,12 @@ export interface ParticleConfigOptions {
   particleDensity?: number;
 }
 
-export const createParticleConfig = (options: ParticleConfigOptions = {}) => {
+export const createParticleConfig = (options: ParticleConfigOptions = {}): ISourceOptions => {
   const {
-    background = "transparent",
+    background = "#000000",
     particleColor = "#ffffff",
-    minSize = 0.6,
-    maxSize = 3,
+    minSize = 0.1,
+    maxSize = 2,
     speed = 1,
     particleDensity = 100
   } = options;
@@ -21,41 +24,52 @@ export const createParticleConfig = (options: ParticleConfigOptions = {}) => {
   return {
     background: {
       color: {
-        value: background,
-      },
+        value: background
+      }
     },
     fpsLimit: 120,
     particles: {
       color: {
-        value: particleColor,
+        value: particleColor
       },
       move: {
         enable: true,
-        direction: "none",
+        direction: "none" as any,
         outModes: {
-          default: "out",
+          default: "out"
         },
         random: true,
         speed: speed,
-        straight: false,
+        straight: false
       },
       number: {
         density: {
           enable: true,
-          area: particleDensity,
+          area: particleDensity
         },
-        value: 100,
+        value: 120
       },
       opacity: {
-        value: 0.8,
+        animation: {
+          enable: true,
+          speed: 1,
+          sync: false
+        },
+        value: {
+          min: 0,
+          max: 1
+        }
       },
       shape: {
-        type: "circle",
+        type: "circle"
       },
       size: {
-        value: { min: minSize, max: maxSize },
-      },
+        value: {
+          min: minSize,
+          max: maxSize
+        }
+      }
     },
-    detectRetina: true,
+    detectRetina: true
   };
 };

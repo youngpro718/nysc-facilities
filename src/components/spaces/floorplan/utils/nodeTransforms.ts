@@ -1,4 +1,5 @@
-import { FloorPlanNode, ROOM_COLORS } from "../types/floorPlanTypes";
+
+import { FloorPlanNode, ROOM_COLORS, RawFloorPlanObject } from "../types/floorPlanTypes";
 
 export function getSpaceColor(space: any): string {
   if (!space) return '#e2e8f0'; // Default color for undefined spaces
@@ -40,7 +41,8 @@ export function transformSpaceToNode(space: any, index: number): FloorPlanNode {
           border: '1px dashed #ef4444',
           opacity: 0.7
         },
-        properties: {}
+        properties: {},
+        rotation: 0
       },
       zIndex: 0
     };
