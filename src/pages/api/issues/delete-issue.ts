@@ -100,11 +100,12 @@ export default async function handler(
         console.log('Issue data being force deleted:', issue);
         
         // Try different deletion strategies if needed
-        const { error: finalDeleteError } = await supabase.rpc(
-          'safely_delete_issue_and_references', 
-          { issue_id_param: issueId }
-        ).single();
-        
+        // Remove the RPC call since the function doesn't exist
+        const { error: finalDeleteError } = await supabase
+          .from('issues')
+          .delete()
+          .eq('id', issueId);
+          
         if (finalDeleteError) {
           console.error('Force delete error:', finalDeleteError);
           return res.status(500).json({

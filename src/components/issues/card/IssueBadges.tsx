@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { IssueStatusBadge } from "./IssueStatusBadge";
 import { cn } from "@/lib/utils";
 
-interface IssueBadgesProps {
+export interface IssueBadgesProps {
   status: "open" | "in_progress" | "resolved";
   priority: string;
   isOverdue: boolean;

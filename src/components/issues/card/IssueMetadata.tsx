@@ -2,7 +2,7 @@
 import { CalendarClock, Building, MapPin, History } from "lucide-react";
 import { format } from "date-fns";
 
-interface IssueMetadataProps {
+export interface IssueMetadataProps {
   timeRemaining: string;
   dueDate?: string;
   isOverdue: boolean;

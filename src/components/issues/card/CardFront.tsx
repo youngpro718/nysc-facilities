@@ -40,11 +40,26 @@ export function CardFront({ issue, onMarkAsSeen, actions }: CardFrontProps) {
           <p className="text-sm text-muted-foreground line-clamp-3 mb-2">
             {issue.description}
           </p>
-          <IssueBadges issue={issue} />
+          <IssueBadges 
+            status={issue.status}
+            priority={issue.priority}
+            isOverdue={Boolean(issue.due_date && new Date(issue.due_date) < new Date())}
+            seen={Boolean(issue.seen)}
+            onMarkAsSeen={handleMarkAsSeen}
+          />
         </div>
 
         <div className="mt-auto p-4 pt-2 border-t">
-          <IssueMetadata issue={issue} />
+          <IssueMetadata 
+            timeRemaining={issue.date_info || "No timeline available"}
+            dueDate={issue.due_date}
+            isOverdue={Boolean(issue.due_date && new Date(issue.due_date) < new Date())}
+            buildingName={issue.buildings?.name}
+            floorName={issue.floors?.name}
+            roomName={issue.rooms?.name}
+            assigned_to={issue.assigned_to || "Unassigned"}
+            status_history={issue.status_history}
+          />
           {actions && (
             <div className="flex justify-end mt-2">
               {actions}
