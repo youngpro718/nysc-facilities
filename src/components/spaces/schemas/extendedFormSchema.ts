@@ -46,3 +46,6 @@ export const ExtendedFormSchema = RoomFormSchema.extend({
 });
 
 export type ExtendedFormData = z.infer<typeof ExtendedFormSchema>;
+
+// Export a union type that combines base types and extended types
+export type FormData = ExtendedFormData;

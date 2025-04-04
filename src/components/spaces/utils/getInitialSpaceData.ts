@@ -1,34 +1,65 @@
 
+import { RoomTypeEnum, StatusEnum } from "../rooms/types/roomEnums";
 import { CreateSpaceFormData } from "../schemas/createSpaceSchema";
-import { StatusEnum } from "../rooms/types/roomEnums";
+import { ExtendedFormData } from "../schemas/extendedFormSchema";
 
-export const getInitialSpaceData = (type: "room" | "hallway" | "door"): Partial<CreateSpaceFormData> => {
-  const baseData = {
-    name: "",
+export function getInitialSpaceData(type: "room" | "hallway" | "door"): Partial<ExtendedFormData> {
+  const commonData = {
     type,
+    name: "",
     status: StatusEnum.ACTIVE,
     description: "",
+    buildingId: "",
+    floorId: "",
+    position: { x: 0, y: 0 },
+    rotation: 0
   };
 
-  switch (type) {
-    case "door":
-      return {
-        ...baseData,
-        hardwareStatus: {
-          frame: "functional",
-          hinges: "functional",
-          doorknob: "functional",
-          lock: "functional"
-        },
-        windPressureIssues: false
-      };
-    case "hallway":
-      return {
-        ...baseData,
-        maintenanceSchedule: [],
-        emergencyExits: []
-      };
-    default:
-      return baseData;
+  if (type === "door") {
+    return {
+      ...commonData,
+      doorType: "standard",
+      securityLevel: "standard",
+      passkeyEnabled: false,
+      // Extended properties used in forms
+      hardwareStatus: {
+        hinges: "functional",
+        lock: "functional",
+        frame: "functional",
+        doorknob: "functional"
+      },
+      closerStatus: "functioning",
+      windPressureIssues: false,
+      hasClosingIssue: false,
+      hasHandleIssue: false,
+      size: { width: 60, height: 20 }
+    };
   }
-};
+
+  if (type === "hallway") {
+    return {
+      ...commonData,
+      section: "connector",
+      hallwayType: "public_main",
+      trafficFlow: "two_way",
+      accessibility: "fully_accessible",
+      emergencyRoute: "not_designated",
+      maintenancePriority: "low",
+      capacityLimit: 50,
+      // Extended properties
+      maintenanceSchedule: [],
+      emergencyExits: [],
+      size: { width: 300, height: 50 }
+    };
+  }
+
+  return {
+    ...commonData,
+    type: "room",
+    roomNumber: "",
+    roomType: RoomTypeEnum.OFFICE,
+    currentFunction: "",
+    isStorage: false,
+    size: { width: 150, height: 100 }
+  };
+}

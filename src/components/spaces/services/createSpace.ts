@@ -1,91 +1,90 @@
 
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { CreateSpaceFormData } from "../schemas/createSpaceSchema";
+import type { 
+  CreateSpaceFormData, 
+  RoomFormData, 
+  HallwayFormData, 
+  DoorFormData 
+} from "../schemas/createSpaceSchema";
 
-export const createSpace = async (formData: CreateSpaceFormData) => {
-  console.log("Creating space with data:", formData);
-  
+export async function createSpace(data: CreateSpaceFormData) {
   try {
-    // Set default values for position, size, and rotation
-    const position = formData.position || { x: 0, y: 0 };
-    const size = formData.size || (
-      formData.type === 'hallway' 
-        ? { width: 300, height: 50 } 
-        : formData.type === 'door'
-          ? { width: 60, height: 20 }
-          : { width: 150, height: 100 }
-    );
-    const rotation = formData.rotation || 0;
+    console.log("Creating space:", data);
+
+    // 1. Create the base space record
+    const { id: spaceId } = await createBaseSpaceRecord(data);
     
-    // Create base space object
-    const spaceData = {
-      name: formData.name,
-      floor_id: formData.floorId,
-      type: formData.type,
-      status: formData.status,
-      position,
-      size,
-      rotation,
-      properties: formData.description 
-        ? { description: formData.description } 
-        : {}
+    // 2. Create type-specific properties
+    if (data.type === "room") {
+      await createRoomProperties(spaceId, data as RoomFormData);
+    } else if (data.type === "hallway") {
+      await createHallwayProperties(spaceId, data as HallwayFormData);
+    } else if (data.type === "door") {
+      await createDoorProperties(spaceId, data as DoorFormData);
+    }
+
+    // 3. Create connections if any
+    if (data.connections && data.connections.length > 0) {
+      await createSpaceConnections(spaceId, data);
+    }
+
+    return {
+      success: true,
+      spaceId,
+      message: `${data.type} created successfully`,
     };
-
-    // Check if we need to add a room number for rooms
-    if (formData.type === "room" && formData.roomNumber) {
-      (spaceData as any).room_number = formData.roomNumber;
-    }
-
-    console.log("Inserting space:", spaceData);
-    
-    // Insert the space
-    const { data: newSpace, error: spaceError } = await supabase
-      .from("new_spaces")
-      .insert(spaceData)
-      .select("id")
-      .single();
-
-    if (spaceError) throw spaceError;
-    
-    const spaceId = newSpace.id;
-    console.log("Created space with ID:", spaceId);
-
-    // Handle type-specific logic
-    if (formData.type === "room") {
-      await createRoomProperties(formData, spaceId);
-    } else if (formData.type === "hallway") {
-      await createHallwayProperties(formData, spaceId);
-    } else if (formData.type === "door") {
-      await createDoorProperties(formData, spaceId);
-    }
-
-    // Handle connections if any
-    if (formData.connections && formData.connections.length > 0) {
-      await createConnections(formData.connections, spaceId, formData.type);
-    }
-
-    return { id: spaceId, type: formData.type };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating space:", error);
-    throw error;
+    throw new Error(error.message || "Failed to create space");
   }
-};
+}
 
-async function createRoomProperties(formData: CreateSpaceFormData & { type: "room" }, spaceId: string) {
-  const roomProps = {
-    space_id: spaceId,
-    room_type: formData.roomType,
-    is_storage: formData.isStorage || false,
-    current_function: formData.currentFunction || null,
-    parent_room_id: formData.parentRoomId || null,
-    phone_number: formData.phoneNumber || null,
-    storage_type: formData.isStorage ? formData.storageType : null,
-    storage_capacity: formData.isStorage ? formData.storageCapacity : null,
-    storage_notes: formData.isStorage ? formData.storageNotes : null
+async function createBaseSpaceRecord(data: CreateSpaceFormData) {
+  // Create the base space entry
+  const spaceData = {
+    name: data.name,
+    type: data.type,
+    floor_id: data.floorId,
+    status: data.status,
+    position: data.position || { x: 0, y: 0 },
+    size: {
+      width: data.type === "door" ? 60 : (data.type === "hallway" ? 300 : 150),
+      height: data.type === "door" ? 20 : (data.type === "hallway" ? 50 : 100)
+    },
+    rotation: data.rotation || 0,
+    properties: {
+      description: data.description
+    }
   };
 
-  console.log("Inserting room properties:", roomProps);
-  
+  if (data.type === "room") {
+    spaceData.room_number = (data as RoomFormData).roomNumber;
+  }
+
+  const { data: spaceResult, error } = await supabase
+    .from("new_spaces")
+    .insert(spaceData)
+    .select("id")
+    .single();
+
+  if (error) throw error;
+  return spaceResult;
+}
+
+async function createRoomProperties(spaceId: string, data: RoomFormData) {
+  // Create room-specific properties
+  const roomProps = {
+    space_id: spaceId,
+    room_type: data.roomType,
+    current_function: data.currentFunction,
+    is_storage: data.isStorage,
+    storage_type: data.isStorage ? data.storageType : null,
+    storage_capacity: data.isStorage ? data.storageCapacity : null,
+    parent_room_id: data.parentRoomId,
+    phone_number: data.phoneNumber,
+  };
+
   const { error } = await supabase
     .from("room_properties")
     .insert(roomProps);
@@ -93,20 +92,19 @@ async function createRoomProperties(formData: CreateSpaceFormData & { type: "roo
   if (error) throw error;
 }
 
-async function createHallwayProperties(formData: CreateSpaceFormData & { type: "hallway" }, spaceId: string) {
+async function createHallwayProperties(spaceId: string, data: HallwayFormData) {
+  // Create hallway-specific properties
   const hallwayProps = {
     space_id: spaceId,
-    section: formData.section || "connector",
-    hallway_type: formData.hallwayType || "public_main",
-    traffic_flow: formData.trafficFlow || "two_way",
-    accessibility: formData.accessibility || "fully_accessible", 
-    emergency_route: formData.emergencyRoute || "not_designated",
-    maintenance_priority: formData.maintenancePriority || "low",
-    capacity_limit: formData.capacityLimit || null
+    section: data.section,
+    hallway_type: data.hallwayType,
+    traffic_flow: data.trafficFlow,
+    accessibility: data.accessibility,
+    emergency_route: data.emergencyRoute,
+    maintenance_priority: data.maintenancePriority,
+    capacity_limit: data.capacityLimit
   };
 
-  console.log("Inserting hallway properties:", hallwayProps);
-  
   const { error } = await supabase
     .from("hallway_properties")
     .insert(hallwayProps);
@@ -114,17 +112,17 @@ async function createHallwayProperties(formData: CreateSpaceFormData & { type: "
   if (error) throw error;
 }
 
-async function createDoorProperties(formData: CreateSpaceFormData & { type: "door" }, spaceId: string) {
+async function createDoorProperties(spaceId: string, data: DoorFormData) {
+  // Create door-specific properties
   const doorProps = {
     space_id: spaceId,
-    security_level: formData.securityLevel || "standard",
-    is_transition_door: formData.isTransitionDoor || false,
-    has_closing_issue: formData.hasClosingIssue || false,
-    has_handle_issue: formData.hasHandleIssue || false,
+    door_type: data.doorType,
+    security_level: data.securityLevel,
+    is_transition_door: data.isTransitionDoor,
+    has_closing_issue: data.hasClosingIssue,
+    has_handle_issue: data.hasHandleIssue,
   };
 
-  console.log("Inserting door properties:", doorProps);
-  
   const { error } = await supabase
     .from("door_properties")
     .insert(doorProps);
@@ -132,36 +130,38 @@ async function createDoorProperties(formData: CreateSpaceFormData & { type: "doo
   if (error) throw error;
 }
 
-async function createConnections(
-  connections: Array<{ toSpaceId?: string; connectionType?: string; direction?: string }>,
-  fromSpaceId: string,
-  spaceType: string
-) {
-  const validConnections = connections.filter(
-    (conn) => conn.toSpaceId && conn.connectionType
-  );
+async function createSpaceConnections(spaceId: string, data: CreateSpaceFormData) {
+  if (!data.connections || !data.connections.length) return;
   
-  if (validConnections.length === 0) return;
+  // Create connections for the space
+  const connections = data.connections.map((conn) => {
+    if (!conn.toSpaceId || !conn.connectionType) return null;
+    
+    return {
+      from_space_id: spaceId,
+      to_space_id: conn.toSpaceId,
+      space_type: data.type,
+      connection_type: conn.connectionType,
+      direction: conn.direction || "",
+      status: "active",
+      connection_status: "active", 
+      is_transition_door: conn.connectionType === "transition",
+      hallway_position: data.type === "hallway" ? 0 : undefined, // Default position
+      position: conn.direction || "center"
+    };
+  }).filter(Boolean);
 
-  // Prepare connections
-  const connectionsToInsert = validConnections.map((conn) => ({
-    from_space_id: fromSpaceId,
-    to_space_id: conn.toSpaceId as string,
-    space_type: spaceType,
-    connection_type: conn.connectionType as string,
-    direction: conn.direction || "adjacent",
-    status: "active",
-    connection_status: "active",
-    is_transition_door: false,
-    hallway_position: 0,
-    position: conn.direction || "adjacent"
-  }));
+  if (connections.length === 0) return;
 
-  console.log("Inserting connections:", connectionsToInsert);
-  
-  const { error } = await supabase
-    .from("space_connections")
-    .insert(connectionsToInsert);
+  // Batch insert connections
+  for (const connection of connections) {
+    const { error } = await supabase
+      .from("space_connections")
+      .insert(connection);
 
-  if (error) throw error;
+    if (error) {
+      console.error("Error creating connection:", error);
+      // Continue with next connection instead of failing the whole operation
+    }
+  }
 }

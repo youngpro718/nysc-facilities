@@ -14,7 +14,6 @@ export interface EditSpaceDialogProps {
   onOpenChange: (open: boolean) => void;
   onSpaceUpdated?: () => void;
   initialData?: any;
-  spaceType?: string;
 }
 
 export function EditSpaceDialog({ id, type, open, onOpenChange, onSpaceUpdated }: EditSpaceDialogProps) {
@@ -48,6 +47,10 @@ export function EditSpaceDialog({ id, type, open, onOpenChange, onSpaceUpdated }
   const getInitialData = () => {
     if (!space) return {};
     
+    // Extract properties safely using optional chaining
+    const properties = space.properties || {};
+    const description = typeof properties === 'object' ? properties.description : undefined;
+    
     const baseData = {
       id: space.id,
       name: space.name,
@@ -57,20 +60,20 @@ export function EditSpaceDialog({ id, type, open, onOpenChange, onSpaceUpdated }
       position: space.position,
       size: space.size,
       rotation: space.rotation || 0,
-      description: space.properties && typeof space.properties === 'object' ? space.properties.description : undefined
+      description: description
     };
     
     if (space.type === "hallway" && space.hallway_properties) {
-      const hallwayProps = space.hallway_properties || {};
+      const hallwayProps = space.hallway_properties;
       return {
         ...baseData,
-        section: hallwayProps.section,
-        hallwayType: hallwayProps.hallway_type,
-        trafficFlow: hallwayProps.traffic_flow,
-        accessibility: hallwayProps.accessibility,
-        emergencyRoute: hallwayProps.emergency_route,
-        maintenancePriority: hallwayProps.maintenance_priority,
-        capacityLimit: hallwayProps.capacity_limit
+        section: hallwayProps?.section,
+        hallwayType: hallwayProps?.hallway_type,
+        trafficFlow: hallwayProps?.traffic_flow,
+        accessibility: hallwayProps?.accessibility,
+        emergencyRoute: hallwayProps?.emergency_route,
+        maintenancePriority: hallwayProps?.maintenance_priority,
+        capacityLimit: hallwayProps?.capacity_limit
       };
     }
     
@@ -79,12 +82,12 @@ export function EditSpaceDialog({ id, type, open, onOpenChange, onSpaceUpdated }
       return {
         ...baseData,
         roomNumber: space.room_number,
-        roomType: roomProps.room_type,
-        currentFunction: roomProps.current_function,
-        isStorage: roomProps.is_storage || false,
-        storageType: roomProps.storage_type,
-        parentRoomId: roomProps.parent_room_id,
-        phoneNumber: roomProps.phone_number
+        roomType: roomProps?.room_type,
+        currentFunction: roomProps?.current_function,
+        isStorage: roomProps?.is_storage || false,
+        storageType: roomProps?.storage_type,
+        parentRoomId: roomProps?.parent_room_id,
+        phoneNumber: roomProps?.phone_number
       };
     }
     

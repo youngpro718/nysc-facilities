@@ -1,70 +1,80 @@
 
-import { Position } from "reactflow";
-import { FloorPlanObjectType, RawFloorPlanObject } from "../types/floorPlanTypes";
+import { Node } from "reactflow";
+import { ROOM_COLORS, FloorPlanObjectData, FloorPlanObjectType } from "../types/floorPlanTypes";
 
-const ROOM_COLORS = {
-  default: '#e2e8f0',
-  active: '#bfdbfe',
-  inactive: '#f1f5f9',
-  under_maintenance: '#fde68a',
-  selected: '#93c5fd',
-};
+interface RawFloorPlanObject {
+  id: string;
+  type: string;
+  position: { x: number; y: number };
+  size: { width: number; height: number };
+  rotation?: number;
+  label?: string;
+  properties?: Record<string, any>;
+  style?: Record<string, any>;
+}
 
-export function transformSpaceToNode(obj: RawFloorPlanObject, index: number) {
-  // Set default style based on object type
-  const defaultStyle = {
-    backgroundColor: ROOM_COLORS.default,
-    border: '1px solid #cbd5e1'
-  };
+export function transformFloorPlanObject(obj: RawFloorPlanObject): Node<FloorPlanObjectData> {
+  const { id, type, position, size, rotation = 0, label, properties = {}, style = {} } = obj;
 
-  // Customize style based on object status if available
-  const status = obj.status || 'active';
-  const backgroundColor = ROOM_COLORS[status as keyof typeof ROOM_COLORS] || ROOM_COLORS.default;
+  // Determine style based on type
+  let nodeStyle = { ...style };
   
-  // Apply custom styling from object if available
-  const style = {
-    ...defaultStyle,
-    backgroundColor,
-    ...(obj.style || {})
-  };
+  if (type === FloorPlanObjectType.ROOM) {
+    const roomType = (properties?.roomType || 'default').toLowerCase();
+    const backgroundColor = ROOM_COLORS[roomType as keyof typeof ROOM_COLORS] || ROOM_COLORS.default;
+    
+    nodeStyle = {
+      ...nodeStyle,
+      backgroundColor,
+      border: '1px solid #cbd5e1',
+    };
+  } else if (type === FloorPlanObjectType.HALLWAY) {
+    nodeStyle = {
+      ...nodeStyle,
+      backgroundColor: '#f1f5f9',
+      border: '1px solid #cbd5e1',
+    };
+  } else if (type === FloorPlanObjectType.DOOR) {
+    nodeStyle = {
+      ...nodeStyle,
+      backgroundColor: '#94a3b8',
+      border: '2px solid #475569',
+    };
+  }
 
   return {
-    id: obj.id,
-    type: obj.type,
-    position: obj.position,
+    id,
+    type,
+    position,
     data: {
-      label: obj.name || obj.label || `${obj.type} ${index + 1}`,
-      type: obj.type,
-      size: obj.size,
-      style,
-      properties: obj.properties || {},
-      rotation: obj.rotation
+      label: label || '',
+      type,
+      properties,
+      size,
+      style: nodeStyle,
+      rotation,
     },
-    // Apply rotation if available, used for node positioning
-    rotation: obj.rotation || 0,
-    // Use z-index for layering, doors on top
-    zIndex: obj.type === 'door' ? 5 : (obj.z_index || 0)
+    width: size.width,
+    height: size.height,
   };
 }
 
-// Function to get connection handles for different node types
-export function getNodeHandles(nodeType: string) {
-  switch (nodeType) {
-    case 'door':
-      return {
-        source: [Position.Right, Position.Left],
-        target: [Position.Left, Position.Right]
-      };
-    case 'hallway':
-      return {
-        source: [Position.Top, Position.Right, Position.Bottom, Position.Left],
-        target: [Position.Top, Position.Right, Position.Bottom, Position.Left]
-      };
-    case 'room':
-    default:
-      return {
-        source: [Position.Top, Position.Right, Position.Bottom, Position.Left],
-        target: [Position.Top, Position.Right, Position.Bottom, Position.Left]
-      };
+export function getNodeLabel(data: FloorPlanObjectData): string {
+  if (data.label) return data.label;
+  
+  if (data.type === FloorPlanObjectType.ROOM) {
+    return data.properties?.roomNumber 
+      ? `Room ${data.properties.roomNumber}`
+      : 'Room';
   }
+  
+  if (data.type === FloorPlanObjectType.HALLWAY) {
+    return 'Hallway';
+  }
+  
+  if (data.type === FloorPlanObjectType.DOOR) {
+    return 'Door';
+  }
+  
+  return data.type || 'Unknown';
 }
