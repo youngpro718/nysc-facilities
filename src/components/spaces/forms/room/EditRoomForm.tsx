@@ -32,10 +32,8 @@ export function EditRoomForm({
     },
   });
 
-  const onSubmit = async (data: RoomFormData) => {
-    try {
-      setIsPending(true);
-      
+  const updateSpaceMutation = useMutation({
+    mutationFn: async (data: RoomFormData) => {
       // Update the basic space data
       const spaceData = {
         name: data.name,
@@ -93,16 +91,26 @@ export function EditRoomForm({
         if (insertError) throw insertError;
       }
 
+      return { success: true };
+    },
+    onSuccess: () => {
       // Refresh room data
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
       queryClient.invalidateQueries({ queryKey: ['space', id] });
-      
       toast.success("Room updated successfully");
       
       if (onSuccess) onSuccess();
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error("Update error:", error);
       toast.error(error instanceof Error ? error.message : "Failed to update room");
+    }
+  });
+
+  const onSubmit = async (data: RoomFormData) => {
+    try {
+      setIsPending(true);
+      await updateSpaceMutation.mutateAsync(data);
     } finally {
       setIsPending(false);
     }

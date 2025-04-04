@@ -4,12 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Edit, PlusCircle, Trash2 } from "lucide-react";
 import { useHallwayData } from "./hooks/useHallwayData";
-import { EmptyState } from "@/components/ui/empty-state";
 import { useState } from "react";
 import { SpaceListFilters } from "./SpaceListFilters";
 import { EditSpaceDialog } from "./EditSpaceDialog";
 import { useSpacesQuery } from "./hooks/queries/useSpacesQuery";
 import { StatusBadge } from "./StatusBadge";
+import { EmptyState } from "./EmptyState";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface HallwaysListProps {
   floorId?: string;
@@ -19,14 +21,24 @@ export function HallwaysList({ floorId }: HallwaysListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [editingId, setEditingId] = useState<string | null>(null);
+  
   const { hallways, loading, error } = useHallwayData();
-  const { deleteSpace } = useSpacesQuery();
   
   // Handle delete action with confirmation
   const handleDelete = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this hallway?")) {
       try {
-        await deleteSpace(id);
+        const { error } = await supabase
+          .from("new_spaces")
+          .delete()
+          .eq("id", id);
+          
+        if (error) {
+          toast.error(`Failed to delete: ${error.message}`);
+          throw error;
+        }
+        
+        toast.success("Hallway deleted successfully");
       } catch (error) {
         console.error("Failed to delete hallway:", error);
       }
@@ -40,7 +52,7 @@ export function HallwaysList({ floorId }: HallwaysListProps) {
     const matchesFloor = !floorId || hallway.floor_id === floorId;
     return matchesSearch && matchesStatus && matchesFloor;
   });
-
+  
   if (loading) {
     return <div className="text-center py-10">Loading hallways...</div>;
   }
@@ -58,7 +70,7 @@ export function HallwaysList({ floorId }: HallwaysListProps) {
       />
     );
   }
-
+  
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-4">
@@ -68,6 +80,7 @@ export function HallwaysList({ floorId }: HallwaysListProps) {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="max-w-sm"
         />
+        
         <SpaceListFilters
           selectedStatus={selectedStatus}
           onStatusChange={setSelectedStatus}
@@ -137,6 +150,3 @@ export function HallwaysList({ floorId }: HallwaysListProps) {
     </div>
   );
 }
-
-// Also export as default for backward compatibility
-export default HallwaysList;

@@ -12,18 +12,17 @@ export interface EditSpaceDialogProps {
   type?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  initialData?: Record<string, any>;
   onSpaceUpdated?: () => void;
 }
 
-export function EditSpaceDialog({ id, type, open, onOpenChange, initialData, onSpaceUpdated }: EditSpaceDialogProps) {
+export function EditSpaceDialog({ id, type, open, onOpenChange, onSpaceUpdated }: EditSpaceDialogProps) {
   const [spaceType, setSpaceType] = useState<string | null>(type || null);
   
-  // Query to fetch the space details if initialData is not provided
+  // Query to fetch the space details
   const { data: space, isLoading } = useQuery({
     queryKey: ["space", id],
     queryFn: async () => {
-      if (!id || initialData) return initialData || null;
+      if (!id) return null;
       
       const { data, error } = await supabase
         .from("new_spaces")
@@ -35,7 +34,7 @@ export function EditSpaceDialog({ id, type, open, onOpenChange, initialData, onS
       setSpaceType(data.type);
       return data;
     },
-    enabled: !!id && open && !initialData,
+    enabled: !!id && open,
   });
 
   const handleClose = () => {
@@ -45,7 +44,6 @@ export function EditSpaceDialog({ id, type, open, onOpenChange, initialData, onS
 
   // Prepare form data based on space type
   const getInitialData = () => {
-    if (initialData) return initialData;
     if (!space) return {};
     
     const baseData = {
@@ -57,7 +55,7 @@ export function EditSpaceDialog({ id, type, open, onOpenChange, initialData, onS
       position: space.position,
       size: space.size,
       rotation: space.rotation || 0,
-      description: space.properties?.description
+      description: typeof space.properties === 'object' ? space.properties?.description : undefined
     };
     
     if (space.type === "hallway" && space.hallway_properties) {
@@ -75,7 +73,7 @@ export function EditSpaceDialog({ id, type, open, onOpenChange, initialData, onS
     }
     
     if (space.type === "room" && space.room_properties) {
-      const roomProps = space.room_properties || {};
+      const roomProps = space.room_properties;
       return {
         ...baseData,
         roomNumber: space.room_number,
