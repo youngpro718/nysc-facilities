@@ -9,9 +9,10 @@ import { RotateCw } from "lucide-react";
 interface IssueCardProps {
   issue: Issue;
   onMarkAsSeen?: (id: string) => void;
+  actions?: React.ReactNode;
 }
 
-export function IssueCard({ issue, onMarkAsSeen }: IssueCardProps) {
+export function IssueCard({ issue, onMarkAsSeen, actions }: IssueCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
 
   return (
@@ -35,6 +36,7 @@ export function IssueCard({ issue, onMarkAsSeen }: IssueCardProps) {
         <CardFront 
           issue={issue} 
           onMarkAsSeen={onMarkAsSeen}
+          actions={actions}
         />
         <CardBack issue={issue} />
       </div>

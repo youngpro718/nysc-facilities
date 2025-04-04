@@ -38,7 +38,22 @@ export default async function handler(
     const forceDelete = force === 'true';
     console.log(`Deleting issue ${issueId}${forceDelete ? ' with force mode' : ''}`);
 
-    // Step 1: Delete related comments first
+    // Begin transaction
+    const { data: issue, error: issueError } = await supabase
+      .from('issues')
+      .select('*')
+      .eq('id', issueId)
+      .single();
+
+    if (issueError || !issue) {
+      return res.status(404).json({
+        success: false,
+        message: 'Issue not found',
+        error: issueError?.message
+      });
+    }
+
+    // Step 1: Delete related comments
     const { error: commentsDeleteError } = await supabase
       .from('issue_comments')
       .delete()
@@ -77,30 +92,32 @@ export default async function handler(
     if (issueDeleteError) {
       console.error('Error deleting issue:', issueDeleteError);
       
-      if (issueDeleteError.code === '23503' && forceDelete) {
-        // If foreign key constraint violation in force mode, try different approach
-        console.log('Force deleting issue with constraints, bypassing transaction');
+      if (forceDelete) {
+        // If force mode is enabled, try one more approach with a more direct query
+        console.log('Force deleting issue with constraints, trying alternative approach');
         
-        // Attempt a direct delete with cascade option (if supported)
-        const { error: forceDeleteError } = await supabase
-          .from('issues')
-          .delete()
-          .eq('id', issueId)
-          .select();
-          
-        if (forceDeleteError) {
-          console.error('Force delete error:', forceDeleteError);
+        // Log the issue for debugging purposes
+        console.log('Issue data being force deleted:', issue);
+        
+        // Try different deletion strategies if needed
+        const { error: finalDeleteError } = await supabase.rpc(
+          'safely_delete_issue_and_references', 
+          { issue_id_param: issueId }
+        ).single();
+        
+        if (finalDeleteError) {
+          console.error('Force delete error:', finalDeleteError);
           return res.status(500).json({
             success: false,
             message: 'Failed to delete issue even in force mode',
-            error: forceDeleteError.message
+            error: finalDeleteError.message
           });
         }
       } else {
-        // Regular error, not in force mode or not a constraint issue
+        // Regular error, not in force mode
         return res.status(500).json({
           success: false,
-          message: 'Failed to delete issue',
+          message: 'Failed to delete issue due to database constraints',
           error: issueDeleteError.message,
           code: issueDeleteError.code,
           details: issueDeleteError.details,

@@ -15,7 +15,7 @@ import {
 import { Trash, AlertCircle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { useIssueDirectDelete } from "../hooks/useIssueDirectDelete";
+import { useDeleteIssueMutation } from "../hooks/mutations/useDeleteIssueMutation";
 
 interface DeleteIssueButtonProps {
   issueId: string;
@@ -39,7 +39,7 @@ export function DeleteIssueButton({
   const [open, setOpen] = useState(false);
   const [forceDelete, setForceDelete] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const { deleteIssue, isDeleting } = useIssueDirectDelete();
+  const { deleteIssueMutation, isDeleteInProgress } = useDeleteIssueMutation();
   
   // Reset state when dialog closes
   const handleOpenChange = (open: boolean) => {
@@ -55,13 +55,15 @@ export function DeleteIssueButton({
     
     try {
       console.log(`Attempting to delete issue with ID: ${issueId}, force: ${forceDelete}`);
-      const success = await deleteIssue(issueId, forceDelete);
       
-      if (success) {
-        setOpen(false);
-        if (onDelete) {
-          onDelete();
-        }
+      await deleteIssueMutation.mutateAsync({ 
+        issueId, 
+        force: forceDelete 
+      });
+      
+      setOpen(false);
+      if (onDelete) {
+        onDelete();
       }
     } catch (error: any) {
       console.error("Error deleting issue:", error);
@@ -112,9 +114,9 @@ export function DeleteIssueButton({
         <AlertDialogAction
           onClick={handleDelete}
           className="bg-destructive hover:bg-destructive/90"
-          disabled={isDeleting}
+          disabled={isDeleteInProgress}
         >
-          {isDeleting ? "Deleting..." : "Delete"}
+          {isDeleteInProgress ? "Deleting..." : "Delete"}
         </AlertDialogAction>
       </AlertDialogFooter>
     </AlertDialogContent>
@@ -150,7 +152,7 @@ export function DeleteIssueButton({
           variant="ghost"
           size="sm"
           className={`text-destructive hover:text-destructive hover:bg-destructive/10 ${className}`}
-          disabled={isDeleting}
+          disabled={isDeleteInProgress}
         >
           <Trash className="h-4 w-4 mr-2" />
           {text}

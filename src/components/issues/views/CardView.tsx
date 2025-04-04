@@ -1,6 +1,7 @@
 
 import { Issue } from "../types/IssueTypes";
 import { IssueCard } from "../card/IssueCard";
+import { DeleteIssueButton } from "../components/DeleteIssueButton";
 
 interface CardViewProps {
   issues: Issue[];
@@ -26,6 +27,12 @@ export const CardView = ({ issues, onIssueSelect }: CardViewProps) => {
           <IssueCard 
             issue={issue}
             onMarkAsSeen={() => {}}
+            actions={
+              <DeleteIssueButton 
+                issueId={issue.id} 
+                className="mt-2" 
+              />
+            }
           />
         </div>
       ))}

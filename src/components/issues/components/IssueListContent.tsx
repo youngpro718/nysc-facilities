@@ -34,6 +34,7 @@ export const IssueListContent = ({
     issues,
     isLoading,
     updateIssueMutation,
+    deleteIssueMutation
   } = useIssueQueries({ filters, searchQuery });
 
   const handleFilterChange = (newFilters: Partial<IssueFiltersType>) => {
@@ -109,4 +110,4 @@ export const IssueListContent = ({
       )}
     </>
   );
-};
+}
