@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import {
@@ -61,8 +62,6 @@ export function DeleteIssueButton({
         if (onDelete) {
           onDelete();
         }
-      } else {
-        setErrorMessage("Failed to delete issue. Check console for details.");
       }
     } catch (error: any) {
       console.error("Error deleting issue:", error);
@@ -160,4 +159,4 @@ export function DeleteIssueButton({
       {renderDialogContent()}
     </AlertDialog>
   );
-} 
+}

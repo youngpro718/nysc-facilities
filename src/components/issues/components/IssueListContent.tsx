@@ -7,7 +7,6 @@ import { TableView } from "../views/TableView";
 import { CardView } from "../views/CardView";
 import { IssueListHeader } from "./IssueListHeader";
 import { useIssueQueries } from "../hooks/useIssueQueries";
-import { useMemo } from "react";
 
 interface IssueListContentProps {
   viewMode: 'table' | 'cards';
@@ -35,7 +34,6 @@ export const IssueListContent = ({
     issues,
     isLoading,
     updateIssueMutation,
-    deleteIssueMutation,
   } = useIssueQueries({ filters, searchQuery });
 
   const handleFilterChange = (newFilters: Partial<IssueFiltersType>) => {
@@ -56,22 +54,6 @@ export const IssueListContent = ({
             toast({
               title: "Status updated",
               description: `Issue status changed to ${newStatus}`,
-            });
-          },
-        }
-      );
-    }
-  };
-
-  const handleDelete = (id: string) => {
-    if (window.confirm("Are you sure you want to delete this issue?")) {
-      deleteIssueMutation.deleteIssueMutation.mutate(
-        { issueId: id },
-        {
-          onSuccess: () => {
-            toast({
-              title: "Issue deleted",
-              description: "The issue has been successfully deleted.",
             });
           },
         }
@@ -123,7 +105,6 @@ export const IssueListContent = ({
           issues={issues}
           onIssueSelect={handleIssueSelect}
           onStatusChange={handleStatusChange}
-          onDelete={handleDelete}
         />
       )}
     </>

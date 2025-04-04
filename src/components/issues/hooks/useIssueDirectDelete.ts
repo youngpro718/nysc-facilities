@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
@@ -16,7 +17,7 @@ export const useIssueDirectDelete = () => {
    * @param force Whether to try to force the deletion by bypassing constraints
    * @returns Promise<boolean> indicating success or failure
    */
-  const deleteIssue = async (issueId: string, force: boolean = false) => {
+  const deleteIssue = async (issueId: string, force: boolean = false): Promise<boolean> => {
     if (!issueId) {
       toast.error('No issue ID provided');
       return false;
@@ -33,6 +34,7 @@ export const useIssueDirectDelete = () => {
       console.log('Delete response:', response.data);
 
       if (response.data.success) {
+        // Invalidate the issues query to refresh the data
         queryClient.invalidateQueries({ queryKey: ['issues'] });
         toast.success(response.data.message || 'Issue deleted successfully');
         return true;
@@ -63,4 +65,4 @@ export const useIssueDirectDelete = () => {
     deleteIssue,
     isDeleting
   };
-}; 
+};

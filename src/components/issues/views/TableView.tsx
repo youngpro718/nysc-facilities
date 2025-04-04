@@ -1,5 +1,6 @@
+
 import { format } from "date-fns";
-import { MoreVertical, MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 import { Issue, IssueStatus } from "../types/IssueTypes";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,14 +25,12 @@ interface TableViewProps {
   issues: Issue[];
   onIssueSelect: (id: string) => void;
   onStatusChange: (id: string, status: IssueStatus) => void;
-  onDelete: (id: string) => void;
 }
 
 export const TableView = ({ 
   issues, 
   onIssueSelect, 
-  onStatusChange, 
-  onDelete 
+  onStatusChange 
 }: TableViewProps) => {
   const handleActionClick = (
     e: React.MouseEvent, 
@@ -128,13 +127,8 @@ export const TableView = ({
                     </DropdownMenuItem>
                     <DropdownMenuItem>
                       <DeleteIssueButton 
-                        issueId={issue.id} 
+                        issueId={issue.id}
                         standalone={false}
-                        onDelete={() => {
-                          if (onDelete) {
-                            onDelete(issue.id);
-                          }
-                        }}
                       />
                     </DropdownMenuItem>
                   </DropdownMenuContent>
