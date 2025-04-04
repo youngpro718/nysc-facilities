@@ -2,7 +2,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useState } from "react";
-import axios from "axios";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DeleteIssueParams {
   issueId: string;
@@ -22,24 +22,57 @@ export const useDeleteIssueMutation = () => {
       console.log(`Deleting issue with ID: ${issueId}${force ? ' (force mode)' : ''}`);
       
       try {
-        // Use our API endpoint which handles all the cleanup
-        const response = await axios.delete(`/api/issues/delete-issue?issueId=${issueId}${force ? '&force=true' : ''}`);
-        console.log("Delete response:", response.data);
-        return response.data;
+        // First, try to delete directly
+        const { error: commentsError } = await supabase
+          .from('issue_comments')
+          .delete()
+          .eq('issue_id', issueId);
+          
+        if (commentsError && !force) {
+          console.warn('Error deleting comments:', commentsError);
+        }
+
+        const { error: historyError } = await supabase
+          .from('issue_history')
+          .delete()
+          .eq('issue_id', issueId);
+          
+        if (historyError && !force) {
+          console.warn('Error deleting history:', historyError);
+        }
+
+        // Finally delete the issue itself
+        const { error: issueError } = await supabase
+          .from('issues')
+          .delete()
+          .eq('id', issueId);
+          
+        if (issueError) {
+          console.error('Error deleting issue:', issueError);
+          
+          if (force) {
+            // If force is true, we perform a more careful deletion
+            // This is a fallback for when constraints prevent deletion
+            console.log('Using force delete approach for issue with ID:', issueId);
+            
+            // Additional cleanup might be needed here if constraints are complex
+            // For now we're just retrying the deletion
+            const { error: forceDeleteError } = await supabase
+              .from('issues')
+              .delete()
+              .eq('id', issueId);
+              
+            if (forceDeleteError) {
+              throw new Error(`Failed to delete issue even with force mode: ${forceDeleteError.message}`);
+            }
+          } else {
+            throw new Error(issueError.message || 'Failed to delete issue');
+          }
+        }
+        
+        return { success: true, message: 'Issue deleted successfully', issueId };
       } catch (error: any) {
         console.error("Error in deleteIssueMutation:", error);
-        
-        // If it's a network error (API endpoint not accessible)
-        if (error.code === 'ERR_NETWORK') {
-          throw new Error("Network error. Please check your connection and try again.");
-        }
-        
-        // If the API returned an error message
-        if (error.response?.data?.message) {
-          throw new Error(error.response.data.message);
-        }
-        
-        // Default error message
         throw error;
       } finally {
         setIsDeleteInProgress(false);

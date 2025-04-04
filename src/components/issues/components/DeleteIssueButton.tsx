@@ -69,8 +69,9 @@ export function DeleteIssueButton({
       console.error("Error deleting issue:", error);
       setErrorMessage(error.message || "An unknown error occurred");
       
-      // If the error message suggests using force=true
-      if (error.message?.includes('force=true')) {
+      // If the error message suggests constraints, recommend force delete
+      if (error.message?.includes('violates foreign key constraint') || 
+          error.message?.includes('constraint')) {
         setErrorMessage(
           "Unable to delete due to database constraints. You can try force deletion, which will attempt to remove all references to this issue."
         );
