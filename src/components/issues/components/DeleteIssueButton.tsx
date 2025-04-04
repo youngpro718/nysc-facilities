@@ -54,24 +54,26 @@ export function DeleteIssueButton({
     setErrorMessage(null);
     
     try {
-      console.log(`Attempting to delete issue with ID: ${issueId}, force: ${forceDelete}`);
+      console.log(`[DeleteIssueButton] Attempting to delete issue ID: ${issueId}, force: ${forceDelete}`);
       
       await deleteIssueMutation.mutateAsync({ 
         issueId, 
         force: forceDelete 
       });
       
+      console.log(`[DeleteIssueButton] Delete succeeded for issue ID: ${issueId}`);
       setOpen(false);
       if (onDelete) {
         onDelete();
       }
     } catch (error: any) {
-      console.error("Error deleting issue:", error);
+      console.error("[DeleteIssueButton] Error deleting issue:", error);
       setErrorMessage(error.message || "An unknown error occurred");
       
       // If the error message suggests constraints, recommend force delete
       if (error.message?.includes('violates foreign key constraint') || 
-          error.message?.includes('constraint')) {
+          error.message?.includes('constraint') || 
+          error.message?.includes('Failed to delete')) {
         setErrorMessage(
           "Unable to delete due to database constraints. You can try force deletion, which will attempt to remove all references to this issue."
         );
@@ -113,7 +115,10 @@ export function DeleteIssueButton({
       <AlertDialogFooter>
         <AlertDialogCancel>Cancel</AlertDialogCancel>
         <AlertDialogAction
-          onClick={handleDelete}
+          onClick={(e) => {
+            e.preventDefault(); // Prevent default to handle manually
+            handleDelete();
+          }}
           className="bg-destructive hover:bg-destructive/90"
           disabled={isDeleteInProgress}
         >

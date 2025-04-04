@@ -29,8 +29,12 @@ export const CardView = ({ issues, onIssueSelect }: CardViewProps) => {
             onMarkAsSeen={() => {}}
             actions={
               <DeleteIssueButton 
-                issueId={issue.id} 
-                className="mt-2" 
+                issueId={issue.id}
+                className="mt-2"
+                onDelete={() => {
+                  console.log(`Issue deleted successfully in CardView: ${issue.id}`);
+                  // The query invalidation in the mutation hook will handle UI updates
+                }}
               />
             }
           />
