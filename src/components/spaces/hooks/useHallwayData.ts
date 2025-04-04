@@ -61,22 +61,61 @@ export const useHallwayData = ({ selectedBuilding, selectedFloor }: UseHallwayDa
         throw hallwaysError;
       }
 
-      // Fetch connected space names in a separate query
-      const spaceConnections = hallwaysData?.flatMap(h => h.space_connections) || [];
+      // Initialize empty map for connected space names
       const connectedSpaceNames: Record<string, string> = {};
 
-      for (const connection of spaceConnections) {
-        if (!connection.to_space_id) continue;
+      // First check if there are any hallways and if they have space_connections
+      if (hallwaysData && hallwaysData.length > 0) {
+        // Type guard to check if space_connections exists and is an array
+        const hasValidConnections = hallwaysData.some(h => 
+          h.space_connections && 
+          Array.isArray(h.space_connections) && 
+          h.space_connections.length > 0
+        );
 
-        const { data, error } = await supabase
-          .from(connection.space_type === 'room' ? 'rooms' : 
-                connection.space_type === 'hallway' ? 'hallways' : 'doors')
-          .select('name')
-          .eq('id', connection.to_space_id)
-          .single();
-
-        if (!error && data) {
-          connectedSpaceNames[connection.to_space_id] = data.name;
+        if (hasValidConnections) {
+          // Gather all to_space_id from valid connections
+          const spaceIds: string[] = [];
+          
+          for (const hallway of hallwaysData) {
+            if (!hallway.space_connections || !Array.isArray(hallway.space_connections)) continue;
+            
+            for (const connection of hallway.space_connections) {
+              // Check if connection is a valid object and has to_space_id
+              if (connection && typeof connection === 'object' && 'to_space_id' in connection) {
+                const toSpaceId = connection.to_space_id;
+                if (typeof toSpaceId === 'string' && toSpaceId) {
+                  spaceIds.push(toSpaceId);
+                }
+              }
+            }
+          }
+          
+          // Only fetch space names if we have valid IDs
+          if (spaceIds.length > 0) {
+            // Fetch room names in batch
+            const { data: roomData } = await supabase
+              .from('rooms')
+              .select('id, name')
+              .in('id', spaceIds);
+              
+            // Fetch hallway names in batch
+            const { data: hallwayData } = await supabase
+              .from('hallways')
+              .select('id, name')
+              .in('id', spaceIds);
+              
+            // Fetch door names in batch
+            const { data: doorData } = await supabase
+              .from('doors')
+              .select('id, name')
+              .in('id', spaceIds);
+            
+            // Combine all data into the connectedSpaceNames map
+            if (roomData) roomData.forEach(room => { if (room.id) connectedSpaceNames[room.id] = room.name; });
+            if (hallwayData) hallwayData.forEach(hall => { if (hall.id) connectedSpaceNames[hall.id] = hall.name; });
+            if (doorData) doorData.forEach(door => { if (door.id) connectedSpaceNames[door.id] = door.name; });
+          }
         }
       }
 
@@ -104,18 +143,35 @@ export const useHallwayData = ({ selectedBuilding, selectedFloor }: UseHallwayDa
           last_updated: (hallway.usage_statistics as any)?.last_updated || null
         };
 
-        // Transform space connections to include the correct connected space name
-        const transformedConnections: HallwayConnection[] = ((hallway.space_connections || []) as any[]).map(conn => ({
-          id: conn.id,
-          position: conn.position,
-          connection_type: conn.connection_type,
-          door_details: conn.door_details,
-          access_requirements: conn.access_requirements,
-          is_emergency_exit: conn.is_emergency_exit,
-          to_space: {
-            name: connectedSpaceNames[conn.to_space_id] || 'Unknown Space'
+        // Transform space connections to include the correct connected space name with type guards
+        const transformedConnections: HallwayConnection[] = [];
+        
+        if (hallway.space_connections && Array.isArray(hallway.space_connections)) {
+          for (const conn of hallway.space_connections) {
+            // Ensure connection is a valid object
+            if (!conn || typeof conn !== 'object') continue;
+            
+            // Check if required properties exist using type guards
+            if (!('id' in conn)) continue;
+            
+            const toSpaceId = 'to_space_id' in conn ? conn.to_space_id as string : undefined;
+            const spaceName = toSpaceId && toSpaceId in connectedSpaceNames 
+              ? connectedSpaceNames[toSpaceId] 
+              : 'Unknown Space';
+              
+            transformedConnections.push({
+              id: conn.id as string,
+              position: 'position' in conn ? conn.position as string : '',
+              connection_type: 'connection_type' in conn ? conn.connection_type as string : '',
+              door_details: 'door_details' in conn ? conn.door_details as Record<string, any> : undefined,
+              access_requirements: 'access_requirements' in conn ? conn.access_requirements as Record<string, any> : undefined,
+              is_emergency_exit: 'is_emergency_exit' in conn ? !!conn.is_emergency_exit : false,
+              to_space: {
+                name: spaceName
+              }
+            });
           }
-        }));
+        }
 
         return {
           ...hallway,
