@@ -1,8 +1,8 @@
 
 // This file contains the particle configuration for the sparkles component
-import { type ISourceOptions } from "@tsparticles/slim";
+import type { ISourceOptions } from "@tsparticles/slim";
 
-interface ParticleConfigOptions {
+export interface ParticleConfigOptions {
   background?: string;
   particleColor?: string;
   minSize?: number;

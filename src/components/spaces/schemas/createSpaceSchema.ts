@@ -1,3 +1,4 @@
+
 import { z } from "zod";
 import { RoomTypeEnum, StatusEnum, StorageTypeEnum } from "../rooms/types/roomEnums";
 import { 
@@ -29,7 +30,7 @@ const hardwareStatusSchema = z.object({
 
 // Define maintenance schedule entry schema
 const maintenanceScheduleEntrySchema = z.object({
-  date: z.string(), // Changed from z.date() to z.string()
+  date: z.string(), 
   type: z.string(),
   status: z.string(),
   assignedTo: z.string().optional()
@@ -77,7 +78,7 @@ const baseSpaceSchema = z.object({
 });
 
 // Room-specific schema with improved validation
-const roomSchema = baseSpaceSchema.extend({
+export const roomSchema = baseSpaceSchema.extend({
   type: z.literal("room"),
   roomType: z.nativeEnum(RoomTypeEnum, {
     errorMap: () => ({ message: "Please select a valid room type" })
@@ -95,8 +96,11 @@ const roomSchema = baseSpaceSchema.extend({
   storageCapacity: z.number().nullable().optional(),
   storageNotes: z.string().nullable().optional(),
   parentRoomId: z.string().nullable().optional(),
-  // Standardize property name to match database
-  courtroomPhotos: courtroomPhotosSchema
+  // Standardize property name to match database - change to courtroomPhotos to match RoomFormSchema
+  courtroomPhotos: z.object({
+    judge_view: z.string().nullable().optional(),
+    audience_view: z.string().nullable().optional()
+  }).nullable().optional()
 }).refine(data => {
   // If isStorage is true, storageType should be provided
   return !data.isStorage || data.storageType !== null;
@@ -106,7 +110,7 @@ const roomSchema = baseSpaceSchema.extend({
 });
 
 // Hallway-specific schema - enhanced with more specific hallway fields and proper enums
-const hallwaySchema = baseSpaceSchema.extend({
+export const hallwaySchema = baseSpaceSchema.extend({
   type: z.literal("hallway"),
   // Use proper enum types from hallwayTypes.ts for better type safety
   hallwayType: z.enum(["public_main", "private"], {
@@ -136,7 +140,7 @@ const hallwaySchema = baseSpaceSchema.extend({
 });
 
 // Door-specific schema with improved validation
-const doorSchema = baseSpaceSchema.extend({
+export const doorSchema = baseSpaceSchema.extend({
   type: z.literal("door"),
   doorType: z.string().optional(),
   securityLevel: z.string().optional(),
@@ -144,16 +148,16 @@ const doorSchema = baseSpaceSchema.extend({
   closerStatus: z.string().optional(),
   windPressureIssues: z.boolean().optional(),
   hardwareStatus: hardwareStatusSchema.optional(),
-  nextMaintenanceDate: z.string().optional(), // Changed from z.date() to z.string()
+  nextMaintenanceDate: z.string().optional(),
   maintenanceNotes: z.string().optional(),
   statusHistory: z.array(z.any()).optional()
 });
 
-// Fix the discriminated union to use the correct types
+// Create the discriminated union schema
 export const createSpaceSchema = z.discriminatedUnion("type", [
-  roomSchema as any,
-  hallwaySchema as any,
-  doorSchema as any
+  roomSchema,
+  hallwaySchema,
+  doorSchema
 ]);
 
 export type CreateSpaceFormData = z.infer<typeof createSpaceSchema>;

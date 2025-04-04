@@ -32,7 +32,7 @@ export interface FloorPlanObjectData {
   [key: string]: any;
 }
 
-export interface FloorPlanNode extends Node {
+export interface FloorPlanNode extends Node<FloorPlanObjectData> {
   id: string;
   type: string;
   position: {

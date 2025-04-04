@@ -32,17 +32,17 @@ export function RoomFormContent({
   const floorId = form.watch("floorId");
   const roomType = form.watch("roomType");
   
-  // Initialize or reset courtroom_photos when room type changes
+  // Initialize or reset courtroomPhotos when room type changes
   useEffect(() => {
     if (roomType === RoomTypeEnum.COURTROOM) {
-      // Make sure courtroom_photos is initialized as an object for courtrooms
-      const currentValue = form.getValues("courtroom_photos");
+      // Make sure courtroomPhotos is initialized as an object for courtrooms
+      const currentValue = form.getValues("courtroomPhotos");
       if (!currentValue) {
-        form.setValue("courtroom_photos", { judge_view: null, audience_view: null });
+        form.setValue("courtroomPhotos", { judge_view: null, audience_view: null });
       }
     } else {
-      // Clear courtroom_photos if room type is not courtroom
-      form.setValue("courtroom_photos", null);
+      // Clear courtroomPhotos if room type is not courtroom
+      form.setValue("courtroomPhotos", null);
     }
   }, [roomType, form]);
   
@@ -75,9 +75,9 @@ export function RoomFormContent({
         form.setValue("type", "room", { shouldValidate: false });
       }
       
-      // For courtrooms, ensure courtroom_photos exists
-      if (roomType === RoomTypeEnum.COURTROOM && !formValues.courtroom_photos) {
-        form.setValue("courtroom_photos", { judge_view: null, audience_view: null }, { shouldValidate: false });
+      // For courtrooms, ensure courtroomPhotos exists
+      if (roomType === RoomTypeEnum.COURTROOM && !formValues.courtroomPhotos) {
+        form.setValue("courtroomPhotos", { judge_view: null, audience_view: null }, { shouldValidate: false });
       }
       
       // Validate connections
