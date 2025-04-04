@@ -61,10 +61,11 @@ export const useDeleteIssueMutation = () => {
             console.log('Attempting force delete approach...');
             
             // This is a more aggressive approach that might help in case of complex DB constraints
-            // We'll try updating the issue to mark it as deleted, then retry the deletion
+            // We'll try updating the issue to mark it as resolved instead of using "deleted"
+            // since "deleted" is not in the allowed enum values
             const { error: updateError } = await supabase
               .from('issues')
-              .update({ status: 'deleted' })
+              .update({ status: 'resolved' }) // Using 'resolved' instead of 'deleted'
               .eq('id', issueId);
               
             if (updateError) {
@@ -72,7 +73,7 @@ export const useDeleteIssueMutation = () => {
               throw new Error(`Failed to delete issue even with force mode: ${issueError.message}`);
             }
             
-            // Try deletion again after marking as deleted
+            // Try deletion again after marking as resolved
             const { error: secondDeleteError } = await supabase
               .from('issues')
               .delete()
