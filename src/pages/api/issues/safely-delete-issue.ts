@@ -29,7 +29,8 @@ export default async function handler(
     }
 
     console.log(`Safe deletion for issue ${issueId} - removing all references`);
-
+    
+    // Start a more careful approach to deleting the issue
     // 1. Delete comments
     const { error: commentsError } = await supabase
       .from('issue_comments')
@@ -50,8 +51,8 @@ export default async function handler(
       console.log('Warning: Error removing issue history:', historyError);
     }
 
-    // 3. Delete any attachments or references in other tables
-    // Add more deletions here if needed...
+    // 3. Check for other possible references (add more if needed)
+    // For example, check for references in notifications, reports, etc.
 
     // 4. Finally delete the issue
     const { error: issueError } = await supabase

@@ -38,7 +38,8 @@ export default async function handler(
     const forceDelete = force === 'true';
     console.log(`Deleting issue ${issueId}${forceDelete ? ' with force mode' : ''}`);
 
-    // Begin transaction
+    // Begin transaction with consistent approach
+    // First, fetch the issue to confirm it exists
     const { data: issue, error: issueError } = await supabase
       .from('issues')
       .select('*')
@@ -53,6 +54,7 @@ export default async function handler(
       });
     }
 
+    // Attempt the sequential deletion approach
     // Step 1: Delete related comments
     const { error: commentsDeleteError } = await supabase
       .from('issue_comments')
@@ -93,25 +95,26 @@ export default async function handler(
       console.error('Error deleting issue:', issueDeleteError);
       
       if (forceDelete) {
-        // If force mode is enabled, try one more approach with a more direct query
-        console.log('Force deleting issue with constraints, trying alternative approach');
-        
-        // Log the issue for debugging purposes
-        console.log('Issue data being force deleted:', issue);
-        
-        // Try different deletion strategies if needed
-        // Remove the RPC call since the function doesn't exist
-        const { error: finalDeleteError } = await supabase
-          .from('issues')
-          .delete()
-          .eq('id', issueId);
+        // In force mode, try using the safer alternative endpoint
+        try {
+          console.log('Force deleting issue with constraints, trying alternative approach');
+          const response = await fetch(`/api/issues/safely-delete-issue?issueId=${issueId}`, {
+            method: 'DELETE'
+          });
           
-        if (finalDeleteError) {
-          console.error('Force delete error:', finalDeleteError);
+          if (!response.ok) {
+            const errorData = await response.json();
+            return res.status(response.status).json(errorData);
+          }
+          
+          const safeDeleteResult = await response.json();
+          return res.status(200).json(safeDeleteResult);
+        } catch (safeDeleteError: any) {
+          console.error('Safe delete approach failed:', safeDeleteError);
           return res.status(500).json({
             success: false,
-            message: 'Failed to delete issue even in force mode',
-            error: finalDeleteError.message
+            message: 'Failed to delete issue even with safe approach',
+            error: safeDeleteError.message
           });
         }
       } else {

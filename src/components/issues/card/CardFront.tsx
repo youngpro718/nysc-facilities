@@ -58,7 +58,6 @@ export function CardFront({ issue, onMarkAsSeen, actions }: CardFrontProps) {
             floorName={issue.floors?.name}
             roomName={issue.rooms?.name}
             assigned_to={issue.assigned_to || "Unassigned"}
-            status_history={issue.status_history}
           />
           {actions && (
             <div className="flex justify-end mt-2">
