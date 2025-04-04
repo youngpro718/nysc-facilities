@@ -1,80 +1,47 @@
 
-import { Node } from "reactflow";
-import { ROOM_COLORS, FloorPlanObjectData, FloorPlanObjectType } from "../types/floorPlanTypes";
+import { ROOM_COLORS } from '../types/floorPlanTypes';
+import type { FloorPlanNode, FloorPlanObjectType, Size, Position } from '../types/floorPlanTypes';
 
-interface RawFloorPlanObject {
-  id: string;
-  type: string;
-  position: { x: number; y: number };
-  size: { width: number; height: number };
-  rotation?: number;
-  label?: string;
-  properties?: Record<string, any>;
-  style?: Record<string, any>;
+export function getSpaceColor(type: string, subtype?: string): string {
+  if (subtype) {
+    return ROOM_COLORS[subtype as keyof typeof ROOM_COLORS] || ROOM_COLORS.default;
+  }
+  
+  return ROOM_COLORS[type as keyof typeof ROOM_COLORS] || ROOM_COLORS.default;
 }
 
-export function transformFloorPlanObject(obj: RawFloorPlanObject): Node<FloorPlanObjectData> {
-  const { id, type, position, size, rotation = 0, label, properties = {}, style = {} } = obj;
-
-  // Determine style based on type
-  let nodeStyle = { ...style };
+export function transformSpace(space: any): FloorPlanNode {
+  const type: FloorPlanObjectType = space.type || 'room';
+  const position: Position = space.position || { x: 0, y: 0 };
+  const size: Size = space.size || { 
+    width: type === 'door' ? 60 : 150, 
+    height: type === 'door' ? 20 : 100 
+  };
   
-  if (type === FloorPlanObjectType.ROOM) {
-    const roomType = (properties?.roomType || 'default').toLowerCase();
-    const backgroundColor = ROOM_COLORS[roomType as keyof typeof ROOM_COLORS] || ROOM_COLORS.default;
-    
-    nodeStyle = {
-      ...nodeStyle,
-      backgroundColor,
-      border: '1px solid #cbd5e1',
-    };
-  } else if (type === FloorPlanObjectType.HALLWAY) {
-    nodeStyle = {
-      ...nodeStyle,
-      backgroundColor: '#f1f5f9',
-      border: '1px solid #cbd5e1',
-    };
-  } else if (type === FloorPlanObjectType.DOOR) {
-    nodeStyle = {
-      ...nodeStyle,
-      backgroundColor: '#94a3b8',
-      border: '2px solid #475569',
-    };
-  }
-
+  const spaceColor = getSpaceColor(type, space.room_type);
+  
   return {
-    id,
+    id: space.id,
     type,
     position,
     data: {
-      label: label || '',
+      label: space.name || (space.room_number ? `Room ${space.room_number}` : 'Untitled Space'),
       type,
-      properties,
       size,
-      style: nodeStyle,
-      rotation,
+      style: {
+        backgroundColor: spaceColor,
+        border: type === 'door' ? '2px solid #475569' : '1px solid #cbd5e1'
+      },
+      properties: {
+        ...space.properties,
+        roomNumber: space.room_number,
+        status: space.status
+      },
+      rotation: space.rotation || 0
     },
-    width: size.width,
-    height: size.height,
+    rotation: space.rotation || 0,
+    zIndex: type === 'door' ? 20 : (type === 'hallway' ? 10 : 0)
   };
 }
 
-export function getNodeLabel(data: FloorPlanObjectData): string {
-  if (data.label) return data.label;
-  
-  if (data.type === FloorPlanObjectType.ROOM) {
-    return data.properties?.roomNumber 
-      ? `Room ${data.properties.roomNumber}`
-      : 'Room';
-  }
-  
-  if (data.type === FloorPlanObjectType.HALLWAY) {
-    return 'Hallway';
-  }
-  
-  if (data.type === FloorPlanObjectType.DOOR) {
-    return 'Door';
-  }
-  
-  return data.type || 'Unknown';
-}
+export const transformSpaceToNode = transformSpace;

@@ -7,6 +7,7 @@ import type {
   HallwayFormData, 
   DoorFormData 
 } from "../schemas/createSpaceSchema";
+import { StatusEnum } from "../rooms/types/roomEnums";
 
 export async function createSpace(data: CreateSpaceFormData) {
   try {
@@ -46,7 +47,7 @@ async function createBaseSpaceRecord(data: CreateSpaceFormData) {
     name: data.name,
     type: data.type,
     floor_id: data.floorId,
-    status: data.status,
+    status: data.status || StatusEnum.ACTIVE,
     position: data.position || { x: 0, y: 0 },
     size: {
       width: data.type === "door" ? 60 : (data.type === "hallway" ? 300 : 150),
@@ -58,18 +59,33 @@ async function createBaseSpaceRecord(data: CreateSpaceFormData) {
     }
   };
 
-  if (data.type === "room") {
-    spaceData.room_number = (data as RoomFormData).roomNumber;
+  // If it's a room, add room_number
+  if (data.type === "room" && (data as RoomFormData).roomNumber) {
+    // We need to add room_number separately due to TypeScript constraints
+    const spaceDataWithRoom = {
+      ...spaceData,
+      room_number: (data as RoomFormData).roomNumber
+    };
+    
+    const { data: spaceResult, error } = await supabase
+      .from("new_spaces")
+      .insert(spaceDataWithRoom)
+      .select("id")
+      .single();
+
+    if (error) throw error;
+    return spaceResult;
+  } else {
+    // For non-room spaces
+    const { data: spaceResult, error } = await supabase
+      .from("new_spaces")
+      .insert(spaceData)
+      .select("id")
+      .single();
+
+    if (error) throw error;
+    return spaceResult;
   }
-
-  const { data: spaceResult, error } = await supabase
-    .from("new_spaces")
-    .insert(spaceData)
-    .select("id")
-    .single();
-
-  if (error) throw error;
-  return spaceResult;
 }
 
 async function createRoomProperties(spaceId: string, data: RoomFormData) {
@@ -87,27 +103,28 @@ async function createRoomProperties(spaceId: string, data: RoomFormData) {
 
   const { error } = await supabase
     .from("room_properties")
-    .insert(roomProps);
+    .insert([roomProps]);
 
   if (error) throw error;
 }
 
 async function createHallwayProperties(spaceId: string, data: HallwayFormData) {
   // Create hallway-specific properties
+  // Use type assertions where needed to match database enum types
   const hallwayProps = {
     space_id: spaceId,
     section: data.section,
     hallway_type: data.hallwayType,
-    traffic_flow: data.trafficFlow,
-    accessibility: data.accessibility,
-    emergency_route: data.emergencyRoute,
+    traffic_flow: data.trafficFlow as any,
+    accessibility: data.accessibility as any,
+    emergency_route: data.emergencyRoute as any,
     maintenance_priority: data.maintenancePriority,
     capacity_limit: data.capacityLimit
   };
 
   const { error } = await supabase
     .from("hallway_properties")
-    .insert(hallwayProps);
+    .insert([hallwayProps]);
 
   if (error) throw error;
 }
@@ -125,7 +142,7 @@ async function createDoorProperties(spaceId: string, data: DoorFormData) {
 
   const { error } = await supabase
     .from("door_properties")
-    .insert(doorProps);
+    .insert([doorProps]);
 
   if (error) throw error;
 }
@@ -134,30 +151,25 @@ async function createSpaceConnections(spaceId: string, data: CreateSpaceFormData
   if (!data.connections || !data.connections.length) return;
   
   // Create connections for the space
-  const connections = data.connections.map((conn) => {
-    if (!conn.toSpaceId || !conn.connectionType) return null;
+  for (const conn of data.connections) {
+    if (!conn.toSpaceId || !conn.connectionType) continue;
     
-    return {
+    const connection = {
       from_space_id: spaceId,
       to_space_id: conn.toSpaceId,
       space_type: data.type,
       connection_type: conn.connectionType,
       direction: conn.direction || "",
-      status: "active",
+      status: "active" as const,
       connection_status: "active", 
       is_transition_door: conn.connectionType === "transition",
       hallway_position: data.type === "hallway" ? 0 : undefined, // Default position
       position: conn.direction || "center"
     };
-  }).filter(Boolean);
 
-  if (connections.length === 0) return;
-
-  // Batch insert connections
-  for (const connection of connections) {
     const { error } = await supabase
       .from("space_connections")
-      .insert(connection);
+      .insert([connection]);
 
     if (error) {
       console.error("Error creating connection:", error);

@@ -13,6 +13,8 @@ export const ExtendedFormSchema = RoomFormSchema.extend({
   windPressureIssues: z.boolean().optional(),
   nextMaintenanceDate: z.string().optional(),
   maintenanceNotes: z.string().optional(),
+  hasClosingIssue: z.boolean().optional(),
+  hasHandleIssue: z.boolean().optional(),
   
   // Hallway-related fields
   section: z.string().optional(),

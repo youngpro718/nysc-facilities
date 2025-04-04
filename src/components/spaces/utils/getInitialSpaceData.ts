@@ -2,8 +2,9 @@
 import { RoomTypeEnum, StatusEnum } from "../rooms/types/roomEnums";
 import { CreateSpaceFormData } from "../schemas/createSpaceSchema";
 import { ExtendedFormData } from "../schemas/extendedFormSchema";
+import { FormData } from "../schemas/extendedFormSchema";
 
-export function getInitialSpaceData(type: "room" | "hallway" | "door"): Partial<ExtendedFormData> {
+export function getInitialSpaceData(type: "room" | "hallway" | "door"): Partial<FormData> {
   const commonData = {
     type,
     name: "",
@@ -30,6 +31,7 @@ export function getInitialSpaceData(type: "room" | "hallway" | "door"): Partial<
       },
       closerStatus: "functioning",
       windPressureIssues: false,
+      // Additional door properties
       hasClosingIssue: false,
       hasHandleIssue: false,
       size: { width: 60, height: 20 }
@@ -50,7 +52,7 @@ export function getInitialSpaceData(type: "room" | "hallway" | "door"): Partial<
       maintenanceSchedule: [],
       emergencyExits: [],
       size: { width: 300, height: 50 }
-    };
+    } as Partial<FormData>;
   }
 
   return {

@@ -22,20 +22,18 @@ export function FloorPlanView() {
   const [zoom, setZoom] = useState<number>(1);
   const [refreshKey, setRefreshKey] = useState<number>(0);
 
-  // Fetch floors data
   useEffect(() => {
     const fetchFloors = async () => {
       setIsLoading(true);
       try {
-      const { data, error } = await supabase
-        .from('floors')
-          .select('*, buildings(name)')
-        .order('floor_number', { ascending: false });
+        const { data, error } = await supabase
+          .from('floors')
+            .select('*, buildings(name)')
+          .order('floor_number', { ascending: false });
 
         if (error) throw error;
         
         setFloors(data || []);
-        // If we have floors and no selected floor, select the first one
         if (data && data.length > 0 && !selectedFloor) {
           setSelectedFloor(data[0].id);
         }
@@ -50,25 +48,20 @@ export function FloorPlanView() {
     fetchFloors();
   }, [selectedFloor]);
 
-  // Handle object selection
   const handleObjectSelect = useCallback((object: any) => {
     console.log('Selected object:', object);
     setSelectedObject(object);
-    // Reset preview data when selecting a new object
     setPreviewData(null);
   }, []);
 
-  // Reset selected object when floor changes
   useEffect(() => {
     setSelectedObject(null);
     setPreviewData(null);
   }, [selectedFloor]);
 
-  // Handle property updates during edit
   const handlePropertyUpdate = useCallback((updates: any) => {
     console.log('Property updates:', updates);
     
-    // Transform form values to proper object structure
     const position = {
       x: parseFloat(updates.positionX),
       y: parseFloat(updates.positionY)
@@ -81,7 +74,6 @@ export function FloorPlanView() {
     
     const rotation = parseFloat(updates.rotation);
     
-    // Build properties object based on object type
     let properties: Record<string, any> = {};
     
     if (selectedObject?.type === 'room') {
@@ -105,7 +97,6 @@ export function FloorPlanView() {
       };
     }
     
-    // Preserve lighting data if available
     if (selectedObject?.properties?.lighting_fixtures) {
       properties.lighting_fixtures = selectedObject.properties.lighting_fixtures;
       properties.functional_lights = selectedObject.properties.functional_lights;
@@ -124,14 +115,12 @@ export function FloorPlanView() {
     });
   }, [selectedObject]);
 
-  // When dialog closes, clear preview data
   useEffect(() => {
     if (!dialogState.isOpen) {
       setPreviewData(null);
     }
   }, [dialogState.isOpen]);
 
-  // Handle zoom controls
   const handleZoomIn = () => {
     setZoom(prev => Math.min(prev + 0.25, 2));
   };
@@ -151,7 +140,6 @@ export function FloorPlanView() {
 
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col">
-      {/* Top Bar with Controls */}
       <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
         <div className="flex items-center justify-between px-4 h-14">
           <div className="flex items-center space-x-4">
@@ -193,9 +181,7 @@ export function FloorPlanView() {
         </div>
       </div>
 
-      {/* Main Content Area */}
       <div className="flex-1 flex min-h-0">
-        {/* Floor Plan View */}
         <div className="flex-1 relative">
           <div className="absolute inset-0">
             {viewMode === '2d' ? (
@@ -210,15 +196,14 @@ export function FloorPlanView() {
               <ThreeDViewer 
                 key={`3d-${refreshKey}`}
                 floorId={selectedFloor}
-                onObjectSelect={handleObjectSelect}
                 selectedObjectId={selectedObject?.id}
                 previewData={previewData}
+                onObjectSelect={handleObjectSelect}
               />
             )}
           </div>
         </div>
 
-        {/* Properties Panel */}
         <div className="w-80 border-l bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="h-full overflow-auto">
             <PropertiesPanel 

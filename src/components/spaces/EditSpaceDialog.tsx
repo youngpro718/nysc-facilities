@@ -49,7 +49,7 @@ export function EditSpaceDialog({ id, type, open, onOpenChange, onSpaceUpdated }
     
     // Extract properties safely using optional chaining
     const properties = space.properties || {};
-    const description = typeof properties === 'object' ? properties.description : undefined;
+    const description = typeof properties === 'object' && properties !== null ? properties.description : undefined;
     
     const baseData = {
       id: space.id,
@@ -64,30 +64,30 @@ export function EditSpaceDialog({ id, type, open, onOpenChange, onSpaceUpdated }
     };
     
     if (space.type === "hallway" && space.hallway_properties) {
-      const hallwayProps = space.hallway_properties;
+      const hallwayProps = space.hallway_properties[0] || {};
       return {
         ...baseData,
-        section: hallwayProps?.section,
-        hallwayType: hallwayProps?.hallway_type,
-        trafficFlow: hallwayProps?.traffic_flow,
-        accessibility: hallwayProps?.accessibility,
-        emergencyRoute: hallwayProps?.emergency_route,
-        maintenancePriority: hallwayProps?.maintenance_priority,
-        capacityLimit: hallwayProps?.capacity_limit
+        section: hallwayProps.section,
+        hallwayType: hallwayProps.hallway_type,
+        trafficFlow: hallwayProps.traffic_flow,
+        accessibility: hallwayProps.accessibility,
+        emergencyRoute: hallwayProps.emergency_route,
+        maintenancePriority: hallwayProps.maintenance_priority,
+        capacityLimit: hallwayProps.capacity_limit
       };
     }
     
     if (space.type === "room" && space.room_properties) {
-      const roomProps = space.room_properties;
+      const roomProps = space.room_properties[0] || {};
       return {
         ...baseData,
         roomNumber: space.room_number,
-        roomType: roomProps?.room_type,
-        currentFunction: roomProps?.current_function,
-        isStorage: roomProps?.is_storage || false,
-        storageType: roomProps?.storage_type,
-        parentRoomId: roomProps?.parent_room_id,
-        phoneNumber: roomProps?.phone_number
+        roomType: roomProps.room_type,
+        currentFunction: roomProps.current_function,
+        isStorage: roomProps.is_storage || false,
+        storageType: roomProps.storage_type,
+        parentRoomId: roomProps.parent_room_id,
+        phoneNumber: roomProps.phone_number
       };
     }
     

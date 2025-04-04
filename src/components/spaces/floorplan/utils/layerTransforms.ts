@@ -1,16 +1,14 @@
 
-import { FloorPlanLayer, FloorPlanLayerDB } from "../types/floorPlanTypes";
+import { FloorPlanLayer, FloorPlanLayerDB } from '../types/floorPlanTypes';
 
-export function transformLayer(raw: FloorPlanLayerDB): FloorPlanLayer {
-  const parsedData = typeof raw.data === 'string' ? JSON.parse(raw.data) : raw.data;
-  
+export function transformLayer(layer: FloorPlanLayerDB): FloorPlanLayer {
   return {
-    id: raw.id,
-    floorId: raw.floor_id,
-    type: raw.type,
-    name: raw.name,
-    orderIndex: raw.order_index,
-    visible: raw.visible,
-    data: parsedData || {}
+    id: layer.id,
+    name: layer.name,
+    floorId: layer.floor_id,
+    type: layer.type,
+    visible: layer.visible,
+    orderIndex: layer.order_index,
+    data: layer.data
   };
 }

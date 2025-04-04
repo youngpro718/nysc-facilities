@@ -1,61 +1,75 @@
 
-import { Node, Edge } from 'reactflow';
+import { Dispatch, SetStateAction } from "react";
+import { Json } from "@/types/supabase";
 
-export enum FloorPlanObjectType {
-  ROOM = 'room',
-  HALLWAY = 'hallway',
-  DOOR = 'door',
-  FURNITURE = 'furniture',
-  LABEL = 'label',
-  WALL = 'wall'
+// Define basic types
+export type FloorPlanObjectType = 'room' | 'hallway' | 'door' | 'fixture' | 'connection';
+
+export interface Position {
+  x: number;
+  y: number;
 }
 
-export enum FloorPlanLayerType {
-  SPACES = 'spaces',
-  WALLS = 'walls',
-  FURNITURE = 'furniture',
-  LABELS = 'labels',
-  MEASUREMENTS = 'measurements',
-  GRID = 'grid',
-  BACKGROUND = 'background'
+export interface Size {
+  width: number;
+  height: number;
+}
+
+export interface FloorPlanObjectStyle {
+  backgroundColor?: string;
+  border?: string;
+  borderRadius?: string;
+  opacity?: number;
+  [key: string]: any;
 }
 
 export interface FloorPlanObjectData {
   label?: string;
-  type: string;
-  style?: Record<string, any>;
+  type: FloorPlanObjectType;
+  size: Size;
+  style?: FloorPlanObjectStyle;
   properties?: Record<string, any>;
-  size?: { width: number; height: number };
   rotation?: number;
 }
 
-export interface FloorPlanNode extends Node<FloorPlanObjectData> {
+export interface FloorPlanNode {
+  id: string;
+  type: FloorPlanObjectType;
+  position: Position;
+  data: FloorPlanObjectData;
   rotation?: number;
   zIndex?: number;
 }
 
-export interface FloorPlanEdge extends Edge {}
+export interface FloorPlanEdge {
+  id: string;
+  source: string;
+  target: string;
+  type?: string;
+  data?: any;
+}
 
 export interface FloorPlanLayer {
   id: string;
-  floorId: string;
-  type: FloorPlanLayerType;
   name: string;
-  orderIndex: number;
+  floorId: string; // Changed from floor_id
+  type: 'base' | 'furniture' | 'lighting' | 'emergency' | 'custom';
   visible: boolean;
-  data: Record<string, any>;
+  orderIndex: number;
+  data?: Record<string, any>;
 }
 
 export interface FloorPlanLayerDB {
   id: string;
-  floor_id: string;
-  type: FloorPlanLayerType;
   name: string;
-  order_index: number;
+  floor_id: string;
+  type: 'base' | 'furniture' | 'lighting' | 'emergency' | 'custom';
   visible: boolean;
-  data: string | Record<string, any>;
+  order_index: number;
+  data?: Record<string, any>;
 }
 
+// Define the full state type
 export interface FloorPlanState {
   nodes: FloorPlanNode[];
   edges: FloorPlanEdge[];
@@ -64,18 +78,23 @@ export interface FloorPlanState {
   selectedEdgeId: string | null;
   selectedLayerId: string | null;
   zoomLevel: number;
-  panPosition: { x: number; y: number };
+  panPosition: Position;
 }
 
-// Room color definitions for different room types
+// Define action-related types
+export type FloorPlanAction = 
+  | { type: 'SET_NODES'; payload: FloorPlanNode[] }
+  | { type: 'SET_EDGES'; payload: FloorPlanEdge[] }
+  | { type: 'SELECT_NODE'; payload: string | null }
+  | { type: 'UPDATE_NODE'; payload: { id: string, data: Partial<FloorPlanNode> } };
+
+// Export colors for different types of spaces
 export const ROOM_COLORS = {
-  'office': '#e5f5e0',
-  'conference': '#c7e9c0',
-  'classroom': '#a1d99b',
-  'storage': '#e6e6e6',
-  'bathroom': '#c6dbef',
-  'break_room': '#fdd0a2',
-  'courtroom': '#fdae6b',
-  'jury_room': '#9ecae1',
-  'default': '#e2e8f0'
+  default: '#e2e8f0',
+  selected: '#94a3b8',
+  courtroom: '#bae6fd',
+  office: '#d1fae5',
+  storage: '#fef3c7',
+  hallway: '#f5d0fe',
+  door: '#94a3b8',
 };
