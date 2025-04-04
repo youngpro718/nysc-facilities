@@ -7,6 +7,9 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { RoomFormContent } from "./RoomFormContent";
 import { RoomFormData, RoomFormSchema } from "./RoomFormSchema";
+import { Form } from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 interface EditRoomFormProps {
   id: string;
@@ -107,7 +110,7 @@ export function EditRoomForm({
     }
   });
 
-  const onSubmit = async (data: RoomFormData) => {
+  const handleSubmit = async (data: RoomFormData) => {
     try {
       setIsPending(true);
       await updateSpaceMutation.mutateAsync(data);
@@ -117,12 +120,38 @@ export function EditRoomForm({
   };
 
   return (
-    <RoomFormContent 
-      form={form}
-      onSubmit={onSubmit}
-      isPending={isPending}
-      onCancel={onCancel}
-      roomId={id}
-    />
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        <div className="space-y-6">
+          <RoomFormContent 
+            form={form}
+            roomId={id}
+          />
+        </div>
+        
+        <div className="flex justify-end gap-2 pt-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+          >
+            Cancel
+          </Button>
+          <Button 
+            type="submit"
+            disabled={isPending || !form.formState.isDirty}
+          >
+            {isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Updating...
+              </>
+            ) : (
+              "Update"
+            )}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 }

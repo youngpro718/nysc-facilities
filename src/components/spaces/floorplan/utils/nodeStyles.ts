@@ -1,69 +1,42 @@
 
-import { FloorPlanObjectData } from '../types/floorPlanTypes';
-import { CSSProperties } from 'react';
+import { NodeResizeControl } from "reactflow";
+import { FloorPlanObjectData, FloorPlanObjectType } from "../types/floorPlanTypes";
 
-interface NodeSize {
-  width: number;
-  height: number;
+export function getNodeBaseStyle(type: string, data: FloorPlanObjectData, isSelected: boolean): React.CSSProperties {
+  const baseStyle = {
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: '10px',
+    transition: 'all 0.3s ease',
+    transform: data.rotation ? `rotate(${data.rotation}deg)` : 'none',
+    ...data.style
+  };
+
+  if (isSelected) {
+    return {
+      ...baseStyle,
+      boxShadow: '0 0 0 2px #3b82f6',
+      zIndex: 10,
+    };
+  }
+
+  return baseStyle;
 }
 
-const DEFAULT_SIZES: Record<string, NodeSize> = {
-  room: { width: 150, height: 100 },
-  door: { width: 60, height: 20 },
-  hallway: { width: 300, height: 50 }
-};
-
-const DEFAULT_COLORS = {
-  room: {
-    background: '#e2e8f0',
-    border: '#cbd5e1'
-  },
-  door: {
-    background: '#94a3b8',
-    border: '#475569'
-  },
-  hallway: {
-    background: '#e5e7eb',
-    border: '#cbd5e1'
-  }
-};
-
-export const getNodeBaseStyle = (
-  type: 'room' | 'door' | 'hallway',
-  data: FloorPlanObjectData,
-  selected: boolean = false
-): CSSProperties => {
-  // Ensure we have valid data and size
-  const size = (data?.size?.width && data?.size?.height) ? data.size : DEFAULT_SIZES[type];
-  const colors = DEFAULT_COLORS[type];
-
+export function getResizerConfig(nodeType: string) {
   return {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: type === 'door' ? '2px' : '10px',
-    borderRadius: '3px',
-    width: `${size.width}px`,
-    height: `${size.height}px`,
-    backgroundColor: data?.style?.backgroundColor || colors.background,
-    border: `${selected ? '2px' : '1px'} solid ${data?.style?.borderColor || colors.border}`,
-    transform: data?.rotation ? `rotate(${data.rotation}deg)` : 'none',
-    position: 'relative' as const,
-    overflow: 'hidden'
+    minWidth: nodeType === 'door' ? 30 : 80,
+    minHeight: nodeType === 'door' ? 15 : 60,
+    keepAspectRatio: false,
+    handleStyle: { 
+      width: '10px', 
+      height: '10px',
+      backgroundColor: '#3b82f6', 
+      border: '1px solid white' 
+    },
+    handleComponent: NodeResizeControl,
   };
-};
-
-export const getResizerConfig = (type: 'room' | 'door' | 'hallway') => {
-  const configs = {
-    room: { minWidth: 100, minHeight: 100 },
-    door: { minWidth: 40, minHeight: 15 },
-    hallway: { minWidth: 200, minHeight: 40 }
-  };
-
-  return {
-    ...configs[type],
-    isVisible: true,
-    lineClassName: "border-blue-400",
-    handleClassName: "h-3 w-3 bg-white border-2 rounded border-blue-400"
-  };
-}; 
+}

@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -186,6 +185,10 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
     </TableCell>
   ];
 
+  const setViewChange = (value: "grid" | "list") => {
+    setView(value);
+  };
+
   return (
     <div className="space-y-6">
       <SpaceListFilters
@@ -196,7 +199,7 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
         sortBy={sortBy}
         onSortChange={setSortBy}
         view={view}
-        onViewChange={setView}
+        onViewChange={setViewChange}
       />
 
       {isLoading ? (

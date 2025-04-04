@@ -13,6 +13,8 @@ export interface EditSpaceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSpaceUpdated?: () => void;
+  initialData?: any;
+  spaceType?: string;
 }
 
 export function EditSpaceDialog({ id, type, open, onOpenChange, onSpaceUpdated }: EditSpaceDialogProps) {
@@ -55,7 +57,7 @@ export function EditSpaceDialog({ id, type, open, onOpenChange, onSpaceUpdated }
       position: space.position,
       size: space.size,
       rotation: space.rotation || 0,
-      description: typeof space.properties === 'object' ? space.properties?.description : undefined
+      description: space.properties && typeof space.properties === 'object' ? space.properties.description : undefined
     };
     
     if (space.type === "hallway" && space.hallway_properties) {

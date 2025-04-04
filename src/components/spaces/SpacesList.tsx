@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -67,12 +66,12 @@ export const SpacesList = () => {
         </div>
 
         <SpaceListFilters
+          selectedStatus={selectedStatus}
+          onStatusChange={setSelectedStatus}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           sortBy={sortBy}
           onSortChange={setSortBy}
-          selectedStatus={selectedStatus}
-          onStatusChange={setSelectedStatus}
           view={view}
           onViewChange={setView}
         />

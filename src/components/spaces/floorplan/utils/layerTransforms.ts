@@ -6,10 +6,10 @@ export function transformLayer(raw: FloorPlanLayerDB): FloorPlanLayer {
   
   return {
     id: raw.id,
-    floor_id: raw.floor_id,
+    floorId: raw.floor_id,
     type: raw.type,
     name: raw.name,
-    order_index: raw.order_index,
+    orderIndex: raw.order_index,
     visible: raw.visible,
     data: parsedData || {}
   };

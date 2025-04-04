@@ -24,6 +24,8 @@ export const RoomConnectionSchema = z.object({
   id: z.string().uuid().optional(), // Add id field for existing connections
 });
 
+export type RoomConnectionData = z.infer<typeof RoomConnectionSchema>;
+
 // Define the room form schema with all fields and improved validation
 export const RoomFormSchema = z.object({
   id: z.string().uuid().optional(),
