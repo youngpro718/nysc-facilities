@@ -12,7 +12,15 @@ interface CardFrontProps {
 }
 
 export function CardFront({ issue, onMarkAsSeen, actions }: CardFrontProps) {
-  const handleMarkAsSeen = (e: React.MouseEvent) => {
+  // Create a wrapper function that doesn't require the event parameter
+  const handleMarkAsSeen = () => {
+    if (onMarkAsSeen && issue.id) {
+      onMarkAsSeen(issue.id);
+    }
+  };
+
+  // Create a separate function for the "New" badge click that accepts the event
+  const handleNewBadgeClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onMarkAsSeen && issue.id) {
       onMarkAsSeen(issue.id);
@@ -28,7 +36,7 @@ export function CardFront({ issue, onMarkAsSeen, actions }: CardFrontProps) {
             {issue.seen === false && (
               <span 
                 className="inline-flex items-center rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 cursor-pointer"
-                onClick={handleMarkAsSeen}
+                onClick={handleNewBadgeClick}
               >
                 New
               </span>
