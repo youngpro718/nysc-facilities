@@ -20,6 +20,15 @@ import { IssueDialogManager } from "@/components/issues/components/IssueDialogMa
 import { useDialogManager } from "@/hooks/useDialogManager";
 import { RoomDetails } from "@/components/rooms/RoomDetails";
 import { Issue } from "@/components/issues/types/IssueTypes";
+import { UserIssue } from "@/types/dashboard";
+
+const convertToIssueType = (userIssues: UserIssue[]): Issue[] => {
+  return userIssues.map(issue => ({
+    ...issue,
+    updated_at: issue.created_at,
+    type: 'general'
+  })) as Issue[];
+};
 
 interface DashboardSectionProps {
   id: string;
@@ -137,6 +146,8 @@ export default function UserDashboard() {
     );
   }
 
+  const convertedIssues = convertToIssueType(userIssues);
+
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-background">
@@ -182,7 +193,7 @@ export default function UserDashboard() {
                 priority={hasActiveIssues ? 'high' : 'medium'}
                 badge={userIssues.length}
               >
-                <ReportedIssuesCard issues={userIssues as Issue[]} />
+                <ReportedIssuesCard issues={convertedIssues} />
               </DashboardSection>
 
               <DashboardSection 
