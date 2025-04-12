@@ -29,6 +29,7 @@ export function AssignedRoomsCard({ rooms }: AssignedRoomsCardProps) {
   const { openDialog } = useDialogManager();
 
   const handleViewRoom = (roomId: string) => {
+    console.log("Viewing room:", roomId); // Add debugging log
     openDialog('roomDetails', { roomId });
   };
 
