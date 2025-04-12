@@ -16,6 +16,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { IssueDialogManager } from "@/components/issues/components/IssueDialogManager";
+import { useDialogManager } from "@/hooks/useDialogManager";
 
 interface DashboardSectionProps {
   id: string;
@@ -95,6 +97,7 @@ function DashboardSection({
 export default function UserDashboard() {
   const [showReportIssue, setShowReportIssue] = useState(false);
   const { isLoading, isAuthenticated } = useAuth();
+  const { dialogState, openDialog, closeDialog } = useDialogManager();
   const {
     profile,
     assignedRooms,
@@ -206,6 +209,11 @@ export default function UserDashboard() {
           open={showReportIssue} 
           onOpenChange={setShowReportIssue}
           assignedRooms={assignedRooms}
+        />
+        
+        <IssueDialogManager
+          dialogState={dialogState}
+          onClose={closeDialog}
         />
       </div>
     </ErrorBoundary>

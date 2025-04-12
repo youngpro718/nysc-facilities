@@ -7022,39 +7022,21 @@ export type Database = {
     }
     Functions: {
       add_admin_user: {
-        Args: {
-          email_to_promote: string
-        }
+        Args: { email_to_promote: string }
         Returns: undefined
       }
       approve_user: {
-        Args: {
-          user_id: string
-        }
+        Args: { user_id: string }
         Returns: undefined
       }
-      assign_key_if_available:
-        | {
-            Args: {
-              key_id: string
-              occupant_id: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              key_id: string
-              occupant_id: string
-              is_spare?: boolean
-            }
-            Returns: Json
-          }
+      assign_key_if_available: {
+        Args:
+          | { key_id: string; occupant_id: string }
+          | { key_id: string; occupant_id: string; is_spare?: boolean }
+        Returns: Json
+      }
       check_relocation_conflicts: {
-        Args: {
-          p_room_id: string
-          p_start_date: string
-          p_end_date: string
-        }
+        Args: { p_room_id: string; p_start_date: string; p_end_date: string }
         Returns: {
           conflicting_relocation_id: string
           conflict_type: string
@@ -7063,30 +7045,19 @@ export type Database = {
         }[]
       }
       cleanup_old_backups: {
-        Args: {
-          policy_id: string
-        }
+        Args: { policy_id: string }
         Returns: undefined
       }
       complete_backup_restoration: {
-        Args: {
-          restoration_id: string
-          success: boolean
-          error_msg?: string
-        }
+        Args: { restoration_id: string; success: boolean; error_msg?: string }
         Returns: undefined
       }
       create_assignment_batch: {
-        Args: {
-          creator_id: string
-          batch_metadata: Json
-        }
+        Args: { creator_id: string; batch_metadata: Json }
         Returns: string
       }
       find_doors_by_room_number: {
-        Args: {
-          p_room_number: string
-        }
+        Args: { p_room_number: string }
         Returns: {
           id: string
           label: string
@@ -7095,9 +7066,7 @@ export type Database = {
         }[]
       }
       get_connected_objects: {
-        Args: {
-          p_object_id: string
-        }
+        Args: { p_object_id: string }
         Returns: {
           id: string
           type: Database["public"]["Enums"]["floor_plan_object_type"]
@@ -7106,9 +7075,7 @@ export type Database = {
         }[]
       }
       get_door_room_details: {
-        Args: {
-          door_id: string
-        }
+        Args: { door_id: string }
         Returns: {
           room_type: string
           room_number: string
@@ -7116,27 +7083,19 @@ export type Database = {
         }[]
       }
       get_door_status: {
-        Args: {
-          door_id: string
-        }
+        Args: { door_id: string }
         Returns: string
       }
       get_next_lighting_sequence: {
-        Args: {
-          p_space_id: string
-        }
+        Args: { p_space_id: string }
         Returns: number
       }
       get_user_role: {
-        Args: {
-          user_id: string
-        }
+        Args: { user_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
       }
       increment_key_quantity: {
-        Args: {
-          key_id: string
-        }
+        Args: { key_id: string }
         Returns: number
       }
       initialize_door_properties: {
@@ -7148,15 +7107,11 @@ export type Database = {
         Returns: Json
       }
       is_admin: {
-        Args: {
-          user_id: string
-        }
+        Args: { user_id: string }
         Returns: boolean
       }
       is_courtroom: {
-        Args: {
-          room_type: string
-        }
+        Args: { room_type: string }
         Returns: boolean
       }
       migrate_spaces_data: {
@@ -7164,15 +7119,11 @@ export type Database = {
         Returns: undefined
       }
       safely_delete_key: {
-        Args: {
-          key_id_to_delete: string
-        }
+        Args: { key_id_to_delete: string }
         Returns: undefined
       }
       safely_delete_relocation: {
-        Args: {
-          relocation_id_param: string
-        }
+        Args: { relocation_id_param: string }
         Returns: undefined
       }
       safely_update_inventory_quantity: {
@@ -7195,10 +7146,7 @@ export type Database = {
         Returns: undefined
       }
       validate_floor_plan_connection: {
-        Args: {
-          source_id: string
-          target_id: string
-        }
+        Args: { source_id: string; target_id: string }
         Returns: boolean
       }
     }
@@ -7370,27 +7318,29 @@ export type Database = {
   }
 }
 
-type PublicSchema = Database[Extract<keyof Database, "public">]
+type DefaultSchema = Database[Extract<keyof Database, "public">]
 
 export type Tables<
-  PublicTableNameOrOptions extends
-    | keyof (PublicSchema["Tables"] & PublicSchema["Views"])
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-        Database[PublicTableNameOrOptions["schema"]]["Views"])
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-      Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] &
-        PublicSchema["Views"])
-    ? (PublicSchema["Tables"] &
-        PublicSchema["Views"])[PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -7398,20 +7348,22 @@ export type Tables<
     : never
 
 export type TablesInsert<
-  PublicTableNameOrOptions extends
-    | keyof PublicSchema["Tables"]
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -7419,20 +7371,22 @@ export type TablesInsert<
     : never
 
 export type TablesUpdate<
-  PublicTableNameOrOptions extends
-    | keyof PublicSchema["Tables"]
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -7440,21 +7394,23 @@ export type TablesUpdate<
     : never
 
 export type Enums<
-  PublicEnumNameOrOptions extends
-    | keyof PublicSchema["Enums"]
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
     | { schema: keyof Database },
-  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = PublicEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
-    ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof PublicSchema["CompositeTypes"]
+    | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof Database },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof Database
@@ -7463,6 +7419,189 @@ export type CompositeTypes<
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
   ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
-    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      access_level_enum: ["none", "read", "write", "admin"],
+      agency_type: ["DCAS", "OCA", "EMPLOYEE"],
+      category_color_enum: [
+        "red",
+        "blue",
+        "green",
+        "yellow",
+        "purple",
+        "orange",
+        "pink",
+        "gray",
+      ],
+      connection_direction_enum: [
+        "north",
+        "south",
+        "east",
+        "west",
+        "adjacent",
+        "left_of_hallway",
+        "right_of_hallway",
+      ],
+      connection_position_enum: ["start", "middle", "end", "adjacent"],
+      connection_status_enum: ["active", "inactive", "under_maintenance"],
+      connection_type_enum: ["door", "direct", "secured"],
+      department_enum: [
+        "Administration",
+        "Court Operations",
+        "Facilities Management",
+        "Information Technology",
+        "Security",
+        "Legal Services",
+        "Human Resources",
+        "Finance",
+      ],
+      direction_enum: ["north", "south", "east", "west", "adjacent"],
+      door_closer_status_enum: [
+        "functioning",
+        "needs_adjustment",
+        "not_working",
+      ],
+      door_hardware_status_enum: [
+        "functional",
+        "needs_repair",
+        "needs_replacement",
+      ],
+      door_type_enum: ["standard", "emergency", "secure", "maintenance"],
+      emergency_route_enum: ["primary", "secondary", "not_designated"],
+      floor_plan_mode_enum: ["edit", "view"],
+      floor_plan_object_type: ["room", "door", "hallway"],
+      hallway_accessibility_enum: [
+        "fully_accessible",
+        "limited_access",
+        "stairs_only",
+        "restricted",
+      ],
+      hallway_section_enum: ["left_wing", "right_wing", "connector"],
+      hallway_traffic_flow_enum: ["one_way", "two_way", "restricted"],
+      hallway_type_enum: ["public_main", "private", "private_main"],
+      issue_priority_enum: ["low", "medium", "high"],
+      issue_resolution_type: [
+        "fixed",
+        "replaced",
+        "maintenance_performed",
+        "no_action_needed",
+        "deferred",
+        "other",
+      ],
+      issue_status_enum: ["open", "in_progress", "resolved"],
+      key_status_enum: ["available", "assigned", "lost", "decommissioned"],
+      key_type_enum: ["physical_key", "elevator_pass", "room_key"],
+      layer_type_enum: ["rooms", "doors", "grid", "hallways", "annotations"],
+      light_fixture_type_enum: ["standard", "emergency", "motion_sensor"],
+      light_position_enum: [
+        "front",
+        "middle",
+        "back",
+        "left",
+        "right",
+        "center",
+      ],
+      light_status_enum: [
+        "functional",
+        "maintenance_needed",
+        "non_functional",
+        "pending_maintenance",
+        "scheduled_replacement",
+      ],
+      lighting_fixture_type_enum: ["standard", "emergency", "motion_sensor"],
+      lighting_issue_type_enum: [
+        "Lighting_Ballast",
+        "Lighting_Replacement",
+        "Lighting_Emergency",
+        "Lighting_Sensor",
+        "Lighting_Control",
+      ],
+      lighting_position_enum: ["ceiling", "wall", "floor", "desk", "recessed"],
+      lighting_status: [
+        "functional",
+        "maintenance_needed",
+        "non_functional",
+        "pending_maintenance",
+        "scheduled_replacement",
+      ],
+      lighting_status_enum: [
+        "functional",
+        "maintenance_needed",
+        "non_functional",
+        "pending_maintenance",
+        "scheduled_replacement",
+      ],
+      lighting_technology: ["LED", "Fluorescent", "Bulb"],
+      lighting_technology_enum: ["LED", "Fluorescent", "Bulb"],
+      notification_preference: ["all", "important_only", "none"],
+      occupant_status_change_reason_enum: [
+        "new_hire",
+        "voluntary_leave",
+        "involuntary_leave",
+        "temporary_leave",
+        "returned_from_leave",
+        "retirement",
+        "other",
+      ],
+      occupant_status_enum: ["active", "inactive", "on_leave", "terminated"],
+      relocation_status_enum: ["scheduled", "active", "completed", "cancelled"],
+      relocation_type_enum: [
+        "construction",
+        "maintenance",
+        "emergency",
+        "other",
+      ],
+      return_reason_enum: ["normal_return", "lost", "damaged", "other"],
+      room_type_enum: [
+        "courtroom",
+        "judges_chambers",
+        "jury_room",
+        "conference_room",
+        "office",
+        "filing_room",
+        "male_locker_room",
+        "female_locker_room",
+        "robing_room",
+        "stake_holder",
+        "records_room",
+        "administrative_office",
+        "break_room",
+        "it_room",
+        "utility_room",
+        "laboratory",
+        "conference",
+      ],
+      security_level_enum: ["standard", "restricted", "high_security"],
+      standardized_issue_type: [
+        "ACCESS_REQUEST",
+        "BUILDING_SYSTEMS",
+        "CEILING",
+        "CLEANING_REQUEST",
+        "CLIMATE_CONTROL",
+        "DOOR",
+        "ELECTRICAL_NEEDS",
+        "EMERGENCY",
+        "EXTERIOR_FACADE",
+        "FLAGPOLE_FLAG",
+        "FLOORING",
+        "GENERAL_REQUESTS",
+        "LEAK",
+        "LIGHTING",
+        "LOCK",
+        "PLUMBING_NEEDS",
+        "RESTROOM_REPAIR",
+        "SIGNAGE",
+        "WINDOW",
+      ],
+      status_enum: ["active", "inactive", "under_maintenance"],
+      user_role: ["admin", "standard"],
+      verification_status_enum: ["pending", "verified", "rejected"],
+      zone_type_enum: ["general", "emergency", "restricted"],
+    },
+  },
+} as const
