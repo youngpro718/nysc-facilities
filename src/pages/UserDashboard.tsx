@@ -18,6 +18,17 @@ import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { IssueDialogManager } from "@/components/issues/components/IssueDialogManager";
 import { useDialogManager } from "@/hooks/useDialogManager";
+import { RoomDetails } from "@/components/rooms/RoomDetails";
+import { Issue } from "@/components/issues/types/IssueTypes";
+import { UserIssue } from "@/types/dashboard";
+
+const convertToIssueType = (userIssues: UserIssue[]): Issue[] => {
+  return userIssues.map(issue => ({
+    ...issue,
+    updated_at: issue.created_at,
+    type: 'general'
+  })) as Issue[];
+};
 
 interface DashboardSectionProps {
   id: string;
@@ -41,7 +52,6 @@ function DashboardSection({
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const isMobile = useIsMobile();
 
-  // Always make sections collapsible on iPhone
   const shouldBeCollapsible = isMobile;
 
   return (
@@ -118,7 +128,6 @@ export default function UserDashboard() {
   const hasUnreadNotifications = unreadCount > 0;
   const hasActiveIssues = userIssues.length > 0;
 
-  // Set up real-time subscriptions
   useDashboardSubscriptions({ userId: profile?.id });
 
   if (isLoading) {
@@ -136,6 +145,8 @@ export default function UserDashboard() {
       </div>
     );
   }
+
+  const convertedIssues = convertToIssueType(userIssues);
 
   return (
     <ErrorBoundary>
@@ -182,7 +193,7 @@ export default function UserDashboard() {
                 priority={hasActiveIssues ? 'high' : 'medium'}
                 badge={userIssues.length}
               >
-                <ReportedIssuesCard issues={userIssues} />
+                <ReportedIssuesCard issues={convertedIssues} />
               </DashboardSection>
 
               <DashboardSection 
@@ -215,6 +226,14 @@ export default function UserDashboard() {
           dialogState={dialogState}
           onClose={closeDialog}
         />
+
+        {dialogState.type === 'roomDetails' && dialogState.isOpen && (
+          <RoomDetails
+            roomId={dialogState.data?.roomId}
+            isOpen={dialogState.isOpen}
+            onClose={closeDialog}
+          />
+        )}
       </div>
     </ErrorBoundary>
   );
