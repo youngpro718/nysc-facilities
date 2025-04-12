@@ -1,3 +1,4 @@
+
 import {
   Table,
   TableBody,
@@ -18,13 +19,19 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useDialogManager } from "@/hooks/useDialogManager";
 
 interface AssignedRoomsCardProps {
   rooms: UserAssignment[];
-  onViewRoom?: (roomId: string) => void;
 }
 
-export function AssignedRoomsCard({ rooms, onViewRoom }: AssignedRoomsCardProps) {
+export function AssignedRoomsCard({ rooms }: AssignedRoomsCardProps) {
+  const { openDialog } = useDialogManager();
+
+  const handleViewRoom = (roomId: string) => {
+    openDialog('roomDetails', { roomId });
+  };
+
   return (
     <Card className="p-6">
       <div className="flex items-center justify-between mb-4">
@@ -102,7 +109,10 @@ export function AssignedRoomsCard({ rooms, onViewRoom }: AssignedRoomsCardProps)
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => onViewRoom?.(room.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleViewRoom(room.room_id || '');
+                      }}
                       className="w-full"
                     >
                       View Details
