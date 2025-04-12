@@ -46,13 +46,6 @@ export function RoomDetails({ roomId, isOpen, onClose }: RoomDetailsProps) {
     if (roomId && isOpen) {
       fetchRoomDetails(roomId);
     }
-    
-    // Reset state when dialog closes
-    if (!isOpen) {
-      setRoom(null);
-      setLoading(true);
-      setError(null);
-    }
   }, [roomId, isOpen]);
 
   const fetchRoomDetails = async (id: string) => {
@@ -125,7 +118,7 @@ export function RoomDetails({ roomId, isOpen, onClose }: RoomDetailsProps) {
       <DialogContent className="max-w-3xl h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="text-xl">
-            {loading ? 'Loading Room Details...' : room?.name || 'Room Details'}
+            {loading ? 'Loading Room Details...' : room?.name}
           </DialogTitle>
         </DialogHeader>
 
