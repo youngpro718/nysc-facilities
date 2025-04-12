@@ -1,7 +1,7 @@
 
 import { useState, useCallback, useRef } from "react";
 
-type DialogType = "issueDetails" | "resolution" | "deletion" | "propertyEdit" | "roomDetails";
+type DialogType = "issueDetails" | "resolution" | "deletion" | "propertyEdit";
 
 export interface DialogState {
   type: DialogType | null;
