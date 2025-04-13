@@ -20,6 +20,13 @@ export const MobileMenu = ({
   onNavigationChange,
   onSignOut
 }: MobileMenuProps) => {
+  // Convert NavigationTab[] to the format expected by ExpandableTabs
+  const expandableTabs = navigation.map(tab => ({
+    title: tab.label,
+    icon: tab.icon,
+    type: undefined
+  }));
+
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetTrigger asChild>
@@ -45,7 +52,7 @@ export const MobileMenu = ({
         </SheetHeader>
         <nav className="flex flex-col gap-4 pt-6">
           <ExpandableTabs 
-            tabs={navigation}
+            tabs={expandableTabs}
             className="flex-col !bg-transparent"
             onChange={onNavigationChange}
           />

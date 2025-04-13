@@ -2,8 +2,6 @@
 import { Room } from "@/components/spaces/rooms/types/RoomTypes";
 
 export type RelocationStatus = 'scheduled' | 'active' | 'completed' | 'cancelled';
-export type WorkAssignmentStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
-export type CourtSessionStatus = 'scheduled' | 'in_session' | 'completed' | 'cancelled';
 export type RelocationType = 'emergency' | 'maintenance' | 'other' | 'construction';
 
 // Base interfaces for specific aspects of a relocation
@@ -23,6 +21,8 @@ export interface RelocationDetails {
   reason: string;
   notes?: string;
   relocation_type: RelocationType;
+  term_id?: string;
+  respect_term_assignments?: boolean;
 }
 
 export interface ScheduleChangeData {
@@ -129,93 +129,4 @@ export interface ActiveRelocation extends RoomRelocation {
   temporary_building_name?: string;
   temporary_floor_name?: string;
   temporary_room_name?: string;
-}
-
-export interface TimeSlot {
-  start_time: string; // Format: HH:MM in 24h format
-  end_time: string;   // Format: HH:MM in 24h format
-}
-
-export interface WorkAssignment {
-  id: string;
-  relocation_id: string;
-  date: string;        // ISO date string: YYYY-MM-DD
-  start_time: string;  // Format: HH:MM in 24h format
-  end_time: string;    // Format: HH:MM in 24h format
-  crew_name: string;
-  task: string;
-  status: WorkAssignmentStatus;
-  notes?: string;
-  created_at: string;
-  updated_at: string;
-  created_by?: string;
-  completed_at?: string;
-  completed_by?: string;
-}
-
-export interface CourtSession {
-  id: string;
-  relocation_id: string;
-  room_id: string;
-  date: string;        // ISO date string: YYYY-MM-DD
-  start_time: string;  // Format: HH:MM in 24h format
-  end_time: string;    // Format: HH:MM in 24h format
-  judge_name?: string;
-  case_number?: string;
-  description?: string;
-  status: CourtSessionStatus;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface DailyAvailability {
-  date: string;       // ISO date string: YYYY-MM-DD
-  room_id: string;
-  is_available: boolean;
-  available_slots: TimeSlot[];
-  court_sessions: CourtSession[];
-  work_assignments: WorkAssignment[];
-}
-
-export interface CreateWorkAssignmentFormData {
-  relocation_id: string;
-  date: string;
-  start_time: string;
-  end_time: string;
-  crew_name: string;
-  task: string;
-  notes?: string;
-}
-
-export interface UpdateWorkAssignmentFormData {
-  id: string;
-  status?: WorkAssignmentStatus;
-  notes?: string;
-  date?: string;
-  start_time?: string;
-  end_time?: string;
-  crew_name?: string;
-  task?: string;
-}
-
-export interface CreateCourtSessionFormData {
-  relocation_id: string;
-  room_id: string;
-  date: string;
-  start_time: string;
-  end_time: string;
-  judge_name?: string;
-  case_number?: string;
-  description?: string;
-}
-
-export interface UpdateCourtSessionFormData {
-  id: string;
-  status?: CourtSessionStatus;
-  date?: string;
-  start_time?: string;
-  end_time?: string;
-  judge_name?: string;
-  case_number?: string;
-  description?: string;
 }
