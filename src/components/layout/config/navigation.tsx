@@ -11,6 +11,7 @@ import {
   Repeat,
   Calendar
 } from 'lucide-react';
+import { NavigationTab } from '../types';
 
 export type NavigationItem = {
   title: string;
@@ -19,12 +20,6 @@ export type NavigationItem = {
   description?: string;
   adminOnly?: boolean;
   children?: NavigationItem[];
-};
-
-export type NavigationTab = {
-  label: string;
-  value: string;
-  icon: typeof Command;
 };
 
 export const navigationItems: NavigationItem[] = [
@@ -105,7 +100,7 @@ export const adminNavigation: NavigationTab[] = navigationItems
   .map(item => ({
     label: item.title,
     value: item.href,
-    icon: item.icon ? (() => item.icon as JSX.Element) : Command,
+    icon: item.icon ? (iconProps => item.icon || <Command {...iconProps} />) : Command,
   }));
 
 export const userNavigation: NavigationTab[] = navigationItems
@@ -113,7 +108,7 @@ export const userNavigation: NavigationTab[] = navigationItems
   .map(item => ({
     label: item.title,
     value: item.href,
-    icon: item.icon ? (() => item.icon as JSX.Element) : Command,
+    icon: item.icon ? (iconProps => item.icon || <Command {...iconProps} />) : Command,
   }));
 
 export const getNavigationRoutes = (isAdmin: boolean): string[] => {

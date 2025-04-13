@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -57,7 +56,6 @@ export function TermUploader() {
         return;
       }
       
-      // Upload the file to storage
       const fileExt = file.name.split('.').pop();
       const filePath = `${Math.random().toString(36).substring(2)}.${fileExt}`;
       
@@ -69,14 +67,12 @@ export function TermUploader() {
         throw uploadError;
       }
       
-      // Get the public URL for the uploaded file
       const { data: urlData } = await supabase.storage
         .from('term-sheets')
         .getPublicUrl(filePath);
         
       const pdfUrl = urlData.publicUrl;
       
-      // Save term data to the database
       const { data: termData, error: termError } = await supabase
         .from('court_terms')
         .insert({
@@ -95,7 +91,6 @@ export function TermUploader() {
         throw termError;
       }
       
-      // Call the PDF parsing function
       const termId = termData.id;
       const parseFunctionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parse-term-sheet?term_id=${termId}&pdf_url=${encodeURIComponent(pdfUrl)}`;
       
@@ -115,7 +110,6 @@ export function TermUploader() {
         term_id: termId,
       });
       
-      // Reset the form
       form.reset();
       setFile(null);
       

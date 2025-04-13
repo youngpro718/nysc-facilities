@@ -14,3 +14,10 @@ export interface Term {
   updated_at: string;
   metadata: any;
 }
+
+export interface TermUploadResponse {
+  success: boolean;
+  message: string;
+  term_id?: string;
+  errors?: string[];
+}

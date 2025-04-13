@@ -36,7 +36,7 @@ export function RelocationDetailsSection({
       try {
         const { data, error } = await supabase
           .from('court_terms')
-          .select('id, term_name, term_number, start_date, end_date, location, pdf_url, status, description, created_at, created_by, updated_at, metadata');
+          .select('*');
           
         if (error) {
           throw error;
@@ -45,19 +45,19 @@ export function RelocationDetailsSection({
         if (data) {
           // Transform the data to ensure it matches the Term interface
           const transformedData: Term[] = data.map(term => ({
-            id: term.id,
-            term_name: term.term_name,
-            term_number: term.term_number,
-            start_date: term.start_date,
-            end_date: term.end_date,
+            id: term.id || '',
+            term_name: term.term_name || '',
+            term_number: term.term_number || '',
+            start_date: term.start_date || '',
+            end_date: term.end_date || '',
             status: term.status || 'unknown',
             pdf_url: term.pdf_url || '',
-            location: term.location,
-            description: term.description,
-            created_at: term.created_at,
-            created_by: term.created_by,
-            updated_at: term.updated_at,
-            metadata: term.metadata
+            location: term.location || '',
+            description: term.description || '',
+            created_at: term.created_at || '',
+            created_by: term.created_by || '',
+            updated_at: term.updated_at || '',
+            metadata: term.metadata || {}
           }));
           
           setTerms(transformedData);

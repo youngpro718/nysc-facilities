@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { RoomRelocation } from "../types/relocationTypes";
@@ -9,6 +10,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CalendarRange, MapPin, FileText } from "lucide-react";
@@ -43,29 +45,30 @@ export function RelocationDetails({ id }: { id: string }) {
           if (relocationData.term_id) {
             const { data: termData, error: termError } = await supabase
               .from('court_terms')
-              .select('id, term_name, term_number, start_date, end_date, status, pdf_url, location, description, created_at, created_by, updated_at, metadata')
+              .select('*')
               .eq('id', relocationData.term_id)
               .single();
             
             if (termError) {
               console.error("Error fetching term data:", termError);
             } else if (termData) {
-              // Transform to match the Term interface
-              setTermInfo({
-                id: termData.id,
-                term_name: termData.term_name,
-                term_number: termData.term_number,
+              // Ensure all required fields are present
+              const term: Term = {
+                id: termData.id || '',
+                term_name: termData.term_name || '',
+                term_number: termData.term_number || '',
                 status: termData.status || 'unknown',
                 pdf_url: termData.pdf_url || '',
-                start_date: termData.start_date,
-                end_date: termData.end_date,
-                location: termData.location,
-                description: termData.description,
-                created_at: termData.created_at,
-                created_by: termData.created_by, 
-                updated_at: termData.updated_at,
-                metadata: termData.metadata
-              });
+                start_date: termData.start_date || '',
+                end_date: termData.end_date || '',
+                location: termData.location || '',
+                description: termData.description || '',
+                created_at: termData.created_at || '',
+                created_by: termData.created_by || '',
+                updated_at: termData.updated_at || '',
+                metadata: termData.metadata || {}
+              };
+              setTermInfo(term);
             }
           }
         }
@@ -108,11 +111,11 @@ export function RelocationDetails({ id }: { id: string }) {
             {error}
           </div>
         </CardContent>
-        <CardContent>
+        <CardFooter>
           <Button variant="outline" onClick={() => navigate("/relocations")}>
             Back to Relocations
           </Button>
-        </CardContent>
+        </CardFooter>
       </Card>
     );
   }
@@ -127,11 +130,11 @@ export function RelocationDetails({ id }: { id: string }) {
         <CardContent>
           <p>The requested relocation could not be found.</p>
         </CardContent>
-        <CardContent>
+        <CardFooter>
           <Button variant="outline" onClick={() => navigate("/relocations")}>
             Back to Relocations
           </Button>
-        </CardContent>
+        </CardFooter>
       </Card>
     );
   }
@@ -141,7 +144,7 @@ export function RelocationDetails({ id }: { id: string }) {
       <CardHeader>
         <CardTitle>Relocation Details</CardTitle>
         <CardDescription>
-          Details of the relocation for room {relocation.room_id}
+          Details of the relocation for room {relocation.original_room_id}
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
