@@ -1,98 +1,69 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { FileText, Download, Trash2, Calendar, CalendarRange, MapPin } from "lucide-react";
 import { format } from "date-fns";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Term } from "./types/termTypes";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FileText, Calendar, ArrowUpRight, Download } from "lucide-react";
+
+interface Term {
+  id: string;
+  term_name: string;
+  term_number: string;
+  location: string;
+  start_date: string;
+  end_date: string;
+  status: 'active' | 'upcoming' | 'expired';
+  description: string | null;
+  pdf_url: string | null;
+  created_at: string;
+}
 
 export function TermList() {
   const [terms, setTerms] = useState<Term[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [selectedTerm, setSelectedTerm] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("active");
 
   useEffect(() => {
     async function fetchTerms() {
       try {
         setIsLoading(true);
-        setError(null);
         
-        const { data, error } = await supabase
+        let query = supabase
           .from('court_terms')
-          .select('*')
+          .select('*');
+          
+        if (activeTab !== 'all') {
+          query = query.eq('status', activeTab);
+        }
+        
+        const { data, error } = await query
           .order('start_date', { ascending: false });
           
         if (error) {
           throw error;
         }
         
-        if (data) {
-          // Transform the data to ensure it matches the Term interface
-          const transformedData: Term[] = data.map(term => ({
-            id: term.id || '',
-            term_name: term.term_name || '',
-            term_number: term.term_number || '',
-            location: term.location || '',
-            start_date: term.start_date || '',
-            end_date: term.end_date || '',
-            status: term.status || 'unknown',
-            description: term.description || '',
-            pdf_url: term.pdf_url || '',
-            created_at: term.created_at || '',
-            created_by: term.created_by || '',
-            updated_at: term.updated_at || '',
-            metadata: term.metadata || {}
-          }));
-          
-          setTerms(transformedData);
+        setTerms(data as Term[]);
+        
+        // If we have terms and none selected, select the first one
+        if (data.length > 0 && !selectedTerm) {
+          setSelectedTerm(data[0].id);
         }
+        
       } catch (error) {
         console.error("Error fetching terms:", error);
-        setError("Failed to load term data");
       } finally {
         setIsLoading(false);
       }
     }
     
     fetchTerms();
-  }, []);
-
-  const handleDeleteTerm = async (termId: string) => {
-    try {
-      // First delete related assignments
-      await supabase
-        .from('term_assignments')
-        .delete()
-        .eq('term_id', termId);
-      
-      // Then delete the term
-      const { error } = await supabase
-        .from('court_terms')
-        .delete()
-        .eq('id', termId);
-        
-      if (error) throw error;
-      
-      // Update state to remove the deleted term
-      setTerms(terms.filter(term => term.id !== termId));
-      toast.success("Term sheet deleted successfully");
-    } catch (error) {
-      console.error("Error deleting term:", error);
-      toast.error("Failed to delete term sheet");
-    }
-  };
+  }, [activeTab]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -109,38 +80,9 @@ export function TermList() {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Term Schedules</CardTitle>
-          <CardDescription>Loading term data...</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-center items-center h-40">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Term Schedules</CardTitle>
-          <CardDescription>Error loading term data</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="p-4 bg-destructive/10 text-destructive rounded-md">
-            {error}
-          </div>
-        </CardContent>
-        <CardFooter>
-          <Button variant="outline" onClick={() => window.location.reload()}>
-            Retry
-          </Button>
-        </CardFooter>
-      </Card>
+      <div className="flex justify-center items-center min-h-[200px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
     );
   }
 
@@ -148,97 +90,140 @@ export function TermList() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Term Schedules</CardTitle>
-          <CardDescription>No term sheets have been uploaded yet</CardDescription>
+          <CardTitle>No Term Sheets Found</CardTitle>
+          <CardDescription>
+            There are no court term sheets available for the selected filter.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col items-center justify-center p-8 text-center">
-            <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground mb-4">
-              Upload a term sheet to see it listed here.
-            </p>
-          </div>
+          <p>Upload a new term sheet to get started.</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Term Schedules</CardTitle>
-        <CardDescription>Uploaded term sheets and their assignments</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Term Name</TableHead>
-              <TableHead>Number</TableHead>
-              <TableHead>Date Range</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {terms.map((term) => (
-              <TableRow key={term.id}>
-                <TableCell className="font-medium">{term.term_name}</TableCell>
-                <TableCell>{term.term_number}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-1">
-                    <CalendarRange className="h-4 w-4 text-muted-foreground" />
-                    <span>
-                      {format(new Date(term.start_date), "MMM d, yyyy")} - {format(new Date(term.end_date), "MMM d, yyyy")}
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell>{getStatusBadge(term.status)}</TableCell>
-                <TableCell>
-                  {term.location && (
-                    <div className="flex items-center gap-1">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span>{term.location}</span>
+    <div className="grid md:grid-cols-3 gap-6">
+      <div className="md:col-span-1">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xl">Court Terms</CardTitle>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid grid-cols-3 w-full">
+                <TabsTrigger value="active">Active</TabsTrigger>
+                <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+                <TabsTrigger value="all">All</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </CardHeader>
+          <CardContent className="p-0">
+            <ScrollArea className="h-[60vh] rounded-md">
+              <div className="flex flex-col gap-1 p-4">
+                {terms.map((term) => (
+                  <Button
+                    key={term.id}
+                    variant={selectedTerm === term.id ? "default" : "ghost"}
+                    className="justify-start w-full text-left"
+                    onClick={() => setSelectedTerm(term.id)}
+                  >
+                    <div className="flex flex-col items-start">
+                      <span className="font-medium">{term.term_name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(term.start_date), "MMM d")} - {format(new Date(term.end_date), "MMM d, yyyy")}
+                      </span>
                     </div>
-                  )}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    {term.pdf_url && (
-                      <Button variant="outline" size="icon" onClick={() => window.open(term.pdf_url!, "_blank")}>
-                        <FileText className="h-4 w-4" />
-                      </Button>
-                    )}
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="icon">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Term Sheet</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete this term sheet? This action cannot be undone.
-                            All assignments for this term will also be deleted.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDeleteTerm(term.id)}>
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                  </Button>
+                ))}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <div className="md:col-span-2">
+        {selectedTerm && (
+          <TermDetail 
+            term={terms.find(t => t.id === selectedTerm)!} 
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TermDetail({ term }: { term: Term }) {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle className="text-2xl">{term.term_name}</CardTitle>
+            <CardDescription>Term {term.term_number} • {term.location}</CardDescription>
+          </div>
+          {getStatusBadge(term.status)}
+        </div>
+      </CardHeader>
+      
+      <CardContent className="space-y-4">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Calendar className="h-4 w-4" />
+          <span>
+            {format(new Date(term.start_date), "MMMM d")} - {format(new Date(term.end_date), "MMMM d, yyyy")}
+          </span>
+        </div>
+        
+        {term.description && (
+          <p className="text-sm">{term.description}</p>
+        )}
+        
+        <div className="flex gap-4">
+          {term.pdf_url && (
+            <Button variant="outline" size="sm" asChild>
+              <a href={term.pdf_url} target="_blank" rel="noopener noreferrer">
+                <FileText className="h-4 w-4 mr-2" />
+                View PDF
+              </a>
+            </Button>
+          )}
+          
+          {term.pdf_url && (
+            <Button variant="outline" size="sm" asChild>
+              <a href={term.pdf_url} download>
+                <Download className="h-4 w-4 mr-2" />
+                Download
+              </a>
+            </Button>
+          )}
+        </div>
+        
+        <div className="pt-4">
+          <h3 className="text-lg font-medium mb-2">Term Assignments</h3>
+          <p className="text-sm text-muted-foreground">
+            (Assignment data will be displayed here after PDF parsing is implemented)
+          </p>
+        </div>
       </CardContent>
+      
+      <CardFooter className="flex justify-between border-t pt-4">
+        <Button variant="ghost" size="sm">Create Relocations</Button>
+        <Button variant="ghost" size="sm">
+          View Details
+          <ArrowUpRight className="ml-2 h-4 w-4" />
+        </Button>
+      </CardFooter>
     </Card>
   );
+}
+
+function getStatusBadge(status: string) {
+  switch (status) {
+    case "active":
+      return <Badge className="bg-green-500">Active</Badge>;
+    case "upcoming":
+      return <Badge variant="outline" className="text-yellow-500 border-yellow-500">Upcoming</Badge>;
+    case "expired":
+      return <Badge variant="outline" className="text-gray-500 border-gray-500">Expired</Badge>;
+    default:
+      return <Badge variant="outline">Unknown</Badge>;
+  }
 }
