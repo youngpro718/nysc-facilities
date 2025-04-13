@@ -1,4 +1,3 @@
-
 import {
   Building,
   Command,
@@ -11,7 +10,7 @@ import {
   Repeat,
   Calendar
 } from 'lucide-react';
-import { NavigationTab } from '../types';
+import { NavigationItem, NavigationTab } from '../types';
 
 export type NavigationItem = {
   title: string;
@@ -100,11 +99,7 @@ export const adminNavigation: NavigationTab[] = navigationItems
   .map(item => ({
     label: item.title,
     value: item.href,
-    icon: item.icon ? 
-      (() => {
-        const IconComponent = item.icon?.type || Command;
-        return IconComponent;
-      })() : Command,
+    icon: item.icon?.type || Command,
   }));
 
 export const userNavigation: NavigationTab[] = navigationItems
@@ -112,11 +107,7 @@ export const userNavigation: NavigationTab[] = navigationItems
   .map(item => ({
     label: item.title,
     value: item.href,
-    icon: item.icon ? 
-      (() => {
-        const IconComponent = item.icon?.type || Command;
-        return IconComponent;
-      })() : Command,
+    icon: item.icon?.type || Command,
   }));
 
 export const getNavigationRoutes = (isAdmin: boolean): string[] => {

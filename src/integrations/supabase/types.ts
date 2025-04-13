@@ -439,7 +439,9 @@ export type Database = {
           id: string
           location: string
           metadata: Json | null
+          pdf_url: string | null
           start_date: string
+          status: string | null
           term_name: string
           term_number: string
           updated_at: string | null
@@ -452,7 +454,9 @@ export type Database = {
           id?: string
           location: string
           metadata?: Json | null
+          pdf_url?: string | null
           start_date: string
+          status?: string | null
           term_name: string
           term_number: string
           updated_at?: string | null
@@ -465,7 +469,9 @@ export type Database = {
           id?: string
           location?: string
           metadata?: Json | null
+          pdf_url?: string | null
           start_date?: string
+          status?: string | null
           term_name?: string
           term_number?: string
           updated_at?: string | null

@@ -15,3 +15,9 @@ export interface NavigationTab {
   value: string;
   icon: LucideIcon;
 }
+
+export interface DeviceInfo {
+  name: string;
+  platform: string;
+  language: string;
+}
