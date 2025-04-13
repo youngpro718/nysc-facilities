@@ -20,6 +20,8 @@ const createRelocationSchema = z.object({
   notes: z.string().optional(),
   relocation_type: z.enum(['emergency', 'maintenance', 'other', 'construction'])
     .default('maintenance'),
+  term_id: z.string().optional(),
+  respect_term_assignments: z.boolean().optional()
 });
 
 export function CreateRelocationForm() {
@@ -36,6 +38,7 @@ export function CreateRelocationForm() {
       reason: "",
       notes: "",
       relocation_type: "maintenance",
+      respect_term_assignments: true
     },
   });
 
@@ -65,4 +68,3 @@ export function CreateRelocationForm() {
     </Form>
   );
 }
-

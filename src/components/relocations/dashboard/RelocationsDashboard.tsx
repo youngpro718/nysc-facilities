@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useRelocations } from "../hooks/useRelocations";
 import { format } from "date-fns";
-import { PlusCircle, ArrowUpRight } from "lucide-react";
+import { PlusCircle, ArrowUpRight, Calendar } from "lucide-react";
 
 export function RelocationsDashboard() {
   const navigate = useNavigate();
@@ -24,6 +24,11 @@ export function RelocationsDashboard() {
   // Handle create relocation click
   const handleCreateRelocation = () => {
     navigate("/relocations/create");
+  };
+
+  // Handle navigate to terms
+  const handleGoToTerms = () => {
+    navigate("/terms");
   };
 
   // Get status badge
@@ -103,10 +108,16 @@ export function RelocationsDashboard() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Temporary Relocations</h1>
-        <Button onClick={handleCreateRelocation}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Create Relocation
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={handleGoToTerms} variant="outline">
+            <Calendar className="mr-2 h-4 w-4" />
+            Court Terms
+          </Button>
+          <Button onClick={handleCreateRelocation}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Create Relocation
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="active" value={activeTab} onValueChange={setActiveTab}>
@@ -260,4 +271,3 @@ export function RelocationsDashboard() {
     </div>
   );
 }
-

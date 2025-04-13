@@ -1,326 +1,397 @@
-import { useRelocationDetails } from "../hooks/useRelocations";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
-import { ArrowLeft, Calendar, AlertTriangle, Clock, CheckCircle, Building, Play, X, CheckSquare } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useState } from "react";
 
-interface RelocationDetailsProps {
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { RoomRelocation } from "../types/relocationTypes";
+import { useRelocationFilters } from "../hooks/useRelocationFilters";
+import { fetchRelocationById, fetchRelocations } from "../services/queries/relocationQueries";
+import { updateRelocation } from "../services/mutations/relocationMutations";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
+import { ArrowLeft, Calendar, CalendarClock, CircleAlert, Clock, FileText } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+
+interface TermInfo {
   id: string;
+  term_name: string;
+  term_number: string;
+  status: string;
+  pdf_url: string | null;
 }
 
-export function RelocationDetails({ id }: RelocationDetailsProps) {
-  const { 
-    relocation, 
-    isLoading, 
-    isError, 
-    activateRelocation,
-    completeRelocation,
-    cancelRelocation,
-    isActivating,
-    isCompleting,
-    isCancelling
-  } = useRelocationDetails(id);
-  
-  const [confirmAction, setConfirmAction] = useState<'activate' | 'complete' | 'cancel' | null>(null);
+export function RelocationDetails({ id }: { id: string }) {
+  const navigate = useNavigate();
+  const { buildingOptions, floorOptions } = useRelocationFilters();
+  const [relocation, setRelocation] = useState<RoomRelocation | null>(null);
+  const [termInfo, setTermInfo] = useState<TermInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  useEffect(() => {
+    const loadRelocation = async () => {
+      try {
+        setIsLoading(true);
+        const data = await fetchRelocationById(id);
+        setRelocation(data);
+        
+        // If the relocation has a term_id, fetch the term info
+        if (data.term_id) {
+          const { data: termData, error } = await supabase
+            .from('court_terms')
+            .select('id, term_name, term_number, status, pdf_url')
+            .eq('id', data.term_id)
+            .single();
+            
+          if (error) {
+            console.error("Error fetching term data:", error);
+          } else {
+            setTermInfo(termData as TermInfo);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading relocation:", error);
+        toast.error("Failed to load relocation details");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadRelocation();
+  }, [id]);
+
+  const handleStatusChange = async (newStatus: 'scheduled' | 'active' | 'completed' | 'cancelled') => {
+    try {
+      setIsUpdating(true);
+      
+      const updateData = { 
+        id, 
+        status: newStatus,
+        actual_end_date: newStatus === 'completed' ? new Date().toISOString() : undefined
+      };
+      
+      const updatedRelocation = await updateRelocation(updateData);
+      setRelocation(updatedRelocation);
+      
+      toast.success(`Relocation ${newStatus === 'cancelled' ? 'cancelled' : 'marked as ' + newStatus}`);
+    } catch (error) {
+      console.error("Error updating relocation status:", error);
+      toast.error("Failed to update relocation status");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-9 w-32" />
-            <Skeleton className="h-8 w-48" />
+      <div className="container mx-auto py-6">
+        <div className="flex flex-col gap-6">
+          <div className="flex items-center">
+            <Button variant="ghost" onClick={() => navigate("/relocations")} className="mr-4">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Relocations
+            </Button>
           </div>
-          <Skeleton className="h-6 w-24" />
+          <Card>
+            <CardHeader>
+              <CardTitle>Loading...</CardTitle>
+              <CardDescription>Please wait while we load the relocation details.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-40 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-4">
-                <Skeleton className="h-6 w-32" />
-                <Card>
-                  <CardContent className="p-4 space-y-3">
-                    <Skeleton className="h-5 w-full" />
-                    <Skeleton className="h-4 w-3/4" />
-                  </CardContent>
-                </Card>
-              </div>
-              <div className="space-y-4">
-                <Skeleton className="h-6 w-32" />
-                <Card>
-                  <CardContent className="p-4 space-y-3">
-                    <Skeleton className="h-5 w-full" />
-                    <Skeleton className="h-4 w-3/4" />
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     );
   }
 
-  if (isError || !relocation) {
+  if (!relocation) {
     return (
-      <div className="bg-red-50 border border-red-200 text-red-800 rounded-lg p-4 mt-4">
-        <h3 className="text-lg font-medium">Error Loading Relocation</h3>
-        <p>Unable to load the relocation details. The ID may be invalid or the relocation may not exist.</p>
-        <Button asChild className="mt-4" variant="outline">
-          <Link to="/relocations">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Relocations
-          </Link>
-        </Button>
+      <div className="container mx-auto py-6">
+        <div className="flex flex-col gap-6">
+          <div className="flex items-center">
+            <Button variant="ghost" onClick={() => navigate("/relocations")} className="mr-4">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Relocations
+            </Button>
+          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Relocation Not Found</CardTitle>
+              <CardDescription>The requested relocation could not be found.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p>Please check the relocation ID and try again.</p>
+            </CardContent>
+            <CardFooter>
+              <Button onClick={() => navigate("/relocations")}>Go to Relocations</Button>
+            </CardFooter>
+          </Card>
+        </div>
       </div>
     );
   }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'scheduled':
-        return <Badge variant="outline" className="flex items-center gap-1"><Clock className="h-3 w-3" /> Scheduled</Badge>;
-      case 'active':
-        return <Badge className="bg-blue-500 flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Active</Badge>;
-      case 'completed':
-        return <Badge className="bg-green-500 flex items-center gap-1"><CheckCircle className="h-3 w-3" /> Completed</Badge>;
-      case 'cancelled':
-        return <Badge variant="destructive" className="flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Cancelled</Badge>;
+      case "active":
+        return <Badge className="bg-green-500">Active</Badge>;
+      case "scheduled":
+        return <Badge variant="outline" className="text-yellow-500 border-yellow-500">Scheduled</Badge>;
+      case "completed":
+        return <Badge className="bg-blue-500">Completed</Badge>;
+      case "cancelled":
+        return <Badge variant="destructive">Cancelled</Badge>;
       default:
-        return <Badge variant="secondary">{status}</Badge>;
+        return <Badge variant="outline">Unknown</Badge>;
     }
-  };
-
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return 'N/A';
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const handleAction = (action: 'activate' | 'complete' | 'cancel') => {
-    if (confirmAction === action) {
-      // Execute the action
-      if (action === 'activate') {
-        activateRelocation();
-      } else if (action === 'complete') {
-        completeRelocation();
-      } else if (action === 'cancel') {
-        cancelRelocation();
-      }
-      setConfirmAction(null);
-    } else {
-      // Set to confirmation state
-      setConfirmAction(action);
-    }
-  };
-
-  const renderActionButtons = () => {
-    if (relocation.status === 'scheduled') {
-      return (
-        <div className="flex items-center gap-2 mt-6">
-          <Button 
-            onClick={() => handleAction('activate')} 
-            className="flex items-center gap-2"
-            disabled={isActivating}
-          >
-            {confirmAction === 'activate' ? (
-              'Confirm Activation'
-            ) : (
-              <>
-                <Play className="h-4 w-4" />
-                Activate
-              </>
-            )}
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => handleAction('cancel')}
-            className="flex items-center gap-2 text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
-            disabled={isCancelling}
-          >
-            {confirmAction === 'cancel' ? (
-              'Confirm Cancellation'
-            ) : (
-              <>
-                <X className="h-4 w-4" />
-                Cancel
-              </>
-            )}
-          </Button>
-        </div>
-      );
-    } else if (relocation.status === 'active') {
-      return (
-        <div className="flex items-center gap-2 mt-6">
-          <Button 
-            onClick={() => handleAction('complete')}
-            className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
-            disabled={isCompleting}
-          >
-            {confirmAction === 'complete' ? (
-              'Confirm Completion'
-            ) : (
-              <>
-                <CheckSquare className="h-4 w-4" />
-                Complete
-              </>
-            )}
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => handleAction('cancel')}
-            className="flex items-center gap-2 text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
-            disabled={isCancelling}
-          >
-            {confirmAction === 'cancel' ? (
-              'Confirm Cancellation'
-            ) : (
-              <>
-                <X className="h-4 w-4" />
-                Cancel
-              </>
-            )}
-          </Button>
-        </div>
-      );
-    }
-    return null;
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button asChild variant="outline" size="sm">
-            <Link to="/relocations">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Relocations
-            </Link>
+    <div className="container mx-auto py-6">
+      <div className="flex flex-col gap-6">
+        <div className="flex items-center">
+          <Button variant="ghost" onClick={() => navigate("/relocations")} className="mr-4">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Relocations
           </Button>
-          <h1 className="text-2xl font-bold">Relocation Details</h1>
-        </div>
-        <div>
-          {getStatusBadge(relocation.status)}
-        </div>
-      </div>
-
-      <Card className="bg-card shadow-md">
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Original Room Card */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-lg font-medium">
-                <Building className="h-5 w-5 text-muted-foreground" />
-                <h2>Original Room</h2>
-              </div>
-              <Card className="bg-muted/30 border-muted">
-                <CardContent className="p-4 space-y-3">
-                  <div>
-                    <p className="text-lg font-medium">{relocation.original_room?.name || 'N/A'}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {relocation.original_room?.floor?.building?.name}, {relocation.original_room?.floor?.name}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Temporary Room Card */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-lg font-medium">
-                <Building className="h-5 w-5 text-muted-foreground" />
-                <h2>Temporary Room</h2>
-              </div>
-              <Card className="bg-muted/30 border-muted">
-                <CardContent className="p-4 space-y-3">
-                  <div>
-                    <p className="text-lg font-medium">{relocation.temporary_room?.name || 'N/A'}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {relocation.temporary_room?.floor?.building?.name}, {relocation.temporary_room?.floor?.name}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+          
+          <div className="flex-1 text-xl font-bold">Relocation Details</div>
+          
+          <div className="flex gap-2">
+            {relocation.status === 'scheduled' && (
+              <Button 
+                onClick={() => handleStatusChange('active')}
+                disabled={isUpdating}
+              >
+                Activate
+              </Button>
+            )}
+            
+            {relocation.status === 'active' && (
+              <Button 
+                onClick={() => handleStatusChange('completed')}
+                disabled={isUpdating}
+              >
+                Complete
+              </Button>
+            )}
+            
+            {(relocation.status === 'scheduled' || relocation.status === 'active') && (
+              <Button 
+                variant="destructive"
+                onClick={() => handleStatusChange('cancelled')}
+                disabled={isUpdating}
+              >
+                Cancel
+              </Button>
+            )}
           </div>
-
-          <Separator className="my-6" />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Relocation Details */}
-            <div className="space-y-4">
-              <h2 className="text-lg font-medium">Relocation Details</h2>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Type</p>
-                  <p className="font-medium capitalize">{relocation.relocation_type}</p>
+        </div>
+        
+        <div className="grid md:grid-cols-3 gap-6">
+          <div className="md:col-span-2">
+            <Card className="mb-6">
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-xl mb-1">
+                      {relocation.original_room?.name || "Unknown Room"}
+                    </CardTitle>
+                    <CardDescription>
+                      Relocated to: {relocation.temporary_room?.name || "Unknown Room"}
+                    </CardDescription>
+                  </div>
+                  {getStatusBadge(relocation.status)}
                 </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Created At</p>
-                  <p className="font-medium">{formatDate(relocation.created_at)}</p>
+              </CardHeader>
+              
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-medium text-muted-foreground">Original Room</h3>
+                    <div className="font-medium">
+                      {relocation.original_room?.name || "Unknown Room"}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {relocation.original_room?.room_number || "No room number"}
+                    </div>
+                    {relocation.original_room?.room_type && (
+                      <div className="text-sm text-muted-foreground capitalize">
+                        Type: {relocation.original_room.room_type.replace(/_/g, ' ')}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-medium text-muted-foreground">Temporary Room</h3>
+                    <div className="font-medium">
+                      {relocation.temporary_room?.name || "Unknown Room"}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {relocation.temporary_room?.room_number || "No room number"}
+                    </div>
+                    {relocation.temporary_room?.room_type && (
+                      <div className="text-sm text-muted-foreground capitalize">
+                        Type: {relocation.temporary_room.room_type.replace(/_/g, ' ')}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Reason</p>
-                <p className="font-medium">{relocation.reason || 'No reason provided'}</p>
-              </div>
-            </div>
-
-            {/* Schedule */}
-            <div className="space-y-4">
-              <h2 className="text-lg font-medium flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-muted-foreground" />
-                Schedule
-              </h2>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Start Date</p>
-                  <p className="font-medium">{formatDate(relocation.start_date)}</p>
+                
+                <div className="pt-2">
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-muted-foreground">Timeline</h3>
+                    
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <strong>Start Date:</strong>{" "}
+                        {format(new Date(relocation.start_date), "MMMM d, yyyy")}
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <strong>End Date:</strong>{" "}
+                        {format(new Date(relocation.end_date), "MMMM d, yyyy")}
+                      </div>
+                    </div>
+                    
+                    {relocation.actual_end_date && (
+                      <div className="flex items-center gap-2">
+                        <CalendarClock className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <strong>Actual End Date:</strong>{" "}
+                          {format(new Date(relocation.actual_end_date), "MMMM d, yyyy")}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">End Date</p>
-                  <p className="font-medium">{formatDate(relocation.end_date)}</p>
+                
+                <div className="pt-2">
+                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Details</h3>
+                  
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <strong>Created:</strong>{" "}
+                      {format(new Date(relocation.created_at), "MMMM d, yyyy")}
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div>
+                      <strong>Type:</strong>{" "}
+                      <span className="capitalize">{relocation.relocation_type.replace(/_/g, ' ')}</span>
+                    </div>
+                    
+                    <div>
+                      <strong>Reason:</strong> {relocation.reason}
+                    </div>
+                    
+                    {relocation.notes && (
+                      <div>
+                        <strong>Notes:</strong> {relocation.notes}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                {relocation.actual_end_date && (
-                  <div className="space-y-1 col-span-2">
-                    <p className="text-sm text-muted-foreground">Actual End Date</p>
-                    <p className="font-medium">{formatDate(relocation.actual_end_date)}</p>
+                
+                {termInfo && (
+                  <div className="pt-2 border-t">
+                    <h3 className="text-sm font-medium text-muted-foreground mb-2">Court Term Information</h3>
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <strong>Term:</strong> {termInfo.term_name} ({termInfo.term_number})
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          className={
+                            termInfo.status === "active" 
+                              ? "bg-green-500" 
+                              : termInfo.status === "upcoming" 
+                              ? "bg-yellow-500" 
+                              : "bg-gray-500"
+                          }
+                        >
+                          {termInfo.status.charAt(0).toUpperCase() + termInfo.status.slice(1)}
+                        </Badge>
+                      </div>
+                      
+                      {termInfo.pdf_url && (
+                        <div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => window.open(termInfo.pdf_url!, "_blank")}
+                          >
+                            <FileText className="mr-2 h-4 w-4" />
+                            View Term Sheet
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
-              </div>
-            </div>
-          </div>
-
-          {relocation.notes && (
-            <>
-              <Separator className="my-6" />
-              <div className="space-y-2">
-                <h2 className="text-lg font-medium">Notes</h2>
-                <div className="bg-muted/30 p-4 rounded-md text-muted-foreground">
-                  {relocation.notes}
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Schedule Changes</CardTitle>
+                <CardDescription>
+                  Schedule changes related to this relocation
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center text-muted-foreground py-8">
+                  <CircleAlert className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No schedule changes have been created yet.</p>
                 </div>
-              </div>
-            </>
-          )}
-
-          {(relocation.status === 'scheduled' || relocation.status === 'active') && (
-            <>
-              <Separator className="my-6" />
-              <div className="space-y-2">
-                <h2 className="text-lg font-medium">Actions</h2>
-                {renderActionButtons()}
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+              </CardContent>
+              <CardFooter>
+                <Button className="w-full" disabled>
+                  Add Schedule Change
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+          
+          <div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Notifications</CardTitle>
+                <CardDescription>
+                  Relocation notifications
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center text-muted-foreground py-8">
+                  <p>No notifications created yet</p>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button className="w-full" disabled>
+                  Send Notification
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

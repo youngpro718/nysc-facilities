@@ -21,6 +21,8 @@ export interface RelocationDetails {
   reason: string;
   notes?: string;
   relocation_type: RelocationType;
+  term_id?: string;
+  respect_term_assignments?: boolean;
 }
 
 export interface ScheduleChangeData {
