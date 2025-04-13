@@ -27,6 +27,7 @@ interface AuthContextType extends AuthState {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  console.log('AuthProvider initializing...');
   const navigate = useNavigate();
   const refreshInProgress = useRef(false);
   const tokenRefreshInProgress = useRef(false);
@@ -307,18 +308,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Initial session check
-    refreshSession();
-
+    console.log('AuthProvider mounted, current state:', authState);
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
-
+    
+    // Initial session check
+    refreshSession().catch(error => {
+      console.error('Failed to refresh initial session:', error);
+      setAuthState(prev => ({ ...prev, isLoading: false }));
+    });
+    
     return () => {
-      if (authTimeout.current) {
-        clearTimeout(authTimeout.current);
-      }
+      console.log('AuthProvider unmounting...');
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, []);
 
   return (
     <AuthContext.Provider

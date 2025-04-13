@@ -25,13 +25,20 @@ export async function parseTabularTermDocument(imageFile: File): Promise<TermImp
   // For a real implementation, all these would use OCR to extract text from the image
   // But for now, we'll assume the structure matches the Term IV document
   
+  // Add start and end dates to all assignments based on the term dates
+  const assignmentsWithDates = assignments.map(assignment => ({
+    ...assignment,
+    start_date: termMetadata.start_date,
+    end_date: termMetadata.end_date
+  }));
+  
   // Match room IDs for extracted assignments
-  await matchRoomIdsForAssignments(assignments);
+  await matchRoomIdsForAssignments(assignmentsWithDates);
   
   return {
     term: termMetadata,
     personnel,
-    assignments
+    assignments: assignmentsWithDates
   };
 }
 

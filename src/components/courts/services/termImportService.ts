@@ -1,9 +1,10 @@
 import { supabase } from '@/integrations/supabase/client';
 import { TermImportData, CourtTerm, TermAssignment, TermPersonnel } from '../types/termTypes';
 import { parseTabularTermDocument } from './tableTermParser';
+import * as pdfjs from 'pdfjs-dist';
 
 // Feature flags
-const DEMO_MODE = true; // Set to false in production
+const DEMO_MODE = false; // Set to false to enable real processing
 const USE_TABLE_PARSER = true; // Enable the specialized table parser
 
 // Define the fallback term data first
@@ -115,9 +116,8 @@ export async function uploadTermDocument(file: File): Promise<{ path: string }> 
 
 /**
  * Process a document and extract court term data
- * In a production app, this would use real OCR or document parsing
  */
-export async function processTermDocument(filePath: string): Promise<TermImportData> {
+export async function processTermDocument(filePath: string, pageText?: string): Promise<TermImportData> {
   console.log('Processing document:', filePath);
   
   // Extract filename from path
@@ -126,11 +126,36 @@ export async function processTermDocument(filePath: string): Promise<TermImportD
   // Always show we're attempting to process
   console.log(`Starting processing for ${filename}...`);
   
-  // In a real implementation, we'd use something like Tesseract.js for OCR
-  // or a server-side function that uses a more powerful OCR service
+  // If we have page text from PDF processing, try to extract data from it first
+  if (pageText) {
+    console.log('Processing page text:', pageText.substring(0, 200) + '...');
+    const extractedData = extractTermInfo(pageText);
+    if (extractedData) {
+      console.log('Successfully extracted data from page text');
+      return extractedData;
+    } else {
+      console.log('No data could be extracted from page text, falling back to demo data');
+    }
+  }
   
-  // Instead, we'll analyze the filename for clues on which demo data to return
-  // This simulates different document formats you might have
+  // If DEMO_MODE is off and no data was extracted, return empty structure
+  if (!DEMO_MODE) {
+    return {
+      term: {
+        term_number: '',
+        term_name: '',
+        description: '',
+        start_date: '',
+        end_date: '',
+        location: ''
+      },
+      personnel: [],
+      assignments: []
+    };
+  }
+  
+  // If no data extracted from page text or no page text provided,
+  // fall back to the demo data generation based on filename
   
   // Figure out what kind of term document this appears to be based on filename
   const isSpringTerm = /spring|april|may/i.test(filename);
@@ -333,6 +358,16 @@ export async function createTermFromOCR(file: File): Promise<TermImportData> {
         // Use the specialized table parser for tabular format documents
         const tableData = await parseTabularTermDocument(file);
         console.log("Table parser successfully extracted data", tableData);
+        
+        // Make sure all assignments have start_date and end_date from the term
+        if (tableData.term.start_date && tableData.term.end_date && tableData.assignments.length > 0) {
+          tableData.assignments = tableData.assignments.map(assignment => ({
+            ...assignment,
+            start_date: tableData.term.start_date,
+            end_date: tableData.term.end_date
+          }));
+        }
+        
         return tableData;
       } catch (tableError) {
         console.error("Error in table parser, falling back to standard process:", tableError);
@@ -345,14 +380,132 @@ export async function createTermFromOCR(file: File): Promise<TermImportData> {
     const { path } = await uploadTermDocument(file);
     console.log("File uploaded, path:", path);
     
-    // 2. Process the document 
-    const importData = await processTermDocument(path);
-    console.log("Document processed successfully", importData);
+    // 2. Process the document - now handling multiple pages
+    let combinedData: TermImportData | null = null;
+    
+    // For PDF files, process each page
+    if (file.type === 'application/pdf') {
+      try {
+        // Load the PDF document
+        const pdf = await pdfjs.getDocument(URL.createObjectURL(file)).promise;
+        const numPages = pdf.numPages;
+        console.log(`Processing PDF with ${numPages} pages`);
+        
+        // Process each page
+        for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+          console.log(`Processing page ${pageNum} of ${numPages}`);
+          const page = await pdf.getPage(pageNum);
+          
+          // Get text content with layout information
+          const textContent = await page.getTextContent();
+          
+          // Sort items by their vertical position (y) to maintain reading order
+          const items = textContent.items
+            .map((item: any) => ({
+              text: item.str,
+              x: item.transform[4], // x position
+              y: item.transform[5], // y position
+              fontSize: Math.sqrt(item.transform[0] * item.transform[0] + item.transform[1] * item.transform[1])
+            }))
+            .sort((a, b) => b.y - a.y); // Sort top to bottom
+          
+          // Group items by approximate y-position (lines)
+          const lineThreshold = 5; // pixels
+          const lines: any[] = [];
+          let currentLine: any[] = [];
+          let lastY = items[0]?.y;
+          
+          items.forEach(item => {
+            if (Math.abs(item.y - lastY) > lineThreshold) {
+              if (currentLine.length > 0) {
+                // Sort items in line by x position (left to right)
+                currentLine.sort((a, b) => a.x - b.x);
+                lines.push(currentLine);
+                currentLine = [];
+              }
+              lastY = item.y;
+            }
+            currentLine.push(item);
+          });
+          
+          // Don't forget the last line
+          if (currentLine.length > 0) {
+            currentLine.sort((a, b) => a.x - b.x);
+            lines.push(currentLine);
+          }
+          
+          // Convert lines to text, maintaining layout
+          const pageText = lines
+            .map(line => line.map((item: any) => item.text).join(' '))
+            .join('\n');
+          
+          console.log(`Extracted text from page ${pageNum}:`, pageText.substring(0, 200) + '...');
+          
+          // Process this page's text
+          const pageData = await processTermDocument(path, pageText);
+          
+          if (!combinedData) {
+            // First page - use as base data
+            combinedData = pageData;
+          } else {
+            // Merge data from subsequent pages
+            if (pageData.assignments?.length) {
+              // Filter out duplicate assignments
+              const newAssignments = pageData.assignments.filter(newAssign => 
+                !combinedData?.assignments.some(existing => 
+                  existing.part_code === newAssign.part_code
+                )
+              );
+              combinedData.assignments = [
+                ...combinedData.assignments,
+                ...newAssignments
+              ];
+            }
+            if (pageData.personnel?.length) {
+              // Filter out duplicate personnel
+              const newPersonnel = pageData.personnel.filter(p => 
+                !combinedData?.personnel.some(
+                  existing => existing.role === p.role && existing.name === p.name
+                )
+              );
+              combinedData.personnel = [
+                ...combinedData.personnel,
+                ...newPersonnel
+              ];
+            }
+            // Update term info if found on this page and not already set
+            if (!combinedData.term.term_number && pageData.term.term_number) {
+              combinedData.term = { ...combinedData.term, ...pageData.term };
+            }
+          }
+        }
+      } catch (pdfError) {
+        console.error('Error processing PDF:', pdfError);
+        throw pdfError;
+      }
+    } else {
+      // For non-PDF files, process as before
+      combinedData = await processTermDocument(path);
+    }
+    
+    if (!combinedData) {
+      throw new Error("Failed to extract data from document");
+    }
+    
+    // Make sure all assignments have start_date and end_date from the term
+    if (combinedData.term.start_date && combinedData.term.end_date && combinedData.assignments.length > 0) {
+      combinedData.assignments = combinedData.assignments.map(assignment => ({
+        ...assignment,
+        start_date: combinedData!.term.start_date,
+        end_date: combinedData!.term.end_date
+      }));
+    }
     
     // Match room numbers to actual room IDs
-    await matchRoomIdsForAssignments(importData);
+    await matchRoomIdsForAssignments(combinedData);
     
-    return importData;
+    console.log("Final combined data:", combinedData);
+    return combinedData;
   } catch (error) {
     console.error("Error in createTermFromOCR:", error);
     
@@ -364,6 +517,16 @@ export async function createTermFromOCR(file: File): Promise<TermImportData> {
     
     // Fall back to demo data as last resort
     console.warn('Using fallback demo data');
+    
+    // Make sure fallback data has start/end dates on assignments
+    if (fallbackTermData.term.start_date && fallbackTermData.term.end_date) {
+      fallbackTermData.assignments = fallbackTermData.assignments.map(assignment => ({
+        ...assignment,
+        start_date: fallbackTermData.term.start_date,
+        end_date: fallbackTermData.term.end_date
+      }));
+    }
+    
     return fallbackTermData;
   }
 }
@@ -402,289 +565,29 @@ function detectTabularFormat(file: File): boolean {
 // Function moved to avoid duplication
 
 /**
- * Match room numbers in assignments to actual room IDs
+ * Matches room numbers in assignments to actual room IDs in the database.
+ * 
+ * This function attempts to find corresponding room IDs for room numbers in the assignments.
+ * It has a fallback mechanism to check both the spaces and rooms tables, and provides
+ * fuzzy matching capabilities for room numbers that don't have an exact match.
+ * 
+ * @example
+ * // Example usage:
+ * const importData = {
+ *   term: { term_name: 'Term IV', ... },
+ *   assignments: [
+ *     { part_code: 'TAP A', room_number: '1180', ... },
+ *     { part_code: 'Part 54', room_number: '621', ... }
+ *   ],
+ *   personnel: [...]
+ * };
+ * 
+ * await matchRoomIdsForAssignments(importData);
+ * 
+ * // Now importData.assignments will have room_id fields populated where matches were found
+ * 
+ * @param data - The TermImportData containing assignments with room_number fields
  */
-// Function moved to avoid duplication
-/**
- * Extract term information from text content
- */
-export function extractTermInfo(content: string): TermImportData | null {
-  try {
-    const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-    
-    const termInfo: Partial<CourtTerm> = {
-      term_number: '',
-      term_name: '',
-      description: '',
-      start_date: '',
-      end_date: '',
-      location: ''
-    };
-    
-    const personnel: Partial<TermPersonnel>[] = [];
-    const assignments: TermAssignment[] = [];
-    
-    // Look for term number
-    const termMatch = lines.find(line => /TERM\s+[IVXLCDM]+/i.test(line));
-    if (termMatch) {
-      const termParts = termMatch.match(/TERM\s+([IVXLCDM]+)/i);
-      if (termParts && termParts[1]) {
-        termInfo.term_number = termParts[1];
-        termInfo.term_name = `Term ${termParts[1]}`;
-      }
-    }
-    
-    // Look for term description
-    const descMatch = lines.find(line => line.includes('COURT') && line.includes('TERM'));
-    if (descMatch) {
-      termInfo.description = descMatch.trim();
-    }
-    
-    // Look for dates
-    const dateMatch = lines.find(line => line.includes('-') && /\w+\s+\d{1,2}/.test(line));
-    if (dateMatch) {
-      const dates = dateMatch.match(/(\w+\s+\d{1,2},?\s+\d{4})\s*-\s*(\w+\s+\d{1,2},?\s+\d{4})/);
-      if (dates && dates[1] && dates[2]) {
-        try {
-          termInfo.start_date = new Date(dates[1]).toISOString().split('T')[0];
-          termInfo.end_date = new Date(dates[2]).toISOString().split('T')[0];
-        } catch (e) {
-          console.warn('Error parsing dates:', e);
-          // Try alternative date format
-          const altDates = dateMatch.match(/(\w+\s+\d{1,2})\s*-\s*(\w+\s+\d{1,2},?\s+\d{4})/);
-          if (altDates && altDates[1] && altDates[2]) {
-            // If the first date doesn't have a year, use the year from the second date
-            const year = altDates[2].match(/(\d{4})/);
-            if (year && year[1]) {
-              try {
-                termInfo.start_date = new Date(`${altDates[1]}, ${year[1]}`).toISOString().split('T')[0];
-                termInfo.end_date = new Date(altDates[2]).toISOString().split('T')[0];
-              } catch (e) {
-                console.warn('Error parsing alternative dates:', e);
-              }
-            }
-          }
-        }
-      }
-    }
-    
-    // Look for location
-    const locationMatch = lines.find(line => line.includes('STREET') || line.includes('AVENUE') || line.includes('CENTRE'));
-    if (locationMatch) {
-      termInfo.location = locationMatch.trim();
-    }
-    
-    // Look for administrative personnel
-    const judgeMatch = lines.find(line => line.includes('JUDGE'));
-    if (judgeMatch) {
-      const judgeParts = judgeMatch.match(/JUDGE[:\s]+(.*?)\s*\(?([\d\-]+)?\)?/);
-      if (judgeParts && judgeParts[1]) {
-        personnel.push({
-          role: 'administrative_judge' as any,
-          name: judgeParts[1].trim().replace(/HON\.\s+/, ''),
-          phone: judgeParts[2] ? judgeParts[2].trim() : ''
-        });
-      }
-    }
-    
-    const clerkMatch = lines.find(line => line.includes('CLERK'));
-    if (clerkMatch) {
-      const clerkParts = clerkMatch.match(/CLERK[:\s]+(.*?)\s*\(?([\d\-]+)?\)?/);
-      if (clerkParts && clerkParts[1]) {
-        personnel.push({
-          role: 'chief_clerk' as any,
-          name: clerkParts[1].trim(),
-          phone: clerkParts[2] ? clerkParts[2].trim() : ''
-        });
-      }
-    }
-    
-    // Look for the table header row
-    const headerIndex = lines.findIndex(line => 
-      line.includes('PART') && line.includes('JUSTICE') && line.includes('ROOM')
-    );
-    
-    if (headerIndex >= 0) {
-      // Find column positions in the header
-      const headerLine = lines[headerIndex];
-      const partPos = headerLine.indexOf('PART');
-      const justicePos = headerLine.indexOf('JUSTICE');
-      const roomPos = headerLine.indexOf('ROOM');
-      const faxPos = headerLine.indexOf('FAX');
-      const telPos = headerLine.indexOf('TEL');
-      const sgtPos = headerLine.indexOf('SGT');
-      const clerksPos = headerLine.indexOf('CLERK');
-      
-      // Process assignment rows
-      let currentAssignment: Partial<TermAssignment> | null = null;
-      
-      for (let i = headerIndex + 1; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (line.length === 0) continue;
-        
-        // Check if this is a new assignment row or continuation of clerk names
-        if (/^[A-Z0-9]+/.test(line)) {
-          // This is a new assignment row
-          if (currentAssignment && currentAssignment.part_code) {
-            assignments.push(currentAssignment as TermAssignment);
-          }
-          
-          // Start a new assignment
-          currentAssignment = {
-            part_code: '',
-            justice_name: '',
-            room_number: '',
-            room_id: '',
-            phone: '',
-            fax: '',
-            sergeant_name: '',
-            clerk_names: []
-          };
-          
-          // Split the line by tabs or multiple spaces
-          const parts = line.split(/\t|\s{2,}/);
-          
-          // Extract data based on the number of columns
-          if (parts.length >= 3) {
-            currentAssignment.part_code = parts[0].trim();
-            currentAssignment.justice_name = parts[1].trim();
-            
-            // Room number is usually the third column
-            if (parts.length > 2) {
-              currentAssignment.room_number = parts[2].trim();
-            }
-            
-            // Extract fax if available
-            if (parts.length > 3 && faxPos > 0) {
-              const faxIndex = 3; // Typically the 4th column
-              if (parts[faxIndex] && /\d{3}-\d{4}/.test(parts[faxIndex])) {
-                currentAssignment.fax = parts[faxIndex].trim();
-              }
-            }
-            
-            // Extract phone if available
-            if (parts.length > 4 && telPos > 0) {
-              const phoneIndex = 4; // Typically the 5th column
-              if (parts[phoneIndex]) {
-                // Handle the (6)XXXX format
-                const phoneMatch = parts[phoneIndex].match(/\(?\d+\)?\d+/);
-                if (phoneMatch) {
-                  currentAssignment.phone = `646-386-${parts[phoneIndex].replace(/[()]/g, '')}`;
-                }
-              }
-            }
-            
-            // Extract sergeant name if available
-            if (parts.length > 5 && sgtPos > 0) {
-              const sgtIndex = 5; // Typically the 6th column
-              if (parts[sgtIndex]) {
-                currentAssignment.sergeant_name = parts[sgtIndex].trim();
-              }
-            }
-            
-            // Extract clerk names if available
-            if (parts.length > 6 && clerksPos > 0) {
-              const clerkIndex = 6; // Typically the 7th column
-              if (parts[clerkIndex]) {
-                currentAssignment.clerk_names = [parts[clerkIndex].trim()];
-              }
-            }
-          }
-        } else if (currentAssignment && /^[A-Z]/.test(line) && !line.includes('PART')) {
-          // This is likely a continuation of clerk names
-          if (currentAssignment.clerk_names) {
-            currentAssignment.clerk_names.push(line.trim());
-          } else {
-            currentAssignment.clerk_names = [line.trim()];
-          }
-        }
-      }
-      
-      // Add the last assignment if it exists
-      if (currentAssignment && currentAssignment.part_code) {
-        assignments.push(currentAssignment as TermAssignment);
-      }
-    }
-    
-    // Return the structured data if we have at least the basic term info
-    if (termInfo.term_number && termInfo.term_name) {
-      return {
-        term: termInfo as CourtTerm,
-        personnel,
-        assignments
-      };
-    }
-    
-    return null;
-  } catch (e) {
-    console.error('Error parsing extracted text:', e);
-    return null;
-  }
-}
-
-// Enhance fallback data with any information extracted from the document
-function enhanceFallbackWithExtractedInfo(extractedText: string): TermImportData {
-  // Start with the fallback data
-  const enhancedData = { ...fallbackTermData };
-  
-  // Try to extract any useful information from the text
-  const lines = extractedText.split('\n');
-  
-  // Look for term number
-  const termMatch = lines.find(line => line.includes('TERM'));
-  if (termMatch) {
-    const termParts = termMatch.match(/TERM\s+([IVX]+)/);
-    if (termParts && termParts[1]) {
-      enhancedData.term.term_number = termParts[1];
-      enhancedData.term.term_name = `Term ${termParts[1]}`;
-    }
-  }
-  
-  // Look for dates
-  const dateMatch = lines.find(line => /\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4}/.test(line));
-  if (dateMatch) {
-    const dates = dateMatch.match(/(\w+\s+\d{1,2},?\s+\d{4})\s*-\s*(\w+\s+\d{1,2},?\s+\d{4})/);
-    if (dates && dates[1] && dates[2]) {
-      try {
-        enhancedData.term.start_date = new Date(dates[1]).toISOString().split('T')[0];
-        enhancedData.term.end_date = new Date(dates[2]).toISOString().split('T')[0];
-      } catch (e) {
-        console.warn('Could not parse dates from extracted text');
-      }
-    }
-  }
-  
-  return enhancedData;
-}
-
-// Export the validateFile function to avoid duplication
-export function validateFile(file: File): void {
-  if (!file) {
-    throw new Error("No file provided");
-  }
-  
-  const maxSizeMB = 10;
-  const maxSizeBytes = maxSizeMB * 1024 * 1024;
-  
-  if (file.size > maxSizeBytes) {
-    throw new Error(`File too large. Maximum size is ${maxSizeMB}MB`);
-  }
-  
-  const allowedTypes = [
-    'application/pdf',
-    'image/png', 
-    'image/jpeg'
-  ];
-  
-  const isAllowedType = allowedTypes.includes(file.type);
-  const isAllowedExtension = /\.(pdf|jpe?g|png)$/i.test(file.name);
-  
-  if (!isAllowedType && !isAllowedExtension) {
-    throw new Error("Unsupported file format. Please upload a PDF, PNG, or JPEG file");
-  }
-}
-
-// Export the matchRoomIdsForAssignments function to avoid duplication
 export async function matchRoomIdsForAssignments(data: TermImportData): Promise<void> {
   // Skip if no assignments
   if (!data.assignments || data.assignments.length === 0) {
@@ -799,5 +702,359 @@ export async function matchRoomIdsForAssignments(data: TermImportData): Promise<
   } catch (e) {
     console.error('Error in matchRoomIdsForAssignments:', e);
     // Continue without matching
+  }
+}
+
+/**
+ * Extract term information from text content
+ */
+export function extractTermInfo(content: string): TermImportData | null {
+  try {
+    const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    
+    const termInfo: Partial<CourtTerm> = {
+      term_number: '',
+      term_name: '',
+      description: '',
+      start_date: '',
+      end_date: '',
+      location: ''
+    };
+    
+    const personnel: Partial<TermPersonnel>[] = [];
+    const assignments: Partial<TermAssignment>[] = [];
+    
+    // Look for term number
+    const termMatch = lines.find(line => /TERM\s+[IVXLCDM]+/i.test(line));
+    if (termMatch) {
+      const termParts = termMatch.match(/TERM\s+([IVXLCDM]+)/i);
+      if (termParts && termParts[1]) {
+        termInfo.term_number = termParts[1];
+        termInfo.term_name = `Term ${termParts[1]}`;
+      }
+    }
+    
+    // Look for term description
+    const descMatch = lines.find(line => line.includes('COURT') && line.includes('TERM'));
+    if (descMatch) {
+      termInfo.description = descMatch.trim();
+    }
+    
+    // Look for dates
+    const dateMatch = lines.find(line => line.includes('-') && /\w+\s+\d{1,2}/.test(line));
+    if (dateMatch) {
+      const dates = dateMatch.match(/(\w+\s+\d{1,2},?\s+\d{4})\s*-\s*(\w+\s+\d{1,2},?\s+\d{4})/);
+      if (dates && dates[1] && dates[2]) {
+        try {
+          termInfo.start_date = new Date(dates[1]).toISOString().split('T')[0];
+          termInfo.end_date = new Date(dates[2]).toISOString().split('T')[0];
+        } catch (e) {
+          console.warn('Error parsing dates:', e);
+          // Try alternative date format
+          const altDates = dateMatch.match(/(\w+\s+\d{1,2})\s*-\s*(\w+\s+\d{1,2},?\s+\d{4})/);
+          if (altDates && altDates[1] && altDates[2]) {
+            // If the first date doesn't have a year, use the year from the second date
+            const year = altDates[2].match(/(\d{4})/);
+            if (year && year[1]) {
+              try {
+                termInfo.start_date = new Date(`${altDates[1]}, ${year[1]}`).toISOString().split('T')[0];
+                termInfo.end_date = new Date(altDates[2]).toISOString().split('T')[0];
+              } catch (e) {
+                console.warn('Error parsing alternative dates:', e);
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    // Look for location
+    const locationMatch = lines.find(line => line.includes('STREET') || line.includes('AVENUE') || line.includes('CENTRE'));
+    if (locationMatch) {
+      termInfo.location = locationMatch.trim();
+    }
+    
+    // Look for administrative personnel
+    const judgeMatch = lines.find(line => line.includes('JUDGE'));
+    if (judgeMatch) {
+      const judgeParts = judgeMatch.match(/JUDGE[:\s]+(.*?)\s*\(?([\d\-]+)?\)?/);
+      if (judgeParts && judgeParts[1]) {
+        personnel.push({
+          role: 'administrative_judge' as any,
+          name: judgeParts[1].trim().replace(/HON\.\s+/, ''),
+          phone: judgeParts[2] ? judgeParts[2].trim() : ''
+        });
+      }
+    }
+    
+    const clerkMatch = lines.find(line => line.includes('CLERK'));
+    if (clerkMatch) {
+      const clerkParts = clerkMatch.match(/CLERK[:\s]+(.*?)\s*\(?([\d\-]+)?\)?/);
+      if (clerkParts && clerkParts[1]) {
+        personnel.push({
+          role: 'chief_clerk' as any,
+          name: clerkParts[1].trim(),
+          phone: clerkParts[2] ? clerkParts[2].trim() : ''
+        });
+      }
+    }
+    
+    // Look for the table with assignments
+    // First find header indicating the start of the assignment table
+    const tableStartIndicators = ['PART', 'JUSTICE', 'ROOM', 'FAX', 'SGT', 'CLERKS'];
+    
+    // Find lines that could be the header row
+    const headerIndex = lines.findIndex(line => {
+      // Count how many indicators are in this line
+      const count = tableStartIndicators.filter(indicator => 
+        line.toUpperCase().includes(indicator)
+      ).length;
+      
+      // If at least 3 indicators are present, this is likely the header
+      return count >= 3;
+    });
+    
+    console.log('Found potential header at line:', headerIndex, lines[headerIndex]);
+    
+    if (headerIndex >= 0) {
+      // We found the header, now process the rows that follow
+      for (let i = headerIndex + 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line || line.length < 3) continue;
+        
+        // Skip lines that appear to be section headers
+        if (line.toUpperCase().includes('PART ASSIGNMENTS') || 
+            line.toUpperCase() === 'ASSIGNMENTS' ||
+            line.toUpperCase() === 'JUSTICE ASSIGNMENTS') {
+          continue;
+        }
+        
+        // Extract part code from the beginning of the line
+        // Common formats: "TAP A", "TAP G", "ATI 21", "1", "22 W"
+        const partMatch = line.match(/^([A-Z0-9]+\s*[A-Z0-9]*\s*[A-Z0-9]*)/i);
+        
+        if (partMatch && partMatch[1]) {
+          // Create a new assignment
+          const assignment: Partial<TermAssignment> = {
+            part_code: partMatch[1].trim(),
+            justice_name: '',
+            room_number: '',
+            sergeant_name: '',
+            clerk_names: []
+          };
+          
+          // Get the rest of the line after the part code
+          const restOfLine = line.substring(partMatch[0].length).trim();
+          
+          // Split by spaces or tabs
+          const parts = restOfLine.split(/\t|\s{2,}|(?<=[A-Z])\.\s+/);
+          
+          // Remove empty strings
+          const filteredParts = parts.filter(p => p.trim().length > 0);
+          
+          console.log('Parsed parts:', filteredParts);
+          
+          // Check if we have enough parts to process
+          if (filteredParts.length >= 1) {
+            // The first part after the part code is the justice name
+            assignment.justice_name = filteredParts[0].replace(/^HON\.\s*/i, '').trim();
+            
+            // If we have a room number (typically the next part matching digits or starts with "Room")
+            const roomIndex = filteredParts.findIndex(p => 
+              /^\d{3,4}$/.test(p.trim()) || 
+              /^ROOM/i.test(p.trim())
+            );
+            
+            if (roomIndex > 0) {
+              assignment.room_number = filteredParts[roomIndex].replace(/^ROOM\s*/i, '').trim();
+            }
+            
+            // Look for a fax number (typically 3 digits, dash, 4 digits)
+            const faxIndex = filteredParts.findIndex(p => /^\d{3}-\d{4}$/.test(p.trim()));
+            if (faxIndex > 0) {
+              assignment.fax = filteredParts[faxIndex].trim();
+            }
+            
+            // Look for a phone number or extension
+            const telIndex = filteredParts.findIndex(p => 
+              /\(?\d+\)?(\d+|x\d+)/.test(p.trim()) &&
+              faxIndex !== -1 && p !== filteredParts[faxIndex]
+            );
+            
+            if (telIndex > 0) {
+              const telPart = filteredParts[telIndex].trim();
+              
+              // Handle various phone formats
+              if (telPart.includes('646-386-')) {
+                assignment.phone = telPart;
+              } else if (telPart.startsWith('(') && telPart.includes(')')) {
+                assignment.phone = `646-386-${telPart.replace(/[()]/g, '')}`;
+              } else if (/^\d{4}$/.test(telPart)) {
+                assignment.phone = `646-386-${telPart}`;
+              }
+            }
+            
+            // After these items should be the sergeant name
+            // Find a name-like string after the phone/fax
+            let sgtIndex = -1;
+            if (telIndex > 0) {
+              sgtIndex = telIndex + 1;
+            } else if (faxIndex > 0) {
+              sgtIndex = faxIndex + 1;
+            } else if (roomIndex > 0) {
+              sgtIndex = roomIndex + 1;
+            }
+            
+            if (sgtIndex > 0 && sgtIndex < filteredParts.length) {
+              // Sergeant names are typically ALL CAPS
+              const sgtPart = filteredParts[sgtIndex].trim();
+              if (/^[A-Z\s]+$/.test(sgtPart)) {
+                assignment.sergeant_name = sgtPart;
+              }
+            }
+            
+            // The clerk names are typically the last parts
+            // They should be name-like strings
+            if (sgtIndex > 0) {
+              const clerkParts = filteredParts.slice(sgtIndex + 1);
+              if (clerkParts.length > 0) {
+                assignment.clerk_names = clerkParts.filter(p => 
+                  p.trim().length > 0 && 
+                  /^[A-Z]/.test(p.trim())
+                ).map(p => p.trim());
+              }
+            }
+            
+            // Add the assignment to our list
+            assignments.push(assignment);
+            
+            console.log('Added assignment:', assignment);
+          }
+        }
+      }
+    } else {
+      // If we can't find the header, try a less strict approach
+      // Look for lines that appear to contain a part code at the beginning
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        
+        // Check for patterns of part codes at the beginning of lines
+        const partPatterns = [
+          /^TAP\s+[A-Z]/i,              // TAP A, TAP G
+          /^ATI\s+\d+/i,                // ATI 21
+          /^\d+\s*[A-Z]*/i,             // 1, 22 W
+          /^[A-Z]+\s*\d*/i,             // PART 1, GWP1
+        ];
+        
+        const isPartLine = partPatterns.some(pattern => pattern.test(line));
+        
+        if (isPartLine) {
+          // Extract the part code
+          const partCode = line.match(/^(\S+\s+\S+|\S+)/i)?.[0]?.trim() || '';
+          
+          // Rest of the line might contain justice name, room, etc.
+          const restOfLine = line.substring(partCode.length).trim();
+          
+          // Try to extract justice name, room, etc.
+          // This is a simplistic approach; you might need more sophisticated parsing
+          const parts = restOfLine.split(/\s{2,}|\t/);
+          
+          const assignment: Partial<TermAssignment> = {
+            part_code: partCode,
+            justice_name: parts[0]?.trim() || '',
+            room_number: '',
+            sergeant_name: '',
+            clerk_names: []
+          };
+          
+          // Try to find room number
+          const roomPart = parts.find(p => /^\d{3,4}$/.test(p.trim()) || /ROOM\s+\d+/i.test(p.trim()));
+          if (roomPart) {
+            assignment.room_number = roomPart.replace(/ROOM\s+/i, '').trim();
+          }
+          
+          // Add the assignment even with partial data
+          if (assignment.part_code) {
+            assignments.push(assignment);
+          }
+        }
+      }
+    }
+    
+    // Return the structured data if we have at least the basic term info
+    if (assignments.length > 0 || (termInfo.term_number && termInfo.term_name)) {
+      return {
+        term: termInfo as CourtTerm,
+        personnel,
+        assignments
+      };
+    }
+    
+    return null;
+  } catch (e) {
+    console.error('Error parsing extracted text:', e);
+    return null;
+  }
+}
+
+// Enhance fallback data with any information extracted from the document
+function enhanceFallbackWithExtractedInfo(extractedText: string): TermImportData {
+  // Start with the fallback data
+  const enhancedData = { ...fallbackTermData };
+  
+  // Try to extract any useful information from the text
+  const lines = extractedText.split('\n');
+  
+  // Look for term number
+  const termMatch = lines.find(line => line.includes('TERM'));
+  if (termMatch) {
+    const termParts = termMatch.match(/TERM\s+([IVX]+)/);
+    if (termParts && termParts[1]) {
+      enhancedData.term.term_number = termParts[1];
+      enhancedData.term.term_name = `Term ${termParts[1]}`;
+    }
+  }
+  
+  // Look for dates
+  const dateMatch = lines.find(line => /\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4}/.test(line));
+  if (dateMatch) {
+    const dates = dateMatch.match(/(\w+\s+\d{1,2},?\s+\d{4})\s*-\s*(\w+\s+\d{1,2},?\s+\d{4})/);
+    if (dates && dates[1] && dates[2]) {
+      try {
+        enhancedData.term.start_date = new Date(dates[1]).toISOString().split('T')[0];
+        enhancedData.term.end_date = new Date(dates[2]).toISOString().split('T')[0];
+      } catch (e) {
+        console.warn('Could not parse dates from extracted text');
+      }
+    }
+  }
+  
+  return enhancedData;
+}
+
+// Export the validateFile function to avoid duplication
+export function validateFile(file: File): void {
+  if (!file) {
+    throw new Error("No file provided");
+  }
+  
+  const maxSizeMB = 10;
+  const maxSizeBytes = maxSizeMB * 1024 * 1024;
+  
+  if (file.size > maxSizeBytes) {
+    throw new Error(`File too large. Maximum size is ${maxSizeMB}MB`);
+  }
+  
+  const allowedTypes = [
+    'application/pdf',
+    'image/png', 
+    'image/jpeg'
+  ];
+  
+  const isAllowedType = allowedTypes.includes(file.type);
+  const isAllowedExtension = /\.(pdf|jpe?g|png)$/i.test(file.name);
+  
+  if (!isAllowedType && !isAllowedExtension) {
+    throw new Error("Unsupported file format. Please upload a PDF, PNG, or JPEG file");
   }
 }

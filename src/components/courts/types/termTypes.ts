@@ -58,6 +58,8 @@ export interface TermAssignment {
   tel_extension?: string;
   sergeant_name?: string;
   clerk_names?: string[];
+  start_date?: string; // Adding date fields for assignment periods
+  end_date?: string; // Adding date fields for assignment periods
   term?: CourtTerm;
   part?: CourtPart;
   room?: Room;
