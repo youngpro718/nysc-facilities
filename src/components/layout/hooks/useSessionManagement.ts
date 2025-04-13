@@ -152,17 +152,17 @@ export const useSessionManagement = (isLoginPage: boolean) => {
                 .from('user_sessions')
                 .update({
                   last_active_at: new Date().toISOString(),
-                  device_info: deviceInfo
+                  device_info: deviceInfo as any // Type assertion to fix compatibility with Json type
                 })
                 .eq('id', existingSession.id);
             } else {
               await supabase
                 .from('user_sessions')
-                .insert([{
+                .insert({
                   user_id: session.user.id,
-                  device_info: deviceInfo,
+                  device_info: deviceInfo as any, // Type assertion to fix compatibility with Json type
                   last_active_at: new Date().toISOString()
-                }]);
+                });
             }
           } catch (error) {
             console.error("Session management error:", error);

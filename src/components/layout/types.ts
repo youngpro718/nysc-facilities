@@ -1,6 +1,12 @@
 
 import { LucideIcon } from "lucide-react";
 
+export interface DeviceInfo {
+  name: string;
+  platform: string;
+  language: string;
+}
+
 export interface NavigationItem {
   title: string;
   href: string;
@@ -14,10 +20,4 @@ export interface NavigationTab {
   label: string;
   value: string;
   icon: LucideIcon;
-}
-
-export interface DeviceInfo {
-  name: string;
-  platform: string;
-  language: string;
 }

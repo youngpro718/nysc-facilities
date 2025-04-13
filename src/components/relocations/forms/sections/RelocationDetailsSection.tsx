@@ -1,32 +1,20 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Term } from "@/components/terms/types/termTypes";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-interface TermOption {
-  id: string;
-  term_name: string;
-  term_number: string;
-  start_date: string;
-  end_date: string;
-  status: string;
-  pdf_url: string;
-  location: string;
-  description: string;
-  created_at: string;
-  created_by: string;
-  updated_at: string;
-  metadata: any;
-}
+import { UseFormReturn } from "react-hook-form";
+import { CreateRelocationFormData } from "../../types/relocationTypes";
 
 interface RelocationDetailsSectionProps {
   selectedTermId: string | null;
   setSelectedTermId: (termId: string | null) => void;
+  form?: UseFormReturn<CreateRelocationFormData>;
 }
 
-export function RelocationDetailsSection({ selectedTermId, setSelectedTermId }: RelocationDetailsSectionProps) {
-  const [terms, setTerms] = useState<TermOption[]>([]);
+export function RelocationDetailsSection({ selectedTermId, setSelectedTermId, form }: RelocationDetailsSectionProps) {
+  const [terms, setTerms] = useState<Term[]>([]);
 
   useEffect(() => {
     const fetchTerms = async () => {
