@@ -21,6 +21,12 @@ export type NavigationItem = {
   children?: NavigationItem[];
 };
 
+export type NavigationTab = {
+  label: string;
+  value: string;
+  icon?: JSX.Element;
+};
+
 export const navigationItems: NavigationItem[] = [
   {
     title: 'Dashboard',
@@ -93,3 +99,27 @@ export const userNavigationItems: NavigationItem[] = [
   },
 ];
 
+// New exports to support Layout.tsx
+export const adminNavigation: NavigationTab[] = navigationItems
+  .filter(item => item.adminOnly !== false)
+  .map(item => ({
+    label: item.title,
+    value: item.href,
+    icon: item.icon,
+  }));
+
+export const userNavigation: NavigationTab[] = navigationItems
+  .filter(item => !item.adminOnly)
+  .map(item => ({
+    label: item.title,
+    value: item.href,
+    icon: item.icon,
+  }));
+
+export const getNavigationRoutes = (isAdmin: boolean): string[] => {
+  const items = isAdmin 
+    ? navigationItems.filter(item => item.adminOnly !== false)
+    : navigationItems.filter(item => !item.adminOnly);
+  
+  return items.map(item => item.href);
+};

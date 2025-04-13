@@ -1,9 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { RoomRelocation } from "../types/relocationTypes";
-import { useRelocationFilters } from "../hooks/useRelocationFilters";
-import { fetchRelocationById, fetchRelocations } from "../services/queries/relocationQueries";
+import { fetchRelocationById } from "../services/queries/relocationQueries";
 import { updateRelocation } from "../services/mutations/relocationMutations";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,18 +11,12 @@ import { format } from "date-fns";
 import { ArrowLeft, Calendar, CalendarClock, CircleAlert, Clock, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Term } from "@/components/terms/types/termTypes";
 
-interface TermInfo {
-  id: string;
-  term_name: string;
-  term_number: string;
-  status: string;
-  pdf_url: string | null;
-}
+interface TermInfo extends Term {}
 
 export function RelocationDetails({ id }: { id: string }) {
   const navigate = useNavigate();
-  const { buildingOptions, floorOptions } = useRelocationFilters();
   const [relocation, setRelocation] = useState<RoomRelocation | null>(null);
   const [termInfo, setTermInfo] = useState<TermInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,14 +33,23 @@ export function RelocationDetails({ id }: { id: string }) {
         if (data.term_id) {
           const { data: termData, error } = await supabase
             .from('court_terms')
-            .select('id, term_name, term_number, status, pdf_url')
+            .select('id, term_name, term_number, status, pdf_url, start_date, end_date')
             .eq('id', data.term_id)
             .single();
             
           if (error) {
             console.error("Error fetching term data:", error);
           } else {
-            setTermInfo(termData as TermInfo);
+            // Transform to match the TermInfo interface
+            setTermInfo({
+              id: termData.id,
+              term_name: termData.term_name,
+              term_number: termData.term_number,
+              status: termData.status || 'unknown',
+              pdf_url: termData.pdf_url,
+              start_date: termData.start_date,
+              end_date: termData.end_date
+            });
           }
         }
       } catch (error) {

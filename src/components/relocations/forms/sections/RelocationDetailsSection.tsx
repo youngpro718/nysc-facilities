@@ -20,15 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { CreateRelocationFormData } from "../../types/relocationTypes";
-
-interface Term {
-  id: string;
-  term_name: string;
-  term_number: string;
-  start_date: string;
-  end_date: string;
-  status: string;
-}
+import { Term } from "@/components/terms/types/termTypes";
 
 export function RelocationDetailsSection({
   form,
@@ -44,14 +36,24 @@ export function RelocationDetailsSection({
       try {
         const { data, error } = await supabase
           .from('court_terms')
-          .select('id, term_name, term_number, start_date, end_date, status')
-          .order('start_date', { ascending: false });
+          .select('id, term_name, term_number, start_date, end_date, status, pdf_url');
           
         if (error) {
           throw error;
         }
         
-        setTerms(data as Term[]);
+        // Transform the data to ensure it matches the Term interface
+        const transformedData: Term[] = (data || []).map(term => ({
+          id: term.id,
+          term_name: term.term_name,
+          term_number: term.term_number,
+          start_date: term.start_date,
+          end_date: term.end_date,
+          status: term.status || 'unknown',
+          pdf_url: term.pdf_url
+        }));
+        
+        setTerms(transformedData);
       } catch (error) {
         console.error("Error fetching terms:", error);
       } finally {
@@ -65,6 +67,7 @@ export function RelocationDetailsSection({
   const handleTermSelect = (termId: string) => {
     const selectedTerm = terms.find(term => term.id === termId);
     if (selectedTerm) {
+      form.setValue("term_id", termId);
       form.setValue("start_date", selectedTerm.start_date);
       form.setValue("end_date", selectedTerm.end_date);
     }
@@ -159,6 +162,18 @@ export function RelocationDetailsSection({
                 />
               </FormControl>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="term_id"
+          render={({ field }) => (
+            <FormItem className="hidden">
+              <FormControl>
+                <Input type="hidden" {...field} />
+              </FormControl>
             </FormItem>
           )}
         />
