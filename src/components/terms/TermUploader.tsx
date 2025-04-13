@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -243,12 +244,16 @@ export function TermUploader() {
                   onChange={handleFileChange}
                   className="hidden"
                 />
-                <label htmlFor="file-upload">
-                  <Button type="button" variant="outline" size="sm" className="cursor-pointer">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Select File
-                  </Button>
-                </label>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  className="cursor-pointer"
+                  onClick={() => document.getElementById('file-upload')?.click()}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Select File
+                </Button>
                 <p className="text-xs text-muted-foreground mt-4">
                   Maximum file size: 10MB
                 </p>
