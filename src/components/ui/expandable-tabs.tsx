@@ -87,12 +87,6 @@ export function ExpandableTabs({
         const currentTab = tab as Tab;
         const TabIcon = currentTab.icon;
         
-        // Make sure TabIcon is a valid React component
-        if (!TabIcon) {
-          console.error(`Tab at index ${index} has an invalid icon`, currentTab);
-          return null;
-        }
-        
         return (
           <motion.button
             key={currentTab.title}

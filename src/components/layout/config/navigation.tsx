@@ -100,7 +100,11 @@ export const adminNavigation: NavigationTab[] = navigationItems
   .map(item => ({
     label: item.title,
     value: item.href,
-    icon: item.icon ? (iconProps => item.icon || <Command {...iconProps} />) : Command,
+    icon: item.icon ? 
+      (() => {
+        const IconComponent = item.icon?.type || Command;
+        return IconComponent;
+      })() : Command,
   }));
 
 export const userNavigation: NavigationTab[] = navigationItems
@@ -108,7 +112,11 @@ export const userNavigation: NavigationTab[] = navigationItems
   .map(item => ({
     label: item.title,
     value: item.href,
-    icon: item.icon ? (iconProps => item.icon || <Command {...iconProps} />) : Command,
+    icon: item.icon ? 
+      (() => {
+        const IconComponent = item.icon?.type || Command;
+        return IconComponent;
+      })() : Command,
   }));
 
 export const getNavigationRoutes = (isAdmin: boolean): string[] => {

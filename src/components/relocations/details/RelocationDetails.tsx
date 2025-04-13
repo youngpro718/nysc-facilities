@@ -52,7 +52,7 @@ export function RelocationDetails({ id }: { id: string }) {
             if (termError) {
               console.error("Error fetching term data:", termError);
             } else if (termData) {
-              // Ensure all required fields are present
+              // Ensure all required fields are present with default values if needed
               const term: Term = {
                 id: termData.id || '',
                 term_name: termData.term_name || '',
