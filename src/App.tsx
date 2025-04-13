@@ -20,7 +20,6 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Relocations from "@/pages/Relocations";
 import CreateRelocation from "@/pages/CreateRelocation";
-import TermSchedule from "@/pages/TermSchedule";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -84,11 +83,6 @@ function App() {
                 <Route path="relocations/:id" element={
                   <ProtectedRoute requireAdmin>
                     <CreateRelocation />
-                  </ProtectedRoute>
-                } />
-                <Route path="court-terms" element={
-                  <ProtectedRoute requireAdmin>
-                    <TermSchedule />
                   </ProtectedRoute>
                 } />
                 <Route path="admin-profile" element={
