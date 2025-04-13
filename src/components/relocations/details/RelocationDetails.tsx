@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { RoomRelocation } from "../types/relocationTypes";
@@ -39,7 +40,7 @@ export function RelocationDetails({ id }: { id: string }) {
             
           if (error) {
             console.error("Error fetching term data:", error);
-          } else {
+          } else if (termData) {
             // Transform to match the TermInfo interface
             setTermInfo({
               id: termData.id,

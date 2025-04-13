@@ -42,18 +42,20 @@ export function RelocationDetailsSection({
           throw error;
         }
         
-        // Transform the data to ensure it matches the Term interface
-        const transformedData: Term[] = (data || []).map(term => ({
-          id: term.id,
-          term_name: term.term_name,
-          term_number: term.term_number,
-          start_date: term.start_date,
-          end_date: term.end_date,
-          status: term.status || 'unknown',
-          pdf_url: term.pdf_url
-        }));
-        
-        setTerms(transformedData);
+        if (data) {
+          // Transform the data to ensure it matches the Term interface
+          const transformedData: Term[] = data.map(term => ({
+            id: term.id,
+            term_name: term.term_name,
+            term_number: term.term_number,
+            start_date: term.start_date,
+            end_date: term.end_date,
+            status: term.status || 'unknown',
+            pdf_url: term.pdf_url
+          }));
+          
+          setTerms(transformedData);
+        }
       } catch (error) {
         console.error("Error fetching terms:", error);
       } finally {

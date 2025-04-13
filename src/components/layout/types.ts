@@ -19,12 +19,18 @@ export interface UserSession {
 
 export interface NavigationItem {
   title: string;
-  icon: LucideIcon;
-  type?: undefined;
+  href: string;
+  icon?: JSX.Element;
+  description?: string;
+  adminOnly?: boolean;
 }
 
 export interface NavigationSeparator {
   type: "separator";
 }
 
-export type NavigationTab = NavigationItem | NavigationSeparator;
+export type NavigationTab = {
+  label: string;
+  value: string;
+  icon?: JSX.Element;
+};

@@ -38,23 +38,25 @@ export function TermList() {
           throw error;
         }
         
-        // Transform the data to ensure it matches the Term interface
-        const transformedData: Term[] = data.map(term => ({
-          id: term.id,
-          term_name: term.term_name,
-          term_number: term.term_number,
-          location: term.location,
-          start_date: term.start_date,
-          end_date: term.end_date,
-          status: term.status || 'unknown',
-          description: term.description,
-          pdf_url: term.pdf_url,
-          created_at: term.created_at,
-          created_by: term.created_by,
-          metadata: term.metadata
-        }));
-        
-        setTerms(transformedData);
+        if (data) {
+          // Transform the data to ensure it matches the Term interface
+          const transformedData: Term[] = data.map(term => ({
+            id: term.id,
+            term_name: term.term_name,
+            term_number: term.term_number,
+            location: term.location,
+            start_date: term.start_date,
+            end_date: term.end_date,
+            status: term.status || 'unknown',
+            description: term.description,
+            pdf_url: term.pdf_url,
+            created_at: term.created_at,
+            created_by: term.created_by,
+            metadata: term.metadata
+          }));
+          
+          setTerms(transformedData);
+        }
       } catch (error) {
         console.error("Error fetching terms:", error);
         setError("Failed to load term data");
