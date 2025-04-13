@@ -1,3 +1,4 @@
+
 import {
   Building,
   Command,
@@ -11,15 +12,6 @@ import {
   Calendar
 } from 'lucide-react';
 import { NavigationItem, NavigationTab } from '../types';
-
-export type NavigationItem = {
-  title: string;
-  href: string;
-  icon?: JSX.Element;
-  description?: string;
-  adminOnly?: boolean;
-  children?: NavigationItem[];
-};
 
 export const navigationItems: NavigationItem[] = [
   {
