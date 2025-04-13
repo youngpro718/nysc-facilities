@@ -14,17 +14,10 @@ export const DesktopNavigation = ({
   onNavigationChange,
   onSignOut
 }: DesktopNavigationProps) => {
-  // Convert NavigationTab[] to the format expected by ExpandableTabs
-  const expandableTabs = navigation.map(tab => ({
-    title: tab.label,
-    icon: tab.icon,
-    type: undefined
-  }));
-
   return (
     <nav className="hidden md:flex items-center gap-4">
       <ExpandableTabs 
-        tabs={expandableTabs} 
+        tabs={navigation} 
         className="border-white/20 bg-transparent"
         onChange={onNavigationChange}
       />

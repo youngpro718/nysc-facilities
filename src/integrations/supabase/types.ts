@@ -406,78 +406,6 @@ export type Database = {
         }
         Relationships: []
       }
-      court_parts: {
-        Row: {
-          created_at: string | null
-          description: string | null
-          id: string
-          part_code: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          part_code: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          part_code?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      court_terms: {
-        Row: {
-          created_at: string | null
-          created_by: string | null
-          description: string | null
-          end_date: string
-          id: string
-          location: string
-          metadata: Json | null
-          pdf_url: string | null
-          start_date: string
-          status: string | null
-          term_name: string
-          term_number: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          created_by?: string | null
-          description?: string | null
-          end_date: string
-          id?: string
-          location: string
-          metadata?: Json | null
-          pdf_url?: string | null
-          start_date: string
-          status?: string | null
-          term_name: string
-          term_number: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          created_by?: string | null
-          description?: string | null
-          end_date?: string
-          id?: string
-          location?: string
-          metadata?: Json | null
-          pdf_url?: string | null
-          start_date?: string
-          status?: string | null
-          term_name?: string
-          term_number?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       department_access: {
         Row: {
           access_level: Database["public"]["Enums"]["access_level_enum"]
@@ -5124,12 +5052,10 @@ export type Database = {
           original_room_id: string | null
           reason: string
           relocation_type: Database["public"]["Enums"]["relocation_type_enum"]
-          respect_term_assignments: boolean | null
           special_instructions: string | null
           start_date: string
           status: Database["public"]["Enums"]["relocation_status_enum"] | null
           temporary_room_id: string | null
-          term_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -5142,12 +5068,10 @@ export type Database = {
           original_room_id?: string | null
           reason: string
           relocation_type: Database["public"]["Enums"]["relocation_type_enum"]
-          respect_term_assignments?: boolean | null
           special_instructions?: string | null
           start_date: string
           status?: Database["public"]["Enums"]["relocation_status_enum"] | null
           temporary_room_id?: string | null
-          term_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -5160,12 +5084,10 @@ export type Database = {
           original_room_id?: string | null
           reason?: string
           relocation_type?: Database["public"]["Enums"]["relocation_type_enum"]
-          respect_term_assignments?: boolean | null
           special_instructions?: string | null
           start_date?: string
           status?: Database["public"]["Enums"]["relocation_status_enum"] | null
           temporary_room_id?: string | null
-          term_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -5237,13 +5159,6 @@ export type Database = {
             columns: ["temporary_room_id"]
             isOneToOne: false
             referencedRelation: "rooms"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "room_relocations_term_id_fkey"
-            columns: ["term_id"]
-            isOneToOne: false
-            referencedRelation: "court_terms"
             referencedColumns: ["id"]
           },
         ]
@@ -5976,148 +5891,6 @@ export type Database = {
           value?: Json
         }
         Relationships: []
-      }
-      term_assignments: {
-        Row: {
-          clerk_names: string[] | null
-          created_at: string | null
-          fax: string | null
-          id: string
-          justice_name: string
-          part_id: string | null
-          phone: string | null
-          room_id: string | null
-          sergeant_name: string | null
-          tel_extension: string | null
-          term_id: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          clerk_names?: string[] | null
-          created_at?: string | null
-          fax?: string | null
-          id?: string
-          justice_name: string
-          part_id?: string | null
-          phone?: string | null
-          room_id?: string | null
-          sergeant_name?: string | null
-          tel_extension?: string | null
-          term_id?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          clerk_names?: string[] | null
-          created_at?: string | null
-          fax?: string | null
-          id?: string
-          justice_name?: string
-          part_id?: string | null
-          phone?: string | null
-          room_id?: string | null
-          sergeant_name?: string | null
-          tel_extension?: string | null
-          term_id?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "term_assignments_part_id_fkey"
-            columns: ["part_id"]
-            isOneToOne: false
-            referencedRelation: "court_parts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "term_assignments_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "room_health_overview"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "term_assignments_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "room_issue_analytics"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "term_assignments_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "room_occupancy_stats"
-            referencedColumns: ["room_id"]
-          },
-          {
-            foreignKeyName: "term_assignments_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "room_selection_details"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "term_assignments_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "rooms"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "term_assignments_term_id_fkey"
-            columns: ["term_id"]
-            isOneToOne: false
-            referencedRelation: "court_terms"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      term_personnel: {
-        Row: {
-          created_at: string | null
-          extension: string | null
-          floor: string | null
-          id: string
-          name: string
-          phone: string | null
-          role: string
-          room: string | null
-          term_id: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          extension?: string | null
-          floor?: string | null
-          id?: string
-          name: string
-          phone?: string | null
-          role: string
-          room?: string | null
-          term_id?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          extension?: string | null
-          floor?: string | null
-          id?: string
-          name?: string
-          phone?: string | null
-          role?: string
-          room?: string | null
-          term_id?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "term_personnel_term_id_fkey"
-            columns: ["term_id"]
-            isOneToOne: false
-            referencedRelation: "court_terms"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       user_roles: {
         Row: {
@@ -7535,7 +7308,6 @@ export type Database = {
         | "SIGNAGE"
         | "WINDOW"
       status_enum: "active" | "inactive" | "under_maintenance"
-      term_status_enum: "active" | "upcoming" | "expired"
       user_role: "admin" | "standard"
       verification_status_enum: "pending" | "verified" | "rejected"
       zone_type_enum: "general" | "emergency" | "restricted"
@@ -7827,7 +7599,6 @@ export const Constants = {
         "WINDOW",
       ],
       status_enum: ["active", "inactive", "under_maintenance"],
-      term_status_enum: ["active", "upcoming", "expired"],
       user_role: ["admin", "standard"],
       verification_status_enum: ["pending", "verified", "rejected"],
       zone_type_enum: ["general", "emergency", "restricted"],

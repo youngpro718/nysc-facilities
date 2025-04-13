@@ -19,9 +19,7 @@ export async function createRelocation(formData: CreateRelocationFormData) {
       notes: formData.notes,
       relocation_type: formData.relocation_type,
       status: 'scheduled' as RelocationStatus,
-      created_by: userData.user.id,
-      term_id: formData.term_id,
-      respect_term_assignments: formData.respect_term_assignments
+      created_by: userData.user.id
     })
     .select()
     .single();

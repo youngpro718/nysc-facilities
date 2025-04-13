@@ -10,7 +10,6 @@ import { CreateRelocationFormData } from "../types/relocationTypes";
 import { RoomSelectionSection } from "./sections/RoomSelectionSection";
 import { DateSelectionSection } from "./sections/DateSelectionSection";
 import { RelocationDetailsSection } from "./sections/RelocationDetailsSection";
-import { useState } from "react";
 
 const createRelocationSchema = z.object({
   original_room_id: z.string().min(1, "Original room is required"),
@@ -21,14 +20,11 @@ const createRelocationSchema = z.object({
   notes: z.string().optional(),
   relocation_type: z.enum(['emergency', 'maintenance', 'other', 'construction'])
     .default('maintenance'),
-  term_id: z.string().optional(),
-  respect_term_assignments: z.boolean().optional()
 });
 
 export function CreateRelocationForm() {
   const navigate = useNavigate();
   const { createRelocation, isCreating } = useRelocations();
-  const [selectedTermId, setSelectedTermId] = useState<string | null>(null);
 
   const form = useForm<CreateRelocationFormData>({
     resolver: zodResolver(createRelocationSchema),
@@ -40,17 +36,11 @@ export function CreateRelocationForm() {
       reason: "",
       notes: "",
       relocation_type: "maintenance",
-      respect_term_assignments: true
     },
   });
 
   const onSubmit = async (data: CreateRelocationFormData) => {
     try {
-      // Inject the selected term ID into the form data before submitting
-      if (selectedTermId) {
-        data.term_id = selectedTermId;
-      }
-      
       await createRelocation(data);
       navigate("/relocations");
     } catch (error) {
@@ -63,10 +53,7 @@ export function CreateRelocationForm() {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <RoomSelectionSection form={form} />
         <DateSelectionSection form={form} />
-        <RelocationDetailsSection 
-          selectedTermId={selectedTermId} 
-          setSelectedTermId={setSelectedTermId}
-        />
+        <RelocationDetailsSection form={form} />
         
         <FormButtons
           onCancel={() => navigate("/relocations")}
@@ -78,3 +65,4 @@ export function CreateRelocationForm() {
     </Form>
   );
 }
+
