@@ -430,6 +430,75 @@ export type Database = {
         }
         Relationships: []
       }
+      court_rooms: {
+        Row: {
+          courtroom_number: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          notes: string | null
+          room_id: string
+          room_number: string
+          updated_at: string | null
+        }
+        Insert: {
+          courtroom_number?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          room_id: string
+          room_number: string
+          updated_at?: string | null
+        }
+        Update: {
+          courtroom_number?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          room_id?: string
+          room_number?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "court_rooms_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_health_overview"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "court_rooms_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_issue_analytics"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "court_rooms_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_occupancy_stats"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "court_rooms_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_selection_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "court_rooms_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       court_terms: {
         Row: {
           created_at: string | null
@@ -439,7 +508,9 @@ export type Database = {
           id: string
           location: string
           metadata: Json | null
+          pdf_url: string | null
           start_date: string
+          status: string | null
           term_name: string
           term_number: string
           updated_at: string | null
@@ -452,7 +523,9 @@ export type Database = {
           id?: string
           location: string
           metadata?: Json | null
+          pdf_url?: string | null
           start_date: string
+          status?: string | null
           term_name: string
           term_number: string
           updated_at?: string | null
@@ -465,7 +538,9 @@ export type Database = {
           id?: string
           location?: string
           metadata?: Json | null
+          pdf_url?: string | null
           start_date?: string
+          status?: string | null
           term_name?: string
           term_number?: string
           updated_at?: string | null

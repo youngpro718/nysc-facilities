@@ -17,12 +17,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon, Upload } from "lucide-react";
+import { CalendarIcon, Upload, FilePdf, FileText, Check, Loader2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 
 const formSchema = z.object({
   termName: z.string().min(1, "Term name is required"),
@@ -43,6 +44,9 @@ const formSchema = z.object({
 export function TermUploader() {
   const navigate = useNavigate();
   const [isUploading, setIsUploading] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -54,15 +58,63 @@ export function TermUploader() {
     },
   });
 
+  const watchPdfFile = form.watch("pdfFile");
+
+  React.useEffect(() => {
+    // Create object URL for PDF preview when file is selected
+    if (watchPdfFile && watchPdfFile instanceof File) {
+      const fileUrl = URL.createObjectURL(watchPdfFile);
+      setPdfPreviewUrl(fileUrl);
+      
+      // Clean up object URL on unmount
+      return () => {
+        URL.revokeObjectURL(fileUrl);
+      };
+    }
+  }, [watchPdfFile]);
+
+  const processPdfContent = async (termId: string, pdfUrl: string) => {
+    try {
+      // Call the edge function to process the PDF
+      const { data, error } = await supabase.functions.invoke('parse-term-sheet', {
+        body: { term_id: termId, pdf_url: pdfUrl },
+      });
+
+      if (error) {
+        throw new Error(`Error processing PDF: ${error.message}`);
+      }
+
+      console.log("PDF processing result:", data);
+      return data;
+    } catch (error) {
+      console.error("Error calling parse-term-sheet function:", error);
+      throw error;
+    }
+  };
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       setIsUploading(true);
+      setCurrentStep(1);
       
-      // 1. Upload the PDF to storage
+      // 1. Upload the PDF to storage with progress tracking
       const fileName = `${values.termName.replace(/\s+/g, '-').toLowerCase()}-${values.termNumber}-${Date.now()}.pdf`;
+      
+      // Set up progress tracking
+      const progressHandler = (progress: number) => {
+        setUploadProgress(progress);
+      };
+      
+      // Upload with progress
+      // NOTE: actual progress tracking isn't directly supported by Supabase JS client
+      // This is a placeholder for conceptual demonstration
+      setUploadProgress(10);
+      
       const { data: fileData, error: fileError } = await supabase.storage
         .from('term-sheets')
         .upload(fileName, values.pdfFile);
+      
+      setUploadProgress(50);
       
       if (fileError) {
         throw new Error(`Error uploading file: ${fileError.message}`);
@@ -72,6 +124,9 @@ export function TermUploader() {
       const { data: { publicUrl } } = supabase.storage
         .from('term-sheets')
         .getPublicUrl(fileName);
+      
+      setUploadProgress(70);
+      setCurrentStep(2);
       
       // 2. Create the term record
       const { data: termData, error: termError } = await supabase
@@ -92,18 +147,29 @@ export function TermUploader() {
         throw new Error(`Error creating term: ${termError.message}`);
       }
       
-      // 3. Call the edge function to parse the PDF (not implemented yet)
-      // This would be added in a future implementation
+      setUploadProgress(85);
+      setCurrentStep(3);
+      
+      // 3. Call the edge function to parse the PDF
+      try {
+        await processPdfContent(termData.id, publicUrl);
+        setUploadProgress(100);
+      } catch (parseError) {
+        console.error("PDF parsing failed but term was created:", parseError);
+        toast.warning("Term sheet uploaded, but PDF parsing failed. You may need to enter assignments manually.");
+      }
       
       toast.success("Term sheet uploaded successfully");
       form.reset();
-      navigate("/terms");
+      navigate("/terms?tab=terms");
       
     } catch (error) {
       console.error("Error uploading term sheet:", error);
       toast.error(error instanceof Error ? error.message : "Failed to upload term sheet");
     } finally {
       setIsUploading(false);
+      setCurrentStep(0);
+      setUploadProgress(0);
     }
   };
 
@@ -292,14 +358,66 @@ export function TermUploader() {
               )}
             />
             
+            {pdfPreviewUrl && (
+              <div className="mt-4 border rounded-md p-4">
+                <h3 className="text-sm font-medium mb-2 flex items-center">
+                  <FilePdf className="h-4 w-4 mr-2" />
+                  PDF Preview
+                </h3>
+                <iframe
+                  src={pdfPreviewUrl}
+                  className="w-full h-[200px] border"
+                  title="PDF Preview"
+                />
+              </div>
+            )}
+            
+            {isUploading && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center">
+                    {currentStep === 1 && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    {currentStep > 1 && <Check className="h-4 w-4 mr-2 text-green-500" />}
+                    <span>Uploading PDF</span>
+                  </div>
+                  <span>{currentStep >= 1 ? (currentStep === 1 ? `${uploadProgress}%` : '100%') : '0%'}</span>
+                </div>
+                
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center">
+                    {currentStep === 2 && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    {currentStep > 2 && <Check className="h-4 w-4 mr-2 text-green-500" />}
+                    <span>Creating Term Record</span>
+                  </div>
+                  <span>{currentStep >= 2 ? (currentStep === 2 ? 'Processing...' : 'Done') : 'Waiting...'}</span>
+                </div>
+                
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center">
+                    {currentStep === 3 && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    {currentStep > 3 && <Check className="h-4 w-4 mr-2 text-green-500" />}
+                    <span>Parsing PDF Content</span>
+                  </div>
+                  <span>{currentStep >= 3 ? (currentStep === 3 ? 'Extracting data...' : 'Done') : 'Waiting...'}</span>
+                </div>
+                
+                <Progress value={uploadProgress} className="h-2" />
+              </div>
+            )}
+            
             <Button type="submit" disabled={isUploading} className="w-full">
               {isUploading ? (
                 <>
-                  <Upload className="mr-2 h-4 w-4 animate-spin" />
-                  Uploading...
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {currentStep === 1 ? "Uploading..." : 
+                   currentStep === 2 ? "Creating Term..." : 
+                   currentStep === 3 ? "Parsing PDF..." : "Processing..."}
                 </>
               ) : (
-                "Upload Term Sheet"
+                <>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload Term Sheet
+                </>
               )}
             </Button>
           </form>

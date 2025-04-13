@@ -92,4 +92,3 @@ export const userNavigationItems: NavigationItem[] = [
     adminOnly: true,
   },
 ];
-
