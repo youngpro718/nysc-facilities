@@ -49,9 +49,10 @@ export function TermList() {
             end_date: term.end_date,
             status: term.status || 'unknown',
             description: term.description,
-            pdf_url: term.pdf_url,
+            pdf_url: term.pdf_url || '',
             created_at: term.created_at,
             created_by: term.created_by,
+            updated_at: term.updated_at,
             metadata: term.metadata
           }));
           

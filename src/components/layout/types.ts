@@ -32,5 +32,5 @@ export interface NavigationSeparator {
 export type NavigationTab = {
   label: string;
   value: string;
-  icon?: JSX.Element;
+  icon: LucideIcon;
 };

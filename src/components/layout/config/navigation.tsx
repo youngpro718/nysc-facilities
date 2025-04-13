@@ -24,7 +24,7 @@ export type NavigationItem = {
 export type NavigationTab = {
   label: string;
   value: string;
-  icon?: JSX.Element;
+  icon: typeof Command;
 };
 
 export const navigationItems: NavigationItem[] = [
@@ -99,13 +99,13 @@ export const userNavigationItems: NavigationItem[] = [
   },
 ];
 
-// New exports to support Layout.tsx
+// Export navigation for the Layout component
 export const adminNavigation: NavigationTab[] = navigationItems
   .filter(item => item.adminOnly !== false)
   .map(item => ({
     label: item.title,
     value: item.href,
-    icon: item.icon,
+    icon: item.icon ? (() => item.icon as JSX.Element) : Command,
   }));
 
 export const userNavigation: NavigationTab[] = navigationItems
@@ -113,7 +113,7 @@ export const userNavigation: NavigationTab[] = navigationItems
   .map(item => ({
     label: item.title,
     value: item.href,
-    icon: item.icon,
+    icon: item.icon ? (() => item.icon as JSX.Element) : Command,
   }));
 
 export const getNavigationRoutes = (isAdmin: boolean): string[] => {
