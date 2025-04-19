@@ -17,7 +17,7 @@ export const DesktopNavigation = ({
   return (
     <nav className="hidden md:flex items-center gap-4">
       <ExpandableTabs 
-        tabs={navigation} 
+        tabs={navigation as any} 
         className="border-white/20 bg-transparent"
         onChange={onNavigationChange}
       />

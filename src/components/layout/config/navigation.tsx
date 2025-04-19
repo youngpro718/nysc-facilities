@@ -10,17 +10,7 @@ import {
   Repeat,
   Calendar,
 } from 'lucide-react';
-import { NavigationTab } from '../types';
-
-// Update the NavigationItem type to include the href property
-export interface NavigationItem {
-  title: string;
-  href: string;
-  icon: React.ComponentType; // Icon component
-  adminOnly: boolean;
-}
-
-export type { NavigationItem };
+import { NavigationTab, NavigationItem } from '../types';
 
 // Define the navigation items for admin and user interfaces
 export const navigationItems: NavigationItem[] = [
@@ -105,13 +95,13 @@ export const adminNavigation: NavigationTab[] = [
   { title: 'Lighting', icon: Lightbulb },
   { title: 'Relocations', icon: Repeat },
   { title: 'Court Terms', icon: Calendar },
-  { type: 'separator' },
+  { type: "separator" },
   { title: 'Profile', icon: User },
 ];
 
 export const userNavigation: NavigationTab[] = [
   { title: 'Dashboard', icon: Command },
-  { type: 'separator' },
+  { type: "separator" },
   { title: 'Profile', icon: User },
 ];
 

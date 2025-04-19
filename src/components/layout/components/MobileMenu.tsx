@@ -45,7 +45,7 @@ export const MobileMenu = ({
         </SheetHeader>
         <nav className="flex flex-col gap-4 pt-6">
           <ExpandableTabs 
-            tabs={navigation}
+            tabs={navigation as any}
             className="flex-col !bg-transparent"
             onChange={onNavigationChange}
           />
