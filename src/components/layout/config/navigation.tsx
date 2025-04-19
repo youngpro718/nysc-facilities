@@ -1,3 +1,4 @@
+
 import {
   Building,
   Command,
@@ -9,7 +10,15 @@ import {
   Repeat,
   Calendar,
 } from 'lucide-react';
-import { NavigationItem, NavigationTab } from '../types';
+import { NavigationTab } from '../types';
+
+// Update the NavigationItem type to include the href property
+export interface NavigationItem {
+  title: string;
+  href: string;
+  icon: React.ComponentType; // Icon component
+  adminOnly: boolean;
+}
 
 export type { NavigationItem };
 
