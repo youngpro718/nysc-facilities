@@ -89,6 +89,7 @@ export const userNavigationItems: NavigationItem[] = [
 ];
 
 // Create the admin and user navigation arrays for the sidebar
+// Using direct icon component references, not JSX elements
 export const adminNavigation: NavigationTab[] = [
   { title: 'Dashboard', icon: Command },
   { title: 'Spaces', icon: Map },
