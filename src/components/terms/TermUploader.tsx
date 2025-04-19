@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,8 +22,6 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import * as pdfjs from 'pdfjs-dist';
 
-// Set up the PDF.js worker source
-// We need to use the correct import path that matches the installed package
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 const formSchema = z.object({
@@ -114,11 +111,10 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
       const assignments: any[] = [];
       
       const partPattern = /^(TAP|TAPG|GWPT|\d+[A-Z]?|\*)/;
-      const phonePattern = /\(\d{3}\)\s*\d{3}-\d{4}/;
       
       let currentAssignment: any = {};
       
-      lines.forEach(line => {
+      lines.forEach((line, index) => {
         line = line.trim();
         
         if (partPattern.test(line)) {
@@ -127,17 +123,23 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
             currentAssignment = {};
           }
           
-          const tokens = line.split(/\s{2,}/);
+          const parts = line.split(/\s{2,}/);
           
           currentAssignment = {
-            partCode: tokens[0],
-            justiceName: tokens[1],
-            room: tokens[2],
-            fax: tokens[3],
-            tel: tokens[4],
-            sgt: tokens[5],
-            clerks: tokens[6]
+            partCode: parts[0]?.trim(),
+            justiceName: parts[1]?.trim(),
+            room: parts[2]?.trim(),
+            fax: parts[3]?.trim(),
+            tel: parts[4]?.trim(),
+            sgt: parts[5]?.trim(),
+            clerks: parts[6]?.trim()
           };
+
+          Object.keys(currentAssignment).forEach(key => {
+            if (currentAssignment[key] === undefined) {
+              currentAssignment[key] = '';
+            }
+          });
         }
       });
       
@@ -146,6 +148,7 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
       }
       
       console.log(`Parsed ${assignments.length} assignments:`, assignments);
+      
       return assignments.map(a => ({
         part: a.partCode,
         justice: a.justiceName,
@@ -153,7 +156,7 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
         tel: a.tel,
         fax: a.fax,
         sgt: a.sgt,
-        clerks: a.clerks
+        clerks: a.clerks ? a.clerks.split(/[,/]/).map((s: string) => s.trim()).filter(Boolean) : []
       }));
     } catch (error) {
       console.error("Error parsing assignments:", error);
@@ -185,7 +188,8 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
         roomNumber: a.room,
         phone: a.tel,
         sergeantName: a.sgt,
-        clerkNames: a.clerks ? a.clerks.split(/[,/]/).map((s: string) => s.trim()).filter(Boolean) : [],
+        clerkNames: Array.isArray(a.clerks) ? a.clerks : 
+          (a.clerks ? a.clerks.split(/[,/]/).map((s: string) => s.trim()).filter(Boolean) : []),
         extension: null
       }));
 
@@ -210,9 +214,7 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
       return data;
     } catch (error) {
       console.error("Error calling parse-term-sheet function:", error);
-      
       setProcessingError(error instanceof Error ? error.message : "Failed to process PDF content");
-      
       throw error;
     }
   };
