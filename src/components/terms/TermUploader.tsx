@@ -20,6 +20,12 @@ import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+// Import PDF.js for client-side PDF parsing - using a simpler approach
+import * as pdfjsLib from 'pdfjs-dist';
+// Import PDF.js worker as a Vite asset URL
+import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+// Assign the workerSrc for PDF.js
+pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 const formSchema = z.object({
   pdfFile: z.instanceof(File, { message: "Please upload a PDF file" })
@@ -40,6 +46,7 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
   const [extractedInfo, setExtractedInfo] = useState<any>(null);
+  const [assignments, setAssignments] = useState<any[]>([]);
   const [processingError, setProcessingError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
 
@@ -74,13 +81,132 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
     }
   }, [watchPdfFile]);
 
-  const processPdfContent = async (termId: string, pdfUrl: string) => {
+  // Function to extract text from a PDF file
+  const extractTextFromPdf = async (pdfFile: File): Promise<string> => {
+    console.log("Extracting text from PDF...");
+    try {
+      // Convert the file to an ArrayBuffer for PDF.js
+      const arrayBuffer = await pdfFile.arrayBuffer();
+      
+      // Load the PDF document
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      console.log(`PDF loaded with ${pdf.numPages} pages`);
+      
+      // Extract text from each page
+      let fullText = "";
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        
+        // Concatenate the text items
+        const pageText = textContent.items
+          .map((item: any) => item.str)
+          .join(' ');
+        
+        fullText += pageText + "\n";
+      }
+      
+      console.log(`Extracted PDF Text:\n${fullText}`); // DEBUG: Show all extracted text
+      return fullText;
+    } catch (error) {
+      console.error("PDF text extraction error:", error);
+      throw new Error(`Failed to extract text from PDF: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
+  
+  // Function to parse assignments from PDF text using regex patterns
+  // Parse assignments from space-padded columnar text
+  const parseAssignments = (pdfText: string): any[] => {
+    console.log("Parsing assignments from extracted text...");
+    try {
+      if (!pdfText) {
+        console.warn("No PDF text available for parsing");
+        return [];
+      }
+      // Split by 2+ spaces to get tokens
+      const tokens = pdfText.split(/\s{2,}/).map(t => t.trim()).filter(Boolean);
+      // Find the starting index for the first PART value (should be a number or TAP/TAPG/etc)
+      let startIdx = tokens.findIndex(tok => /^(TAP|TAPG|GWPT|\d+|\d+[A-Z]?|\*)$/i.test(tok));
+      if (startIdx === -1) {
+        console.warn('No recognizable PART column found in tokens.');
+        return [];
+      }
+      // Each assignment row has 7 columns
+      const assignments = [];
+      for (let i = startIdx; i + 6 < tokens.length; i += 7) {
+        const [part, justice, room, fax, tel, sgt, clerks] = tokens.slice(i, i + 7);
+        // Basic validation: part and justice must be present
+        if (!part || !justice) continue;
+        assignments.push({
+          part,
+          justice,
+          room,
+          fax,
+          tel,
+          sgt,
+          clerks
+        });
+      }
+      console.log(`Extracted ${assignments.length} assignments`, assignments);
+      if (assignments.length === 0) {
+        console.warn('No assignments detected in PDF table.');
+      }
+      return assignments;
+    } catch (error) {
+      console.error("Error parsing assignments:", error);
+      return [];
+    }
+  };
+
+
+  
+  // Function to handle PDF extraction and assignment parsing
+  const processTermData = async (pdfFile: File): Promise<any[]> => {
+    try {
+      // Extract text from the PDF
+      const pdfText = await extractTextFromPdf(pdfFile);
+      
+      // Parse assignments from the extracted text
+      const parsedAssignments = parseAssignments(pdfText);
+      console.log("Parsed assignments:", parsedAssignments);
+      setAssignments(parsedAssignments); // Save for UI display
+      return parsedAssignments;
+    } catch (error) {
+      console.error("Error processing term data:", error);
+      setAssignments([]);
+      return [];
+    }
+  };
+  
+
+
+  const processPdfContent = async (termId: string, pdfUrl: string, assignments: any[] = []) => {
     try {
       setProcessingError(null);
       
-      // Call the edge function to process the PDF
+      // Map assignments to backend structure
+      const mappedAssignments = assignments.map(a => ({
+        partCode: a.part,
+        justiceName: a.justice,
+        roomNumber: a.room,
+        phone: a.tel,
+        sergeantName: a.sgt,
+        clerkNames: a.clerks ? a.clerks.split(/[,/]/).map((s: string) => s.trim()).filter(Boolean) : [],
+        extension: null // Not present in parsed data
+      }));
+
+      // DEBUG: Log assignments being sent to backend
+      console.log('Submitting assignments to backend:', mappedAssignments);
+      
+      // Call the edge function to process the PDF, but include our extracted assignments
       const { data, error } = await supabase.functions.invoke('parse-term-sheet', {
-        body: { term_id: termId, pdf_url: pdfUrl },
+        body: { 
+          term_id: termId, 
+          pdf_url: pdfUrl,
+          client_extracted: {
+            assignments: mappedAssignments
+          } 
+        },
       });
 
       if (error) {
@@ -149,12 +275,18 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
         throw new Error(`Error creating term: ${termError.message}`);
       }
       
-      setUploadProgress(70);
-      setCurrentStep(3);
+      setUploadProgress(60);
       
-      // 3. Call the edge function to parse the PDF
+      // 3. Process term data without having to extract from PDF
       try {
-        const result = await processPdfContent(termData.id, publicUrl);
+        console.log("Processing term data...");
+        const sampleAssignments = await processTermData(values.pdfFile);
+        
+        setUploadProgress(70);
+        setCurrentStep(3);
+        
+        // 4. Call the edge function to process the PDF with our sample data
+        const result = await processPdfContent(termData.id, publicUrl, sampleAssignments);
         setUploadProgress(100);
         
         if (result.success) {
@@ -337,6 +469,47 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
             </Button>
           </form>
         </Form>
+
+        {/* Assignment Table Display */}
+        {assignments && assignments.length > 0 && (
+          <div className="mt-8">
+            <h3 className="text-base font-semibold mb-2">Extracted Assignments</h3>
+            {/* Warn if only a suspiciously small number of assignments are extracted */}
+            {assignments.length > 0 && assignments.length <= 5 && (
+              <div className="mb-2 text-yellow-700 bg-yellow-50 border border-yellow-200 rounded px-3 py-2 text-sm">
+                Warning: Only {assignments.length} assignments were extracted. This may indicate a parsing issue or incomplete data.
+              </div>
+            )}
+            <div className="overflow-x-auto">
+              <table className="min-w-full border text-sm bg-white">
+                <thead>
+                  <tr className="bg-gray-100 text-gray-900">
+                    <th className="border px-2 py-1 text-gray-900">PART</th>
+                    <th className="border px-2 py-1 text-gray-900">JUSTICE</th>
+                    <th className="border px-2 py-1 text-gray-900">ROOM</th>
+                    <th className="border px-2 py-1 text-gray-900">FAX</th>
+                    <th className="border px-2 py-1 text-gray-900">TEL</th>
+                    <th className="border px-2 py-1 text-gray-900">SGT</th>
+                    <th className="border px-2 py-1 text-gray-900">CLERKS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {assignments.map((a, idx) => (
+                    <tr key={idx} className="even:bg-gray-50 text-gray-900">
+                      <td className="border px-2 py-1 text-gray-900">{a.part}</td>
+                      <td className="border px-2 py-1 text-gray-900">{a.justice}</td>
+                      <td className="border px-2 py-1 text-gray-900">{a.room}</td>
+                      <td className="border px-2 py-1 text-gray-900">{a.fax}</td>
+                      <td className="border px-2 py-1 text-gray-900">{a.tel}</td>
+                      <td className="border px-2 py-1 text-gray-900">{a.sgt}</td>
+                      <td className="border px-2 py-1 text-gray-900">{a.clerks}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
