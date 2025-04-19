@@ -20,11 +20,8 @@ import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-// Import PDF.js for client-side PDF parsing - using a simpler approach
 import * as pdfjsLib from 'pdfjs-dist';
-// Import PDF.js worker as a Vite asset URL
 import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
-// Assign the workerSrc for PDF.js
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 const formSchema = z.object({
@@ -58,12 +55,10 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
   const watchPdfFile = form.watch("pdfFile");
 
   useEffect(() => {
-    // Create object URL for PDF preview when file is selected
     if (watchPdfFile && watchPdfFile instanceof File) {
       const fileUrl = URL.createObjectURL(watchPdfFile);
       setPdfPreviewUrl(fileUrl);
       
-      // Try to extract preliminary information from filename
       const filename = watchPdfFile.name;
       const termMatch = filename.match(/(spring|fall|summer|winter)\s+term\s+(\d{4})/i);
       
@@ -74,102 +69,102 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
         });
       }
       
-      // Clean up object URL on unmount
       return () => {
         URL.revokeObjectURL(fileUrl);
       };
     }
   }, [watchPdfFile]);
 
-  // Function to extract text from a PDF file
   const extractTextFromPdf = async (pdfFile: File): Promise<string> => {
     console.log("Extracting text from PDF...");
     try {
-      // Convert the file to an ArrayBuffer for PDF.js
       const arrayBuffer = await pdfFile.arrayBuffer();
-      
-      // Load the PDF document
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       console.log(`PDF loaded with ${pdf.numPages} pages`);
       
-      // Extract text from each page
       let fullText = "";
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
-        
-        // Concatenate the text items
         const pageText = textContent.items
           .map((item: any) => item.str)
           .join(' ');
-        
         fullText += pageText + "\n";
       }
       
-      console.log(`Extracted PDF Text:\n${fullText}`); // DEBUG: Show all extracted text
+      console.log(`Extracted text length: ${fullText.length} characters`);
       return fullText;
     } catch (error) {
       console.error("PDF text extraction error:", error);
-      throw new Error(`Failed to extract text from PDF: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
     }
   };
-  
-  // Function to parse assignments from PDF text using regex patterns
-  // Parse assignments from space-padded columnar text
+
   const parseAssignments = (pdfText: string): any[] => {
-    console.log("Parsing assignments from extracted text...");
+    console.log("Parsing assignments from text...");
     try {
       if (!pdfText) {
-        console.warn("No PDF text available for parsing");
-        return [];
+        throw new Error("No PDF text available for parsing");
       }
-      // Split by 2+ spaces to get tokens
-      const tokens = pdfText.split(/\s{2,}/).map(t => t.trim()).filter(Boolean);
-      // Find the starting index for the first PART value (should be a number or TAP/TAPG/etc)
-      let startIdx = tokens.findIndex(tok => /^(TAP|TAPG|GWPT|\d+|\d+[A-Z]?|\*)$/i.test(tok));
-      if (startIdx === -1) {
-        console.warn('No recognizable PART column found in tokens.');
-        return [];
+
+      const lines = pdfText.split('\n');
+      const assignments: any[] = [];
+      
+      const partPattern = /^(TAP|TAPG|GWPT|\d+[A-Z]?|\*)/;
+      const phonePattern = /\(\d{3}\)\s*\d{3}-\d{4}/;
+      
+      let currentAssignment: any = {};
+      
+      lines.forEach(line => {
+        line = line.trim();
+        
+        if (partPattern.test(line)) {
+          if (Object.keys(currentAssignment).length > 0) {
+            assignments.push({...currentAssignment});
+            currentAssignment = {};
+          }
+          
+          const tokens = line.split(/\s{2,}/);
+          
+          currentAssignment = {
+            partCode: tokens[0],
+            justiceName: tokens[1],
+            room: tokens[2],
+            fax: tokens[3],
+            tel: tokens[4],
+            sgt: tokens[5],
+            clerks: tokens[6]
+          };
+        }
+      });
+      
+      if (Object.keys(currentAssignment).length > 0) {
+        assignments.push(currentAssignment);
       }
-      // Each assignment row has 7 columns
-      const assignments = [];
-      for (let i = startIdx; i + 6 < tokens.length; i += 7) {
-        const [part, justice, room, fax, tel, sgt, clerks] = tokens.slice(i, i + 7);
-        // Basic validation: part and justice must be present
-        if (!part || !justice) continue;
-        assignments.push({
-          part,
-          justice,
-          room,
-          fax,
-          tel,
-          sgt,
-          clerks
-        });
-      }
-      console.log(`Extracted ${assignments.length} assignments`, assignments);
-      if (assignments.length === 0) {
-        console.warn('No assignments detected in PDF table.');
-      }
-      return assignments;
+      
+      console.log(`Parsed ${assignments.length} assignments:`, assignments);
+      return assignments.map(a => ({
+        partCode: a.partCode,
+        justiceName: a.justiceName,
+        roomNumber: a.room,
+        phone: a.tel,
+        fax: a.fax,
+        sergeantName: a.sgt,
+        clerkNames: a.clerks ? a.clerks.split(/[,/]/).map((s: string) => s.trim()).filter(Boolean) : [],
+        extension: null
+      }));
     } catch (error) {
       console.error("Error parsing assignments:", error);
       return [];
     }
   };
 
-
-  
-  // Function to handle PDF extraction and assignment parsing
   const processTermData = async (pdfFile: File): Promise<any[]> => {
     try {
-      // Extract text from the PDF
       const pdfText = await extractTextFromPdf(pdfFile);
-      
-      // Parse assignments from the extracted text
       const parsedAssignments = parseAssignments(pdfText);
       console.log("Parsed assignments:", parsedAssignments);
-      setAssignments(parsedAssignments); // Save for UI display
+      setAssignments(parsedAssignments);
       return parsedAssignments;
     } catch (error) {
       console.error("Error processing term data:", error);
@@ -177,14 +172,11 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
       return [];
     }
   };
-  
-
 
   const processPdfContent = async (termId: string, pdfUrl: string, assignments: any[] = []) => {
     try {
       setProcessingError(null);
       
-      // Map assignments to backend structure
       const mappedAssignments = assignments.map(a => ({
         partCode: a.part,
         justiceName: a.justice,
@@ -192,13 +184,11 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
         phone: a.tel,
         sergeantName: a.sgt,
         clerkNames: a.clerks ? a.clerks.split(/[,/]/).map((s: string) => s.trim()).filter(Boolean) : [],
-        extension: null // Not present in parsed data
+        extension: null
       }));
 
-      // DEBUG: Log assignments being sent to backend
       console.log('Submitting assignments to backend:', mappedAssignments);
       
-      // Call the edge function to process the PDF, but include our extracted assignments
       const { data, error } = await supabase.functions.invoke('parse-term-sheet', {
         body: { 
           term_id: termId, 
@@ -219,10 +209,8 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
     } catch (error) {
       console.error("Error calling parse-term-sheet function:", error);
       
-      // Set error message
       setProcessingError(error instanceof Error ? error.message : "Failed to process PDF content");
       
-      // Re-throw to handle in the calling function
       throw error;
     }
   };
@@ -233,11 +221,9 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
       setCurrentStep(1);
       setProcessingError(null);
       
-      // Generate a filename based on timestamp to ensure uniqueness
       const fileName = `term-sheet-${Date.now()}.pdf`;
       setUploadProgress(10);
       
-      // 1. Upload the PDF to storage
       const { data: fileData, error: fileError } = await supabase.storage
         .from('term-sheets')
         .upload(fileName, values.pdfFile);
@@ -248,7 +234,6 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
       
       setUploadProgress(40);
       
-      // Get the public URL
       const { data: { publicUrl } } = supabase.storage
         .from('term-sheets')
         .getPublicUrl(fileName);
@@ -256,7 +241,6 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
       setUploadProgress(50);
       setCurrentStep(2);
       
-      // 2. Create the term record with placeholder data that will be updated after parsing
       const { data: termData, error: termError } = await supabase
         .from('court_terms')
         .insert({
@@ -277,7 +261,6 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
       
       setUploadProgress(60);
       
-      // 3. Process term data without having to extract from PDF
       try {
         console.log("Processing term data...");
         const sampleAssignments = await processTermData(values.pdfFile);
@@ -285,14 +268,12 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
         setUploadProgress(70);
         setCurrentStep(3);
         
-        // 4. Call the edge function to process the PDF with our sample data
         const result = await processPdfContent(termData.id, publicUrl, sampleAssignments);
         setUploadProgress(100);
         
         if (result.success) {
           toast.success(`Term sheet processed successfully. Extracted ${result.extracted.assignments} assignments and ${result.extracted.personnel} personnel records.`);
           
-          // Call the success callback if provided
           if (onUploadSuccess) {
             onUploadSuccess();
           }
@@ -303,7 +284,6 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
         console.error("PDF parsing encountered issues:", parseError);
         toast.warning("Term sheet uploaded, but PDF parsing had issues. You may need to enter some data manually.");
         
-        // Still navigate to terms tab since we successfully created the term
         setTimeout(() => {
           navigate("/terms?tab=terms");
         }, 2000);
@@ -470,11 +450,9 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
           </form>
         </Form>
 
-        {/* Assignment Table Display */}
         {assignments && assignments.length > 0 && (
           <div className="mt-8">
             <h3 className="text-base font-semibold mb-2">Extracted Assignments</h3>
-            {/* Warn if only a suspiciously small number of assignments are extracted */}
             {assignments.length > 0 && assignments.length <= 5 && (
               <div className="mb-2 text-yellow-700 bg-yellow-50 border border-yellow-200 rounded px-3 py-2 text-sm">
                 Warning: Only {assignments.length} assignments were extracted. This may indicate a parsing issue or incomplete data.
