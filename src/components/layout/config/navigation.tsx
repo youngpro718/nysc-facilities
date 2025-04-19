@@ -1,4 +1,3 @@
-
 import {
   Building,
   Command,
@@ -9,7 +8,6 @@ import {
   KeyRound,
   Repeat,
   Calendar,
-  LucideIcon
 } from 'lucide-react';
 import { NavigationItem, NavigationTab } from '../types';
 
@@ -20,55 +18,55 @@ export const navigationItems: NavigationItem[] = [
   {
     title: 'Dashboard',
     href: '/',
-    icon: <Command size={18} />,
+    icon: Command,
     adminOnly: true,
   },
   {
     title: 'User Dashboard',
     href: '/dashboard',
-    icon: <Command size={18} />,
+    icon: Command,
     adminOnly: false,
   },
   {
     title: 'Spaces',
     href: '/spaces',
-    icon: <Map size={18} />,
+    icon: Map,
     adminOnly: true,
   },
   {
     title: 'Issues',
     href: '/issues',
-    icon: <Mail size={18} />,
+    icon: Mail,
     adminOnly: true,
   },
   {
     title: 'Occupants',
     href: '/occupants',
-    icon: <User size={18} />,
+    icon: User,
     adminOnly: true,
   },
   {
     title: 'Keys',
     href: '/keys',
-    icon: <KeyRound size={18} />,
+    icon: KeyRound,
     adminOnly: true,
   },
   {
     title: 'Lighting',
     href: '/lighting',
-    icon: <Lightbulb size={18} />,
+    icon: Lightbulb,
     adminOnly: true,
   },
   {
     title: 'Relocations',
     href: '/relocations',
-    icon: <Repeat size={18} />,
+    icon: Repeat,
     adminOnly: true,
   },
   {
     title: 'Court Terms',
     href: '/terms',
-    icon: <Calendar size={18} />,
+    icon: Calendar,
     adminOnly: true,
   },
 ];
@@ -77,19 +75,18 @@ export const userNavigationItems: NavigationItem[] = [
   {
     title: 'Profile',
     href: '/profile',
-    icon: <User size={18} />,
+    icon: User,
     adminOnly: false,
   },
   {
     title: 'Admin Profile',
     href: '/admin-profile',
-    icon: <Building size={18} />,
+    icon: Building,
     adminOnly: true,
   },
 ];
 
 // Create the admin and user navigation arrays for the sidebar
-// Using direct icon component references, not JSX elements
 export const adminNavigation: NavigationTab[] = [
   { title: 'Dashboard', icon: Command },
   { title: 'Spaces', icon: Map },
