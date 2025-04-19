@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,9 +21,11 @@ import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import * as pdfjsLib from 'pdfjs-dist';
-import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
-pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
+import * as pdfjs from 'pdfjs-dist';
+
+// Set up the PDF.js worker source
+const pdfjsWorker = await import('pdfjs-dist/build/pdf.worker.mjs');
+pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker.default;
 
 const formSchema = z.object({
   pdfFile: z.instanceof(File, { message: "Please upload a PDF file" })
@@ -79,7 +82,7 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
     console.log("Extracting text from PDF...");
     try {
       const arrayBuffer = await pdfFile.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
       console.log(`PDF loaded with ${pdf.numPages} pages`);
       
       let fullText = "";
@@ -144,14 +147,13 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
       
       console.log(`Parsed ${assignments.length} assignments:`, assignments);
       return assignments.map(a => ({
-        partCode: a.partCode,
-        justiceName: a.justiceName,
-        roomNumber: a.room,
-        phone: a.tel,
+        part: a.partCode,
+        justice: a.justiceName,
+        room: a.room,
+        tel: a.tel,
         fax: a.fax,
-        sergeantName: a.sgt,
-        clerkNames: a.clerks ? a.clerks.split(/[,/]/).map((s: string) => s.trim()).filter(Boolean) : [],
-        extension: null
+        sgt: a.sgt,
+        clerks: a.clerks
       }));
     } catch (error) {
       console.error("Error parsing assignments:", error);
