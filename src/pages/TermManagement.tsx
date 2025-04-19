@@ -6,18 +6,44 @@ import { TermList } from "@/components/terms/TermList";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Info } from "lucide-react";
 
 export function TermManagement() {
   const [searchParams, setSearchParams] = useSearchParams();
   const defaultTab = searchParams.get("tab") || "upload";
+  const [uploadSuccess, setUploadSuccess] = useState(false);
   
   const handleTabChange = (value: string) => {
     setSearchParams({ tab: value });
+    // Reset success message when changing tabs
+    if (value !== "upload") {
+      setUploadSuccess(false);
+    }
+  };
+
+  const handleUploadSuccess = () => {
+    setUploadSuccess(true);
+    // Automatically switch to terms tab after successful upload
+    setTimeout(() => {
+      setSearchParams({ tab: "terms" });
+      setUploadSuccess(false);
+    }, 2000);
   };
 
   return (
     <div className="container mx-auto py-6">
       <h1 className="text-2xl font-bold mb-6">Court Term Management</h1>
+      
+      {uploadSuccess && (
+        <Alert className="mb-4 bg-green-50 border-green-200">
+          <Info className="h-4 w-4 text-green-600" />
+          <AlertTitle className="text-green-800">Success!</AlertTitle>
+          <AlertDescription className="text-green-700">
+            Term sheet uploaded and processed successfully. Redirecting to term list...
+          </AlertDescription>
+        </Alert>
+      )}
       
       <Tabs 
         defaultValue={defaultTab} 
@@ -33,7 +59,7 @@ export function TermManagement() {
         
         <TabsContent value="upload" className="space-y-4">
           <ErrorBoundary>
-            <TermUploader />
+            <TermUploader onUploadSuccess={handleUploadSuccess} />
           </ErrorBoundary>
         </TabsContent>
         

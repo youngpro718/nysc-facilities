@@ -16,10 +16,11 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Upload, FileText, Check, Loader2 } from "lucide-react";
+import { Upload, FileText, Check, Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const formSchema = z.object({
   pdfFile: z.instanceof(File, { message: "Please upload a PDF file" })
@@ -29,13 +30,19 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export function TermUploader() {
+interface TermUploaderProps {
+  onUploadSuccess?: () => void;
+}
+
+export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
   const navigate = useNavigate();
   const [isUploading, setIsUploading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
   const [extractedInfo, setExtractedInfo] = useState<any>(null);
+  const [processingError, setProcessingError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -70,12 +77,15 @@ export function TermUploader() {
 
   const processPdfContent = async (termId: string, pdfUrl: string) => {
     try {
+      setProcessingError(null);
+      
       // Call the edge function to process the PDF
       const { data, error } = await supabase.functions.invoke('parse-term-sheet', {
         body: { term_id: termId, pdf_url: pdfUrl },
       });
 
       if (error) {
+        console.error("Error calling parse-term-sheet function:", error);
         throw new Error(`Error processing PDF: ${error.message}`);
       }
 
@@ -83,6 +93,11 @@ export function TermUploader() {
       return data;
     } catch (error) {
       console.error("Error calling parse-term-sheet function:", error);
+      
+      // Set error message
+      setProcessingError(error instanceof Error ? error.message : "Failed to process PDF content");
+      
+      // Re-throw to handle in the calling function
       throw error;
     }
   };
@@ -91,6 +106,7 @@ export function TermUploader() {
     try {
       setIsUploading(true);
       setCurrentStep(1);
+      setProcessingError(null);
       
       // Generate a filename based on timestamp to ensure uniqueness
       const fileName = `term-sheet-${Date.now()}.pdf`;
@@ -144,16 +160,25 @@ export function TermUploader() {
         
         if (result.success) {
           toast.success(`Term sheet processed successfully. Extracted ${result.extracted.assignments} assignments and ${result.extracted.personnel} personnel records.`);
+          
+          // Call the success callback if provided
+          if (onUploadSuccess) {
+            onUploadSuccess();
+          }
         } else {
           toast.warning("Term sheet uploaded, but data extraction was incomplete. Some manual editing may be required.");
         }
       } catch (parseError) {
         console.error("PDF parsing encountered issues:", parseError);
         toast.warning("Term sheet uploaded, but PDF parsing had issues. You may need to enter some data manually.");
+        
+        // Still navigate to terms tab since we successfully created the term
+        setTimeout(() => {
+          navigate("/terms?tab=terms");
+        }, 2000);
       }
       
       form.reset();
-      navigate("/terms?tab=terms");
       
     } catch (error) {
       console.error("Error uploading term sheet:", error);
@@ -163,6 +188,16 @@ export function TermUploader() {
       setCurrentStep(0);
       setUploadProgress(0);
     }
+  };
+
+  const handleRetry = async () => {
+    if (!form.getValues("pdfFile")) {
+      toast.error("Please select a PDF file first");
+      return;
+    }
+    
+    setRetryCount(prev => prev + 1);
+    onSubmit(form.getValues());
   };
 
   return (
@@ -191,6 +226,7 @@ export function TermUploader() {
                           const file = e.target.files?.[0];
                           if (file) {
                             onChange(file);
+                            setProcessingError(null);
                           }
                         }}
                         {...fieldProps}
@@ -204,6 +240,26 @@ export function TermUploader() {
                 </FormItem>
               )}
             />
+            
+            {processingError && (
+              <Alert variant="destructive" className="bg-red-50 border-red-200 text-red-900">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription className="text-red-800">
+                  <p className="font-medium">Error processing PDF:</p>
+                  <p className="text-sm mt-1">{processingError}</p>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-2 bg-white text-red-600 border-red-300 hover:bg-red-50"
+                    onClick={handleRetry}
+                  >
+                    <Loader2 className={`mr-2 h-4 w-4 ${retryCount > 0 ? "animate-spin" : ""}`} />
+                    Retry Upload
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
             
             {extractedInfo && (
               <div className="bg-green-50 p-4 rounded-md">

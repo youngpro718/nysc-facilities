@@ -16,6 +16,7 @@ serve(async (req: Request) => {
   }
 
   try {
+    // Parse request body
     const { term_id, pdf_url } = await req.json();
 
     if (!term_id || !pdf_url) {
@@ -34,20 +35,34 @@ serve(async (req: Request) => {
     // Create a Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error("Missing Supabase environment variables");
+    }
+    
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Fetch PDF data from the URL
     const pdfResponse = await fetch(pdf_url);
+    if (!pdfResponse.ok) {
+      throw new Error(`Failed to fetch PDF: ${pdfResponse.status} ${pdfResponse.statusText}`);
+    }
+    
     const pdfArrayBuffer = await pdfResponse.arrayBuffer();
     
-    // Load the PDF
+    // Configure PDF.js worker
     pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+    
+    // Load the PDF
     const loadingTask = pdfjsLib.getDocument({ data: pdfArrayBuffer });
     const pdf = await loadingTask.promise;
+    
+    console.log(`PDF loaded successfully. Pages: ${pdf.numPages}`);
     
     // Extract text from all pages
     const extractedText: string[] = [];
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      console.log(`Processing page ${pageNum}`);
       const page = await pdf.getPage(pageNum);
       const textContent = await page.getTextContent();
       const pageText = textContent.items
@@ -57,19 +72,24 @@ serve(async (req: Request) => {
     }
     
     const fullText = extractedText.join(' ');
+    console.log("Text extraction complete");
     
     // Extract term information
     const termInfo = extractTermInfo(fullText);
+    console.log("Term info extracted:", termInfo);
     
     // Extract justice assignments
     const assignments = extractAssignments(fullText);
+    console.log(`Extracted ${assignments.length} assignments`);
     
     // Extract personnel
     const personnel = extractPersonnel(fullText);
+    console.log(`Extracted ${personnel.length} personnel records`);
     
     // Update term information if needed
     if (Object.keys(termInfo).length > 0) {
-      const { data: termData, error: termError } = await supabase
+      console.log("Updating term information...");
+      const { error: termError } = await supabase
         .from('court_terms')
         .update(termInfo)
         .eq('id', term_id);
@@ -79,15 +99,39 @@ serve(async (req: Request) => {
       }
     }
     
+    // Clear existing assignments for this term to prevent duplicates
+    console.log("Removing existing assignments...");
+    const { error: deleteAssignmentsError } = await supabase
+      .from('term_assignments')
+      .delete()
+      .eq('term_id', term_id);
+    
+    if (deleteAssignmentsError) {
+      console.error("Error deleting existing assignments:", deleteAssignmentsError);
+    }
+    
+    // Clear existing personnel for this term to prevent duplicates
+    console.log("Removing existing personnel records...");
+    const { error: deletePersonnelError } = await supabase
+      .from('term_personnel')
+      .delete()
+      .eq('term_id', term_id);
+    
+    if (deletePersonnelError) {
+      console.error("Error deleting existing personnel:", deletePersonnelError);
+    }
+    
     // Create court parts if they don't exist
     for (const assignment of assignments) {
+      console.log(`Processing assignment for part ${assignment.partCode}`);
+      
       const { data: partData, error: partError } = await supabase
         .from('court_parts')
         .select('id')
         .eq('part_code', assignment.partCode)
-        .single();
+        .maybeSingle();
         
-      if (partError && partError.code !== 'PGRST116') {
+      if (partError) {
         console.error("Error checking court part:", partError);
         continue;
       }
@@ -95,6 +139,7 @@ serve(async (req: Request) => {
       let partId = partData?.id;
       
       if (!partId) {
+        console.log(`Creating new court part: ${assignment.partCode}`);
         const { data: newPart, error: createPartError } = await supabase
           .from('court_parts')
           .insert({
@@ -113,26 +158,31 @@ serve(async (req: Request) => {
       }
       
       // Find corresponding room
-      const { data: roomData, error: roomError } = await supabase
-        .from('rooms')
-        .select('id')
-        .eq('room_number', assignment.roomNumber)
-        .single();
-        
-      if (roomError && roomError.code !== 'PGRST116') {
-        console.error("Error finding room:", roomError);
-        continue;
+      let roomId = null;
+      if (assignment.roomNumber) {
+        const { data: roomData, error: roomError } = await supabase
+          .from('rooms')
+          .select('id')
+          .eq('room_number', assignment.roomNumber)
+          .maybeSingle();
+          
+        if (roomError && roomError.code !== 'PGRST116') {
+          console.error("Error finding room:", roomError);
+        } else if (roomData) {
+          roomId = roomData.id;
+        }
       }
       
       // Create assignment
+      console.log(`Creating assignment: Part ${assignment.partCode}, Justice: ${assignment.justiceName}`);
       const { error: assignmentError } = await supabase
         .from('term_assignments')
         .insert({
           term_id,
           part_id: partId,
-          room_id: roomData?.id,
+          room_id: roomId,
           justice_name: assignment.justiceName,
-          clerk_names: assignment.clerkNames,
+          clerk_names: assignment.clerkNames || [],
           sergeant_name: assignment.sergeantName,
           phone: assignment.phone,
           fax: assignment.fax,
@@ -146,6 +196,7 @@ serve(async (req: Request) => {
     
     // Create personnel records
     for (const person of personnel) {
+      console.log(`Creating personnel record: ${person.name}, Role: ${person.role}`);
       const { error: personnelError } = await supabase
         .from('term_personnel')
         .insert({
@@ -181,7 +232,7 @@ serve(async (req: Request) => {
   } catch (error) {
     console.error("Error processing PDF:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message || "Unknown error processing PDF" }),
       { 
         status: 500, 
         headers: { ...corsHeaders, "Content-Type": "application/json" }
@@ -242,8 +293,11 @@ interface Assignment {
 function extractAssignments(text: string): Assignment[] {
   const assignments: Assignment[] = [];
   
+  // Add a marker to help find the end of the text
+  const textWithMarker = text + " [END]";
+  
   // Regular expression to find court parts and justices
-  const partSections = text.match(/PART\s+(\d+)[^\n]*\n+[^\n]*HON\.\s+([A-Z\s.]+)(?:\n|.)+?(?=PART|\[END\])/gi);
+  const partSections = textWithMarker.match(/PART\s+(\d+)[^\n]*\n+[^\n]*HON\.\s+([A-Z\s.]+)(?:\n|.)+?(?=PART|\[END\])/gi);
   
   if (!partSections) return assignments;
   
