@@ -5,11 +5,11 @@ import {
   Lightbulb,
   Mail,
   User,
-  Tag,
   Map,
   KeyRound,
   Repeat,
-  Calendar
+  Calendar,
+  LucideIcon
 } from 'lucide-react';
 import { NavigationItem, NavigationTab } from '../types';
 
