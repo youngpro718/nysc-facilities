@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -15,31 +16,18 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon, Upload, FileText, Check, Loader2 } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { Upload, FileText, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import * as React from "react";
 
 const formSchema = z.object({
-  termName: z.string().min(1, "Term name is required"),
-  termNumber: z.string().min(1, "Term number is required"),
-  location: z.string().min(1, "Location is required"),
-  startDate: z.date({
-    required_error: "Start date is required",
-  }),
-  endDate: z.date({
-    required_error: "End date is required",
-  }),
-  description: z.string().optional(),
   pdfFile: z.instanceof(File, { message: "Please upload a PDF file" })
     .refine(file => file.size < 10000000, "File size must be less than 10MB")
     .refine(file => file.type === "application/pdf", "File must be a PDF"),
 });
+
+type FormValues = z.infer<typeof formSchema>;
 
 export function TermUploader() {
   const navigate = useNavigate();
@@ -47,24 +35,31 @@ export function TermUploader() {
   const [currentStep, setCurrentStep] = useState(0);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+  const [extractedInfo, setExtractedInfo] = useState<any>(null);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      termName: "",
-      termNumber: "",
-      location: "",
-      description: "",
-    },
+    defaultValues: {},
   });
 
   const watchPdfFile = form.watch("pdfFile");
 
-  React.useEffect(() => {
+  useEffect(() => {
     // Create object URL for PDF preview when file is selected
     if (watchPdfFile && watchPdfFile instanceof File) {
       const fileUrl = URL.createObjectURL(watchPdfFile);
       setPdfPreviewUrl(fileUrl);
+      
+      // Try to extract preliminary information from filename
+      const filename = watchPdfFile.name;
+      const termMatch = filename.match(/(spring|fall|summer|winter)\s+term\s+(\d{4})/i);
+      
+      if (termMatch) {
+        setExtractedInfo({
+          termName: `${termMatch[1].charAt(0).toUpperCase() + termMatch[1].slice(1)} Term ${termMatch[2]}`,
+          termNumber: termMatch[2]
+        });
+      }
       
       // Clean up object URL on unmount
       return () => {
@@ -92,52 +87,44 @@ export function TermUploader() {
     }
   };
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: FormValues) => {
     try {
       setIsUploading(true);
       setCurrentStep(1);
       
-      // 1. Upload the PDF to storage with progress tracking
-      const fileName = `${values.termName.replace(/\s+/g, '-').toLowerCase()}-${values.termNumber}-${Date.now()}.pdf`;
-      
-      // Set up progress tracking
-      const progressHandler = (progress: number) => {
-        setUploadProgress(progress);
-      };
-      
-      // Upload with progress
-      // NOTE: actual progress tracking isn't directly supported by Supabase JS client
-      // This is a placeholder for conceptual demonstration
+      // Generate a filename based on timestamp to ensure uniqueness
+      const fileName = `term-sheet-${Date.now()}.pdf`;
       setUploadProgress(10);
       
+      // 1. Upload the PDF to storage
       const { data: fileData, error: fileError } = await supabase.storage
         .from('term-sheets')
         .upload(fileName, values.pdfFile);
       
-      setUploadProgress(50);
-      
       if (fileError) {
         throw new Error(`Error uploading file: ${fileError.message}`);
       }
+      
+      setUploadProgress(40);
       
       // Get the public URL
       const { data: { publicUrl } } = supabase.storage
         .from('term-sheets')
         .getPublicUrl(fileName);
       
-      setUploadProgress(70);
+      setUploadProgress(50);
       setCurrentStep(2);
       
-      // 2. Create the term record
+      // 2. Create the term record with placeholder data that will be updated after parsing
       const { data: termData, error: termError } = await supabase
         .from('court_terms')
         .insert({
-          term_name: values.termName,
-          term_number: values.termNumber,
-          location: values.location,
-          start_date: values.startDate.toISOString().split('T')[0],
-          end_date: values.endDate.toISOString().split('T')[0],
-          description: values.description,
+          term_name: extractedInfo?.termName || "New Term",
+          term_number: extractedInfo?.termNumber || `${new Date().getFullYear()}-${new Date().getMonth() + 1}`,
+          location: "To be extracted",
+          start_date: new Date().toISOString().split('T')[0],
+          end_date: new Date(new Date().setMonth(new Date().getMonth() + 3)).toISOString().split('T')[0],
+          description: "Automatically generated from PDF upload",
           pdf_url: publicUrl,
         })
         .select()
@@ -147,19 +134,24 @@ export function TermUploader() {
         throw new Error(`Error creating term: ${termError.message}`);
       }
       
-      setUploadProgress(85);
+      setUploadProgress(70);
       setCurrentStep(3);
       
       // 3. Call the edge function to parse the PDF
       try {
-        await processPdfContent(termData.id, publicUrl);
+        const result = await processPdfContent(termData.id, publicUrl);
         setUploadProgress(100);
+        
+        if (result.success) {
+          toast.success(`Term sheet processed successfully. Extracted ${result.extracted.assignments} assignments and ${result.extracted.personnel} personnel records.`);
+        } else {
+          toast.warning("Term sheet uploaded, but data extraction was incomplete. Some manual editing may be required.");
+        }
       } catch (parseError) {
-        console.error("PDF parsing failed but term was created:", parseError);
-        toast.warning("Term sheet uploaded, but PDF parsing failed. You may need to enter assignments manually.");
+        console.error("PDF parsing encountered issues:", parseError);
+        toast.warning("Term sheet uploaded, but PDF parsing had issues. You may need to enter some data manually.");
       }
       
-      toast.success("Term sheet uploaded successfully");
       form.reset();
       navigate("/terms?tab=terms");
       
@@ -178,157 +170,12 @@ export function TermUploader() {
       <CardHeader>
         <CardTitle>Upload Court Term Sheet</CardTitle>
         <CardDescription>
-          Upload a court term sheet PDF to extract and store court assignments
+          Upload a court term sheet PDF to automatically extract and store court assignments and personnel information
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="termName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Term Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. Fall Term 2023" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="termNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Term Number</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. 2023-04" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <FormField
-              control={form.control}
-              name="location"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Location</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. County Courthouse" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="startDate"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Start Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) =>
-                            date < new Date(new Date().setHours(0, 0, 0, 0))
-                          }
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="endDate"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>End Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) => {
-                            const startDate = form.getValues("startDate");
-                            return startDate && date < startDate;
-                          }}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description (Optional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Additional information about this term" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
             <FormField
               control={form.control}
               name="pdfFile"
@@ -351,12 +198,25 @@ export function TermUploader() {
                     </div>
                   </FormControl>
                   <FormDescription>
-                    Upload a PDF file containing the court term sheet
+                    Upload a PDF file containing the court term sheet - we'll automatically extract all relevant information
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            
+            {extractedInfo && (
+              <div className="bg-green-50 p-4 rounded-md">
+                <h3 className="text-sm font-semibold text-green-800 mb-2">Preliminary Information Detected</h3>
+                {extractedInfo.termName && (
+                  <p className="text-sm text-green-800">Term Name: {extractedInfo.termName}</p>
+                )}
+                {extractedInfo.termNumber && (
+                  <p className="text-sm text-green-800">Term Number: {extractedInfo.termNumber}</p>
+                )}
+                <p className="text-xs text-green-600 mt-2">Full data will be extracted after upload</p>
+              </div>
+            )}
             
             {pdfPreviewUrl && (
               <div className="mt-4 border rounded-md p-4">
@@ -366,7 +226,7 @@ export function TermUploader() {
                 </h3>
                 <iframe
                   src={pdfPreviewUrl}
-                  className="w-full h-[200px] border"
+                  className="w-full h-[300px] border"
                   title="PDF Preview"
                 />
               </div>
@@ -396,9 +256,9 @@ export function TermUploader() {
                   <div className="flex items-center">
                     {currentStep === 3 && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                     {currentStep > 3 && <Check className="h-4 w-4 mr-2 text-green-500" />}
-                    <span>Parsing PDF Content</span>
+                    <span>Extracting Data</span>
                   </div>
-                  <span>{currentStep >= 3 ? (currentStep === 3 ? 'Extracting data...' : 'Done') : 'Waiting...'}</span>
+                  <span>{currentStep >= 3 ? (currentStep === 3 ? 'Parsing content...' : 'Done') : 'Waiting...'}</span>
                 </div>
                 
                 <Progress value={uploadProgress} className="h-2" />
@@ -411,12 +271,12 @@ export function TermUploader() {
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   {currentStep === 1 ? "Uploading..." : 
                    currentStep === 2 ? "Creating Term..." : 
-                   currentStep === 3 ? "Parsing PDF..." : "Processing..."}
+                   currentStep === 3 ? "Extracting Data..." : "Processing..."}
                 </>
               ) : (
                 <>
                   <Upload className="mr-2 h-4 w-4" />
-                  Upload Term Sheet
+                  Upload and Process Term Sheet
                 </>
               )}
             </Button>

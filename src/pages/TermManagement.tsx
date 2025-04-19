@@ -5,6 +5,7 @@ import { TermUploader } from "@/components/terms/TermUploader";
 import { TermList } from "@/components/terms/TermList";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function TermManagement() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -44,25 +45,39 @@ export function TermManagement() {
         
         <TabsContent value="assignments" className="space-y-4">
           <ErrorBoundary>
-            <div className="p-6 bg-white rounded-lg shadow">
-              <h2 className="text-xl font-semibold mb-4">Term Assignments</h2>
-              <p className="text-muted-foreground">
-                This section will display court part assignments extracted from term sheets.
-                Select a term from the Term Schedules tab and click "View Assignments" to see details.
-              </p>
-            </div>
+            <Card className="p-6 bg-white rounded-lg shadow">
+              <CardHeader>
+                <CardTitle>Term Assignments</CardTitle>
+                <CardDescription>
+                  View and manage court part assignments for all terms
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Select a term from the Term Schedules tab and click "View Assignments" to see details,
+                  or use the integrated assignments view to manage assignments across terms.
+                </p>
+              </CardContent>
+            </Card>
           </ErrorBoundary>
         </TabsContent>
         
         <TabsContent value="personnel" className="space-y-4">
           <ErrorBoundary>
-            <div className="p-6 bg-white rounded-lg shadow">
-              <h2 className="text-xl font-semibold mb-4">Term Personnel</h2>
-              <p className="text-muted-foreground">
-                This section will allow management of court personnel including justices, 
-                clerks, and sergeants associated with court terms.
-              </p>
-            </div>
+            <Card className="p-6 bg-white rounded-lg shadow">
+              <CardHeader>
+                <CardTitle>Term Personnel</CardTitle>
+                <CardDescription>
+                  View and manage court personnel across all terms
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Select a term from the Term Schedules tab and click "View Personnel" to see details,
+                  or use this integrated view to manage personnel across terms.
+                </p>
+              </CardContent>
+            </Card>
           </ErrorBoundary>
         </TabsContent>
       </Tabs>
