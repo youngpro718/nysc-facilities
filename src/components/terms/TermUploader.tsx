@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -107,156 +106,175 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
 
   const parseAssignments = (pdfText: string): any[] => {
     console.log("Parsing assignments from text...");
+    
     try {
       if (!pdfText) {
         throw new Error("No PDF text available for parsing");
       }
 
-      // Extract the table section
-      // Look for section with PART, JUSTICE, ROOM headers
-      const tableStartMatch = pdfText.match(/PART\s+JUSTICE\s+ROOM\s+FAX[\s\S]+?CLERKS/i);
-      if (!tableStartMatch) {
+      // Log a portion of the text to see what we're working with
+      console.log("PDF text sample:", pdfText.substring(0, 500));
+
+      const assignments: any[] = [];
+      
+      // Look for the assignment table section
+      // Split by lines to process line by line
+      const lines = pdfText.split('\n').map(line => line.trim());
+      
+      // Find the section that contains PART, JUSTICE, ROOM headers
+      let tableStartIndex = -1;
+      
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].match(/PART.*JUSTICE.*ROOM.*CLERKS/i) || 
+            lines[i].match(/PART.*JUSTICE.*ROOM/i)) {
+          tableStartIndex = i;
+          console.log("Found table header at line:", i, lines[i]);
+          break;
+        }
+      }
+      
+      if (tableStartIndex === -1) {
+        // Try alternate header patterns
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i].match(/JUSTICE/) && lines[i].match(/PART/) && lines[i+1] && lines[i+1].match(/ROOM/)) {
+            tableStartIndex = i;
+            console.log("Found alternate table header at line:", i, lines[i]);
+            break;
+          }
+        }
+      }
+      
+      if (tableStartIndex === -1) {
         console.error("Could not find assignment table in PDF");
         return [];
       }
-
-      // Process the text by lines for table data
-      const lines = pdfText.split('\n');
-      const assignments: any[] = [];
       
-      // Regex patterns for identifying parts
-      const partPatterns = [
-        /^(TAP\s*[A-Z]?)/i,  // TAP A, TAP G
-        /^(GWP\d+)/i,        // GWP1
-        /^(TAP\s*[A-Z]?)/i,  // TAP B
-        /^(AT\d+)/i,         // AT1, AT21
-        /^\s*(\d+\s*[A-Za-z]*)/,  // 1, 22W, 23W, etc.
-        /^(\*)/              // * for special designations
-      ];
-
-      let inAssignmentSection = false;
-      let currentRow: string[] = [];
+      // Skip the header row
+      let currentLineIndex = tableStartIndex + 1;
       
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
+      // Process rows until we reach the end of the table or end of document
+      while (currentLineIndex < lines.length) {
+        const line = lines[currentLineIndex];
         
-        // Check if we're in the assignment table section
-        if (!inAssignmentSection && line.match(/PART\s+JUSTICE\s+ROOM/i)) {
-          inAssignmentSection = true;
+        // Skip empty lines
+        if (!line || line.trim() === '') {
+          currentLineIndex++;
           continue;
         }
         
-        if (!inAssignmentSection) continue;
-        
         // Check if we've reached the end of the table
-        if (line.match(/PAGE No\.|LOCATED AT|^\*\s*LOCATED/i)) {
+        if (line.match(/END OF TABLE|PAGE No\.|LOCATED AT/i)) {
+          console.log("Reached end of table at line:", currentLineIndex, line);
           break;
         }
-
-        // Skip empty lines
-        if (!line) continue;
         
-        // Check if this line starts with a part identifier
-        const isPart = partPatterns.some(pattern => line.match(pattern));
+        // Extract assignment information
+        // Look for patterns like:
+        // 1. Part number/code (could be numbers, TAP, AT, etc.)
+        // 2. Justice name (usually in format J. LASTNAME)
+        // 3. Room number
         
-        if (isPart) {
-          // If we have collected a previous assignment, add it
-          if (currentRow.length > 0) {
-            addAssignmentFromRow(currentRow, assignments);
-            currentRow = [];
-          }
+        // Check if line starts with a part identifier
+        const partPattern = /^(\d+\s*[A-Z]*|\*+|TAP\s*[A-Z]?|GWP\d+|AT\d+)/i;
+        const partMatch = line.match(partPattern);
+        
+        if (partMatch) {
+          console.log("Found part row:", line);
           
-          // Start a new row
-          currentRow.push(line);
-        } else if (currentRow.length > 0) {
-          // Continue adding to the current row
-          currentRow[currentRow.length - 1] += " " + line;
+          // Extract the part code
+          const part = partMatch[1].trim();
+          
+          // Extract the justice name (usually follows the part code)
+          // Justice names typically in format "J. LASTNAME" or "A. B. LASTNAME"
+          const justicePattern = /([A-Z]\.\s+[A-Z](?:\.\s*)?(?:\s+[A-Z](?:\.\s*)?)*\s+[A-Z]+)/;
+          const justiceMatch = line.substring(part.length).match(justicePattern);
+          
+          if (justiceMatch) {
+            const justice = justiceMatch[1].trim();
+            
+            // Extract room number (usually follows the justice name)
+            // Room numbers are typically numeric
+            const roomPattern = /\b(\d{1,4}[A-Z]?)\b/;
+            const lineAfterJustice = line.substring(part.length + justice.length);
+            const roomMatch = lineAfterJustice.match(roomPattern);
+            
+            if (roomMatch) {
+              const room = roomMatch[1].trim();
+              
+              // Extract remaining information (clerks, etc.)
+              const remainingText = lineAfterJustice.substring(roomMatch.index! + roomMatch[0].length).trim();
+              
+              // Extract fax number if present
+              let fax = "";
+              const faxMatch = remainingText.match(/(\d+-\d+)/);
+              if (faxMatch) {
+                fax = faxMatch[1];
+              }
+              
+              // Extract telephone extension
+              let tel = "";
+              const telMatch = remainingText.match(/\(?(\d{3})\)?[\s-]?(\d{3})[-\s]?(\d{4})/);
+              if (telMatch) {
+                tel = telMatch[0];
+              }
+              
+              // Extract sergeant name if present (usually uppercase)
+              let sgt = "";
+              const sgtPattern = /([A-Z]{2,}(?:\s+[A-Z]+)*)/;
+              const sgtMatch = remainingText.match(sgtPattern);
+              if (sgtMatch && !sgtMatch[1].match(/\d/)) {  // Avoid matching phone numbers
+                sgt = sgtMatch[1];
+              }
+              
+              // The rest can be considered clerk names
+              // Clerks are typically separated by commas or slashes
+              let clerks: string[] = [];
+              
+              // Try to find clerk names after the sergeant
+              const clerksText = sgt ? 
+                remainingText.substring(remainingText.indexOf(sgt) + sgt.length).trim() : 
+                remainingText;
+              
+              if (clerksText) {
+                clerks = clerksText
+                  .split(/[,\/]/)
+                  .map(c => c.trim())
+                  .filter(c => c && c.length > 0 && !/^\d+$/.test(c));  // Filter out pure numbers
+              }
+              
+              // Add the extracted assignment
+              assignments.push({
+                part,
+                justice,
+                room,
+                fax,
+                tel,
+                sgt,
+                clerks
+              });
+              
+              console.log("Extracted assignment:", {
+                part,
+                justice,
+                room,
+                fax,
+                tel,
+                sgt,
+                clerks
+              });
+            }
+          }
         }
+        
+        currentLineIndex++;
       }
       
-      // Add the last row if exists
-      if (currentRow.length > 0) {
-        addAssignmentFromRow(currentRow, assignments);
-      }
-      
-      console.log(`Parsed ${assignments.length} assignments:`, assignments);
-      
+      console.log(`Extracted ${assignments.length} assignments`);
       return assignments;
     } catch (error) {
       console.error("Error parsing assignments:", error);
       return [];
     }
-  };
-  
-  // Helper function to process a table row and extract assignment details
-  const addAssignmentFromRow = (rowLines: string[], assignments: any[]) => {
-    const rowText = rowLines.join(" ").replace(/\s+/g, " ").trim();
-    
-    // Extract part (could be complex like "22 W" or "TAP A")
-    const partMatch = rowText.match(/^([A-Za-z0-9\s*]+?)(?=\s+[A-Z]\.)/i);
-    if (!partMatch) return;
-    
-    const part = partMatch[1].trim();
-    
-    // Remove the part from the text to process the rest
-    let remaining = rowText.substring(part.length).trim();
-    
-    // Extract justice name (format is typically "J. LASTNAME" or "A. B. LASTNAME")
-    const justiceMatch = remaining.match(/^([A-Z]\.\s+[A-Z\.]+(?:\s+[A-Z\.]+)?(?:\s+[A-Z]+)?)(?=\s+\d)/i);
-    if (!justiceMatch) return;
-    
-    const justice = justiceMatch[1].trim();
-    remaining = remaining.substring(justice.length).trim();
-    
-    // Extract room number
-    const roomMatch = remaining.match(/^(\d+)/);
-    if (!roomMatch) return;
-    
-    const room = roomMatch[1].trim();
-    remaining = remaining.substring(room.length).trim();
-    
-    // Extract fax (may be empty)
-    let fax = "";
-    const faxMatch = remaining.match(/^(\d+-\d+|)/);
-    if (faxMatch) {
-      fax = faxMatch[1].trim();
-      remaining = remaining.substring(fax.length).trim();
-    }
-    
-    // Extract telephone extension (format: (646)xxx)
-    let tel = "";
-    const telMatch = remaining.match(/^\(?\d+\)?\d+/);
-    if (telMatch) {
-      tel = telMatch[0].trim();
-      remaining = remaining.substring(telMatch[0].length).trim();
-    }
-    
-    // Extract sergeant name
-    let sgt = "";
-    const sgtMatch = remaining.match(/^([A-Z]+(?:\s+[A-Z]+)?)/);
-    if (sgtMatch) {
-      sgt = sgtMatch[1].trim();
-      remaining = remaining.substring(sgt.length).trim();
-    }
-    
-    // The rest is clerks
-    const clerks = remaining.trim();
-    
-    // Process clerks into an array
-    const clerksArray = clerks.split(/[,\/]/)
-      .map(c => c.trim())
-      .filter(c => c && c.length > 0)
-      .map(c => c.replace(/^\s*[A-Z]\.\s+/, '').trim());  // Remove initials if present
-    
-    assignments.push({
-      part,
-      justice,
-      room,
-      fax,
-      tel,
-      sgt,
-      clerks: clerksArray
-    });
   };
 
   const processTermData = async (pdfFile: File): Promise<any[]> => {
