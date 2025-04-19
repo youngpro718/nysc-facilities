@@ -24,8 +24,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import * as pdfjs from 'pdfjs-dist';
 
 // Set up the PDF.js worker source
-const pdfjsWorker = await import('pdfjs-dist/build/pdf.worker.mjs');
-pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker.default;
+// We need to use the correct import path that matches the installed package
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 const formSchema = z.object({
   pdfFile: z.instanceof(File, { message: "Please upload a PDF file" })
