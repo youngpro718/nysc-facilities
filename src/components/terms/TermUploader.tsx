@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,13 +16,14 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon, Upload, FilePdf, FileText, Check, Loader2 } from "lucide-react";
+import { CalendarIcon, Upload, FileText, Check, Loader2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import * as React from "react";
 
 const formSchema = z.object({
   termName: z.string().min(1, "Term name is required"),
@@ -361,7 +361,7 @@ export function TermUploader() {
             {pdfPreviewUrl && (
               <div className="mt-4 border rounded-md p-4">
                 <h3 className="text-sm font-medium mb-2 flex items-center">
-                  <FilePdf className="h-4 w-4 mr-2" />
+                  <FileText className="h-4 w-4 mr-2" />
                   PDF Preview
                 </h3>
                 <iframe

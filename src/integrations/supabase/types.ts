@@ -4503,6 +4503,191 @@ export type Database = {
           },
         ]
       }
+      relocations: {
+        Row: {
+          created_at: string | null
+          end_date: string | null
+          id: string
+          notes: string | null
+          reason: string | null
+          source_courtroom_id: string
+          start_date: string | null
+          status: string | null
+          target_courtroom_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          reason?: string | null
+          source_courtroom_id: string
+          start_date?: string | null
+          status?: string | null
+          target_courtroom_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          reason?: string | null
+          source_courtroom_id?: string
+          start_date?: string | null
+          status?: string | null
+          target_courtroom_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relocations_source_courtroom_id_fkey"
+            columns: ["source_courtroom_id"]
+            isOneToOne: false
+            referencedRelation: "room_health_overview"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "relocations_source_courtroom_id_fkey"
+            columns: ["source_courtroom_id"]
+            isOneToOne: false
+            referencedRelation: "room_issue_analytics"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "relocations_source_courtroom_id_fkey"
+            columns: ["source_courtroom_id"]
+            isOneToOne: false
+            referencedRelation: "room_occupancy_stats"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "relocations_source_courtroom_id_fkey"
+            columns: ["source_courtroom_id"]
+            isOneToOne: false
+            referencedRelation: "room_selection_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relocations_source_courtroom_id_fkey"
+            columns: ["source_courtroom_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relocations_target_courtroom_id_fkey"
+            columns: ["target_courtroom_id"]
+            isOneToOne: false
+            referencedRelation: "room_health_overview"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "relocations_target_courtroom_id_fkey"
+            columns: ["target_courtroom_id"]
+            isOneToOne: false
+            referencedRelation: "room_issue_analytics"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "relocations_target_courtroom_id_fkey"
+            columns: ["target_courtroom_id"]
+            isOneToOne: false
+            referencedRelation: "room_occupancy_stats"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "relocations_target_courtroom_id_fkey"
+            columns: ["target_courtroom_id"]
+            isOneToOne: false
+            referencedRelation: "room_selection_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relocations_target_courtroom_id_fkey"
+            columns: ["target_courtroom_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      renovations: {
+        Row: {
+          contractor: string | null
+          courtroom_id: string
+          created_at: string | null
+          end_date: string | null
+          id: string
+          notes: string | null
+          start_date: string | null
+          status: string | null
+          updated_at: string | null
+          work_type: string | null
+        }
+        Insert: {
+          contractor?: string | null
+          courtroom_id: string
+          created_at?: string | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string | null
+          work_type?: string | null
+        }
+        Update: {
+          contractor?: string | null
+          courtroom_id?: string
+          created_at?: string | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string | null
+          work_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "renovations_courtroom_id_fkey"
+            columns: ["courtroom_id"]
+            isOneToOne: false
+            referencedRelation: "room_health_overview"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "renovations_courtroom_id_fkey"
+            columns: ["courtroom_id"]
+            isOneToOne: false
+            referencedRelation: "room_issue_analytics"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "renovations_courtroom_id_fkey"
+            columns: ["courtroom_id"]
+            isOneToOne: false
+            referencedRelation: "room_occupancy_stats"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "renovations_courtroom_id_fkey"
+            columns: ["courtroom_id"]
+            isOneToOne: false
+            referencedRelation: "room_selection_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "renovations_courtroom_id_fkey"
+            columns: ["courtroom_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       report_templates: {
         Row: {
           config: Json

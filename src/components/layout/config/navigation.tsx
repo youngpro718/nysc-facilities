@@ -11,16 +11,11 @@ import {
   Repeat,
   Calendar
 } from 'lucide-react';
+import { NavigationItem, NavigationTab } from '../types';
 
-export type NavigationItem = {
-  title: string;
-  href: string;
-  icon?: JSX.Element;
-  description?: string;
-  adminOnly?: boolean;
-  children?: NavigationItem[];
-};
+export type { NavigationItem };
 
+// Define the navigation items for admin and user interfaces
 export const navigationItems: NavigationItem[] = [
   {
     title: 'Dashboard',
@@ -92,3 +87,47 @@ export const userNavigationItems: NavigationItem[] = [
     adminOnly: true,
   },
 ];
+
+// Create the admin and user navigation arrays for the sidebar
+export const adminNavigation: NavigationTab[] = [
+  { title: 'Dashboard', icon: Command },
+  { title: 'Spaces', icon: Map },
+  { title: 'Issues', icon: Mail },
+  { title: 'Occupants', icon: User },
+  { title: 'Keys', icon: KeyRound },
+  { title: 'Lighting', icon: Lightbulb },
+  { title: 'Relocations', icon: Repeat },
+  { title: 'Court Terms', icon: Calendar },
+  { type: 'separator' },
+  { title: 'Profile', icon: User },
+];
+
+export const userNavigation: NavigationTab[] = [
+  { title: 'Dashboard', icon: Command },
+  { type: 'separator' },
+  { title: 'Profile', icon: User },
+];
+
+// Helper function to get navigation routes based on admin status
+export const getNavigationRoutes = (isAdmin: boolean): string[] => {
+  if (isAdmin) {
+    return [
+      '/', // Dashboard
+      '/spaces',
+      '/issues',
+      '/occupants',
+      '/keys',
+      '/lighting',
+      '/relocations',
+      '/terms',
+      '', // Separator doesn't have a route
+      '/admin-profile',
+    ];
+  }
+  
+  return [
+    '/dashboard', // User dashboard
+    '', // Separator
+    '/profile',
+  ];
+};

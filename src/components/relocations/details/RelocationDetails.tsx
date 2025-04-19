@@ -1,9 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { RoomRelocation } from "../types/relocationTypes";
-import { useRelocationFilters } from "../hooks/useRelocationFilters";
-import { fetchRelocationById, fetchRelocations } from "../services/queries/relocationQueries";
+import { fetchRelocationById } from "../services/queries/relocationQueries";
 import { updateRelocation } from "../services/mutations/relocationMutations";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,7 +22,6 @@ interface TermInfo {
 
 export function RelocationDetails({ id }: { id: string }) {
   const navigate = useNavigate();
-  const { buildingOptions, floorOptions } = useRelocationFilters();
   const [relocation, setRelocation] = useState<RoomRelocation | null>(null);
   const [termInfo, setTermInfo] = useState<TermInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
