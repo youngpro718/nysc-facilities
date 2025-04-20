@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -129,123 +130,248 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
       
       // Enhanced part code patterns to match special formats
       const partPatterns = [
-        /^((?:IDV|N-SCT|TAP\s*[A-G]|GWP\d|MDC-\d+)\b)/i,
-        /^([0-9]+[A-Z]*)/,
+        /^((?:IDV|N-SCT|TAP\s*[A-G]|GWP\d|MDC-\d+|IA\d+|FAP\d+|CI\d+|PART\s*[A-Z0-9]+)\b)/i,
+        /^([0-9]+[A-Z]*\s*(?:PART)?)/i,
         /^(TAP\s*[A-Z]?)/i,
         /^([A-Z]+\s*\d+[A-Z]*)/,
-        /^([IVX]+)/,
+        /^([IVX]+\s*)/,
+        /^(PART\s*[A-Z0-9]+)/i,
       ];
       
-      // Look for standard table headers
-      let tableStartIndex = lines.findIndex(line => 
-        /PART.*JUSTICE|JUDGE.*PART|COURTROOM.*JUDGE/i.test(line)
+      // Look for standard table headers to locate assignment tables
+      const tableStartIndex = lines.findIndex(line => 
+        /PART.*JUSTICE|JUDGE.*PART|COURT.*PART|COURTROOM.*JUDGE|COURT PART/i.test(line)
       );
       
-      if (tableStartIndex === -1) {
-        // Try to find the first part code as fallback
-        tableStartIndex = lines.findIndex(line => 
+      // If we can't find a standard header, look for first line with a part code
+      let startIndex = tableStartIndex;
+      if (startIndex === -1) {
+        startIndex = lines.findIndex(line => 
           partPatterns.some(pattern => pattern.test(line.trim()))
         );
       }
 
-      if (tableStartIndex === -1) {
+      if (startIndex === -1) {
         console.error("Could not find assignment table in PDF");
         return [];
       }
 
-      console.log("Starting to process assignments from line", tableStartIndex);
+      console.log("Starting to process assignments from line", startIndex);
       
-      let currentLineIndex = tableStartIndex;
+      let currentLineIndex = startIndex;
+      const processedLines = new Set(); // Track processed lines to avoid duplicates
       
+      // Scan through all lines after the header
       while (currentLineIndex < lines.length && 
-             currentLineIndex - tableStartIndex < 100) {
+             currentLineIndex - startIndex < 200) { // Extend scan range to 200 lines
         
         const line = lines[currentLineIndex].trim();
+        currentLineIndex++;
         
-        if (!line || line.match(/END OF|PAGE/i)) {
-          currentLineIndex++;
+        if (!line || line.match(/END OF|PAGE|^\s*$/i) || processedLines.has(line)) {
           continue;
         }
 
-        // Try to extract part code first
+        processedLines.add(line);
+        
+        // Try to extract part code using each pattern
         let partMatch = null;
+        let matchedPattern = null;
+        
         for (const pattern of partPatterns) {
           partMatch = line.match(pattern);
-          if (partMatch) break;
+          if (partMatch) {
+            matchedPattern = pattern;
+            break;
+          }
         }
 
         if (partMatch) {
           console.log("Processing line:", line);
           
-          const part = partMatch[1].trim();
+          const part = partMatch[1].trim().replace(/\s+/g, ' ');
           const remainingText = line.substring(partMatch[0].length).trim();
           
-          // More flexible justice name extraction
-          const justicePattern = /([A-Z]\.?\s+(?:[A-Z]\.?\s+)?[A-Z][A-Za-z\-']+)/;
+          // More flexible justice name extraction - look for capitalized names
+          // Improved pattern to handle formats like "HON. J. DOE" or "J. SMITH"
+          const justicePattern = /((?:HON\.?\s+)?[A-Z](?:\.\s+|\s+)[A-Z][A-Za-z\-']+(?:\s+[A-Z][A-Za-z\-']+)?)/;
           const justiceMatch = remainingText.match(justicePattern);
           
           if (justiceMatch) {
             const justice = justiceMatch[1].trim();
             const afterJustice = remainingText.substring(remainingText.indexOf(justice) + justice.length).trim();
             
-            // Look for room number
-            const roomPattern = /(?:RM\.?|ROOM)?\s*(\d{3,4}[A-Z]?)/i;
+            // Enhanced room number extraction - handle various formats
+            // Look for "ROOM", "RM", or just a 3-4 digit number
+            const roomPattern = /(?:(?:RM|ROOM)[\.:]?\s*)?(\d{3,4}[A-Z]?)/i;
             const roomMatch = afterJustice.match(roomPattern);
             
+            let room = null;
+            let remainingInfo = afterJustice;
+            
             if (roomMatch) {
-              const room = roomMatch[1].trim();
-              let remainingInfo = afterJustice;
-              
-              // Extract phone and fax - now handling (6)4051 format
-              const phonePattern = /\((\d)\)(\d{4})/;
-              const faxPattern = /(?:FAX:?)?\s*(?:\()?(\d{3}[\s-]?\d{3}[\s-]?\d{4})(?:\))?/i;
-              
+              room = roomMatch[1].trim();
+              remainingInfo = afterJustice;
+            }
+            
+            // Enhanced phone extraction - handle formats like (6)4051, 646-4051, or 646.4051
+            const phonePatterns = [
+              /\((\d)\)(\d{4})/,                   // (6)4051 format
+              /\(?\d{3}[\s\.\-]?\d{3}[\s\.\-]?\d{4}\)?/i,  // Regular phone numbers
+              /\d{3,4}-\d{4}/,                     // Extension format
+              /\d{3,4}\.\d{4}/                     // Period-separated format
+            ];
+            
+            let phone = null;
+            for (const phonePattern of phonePatterns) {
               const phoneMatch = remainingInfo.match(phonePattern);
-              const faxMatch = remainingInfo.match(faxPattern);
-              
-              // Extract sergeant (last name only)
-              const sgtPattern = /\b(?:SGT\.?\s+)([A-Z]+)\b/i;
-              const sgtMatch = remainingInfo.match(sgtPattern);
-              let sgt = sgtMatch ? sgtMatch[1] : '';
-              
-              // Process clerk names (initial + last name)
-              let clerks: string[] = [];
-              const clerkPattern = /[A-Z]\.\s+[A-Za-z\-]+(?:\s+[A-Za-z\-]+)?/g;
-              const clerkMatches = remainingInfo.match(clerkPattern);
-              
-              if (clerkMatches) {
-                clerks = clerkMatches
-                  .filter(name => !name.startsWith('SGT.'))
-                  .map(name => name.trim());
+              if (phoneMatch) {
+                phone = phoneMatch[0];
+                break;
               }
+            }
+            
+            // Extract fax number
+            const faxPattern = /(?:FAX|F)[:.]\s*(\(?\d{3}[\s\.\-]?\d{3}[\s\.\-]?\d{4}|\d{3,4}-\d{4}|\d{3,4}\.\d{4})/i;
+            const faxMatch = remainingInfo.match(faxPattern);
+            let fax = faxMatch ? faxMatch[1] : null;
+            
+            // Extract sergeant (last name only) - enhanced to handle various formats
+            const sgtPattern = /\b(?:SGT\.?\s+|SERGEANT\s+)([A-Z]+)\b/i;
+            const sgtMatch = remainingInfo.match(sgtPattern);
+            let sgt = sgtMatch ? sgtMatch[1] : '';
+            
+            // Enhanced clerk name extraction - handle various formats
+            // Look for patterns like "T. SMITH", "T.SMITH", "T SMITH"
+            let clerks: string[] = [];
+            const clerkPattern = /[A-Z]\.?\s+[A-Za-z\-']+(?:\s+[A-Za-z\-']+)?/g;
+            let clerkText = remainingInfo;
+            
+            // Remove the sergeant part if found to avoid confusion
+            if (sgtMatch) {
+              clerkText = clerkText.replace(sgtMatch[0], '');
+            }
+            
+            // Find all potential clerk names
+            const clerkMatches = clerkText.match(clerkPattern);
+            
+            if (clerkMatches) {
+              // Filter out false positives like "SGT. SMITH" or the justice name
+              clerks = clerkMatches
+                .filter(name => !name.match(/^(SGT|SERGEANT|HON|JUDGE|ROOM|RM|FAX|F)\b/i))
+                .filter(name => name !== justice)
+                .map(name => name.trim());
+            }
+            
+            console.log("Extracted assignment:", {
+              part,
+              justice,
+              room,
+              phone,
+              fax,
+              sgt,
+              clerks
+            });
+            
+            assignments.push({
+              part,
+              justice,
+              room,
+              tel: phone,
+              fax,
+              sgt,
+              clerks
+            });
+          }
+        }
+      }
+      
+      // If we didn't find many assignments, try a secondary parsing approach with looser patterns
+      if (assignments.length < 5) {
+        console.log("Few assignments found, trying secondary parsing approach");
+        
+        // Try to detect table structure by looking for consistent patterns
+        // in consecutive lines with similar spacing
+        
+        // Reset and scan through all lines in PDF
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim();
+          
+          if (!line || processedLines.has(line)) continue;
+          
+          // Look for lines that potentially contain part, justice, and room info
+          // but might not match our rigid patterns
+          if (line.match(/[A-Z0-9]{1,6}\s+[A-Z]/)) {
+            // Attempt to split the line by whitespace groups and analyze parts
+            const parts = line.split(/\s{2,}/);
+            
+            if (parts.length >= 2) {
+              const potentialPart = parts[0].trim();
+              const potentialJustice = parts[1].trim();
               
-              console.log("Extracted assignment:", {
-                part,
-                justice,
-                room,
-                phone: phoneMatch ? `(${phoneMatch[1]})${phoneMatch[2]}` : '',
-                sgt,
-                clerks
-              });
-              
-              assignments.push({
-                part,
-                justice,
-                room,
-                tel: phoneMatch ? `(${phoneMatch[1]})${phoneMatch[2]}` : null,
-                fax: faxMatch ? faxMatch[1] : null,
-                sgt,
-                clerks
-              });
+              // If this looks like part/justice data, extract it
+              if (potentialPart.length <= 10 && potentialJustice.match(/[A-Z]/)) {
+                let roomInfo = '';
+                let phoneInfo = '';
+                let clerkInfo = '';
+                
+                if (parts.length >= 3) roomInfo = parts[2].trim();
+                if (parts.length >= 4) phoneInfo = parts[3].trim();
+                if (parts.length >= 5) clerkInfo = parts.slice(4).join(' ').trim();
+                
+                // Extract phone number if present
+                let phone = null;
+                if (phoneInfo.match(/\d{3,4}[\.\-]?\d{4}/)) {
+                  phone = phoneInfo;
+                }
+                
+                // Create a new assignment based on this looser parsing
+                assignments.push({
+                  part: potentialPart,
+                  justice: potentialJustice,
+                  room: roomInfo.match(/\d{3,4}/) ? roomInfo.match(/\d{3,4}/)[0] : null,
+                  tel: phone,
+                  fax: null,
+                  sgt: '',
+                  clerks: clerkInfo ? [clerkInfo] : []
+                });
+              }
             }
           }
         }
-        
-        currentLineIndex++;
       }
       
-      console.log(`Successfully extracted ${assignments.length} assignments`);
-      return assignments;
+      // Perform post-processing to clean up and standardize data
+      const processedAssignments = assignments.map(assignment => {
+        // Clean part code - standardize format and remove extra spaces
+        const cleanedPart = assignment.part.replace(/PART\s+/i, '').trim();
+        
+        // Clean justice name - ensure consistent format
+        let justice = assignment.justice;
+        if (justice.startsWith('HON.')) {
+          justice = justice.substring(4).trim();
+        }
+        
+        // Standardize clerk names format
+        const cleanedClerks = Array.isArray(assignment.clerks) 
+          ? assignment.clerks.map((c: string) => c.trim()) 
+          : [];
+        
+        return {
+          ...assignment,
+          part: cleanedPart,
+          justice,
+          clerks: cleanedClerks
+        };
+      });
+      
+      // Remove any duplicate assignments based on part code
+      const uniqueAssignments = Array.from(
+        new Map(processedAssignments.map(a => [a.part, a])).values()
+      );
+      
+      console.log(`Successfully extracted ${uniqueAssignments.length} assignments`);
+      return uniqueAssignments;
     } catch (error) {
       console.error("Error parsing assignments:", error);
       return [];
@@ -256,7 +382,9 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
     try {
       const extractedText = await extractTextFromPdf(pdfFile);
       
-      const termTitleMatch = extractedText.match(/TERM\s+(I+V?|V?I+|[IVX]+)\s*$/m);
+      // Extract term information from PDF
+      // Look for term title in various formats
+      const termTitleMatch = extractedText.match(/TERM\s+(I+V?|V?I+|[IVX]+|[0-9]+)(?:\s+ASSIGNMENT)?/mi);
       if (termTitleMatch && !extractedInfo) {
         setExtractedInfo({
           termName: `Term ${termTitleMatch[1]}`,
@@ -264,7 +392,10 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
         });
       }
       
+      // Enhanced date extraction - handle various date formats
+      // Traditional format: JANUARY 30, 2023 - FEBRUARY 28, 2023
       const dateRangeMatch = extractedText.match(/(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+(\d{1,2})[,\s]+(\d{4})\s*[-–]\s*(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+(\d{1,2})[,\s]+(\d{4})/i);
+      
       if (dateRangeMatch && extractedInfo) {
         const startMonth = dateRangeMatch[1];
         const startDay = dateRangeMatch[2];
@@ -280,8 +411,9 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
         }));
       }
       
-      // Add fallback date extraction for more formats
+      // Try alternative date formats
       if (!dateRangeMatch) {
+        // MM/DD/YYYY format
         const simpleDateMatch = extractedText.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s*[-–]\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/i);
         if (simpleDateMatch && extractedInfo) {
           setExtractedInfo(prev => ({
@@ -289,7 +421,28 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
             startDate: `${simpleDateMatch[3]}-${simpleDateMatch[1].padStart(2, '0')}-${simpleDateMatch[2].padStart(2, '0')}`,
             endDate: `${simpleDateMatch[6]}-${simpleDateMatch[4].padStart(2, '0')}-${simpleDateMatch[5].padStart(2, '0')}`
           }));
+        } else {
+          // Text date without year: JANUARY 3 - FEBRUARY 2
+          const shortDateMatch = extractedText.match(/(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+(\d{1,2})\s*[-–]\s*(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+(\d{1,2})/i);
+          
+          if (shortDateMatch && extractedInfo) {
+            const currentYear = new Date().getFullYear();
+            setExtractedInfo(prev => ({
+              ...prev,
+              startDate: `${currentYear}-${getMonthNumber(shortDateMatch[1])}-${shortDateMatch[2].padStart(2, '0')}`,
+              endDate: `${currentYear}-${getMonthNumber(shortDateMatch[3])}-${shortDateMatch[4].padStart(2, '0')}`
+            }));
+          }
         }
+      }
+      
+      // Extract location information
+      const locationMatch = extractedText.match(/(?:COUNTY|BOROUGH|DISTRICT|COURT)\s+OF\s+([A-Z\s]+)/i);
+      if (locationMatch && extractedInfo) {
+        setExtractedInfo(prev => ({
+          ...prev,
+          location: locationMatch[1].trim()
+        }));
       }
       
       const parsedAssignments = parseAssignments(extractedText);
@@ -395,7 +548,7 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
         .insert({
           term_name: extractedInfo?.termName || "New Term",
           term_number: extractedInfo?.termNumber || `${new Date().getFullYear()}-${new Date().getMonth() + 1}`,
-          location: "New York",
+          location: extractedInfo?.location || "New York",
           start_date: extractedInfo?.startDate || new Date().toISOString().split('T')[0],
           end_date: extractedInfo?.endDate || new Date(new Date().setMonth(new Date().getMonth() + 3)).toISOString().split('T')[0],
           description: "Automatically generated from PDF upload",
