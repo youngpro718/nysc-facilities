@@ -1,9 +1,8 @@
+
 import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Card, 
   CardContent, 
@@ -12,14 +11,14 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FileUp, AlertCircle, CalendarRange, Clock, MapPin } from "lucide-react";
+import { DatePicker } from "@/components/ui/date-picker";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { toast } from "sonner";
 import {
   Table,
   TableBody,
@@ -28,24 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Calendar,
-  Search, 
-  MoreVertical, 
-  FileText, 
-  Pencil, 
-  Trash2, 
-  Eye, 
-  Download,
-  User,
-  Users,
-  MapPin,
-  CalendarDays,
-  Filter
-} from "lucide-react";
 import { format } from "date-fns";
-import { toast } from "sonner";
 
 // --- Formatting Helpers ---
 function formatPart(part: string | undefined, fallback: string | undefined) {
@@ -96,589 +78,579 @@ function formatClerks(clerks: string[] | string | undefined) {
   }).join(', ');
 }
 
-
-export function TermList() {
-  const [editingIdx, setEditingIdx] = useState<number | null>(null);
-  const [editValues, setEditValues] = useState<{ phone: string; sgt: string; clerks: string }>({ phone: '', sgt: '', clerks: '' });
-
-  // Handler to start editing a row
-  const handleEdit = (idx: number, assignment: any) => {
-    setEditingIdx(idx);
-    setEditValues({
-      phone: assignment.phone || '',
-      sgt: assignment.sgt || '',
-      clerks: assignment.clerks ? (Array.isArray(assignment.clerks) ? assignment.clerks.join(', ') : assignment.clerks) : ''
-    });
-  };
-
-  // Handler to cancel editing
-  const handleCancel = () => {
-    setEditingIdx(null);
-    setEditValues({ phone: '', sgt: '', clerks: '' });
-  };
-
-  // Handler to save edits (for now, just updates local assignments array)
-  const handleSave = (idx: number) => {
-    // TODO: Save to backend if desired
-    if (assignments[idx]) {
-      assignments[idx].phone = editValues.phone;
-      assignments[idx].sgt = editValues.sgt;
-      assignments[idx].clerks = editValues.clerks.split(',').map((c: string) => c.trim()).filter(Boolean);
-    }
-    setEditingIdx(null);
-    setEditValues({ phone: '', sgt: '', clerks: '' });
-  };
-
-  // Handler for controlled input changes
-  const handleEditChange = (idx: number, field: 'phone' | 'sgt' | 'clerks', value: string) => {
-    if (editingIdx !== idx) return;
-    setEditValues(prev => ({ ...prev, [field]: value }));
-  };
-
+// Changed the component name from 'TermList' to 'TermUploader' to match the import in TermManagement.tsx
+export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void }) {
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [termName, setTermName] = useState("");
+  const [termNumber, setTermNumber] = useState("");
+  const [location, setLocation] = useState("Manhattan");
+  const [status, setStatus] = useState("upcoming");
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [error, setError] = useState<string | null>(null);
+  const [previewAssignments, setPreviewAssignments] = useState<any[]>([]);
+  const [currentStep, setCurrentStep] = useState("upload");
+  
   const navigate = useNavigate();
-  const [terms, setTerms] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedTerm, setSelectedTerm] = useState<string | null>(null);
-  const [assignments, setAssignments] = useState<any[]>([]);
-  const [personnel, setPersonnel] = useState<any[]>([]);
-  const [viewMode, setViewMode] = useState<"details" | "personnel">("details");
-
-  const fetchTerms = async () => {
-    try {
-      setLoading(true);
-      
-      let query = supabase
-        .from('court_terms')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (statusFilter !== "all") {
-        query = query.eq('status', statusFilter);
+  
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      if (file.type !== "application/pdf") {
+        setError("Please upload a PDF file.");
+        return;
       }
       
-      const { data, error } = await query;
+      setPdfFile(file);
+      setError(null);
       
-      if (error) {
-        throw error;
-      }
-      
-      if (data) {
-        // Get assignment counts for each term
-        const termsWithCounts = await Promise.all(
-          data.map(async (term) => {
-            const { count: assignmentCount, error: assignmentError } = await supabase
-              .from('term_assignments')
-              .select('*', { count: 'exact', head: true })
-              .eq('term_id', term.id);
-              
-            const { count: personnelCount, error: personnelError } = await supabase
-              .from('term_personnel')
-              .select('*', { count: 'exact', head: true })
-              .eq('term_id', term.id);
-              
-            return {
-              ...term,
-              assignmentCount: assignmentCount || 0,
-              personnelCount: personnelCount || 0
-            };
-          })
-        );
+      // Generate term name and number from file name if empty
+      if (!termName || !termNumber) {
+        const fileName = file.name.replace(".pdf", "");
+        // Example: "April 2025 - Term III.pdf" -> "April 2025" and "Term III"
+        const match = fileName.match(/(.+?)(?:\s*[-–]\s*(.+))?$/);
         
-        setTerms(termsWithCounts);
+        if (match) {
+          if (!termName && match[1]) setTermName(match[1].trim());
+          if (!termNumber && match[2]) setTermNumber(match[2].trim());
+        }
       }
-    } catch (error) {
-      console.error("Error fetching terms:", error);
-      toast.error("Failed to load court terms");
-    } finally {
-      setLoading(false);
     }
   };
-
-  const fetchTermDetails = async (termId: string) => {
+  
+  const validateForm = () => {
+    if (!pdfFile) {
+      setError("Please select a PDF file to upload.");
+      return false;
+    }
+    
+    if (!termName) {
+      setError("Please enter a term name.");
+      return false;
+    }
+    
+    if (!termNumber) {
+      setError("Please enter a term number.");
+      return false;
+    }
+    
+    if (!startDate || !endDate) {
+      setError("Please select both start and end dates.");
+      return false;
+    }
+    
+    return true;
+  };
+  
+  const extractDataFromPDF = async () => {
+    if (!pdfFile) return null;
+    
     try {
-      setLoading(true);
+      setUploading(true);
+      console.info("Processing term data...");
       
-      // Fetch assignments
-      const { data: assignmentsData, error: assignmentsError } = await supabase
-        .from('term_assignments')
-        .select(`
-          *,
-          court_parts (
-            part_code, 
-            description
-          ),
-          rooms (
-            name, 
-            room_number, 
-            floor_id,
-            floors (
-              name,
-              building_id,
-              buildings (
-                name
-              )
-            )
-          )
-        `)
-        .eq('term_id', termId);
+      // First, extract text from PDF
+      console.info("Extracting text from PDF...");
+      const pdfData = new FormData();
+      pdfData.append("file", pdfFile);
+      
+      const reader = new FileReader();
+      
+      return new Promise<any>((resolve, reject) => {
+        reader.onload = async (e) => {
+          try {
+            const pdfArrayBuffer = e.target?.result as ArrayBuffer;
+            
+            // Load PDF.js dynamically
+            const pdfjsLib = await import('pdfjs-dist');
+            pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+            
+            const pdf = await pdfjsLib.getDocument({ data: pdfArrayBuffer }).promise;
+            console.info(`PDF loaded with ${pdf.numPages} pages`);
+            
+            let extractedText = '';
+            
+            // Extract text from each page
+            for (let i = 1; i <= pdf.numPages; i++) {
+              const page = await pdf.getPage(i);
+              const textContent = await page.getTextContent();
+              const pageText = textContent.items.map((item: any) => item.str).join(' ');
+              extractedText += pageText + '\n';
+            }
+            
+            console.info(`Extracted text length: ${extractedText.length} characters`);
+            console.info(`PDF text sample: ${extractedText.substring(0, 1000)}`);
+            
+            // Parse assignments from text
+            console.info("Parsing assignments from text...");
+            const assignments = parseAssignmentsFromText(extractedText);
+            
+            resolve(assignments);
+          } catch (error) {
+            console.error("Error processing PDF:", error);
+            reject(error);
+          }
+        };
         
-      if (assignmentsError) {
-        throw assignmentsError;
-      }
-      
-      // Fetch personnel
-      const { data: personnelData, error: personnelError } = await supabase
-        .from('term_personnel')
-        .select('*')
-        .eq('term_id', termId);
+        reader.onerror = (error) => {
+          reject(error);
+        };
         
-      if (personnelError) {
-        throw personnelError;
-      }
-      
-      setAssignments(assignmentsData || []);
-      setPersonnel(personnelData || []);
-      setSelectedTerm(termId);
-      setViewMode("details");
+        reader.readAsArrayBuffer(pdfFile);
+      });
     } catch (error) {
-      console.error("Error fetching term details:", error);
-      toast.error("Failed to load term details");
-    } finally {
-      setLoading(false);
+      console.error("Error in extractDataFromPDF:", error);
+      return null;
     }
   };
-
-  const deleteTerm = async (termId: string) => {
-    if (!confirm("Are you sure you want to delete this term? This action cannot be undone.")) {
+  
+  const parseAssignmentsFromText = (text: string) => {
+    // Improved parsing logic based on common term sheet formats
+    try {
+      // Split by lines and clean up
+      const lines = text.split(/\n/).map(line => line.trim()).filter(Boolean);
+      console.info(`Total lines: ${lines.length}`);
+      
+      // Pattern to match assignments
+      // Improved pattern that can handle various formats
+      const assignmentPattern = /\b([A-Z0-9-]+)\s+([A-Za-z\s\.-]+)(?:\s+([Rr]oom\s+)?(\d+[A-Z]?))?(?:\s+\(?(\d[-\d]+)\)?)?/i;
+      
+      const assignments: any[] = [];
+      
+      console.info(`Starting to process assignments from line 0`);
+      
+      // Process each line for potential assignments
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const match = line.match(assignmentPattern);
+        
+        if (match) {
+          // Found potential assignment
+          const [_, part, justice, roomPrefix, room, phone] = match;
+          
+          // Look ahead for potential SGT and clerks info
+          let sgt = '';
+          let clerks: string[] = [];
+          
+          // Check next line for SGT
+          if (i + 1 < lines.length && lines[i + 1].includes('SGT')) {
+            sgt = lines[i + 1].replace('SGT', '').trim();
+            i++; // Move to next line
+          }
+          
+          // Check next line(s) for clerks
+          let clerkLine = '';
+          while (i + 1 < lines.length && !lines[i + 1].match(assignmentPattern)) {
+            clerkLine += ' ' + lines[i + 1];
+            i++;
+            
+            // Stop if we hit a new section
+            if (lines[i].includes('PART') || lines[i].includes('JUDGE')) break;
+          }
+          
+          if (clerkLine) {
+            // Process clerk names
+            clerks = clerkLine.split(',').map(c => c.trim()).filter(Boolean);
+            if (clerks.length === 0 && clerkLine.trim()) {
+              clerks = [clerkLine.trim()];
+            }
+          }
+          
+          assignments.push({
+            part,
+            justice: justice.trim(),
+            room,
+            tel: phone,
+            fax: null,
+            sgt,
+            clerks
+          });
+        }
+      }
+      
+      // Secondary approach for when standard patterns don't find much
+      if (assignments.length < 3) {
+        console.info("Few assignments found, trying secondary parsing approach");
+        
+        // Simple table detection - look for sections that might be tables
+        const tablePattern = /([A-Z0-9-]+)\s+([A-Za-z\s\.-]+)/g;
+        let match;
+        let tableAssignments = [];
+        
+        while ((match = tablePattern.exec(text)) !== null) {
+          const [_, part, justice] = match;
+          if (part && justice && part.length < 10) { // Avoid catching long text as part code
+            tableAssignments.push({
+              part,
+              justice: justice.trim(),
+              room: null,
+              tel: null,
+              fax: null,
+              sgt: "",
+              clerks: []
+            });
+          }
+        }
+        
+        // Only use these if they seem like reasonable assignments
+        if (tableAssignments.length > assignments.length && tableAssignments.length < 50) {
+          assignments.push(...tableAssignments);
+        }
+      }
+      
+      console.info(`Successfully extracted ${assignments.length} assignments`);
+      console.info(`Parsed assignments: ${JSON.stringify(assignments, null, 2)}`);
+      
+      return assignments;
+    } catch (error) {
+      console.error("Error parsing assignments:", error);
+      return [];
+    }
+  };
+  
+  const handleAnalyzeClick = async () => {
+    try {
+      const assignments = await extractDataFromPDF();
+      setPreviewAssignments(assignments || []);
+      setCurrentStep("review");
+    } catch (error: any) {
+      console.error("Error analyzing PDF:", error);
+      setError(`Error analyzing PDF: ${error.message}`);
+    } finally {
+      setUploading(false);
+    }
+  };
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
       return;
     }
     
     try {
-      setLoading(true);
+      setUploading(true);
+      setError(null);
       
-      const { error } = await supabase
-        .from('court_terms')
-        .delete()
-        .eq('id', termId);
-        
-      if (error) {
-        throw error;
+      // 1. Upload the PDF file to storage
+      const timestamp = Date.now();
+      const fileExt = pdfFile!.name.split('.').pop();
+      const filePath = `term_pdfs/${timestamp}-${pdfFile!.name}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, pdfFile!);
+      
+      if (uploadError) {
+        throw uploadError;
       }
       
-      toast.success("Term deleted successfully");
-      fetchTerms();
-    } catch (error) {
-      console.error("Error deleting term:", error);
-      toast.error("Failed to delete term");
+      // Get the public URL
+      const { data: publicUrlData } = await supabase.storage
+        .from('documents')
+        .getPublicUrl(filePath);
+      
+      // 2. Create the term record
+      const termId = crypto.randomUUID();
+      const { error: termError } = await supabase
+        .from('court_terms')
+        .insert({
+          id: termId,
+          term_name: termName,
+          term_number: termNumber,
+          location: location,
+          status: status,
+          start_date: startDate,
+          end_date: endDate,
+          pdf_url: publicUrlData.publicUrl
+        });
+      
+      if (termError) {
+        throw termError;
+      }
+      
+      // 3. Process the assignments from the PDF and add them to the database
+      const assignments = previewAssignments.map(assignment => ({
+        term_id: termId,
+        partCode: assignment.part,
+        justiceName: assignment.justice,
+        roomNumber: assignment.room,
+        phone: assignment.tel,
+        sergeantName: assignment.sgt,
+        clerkNames: assignment.clerks,
+        extension: assignment.extension || null,
+        fax: assignment.fax || null
+      }));
+      
+      console.info(`Submitting assignments to backend: ${JSON.stringify(assignments, null, 2)}`);
+      
+      const { data: processingResult, error: processingError } = await supabase.functions
+        .invoke('parse-term-sheet', {
+          body: {
+            term_id: termId,
+            assignments: assignments
+          }
+        });
+      
+      if (processingError) {
+        throw processingError;
+      }
+      
+      console.info(`PDF processing result: ${JSON.stringify(processingResult, null, 2)}`);
+      
+      // Success!
+      toast.success("Term uploaded successfully!");
+      onUploadSuccess?.();
+      
+      // Reset form
+      setPdfFile(null);
+      setTermName("");
+      setTermNumber("");
+      setStartDate(undefined);
+      setEndDate(undefined);
+      setPreviewAssignments([]);
+      setCurrentStep("upload");
+      
+    } catch (error: any) {
+      console.error("Error uploading term:", error);
+      setError(`Error uploading: ${error.message}`);
+      toast.error("Failed to upload term");
     } finally {
-      setLoading(false);
+      setUploading(false);
     }
   };
-
-  useEffect(() => {
-    fetchTerms();
-  }, [statusFilter]);
-
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  };
-
-  const filteredTerms = terms.filter(term => {
-    if (!searchQuery) return true;
-    
-    const query = searchQuery.toLowerCase();
-    return (
-      term.term_name.toLowerCase().includes(query) ||
-      term.term_number.toLowerCase().includes(query) ||
-      term.location.toLowerCase().includes(query)
-    );
-  });
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "active":
-        return <Badge className="bg-green-500">Active</Badge>;
-      case "upcoming":
-        return <Badge className="bg-blue-500">Upcoming</Badge>;
-      case "completed":
-        return <Badge className="bg-gray-500">Completed</Badge>;
-      default:
-        return <Badge className="bg-gray-500">{status}</Badge>;
-    }
-  };
-
-  const handleBack = () => {
-    setSelectedTerm(null);
-  };
-
-  const handleViewPersonnel = () => {
-    setViewMode("personnel");
-  };
-
-  const handleViewAssignments = () => {
-    setViewMode("details");
-  };
-
-  const renderTermList = () => {
-    return (
-      <>
-        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-          <h1 className="text-3xl font-bold">Court Terms</h1>
-          <div className="flex gap-2">
-            <Button onClick={() => navigate("/terms/new")}>
-              Add New Term
-            </Button>
-          </div>
-        </div>
-        
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search terms..."
-              className="pl-8"
-              value={searchQuery}
-              onChange={handleSearch}
-            />
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Status:</span>
-            <Tabs defaultValue={statusFilter} className="w-auto" onValueChange={setStatusFilter}>
-              <TabsList>
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="active">Active</TabsTrigger>
-                <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-                <TabsTrigger value="completed">Completed</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-        </div>
-        
-        {loading ? (
-          <div className="text-center py-8">
-            <p>Loading terms...</p>
-          </div>
-        ) : filteredTerms.length === 0 ? (
-          <div className="text-center border rounded-md p-8">
-            <p className="text-muted-foreground">No terms found. Try adjusting your search or filters.</p>
-            <Button className="mt-4" variant="outline" onClick={() => { setSearchQuery(""); setStatusFilter("all"); }}>
-              Clear Filters
-            </Button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredTerms.map((term) => (
-              <Card key={term.id} className="overflow-hidden">
-                <CardHeader className="pb-3">
-                  <CardTitle>{term.term_name}</CardTitle>
-                  <CardDescription>
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3.5 w-3.5" />
-                      <span>{term.term_number}</span>
-                    </div>
-                    <div className="flex items-center gap-1 mt-1">
-                      <MapPin className="h-3.5 w-3.5" />
-                      <span>{term.location}</span>
-                    </div>
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pb-3">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      {getStatusBadge(term.status)}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {term.start_date && term.end_date ? (
-                        `${format(new Date(term.start_date), "MMM d")} - ${format(new Date(term.end_date), "MMM d, yyyy")}`
-                      ) : (
-                        "No dates specified"
-                      )}
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 mt-4">
-                    <div className="flex items-center gap-1.5">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{term.assignmentCount} Assignments</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{term.personnelCount} Personnel</span>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="pt-0 flex justify-between">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => fetchTermDetails(term.id)}
-                  >
-                    <Eye className="h-4 w-4 mr-2" />
-                    View Details
-                  </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem 
-                        onClick={() => window.open(term.pdf_url, '_blank')}
-                      >
-                        <FileText className="h-4 w-4 mr-2" />
-                        View PDF
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => fetchTermDetails(term.id)}
-                      >
-                        <Eye className="h-4 w-4 mr-2" />
-                        View Details
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem 
-                        onClick={() => navigate(`/terms/edit/${term.id}`)}
-                      >
-                        <Pencil className="h-4 w-4 mr-2" />
-                        Edit Term
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => deleteTerm(term.id)}
-                        className="text-red-600"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete Term
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        )}
-      </>
-    );
-  };
-
-  const renderTermDetails = () => {
-    const term = terms.find(t => t.id === selectedTerm);
-    
-    if (!term) return null;
-    
-    return (
-      <div>
-        <Button 
-          variant="outline" 
-          className="mb-4" 
-          onClick={handleBack}
-        >
-          &larr; Back to Terms
-        </Button>
-        
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-          <div>
-            <h2 className="text-2xl font-bold">{term.term_name}</h2>
-            <div className="text-muted-foreground">{term.term_number} | {term.location}</div>
-          </div>
-          
-          <div className="flex gap-2">
-            <Button 
-              variant={viewMode === "details" ? "default" : "outline"} 
-              onClick={handleViewAssignments}
-            >
-              Assignments ({assignments.length})
-            </Button>
-            <Button 
-              variant={viewMode === "personnel" ? "default" : "outline"} 
-              onClick={handleViewPersonnel}
-            >
-              Personnel ({personnel.length})
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => window.open(term.pdf_url, '_blank')}
-            >
-              <FileText className="h-4 w-4 mr-2" />
-              View PDF
-            </Button>
-          </div>
-        </div>
-        
-        <div className="border rounded-md p-4 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground">Term Period</h3>
-              <div className="flex items-center mt-1">
-                <CalendarDays className="h-4 w-4 mr-2" />
-                <span>
-                  {term.start_date && term.end_date ? (
-                    `${format(new Date(term.start_date), "MMMM d, yyyy")} - ${format(new Date(term.end_date), "MMMM d, yyyy")}`
-                  ) : (
-                    "No dates specified"
-                  )}
-                </span>
-              </div>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground">Status</h3>
-              <div className="mt-1">{getStatusBadge(term.status)}</div>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground">PDF Uploaded</h3>
-              <p className="mt-1">{format(new Date(term.created_at), "MMMM d, yyyy")}</p>
-            </div>
-          </div>
-        </div>
-        
-        {viewMode === "details" ? (
-          <div>
-            <h3 className="text-lg font-medium mb-4">Court Assignments</h3>
-            {assignments.length === 0 ? (
-              <div className="text-center border rounded-md p-8">
-                <p className="text-muted-foreground">No assignments available for this term.</p>
-              </div>
-            ) : (
-              <div className="border rounded-md overflow-hidden">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-gray-200 dark:bg-gray-900">
-                        <TableHead>Part</TableHead>
-                        <TableHead>Justice</TableHead>
-                        <TableHead>Room</TableHead>
-                        <TableHead>Phone</TableHead>
-                        <TableHead>SGT</TableHead>
-                        <TableHead>Clerks</TableHead>
-                        <TableHead></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {assignments.map((assignment, idx) => {
-                        const isEditing = editingIdx === idx;
-                        return (
-                          <TableRow key={assignment.id || idx} className={isEditing ? "bg-yellow-100 dark:bg-yellow-900" : "even:bg-gray-50 dark:even:bg-gray-900"}>
-                            <TableCell>{formatPart(assignment.part, assignment.court_parts?.part_code)}</TableCell>
-                            <TableCell>{assignment.justice || assignment.justice_name}</TableCell>
-                            <TableCell>{assignment.room || assignment.rooms?.room_number}</TableCell>
-                            <TableCell>
-                              {isEditing ? (
-                                <input
-                                  type="text"
-                                  value={editValues.phone}
-                                  onChange={e => handleEditChange(idx, 'phone', e.target.value)}
-                                  className="border rounded px-1 py-0.5 w-24 bg-yellow-50 dark:bg-yellow-900 text-black dark:text-white"
-                                />
-                              ) : (
-                                formatPhone(assignment.phone)
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {isEditing ? (
-                                <input
-                                  type="text"
-                                  value={editValues.sgt}
-                                  onChange={e => handleEditChange(idx, 'sgt', e.target.value)}
-                                  className="border rounded px-1 py-0.5 w-20 bg-yellow-50 dark:bg-yellow-900 text-black dark:text-white"
-                                />
-                              ) : (
-                                formatSergeant(assignment.sgt)
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {isEditing ? (
-                                <input
-                                  type="text"
-                                  value={editValues.clerks}
-                                  onChange={e => handleEditChange(idx, 'clerks', e.target.value)}
-                                  className="border rounded px-1 py-0.5 w-44 bg-yellow-50 dark:bg-yellow-900 text-black dark:text-white"
-                                />
-                              ) : (
-                                formatClerks(assignment.clerks)
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {isEditing ? (
-                                <>
-                                  <Button size="sm" variant="outline" className="mr-2" onClick={() => handleSave(idx)}>Save</Button>
-                                  <Button size="sm" variant="ghost" onClick={handleCancel}>Cancel</Button>
-                                </>
-                              ) : (
-                                <Button size="sm" variant="outline" className="bg-blue-600 text-white hover:bg-blue-700" onClick={() => handleEdit(idx, assignment)}>Edit</Button>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div>
-            <h3 className="text-lg font-medium mb-4">Court Personnel</h3>
-            {personnel.length === 0 ? (
-              <div className="text-center border rounded-md p-8">
-                <p className="text-muted-foreground">No personnel data available for this term.</p>
-              </div>
-            ) : (
-              <div className="border rounded-md overflow-hidden">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Role</TableHead>
-                        <TableHead>Contact</TableHead>
-                        <TableHead>Location</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {personnel.map((person) => (
-                        <TableRow key={person.id}>
-                          <TableCell className="font-medium">{person.name}</TableCell>
-                          <TableCell>{person.role}</TableCell>
-                          <TableCell>
-                            {person.phone && (
-                              <div className="text-sm">{person.phone}</div>
-                            )}
-                            {person.extension && (
-                              <div className="text-xs">Ext: {person.extension}</div>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {(person.room || person.floor) ? (
-                              <>
-                                {person.room && <span>Room {person.room}</span>}
-                                {person.room && person.floor && <span>, </span>}
-                                {person.floor && <span>Floor {person.floor}</span>}
-                              </>
-                            ) : (
-                              "—"
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    );
-  };
-
+  
   return (
-    <div className="container mx-auto py-8">
-      {selectedTerm ? renderTermDetails() : renderTermList()}
+    <div className="container mx-auto">
+      <Card className="max-w-4xl mx-auto">
+        <CardHeader>
+          <CardTitle>Upload Term Schedule</CardTitle>
+          <CardDescription>
+            Upload a term sheet PDF to create assignments and personnel records.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={currentStep} className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="upload" onClick={() => setCurrentStep("upload")}>
+                Upload PDF
+              </TabsTrigger>
+              <TabsTrigger 
+                value="review" 
+                onClick={() => previewAssignments.length > 0 && setCurrentStep("review")}
+                disabled={previewAssignments.length === 0}
+              >
+                Review Data
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="upload">
+              <form onSubmit={(e) => { e.preventDefault(); handleAnalyzeClick(); }}>
+                <div className="space-y-6">
+                  {error && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Error</AlertTitle>
+                      <AlertDescription>
+                        {error}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  <div className="grid grid-cols-1 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="pdf-upload">Upload Term Sheet PDF</Label>
+                      <div className="flex items-center gap-4">
+                        <Input
+                          id="pdf-upload"
+                          type="file"
+                          accept=".pdf"
+                          onChange={handleFileChange}
+                          className="flex-1"
+                        />
+                        {pdfFile && (
+                          <Button 
+                            type="submit"
+                            disabled={uploading}
+                          >
+                            {uploading ? "Analyzing..." : "Analyze PDF"}
+                          </Button>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Upload a PDF file of the court term schedule.
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="term-name">Term Name</Label>
+                          <Input
+                            id="term-name"
+                            value={termName}
+                            onChange={(e) => setTermName(e.target.value)}
+                            placeholder="e.g., Fall 2025"
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="term-number">Term Number</Label>
+                          <Input
+                            id="term-number"
+                            value={termNumber}
+                            onChange={(e) => setTermNumber(e.target.value)}
+                            placeholder="e.g., Term IV"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Start Date</Label>
+                          <DatePicker
+                            value={startDate}
+                            onChange={setStartDate}
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label>End Date</Label>
+                          <DatePicker
+                            value={endDate}
+                            onChange={setEndDate}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="location">Location</Label>
+                          <Select
+                            value={location}
+                            onValueChange={setLocation}
+                          >
+                            <SelectTrigger id="location">
+                              <SelectValue placeholder="Select location" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Manhattan">Manhattan</SelectItem>
+                              <SelectItem value="Brooklyn">Brooklyn</SelectItem>
+                              <SelectItem value="Queens">Queens</SelectItem>
+                              <SelectItem value="Bronx">Bronx</SelectItem>
+                              <SelectItem value="Staten Island">Staten Island</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="status">Status</Label>
+                          <Select
+                            value={status}
+                            onValueChange={setStatus}
+                          >
+                            <SelectTrigger id="status">
+                              <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="upcoming">Upcoming</SelectItem>
+                              <SelectItem value="active">Active</SelectItem>
+                              <SelectItem value="completed">Completed</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </TabsContent>
+            
+            <TabsContent value="review">
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-medium">Extracted Assignments</h3>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => setCurrentStep("upload")}>
+                      Back
+                    </Button>
+                    <Button onClick={handleSubmit} disabled={uploading}>
+                      {uploading ? "Uploading..." : "Submit"}
+                    </Button>
+                  </div>
+                </div>
+                
+                {previewAssignments.length === 0 ? (
+                  <div className="text-center border rounded-md p-8">
+                    <p className="text-muted-foreground">No assignments extracted from the PDF.</p>
+                    <Button 
+                      className="mt-4" 
+                      variant="outline" 
+                      onClick={() => setCurrentStep("upload")}
+                    >
+                      Try Again
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="border rounded-md overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Part</TableHead>
+                            <TableHead>Justice</TableHead>
+                            <TableHead>Room</TableHead>
+                            <TableHead>Phone</TableHead>
+                            <TableHead>SGT</TableHead>
+                            <TableHead>Clerks</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {previewAssignments.map((assignment, idx) => (
+                            <TableRow key={idx}>
+                              <TableCell>{formatPart(assignment.part, undefined)}</TableCell>
+                              <TableCell>{assignment.justice}</TableCell>
+                              <TableCell>{assignment.room || '—'}</TableCell>
+                              <TableCell>{formatPhone(assignment.tel)}</TableCell>
+                              <TableCell>{formatSergeant(assignment.sgt)}</TableCell>
+                              <TableCell>{formatClerks(assignment.clerks)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="flex justify-end mt-4">
+                  <Button onClick={handleSubmit} disabled={uploading}>
+                    {uploading ? "Uploading..." : "Submit"}
+                  </Button>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+        <CardFooter className="flex justify-between">
+          <div className="text-sm text-muted-foreground">
+            <div className="flex items-center">
+              <FileUp className="h-4 w-4 mr-1" />
+              {pdfFile ? pdfFile.name : "No file selected"}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            {startDate && endDate && (
+              <>
+                <CalendarRange className="h-4 w-4" />
+                <span>
+                  {format(startDate, "MMM d")} - {format(endDate, "MMM d, yyyy")}
+                </span>
+              </>
+            )}
+          </div>
+        </CardFooter>
+      </Card>
     </div>
   );
 }
