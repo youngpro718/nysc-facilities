@@ -36,13 +36,7 @@ export function useConnectionQueries(spaceId: string, spaceType: "room" | "hallw
           position,
           status,
           hallway_position,
-          offset_distance,
-          to_space:to_space_id(
-            id,
-            name,
-            type,
-            room_number
-          )
+          offset_distance
         `)
         .or(`from_space_id.eq.${spaceId},to_space_id.eq.${spaceId}`)
         .eq("status", "active");
@@ -55,29 +49,40 @@ export function useConnectionQueries(spaceId: string, spaceType: "room" | "hallw
 
       if (!connections) return [];
 
+      // Get all the connected space IDs
+      const connectedSpaceIds = connections.map(conn => 
+        conn.from_space_id === spaceId ? conn.to_space_id : conn.from_space_id
+      );
+
+      // Fetch the connected spaces in a separate query
+      const { data: connectedSpaces, error: spacesError } = await supabase
+        .from("new_spaces")
+        .select("id, name, type, room_number")
+        .in("id", connectedSpaceIds)
+        .eq("status", "active");
+
+      if (spacesError) {
+        console.error("Error fetching connected spaces:", spacesError);
+        toast.error("Failed to load connected spaces");
+      }
+
+      // Create a map of space IDs to space data for easy lookup
+      const spacesMap = (connectedSpaces || []).reduce((map, space) => {
+        map[space.id] = space;
+        return map;
+      }, {} as Record<string, any>);
+
       // Transform the connections data
       return connections.map((conn): Connection => {
         const connectedSpaceId = conn.from_space_id === spaceId ? conn.to_space_id : conn.from_space_id;
         
-        // Define a type guard to check if to_space is valid
-        const isValidToSpace = (obj: any): obj is { name: string; type: string; room_number?: string } => {
-          return obj && 
-            typeof obj === 'object' && 
-            !('error' in obj) &&
-            typeof obj.name === 'string' &&
-            typeof obj.type === 'string';
-        };
-        
-        // Create a safe default object for invalid to_space data
-        const defaultSpace = {
+        // Look up the connected space in our map
+        const connectedSpace = spacesMap[connectedSpaceId] || {
           id: connectedSpaceId,
           name: "Unknown Space",
           type: "unknown",
           room_number: null
         };
-        
-        // Use the type guard to determine the connected space
-        const connectedSpace = isValidToSpace(conn.to_space) ? conn.to_space : defaultSpace;
 
         return {
           id: conn.id,
