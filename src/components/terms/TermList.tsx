@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -47,6 +46,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { EditTermAssignmentDialog } from "@/components/terms/EditTermAssignmentDialog";
 
 export function TermList() {
   const navigate = useNavigate();
@@ -57,7 +57,8 @@ export function TermList() {
   const [selectedTerm, setSelectedTerm] = useState<string | null>(null);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [personnel, setPersonnel] = useState<any[]>([]);
-  const [viewMode, setViewMode] = useState<"terms" | "details" | "personnel">("terms");
+  const [viewMode, setViewMode<"terms" | "details" | "personnel">("terms");
+  const [editingAssignment, setEditingAssignment] = useState<any>(null);
 
   const fetchTerms = async () => {
     try {
@@ -389,7 +390,7 @@ export function TermList() {
         
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
-            <h2 className="text-2xl font-bold">{term.term_name}</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{term.term_name}</h2>
             <p className="text-muted-foreground">{term.term_number} | {term.location}</p>
           </div>
           
@@ -416,11 +417,11 @@ export function TermList() {
           </div>
         </div>
         
-        <div className="border rounded-md p-4 mb-6">
+        <div className="border rounded-md p-4 mb-6 bg-white">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <h3 className="text-sm font-medium text-muted-foreground">Term Period</h3>
-              <p className="flex items-center mt-1">
+              <h3 className="text-sm font-medium text-gray-600">Term Period</h3>
+              <p className="flex items-center mt-1 text-gray-900">
                 <CalendarDays className="h-4 w-4 mr-2" />
                 {term.start_date && term.end_date ? (
                   `${format(new Date(term.start_date), "MMMM d, yyyy")} - ${format(new Date(term.end_date), "MMMM d, yyyy")}`
@@ -430,67 +431,73 @@ export function TermList() {
               </p>
             </div>
             <div>
-              <h3 className="text-sm font-medium text-muted-foreground">Status</h3>
+              <h3 className="text-sm font-medium text-gray-600">Status</h3>
               <p className="mt-1">{getStatusBadge(term.status)}</p>
             </div>
             <div>
-              <h3 className="text-sm font-medium text-muted-foreground">PDF Uploaded</h3>
-              <p className="mt-1">{format(new Date(term.created_at), "MMMM d, yyyy")}</p>
+              <h3 className="text-sm font-medium text-gray-600">PDF Uploaded</h3>
+              <p className="mt-1 text-gray-900">{format(new Date(term.created_at), "MMMM d, yyyy")}</p>
             </div>
           </div>
         </div>
         
         {viewMode === "details" ? (
           <>
-            <h3 className="text-lg font-medium mb-4">Court Assignments</h3>
+            <h3 className="text-lg font-medium mb-4 text-gray-900">Court Assignments</h3>
             {assignments.length === 0 ? (
-              <div className="text-center border rounded-md p-8">
+              <div className="text-center border rounded-md p-8 bg-white">
                 <p className="text-muted-foreground">No assignments available for this term.</p>
               </div>
             ) : (
-              <div className="border rounded-md overflow-hidden">
+              <div className="border rounded-md overflow-hidden bg-white">
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>Part</TableHead>
-                        <TableHead>Justice</TableHead>
-                        <TableHead>Clerks</TableHead>
-                        <TableHead>Room</TableHead>
-                        <TableHead>Contact</TableHead>
+                      <TableRow className="bg-gray-50">
+                        <TableHead className="text-gray-900">Part</TableHead>
+                        <TableHead className="text-gray-900">Justice</TableHead>
+                        <TableHead className="text-gray-900">Room</TableHead>
+                        <TableHead className="text-gray-900">Phone/Fax</TableHead>
+                        <TableHead className="text-gray-900">Sgt.</TableHead>
+                        <TableHead className="text-gray-900">Clerks</TableHead>
+                        <TableHead className="text-gray-900 text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {assignments.map((assignment) => (
                         <TableRow key={assignment.id}>
-                          <TableCell className="font-medium">
-                            Part {assignment.court_parts?.part_code || assignment.part_id}
+                          <TableCell className="font-medium text-gray-900">
+                            {assignment.court_parts?.part_code || assignment.part_id}
                           </TableCell>
-                          <TableCell>{assignment.justice_name}</TableCell>
-                          <TableCell>
+                          <TableCell className="text-gray-900">{assignment.justice_name}</TableCell>
+                          <TableCell className="text-gray-900">
+                            {assignment.rooms?.room_number || "—"}
+                          </TableCell>
+                          <TableCell className="text-gray-900">
+                            {assignment.phone && (
+                              <div>{assignment.phone}</div>
+                            )}
+                            {assignment.fax && (
+                              <div className="text-gray-600 text-sm">Fax: {assignment.fax}</div>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-gray-900">
+                            {assignment.sergeant_name || "—"}
+                          </TableCell>
+                          <TableCell className="text-gray-900">
                             {assignment.clerk_names && assignment.clerk_names.length > 0 
                               ? assignment.clerk_names.join(', ')
                               : "—"}
                           </TableCell>
-                          <TableCell>
-                            {assignment.rooms ? (
-                              <div>
-                                <div>{assignment.rooms.name || assignment.rooms.room_number}</div>
-                                <div className="text-xs text-muted-foreground">
-                                  {assignment.rooms.floors?.buildings?.name}, {assignment.rooms.floors?.name}
-                                </div>
-                              </div>
-                            ) : (
-                              "—"
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {assignment.phone && (
-                              <div className="text-sm">{assignment.phone}</div>
-                            )}
-                            {assignment.extension && (
-                              <div className="text-xs">Ext: {assignment.extension}</div>
-                            )}
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setEditingAssignment(assignment)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                              <span className="sr-only">Edit</span>
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -552,9 +559,21 @@ export function TermList() {
             )}
           </>
         )}
-      </>
-    );
-  };
+
+      {editingAssignment && (
+        <EditTermAssignmentDialog
+          isOpen={true}
+          onClose={() => setEditingAssignment(null)}
+          assignment={editingAssignment}
+          onSave={() => {
+            fetchTermDetails(selectedTerm!);
+            setEditingAssignment(null);
+          }}
+        />
+      )}
+    </>
+  );
+};
 
   return (
     <div className="w-full">

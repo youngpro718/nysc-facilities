@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -128,61 +127,25 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
       console.log("Total lines:", lines.length);
       setDebugInfo({ lineCount: lines.length, sampleLines: lines.slice(0, 20) });
       
-      // Multi-approach strategy for finding the assignment table section
-      
-      // Approach 1: Look for standard table headers
-      let tableStartIndex = -1;
-      const possibleHeaders = [
-        /PART.*JUSTICE.*ROOM/i,
-        /PART.*JUDGE.*ROOM/i,
-        /P(AR)?T.*J\..+ROOM/i,
-        /^\s*PART\s*$/i,
-        /JUDGE.*PART.*ROOM/i,
-        /COURTROOM.*JUDGE/i,
-        /PART.*COURTROOM/i,
+      // Enhanced part code patterns to match special formats
+      const partPatterns = [
+        /^((?:IDV|N-SCT|TAP\s*[A-G]|GWP\d|MDC-\d+)\b)/i,
+        /^([0-9]+[A-Z]*)/,
+        /^(TAP\s*[A-Z]?)/i,
+        /^([A-Z]+\s*\d+[A-Z]*)/,
+        /^([IVX]+)/,
       ];
-
-      for (let i = 0; i < lines.length; i++) {
-        // Check current line and a few following lines together
-        for (let j = 0; j < 3 && i + j < lines.length; j++) {
-          const combinedLines = lines.slice(i, i + j + 1).join(' ');
-          
-          if (possibleHeaders.some(pattern => pattern.test(combinedLines))) {
-            console.log("Found table header at line:", i, combinedLines);
-            tableStartIndex = i;
-            break;
-          }
-        }
-        if (tableStartIndex !== -1) break;
-      }
-
-      // Approach 2: Find room numbers as anchors
-      if (tableStartIndex === -1) {
-        console.log("Trying to find room numbers as anchors...");
-        const roomNumberPattern = /\b(?:RM\.?|ROOM)?\s*\d{3,4}[A-Z]?\b|\b\d{3,4}[A-Z]?\s*$/i;
-        
-        for (let i = 0; i < lines.length; i++) {
-          if (roomNumberPattern.test(lines[i]) && 
-              (i > 0 && /[A-Z]\.?\s+[A-Z][a-z]+/.test(lines[i]))) { // Looks like a justice name
-            console.log("Found potential assignment line with room:", i, lines[i]);
-            tableStartIndex = i - 1; // Start from the line before this
-            break;
-          }
-        }
-      }
       
-      // Approach 3: Scan for patterns that look like part numbers followed by justice names
+      // Look for standard table headers
+      let tableStartIndex = lines.findIndex(line => 
+        /PART.*JUSTICE|JUDGE.*PART|COURTROOM.*JUDGE/i.test(line)
+      );
+      
       if (tableStartIndex === -1) {
-        console.log("Scanning for part number patterns...");
-        const partPattern = /^\s*(?:[0-9]+[A-Z]*|[IVX]+|TAP\s*[A-Z]?|[A-Z]+\s*\d+)\s+[A-Z]\.?\s/i;
-        
-        for (let i = 0; i < lines.length; i++) {
-          if (partPattern.test(lines[i])) {
-            console.log("Found potential part number pattern:", i, lines[i]);
-            tableStartIndex = i - 1;
-            break;
-          }
-        }
+        // Try to find the first part code as fallback
+        tableStartIndex = lines.findIndex(line => 
+          partPatterns.some(pattern => pattern.test(line.trim()))
+        );
       }
 
       if (tableStartIndex === -1) {
@@ -192,54 +155,19 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
 
       console.log("Starting to process assignments from line", tableStartIndex);
       
-      // More flexible parsing algorithms
-      const partPatterns = [
-        /^([0-9]+[A-Z]*)/,
-        /^(TAP\s*[A-Z]?)/i,
-        /^([A-Z]*\s*\d+[A-Z]*)/,
-        /^([IVX]+)/,
-        /^(IDV|MDC|SCT)/i,
-      ];
-      
-      // Pre-process potential room numbers from the entire document
-      const roomNumbers = new Set<string>();
-      const roomPattern = /(?:RM\.?|ROOM)?\s*(\d{1,4}[A-Z]?)\b|\b(\d{3,4}[A-Z]?)(?:\s|$)/i;
-      
-      for (const line of lines) {
-        const roomMatches = line.match(new RegExp(roomPattern, 'gi'));
-        if (roomMatches) {
-          roomMatches.forEach(match => {
-            const extracted = match.match(roomPattern);
-            if (extracted) {
-              const room = (extracted[1] || extracted[2]).trim();
-              if (/^\d{3,4}[A-Z]?$/.test(room)) { // Validate it looks like a room number
-                roomNumbers.add(room);
-              }
-            }
-          });
-        }
-      }
-      
-      console.log("Potential room numbers found:", Array.from(roomNumbers));
-      
-      // Process assignment lines with more flexibility
       let currentLineIndex = tableStartIndex;
-      let assignmentCount = 0;
-      const maxLinesToProcess = 100; // Safety limit
       
       while (currentLineIndex < lines.length && 
-             currentLineIndex - tableStartIndex < maxLinesToProcess) {
+             currentLineIndex - tableStartIndex < 100) {
         
         const line = lines[currentLineIndex].trim();
         
-        // Skip empty lines or footer markers
-        if (!line || 
-            line.match(/END OF|PAGE No\.|LOCATED AT|COURT NOTES|^\s*\d+\s*$/i)) {
+        if (!line || line.match(/END OF|PAGE/i)) {
           currentLineIndex++;
           continue;
         }
 
-        // Try to extract part number first
+        // Try to extract part code first
         let partMatch = null;
         for (const pattern of partPatterns) {
           partMatch = line.match(pattern);
@@ -247,13 +175,12 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
         }
 
         if (partMatch) {
-          console.log("Processing potential assignment line:", line);
+          console.log("Processing line:", line);
           
           const part = partMatch[1].trim();
           const remainingText = line.substring(partMatch[0].length).trim();
           
-          // More flexible justice name extraction - look for name patterns
-          // Justice names are usually in format: X. LASTNAME or X. X. LASTNAME or similar
+          // More flexible justice name extraction
           const justicePattern = /([A-Z]\.?\s+(?:[A-Z]\.?\s+)?[A-Z][A-Za-z\-']+)/;
           const justiceMatch = remainingText.match(justicePattern);
           
@@ -261,84 +188,42 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
             const justice = justiceMatch[1].trim();
             const afterJustice = remainingText.substring(remainingText.indexOf(justice) + justice.length).trim();
             
-            // Look for room number - more flexible pattern
-            const roomPatterns = [
-              /(?:RM\.?|ROOM)?\s*(\d{1,4}[A-Z]?)/i,
-              /(\d{3,4}[A-Z]?)\s*$/i, // Room number at end of line
-            ];
+            // Look for room number
+            const roomPattern = /(?:RM\.?|ROOM)?\s*(\d{3,4}[A-Z]?)/i;
+            const roomMatch = afterJustice.match(roomPattern);
             
-            let roomMatch = null;
-            let room = '';
-            
-            for (const pattern of roomPatterns) {
-              roomMatch = afterJustice.match(pattern);
-              if (roomMatch) {
-                room = roomMatch[1].trim();
-                break;
-              }
-            }
-            
-            // If no room found but we have collected room numbers, try to find if any appears in the text
-            if (!room && roomNumbers.size > 0) {
-              for (const potentialRoom of roomNumbers) {
-                if (afterJustice.includes(potentialRoom)) {
-                  room = potentialRoom;
-                  break;
-                }
-              }
-            }
-            
-            // Only process if we found what looks like a room number
-            if (room) {
-              // Extract remaining info - phone, fax, clerks
+            if (roomMatch) {
+              const room = roomMatch[1].trim();
               let remainingInfo = afterJustice;
-              if (roomMatch) {
-                remainingInfo = afterJustice.substring(0, roomMatch.index) + 
-                               afterJustice.substring(roomMatch.index + roomMatch[0].length);
-              }
               
-              // Phone and fax extraction
-              const phonePattern = /(?:TEL:?)?\s*(?:\()?(\d{3}[\s-]?\d{3}[\s-]?\d{4})(?:\))?/i;
+              // Extract phone and fax - now handling (6)4051 format
+              const phonePattern = /\((\d)\)(\d{4})/;
               const faxPattern = /(?:FAX:?)?\s*(?:\()?(\d{3}[\s-]?\d{3}[\s-]?\d{4})(?:\))?/i;
               
               const phoneMatch = remainingInfo.match(phonePattern);
               const faxMatch = remainingInfo.match(faxPattern);
               
-              // Try to extract clerks and other personnel - more flexible approach
-              let clerks: string[] = [];
-              let sgt = '';
-              
-              // Try to find 'SGT' or similar pattern
-              const sgtPattern = /\b(SGT\.?\s+[A-Z]+)/i;
+              // Extract sergeant (last name only)
+              const sgtPattern = /\b(?:SGT\.?\s+)([A-Z]+)\b/i;
               const sgtMatch = remainingInfo.match(sgtPattern);
-              if (sgtMatch) {
-                sgt = sgtMatch[1];
-                remainingInfo = remainingInfo.replace(sgtMatch[0], '');
-              }
+              let sgt = sgtMatch ? sgtMatch[1] : '';
               
-              // Clean up remaining text and split potential clerk names
-              if (phoneMatch) remainingInfo = remainingInfo.replace(phoneMatch[0], '');
-              if (faxMatch) remainingInfo = remainingInfo.replace(faxMatch[0], '');
+              // Process clerk names (initial + last name)
+              let clerks: string[] = [];
+              const clerkPattern = /[A-Z]\.\s+[A-Za-z\-]+(?:\s+[A-Za-z\-]+)?/g;
+              const clerkMatches = remainingInfo.match(clerkPattern);
               
-              // Look for name patterns in the remaining text
-              const namePattern = /[A-Z][A-Za-z\-'.]+(?:\s+[A-Z][A-Za-z\-'.]+)*/g;
-              const nameMatches = remainingInfo.match(namePattern);
-              
-              if (nameMatches) {
-                // Filter out known non-clerk terms
-                clerks = nameMatches.filter(name => 
-                  !['TEL', 'FAX', 'RM', 'ROOM', 'SGT', 'PART'].includes(name) &&
-                  !name.match(/^\d+$/) &&
-                  name.length > 1
-                );
+              if (clerkMatches) {
+                clerks = clerkMatches
+                  .filter(name => !name.startsWith('SGT.'))
+                  .map(name => name.trim());
               }
               
               console.log("Extracted assignment:", {
                 part,
                 justice,
                 room,
-                phone: phoneMatch ? phoneMatch[1] : '',
-                fax: faxMatch ? faxMatch[1] : '',
+                phone: phoneMatch ? `(${phoneMatch[1]})${phoneMatch[2]}` : '',
                 sgt,
                 clerks
               });
@@ -347,13 +232,11 @@ export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
                 part,
                 justice,
                 room,
-                tel: phoneMatch ? phoneMatch[1] : null,
+                tel: phoneMatch ? `(${phoneMatch[1]})${phoneMatch[2]}` : null,
                 fax: faxMatch ? faxMatch[1] : null,
                 sgt,
                 clerks
               });
-              
-              assignmentCount++;
             }
           }
         }
