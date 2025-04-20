@@ -1,845 +1,684 @@
-
 import React, { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Upload, FileText, Check, Loader2, AlertTriangle, Info } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Calendar,
+  Search, 
+  MoreVertical, 
+  FileText, 
+  Pencil, 
+  Trash2, 
+  Eye, 
+  Download,
+  User,
+  Users,
+  MapPin,
+  CalendarDays,
+  Filter
+} from "lucide-react";
+import { format } from "date-fns";
 import { toast } from "sonner";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import * as pdfjs from 'pdfjs-dist';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
-
-const formSchema = z.object({
-  pdfFile: z.instanceof(File, { message: "Please upload a PDF file" })
-    .refine(file => file.size < 10000000, "File size must be less than 10MB")
-    .refine(file => file.type === "application/pdf", "File must be a PDF"),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
-interface TermUploaderProps {
-  onUploadSuccess?: () => void;
+// --- Formatting Helpers ---
+function formatPart(part: string | undefined, fallback: string | undefined) {
+  // Accepts letters, numbers, hyphens, spaces, e.g. IDV, N-SCT, TAP A, TAP G, GWP1, TAP B, MDC-92
+  if (typeof part === 'string' && part.trim()) return part;
+  if (typeof fallback === 'string' && fallback.trim()) return fallback;
+  return '—';
 }
 
-export function TermUploader({ onUploadSuccess }: TermUploaderProps) {
+function formatPhone(phone: string | undefined) {
+  if (!phone) return '—';
+  // Already formatted: (6)4051
+  if (/^\(\d\)\d{4}$/.test(phone)) return phone;
+  // Try to format 64051 or 4051 as (6)4051
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length === 5 && digits[0] === '6') {
+    return `(6)${digits.slice(1)}`;
+  }
+  if (digits.length === 4) {
+    return `(6)${digits}`;
+  }
+  return phone;
+}
+
+function formatSergeant(sgt: string | undefined) {
+  if (!sgt || typeof sgt !== 'string') return '—';
+  // Only use last name (all caps, hyphenated allowed)
+  const parts = sgt.trim().split(/\s+/);
+  return parts.length > 0 ? parts[parts.length - 1].replace(/[^A-Z\-]/gi, '') : sgt;
+}
+
+function formatClerks(clerks: string[] | string | undefined) {
+  // Display as initial + last name, comma separated. Hyphenated last names allowed.
+  if (!clerks) return '—';
+  if (typeof clerks === 'string') clerks = clerks.split(',').map(c => c.trim()).filter(Boolean);
+  if (!Array.isArray(clerks) || clerks.length === 0) return '—';
+  return clerks.map(name => {
+    // If name is like "T. Cedeno-Barrett", just return as is
+    if (/^[A-Z]\.\s+[A-Za-z\-']+$/.test(name)) return name;
+    // If name is like "T Cedeno-Barrett" or "T. Cedeno Barrett"
+    const parts = name.split(/\s+/);
+    if (parts.length >= 2) {
+      let initial = parts[0].replace(/[^A-Z.]/gi, '');
+      let last = parts.slice(1).join(' ').replace(/[^A-Za-z\-']/gi, '');
+      return `${initial} ${last}`;
+    }
+    return name;
+  }).join(', ');
+}
+
+
+export function TermList() {
+  const [editingIdx, setEditingIdx] = useState<number | null>(null);
+  const [editValues, setEditValues] = useState<{ phone: string; sgt: string; clerks: string }>({ phone: '', sgt: '', clerks: '' });
+
+  // Handler to start editing a row
+  const handleEdit = (idx: number, assignment: any) => {
+    setEditingIdx(idx);
+    setEditValues({
+      phone: assignment.phone || '',
+      sgt: assignment.sgt || '',
+      clerks: assignment.clerks ? (Array.isArray(assignment.clerks) ? assignment.clerks.join(', ') : assignment.clerks) : ''
+    });
+  };
+
+  // Handler to cancel editing
+  const handleCancel = () => {
+    setEditingIdx(null);
+    setEditValues({ phone: '', sgt: '', clerks: '' });
+  };
+
+  // Handler to save edits (for now, just updates local assignments array)
+  const handleSave = (idx: number) => {
+    // TODO: Save to backend if desired
+    if (assignments[idx]) {
+      assignments[idx].phone = editValues.phone;
+      assignments[idx].sgt = editValues.sgt;
+      assignments[idx].clerks = editValues.clerks.split(',').map((c: string) => c.trim()).filter(Boolean);
+    }
+    setEditingIdx(null);
+    setEditValues({ phone: '', sgt: '', clerks: '' });
+  };
+
+  // Handler for controlled input changes
+  const handleEditChange = (idx: number, field: 'phone' | 'sgt' | 'clerks', value: string) => {
+    if (editingIdx !== idx) return;
+    setEditValues(prev => ({ ...prev, [field]: value }));
+  };
+
   const navigate = useNavigate();
-  const [isUploading, setIsUploading] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
-  const [extractedInfo, setExtractedInfo] = useState<any>(null);
+  const [terms, setTerms] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedTerm, setSelectedTerm] = useState<string | null>(null);
   const [assignments, setAssignments] = useState<any[]>([]);
-  const [processingError, setProcessingError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
-  const [pdfText, setPdfText] = useState<string>("");
-  const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [personnel, setPersonnel] = useState<any[]>([]);
+  const [viewMode, setViewMode] = useState<"details" | "personnel">("details");
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {},
-  });
-
-  const watchPdfFile = form.watch("pdfFile");
-
-  useEffect(() => {
-    if (watchPdfFile && watchPdfFile instanceof File) {
-      const fileUrl = URL.createObjectURL(watchPdfFile);
-      setPdfPreviewUrl(fileUrl);
-      
-      const filename = watchPdfFile.name;
-      const termMatch = filename.match(/(spring|fall|summer|winter|term)\s*(i+v?|v?i+|v|iv|iii|ii|i|\d+)\s*(\d{4})?/i);
-      
-      if (termMatch) {
-        const termSeason = termMatch[1].charAt(0).toUpperCase() + termMatch[1].slice(1).toLowerCase();
-        const termNumber = termMatch[2].toUpperCase();
-        const termYear = termMatch[3] || new Date().getFullYear().toString();
-        
-        setExtractedInfo({
-          termName: `${termSeason} ${termNumber} ${termYear}`.trim(),
-          termNumber: termYear
-        });
-      }
-      
-      return () => {
-        URL.revokeObjectURL(fileUrl);
-      };
-    }
-  }, [watchPdfFile]);
-
-  const extractTextFromPdf = async (pdfFile: File): Promise<string> => {
-    console.log("Extracting text from PDF...");
+  const fetchTerms = async () => {
     try {
-      const arrayBuffer = await pdfFile.arrayBuffer();
-      const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
-      console.log(`PDF loaded with ${pdf.numPages} pages`);
+      setLoading(true);
       
-      let fullText = "";
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items
-          .map((item: any) => item.str)
-          .join(' ');
-        fullText += pageText + "\n";
-      }
-      
-      console.log(`Extracted text length: ${fullText.length} characters`);
-      
-      // Save full text for debugging
-      setPdfText(fullText);
-      
-      return fullText;
-    } catch (error) {
-      console.error("PDF text extraction error:", error);
-      throw error;
-    }
-  };
-
-  const parseAssignments = (pdfText: string): any[] => {
-    console.log("Parsing assignments from text...");
-    
-    try {
-      if (!pdfText) {
-        throw new Error("No PDF text available for parsing");
-      }
-
-      console.log("PDF text sample:", pdfText.substring(0, 1000));
-
-      const assignments: any[] = [];
-      const lines = pdfText.split('\n').map(line => line.trim());
-      
-      // Debug: Log all lines for inspection
-      console.log("Total lines:", lines.length);
-      setDebugInfo({ lineCount: lines.length, sampleLines: lines.slice(0, 20) });
-      
-      // Enhanced part code patterns to match special formats
-      const partPatterns = [
-        /^((?:IDV|N-SCT|TAP\s*[A-G]|GWP\d|MDC-\d+|IA\d+|FAP\d+|CI\d+|PART\s*[A-Z0-9]+)\b)/i,
-        /^([0-9]+[A-Z]*\s*(?:PART)?)/i,
-        /^(TAP\s*[A-Z]?)/i,
-        /^([A-Z]+\s*\d+[A-Z]*)/,
-        /^([IVX]+\s*)/,
-        /^(PART\s*[A-Z0-9]+)/i,
-      ];
-      
-      // Look for standard table headers to locate assignment tables
-      const tableStartIndex = lines.findIndex(line => 
-        /PART.*JUSTICE|JUDGE.*PART|COURT.*PART|COURTROOM.*JUDGE|COURT PART/i.test(line)
-      );
-      
-      // If we can't find a standard header, look for first line with a part code
-      let startIndex = tableStartIndex;
-      if (startIndex === -1) {
-        startIndex = lines.findIndex(line => 
-          partPatterns.some(pattern => pattern.test(line.trim()))
-        );
-      }
-
-      if (startIndex === -1) {
-        console.error("Could not find assignment table in PDF");
-        return [];
-      }
-
-      console.log("Starting to process assignments from line", startIndex);
-      
-      let currentLineIndex = startIndex;
-      const processedLines = new Set(); // Track processed lines to avoid duplicates
-      
-      // Scan through all lines after the header
-      while (currentLineIndex < lines.length && 
-             currentLineIndex - startIndex < 200) { // Extend scan range to 200 lines
-        
-        const line = lines[currentLineIndex].trim();
-        currentLineIndex++;
-        
-        if (!line || line.match(/END OF|PAGE|^\s*$/i) || processedLines.has(line)) {
-          continue;
-        }
-
-        processedLines.add(line);
-        
-        // Try to extract part code using each pattern
-        let partMatch = null;
-        let matchedPattern = null;
-        
-        for (const pattern of partPatterns) {
-          partMatch = line.match(pattern);
-          if (partMatch) {
-            matchedPattern = pattern;
-            break;
-          }
-        }
-
-        if (partMatch) {
-          console.log("Processing line:", line);
-          
-          const part = partMatch[1].trim().replace(/\s+/g, ' ');
-          const remainingText = line.substring(partMatch[0].length).trim();
-          
-          // More flexible justice name extraction - look for capitalized names
-          // Improved pattern to handle formats like "HON. J. DOE" or "J. SMITH"
-          const justicePattern = /((?:HON\.?\s+)?[A-Z](?:\.\s+|\s+)[A-Z][A-Za-z\-']+(?:\s+[A-Z][A-Za-z\-']+)?)/;
-          const justiceMatch = remainingText.match(justicePattern);
-          
-          if (justiceMatch) {
-            const justice = justiceMatch[1].trim();
-            const afterJustice = remainingText.substring(remainingText.indexOf(justice) + justice.length).trim();
-            
-            // Enhanced room number extraction - handle various formats
-            // Look for "ROOM", "RM", or just a 3-4 digit number
-            const roomPattern = /(?:(?:RM|ROOM)[\.:]?\s*)?(\d{3,4}[A-Z]?)/i;
-            const roomMatch = afterJustice.match(roomPattern);
-            
-            let room = null;
-            let remainingInfo = afterJustice;
-            
-            if (roomMatch) {
-              room = roomMatch[1].trim();
-              remainingInfo = afterJustice;
-            }
-            
-            // Enhanced phone extraction - handle formats like (6)4051, 646-4051, or 646.4051
-            const phonePatterns = [
-              /\((\d)\)(\d{4})/,                   // (6)4051 format
-              /\(?\d{3}[\s\.\-]?\d{3}[\s\.\-]?\d{4}\)?/i,  // Regular phone numbers
-              /\d{3,4}-\d{4}/,                     // Extension format
-              /\d{3,4}\.\d{4}/                     // Period-separated format
-            ];
-            
-            let phone = null;
-            for (const phonePattern of phonePatterns) {
-              const phoneMatch = remainingInfo.match(phonePattern);
-              if (phoneMatch) {
-                phone = phoneMatch[0];
-                break;
-              }
-            }
-            
-            // Extract fax number
-            const faxPattern = /(?:FAX|F)[:.]\s*(\(?\d{3}[\s\.\-]?\d{3}[\s\.\-]?\d{4}|\d{3,4}-\d{4}|\d{3,4}\.\d{4})/i;
-            const faxMatch = remainingInfo.match(faxPattern);
-            let fax = faxMatch ? faxMatch[1] : null;
-            
-            // Extract sergeant (last name only) - enhanced to handle various formats
-            const sgtPattern = /\b(?:SGT\.?\s+|SERGEANT\s+)([A-Z]+)\b/i;
-            const sgtMatch = remainingInfo.match(sgtPattern);
-            let sgt = sgtMatch ? sgtMatch[1] : '';
-            
-            // Enhanced clerk name extraction - handle various formats
-            // Look for patterns like "T. SMITH", "T.SMITH", "T SMITH"
-            let clerks: string[] = [];
-            const clerkPattern = /[A-Z]\.?\s+[A-Za-z\-']+(?:\s+[A-Za-z\-']+)?/g;
-            let clerkText = remainingInfo;
-            
-            // Remove the sergeant part if found to avoid confusion
-            if (sgtMatch) {
-              clerkText = clerkText.replace(sgtMatch[0], '');
-            }
-            
-            // Find all potential clerk names
-            const clerkMatches = clerkText.match(clerkPattern);
-            
-            if (clerkMatches) {
-              // Filter out false positives like "SGT. SMITH" or the justice name
-              clerks = clerkMatches
-                .filter(name => !name.match(/^(SGT|SERGEANT|HON|JUDGE|ROOM|RM|FAX|F)\b/i))
-                .filter(name => name !== justice)
-                .map(name => name.trim());
-            }
-            
-            console.log("Extracted assignment:", {
-              part,
-              justice,
-              room,
-              phone,
-              fax,
-              sgt,
-              clerks
-            });
-            
-            assignments.push({
-              part,
-              justice,
-              room,
-              tel: phone,
-              fax,
-              sgt,
-              clerks
-            });
-          }
-        }
-      }
-      
-      // If we didn't find many assignments, try a secondary parsing approach with looser patterns
-      if (assignments.length < 5) {
-        console.log("Few assignments found, trying secondary parsing approach");
-        
-        // Try to detect table structure by looking for consistent patterns
-        // in consecutive lines with similar spacing
-        
-        // Reset and scan through all lines in PDF
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i].trim();
-          
-          if (!line || processedLines.has(line)) continue;
-          
-          // Look for lines that potentially contain part, justice, and room info
-          // but might not match our rigid patterns
-          if (line.match(/[A-Z0-9]{1,6}\s+[A-Z]/)) {
-            // Attempt to split the line by whitespace groups and analyze parts
-            const parts = line.split(/\s{2,}/);
-            
-            if (parts.length >= 2) {
-              const potentialPart = parts[0].trim();
-              const potentialJustice = parts[1].trim();
-              
-              // If this looks like part/justice data, extract it
-              if (potentialPart.length <= 10 && potentialJustice.match(/[A-Z]/)) {
-                let roomInfo = '';
-                let phoneInfo = '';
-                let clerkInfo = '';
-                
-                if (parts.length >= 3) roomInfo = parts[2].trim();
-                if (parts.length >= 4) phoneInfo = parts[3].trim();
-                if (parts.length >= 5) clerkInfo = parts.slice(4).join(' ').trim();
-                
-                // Extract phone number if present
-                let phone = null;
-                if (phoneInfo.match(/\d{3,4}[\.\-]?\d{4}/)) {
-                  phone = phoneInfo;
-                }
-                
-                // Create a new assignment based on this looser parsing
-                assignments.push({
-                  part: potentialPart,
-                  justice: potentialJustice,
-                  room: roomInfo.match(/\d{3,4}/) ? roomInfo.match(/\d{3,4}/)[0] : null,
-                  tel: phone,
-                  fax: null,
-                  sgt: '',
-                  clerks: clerkInfo ? [clerkInfo] : []
-                });
-              }
-            }
-          }
-        }
-      }
-      
-      // Perform post-processing to clean up and standardize data
-      const processedAssignments = assignments.map(assignment => {
-        // Clean part code - standardize format and remove extra spaces
-        const cleanedPart = assignment.part.replace(/PART\s+/i, '').trim();
-        
-        // Clean justice name - ensure consistent format
-        let justice = assignment.justice;
-        if (justice.startsWith('HON.')) {
-          justice = justice.substring(4).trim();
-        }
-        
-        // Standardize clerk names format
-        const cleanedClerks = Array.isArray(assignment.clerks) 
-          ? assignment.clerks.map((c: string) => c.trim()) 
-          : [];
-        
-        return {
-          ...assignment,
-          part: cleanedPart,
-          justice,
-          clerks: cleanedClerks
-        };
-      });
-      
-      // Remove any duplicate assignments based on part code
-      const uniqueAssignments = Array.from(
-        new Map(processedAssignments.map(a => [a.part, a])).values()
-      );
-      
-      console.log(`Successfully extracted ${uniqueAssignments.length} assignments`);
-      return uniqueAssignments;
-    } catch (error) {
-      console.error("Error parsing assignments:", error);
-      return [];
-    }
-  };
-
-  const processTermData = async (pdfFile: File): Promise<any[]> => {
-    try {
-      const extractedText = await extractTextFromPdf(pdfFile);
-      
-      // Extract term information from PDF
-      // Look for term title in various formats
-      const termTitleMatch = extractedText.match(/TERM\s+(I+V?|V?I+|[IVX]+|[0-9]+)(?:\s+ASSIGNMENT)?/mi);
-      if (termTitleMatch && !extractedInfo) {
-        setExtractedInfo({
-          termName: `Term ${termTitleMatch[1]}`,
-          termNumber: new Date().getFullYear().toString()
-        });
-      }
-      
-      // Enhanced date extraction - handle various date formats
-      // Traditional format: JANUARY 30, 2023 - FEBRUARY 28, 2023
-      const dateRangeMatch = extractedText.match(/(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+(\d{1,2})[,\s]+(\d{4})\s*[-–]\s*(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+(\d{1,2})[,\s]+(\d{4})/i);
-      
-      if (dateRangeMatch && extractedInfo) {
-        const startMonth = dateRangeMatch[1];
-        const startDay = dateRangeMatch[2];
-        const startYear = dateRangeMatch[3];
-        const endMonth = dateRangeMatch[4];
-        const endDay = dateRangeMatch[5];
-        const endYear = dateRangeMatch[6];
-        
-        setExtractedInfo(prev => ({
-          ...prev,
-          startDate: `${startYear}-${getMonthNumber(startMonth)}-${startDay.padStart(2, '0')}`,
-          endDate: `${endYear}-${getMonthNumber(endMonth)}-${endDay.padStart(2, '0')}`
-        }));
-      }
-      
-      // Try alternative date formats
-      if (!dateRangeMatch) {
-        // MM/DD/YYYY format
-        const simpleDateMatch = extractedText.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s*[-–]\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/i);
-        if (simpleDateMatch && extractedInfo) {
-          setExtractedInfo(prev => ({
-            ...prev,
-            startDate: `${simpleDateMatch[3]}-${simpleDateMatch[1].padStart(2, '0')}-${simpleDateMatch[2].padStart(2, '0')}`,
-            endDate: `${simpleDateMatch[6]}-${simpleDateMatch[4].padStart(2, '0')}-${simpleDateMatch[5].padStart(2, '0')}`
-          }));
-        } else {
-          // Text date without year: JANUARY 3 - FEBRUARY 2
-          const shortDateMatch = extractedText.match(/(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+(\d{1,2})\s*[-–]\s*(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+(\d{1,2})/i);
-          
-          if (shortDateMatch && extractedInfo) {
-            const currentYear = new Date().getFullYear();
-            setExtractedInfo(prev => ({
-              ...prev,
-              startDate: `${currentYear}-${getMonthNumber(shortDateMatch[1])}-${shortDateMatch[2].padStart(2, '0')}`,
-              endDate: `${currentYear}-${getMonthNumber(shortDateMatch[3])}-${shortDateMatch[4].padStart(2, '0')}`
-            }));
-          }
-        }
-      }
-      
-      // Extract location information
-      const locationMatch = extractedText.match(/(?:COUNTY|BOROUGH|DISTRICT|COURT)\s+OF\s+([A-Z\s]+)/i);
-      if (locationMatch && extractedInfo) {
-        setExtractedInfo(prev => ({
-          ...prev,
-          location: locationMatch[1].trim()
-        }));
-      }
-      
-      const parsedAssignments = parseAssignments(extractedText);
-      console.log("Parsed assignments:", parsedAssignments);
-      setAssignments(parsedAssignments);
-      return parsedAssignments;
-    } catch (error) {
-      console.error("Error processing term data:", error);
-      setAssignments([]);
-      return [];
-    }
-  };
-  
-  const getMonthNumber = (monthName: string): string => {
-    const months: Record<string, string> = {
-      'JANUARY': '01', 'FEBRUARY': '02', 'MARCH': '03', 'APRIL': '04',
-      'MAY': '05', 'JUNE': '06', 'JULY': '07', 'AUGUST': '08',
-      'SEPTEMBER': '09', 'OCTOBER': '10', 'NOVEMBER': '11', 'DECEMBER': '12'
-    };
-    return months[monthName.toUpperCase()] || '01';
-  };
-
-  const processPdfContent = async (termId: string, pdfUrl: string, assignments: any[] = []) => {
-    try {
-      setProcessingError(null);
-      
-      const mappedAssignments = assignments.map(a => ({
-        partCode: a.part,
-        justiceName: a.justice,
-        roomNumber: a.room,
-        phone: a.tel,
-        sergeantName: a.sgt,
-        clerkNames: Array.isArray(a.clerks) ? a.clerks : 
-          (a.clerks ? a.clerks.split(/[,\/]/).map((s: string) => s.trim()).filter(Boolean) : []),
-        extension: null,
-        fax: a.fax || null
-      }));
-
-      console.log('Submitting assignments to backend:', mappedAssignments);
-      
-      const { data, error } = await supabase.functions.invoke('parse-term-sheet', {
-        body: { 
-          term_id: termId, 
-          pdf_url: pdfUrl,
-          client_extracted: {
-            assignments: mappedAssignments
-          } 
-        },
-      });
-
-      if (error) {
-        console.error("Error calling parse-term-sheet function:", error);
-        throw new Error(`Error processing PDF: ${error.message}`);
-      }
-
-      console.log("PDF processing result:", data);
-      return data;
-    } catch (error) {
-      console.error("Error calling parse-term-sheet function:", error);
-      setProcessingError(error instanceof Error ? error.message : "Failed to process PDF content");
-      throw error;
-    }
-  };
-
-  const onSubmit = async (values: FormValues) => {
-    try {
-      setIsUploading(true);
-      setCurrentStep(1);
-      setProcessingError(null);
-      
-      const fileName = `term-sheet-${Date.now()}.pdf`;
-      setUploadProgress(10);
-      
-      const { data: fileData, error: fileError } = await supabase.storage
-        .from('term-sheets')
-        .upload(fileName, values.pdfFile);
-      
-      if (fileError) {
-        throw new Error(`Error uploading file: ${fileError.message}`);
-      }
-      
-      setUploadProgress(40);
-      
-      const { data: { publicUrl } } = supabase.storage
-        .from('term-sheets')
-        .getPublicUrl(fileName);
-      
-      setUploadProgress(50);
-      setCurrentStep(2);
-      
-      console.log("Processing term data...");
-      const sampleAssignments = await processTermData(values.pdfFile);
-      
-      if (!extractedInfo || !extractedInfo.termName) {
-        setExtractedInfo({
-          termName: "Term " + new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-          termNumber: `${new Date().getFullYear()}-${new Date().getMonth() + 1}`,
-        });
-      }
-      
-      const { data: termData, error: termError } = await supabase
+      let query = supabase
         .from('court_terms')
-        .insert({
-          term_name: extractedInfo?.termName || "New Term",
-          term_number: extractedInfo?.termNumber || `${new Date().getFullYear()}-${new Date().getMonth() + 1}`,
-          location: extractedInfo?.location || "New York",
-          start_date: extractedInfo?.startDate || new Date().toISOString().split('T')[0],
-          end_date: extractedInfo?.endDate || new Date(new Date().setMonth(new Date().getMonth() + 3)).toISOString().split('T')[0],
-          description: "Automatically generated from PDF upload",
-          pdf_url: publicUrl,
-        })
-        .select()
-        .single();
+        .select('*')
+        .order('created_at', { ascending: false });
       
-      if (termError) {
-        throw new Error(`Error creating term: ${termError.message}`);
+      if (statusFilter !== "all") {
+        query = query.eq('status', statusFilter);
       }
       
-      setUploadProgress(60);
+      const { data, error } = await query;
       
-      if (sampleAssignments.length === 0) {
-        console.warn("No assignments extracted from PDF");
-        setProcessingError(`No assignments could be extracted from the PDF. PDF text length: ${pdfText.length} characters.`);
-        
-        // Create term but show warning
-        toast.warning("Term created but no assignments could be extracted. You may need to add assignments manually.");
-        
-        setTimeout(() => {
-          navigate("/terms?tab=terms");
-        }, 2000);
-      } else {
-        setUploadProgress(70);
-        setCurrentStep(3);
-        
-        try {
-          const result = await processPdfContent(termData.id, publicUrl, sampleAssignments);
-          setUploadProgress(100);
-          
-          if (result.success) {
-            toast.success(`Term sheet processed successfully. Extracted ${result.extracted.assignments} assignments and ${result.extracted.personnel} personnel records.`);
-            
-            if (onUploadSuccess) {
-              onUploadSuccess();
-            }
-          } else {
-            toast.warning("Term sheet uploaded, but data extraction was incomplete. Some manual editing may be required.");
-          }
-        } catch (parseError) {
-          console.error("PDF parsing encountered issues:", parseError);
-          toast.warning("Term sheet uploaded, but PDF parsing had issues. You may need to enter some data manually.");
-          
-          setTimeout(() => {
-            navigate("/terms?tab=terms");
-          }, 2000);
-        }
+      if (error) {
+        throw error;
       }
       
-      form.reset();
-      
+      if (data) {
+        // Get assignment counts for each term
+        const termsWithCounts = await Promise.all(
+          data.map(async (term) => {
+            const { count: assignmentCount, error: assignmentError } = await supabase
+              .from('term_assignments')
+              .select('*', { count: 'exact', head: true })
+              .eq('term_id', term.id);
+              
+            const { count: personnelCount, error: personnelError } = await supabase
+              .from('term_personnel')
+              .select('*', { count: 'exact', head: true })
+              .eq('term_id', term.id);
+              
+            return {
+              ...term,
+              assignmentCount: assignmentCount || 0,
+              personnelCount: personnelCount || 0
+            };
+          })
+        );
+        
+        setTerms(termsWithCounts);
+      }
     } catch (error) {
-      console.error("Error uploading term sheet:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to upload term sheet");
+      console.error("Error fetching terms:", error);
+      toast.error("Failed to load court terms");
     } finally {
-      setIsUploading(false);
-      setCurrentStep(0);
-      setUploadProgress(0);
+      setLoading(false);
     }
   };
 
-  const handleRetry = async () => {
-    if (!form.getValues("pdfFile")) {
-      toast.error("Please select a PDF file first");
+  const fetchTermDetails = async (termId: string) => {
+    try {
+      setLoading(true);
+      
+      // Fetch assignments
+      const { data: assignmentsData, error: assignmentsError } = await supabase
+        .from('term_assignments')
+        .select(`
+          *,
+          court_parts (
+            part_code, 
+            description
+          ),
+          rooms (
+            name, 
+            room_number, 
+            floor_id,
+            floors (
+              name,
+              building_id,
+              buildings (
+                name
+              )
+            )
+          )
+        `)
+        .eq('term_id', termId);
+        
+      if (assignmentsError) {
+        throw assignmentsError;
+      }
+      
+      // Fetch personnel
+      const { data: personnelData, error: personnelError } = await supabase
+        .from('term_personnel')
+        .select('*')
+        .eq('term_id', termId);
+        
+      if (personnelError) {
+        throw personnelError;
+      }
+      
+      setAssignments(assignmentsData || []);
+      setPersonnel(personnelData || []);
+      setSelectedTerm(termId);
+      setViewMode("details");
+    } catch (error) {
+      console.error("Error fetching term details:", error);
+      toast.error("Failed to load term details");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteTerm = async (termId: string) => {
+    if (!confirm("Are you sure you want to delete this term? This action cannot be undone.")) {
       return;
     }
     
-    setRetryCount(prev => prev + 1);
-    onSubmit(form.getValues());
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from('court_terms')
+        .delete()
+        .eq('id', termId);
+        
+      if (error) {
+        throw error;
+      }
+      
+      toast.success("Term deleted successfully");
+      fetchTerms();
+    } catch (error) {
+      console.error("Error deleting term:", error);
+      toast.error("Failed to delete term");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTerms();
+  }, [statusFilter]);
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const filteredTerms = terms.filter(term => {
+    if (!searchQuery) return true;
+    
+    const query = searchQuery.toLowerCase();
+    return (
+      term.term_name.toLowerCase().includes(query) ||
+      term.term_number.toLowerCase().includes(query) ||
+      term.location.toLowerCase().includes(query)
+    );
+  });
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "active":
+        return <Badge className="bg-green-500">Active</Badge>;
+      case "upcoming":
+        return <Badge className="bg-blue-500">Upcoming</Badge>;
+      case "completed":
+        return <Badge className="bg-gray-500">Completed</Badge>;
+      default:
+        return <Badge className="bg-gray-500">{status}</Badge>;
+    }
+  };
+
+  const handleBack = () => {
+    setSelectedTerm(null);
+  };
+
+  const handleViewPersonnel = () => {
+    setViewMode("personnel");
+  };
+
+  const handleViewAssignments = () => {
+    setViewMode("details");
+  };
+
+  const renderTermList = () => {
+    return (
+      <>
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+          <h1 className="text-3xl font-bold">Court Terms</h1>
+          <div className="flex gap-2">
+            <Button onClick={() => navigate("/terms/new")}>
+              Add New Term
+            </Button>
+          </div>
+        </div>
+        
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search terms..."
+              className="pl-8"
+              value={searchQuery}
+              onChange={handleSearch}
+            />
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Status:</span>
+            <Tabs defaultValue={statusFilter} className="w-auto" onValueChange={setStatusFilter}>
+              <TabsList>
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="active">Active</TabsTrigger>
+                <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+                <TabsTrigger value="completed">Completed</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        </div>
+        
+        {loading ? (
+          <div className="text-center py-8">
+            <p>Loading terms...</p>
+          </div>
+        ) : filteredTerms.length === 0 ? (
+          <div className="text-center border rounded-md p-8">
+            <p className="text-muted-foreground">No terms found. Try adjusting your search or filters.</p>
+            <Button className="mt-4" variant="outline" onClick={() => { setSearchQuery(""); setStatusFilter("all"); }}>
+              Clear Filters
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredTerms.map((term) => (
+              <Card key={term.id} className="overflow-hidden">
+                <CardHeader className="pb-3">
+                  <CardTitle>{term.term_name}</CardTitle>
+                  <CardDescription>
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-3.5 w-3.5" />
+                      <span>{term.term_number}</span>
+                    </div>
+                    <div className="flex items-center gap-1 mt-1">
+                      <MapPin className="h-3.5 w-3.5" />
+                      <span>{term.location}</span>
+                    </div>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pb-3">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      {getStatusBadge(term.status)}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {term.start_date && term.end_date ? (
+                        `${format(new Date(term.start_date), "MMM d")} - ${format(new Date(term.end_date), "MMM d, yyyy")}`
+                      ) : (
+                        "No dates specified"
+                      )}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mt-4">
+                    <div className="flex items-center gap-1.5">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{term.assignmentCount} Assignments</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{term.personnelCount} Personnel</span>
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="pt-0 flex justify-between">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => fetchTermDetails(term.id)}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    View Details
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuItem 
+                        onClick={() => window.open(term.pdf_url, '_blank')}
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        View PDF
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => fetchTermDetails(term.id)}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Details
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        onClick={() => navigate(`/terms/edit/${term.id}`)}
+                      >
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Edit Term
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => deleteTerm(term.id)}
+                        className="text-red-600"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete Term
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        )}
+      </>
+    );
+  };
+
+  const renderTermDetails = () => {
+    const term = terms.find(t => t.id === selectedTerm);
+    
+    if (!term) return null;
+    
+    return (
+      <div>
+        <Button 
+          variant="outline" 
+          className="mb-4" 
+          onClick={handleBack}
+        >
+          &larr; Back to Terms
+        </Button>
+        
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+          <div>
+            <h2 className="text-2xl font-bold">{term.term_name}</h2>
+            <div className="text-muted-foreground">{term.term_number} | {term.location}</div>
+          </div>
+          
+          <div className="flex gap-2">
+            <Button 
+              variant={viewMode === "details" ? "default" : "outline"} 
+              onClick={handleViewAssignments}
+            >
+              Assignments ({assignments.length})
+            </Button>
+            <Button 
+              variant={viewMode === "personnel" ? "default" : "outline"} 
+              onClick={handleViewPersonnel}
+            >
+              Personnel ({personnel.length})
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => window.open(term.pdf_url, '_blank')}
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              View PDF
+            </Button>
+          </div>
+        </div>
+        
+        <div className="border rounded-md p-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground">Term Period</h3>
+              <div className="flex items-center mt-1">
+                <CalendarDays className="h-4 w-4 mr-2" />
+                <span>
+                  {term.start_date && term.end_date ? (
+                    `${format(new Date(term.start_date), "MMMM d, yyyy")} - ${format(new Date(term.end_date), "MMMM d, yyyy")}`
+                  ) : (
+                    "No dates specified"
+                  )}
+                </span>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground">Status</h3>
+              <div className="mt-1">{getStatusBadge(term.status)}</div>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground">PDF Uploaded</h3>
+              <p className="mt-1">{format(new Date(term.created_at), "MMMM d, yyyy")}</p>
+            </div>
+          </div>
+        </div>
+        
+        {viewMode === "details" ? (
+          <div>
+            <h3 className="text-lg font-medium mb-4">Court Assignments</h3>
+            {assignments.length === 0 ? (
+              <div className="text-center border rounded-md p-8">
+                <p className="text-muted-foreground">No assignments available for this term.</p>
+              </div>
+            ) : (
+              <div className="border rounded-md overflow-hidden">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-gray-200 dark:bg-gray-900">
+                        <TableHead>Part</TableHead>
+                        <TableHead>Justice</TableHead>
+                        <TableHead>Room</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>SGT</TableHead>
+                        <TableHead>Clerks</TableHead>
+                        <TableHead></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {assignments.map((assignment, idx) => {
+                        const isEditing = editingIdx === idx;
+                        return (
+                          <TableRow key={assignment.id || idx} className={isEditing ? "bg-yellow-100 dark:bg-yellow-900" : "even:bg-gray-50 dark:even:bg-gray-900"}>
+                            <TableCell>{formatPart(assignment.part, assignment.court_parts?.part_code)}</TableCell>
+                            <TableCell>{assignment.justice || assignment.justice_name}</TableCell>
+                            <TableCell>{assignment.room || assignment.rooms?.room_number}</TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <input
+                                  type="text"
+                                  value={editValues.phone}
+                                  onChange={e => handleEditChange(idx, 'phone', e.target.value)}
+                                  className="border rounded px-1 py-0.5 w-24 bg-yellow-50 dark:bg-yellow-900 text-black dark:text-white"
+                                />
+                              ) : (
+                                formatPhone(assignment.phone)
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <input
+                                  type="text"
+                                  value={editValues.sgt}
+                                  onChange={e => handleEditChange(idx, 'sgt', e.target.value)}
+                                  className="border rounded px-1 py-0.5 w-20 bg-yellow-50 dark:bg-yellow-900 text-black dark:text-white"
+                                />
+                              ) : (
+                                formatSergeant(assignment.sgt)
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <input
+                                  type="text"
+                                  value={editValues.clerks}
+                                  onChange={e => handleEditChange(idx, 'clerks', e.target.value)}
+                                  className="border rounded px-1 py-0.5 w-44 bg-yellow-50 dark:bg-yellow-900 text-black dark:text-white"
+                                />
+                              ) : (
+                                formatClerks(assignment.clerks)
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <>
+                                  <Button size="sm" variant="outline" className="mr-2" onClick={() => handleSave(idx)}>Save</Button>
+                                  <Button size="sm" variant="ghost" onClick={handleCancel}>Cancel</Button>
+                                </>
+                              ) : (
+                                <Button size="sm" variant="outline" className="bg-blue-600 text-white hover:bg-blue-700" onClick={() => handleEdit(idx, assignment)}>Edit</Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div>
+            <h3 className="text-lg font-medium mb-4">Court Personnel</h3>
+            {personnel.length === 0 ? (
+              <div className="text-center border rounded-md p-8">
+                <p className="text-muted-foreground">No personnel data available for this term.</p>
+              </div>
+            ) : (
+              <div className="border rounded-md overflow-hidden">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Contact</TableHead>
+                        <TableHead>Location</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {personnel.map((person) => (
+                        <TableRow key={person.id}>
+                          <TableCell className="font-medium">{person.name}</TableCell>
+                          <TableCell>{person.role}</TableCell>
+                          <TableCell>
+                            {person.phone && (
+                              <div className="text-sm">{person.phone}</div>
+                            )}
+                            {person.extension && (
+                              <div className="text-xs">Ext: {person.extension}</div>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {(person.room || person.floor) ? (
+                              <>
+                                {person.room && <span>Room {person.room}</span>}
+                                {person.room && person.floor && <span>, </span>}
+                                {person.floor && <span>Floor {person.floor}</span>}
+                              </>
+                            ) : (
+                              "—"
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
-    <Card className="w-full max-w-3xl mx-auto">
-      <CardHeader>
-        <CardTitle>Upload Court Term Sheet</CardTitle>
-        <CardDescription>
-          Upload a court term sheet PDF to automatically extract and store court assignments and personnel information
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="pdfFile"
-              render={({ field: { value, onChange, ...fieldProps } }) => (
-                <FormItem>
-                  <FormLabel>Term Sheet PDF</FormLabel>
-                  <FormControl>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="file"
-                        accept="application/pdf"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            onChange(file);
-                            setProcessingError(null);
-                            setPdfText("");
-                            setDebugInfo(null);
-                          }
-                        }}
-                        {...fieldProps}
-                      />
-                    </div>
-                  </FormControl>
-                  <FormDescription>
-                    Upload a PDF file containing the court term sheet - we'll automatically extract all relevant information
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            {processingError && (
-              <Alert variant="destructive" className="bg-red-50 border-red-200 text-red-900">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription className="text-red-800">
-                  <p className="font-medium">Error processing PDF:</p>
-                  <p className="text-sm mt-1">{processingError}</p>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="sm" 
-                    className="mt-2 bg-white text-red-600 border-red-300 hover:bg-red-50"
-                    onClick={handleRetry}
-                  >
-                    <Loader2 className={`mr-2 h-4 w-4 ${retryCount > 0 ? "animate-spin" : ""}`} />
-                    Retry Upload
-                  </Button>
-                </AlertDescription>
-              </Alert>
-            )}
-            
-            {debugInfo && (
-              <Alert className="bg-blue-50 border-blue-200 text-blue-900">
-                <Info className="h-4 w-4" />
-                <AlertDescription className="text-blue-800">
-                  <p className="font-medium">PDF Processing Information:</p>
-                  <p className="text-sm">Lines found: {debugInfo.lineCount}</p>
-                  <details className="mt-2">
-                    <summary className="text-sm cursor-pointer">View sample lines</summary>
-                    <div className="mt-1 p-2 bg-blue-100 rounded-md text-xs overflow-auto max-h-32">
-                      {debugInfo.sampleLines?.map((line: string, idx: number) => (
-                        <div key={idx} className="mb-1">
-                          Line {idx}: {line || "(empty)"}
-                        </div>
-                      ))}
-                    </div>
-                  </details>
-                </AlertDescription>
-              </Alert>
-            )}
-            
-            {extractedInfo && (
-              <div className="bg-green-50 p-4 rounded-md">
-                <h3 className="text-sm font-semibold text-green-800 mb-2">Preliminary Information Detected</h3>
-                {extractedInfo.termName && (
-                  <p className="text-sm text-green-800">Term Name: {extractedInfo.termName}</p>
-                )}
-                {extractedInfo.termNumber && (
-                  <p className="text-sm text-green-800">Term Number: {extractedInfo.termNumber}</p>
-                )}
-                {extractedInfo.startDate && extractedInfo.endDate && (
-                  <p className="text-sm text-green-800">Date Range: {extractedInfo.startDate} to {extractedInfo.endDate}</p>
-                )}
-                <p className="text-xs text-green-600 mt-2">Full data will be extracted after upload</p>
-              </div>
-            )}
-            
-            {pdfPreviewUrl && (
-              <div className="mt-4 border rounded-md p-4">
-                <h3 className="text-sm font-medium mb-2 flex items-center">
-                  <FileText className="h-4 w-4 mr-2" />
-                  PDF Preview
-                </h3>
-                <iframe
-                  src={pdfPreviewUrl}
-                  className="w-full h-[300px] border"
-                  title="PDF Preview"
-                />
-              </div>
-            )}
-            
-            {isUploading && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center">
-                    {currentStep === 1 && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                    {currentStep > 1 && <Check className="h-4 w-4 mr-2 text-green-500" />}
-                    <span>Uploading PDF</span>
-                  </div>
-                  <span>{currentStep >= 1 ? (currentStep === 1 ? `${uploadProgress}%` : '100%') : '0%'}</span>
-                </div>
-                
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center">
-                    {currentStep === 2 && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                    {currentStep > 2 && <Check className="h-4 w-4 mr-2 text-green-500" />}
-                    <span>Creating Term Record</span>
-                  </div>
-                  <span>{currentStep >= 2 ? (currentStep === 2 ? 'Processing...' : 'Done') : 'Waiting...'}</span>
-                </div>
-                
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center">
-                    {currentStep === 3 && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                    {currentStep > 3 && <Check className="h-4 w-4 mr-2 text-green-500" />}
-                    <span>Extracting Data</span>
-                  </div>
-                  <span>{currentStep >= 3 ? (currentStep === 3 ? 'Parsing content...' : 'Done') : 'Waiting...'}</span>
-                </div>
-                
-                <Progress value={uploadProgress} className="h-2" />
-              </div>
-            )}
-            
-            <Button type="submit" disabled={isUploading} className="w-full">
-              {isUploading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {currentStep === 1 ? "Uploading..." : 
-                   currentStep === 2 ? "Creating Term..." : 
-                   currentStep === 3 ? "Extracting Data..." : "Processing..."}
-                </>
-              ) : (
-                <>
-                  <Upload className="mr-2 h-4 w-4" />
-                  Upload and Process Term Sheet
-                </>
-              )}
-            </Button>
-          </form>
-        </Form>
-
-        {assignments && assignments.length > 0 && (
-          <div className="mt-8">
-            <h3 className="text-base font-semibold mb-2">Extracted Assignments</h3>
-            {assignments.length > 0 && assignments.length <= 5 && (
-              <div className="mb-2 text-yellow-700 bg-yellow-50 border border-yellow-200 rounded px-3 py-2 text-sm">
-                Warning: Only {assignments.length} assignments were extracted. This may indicate a parsing issue or incomplete data.
-              </div>
-            )}
-            <div className="overflow-x-auto">
-              <table className="min-w-full border text-sm bg-white">
-                <thead>
-                  <tr className="bg-gray-100 text-gray-900">
-                    <th className="border px-2 py-1 text-gray-900">PART</th>
-                    <th className="border px-2 py-1 text-gray-900">JUSTICE</th>
-                    <th className="border px-2 py-1 text-gray-900">ROOM</th>
-                    <th className="border px-2 py-1 text-gray-900">FAX</th>
-                    <th className="border px-2 py-1 text-gray-900">TEL</th>
-                    <th className="border px-2 py-1 text-gray-900">SGT</th>
-                    <th className="border px-2 py-1 text-gray-900">CLERKS</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {assignments.map((a, idx) => (
-                    <tr key={idx} className="even:bg-gray-50 text-gray-900">
-                      <td className="border px-2 py-1 text-gray-900">{a.part}</td>
-                      <td className="border px-2 py-1 text-gray-900">{a.justice}</td>
-                      <td className="border px-2 py-1 text-gray-900">{a.room}</td>
-                      <td className="border px-2 py-1 text-gray-900">{a.fax}</td>
-                      <td className="border px-2 py-1 text-gray-900">{a.tel}</td>
-                      <td className="border px-2 py-1 text-gray-900">{a.sgt}</td>
-                      <td className="border px-2 py-1 text-gray-900">
-                        {Array.isArray(a.clerks) 
-                          ? a.clerks.join(', ') 
-                          : a.clerks}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-        
-        {pdfText && pdfText.length > 0 && (
-          <div className="mt-8">
-            <details>
-              <summary className="text-sm font-medium cursor-pointer">View Raw PDF Text (for debugging)</summary>
-              <div className="mt-2 p-3 bg-gray-50 border rounded text-xs overflow-auto max-h-96 whitespace-pre-wrap">
-                {pdfText}
-              </div>
-            </details>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+    <div className="container mx-auto py-8">
+      {selectedTerm ? renderTermDetails() : renderTermList()}
+    </div>
   );
 }
