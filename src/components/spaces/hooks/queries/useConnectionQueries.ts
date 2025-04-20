@@ -58,7 +58,14 @@ export function useConnectionQueries(spaceId: string, spaceType: "room" | "hallw
       // Transform the connections data
       return connections.map((conn): Connection => {
         const connectedSpaceId = conn.from_space_id === spaceId ? conn.to_space_id : conn.from_space_id;
-        const connectedSpace = conn.to_space;
+        
+        // Check if to_space exists and create safe fallback for null/undefined values
+        const connectedSpace = conn.to_space || {
+          id: connectedSpaceId,
+          name: "Unknown Space",
+          type: "unknown",
+          room_number: null
+        };
 
         return {
           id: conn.id,
@@ -73,7 +80,7 @@ export function useConnectionQueries(spaceId: string, spaceType: "room" | "hallw
           offset_distance: conn.offset_distance,
           to_space: connectedSpace,
           connectionType: conn.connection_type as ConnectionType,
-          connectedSpaceName: connectedSpace?.name || ''
+          connectedSpaceName: connectedSpace.name || ''
         };
       });
     },
