@@ -46,9 +46,95 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { EditTermAssignmentDialog } from "@/components/terms/EditTermAssignmentDialog";
+
+// --- Formatting Helpers ---
+function formatPart(part: string | undefined, fallback: string | undefined) {
+  // Accepts letters, numbers, hyphens, spaces, e.g. IDV, N-SCT, TAP A, TAP G, GWP1, TAP B, MDC-92
+  if (typeof part === 'string' && part.trim()) return part;
+  if (typeof fallback === 'string' && fallback.trim()) return fallback;
+  return '—';
+}
+
+function formatPhone(phone: string | undefined) {
+  if (!phone) return '—';
+  // Already formatted: (6)4051
+  if (/^\(\d\)\d{4}$/.test(phone)) return phone;
+  // Try to format 64051 or 4051 as (6)4051
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length === 5 && digits[0] === '6') {
+    return `(6)${digits.slice(1)}`;
+  }
+  if (digits.length === 4) {
+    return `(6)${digits}`;
+  }
+  return phone;
+}
+
+function formatSergeant(sgt: string | undefined) {
+  if (!sgt || typeof sgt !== 'string') return '—';
+  // Only use last name (all caps, hyphenated allowed)
+  const parts = sgt.trim().split(/\s+/);
+  return parts.length > 0 ? parts[parts.length - 1].replace(/[^A-Z\-]/gi, '') : sgt;
+}
+
+function formatClerks(clerks: string[] | string | undefined) {
+  // Display as initial + last name, comma separated. Hyphenated last names allowed.
+  if (!clerks) return '—';
+  if (typeof clerks === 'string') clerks = clerks.split(',').map(c => c.trim()).filter(Boolean);
+  if (!Array.isArray(clerks) || clerks.length === 0) return '—';
+  return clerks.map(name => {
+    // If name is like "T. Cedeno-Barrett", just return as is
+    if (/^[A-Z]\.\s+[A-Za-z\-']+$/.test(name)) return name;
+    // If name is like "T Cedeno-Barrett" or "T. Cedeno Barrett"
+    const parts = name.split(/\s+/);
+    if (parts.length >= 2) {
+      let initial = parts[0].replace(/[^A-Z.]/gi, '');
+      let last = parts.slice(1).join(' ').replace(/[^A-Za-z\-']/gi, '');
+      return `${initial} ${last}`;
+    }
+    return name;
+  }).join(', ');
+}
+
 
 export function TermList() {
+  const [editingIdx, setEditingIdx] = useState<number | null>(null);
+  const [editValues, setEditValues] = useState<{ phone: string; sgt: string; clerks: string }>({ phone: '', sgt: '', clerks: '' });
+
+  // Handler to start editing a row
+  const handleEdit = (idx: number, assignment: any) => {
+    setEditingIdx(idx);
+    setEditValues({
+      phone: assignment.phone || '',
+      sgt: assignment.sgt || '',
+      clerks: assignment.clerks ? (Array.isArray(assignment.clerks) ? assignment.clerks.join(', ') : assignment.clerks) : ''
+    });
+  };
+
+  // Handler to cancel editing
+  const handleCancel = () => {
+    setEditingIdx(null);
+    setEditValues({ phone: '', sgt: '', clerks: '' });
+  };
+
+  // Handler to save edits (for now, just updates local assignments array)
+  const handleSave = (idx: number) => {
+    // TODO: Save to backend if desired
+    if (assignments[idx]) {
+      assignments[idx].phone = editValues.phone;
+      assignments[idx].sgt = editValues.sgt;
+      assignments[idx].clerks = editValues.clerks.split(',').map((c: string) => c.trim()).filter(Boolean);
+    }
+    setEditingIdx(null);
+    setEditValues({ phone: '', sgt: '', clerks: '' });
+  };
+
+  // Handler for controlled input changes
+  const handleEditChange = (idx: number, field: 'phone' | 'sgt' | 'clerks', value: string) => {
+    if (editingIdx !== idx) return;
+    setEditValues(prev => ({ ...prev, [field]: value }));
+  };
+
   const navigate = useNavigate();
   const [terms, setTerms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,8 +143,7 @@ export function TermList() {
   const [selectedTerm, setSelectedTerm] = useState<string | null>(null);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [personnel, setPersonnel] = useState<any[]>([]);
-  const [viewMode, setViewMode] = useState<"terms" | "details" | "personnel">("terms");
-  const [editingAssignment, setEditingAssignment] = useState<any>(null);
+  const [viewMode, setViewMode] = useState<"details" | "personnel">("details");
 
   const fetchTerms = async () => {
     try {
@@ -80,6 +165,7 @@ export function TermList() {
       }
       
       if (data) {
+        // Get assignment counts for each term
         const termsWithCounts = await Promise.all(
           data.map(async (term) => {
             const { count: assignmentCount, error: assignmentError } = await supabase
@@ -114,6 +200,7 @@ export function TermList() {
     try {
       setLoading(true);
       
+      // Fetch assignments
       const { data: assignmentsData, error: assignmentsError } = await supabase
         .from('term_assignments')
         .select(`
@@ -141,6 +228,7 @@ export function TermList() {
         throw assignmentsError;
       }
       
+      // Fetch personnel
       const { data: personnelData, error: personnelError } = await supabase
         .from('term_personnel')
         .select('*')
@@ -163,23 +251,29 @@ export function TermList() {
   };
 
   const deleteTerm = async (termId: string) => {
-    if (confirm("Are you sure you want to delete this term? This will also delete all related assignments and personnel data.")) {
-      try {
-        await supabase.from('term_assignments').delete().eq('term_id', termId);
-        await supabase.from('term_personnel').delete().eq('term_id', termId);
+    if (!confirm("Are you sure you want to delete this term? This action cannot be undone.")) {
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from('court_terms')
+        .delete()
+        .eq('id', termId);
         
-        const { error } = await supabase.from('court_terms').delete().eq('id', termId);
-        
-        if (error) {
-          throw error;
-        }
-        
-        toast.success("Term deleted successfully");
-        fetchTerms();
-      } catch (error) {
-        console.error("Error deleting term:", error);
-        toast.error("Failed to delete term");
+      if (error) {
+        throw error;
       }
+      
+      toast.success("Term deleted successfully");
+      fetchTerms();
+    } catch (error) {
+      console.error("Error deleting term:", error);
+      toast.error("Failed to delete term");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -187,14 +281,18 @@ export function TermList() {
     fetchTerms();
   }, [statusFilter]);
 
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
   const filteredTerms = terms.filter(term => {
     if (!searchQuery) return true;
     
-    const searchLower = searchQuery.toLowerCase();
+    const query = searchQuery.toLowerCase();
     return (
-      (term.term_name?.toLowerCase() || "").includes(searchLower) ||
-      (term.term_number?.toLowerCase() || "").includes(searchLower) ||
-      (term.location?.toLowerCase() || "").includes(searchLower)
+      term.term_name.toLowerCase().includes(query) ||
+      term.term_number.toLowerCase().includes(query) ||
+      term.location.toLowerCase().includes(query)
     );
   });
 
@@ -203,129 +301,128 @@ export function TermList() {
       case "active":
         return <Badge className="bg-green-500">Active</Badge>;
       case "upcoming":
-        return <Badge variant="outline" className="text-orange-500 border-orange-500">Upcoming</Badge>;
-      case "expired":
-        return <Badge variant="outline" className="text-gray-500 border-gray-500">Expired</Badge>;
+        return <Badge className="bg-blue-500">Upcoming</Badge>;
+      case "completed":
+        return <Badge className="bg-gray-500">Completed</Badge>;
       default:
-        return <Badge variant="outline">Unknown</Badge>;
+        return <Badge className="bg-gray-500">{status}</Badge>;
     }
   };
-  
+
   const handleBack = () => {
-    setViewMode("terms");
     setSelectedTerm(null);
   };
-  
+
   const handleViewPersonnel = () => {
     setViewMode("personnel");
   };
-  
+
   const handleViewAssignments = () => {
     setViewMode("details");
   };
-  
+
   const renderTermList = () => {
     return (
       <>
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-          <div className="relative w-full md:w-72">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+          <h1 className="text-3xl font-bold">Court Terms</h1>
+          <div className="flex gap-2">
+            <Button onClick={() => navigate("/terms/new")}>
+              Add New Term
+            </Button>
+          </div>
+        </div>
+        
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
+              type="search"
               placeholder="Search terms..."
               className="pl-8"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={handleSearch}
             />
           </div>
           
           <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex items-center gap-1"
-              onClick={() => setStatusFilter(statusFilter === "all" ? "active" : "all")}
-            >
-              <Filter className="h-4 w-4" />
-              {statusFilter === "all" ? "All Terms" : "Active Terms Only"}
-            </Button>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  Status: {statusFilter === "all" ? "All" : statusFilter}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => setStatusFilter("all")}>All</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setStatusFilter("active")}>Active</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setStatusFilter("upcoming")}>Upcoming</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setStatusFilter("expired")}>Expired</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Status:</span>
+            <Tabs defaultValue={statusFilter} className="w-auto" onValueChange={setStatusFilter}>
+              <TabsList>
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="active">Active</TabsTrigger>
+                <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+                <TabsTrigger value="completed">Completed</TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
         </div>
         
         {loading ? (
-          <div className="flex items-center justify-center h-60">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          <div className="text-center py-8">
+            <p>Loading terms...</p>
           </div>
         ) : filteredTerms.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">No terms found.</p>
+          <div className="text-center border rounded-md p-8">
+            <p className="text-muted-foreground">No terms found. Try adjusting your search or filters.</p>
+            <Button className="mt-4" variant="outline" onClick={() => { setSearchQuery(""); setStatusFilter("all"); }}>
+              Clear Filters
+            </Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredTerms.map((term) => (
               <Card key={term.id} className="overflow-hidden">
                 <CardHeader className="pb-3">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-lg">{term.term_name || "Unnamed Term"}</CardTitle>
-                      <CardDescription>{term.term_number}</CardDescription>
+                  <CardTitle>{term.term_name}</CardTitle>
+                  <CardDescription>
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-3.5 w-3.5" />
+                      <span>{term.term_number}</span>
                     </div>
-                    {getStatusBadge(term.status)}
-                  </div>
+                    <div className="flex items-center gap-1 mt-1">
+                      <MapPin className="h-3.5 w-3.5" />
+                      <span>{term.location}</span>
+                    </div>
+                  </CardDescription>
                 </CardHeader>
-                <CardContent className="pb-0">
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center">
-                      <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <span>{term.location || "No location specified"}</span>
+                <CardContent className="pb-3">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      {getStatusBadge(term.status)}
                     </div>
-                    <div className="flex items-center">
-                      <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <span>
-                        {term.start_date && term.end_date ? (
-                          `${format(new Date(term.start_date), "MMM d, yyyy")} - ${format(new Date(term.end_date), "MMM d, yyyy")}`
-                        ) : (
-                          "No dates specified"
-                        )}
-                      </span>
+                    <div className="text-sm text-muted-foreground">
+                      {term.start_date && term.end_date ? (
+                        `${format(new Date(term.start_date), "MMM d")} - ${format(new Date(term.end_date), "MMM d, yyyy")}`
+                      ) : (
+                        "No dates specified"
+                      )}
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center">
-                        <User className="h-4 w-4 mr-1 text-muted-foreground" />
-                        <span>{term.assignmentCount} assignments</span>
-                      </div>
-                      <div className="flex items-center">
-                        <Users className="h-4 w-4 mr-1 text-muted-foreground" />
-                        <span>{term.personnelCount} personnel</span>
-                      </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mt-4">
+                    <div className="flex items-center gap-1.5">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{term.assignmentCount} Assignments</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{term.personnelCount} Personnel</span>
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter className="pt-4 flex justify-between">
+                <CardFooter className="pt-0 flex justify-between">
                   <Button 
                     variant="outline" 
                     size="sm"
                     onClick={() => fetchTermDetails(term.id)}
                   >
-                    <Eye className="h-4 w-4 mr-1" />
+                    <Eye className="h-4 w-4 mr-2" />
                     View Details
                   </Button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
+                      <Button variant="ghost" size="sm">
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -374,7 +471,7 @@ export function TermList() {
     if (!term) return null;
     
     return (
-      <>
+      <div>
         <Button 
           variant="outline" 
           className="mb-4" 
@@ -385,8 +482,8 @@ export function TermList() {
         
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">{term.term_name}</h2>
-            <p className="text-muted-foreground">{term.term_number} | {term.location}</p>
+            <h2 className="text-2xl font-bold">{term.term_name}</h2>
+            <div className="text-muted-foreground">{term.term_number} | {term.location}</div>
           </div>
           
           <div className="flex gap-2">
@@ -412,98 +509,119 @@ export function TermList() {
           </div>
         </div>
         
-        <div className="border rounded-md p-4 mb-6 bg-white">
+        <div className="border rounded-md p-4 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <h3 className="text-sm font-medium text-gray-600">Term Period</h3>
-              <p className="flex items-center mt-1 text-gray-900">
+              <h3 className="text-sm font-medium text-muted-foreground">Term Period</h3>
+              <div className="flex items-center mt-1">
                 <CalendarDays className="h-4 w-4 mr-2" />
-                {term.start_date && term.end_date ? (
-                  `${format(new Date(term.start_date), "MMMM d, yyyy")} - ${format(new Date(term.end_date), "MMMM d, yyyy")}`
-                ) : (
-                  "No dates specified"
-                )}
-              </p>
+                <span>
+                  {term.start_date && term.end_date ? (
+                    `${format(new Date(term.start_date), "MMMM d, yyyy")} - ${format(new Date(term.end_date), "MMMM d, yyyy")}`
+                  ) : (
+                    "No dates specified"
+                  )}
+                </span>
+              </div>
             </div>
             <div>
-              <h3 className="text-sm font-medium text-gray-600">Status</h3>
-              <p className="mt-1">{getStatusBadge(term.status)}</p>
+              <h3 className="text-sm font-medium text-muted-foreground">Status</h3>
+              <div className="mt-1">{getStatusBadge(term.status)}</div>
             </div>
             <div>
-              <h3 className="text-sm font-medium text-gray-600">PDF Uploaded</h3>
-              <p className="mt-1 text-gray-900">{format(new Date(term.created_at), "MMMM d, yyyy")}</p>
+              <h3 className="text-sm font-medium text-muted-foreground">PDF Uploaded</h3>
+              <p className="mt-1">{format(new Date(term.created_at), "MMMM d, yyyy")}</p>
             </div>
           </div>
         </div>
         
         {viewMode === "details" ? (
-          <>
-            <h3 className="text-lg font-medium mb-4 text-gray-900">Court Assignments</h3>
+          <div>
+            <h3 className="text-lg font-medium mb-4">Court Assignments</h3>
             {assignments.length === 0 ? (
-              <div className="text-center border rounded-md p-8 bg-white">
+              <div className="text-center border rounded-md p-8">
                 <p className="text-muted-foreground">No assignments available for this term.</p>
               </div>
             ) : (
-              <div className="border rounded-md overflow-hidden bg-white">
+              <div className="border rounded-md overflow-hidden">
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-gray-50">
-                        <TableHead className="text-gray-900">Part</TableHead>
-                        <TableHead className="text-gray-900">Justice</TableHead>
-                        <TableHead className="text-gray-900">Room</TableHead>
-                        <TableHead className="text-gray-900">Phone/Fax</TableHead>
-                        <TableHead className="text-gray-900">Sgt.</TableHead>
-                        <TableHead className="text-gray-900">Clerks</TableHead>
-                        <TableHead className="text-gray-900 text-right">Actions</TableHead>
+                      <TableRow className="bg-gray-200 dark:bg-gray-900">
+                        <TableHead>Part</TableHead>
+                        <TableHead>Justice</TableHead>
+                        <TableHead>Room</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>SGT</TableHead>
+                        <TableHead>Clerks</TableHead>
+                        <TableHead></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {assignments.map((assignment) => (
-                        <TableRow key={assignment.id}>
-                          <TableCell className="font-medium text-gray-900">
-                            {assignment.court_parts?.part_code || assignment.part_id}
-                          </TableCell>
-                          <TableCell className="text-gray-900">{assignment.justice_name}</TableCell>
-                          <TableCell className="text-gray-900">
-                            {assignment.rooms?.room_number || "—"}
-                          </TableCell>
-                          <TableCell className="text-gray-900">
-                            {assignment.phone && (
-                              <div>{assignment.phone}</div>
-                            )}
-                            {assignment.fax && (
-                              <div className="text-gray-600 text-sm">Fax: {assignment.fax}</div>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-gray-900">
-                            {assignment.sergeant_name || "—"}
-                          </TableCell>
-                          <TableCell className="text-gray-900">
-                            {assignment.clerk_names && assignment.clerk_names.length > 0 
-                              ? assignment.clerk_names.join(', ')
-                              : "—"}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setEditingAssignment(assignment)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                              <span className="sr-only">Edit</span>
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {assignments.map((assignment, idx) => {
+                        const isEditing = editingIdx === idx;
+                        return (
+                          <TableRow key={assignment.id || idx} className={isEditing ? "bg-yellow-100 dark:bg-yellow-900" : "even:bg-gray-50 dark:even:bg-gray-900"}>
+                            <TableCell>{formatPart(assignment.part, assignment.court_parts?.part_code)}</TableCell>
+                            <TableCell>{assignment.justice || assignment.justice_name}</TableCell>
+                            <TableCell>{assignment.room || assignment.rooms?.room_number}</TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <input
+                                  type="text"
+                                  value={editValues.phone}
+                                  onChange={e => handleEditChange(idx, 'phone', e.target.value)}
+                                  className="border rounded px-1 py-0.5 w-24 bg-yellow-50 dark:bg-yellow-900 text-black dark:text-white"
+                                />
+                              ) : (
+                                formatPhone(assignment.phone)
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <input
+                                  type="text"
+                                  value={editValues.sgt}
+                                  onChange={e => handleEditChange(idx, 'sgt', e.target.value)}
+                                  className="border rounded px-1 py-0.5 w-20 bg-yellow-50 dark:bg-yellow-900 text-black dark:text-white"
+                                />
+                              ) : (
+                                formatSergeant(assignment.sgt)
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <input
+                                  type="text"
+                                  value={editValues.clerks}
+                                  onChange={e => handleEditChange(idx, 'clerks', e.target.value)}
+                                  className="border rounded px-1 py-0.5 w-44 bg-yellow-50 dark:bg-yellow-900 text-black dark:text-white"
+                                />
+                              ) : (
+                                formatClerks(assignment.clerks)
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <>
+                                  <Button size="sm" variant="outline" className="mr-2" onClick={() => handleSave(idx)}>Save</Button>
+                                  <Button size="sm" variant="ghost" onClick={handleCancel}>Cancel</Button>
+                                </>
+                              ) : (
+                                <Button size="sm" variant="outline" className="bg-blue-600 text-white hover:bg-blue-700" onClick={() => handleEdit(idx, assignment)}>Edit</Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>
               </div>
             )}
-          </>
+          </div>
         ) : (
-          <>
+          <div>
             <h3 className="text-lg font-medium mb-4">Court Personnel</h3>
             {personnel.length === 0 ? (
               <div className="text-center border rounded-md p-8">
@@ -552,27 +670,15 @@ export function TermList() {
                 </div>
               </div>
             )}
-          </>
+          </div>
         )}
-
-      {editingAssignment && (
-        <EditTermAssignmentDialog
-          isOpen={true}
-          onClose={() => setEditingAssignment(null)}
-          assignment={editingAssignment}
-          onSave={() => {
-            fetchTermDetails(selectedTerm!);
-            setEditingAssignment(null);
-          }}
-        />
-      )}
-    </>
-  );
-};
+      </div>
+    );
+  };
 
   return (
-    <div className="w-full">
-      {viewMode === "terms" ? renderTermList() : renderTermDetails()}
+    <div className="container mx-auto py-8">
+      {selectedTerm ? renderTermDetails() : renderTermList()}
     </div>
   );
 }
