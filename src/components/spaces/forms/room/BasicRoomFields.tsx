@@ -1,4 +1,3 @@
-
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -65,7 +64,7 @@ export function BasicRoomFields({ form }: BasicRoomFieldsProps) {
                   </FormControl>
                   <SelectContent>
                     {Object.entries(RoomTypeEnum).map(([key, value]) => (
-                      <SelectItem key={value} value={value}>
+                      <SelectItem key={key} value={value}>
                         {key.split('_').map(word => 
                           word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
                         ).join(' ')}
