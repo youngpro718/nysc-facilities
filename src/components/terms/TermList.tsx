@@ -57,7 +57,7 @@ export function TermList() {
   const [selectedTerm, setSelectedTerm] = useState<string | null>(null);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [personnel, setPersonnel] = useState<any[]>([]);
-  const [viewMode, setViewMode<"terms" | "details" | "personnel">("terms");
+  const [viewMode, setViewMode] = useState<"terms" | "details" | "personnel">("terms");
   const [editingAssignment, setEditingAssignment] = useState<any>(null);
 
   const fetchTerms = async () => {
@@ -80,7 +80,6 @@ export function TermList() {
       }
       
       if (data) {
-        // Get assignment counts for each term
         const termsWithCounts = await Promise.all(
           data.map(async (term) => {
             const { count: assignmentCount, error: assignmentError } = await supabase
@@ -115,7 +114,6 @@ export function TermList() {
     try {
       setLoading(true);
       
-      // Fetch assignments
       const { data: assignmentsData, error: assignmentsError } = await supabase
         .from('term_assignments')
         .select(`
@@ -143,7 +141,6 @@ export function TermList() {
         throw assignmentsError;
       }
       
-      // Fetch personnel
       const { data: personnelData, error: personnelError } = await supabase
         .from('term_personnel')
         .select('*')
@@ -168,11 +165,9 @@ export function TermList() {
   const deleteTerm = async (termId: string) => {
     if (confirm("Are you sure you want to delete this term? This will also delete all related assignments and personnel data.")) {
       try {
-        // First delete assignments and personnel (they have foreign key constraints)
         await supabase.from('term_assignments').delete().eq('term_id', termId);
         await supabase.from('term_personnel').delete().eq('term_id', termId);
         
-        // Then delete the term
         const { error } = await supabase.from('court_terms').delete().eq('id', termId);
         
         if (error) {
