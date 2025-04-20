@@ -319,9 +319,10 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
         .getPublicUrl(filePath);
       
       const termId = crypto.randomUUID();
+      
       const { error: termError } = await supabase
         .from('court_terms')
-        .insert({
+        .insert([{
           term_name: termName,
           term_number: termNumber,
           location: location,
@@ -329,7 +330,7 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
           start_date: startDate,
           end_date: endDate,
           pdf_url: publicUrlData.publicUrl
-        });
+        }]);
       
       if (termError) {
         throw termError;
@@ -615,4 +616,8 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
       </Card>
     </div>
   );
+}
+
+export function TermList() {
+  return <div>Term List Coming Soon</div>;
 }
