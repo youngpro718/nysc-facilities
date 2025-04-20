@@ -59,8 +59,16 @@ export function useConnectionQueries(spaceId: string, spaceType: "room" | "hallw
       return connections.map((conn): Connection => {
         const connectedSpaceId = conn.from_space_id === spaceId ? conn.to_space_id : conn.from_space_id;
         
-        // Check if to_space exists and create safe fallback for null/undefined values
-        const connectedSpace = conn.to_space || {
+        // Check if to_space is a valid object or an error
+        // TypeScript needs reassurance that we're handling the error case
+        const hasValidToSpace = conn.to_space && 
+          typeof conn.to_space === 'object' && 
+          !('error' in conn.to_space) &&
+          'name' in conn.to_space &&
+          'type' in conn.to_space;
+        
+        // Create a safe default object in case to_space is missing or invalid
+        const connectedSpace = hasValidToSpace ? conn.to_space : {
           id: connectedSpaceId,
           name: "Unknown Space",
           type: "unknown",
