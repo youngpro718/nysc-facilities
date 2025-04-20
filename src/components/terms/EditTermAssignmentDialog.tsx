@@ -65,7 +65,8 @@ export function EditTermAssignmentDialog({
 
   const onSubmit = async (values: EditAssignmentFormValues) => {
     try {
-      const { part_code, ...rest } = values;
+      const { part_code, ...restValues } = values;
+      const updateData: Record<string, any> = { ...restValues };
 
       // Update the court part if it changed
       if (part_code !== assignment?.court_parts?.part_code) {
@@ -87,9 +88,9 @@ export function EditTermAssignmentDialog({
             
           if (createPartError) throw createPartError;
           
-          rest.part_id = newPart.id;
+          updateData.part_id = newPart.id;
         } else {
-          rest.part_id = partData.id;
+          updateData.part_id = partData.id;
         }
       }
 
@@ -99,12 +100,11 @@ export function EditTermAssignmentDialog({
         .map(name => name.trim())
         .filter(Boolean);
 
+      updateData.clerk_names = clerkNames;
+
       const { error } = await supabase
         .from('term_assignments')
-        .update({
-          ...rest,
-          clerk_names: clerkNames,
-        })
+        .update(updateData)
         .eq('id', assignment.id);
 
       if (error) throw error;
