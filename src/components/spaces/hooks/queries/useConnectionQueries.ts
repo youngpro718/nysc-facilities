@@ -37,10 +37,11 @@ export function useConnectionQueries(spaceId: string, spaceType: "room" | "hallw
           status,
           hallway_position,
           offset_distance,
-          to_space:spaces!to_space_id (
+          to_space:to_space_id(
+            id,
             name,
-            room_number,
-            type
+            type,
+            room_number
           )
         `)
         .or(`from_space_id.eq.${spaceId},to_space_id.eq.${spaceId}`)
