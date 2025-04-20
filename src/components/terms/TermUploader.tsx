@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,7 +30,6 @@ import { format } from "date-fns";
 
 // --- Formatting Helpers ---
 function formatPart(part: string | undefined, fallback: string | undefined) {
-  // Accepts letters, numbers, hyphens, spaces, e.g. IDV, N-SCT, TAP A, TAP G, GWP1, TAP B, MDC-92
   if (typeof part === 'string' && part.trim()) return part;
   if (typeof fallback === 'string' && fallback.trim()) return fallback;
   return '—';
@@ -39,9 +37,7 @@ function formatPart(part: string | undefined, fallback: string | undefined) {
 
 function formatPhone(phone: string | undefined) {
   if (!phone) return '—';
-  // Already formatted: (6)4051
   if (/^\(\d\)\d{4}$/.test(phone)) return phone;
-  // Try to format 64051 or 4051 as (6)4051
   const digits = phone.replace(/\D/g, '');
   if (digits.length === 5 && digits[0] === '6') {
     return `(6)${digits.slice(1)}`;
@@ -54,20 +50,16 @@ function formatPhone(phone: string | undefined) {
 
 function formatSergeant(sgt: string | undefined) {
   if (!sgt || typeof sgt !== 'string') return '—';
-  // Only use last name (all caps, hyphenated allowed)
   const parts = sgt.trim().split(/\s+/);
   return parts.length > 0 ? parts[parts.length - 1].replace(/[^A-Z\-]/gi, '') : sgt;
 }
 
 function formatClerks(clerks: string[] | string | undefined) {
-  // Display as initial + last name, comma separated. Hyphenated last names allowed.
   if (!clerks) return '—';
   if (typeof clerks === 'string') clerks = clerks.split(',').map(c => c.trim()).filter(Boolean);
   if (!Array.isArray(clerks) || clerks.length === 0) return '—';
   return clerks.map(name => {
-    // If name is like "T. Cedeno-Barrett", just return as is
     if (/^[A-Z]\.\s+[A-Za-z\-']+$/.test(name)) return name;
-    // If name is like "T Cedeno-Barrett" or "T. Cedeno Barrett"
     const parts = name.split(/\s+/);
     if (parts.length >= 2) {
       let initial = parts[0].replace(/[^A-Z.]/gi, '');
@@ -78,7 +70,6 @@ function formatClerks(clerks: string[] | string | undefined) {
   }).join(', ');
 }
 
-// Changed the component name from 'TermList' to 'TermUploader' to match the import in TermManagement.tsx
 export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void }) {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -105,10 +96,8 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
       setPdfFile(file);
       setError(null);
       
-      // Generate term name and number from file name if empty
       if (!termName || !termNumber) {
         const fileName = file.name.replace(".pdf", "");
-        // Example: "April 2025 - Term III.pdf" -> "April 2025" and "Term III"
         const match = fileName.match(/(.+?)(?:\s*[-–]\s*(.+))?$/);
         
         if (match) {
@@ -150,8 +139,6 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
       setUploading(true);
       console.info("Processing term data...");
       
-      // First, extract text from PDF
-      console.info("Extracting text from PDF...");
       const pdfData = new FormData();
       pdfData.append("file", pdfFile);
       
@@ -162,7 +149,6 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
           try {
             const pdfArrayBuffer = e.target?.result as ArrayBuffer;
             
-            // Load PDF.js dynamically
             const pdfjsLib = await import('pdfjs-dist');
             pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
             
@@ -171,7 +157,6 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
             
             let extractedText = '';
             
-            // Extract text from each page
             for (let i = 1; i <= pdf.numPages; i++) {
               const page = await pdf.getPage(i);
               const textContent = await page.getTextContent();
@@ -182,8 +167,6 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
             console.info(`Extracted text length: ${extractedText.length} characters`);
             console.info(`PDF text sample: ${extractedText.substring(0, 1000)}`);
             
-            // Parse assignments from text
-            console.info("Parsing assignments from text...");
             const assignments = parseAssignmentsFromText(extractedText);
             
             resolve(assignments);
@@ -206,51 +189,40 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
   };
   
   const parseAssignmentsFromText = (text: string) => {
-    // Improved parsing logic based on common term sheet formats
     try {
-      // Split by lines and clean up
       const lines = text.split(/\n/).map(line => line.trim()).filter(Boolean);
       console.info(`Total lines: ${lines.length}`);
       
-      // Pattern to match assignments
-      // Improved pattern that can handle various formats
       const assignmentPattern = /\b([A-Z0-9-]+)\s+([A-Za-z\s\.-]+)(?:\s+([Rr]oom\s+)?(\d+[A-Z]?))?(?:\s+\(?(\d[-\d]+)\)?)?/i;
       
       const assignments: any[] = [];
       
       console.info(`Starting to process assignments from line 0`);
       
-      // Process each line for potential assignments
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         const match = line.match(assignmentPattern);
         
         if (match) {
-          // Found potential assignment
           const [_, part, justice, roomPrefix, room, phone] = match;
           
-          // Look ahead for potential SGT and clerks info
           let sgt = '';
           let clerks: string[] = [];
           
-          // Check next line for SGT
           if (i + 1 < lines.length && lines[i + 1].includes('SGT')) {
             sgt = lines[i + 1].replace('SGT', '').trim();
-            i++; // Move to next line
+            i++;
           }
           
-          // Check next line(s) for clerks
           let clerkLine = '';
           while (i + 1 < lines.length && !lines[i + 1].match(assignmentPattern)) {
             clerkLine += ' ' + lines[i + 1];
             i++;
             
-            // Stop if we hit a new section
             if (lines[i].includes('PART') || lines[i].includes('JUDGE')) break;
           }
           
           if (clerkLine) {
-            // Process clerk names
             clerks = clerkLine.split(',').map(c => c.trim()).filter(Boolean);
             if (clerks.length === 0 && clerkLine.trim()) {
               clerks = [clerkLine.trim()];
@@ -269,18 +241,16 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
         }
       }
       
-      // Secondary approach for when standard patterns don't find much
       if (assignments.length < 3) {
         console.info("Few assignments found, trying secondary parsing approach");
         
-        // Simple table detection - look for sections that might be tables
         const tablePattern = /([A-Z0-9-]+)\s+([A-Za-z\s\.-]+)/g;
         let match;
         let tableAssignments = [];
         
         while ((match = tablePattern.exec(text)) !== null) {
           const [_, part, justice] = match;
-          if (part && justice && part.length < 10) { // Avoid catching long text as part code
+          if (part && justice && part.length < 10) {
             tableAssignments.push({
               part,
               justice: justice.trim(),
@@ -293,7 +263,6 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
           }
         }
         
-        // Only use these if they seem like reasonable assignments
         if (tableAssignments.length > assignments.length && tableAssignments.length < 50) {
           assignments.push(...tableAssignments);
         }
@@ -333,7 +302,6 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
       setUploading(true);
       setError(null);
       
-      // 1. Upload the PDF file to storage
       const timestamp = Date.now();
       const fileExt = pdfFile!.name.split('.').pop();
       const filePath = `term_pdfs/${timestamp}-${pdfFile!.name}`;
@@ -346,17 +314,14 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
         throw uploadError;
       }
       
-      // Get the public URL
       const { data: publicUrlData } = await supabase.storage
         .from('documents')
         .getPublicUrl(filePath);
       
-      // 2. Create the term record
       const termId = crypto.randomUUID();
       const { error: termError } = await supabase
         .from('court_terms')
         .insert({
-          id: termId,
           term_name: termName,
           term_number: termNumber,
           location: location,
@@ -370,7 +335,6 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
         throw termError;
       }
       
-      // 3. Process the assignments from the PDF and add them to the database
       const assignments = previewAssignments.map(assignment => ({
         term_id: termId,
         partCode: assignment.part,
@@ -399,11 +363,9 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
       
       console.info(`PDF processing result: ${JSON.stringify(processingResult, null, 2)}`);
       
-      // Success!
       toast.success("Term uploaded successfully!");
       onUploadSuccess?.();
       
-      // Reset form
       setPdfFile(null);
       setTermName("");
       setTermNumber("");
