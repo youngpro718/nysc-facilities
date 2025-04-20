@@ -28,7 +28,6 @@ import {
 } from "@/components/ui/table";
 import { format } from "date-fns";
 
-// --- Formatting Helpers ---
 function formatPart(part: string | undefined, fallback: string | undefined) {
   if (typeof part === 'string' && part.trim()) return part;
   if (typeof fallback === 'string' && fallback.trim()) return fallback;
@@ -322,15 +321,15 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
       
       const { error: termError } = await supabase
         .from('court_terms')
-        .insert([{
+        .insert({
           term_name: termName,
           term_number: termNumber,
           location: location,
           status: status,
-          start_date: startDate,
-          end_date: endDate,
+          start_date: startDate ? startDate.toISOString().split('T')[0] : null,
+          end_date: endDate ? endDate.toISOString().split('T')[0] : null,
           pdf_url: publicUrlData.publicUrl
-        }]);
+        });
       
       if (termError) {
         throw termError;
