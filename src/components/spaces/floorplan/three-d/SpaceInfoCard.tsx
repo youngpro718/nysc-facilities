@@ -1,6 +1,6 @@
-
 import React, { useState } from 'react';
 import { Html } from '@react-three/drei';
+import { cn } from "@/lib/utils";
 
 interface SpaceInfoCardProps {
   data: {
@@ -28,7 +28,6 @@ export function SpaceInfoCard({ data, position, visible, type = 'room' }: SpaceI
     }
   };
 
-  // Format size info to be more readable
   const formatSize = (size: any) => {
     if (!size) return 'Unknown dimensions';
     const { width, height } = size;
@@ -37,7 +36,6 @@ export function SpaceInfoCard({ data, position, visible, type = 'room' }: SpaceI
     return `${Math.round(width)} × ${Math.round(height)} units`;
   };
   
-  // Get connection count
   const getConnectionsInfo = () => {
     const connections = data.properties?.connected_spaces;
     if (!connections || !Array.isArray(connections)) {
@@ -46,7 +44,6 @@ export function SpaceInfoCard({ data, position, visible, type = 'room' }: SpaceI
     return `${connections.length} connections`;
   };
   
-  // Get lighting status if available
   const getLightingStatus = () => {
     const status = data.properties?.lighting_status;
     if (!status) return null;
@@ -78,19 +75,26 @@ export function SpaceInfoCard({ data, position, visible, type = 'room' }: SpaceI
   const lightingStatus = getLightingStatus();
   
   return (
-    <Html position={position} center zIndexRange={[900, 999]}>
+    <Html position={position} center zIndexRange={[1000, 1100]}>
       <div 
-        className={`p-2 rounded-lg shadow-lg bg-white/95 backdrop-blur-sm 
-                   transition-all duration-150 border border-gray-200 max-w-[240px]
-                   ${isExpanded ? 'scale-100' : 'scale-95'}`}
+        className={cn(
+          "fixed transform -translate-x-1/2 -translate-y-full",
+          "p-3 rounded-lg shadow-lg",
+          "bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85",
+          "border border-gray-200/50",
+          "max-w-[240px] min-w-[180px]",
+          "transition-all duration-150 ease-out",
+          isExpanded ? "scale-100" : "scale-95 hover:scale-100",
+        )}
         style={{ 
-          transform: `translateY(-100%)`,
-          pointerEvents: 'auto'
+          marginTop: '-10px',
+          perspective: '1000px',
+          transformStyle: 'preserve-3d',
         }}
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-start gap-2">
-          <div className="text-xl">{getTypeIcon()}</div>
+          <div className="text-xl select-none">{getTypeIcon()}</div>
           <div className="flex-1 min-w-0">
             <h3 className="font-medium text-sm truncate">{data.label}</h3>
             <div className="text-xs text-gray-500">{formatSize(data.size)}</div>
@@ -104,7 +108,7 @@ export function SpaceInfoCard({ data, position, visible, type = 'room' }: SpaceI
             )}
             
             {isExpanded && data.properties && (
-              <div className="mt-2 pt-2 border-t border-gray-100 space-y-1">
+              <div className="mt-2 pt-2 border-t border-gray-100 space-y-1.5">
                 {data.properties.room_number && (
                   <div className="text-xs">
                     <span className="font-medium">Room #:</span> {data.properties.room_number}
@@ -145,11 +149,9 @@ export function SpaceInfoCard({ data, position, visible, type = 'room' }: SpaceI
           </div>
         </div>
         
-        {isExpanded ? (
-          <div className="text-[10px] text-center mt-1 text-gray-400">Click to collapse</div>
-        ) : (
-          <div className="text-[10px] text-center mt-1 text-gray-400">Click for details</div>
-        )}
+        <div className="text-[10px] text-center mt-2 text-gray-400">
+          {isExpanded ? "Click to collapse" : "Click for details"}
+        </div>
       </div>
     </Html>
   );

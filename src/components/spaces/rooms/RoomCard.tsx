@@ -18,29 +18,30 @@ export function RoomCard({ room, onDelete }: RoomCardProps) {
   };
 
   return (
-    <Card className="overflow-hidden h-[320px] flex">
-      <CardContent className="p-0 flex-1 relative">
+    <Card className="relative h-[320px] group">
+      <CardContent className="p-0 h-full perspective-1000">
         <div 
-          className="absolute inset-0 w-full h-full backface-hidden transition-transform duration-500"
+          className="relative w-full h-full transition-all duration-500"
           style={{ 
-            transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
-            opacity: isFlipped ? 0 : 1,
-            zIndex: isFlipped ? 0 : 1,
-            pointerEvents: isFlipped ? 'none' : 'auto'
+            transformStyle: 'preserve-3d',
+            transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0)',
           }}
         >
-          <CardFront room={room} onFlip={handleFlip} onDelete={onDelete} />
-        </div>
-        <div 
-          className="absolute inset-0 w-full h-full backface-hidden transition-transform duration-500"
-          style={{ 
-            transform: isFlipped ? 'rotateY(0deg)' : 'rotateY(-180deg)',
-            opacity: isFlipped ? 1 : 0,
-            zIndex: isFlipped ? 1 : 0,
-            pointerEvents: isFlipped ? 'auto' : 'none'
-          }}
-        >
-          <CardBack room={room} onFlip={handleFlip} />
+          <div 
+            className="absolute inset-0 w-full h-full backface-hidden"
+            style={{ backfaceVisibility: 'hidden' }}
+          >
+            <CardFront room={room} onFlip={handleFlip} onDelete={onDelete} />
+          </div>
+          <div 
+            className="absolute inset-0 w-full h-full backface-hidden"
+            style={{ 
+              backfaceVisibility: 'hidden',
+              transform: 'rotateY(180deg)'
+            }}
+          >
+            <CardBack room={room} onFlip={handleFlip} />
+          </div>
         </div>
       </CardContent>
     </Card>
