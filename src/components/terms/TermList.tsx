@@ -28,6 +28,12 @@ import {
   ChevronRightIcon
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from "@/components/ui/tooltip";
 
 interface Term {
   id: string;
@@ -218,41 +224,74 @@ export function TermList() {
                     )}
                   </TableCell>
                   <TableCell className="text-right space-x-1">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-8"
-                      onClick={() => downloadPdf(term.pdf_url, term.term_name)}
-                    >
-                      <FileTextIcon className="h-4 w-4 mr-1" />
-                      PDF
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-8"
-                      onClick={() => viewAssignments(term.id)}
-                    >
-                      <ClipboardListIcon className="h-4 w-4 mr-1" />
-                      Assignments
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-8"
-                      onClick={() => viewPersonnel(term.id)}
-                    >
-                      <UsersIcon className="h-4 w-4 mr-1" />
-                      Personnel
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-8"
-                      onClick={() => navigate(`/terms/${term.id}`)}
-                    >
-                      <ChevronRightIcon className="h-4 w-4" />
-                    </Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8"
+                            onClick={() => downloadPdf(term.pdf_url, term.term_name)}
+                          >
+                            <FileTextIcon className="h-4 w-4 mr-1" />
+                            PDF
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Download PDF</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8"
+                            onClick={() => viewAssignments(term.id)}
+                          >
+                            <ClipboardListIcon className="h-4 w-4 mr-1" />
+                            Assignments
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>View Assignments</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8"
+                            onClick={() => viewPersonnel(term.id)}
+                          >
+                            <UsersIcon className="h-4 w-4 mr-1" />
+                            Personnel
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>View Personnel</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8"
+                            onClick={() => navigate(`/terms/${term.id}`)}
+                          >
+                            <ChevronRightIcon className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>View Details</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </TableCell>
                 </TableRow>
               ))}

@@ -1,3 +1,4 @@
+
 import { PDFDocumentProxy } from "pdfjs-dist";
 
 export interface TermAssignment {
@@ -37,7 +38,7 @@ export async function extractTextFromPDF(pdfArrayBuffer: ArrayBuffer): Promise<s
     // First pass: Extract text with more precise layout preservation
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
-      const textContent = await page.getTextContent({ normalizeWhitespace: false });
+      const textContent = await page.getTextContent();
       
       // Group items by their y-position with higher precision
       const lineMap = new Map<number, {text: string, x: number, fontSize?: number}[]>();
