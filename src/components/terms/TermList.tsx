@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -45,6 +46,10 @@ interface Term {
   pdf_url: string;
   created_at: string;
   assignment_count?: number;
+  metadata?: any;
+  created_by?: string;
+  description?: string;
+  updated_at?: string;
 }
 
 export function TermList() {
