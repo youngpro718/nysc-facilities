@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -62,7 +61,6 @@ export function TermList() {
     try {
       setLoading(true);
       
-      // Fetch terms
       const { data: termsData, error: termsError } = await supabase
         .from('court_terms')
         .select('*')
@@ -72,7 +70,6 @@ export function TermList() {
         throw termsError;
       }
       
-      // Get assignment counts for each term
       for (const term of termsData) {
         const { count, error: countError } = await supabase
           .from('term_assignments')
