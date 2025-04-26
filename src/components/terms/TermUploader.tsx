@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileUp, AlertCircle, CalendarRange, Clock, MapPin, Loader2, CheckCircle, XCircle } from "lucide-react";
+import { FileUp, AlertCircle, CalendarRange, Clock, MapPin, Loader2, CheckCircle, XCircle, Info } from "lucide-react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -37,10 +37,13 @@ import {
   formatSergeant, 
   formatClerks,
   getReadableFileSize,
-  type TermAssignment
+  extractTermMetadata,
+  type TermAssignment,
+  type ExtractedTermMetadata
 } from "@/utils/pdfProcessing";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void }) {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -58,10 +61,24 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
   const [fileSize, setFileSize] = useState<string | null>(null);
   const [processingProgress, setProcessingProgress] = useState(0);
   const [extractionMethod, setExtractionMethod] = useState<string | null>(null);
+  const [pdfText, setPdfText] = useState<string | null>(null);
+  const [termMetadata, setTermMetadata] = useState<ExtractedTermMetadata | null>(null);
+  const [extractingMetadata, setExtractingMetadata] = useState(false);
+  const [autoExtracted, setAutoExtracted] = useState<{
+    termName: boolean;
+    termNumber: boolean;
+    location: boolean;
+    dates: boolean;
+  }>({
+    termName: false,
+    termNumber: false,
+    location: false,
+    dates: false
+  });
   
   const navigate = useNavigate();
   
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       const validation = validatePDFFile(file);
@@ -76,15 +93,66 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
       setError(null);
       setPreviewAssignments([]);
       
-      // Try to extract term info from filename
-      if (!termName || !termNumber) {
-        const fileName = file.name.replace(".pdf", "");
-        const match = fileName.match(/(.+?)(?:\s*[-–]\s*(.+))?$/);
+      // Immediately begin extracting metadata
+      setExtractingMetadata(true);
+      try {
+        const extractedText = await extractTextFromPDF(await file.arrayBuffer());
+        setPdfText(extractedText);
         
-        if (match) {
-          if (!termName && match[1]) setTermName(match[1].trim());
-          if (!termNumber && match[2]) setTermNumber(match[2].trim());
+        const metadata = extractTermMetadata(extractedText);
+        setTermMetadata(metadata);
+        
+        // Auto-fill form with extracted metadata
+        let fieldsExtracted = {
+          termName: false,
+          termNumber: false,
+          location: false,
+          dates: false
+        };
+        
+        if (metadata.termName) {
+          setTermName(metadata.termName);
+          fieldsExtracted.termName = true;
         }
+        
+        if (metadata.termNumber) {
+          setTermNumber(metadata.termNumber);
+          fieldsExtracted.termNumber = true;
+        }
+        
+        if (metadata.location) {
+          setLocation(metadata.location);
+          fieldsExtracted.location = true;
+        }
+        
+        if (metadata.startDate && metadata.endDate) {
+          setStartDate(metadata.startDate);
+          setEndDate(metadata.endDate);
+          fieldsExtracted.dates = true;
+        } else if (metadata.startDate) {
+          setStartDate(metadata.startDate);
+          // Estimate end date (3 months after start)
+          const estimatedEnd = new Date(metadata.startDate);
+          estimatedEnd.setMonth(estimatedEnd.getMonth() + 3);
+          setEndDate(estimatedEnd);
+          fieldsExtracted.dates = true;
+        }
+        
+        setAutoExtracted(fieldsExtracted);
+        
+        if (Object.values(fieldsExtracted).some(val => val)) {
+          toast.success("Metadata extracted from PDF");
+        }
+        
+        // If we found sufficient metadata, automatically trigger assignment analysis
+        if (fieldsExtracted.termName && fieldsExtracted.dates) {
+          handleAnalyzeClick();
+        }
+      } catch (error) {
+        console.error("Error extracting metadata:", error);
+        toast.error("Could not extract metadata from PDF");
+      } finally {
+        setExtractingMetadata(false);
       }
     }
   };
@@ -97,11 +165,6 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
     
     if (!termName) {
       setError("Please enter a term name.");
-      return false;
-    }
-    
-    if (!termNumber) {
-      setError("Please enter a term number.");
       return false;
     }
     
@@ -119,48 +182,38 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
   };
   
   const extractDataFromPDF = async () => {
-    if (!pdfFile) return null;
+    if (!pdfFile) return { assignments: [], method: "None" };
     
     try {
       setProcessing(true);
       setProcessingProgress(10);
       console.info("Processing term data...");
       
-      // Use FileReader to get the PDF as an ArrayBuffer
-      return new Promise<TermAssignment[]>((resolve, reject) => {
-        const reader = new FileReader();
-        
-        reader.onload = async (e) => {
-          try {
-            const pdfArrayBuffer = e.target?.result as ArrayBuffer;
-            setProcessingProgress(30);
-            
-            // Extract text from the PDF
-            const extractedText = await extractTextFromPDF(pdfArrayBuffer);
-            console.info(`Extracted text length: ${extractedText.length} characters`);
-            setProcessingProgress(60);
-            
-            // Parse assignments from the extracted text
-            const assignments = parseAssignmentsFromText(extractedText);
-            console.info(`Successfully extracted ${assignments.length} assignments`);
-            setProcessingProgress(90);
-            
-            resolve(assignments);
-          } catch (error) {
-            console.error("Error processing PDF:", error);
-            reject(error);
-          }
-        };
-        
-        reader.onerror = (error) => {
-          reject(error);
-        };
-        
-        reader.readAsArrayBuffer(pdfFile);
-      });
+      // If we've already extracted the text, use it
+      let extractedText = pdfText;
+      
+      if (!extractedText) {
+        // Use FileReader to get the PDF as an ArrayBuffer
+        const pdfArrayBuffer = await pdfFile.arrayBuffer();
+        setProcessingProgress(30);
+        extractedText = await extractTextFromPDF(pdfArrayBuffer);
+        setPdfText(extractedText);
+      } else {
+        setProcessingProgress(30);
+      }
+      
+      console.info(`Using extracted text length: ${extractedText.length} characters`);
+      setProcessingProgress(60);
+      
+      // Parse assignments from the extracted text
+      const result = parseAssignmentsFromText(extractedText);
+      console.info(`Successfully extracted ${result.assignments.length} assignments using ${result.method}`);
+      setProcessingProgress(90);
+      
+      return result;
     } catch (error) {
       console.error("Error in extractDataFromPDF:", error);
-      return null;
+      return { assignments: [], method: "Error" };
     } finally {
       setProcessingProgress(100);
       setTimeout(() => setProcessing(false), 500); // Small delay to show completed progress
@@ -175,17 +228,17 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
       
       setProcessing(true);
       setExtractionMethod(null);
-      const assignments = await extractDataFromPDF();
+      const result = await extractDataFromPDF();
       
-      if (!assignments || assignments.length === 0) {
+      if (!result.assignments || result.assignments.length === 0) {
         toast.error("No assignments could be extracted from the PDF");
         setError("No assignments could be extracted from the PDF. Please check the file and try again.");
         setCurrentStep("upload");
       } else {
-        setPreviewAssignments(assignments);
+        setPreviewAssignments(result.assignments);
         setCurrentStep("review");
-        setExtractionMethod("Improved pattern matching");
-        toast.success(`Found ${assignments.length} assignments in the PDF`);
+        setExtractionMethod(result.method);
+        toast.success(`Found ${result.assignments.length} assignments in the PDF using ${result.method}`);
       }
     } catch (error: any) {
       console.error("Error analyzing PDF:", error);
@@ -212,7 +265,6 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
       
       // Upload PDF to storage
       const timestamp = Date.now();
-      const fileExt = pdfFile!.name.split('.').pop();
       const filePath = `term_pdfs/${timestamp}-${pdfFile!.name}`;
       
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -233,7 +285,7 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
         .insert({
           id: termId,
           term_name: termName,
-          term_number: termNumber,
+          term_number: termNumber || null, // Allow null for term number
           location: location,
           status: status,
           start_date: startDate ? startDate.toISOString().split('T')[0] : null,
@@ -290,6 +342,17 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
       setPreviewAssignments([]);
       setCurrentStep("upload");
       setFileSize(null);
+      setPdfText(null);
+      setTermMetadata(null);
+      setAutoExtracted({
+        termName: false,
+        termNumber: false,
+        location: false,
+        dates: false
+      });
+      
+      // Navigate to term list
+      navigate("/terms");
       
     } catch (error: any) {
       console.error("Error uploading term:", error);
@@ -297,6 +360,14 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
       toast.error("Failed to upload term");
     } finally {
       setUploading(false);
+    }
+  };
+  
+  const getMetadataStatusIcon = (extracted: boolean) => {
+    if (extracted) {
+      return <CheckCircle className="h-3 w-3 text-green-500" />;
+    } else {
+      return <Info className="h-3 w-3 text-amber-500" />;
     }
   };
   
@@ -320,7 +391,7 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
                 onClick={() => previewAssignments.length > 0 && setCurrentStep("review")}
                 disabled={previewAssignments.length === 0}
               >
-                Review Data
+                Review Data ({previewAssignments.length})
               </TabsTrigger>
             </TabsList>
             
@@ -347,17 +418,22 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
                           accept=".pdf"
                           onChange={handleFileChange}
                           className="flex-1"
-                          disabled={processing || uploading}
+                          disabled={processing || uploading || extractingMetadata}
                         />
                         {pdfFile && (
                           <Button 
                             type="submit"
-                            disabled={processing || uploading}
+                            disabled={processing || uploading || extractingMetadata}
                           >
                             {processing ? (
                               <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 Analyzing...
+                              </>
+                            ) : extractingMetadata ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Extracting...
                               </>
                             ) : "Analyze PDF"}
                           </Button>
@@ -365,14 +441,31 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
                       </div>
                       {fileSize && (
                         <div className="flex flex-col gap-1">
-                          <p className="text-sm text-muted-foreground">
-                            File size: {fileSize}
-                          </p>
-                          {processing && (
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm text-muted-foreground">
+                              File size: {fileSize}
+                            </p>
+                            {pdfFile && (termMetadata || extractingMetadata) && (
+                              <span className="text-sm text-muted-foreground">
+                                {extractingMetadata ? (
+                                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                                    <Loader2 className="h-3 w-3 mr-1 animate-spin" /> Extracting metadata
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                    <CheckCircle className="h-3 w-3 mr-1" /> Metadata extracted
+                                  </Badge>
+                                )}
+                              </span>
+                            )}
+                          </div>
+                          {(processing || extractingMetadata) && (
                             <div className="w-full">
-                              <Progress value={processingProgress} className="h-1" />
+                              <Progress value={processing ? processingProgress : 50} className="h-1" />
                               <p className="text-xs text-muted-foreground mt-1">
-                                {processingProgress < 100 ? "Analyzing PDF..." : "Analysis complete"}
+                                {processing ? 
+                                  (processingProgress < 100 ? "Analyzing PDF..." : "Analysis complete") : 
+                                  "Extracting metadata..."}
                               </p>
                             </div>
                           )}
@@ -382,76 +475,160 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
                     
                     <div className="space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="term-name">Term Name</Label>
-                          <Input
-                            id="term-name"
-                            value={termName}
-                            onChange={(e) => setTermName(e.target.value)}
-                            placeholder="e.g., Fall 2025"
-                            disabled={processing || uploading}
-                          />
-                        </div>
+                        <TooltipProvider>
+                          <div className="space-y-2">
+                            <Label htmlFor="term-name" className="flex items-center gap-1">
+                              Term Name
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="cursor-help">
+                                    {getMetadataStatusIcon(autoExtracted.termName)}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {autoExtracted.termName ? 
+                                    "Automatically extracted from PDF" : 
+                                    "Enter or verify the term name"}
+                                </TooltipContent>
+                              </Tooltip>
+                            </Label>
+                            <Input
+                              id="term-name"
+                              value={termName}
+                              onChange={(e) => setTermName(e.target.value)}
+                              placeholder="e.g., Fall 2025"
+                              disabled={processing || uploading || extractingMetadata}
+                              className={autoExtracted.termName ? "border-green-500" : ""}
+                            />
+                          </div>
+                        </TooltipProvider>
                         
-                        <div className="space-y-2">
-                          <Label htmlFor="term-number">Term Number</Label>
-                          <Input
-                            id="term-number"
-                            value={termNumber}
-                            onChange={(e) => setTermNumber(e.target.value)}
-                            placeholder="e.g., Term IV"
-                            disabled={processing || uploading}
-                          />
-                        </div>
+                        <TooltipProvider>
+                          <div className="space-y-2">
+                            <Label htmlFor="term-number" className="flex items-center gap-1">
+                              Term Number
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="cursor-help">
+                                    {getMetadataStatusIcon(autoExtracted.termNumber)}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {autoExtracted.termNumber ? 
+                                    "Automatically extracted from PDF" : 
+                                    "Enter the term number if available"}
+                                </TooltipContent>
+                              </Tooltip>
+                            </Label>
+                            <Input
+                              id="term-number"
+                              value={termNumber}
+                              onChange={(e) => setTermNumber(e.target.value)}
+                              placeholder="e.g., Term IV"
+                              disabled={processing || uploading || extractingMetadata}
+                              className={autoExtracted.termNumber ? "border-green-500" : ""}
+                            />
+                          </div>
+                        </TooltipProvider>
                       </div>
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label>Start Date</Label>
-                          <DatePicker
-                            value={startDate}
-                            onChange={setStartDate}
-                            disabled={processing || uploading}
-                          />
-                        </div>
+                        <TooltipProvider>
+                          <div className="space-y-2">
+                            <Label className="flex items-center gap-1">
+                              Start Date
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="cursor-help">
+                                    {getMetadataStatusIcon(autoExtracted.dates)}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {autoExtracted.dates ? 
+                                    "Date range extracted from PDF" : 
+                                    "Select the term start date"}
+                                </TooltipContent>
+                              </Tooltip>
+                            </Label>
+                            <DatePicker
+                              value={startDate}
+                              onChange={setStartDate}
+                              disabled={processing || uploading || extractingMetadata}
+                              className={autoExtracted.dates ? "border-green-500" : ""}
+                            />
+                          </div>
+                        </TooltipProvider>
                         
-                        <div className="space-y-2">
-                          <Label>End Date</Label>
-                          <DatePicker
-                            value={endDate}
-                            onChange={setEndDate}
-                            disabled={processing || uploading}
-                          />
-                        </div>
+                        <TooltipProvider>
+                          <div className="space-y-2">
+                            <Label className="flex items-center gap-1">
+                              End Date
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="cursor-help">
+                                    {getMetadataStatusIcon(autoExtracted.dates)}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {autoExtracted.dates ? 
+                                    "Date range extracted from PDF" : 
+                                    "Select the term end date"}
+                                </TooltipContent>
+                              </Tooltip>
+                            </Label>
+                            <DatePicker
+                              value={endDate}
+                              onChange={setEndDate}
+                              disabled={processing || uploading || extractingMetadata}
+                              className={autoExtracted.dates ? "border-green-500" : ""}
+                            />
+                          </div>
+                        </TooltipProvider>
                       </div>
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="location">Location</Label>
-                          <Select
-                            value={location}
-                            onValueChange={setLocation}
-                            disabled={processing || uploading}
-                          >
-                            <SelectTrigger id="location">
-                              <SelectValue placeholder="Select location" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Manhattan">Manhattan</SelectItem>
-                              <SelectItem value="Brooklyn">Brooklyn</SelectItem>
-                              <SelectItem value="Queens">Queens</SelectItem>
-                              <SelectItem value="Bronx">Bronx</SelectItem>
-                              <SelectItem value="Staten Island">Staten Island</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
+                        <TooltipProvider>
+                          <div className="space-y-2">
+                            <Label htmlFor="location" className="flex items-center gap-1">
+                              Location
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="cursor-help">
+                                    {getMetadataStatusIcon(autoExtracted.location)}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {autoExtracted.location ? 
+                                    "Location extracted from PDF" : 
+                                    "Select the court location"}
+                                </TooltipContent>
+                              </Tooltip>
+                            </Label>
+                            <Select
+                              value={location}
+                              onValueChange={setLocation}
+                              disabled={processing || uploading || extractingMetadata}
+                            >
+                              <SelectTrigger id="location" className={autoExtracted.location ? "border-green-500" : ""}>
+                                <SelectValue placeholder="Select location" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Manhattan">Manhattan</SelectItem>
+                                <SelectItem value="Brooklyn">Brooklyn</SelectItem>
+                                <SelectItem value="Queens">Queens</SelectItem>
+                                <SelectItem value="Bronx">Bronx</SelectItem>
+                                <SelectItem value="Staten Island">Staten Island</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </TooltipProvider>
                         
                         <div className="space-y-2">
                           <Label htmlFor="status">Status</Label>
                           <Select
                             value={status}
                             onValueChange={setStatus}
-                            disabled={processing || uploading}
+                            disabled={processing || uploading || extractingMetadata}
                           >
                             <SelectTrigger id="status">
                               <SelectValue placeholder="Select status" />
@@ -525,7 +702,7 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
                         <TableBody>
                           {previewAssignments.map((assignment, idx) => (
                             <TableRow key={idx}>
-                              <TableCell>{formatPart(assignment.part, undefined)}</TableCell>
+                              <TableCell className="font-medium">{formatPart(assignment.part, undefined)}</TableCell>
                               <TableCell>{assignment.justice}</TableCell>
                               <TableCell>{assignment.room || '—'}</TableCell>
                               <TableCell>{formatPhone(assignment.tel)}</TableCell>
@@ -580,13 +757,15 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
                 </span>
               </>
             )}
+            {location && (
+              <>
+                <MapPin className="h-4 w-4 ml-2" />
+                <span>{location}</span>
+              </>
+            )}
           </div>
         </CardFooter>
       </Card>
     </div>
   );
-}
-
-export function TermList() {
-  return <div>Term List Coming Soon</div>;
 }
