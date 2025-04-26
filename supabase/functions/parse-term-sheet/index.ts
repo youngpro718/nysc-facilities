@@ -41,12 +41,6 @@ serve(async (req: Request) => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Fetch PDF data if needed
-    const pdfResponse = await fetch(pdf_url);
-    if (!pdfResponse.ok) {
-      throw new Error(`Failed to fetch PDF: ${pdfResponse.status} ${pdfResponse.statusText}`);
-    }
-
     // Use the client-extracted data if available
     const assignments = client_extracted?.assignments || [];
     console.log(`Processing ${assignments.length} assignments from client extraction`);
@@ -78,14 +72,14 @@ serve(async (req: Request) => {
         try {
           // Clean data before processing
           const cleanPartCode = (assignment.partCode || "").trim().replace(/\s+/g, ' ');
-          const cleanJusticeName = (assignment.justiceName || "").trim();
+          const cleanJusticeName = (assignment.justiceName || "").trim().replace(/\s+/g, ' ');
           
           // Skip records with missing essential data
           if (!cleanPartCode || !cleanJusticeName) {
             console.warn("Skipping assignment with missing part code or justice name");
             results.failed++;
             results.details.push({
-              partCode: cleanPartCode,
+              partCode: cleanPartCode || "(missing)",
               error: "Missing required data"
             });
             continue;
@@ -149,6 +143,8 @@ serve(async (req: Request) => {
               console.error("Error finding room:", roomError);
             } else if (roomData) {
               roomId = roomData.id;
+            } else {
+              console.log(`Room ${roomNumber} not found, will be null in assignment`);
             }
           }
           
@@ -205,7 +201,7 @@ serve(async (req: Request) => {
           console.error("Error processing assignment:", processError);
           results.failed++;
           results.details.push({
-            partCode: assignment.partCode,
+            partCode: assignment.partCode || "(unknown)",
             error: `Exception: ${processError.message}`
           });
         }

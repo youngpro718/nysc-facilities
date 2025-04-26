@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileUp, AlertCircle, CalendarRange, Clock, MapPin, Loader2 } from "lucide-react";
+import { FileUp, AlertCircle, CalendarRange, Clock, MapPin, Loader2, CheckCircle, XCircle } from "lucide-react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -39,6 +39,8 @@ import {
   getReadableFileSize,
   type TermAssignment
 } from "@/utils/pdfProcessing";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 
 export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void }) {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -54,6 +56,8 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
   const [previewAssignments, setPreviewAssignments] = useState<TermAssignment[]>([]);
   const [currentStep, setCurrentStep] = useState("upload");
   const [fileSize, setFileSize] = useState<string | null>(null);
+  const [processingProgress, setProcessingProgress] = useState(0);
+  const [extractionMethod, setExtractionMethod] = useState<string | null>(null);
   
   const navigate = useNavigate();
   
@@ -70,6 +74,7 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
       setPdfFile(file);
       setFileSize(getReadableFileSize(file.size));
       setError(null);
+      setPreviewAssignments([]);
       
       // Try to extract term info from filename
       if (!termName || !termNumber) {
@@ -118,6 +123,7 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
     
     try {
       setProcessing(true);
+      setProcessingProgress(10);
       console.info("Processing term data...");
       
       // Use FileReader to get the PDF as an ArrayBuffer
@@ -127,15 +133,17 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
         reader.onload = async (e) => {
           try {
             const pdfArrayBuffer = e.target?.result as ArrayBuffer;
+            setProcessingProgress(30);
             
             // Extract text from the PDF
             const extractedText = await extractTextFromPDF(pdfArrayBuffer);
             console.info(`Extracted text length: ${extractedText.length} characters`);
-            console.info(`PDF text sample: ${extractedText.substring(0, 1000)}`);
+            setProcessingProgress(60);
             
             // Parse assignments from the extracted text
             const assignments = parseAssignmentsFromText(extractedText);
             console.info(`Successfully extracted ${assignments.length} assignments`);
+            setProcessingProgress(90);
             
             resolve(assignments);
           } catch (error) {
@@ -154,7 +162,8 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
       console.error("Error in extractDataFromPDF:", error);
       return null;
     } finally {
-      setProcessing(false);
+      setProcessingProgress(100);
+      setTimeout(() => setProcessing(false), 500); // Small delay to show completed progress
     }
   };
   
@@ -165,6 +174,7 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
       }
       
       setProcessing(true);
+      setExtractionMethod(null);
       const assignments = await extractDataFromPDF();
       
       if (!assignments || assignments.length === 0) {
@@ -174,6 +184,7 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
       } else {
         setPreviewAssignments(assignments);
         setCurrentStep("review");
+        setExtractionMethod("Improved pattern matching");
         toast.success(`Found ${assignments.length} assignments in the PDF`);
       }
     } catch (error: any) {
@@ -236,7 +247,6 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
       
       // Prepare assignments data for processing
       const assignments = previewAssignments.map(assignment => ({
-        term_id: termId,
         partCode: assignment.part,
         justiceName: assignment.justice,
         roomNumber: assignment.room,
@@ -247,14 +257,17 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
         fax: assignment.fax || null
       }));
       
-      console.info(`Submitting assignments to backend: ${JSON.stringify(assignments, null, 2)}`);
+      console.info(`Submitting assignments to edge function: ${assignments.length} items`);
       
       // Process assignments using edge function
       const { data: processingResult, error: processingError } = await supabase.functions
         .invoke('parse-term-sheet', {
           body: {
             term_id: termId,
-            assignments: assignments
+            pdf_url: publicUrlData.publicUrl,
+            client_extracted: {
+              assignments: assignments
+            }
           }
         });
       
@@ -351,9 +364,19 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
                         )}
                       </div>
                       {fileSize && (
-                        <p className="text-sm text-muted-foreground">
-                          File size: {fileSize}
-                        </p>
+                        <div className="flex flex-col gap-1">
+                          <p className="text-sm text-muted-foreground">
+                            File size: {fileSize}
+                          </p>
+                          {processing && (
+                            <div className="w-full">
+                              <Progress value={processingProgress} className="h-1" />
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {processingProgress < 100 ? "Analyzing PDF..." : "Analysis complete"}
+                              </p>
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
                     
@@ -450,7 +473,14 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
             <TabsContent value="review">
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-medium">Extracted Assignments</h3>
+                  <div className="space-y-1">
+                    <h3 className="text-lg font-medium">Extracted Assignments</h3>
+                    {extractionMethod && (
+                      <p className="text-sm text-muted-foreground">
+                        Method: {extractionMethod} • {previewAssignments.length} assignments found
+                      </p>
+                    )}
+                  </div>
                   <div className="flex gap-2">
                     <Button variant="outline" onClick={() => setCurrentStep("upload")} disabled={uploading}>
                       Back
@@ -489,6 +519,7 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
                             <TableHead>Phone</TableHead>
                             <TableHead>SGT</TableHead>
                             <TableHead>Clerks</TableHead>
+                            <TableHead className="w-[100px]">Status</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -500,6 +531,17 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
                               <TableCell>{formatPhone(assignment.tel)}</TableCell>
                               <TableCell>{formatSergeant(assignment.sgt)}</TableCell>
                               <TableCell>{formatClerks(assignment.clerks)}</TableCell>
+                              <TableCell>
+                                {assignment.part && assignment.justice ? (
+                                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                    <CheckCircle className="h-3 w-3 mr-1" /> Valid
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                                    <AlertCircle className="h-3 w-3 mr-1" /> Incomplete
+                                  </Badge>
+                                )}
+                              </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
