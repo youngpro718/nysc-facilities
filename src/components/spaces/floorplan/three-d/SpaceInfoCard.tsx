@@ -106,7 +106,7 @@ export function SpaceInfoCard({
                     <span className="font-medium">Type:</span> {data.properties.space_type}
                   </div>}
                 
-                {data.properties.status && <div className="text-xs">
+                {data.properties.status && <div className="text-xs bg-zinc-950">
                     <span className="font-medium">Status:</span> {data.properties.status}
                   </div>}
                 
