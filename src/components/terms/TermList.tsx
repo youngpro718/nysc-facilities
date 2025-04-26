@@ -45,7 +45,7 @@ interface Term {
   end_date: string;
   pdf_url: string;
   created_at: string;
-  assignment_count?: number;
+  assignment_count?: number;  // Add this optional property
   metadata?: any;
   created_by?: string;
   description?: string;
