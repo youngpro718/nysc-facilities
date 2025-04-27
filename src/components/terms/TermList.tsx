@@ -45,7 +45,7 @@ interface Term {
   end_date: string;
   pdf_url: string;
   created_at: string;
-  assignment_count?: number;  // Add this optional property
+  assignment_count?: number;  // Add assignment_count as an optional property
   metadata?: any;
   created_by?: string;
   description?: string;
@@ -75,18 +75,25 @@ export function TermList() {
         throw termsError;
       }
       
-      for (const term of termsData) {
+      // Convert to Term type and initialize assignment_count
+      const typedTerms: Term[] = termsData.map(term => ({
+        ...term,
+        assignment_count: 0
+      }));
+      
+      // Fetch assignment counts for each term
+      for (const term of typedTerms) {
         const { count, error: countError } = await supabase
           .from('term_assignments')
           .select('*', { count: 'exact', head: true })
           .eq('term_id', term.id);
           
         if (!countError) {
-          term.assignment_count = count;
+          term.assignment_count = count || 0;
         }
       }
       
-      setTerms(termsData);
+      setTerms(typedTerms);
     } catch (err: any) {
       console.error("Error fetching terms:", err);
       setError(err.message);
