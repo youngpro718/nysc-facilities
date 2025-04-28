@@ -5500,6 +5500,13 @@ export type Database = {
             referencedRelation: "court_terms"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "room_relocations_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "term_details"
+            referencedColumns: ["id"]
+          },
         ]
       }
       rooms: {
@@ -6276,6 +6283,62 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_term_assignments_part"
+            columns: ["part_id"]
+            isOneToOne: false
+            referencedRelation: "court_parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_term_assignments_room"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_health_overview"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "fk_term_assignments_room"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_issue_analytics"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "fk_term_assignments_room"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_occupancy_stats"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "fk_term_assignments_room"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_selection_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_term_assignments_room"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_term_assignments_term"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "court_terms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_term_assignments_term"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "term_details"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "term_assignments_part_id_fkey"
             columns: ["part_id"]
             isOneToOne: false
@@ -6324,6 +6387,13 @@ export type Database = {
             referencedRelation: "court_terms"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "term_assignments_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "term_details"
+            referencedColumns: ["id"]
+          },
         ]
       }
       term_personnel: {
@@ -6369,6 +6439,13 @@ export type Database = {
             columns: ["term_id"]
             isOneToOne: false
             referencedRelation: "court_terms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "term_personnel_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "term_details"
             referencedColumns: ["id"]
           },
         ]
@@ -7435,6 +7512,60 @@ export type Database = {
           room_name: string | null
           room_number: string | null
           status: string | null
+        }
+        Relationships: []
+      }
+      term_details: {
+        Row: {
+          assignment_count: number | null
+          assignments: Json | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          end_date: string | null
+          id: string | null
+          location: string | null
+          metadata: Json | null
+          pdf_url: string | null
+          start_date: string | null
+          status: string | null
+          term_name: string | null
+          term_number: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          assignment_count?: never
+          assignments?: never
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string | null
+          location?: string | null
+          metadata?: Json | null
+          pdf_url?: string | null
+          start_date?: string | null
+          status?: string | null
+          term_name?: string | null
+          term_number?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          assignment_count?: never
+          assignments?: never
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string | null
+          location?: string | null
+          metadata?: Json | null
+          pdf_url?: string | null
+          start_date?: string | null
+          status?: string | null
+          term_name?: string | null
+          term_number?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }

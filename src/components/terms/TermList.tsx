@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -23,7 +22,6 @@ export function TermList() {
     search: "",
   });
   
-  // Extract unique locations for the filters
   const locations = useMemo(() => {
     return Array.from(new Set(terms.map(term => term.location))).sort();
   }, [terms]);
@@ -38,24 +36,15 @@ export function TermList() {
       setError(null);
       
       const { data, error: fetchError } = await supabase
-        .from('court_terms')
-        .select(`
-          *,
-          term_assignments:term_assignments(count)
-        `)
+        .from('term_details')
+        .select('*')
         .order('created_at', { ascending: false });
       
       if (fetchError) {
         throw fetchError;
       }
       
-      // Transform the data to include assignment_count
-      const termsWithCounts: Term[] = data.map(term => ({
-        ...term,
-        assignment_count: term.term_assignments?.[0]?.count || 0
-      }));
-      
-      setTerms(termsWithCounts);
+      setTerms(data);
     } catch (err: any) {
       console.error("Error fetching terms:", err);
       setError(err.message);
@@ -69,20 +58,16 @@ export function TermList() {
     }
   };
   
-  // Apply filters to terms
   const filteredTerms = useMemo(() => {
     return terms.filter(term => {
-      // Status filter
       if (filters.status && term.status !== filters.status) {
         return false;
       }
       
-      // Location filter
       if (filters.location && term.location !== filters.location) {
         return false;
       }
       
-      // Search filter (case insensitive)
       if (filters.search && !term.term_name.toLowerCase().includes(filters.search.toLowerCase())) {
         return false;
       }

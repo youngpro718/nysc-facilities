@@ -10,6 +10,7 @@ export interface Term {
   pdf_url: string;
   created_at: string;
   assignment_count: number;
+  assignments: TermAssignment[];
   metadata?: any;
   created_by?: string;
   description?: string;
