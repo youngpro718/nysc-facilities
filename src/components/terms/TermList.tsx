@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -44,7 +45,17 @@ export function TermList() {
         throw fetchError;
       }
       
-      setTerms(data);
+      // Transform the data to ensure assignments are properly typed
+      const formattedTerms = data.map(term => ({
+        ...term,
+        assignments: Array.isArray(term.assignments) 
+          ? term.assignments 
+          : typeof term.assignments === 'string'
+            ? JSON.parse(term.assignments)
+            : []
+      })) as Term[];
+      
+      setTerms(formattedTerms);
     } catch (err: any) {
       console.error("Error fetching terms:", err);
       setError(err.message);
