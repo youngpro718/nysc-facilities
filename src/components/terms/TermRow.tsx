@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { format } from "date-fns";
 import {
   TableRow,
@@ -8,11 +8,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
-  CalendarIcon, 
   FileTextIcon,
   ClipboardListIcon,
   UsersIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  Loader2
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -22,6 +22,7 @@ import {
   TooltipTrigger
 } from "@/components/ui/tooltip";
 import { Term } from "@/types/terms";
+import { useToast } from "@/hooks/use-toast";
 
 interface TermRowProps {
   term: Term;
@@ -29,6 +30,8 @@ interface TermRowProps {
 
 export function TermRow({ term }: TermRowProps) {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState<string | null>(null);
   
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -43,21 +46,54 @@ export function TermRow({ term }: TermRowProps) {
     }
   };
   
-  const viewAssignments = (termId: string) => {
-    navigate(`/term-assignments/${termId}`);
+  const viewAssignments = async (termId: string) => {
+    try {
+      setLoading('assignments');
+      navigate(`/term-assignments/${termId}`);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load assignments. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(null);
+    }
   };
   
-  const viewPersonnel = (termId: string) => {
-    navigate(`/term-personnel/${termId}`);
+  const viewPersonnel = async (termId: string) => {
+    try {
+      setLoading('personnel');
+      navigate(`/term-personnel/${termId}`);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load personnel. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(null);
+    }
   };
   
-  const downloadPdf = (pdfUrl: string, termName: string) => {
-    const link = document.createElement('a');
-    link.href = pdfUrl;
-    link.download = `${termName.replace(/\s+/g, '_')}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const downloadPdf = async (pdfUrl: string, termName: string) => {
+    try {
+      setLoading('pdf');
+      const link = document.createElement('a');
+      link.href = pdfUrl;
+      link.download = `${termName.replace(/\s+/g, '_')}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to download PDF. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(null);
+    }
   };
 
   return (
@@ -71,7 +107,6 @@ export function TermRow({ term }: TermRowProps) {
       <TableCell>{term.location}</TableCell>
       <TableCell>
         <div className="flex items-center gap-1">
-          <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="text-sm">
             {format(new Date(term.start_date), "MMM d")} - {format(new Date(term.end_date), "MMM d, yyyy")}
           </span>
@@ -94,8 +129,13 @@ export function TermRow({ term }: TermRowProps) {
                 size="sm" 
                 className="h-8"
                 onClick={() => downloadPdf(term.pdf_url, term.term_name)}
+                disabled={loading === 'pdf'}
               >
-                <FileTextIcon className="h-4 w-4 mr-1" />
+                {loading === 'pdf' ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                ) : (
+                  <FileTextIcon className="h-4 w-4 mr-1" />
+                )}
                 PDF
               </Button>
             </TooltipTrigger>
@@ -111,8 +151,13 @@ export function TermRow({ term }: TermRowProps) {
                 size="sm" 
                 className="h-8"
                 onClick={() => viewAssignments(term.id)}
+                disabled={loading === 'assignments'}
               >
-                <ClipboardListIcon className="h-4 w-4 mr-1" />
+                {loading === 'assignments' ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                ) : (
+                  <ClipboardListIcon className="h-4 w-4 mr-1" />
+                )}
                 Assignments
               </Button>
             </TooltipTrigger>
@@ -128,8 +173,13 @@ export function TermRow({ term }: TermRowProps) {
                 size="sm" 
                 className="h-8"
                 onClick={() => viewPersonnel(term.id)}
+                disabled={loading === 'personnel'}
               >
-                <UsersIcon className="h-4 w-4 mr-1" />
+                {loading === 'personnel' ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                ) : (
+                  <UsersIcon className="h-4 w-4 mr-1" />
+                )}
                 Personnel
               </Button>
             </TooltipTrigger>

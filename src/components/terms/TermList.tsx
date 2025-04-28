@@ -9,12 +9,14 @@ import { Term, TermFilterState } from "@/types/terms";
 import { TermsHeader } from "./TermsHeader";
 import { TermsFilters } from "./TermsFilters";
 import { TermsTable } from "./TermsTable";
+import { useToast } from "@/hooks/use-toast";
 
 export function TermList() {
   const [terms, setTerms] = useState<Term[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [filters, setFilters] = useState<TermFilterState>({
     status: null,
     location: null,
@@ -33,8 +35,8 @@ export function TermList() {
   const fetchTerms = async () => {
     try {
       setLoading(true);
+      setError(null);
       
-      // Use a better SQL query structure to get terms with assignment count in a single query
       const { data, error: fetchError } = await supabase
         .from('court_terms')
         .select(`
@@ -57,6 +59,11 @@ export function TermList() {
     } catch (err: any) {
       console.error("Error fetching terms:", err);
       setError(err.message);
+      toast({
+        title: "Error",
+        description: "Failed to load terms. Please try again later.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
