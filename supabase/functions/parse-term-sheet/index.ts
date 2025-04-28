@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.36.0";
 
@@ -72,7 +71,8 @@ serve(async (req: Request) => {
         try {
           // Clean data before processing
           const cleanPartCode = (assignment.partCode || "").trim().replace(/\s+/g, ' ');
-          const cleanJusticeName = (assignment.justiceName || "").trim().replace(/\s+/g, ' ');
+          const cleanJusticeName = (assignment.justiceName || "").trim().replace(/\s+/g, ' ')
+            .replace(/\*/g, ''); // Remove asterisks from justice names
           
           // Skip records with missing essential data
           if (!cleanPartCode || !cleanJusticeName) {
@@ -161,10 +161,23 @@ serve(async (req: Request) => {
               .filter((name: string) => name.length > 0);
           }
           
-          // Clean phone number format
+          // Process phone & extension for improved formatting
           let phoneNumber = assignment.phone;
-          if (phoneNumber) {
-            phoneNumber = phoneNumber.toString().trim();
+          let telExtension = assignment.extension;
+          
+          // If phone is in format "646-386-XXXX", extract extension
+          if (phoneNumber && phoneNumber.includes('-')) {
+            const parts = phoneNumber.split('-');
+            if (parts.length === 3 && parts[0] === '646' && parts[1] === '386') {
+              telExtension = parts[2];
+              // Keep the full number as is
+            }
+          } 
+          // If just the extension is provided
+          else if (phoneNumber && !phoneNumber.includes('-')) {
+            // Format consistently as full number
+            phoneNumber = `646-386-${phoneNumber}`;
+            telExtension = phoneNumber.trim();
           }
           
           // Create term assignment
@@ -177,10 +190,11 @@ serve(async (req: Request) => {
               room_id: roomId,
               justice_name: cleanJusticeName,
               clerk_names: clerkNames,
-              sergeant_name: assignment.sergeantName ? assignment.sergeantName.trim() : null,
-              phone: phoneNumber,
+              sergeant_name: assignment.sergeantName ? 
+                assignment.sergeantName.trim().replace(/^SGT\.?\s*/i, '') : null,
+              phone: phoneNumber ? phoneNumber.toString().trim() : null,
               fax: assignment.fax ? assignment.fax.toString().trim() : null,
-              tel_extension: assignment.extension ? assignment.extension.toString().trim() : null
+              tel_extension: telExtension ? telExtension.toString().trim() : null
             });
             
           if (assignmentError) {

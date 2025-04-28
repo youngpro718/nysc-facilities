@@ -215,11 +215,13 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
       }
       
       console.info(`Using extracted text length: ${extractedText.length} characters`);
+      console.info("First 500 characters of extracted text:", extractedText.substring(0, 500));
       setProcessingProgress(60);
       
-      // Parse assignments from the extracted text
+      // Parse assignments from the extracted text using our improved parsing logic
       const result = parseAssignmentsFromText(extractedText);
       console.info(`Successfully extracted ${result.assignments.length} assignments using ${result.method}`);
+      console.info("First assignment sample:", result.assignments[0]);
       setProcessingProgress(90);
       
       return result;
