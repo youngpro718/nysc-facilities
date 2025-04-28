@@ -1,25 +1,16 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+
+import { useState } from "react";
 import { SparklesCore } from "@/components/ui/sparkles";
 import { Card } from "@/components/ui/card";
-import { EvervaultCard } from "@/components/ui/evervault-card";
 import { AuthForm } from "@/components/auth/AuthForm";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { Loader2 } from "lucide-react";
 
 const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const { isAuthenticated, isAdmin, isLoading } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      // Redirect to the attempted URL or default route
-      const from = location.state?.from?.pathname || (isAdmin ? '/' : '/dashboard');
-      navigate(from, { replace: true });
-    }
-  }, [isAuthenticated, isAdmin, navigate, location]);
+  const { isLoading } = useAuthRedirect({
+    enabled: false // Don't auto-redirect, let the hook handle redirects after auth state changes
+  });
 
   if (isLoading) {
     return (

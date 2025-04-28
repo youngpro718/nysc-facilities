@@ -1,7 +1,7 @@
+
 import { ReactNode } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
+import { useAuthRedirect } from '@/hooks/useAuthRedirect';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -14,8 +14,9 @@ export function ProtectedRoute({
   requireAdmin = false,
   requireVerified = true 
 }: ProtectedRouteProps) {
-  const { isAuthenticated, isAdmin, isLoading, profile } = useAuth();
-  const location = useLocation();
+  const { isLoading } = useAuthRedirect({
+    requiresAdmin: requireAdmin
+  });
 
   if (isLoading) {
     return (
@@ -25,22 +26,5 @@ export function ProtectedRoute({
     );
   }
 
-  if (!isAuthenticated) {
-    // Save the attempted URL for redirecting after login
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-
-  if (requireVerified && profile?.verification_status === 'pending') {
-    return <Navigate to="/verification-pending" replace />;
-  }
-
-  if (requireAdmin && !isAdmin) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  if (!requireAdmin && isAdmin && location.pathname === '/dashboard') {
-    return <Navigate to="/" replace />;
-  }
-
   return <>{children}</>;
-} 
+}

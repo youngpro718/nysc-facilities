@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -45,7 +44,7 @@ interface Term {
   end_date: string;
   pdf_url: string;
   created_at: string;
-  assignment_count?: number;  // Add assignment_count as an optional property
+  assignment_count?: number;  
   metadata?: any;
   created_by?: string;
   description?: string;
@@ -75,25 +74,40 @@ export function TermList() {
         throw termsError;
       }
       
-      // Convert to Term type and initialize assignment_count
       const typedTerms: Term[] = termsData.map(term => ({
         ...term,
         assignment_count: 0
       }));
       
-      // Fetch assignment counts for each term
-      for (const term of typedTerms) {
+      const assignmentPromises = typedTerms.map(async (term) => {
         const { count, error: countError } = await supabase
           .from('term_assignments')
           .select('*', { count: 'exact', head: true })
           .eq('term_id', term.id);
           
         if (!countError) {
-          term.assignment_count = count || 0;
+          return {
+            termId: term.id,
+            count: count || 0
+          };
         }
-      }
+        return {
+          termId: term.id,
+          count: 0
+        };
+      });
       
-      setTerms(typedTerms);
+      const assignmentCounts = await Promise.all(assignmentPromises);
+      
+      const updatedTerms = typedTerms.map(term => {
+        const assignmentData = assignmentCounts.find(item => item.termId === term.id);
+        return {
+          ...term,
+          assignment_count: assignmentData ? assignmentData.count : 0
+        };
+      });
+      
+      setTerms(updatedTerms);
     } catch (err: any) {
       console.error("Error fetching terms:", err);
       setError(err.message);
