@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,7 +6,6 @@ import {
   Card, 
   CardContent, 
   CardDescription, 
-  CardFooter, 
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
@@ -59,6 +57,7 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
   const [previewAssignments, setPreviewAssignments] = useState<TermAssignment[]>([]);
   const [currentStep, setCurrentStep] = useState("upload");
   const [fileSize, setFileSize] = useState<string | null>(null);
+  
   const [processingProgress, setProcessingProgress] = useState(0);
   const [extractionMethod, setExtractionMethod] = useState<string | null>(null);
   const [pdfText, setPdfText] = useState<string | null>(null);
@@ -362,7 +361,7 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
       setUploading(false);
     }
   };
-  
+
   const getMetadataStatusIcon = (extracted: boolean) => {
     if (extracted) {
       return <CheckCircle className="h-3 w-3 text-green-500" />;
