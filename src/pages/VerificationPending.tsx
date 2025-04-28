@@ -4,86 +4,31 @@ import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ClipboardCheck, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SparklesCore } from "@/components/ui/sparkles";
 import { delay } from "@/utils/timing";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function VerificationPending() {
   const navigate = useNavigate();
+  const { user, profile, refreshSession, signOut, isLoading } = useAuth();
 
   useEffect(() => {
-    const checkVerificationStatus = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          navigate("/login", { replace: true });
-          return;
-        }
-
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('verification_status')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        if (error) throw error;
-
-        if (profile?.verification_status === 'verified') {
-          toast.success("Your account has been verified!");
-          await delay(100);
-          navigate("/", { replace: true });
-        }
-      } catch (error) {
-        console.error("Error checking verification status:", error);
-      }
-    };
-
-    // Check initial status
-    checkVerificationStatus();
-
-    // Subscribe to profile changes
-    const subscription = supabase
-      .channel('profile-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'profiles',
-          filter: `id=eq.${supabase.auth.getUser().then(({ data }) => data.user?.id)}`
-        },
-        async (payload) => {
-          if (payload.new.verification_status === 'verified') {
-            toast.success("Your account has been verified!");
-            await delay(100);
-            navigate("/", { replace: true });
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(subscription);
-    };
-  }, [navigate]);
+    if (!isLoading && !user) {
+      navigate("/login", { replace: true });
+    }
+    
+    // Redirect if user is already verified
+    if (profile?.verification_status === 'verified') {
+      toast.success("Your account has been verified!");
+      navigate("/", { replace: true });
+    }
+  }, [user, profile, navigate, isLoading]);
 
   const handleCheckStatus = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate("/login", { replace: true });
-        return;
-      }
-
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('verification_status')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (error) throw error;
-
+      await refreshSession();
+      
       if (profile?.verification_status === 'verified') {
         toast.success("Your account has been verified!");
         await delay(100);
@@ -98,15 +43,16 @@ export default function VerificationPending() {
   };
 
   const handleSignOut = async () => {
-    try {
-      await supabase.auth.signOut();
-      await delay(100);
-      navigate("/login", { replace: true });
-    } catch (error) {
-      console.error("Error signing out:", error);
-      toast.error("Failed to sign out");
-    }
+    await signOut();
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen relative w-full bg-courthouse flex flex-col items-center justify-center overflow-hidden">

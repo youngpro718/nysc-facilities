@@ -1,7 +1,8 @@
 
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
-import { useAuthRedirect } from '@/hooks/useAuthRedirect';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -14,9 +15,43 @@ export function ProtectedRoute({
   requireAdmin = false,
   requireVerified = true 
 }: ProtectedRouteProps) {
-  const { isLoading } = useAuthRedirect({
-    requiresAdmin: requireAdmin
-  });
+  const { isAuthenticated, isAdmin, isLoading, profile } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    if (!isAuthenticated) {
+      // Save the attempted URL for redirecting after login
+      navigate('/login', { 
+        state: { from: location.pathname }, 
+        replace: true 
+      });
+      return;
+    }
+
+    // Handle verification pending
+    if (requireVerified && profile?.verification_status === 'pending') {
+      navigate('/verification-pending', { replace: true });
+      return;
+    }
+
+    // Handle admin route protection
+    if (requireAdmin && !isAdmin) {
+      navigate('/dashboard', { replace: true });
+      return;
+    }
+  }, [
+    isAuthenticated, 
+    isAdmin, 
+    isLoading, 
+    profile, 
+    navigate, 
+    location.pathname, 
+    requireAdmin, 
+    requireVerified
+  ]);
 
   if (isLoading) {
     return (

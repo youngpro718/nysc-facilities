@@ -3,14 +3,12 @@ import { useState } from "react";
 import { SparklesCore } from "@/components/ui/sparkles";
 import { Card } from "@/components/ui/card";
 import { AuthForm } from "@/components/auth/AuthForm";
-import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { Loader2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const { isLoading } = useAuthRedirect({
-    enabled: false // Don't auto-redirect, let the hook handle redirects after auth state changes
-  });
+  const { isLoading, isAuthenticated } = useAuth();
 
   if (isLoading) {
     return (
