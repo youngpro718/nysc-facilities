@@ -1,3 +1,4 @@
+
 import { PDFDocumentProxy } from "pdfjs-dist";
 
 export interface TermAssignment {
@@ -807,4 +808,57 @@ export function formatClerks(clerks: string[] | string | undefined): string {
   // Convert string to array
   let clerkArray: string[];
   if (typeof clerks === 'string') {
-    clerkArray = clerks.split(/[,\/]/).map(c => c.
+    clerkArray = clerks.split(/[,\/]/).map(c => c.trim()).filter(Boolean);
+    if (clerkArray.length === 0 && clerks.trim()) {
+      clerkArray = [clerks.trim()];
+    }
+  } else if (Array.isArray(clerks)) {
+    clerkArray = clerks.filter(Boolean);
+  } else {
+    return '—';
+  }
+  
+  if (clerkArray.length === 0) return '—';
+  
+  // Format each clerk name
+  return clerkArray.map(name => {
+    // Handle "Initial. Last" format
+    if (/^[A-Z]\.\s+[A-Za-z\-']+$/.test(name)) return name;
+    
+    // Try to extract initial and last name
+    const parts = name.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      let initial = parts[0].replace(/[^A-Z.]/gi, '');
+      if (!initial.endsWith('.')) initial += '.';
+      
+      let last = parts.slice(1).join(' ').replace(/[^A-Za-z\-']/gi, '');
+      return `${initial} ${last}`;
+    }
+    
+    return name;
+  }).join(', ');
+}
+
+/**
+ * Get file size in readable format
+ */
+export function getReadableFileSize(size: number): string {
+  const i = size === 0 ? 0 : Math.floor(Math.log(size) / Math.log(1024));
+  return `${(size / Math.pow(1024, i)).toFixed(2)} ${['B', 'KB', 'MB', 'GB', 'TB'][i]}`;
+}
+
+/**
+ * Validate PDF file
+ */
+export function validatePDFFile(file: File): { valid: boolean; error?: string } {
+  if (file.type !== "application/pdf") {
+    return { valid: false, error: "Please upload a PDF file." };
+  }
+  
+  // Check file size (10MB limit)
+  if (file.size > 10 * 1024 * 1024) {
+    return { valid: false, error: `File size exceeds 10MB (${getReadableFileSize(file.size)})` };
+  }
+  
+  return { valid: true };
+}
