@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { TermUploader } from "@/components/terms/TermUploader";
 import { TermList } from "@/components/terms/TermList";
@@ -7,15 +7,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Info } from "lucide-react";
+import { Info, ClipboardListIcon, UsersIcon, FileTextIcon } from "lucide-react";
 
 export function TermManagement() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const defaultTab = searchParams.get("tab") || "upload";
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "upload");
   const [uploadSuccess, setUploadSuccess] = useState(false);
   
+  // Update URL when tab changes
+  useEffect(() => {
+    setSearchParams({ tab: activeTab });
+  }, [activeTab, setSearchParams]);
+
   const handleTabChange = (value: string) => {
-    setSearchParams({ tab: value });
+    setActiveTab(value);
     // Reset success message when changing tabs
     if (value !== "upload") {
       setUploadSuccess(false);
@@ -26,7 +31,7 @@ export function TermManagement() {
     setUploadSuccess(true);
     // Automatically switch to terms tab after successful upload
     setTimeout(() => {
-      setSearchParams({ tab: "terms" });
+      setActiveTab("terms");
       setUploadSuccess(false);
     }, 2000);
   };
@@ -46,15 +51,27 @@ export function TermManagement() {
       )}
       
       <Tabs 
-        defaultValue={defaultTab} 
+        value={activeTab} 
         className="w-full"
         onValueChange={handleTabChange}
       >
         <TabsList className="mb-4">
-          <TabsTrigger value="upload">Upload Term Sheet</TabsTrigger>
-          <TabsTrigger value="terms">Term Schedules</TabsTrigger>
-          <TabsTrigger value="assignments">Assignments</TabsTrigger>
-          <TabsTrigger value="personnel">Personnel</TabsTrigger>
+          <TabsTrigger value="upload" className="flex items-center gap-2">
+            <FileTextIcon className="h-4 w-4" />
+            Upload Term Sheet
+          </TabsTrigger>
+          <TabsTrigger value="terms" className="flex items-center gap-2">
+            <ClipboardListIcon className="h-4 w-4" />
+            Term Schedules
+          </TabsTrigger>
+          <TabsTrigger value="assignments" className="flex items-center gap-2">
+            <ClipboardListIcon className="h-4 w-4" />
+            Assignments
+          </TabsTrigger>
+          <TabsTrigger value="personnel" className="flex items-center gap-2">
+            <UsersIcon className="h-4 w-4" />
+            Personnel
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="upload" className="space-y-4">

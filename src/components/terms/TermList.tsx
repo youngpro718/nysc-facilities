@@ -1,61 +1,30 @@
-import React, { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { 
-  CalendarIcon, 
-  FileTextIcon, 
-  Loader2,
-  ClipboardListIcon,
-  UsersIcon,
-  ChevronRightIcon
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger
-} from "@/components/ui/tooltip";
 
-interface Term {
-  id: string;
-  term_name: string;
-  term_number: string | null;
-  location: string;
-  status: string;
-  start_date: string;
-  end_date: string;
-  pdf_url: string;
-  created_at: string;
-  assignment_count?: number;  
-  metadata?: any;
-  created_by?: string;
-  description?: string;
-  updated_at?: string;
-}
+import React, { useState, useEffect, useMemo } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Loader2, FileTextIcon } from "lucide-react";
+import { Term, TermFilterState } from "@/types/terms";
+import { TermsHeader } from "./TermsHeader";
+import { TermsFilters } from "./TermsFilters";
+import { TermsTable } from "./TermsTable";
 
 export function TermList() {
   const [terms, setTerms] = useState<Term[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const [filters, setFilters] = useState<TermFilterState>({
+    status: null,
+    location: null,
+    search: "",
+  });
+  
+  // Extract unique locations for the filters
+  const locations = useMemo(() => {
+    return Array.from(new Set(terms.map(term => term.location))).sort();
+  }, [terms]);
   
   useEffect(() => {
     fetchTerms();
@@ -65,49 +34,26 @@ export function TermList() {
     try {
       setLoading(true);
       
-      const { data: termsData, error: termsError } = await supabase
+      // Use a better SQL query structure to get terms with assignment count in a single query
+      const { data, error: fetchError } = await supabase
         .from('court_terms')
-        .select('*')
+        .select(`
+          *,
+          term_assignments:term_assignments(count)
+        `)
         .order('created_at', { ascending: false });
       
-      if (termsError) {
-        throw termsError;
+      if (fetchError) {
+        throw fetchError;
       }
       
-      const typedTerms: Term[] = termsData.map(term => ({
+      // Transform the data to include assignment_count
+      const termsWithCounts: Term[] = data.map(term => ({
         ...term,
-        assignment_count: 0
+        assignment_count: term.term_assignments?.[0]?.count || 0
       }));
       
-      const assignmentPromises = typedTerms.map(async (term) => {
-        const { count, error: countError } = await supabase
-          .from('term_assignments')
-          .select('*', { count: 'exact', head: true })
-          .eq('term_id', term.id);
-          
-        if (!countError) {
-          return {
-            termId: term.id,
-            count: count || 0
-          };
-        }
-        return {
-          termId: term.id,
-          count: 0
-        };
-      });
-      
-      const assignmentCounts = await Promise.all(assignmentPromises);
-      
-      const updatedTerms = typedTerms.map(term => {
-        const assignmentData = assignmentCounts.find(item => item.termId === term.id);
-        return {
-          ...term,
-          assignment_count: assignmentData ? assignmentData.count : 0
-        };
-      });
-      
-      setTerms(updatedTerms);
+      setTerms(termsWithCounts);
     } catch (err: any) {
       console.error("Error fetching terms:", err);
       setError(err.message);
@@ -116,35 +62,27 @@ export function TermList() {
     }
   };
   
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <Badge className="bg-green-100 text-green-800 border-green-200">Active</Badge>;
-      case 'upcoming':
-        return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Upcoming</Badge>;
-      case 'completed':
-        return <Badge className="bg-gray-100 text-gray-800 border-gray-200">Completed</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  };
-  
-  const viewAssignments = (termId: string) => {
-    navigate(`/term-assignments/${termId}`);
-  };
-  
-  const viewPersonnel = (termId: string) => {
-    navigate(`/term-personnel/${termId}`);
-  };
-  
-  const downloadPdf = (pdfUrl: string, termName: string) => {
-    const link = document.createElement('a');
-    link.href = pdfUrl;
-    link.download = `${termName.replace(/\s+/g, '_')}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  // Apply filters to terms
+  const filteredTerms = useMemo(() => {
+    return terms.filter(term => {
+      // Status filter
+      if (filters.status && term.status !== filters.status) {
+        return false;
+      }
+      
+      // Location filter
+      if (filters.location && term.location !== filters.location) {
+        return false;
+      }
+      
+      // Search filter (case insensitive)
+      if (filters.search && !term.term_name.toLowerCase().includes(filters.search.toLowerCase())) {
+        return false;
+      }
+      
+      return true;
+    });
+  }, [terms, filters]);
   
   if (loading) {
     return (
@@ -201,126 +139,14 @@ export function TermList() {
   
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Term Schedules</CardTitle>
-        <CardDescription>
-          View and manage uploaded court term schedules
-        </CardDescription>
-      </CardHeader>
+      <TermsHeader />
       <CardContent>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Term</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Dates</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Assignments</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {terms.map((term) => (
-                <TableRow key={term.id}>
-                  <TableCell>
-                    <div className="font-medium">{term.term_name}</div>
-                    {term.term_number && (
-                      <div className="text-xs text-muted-foreground">{term.term_number}</div>
-                    )}
-                  </TableCell>
-                  <TableCell>{term.location}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="text-sm">
-                        {format(new Date(term.start_date), "MMM d")} - {format(new Date(term.end_date), "MMM d, yyyy")}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>{getStatusBadge(term.status)}</TableCell>
-                  <TableCell>
-                    {term.assignment_count !== undefined ? (
-                      <Badge variant="outline">{term.assignment_count}</Badge>
-                    ) : (
-                      <Badge variant="outline">-</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right space-x-1">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-8"
-                            onClick={() => downloadPdf(term.pdf_url, term.term_name)}
-                          >
-                            <FileTextIcon className="h-4 w-4 mr-1" />
-                            PDF
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Download PDF</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-8"
-                            onClick={() => viewAssignments(term.id)}
-                          >
-                            <ClipboardListIcon className="h-4 w-4 mr-1" />
-                            Assignments
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>View Assignments</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-8"
-                            onClick={() => viewPersonnel(term.id)}
-                          >
-                            <UsersIcon className="h-4 w-4 mr-1" />
-                            Personnel
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>View Personnel</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-8"
-                            onClick={() => navigate(`/terms/${term.id}`)}
-                          >
-                            <ChevronRightIcon className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>View Details</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <TermsFilters 
+          filters={filters} 
+          onFilterChange={setFilters} 
+          locations={locations} 
+        />
+        <TermsTable terms={filteredTerms} />
       </CardContent>
     </Card>
   );
