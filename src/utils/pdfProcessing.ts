@@ -1,4 +1,3 @@
-
 import { PDFDocumentProxy } from "pdfjs-dist";
 
 export interface TermAssignment {
@@ -18,10 +17,17 @@ export interface ExtractedTermMetadata {
   location?: string;
   startDate?: Date;
   endDate?: Date;
+  confidence?: {
+    termName?: number;
+    termNumber?: number;
+    location?: number;
+    dates?: number;
+    overall?: number;
+  };
 }
 
 /**
- * Extract text from a PDF document with layout preservation
+ * Extract text from a PDF document with layout preservation and font information
  * @param pdfArrayBuffer The PDF file as an ArrayBuffer
  * @returns The extracted text content with position information
  */
@@ -34,14 +40,17 @@ export async function extractTextFromPDF(pdfArrayBuffer: ArrayBuffer): Promise<s
     console.info(`PDF loaded with ${pdf.numPages} pages`);
     
     let extractedText = '';
+    let firstPageSpecialProcessing = '';
     
     // First pass: Extract text with more precise layout preservation
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const textContent = await page.getTextContent();
+      const viewport = page.getViewport({ scale: 1.0 });
+      const pageHeight = viewport.height;
       
       // Group items by their y-position with higher precision
-      const lineMap = new Map<number, {text: string, x: number, fontSize?: number}[]>();
+      const lineMap = new Map<number, {text: string, x: number, fontSize?: number, fontWeight?: string}[]>();
       
       textContent.items.forEach((item: any) => {
         // Round the y-position with higher precision (0.1 instead of 1)
@@ -52,29 +61,71 @@ export async function extractTextFromPDF(pdfArrayBuffer: ArrayBuffer): Promise<s
           lineMap.set(yPos, []);
         }
         
-        // Also store font size information for potential header detection
+        // Extract font size and font weight information for potential header detection
         const fontSize = item.transform[3]; // This corresponds to font size in the transform matrix
+        const fontName = item.fontName || '';
+        const fontWeight = fontName.toLowerCase().includes('bold') ? 'bold' : 'normal';
         
         lineMap.get(yPos)!.push({
           text: item.str,
           x: item.transform[4], // x-position for sorting
-          fontSize: fontSize
+          fontSize: fontSize,
+          fontWeight: fontWeight
         });
       });
       
       // Sort lines by y-position (descending) and items in each line by x-position
       const sortedLines = Array.from(lineMap.entries())
-        .sort((a, b) => b[0] - a[0])
-        .map(([_, items]) => {
-          return items
-            .sort((a, b) => a.x - b.x)
-            .map(item => item.text)
-            .join(' ');
+        .sort((a, b) => b[0] - a[0]) // Sort by y-position (top to bottom)
+        .map(([yPos, items]) => {
+          // Sort items in each line by x-position (left to right)
+          const sortedItems = items.sort((a, b) => a.x - b.x);
+          
+          // Check if this line contains potential header elements (larger font size)
+          const avgFontSize = sortedItems.reduce((sum, item) => sum + (item.fontSize || 0), 0) / sortedItems.length;
+          const hasLargeFont = avgFontSize > 14; // Threshold for header detection
+          const hasBoldFont = sortedItems.some(item => item.fontWeight === 'bold');
+          
+          // For header-like elements, add special markers for easier parsing later
+          let lineText = sortedItems.map(item => item.text).join(' ');
+          
+          // Add metadata markers for key elements to aid extraction
+          if ((hasLargeFont || hasBoldFont) && (i === 1 || i === 2)) {
+            // For first 2 pages, highlight potential headers for metadata extraction
+            if (/TERM|ASSIGNMENT|JUSTICE|PERIOD|SCHEDULE|COURT/i.test(lineText)) {
+              lineText = `## HEADER ## ${lineText} ## HEADER ##`;
+            }
+            
+            if (/DATE|FROM|TO|THROUGH|EFFECTIVE/i.test(lineText)) {
+              lineText = `## DATE ## ${lineText} ## DATE ##`;
+            }
+            
+            if (/COUNTY|COURTHOUSE|SUPREME COURT/i.test(lineText)) {
+              lineText = `## LOCATION ## ${lineText} ## LOCATION ##`;
+            }
+          }
+          
+          return lineText;
         });
       
       // Join the sorted lines with newlines and add a page separator
-      extractedText += sortedLines.join('\n') + '\n\n========= PAGE ' + i + ' =========\n\n';
+      const pageText = sortedLines.join('\n') + '\n\n========= PAGE ' + i + ' =========\n\n';
+      extractedText += pageText;
+      
+      // Store first page text separately for focused metadata extraction
+      if (i === 1) {
+        firstPageSpecialProcessing = pageText;
+      }
     }
+    
+    // Attempt a specialized extraction of the header section (first 20 lines of first page)
+    let headerSection = '';
+    const firstPageLines = firstPageSpecialProcessing.split('\n');
+    const headerLines = firstPageLines.slice(0, Math.min(20, firstPageLines.length));
+    headerSection = headerLines.join('\n');
+    
+    // Add the header section at the beginning for easier access during extraction
+    extractedText = `## DOCUMENT HEADER START ##\n${headerSection}\n## DOCUMENT HEADER END ##\n\n` + extractedText;
     
     return extractedText;
   } catch (error) {
@@ -84,141 +135,423 @@ export async function extractTextFromPDF(pdfArrayBuffer: ArrayBuffer): Promise<s
 }
 
 /**
- * Extract term metadata from the PDF text
+ * Extract term metadata from the PDF text with improved pattern matching
  * @param text The extracted PDF text
- * @returns Extracted term metadata
+ * @returns Extracted term metadata with confidence scores
  */
 export function extractTermMetadata(text: string): ExtractedTermMetadata {
-  const metadata: ExtractedTermMetadata = {};
+  const metadata: ExtractedTermMetadata = {
+    confidence: {
+      termName: 0,
+      termNumber: 0,
+      location: 0,
+      dates: 0,
+      overall: 0
+    }
+  };
   
   try {
-    // Look for term name and number patterns
-    // Term patterns like "FALL TERM 2025" or "TERM IV - SUMMER 2025"
+    // First, try to extract header section for focused processing
+    let headerSection = text;
+    const headerMatch = text.match(/## DOCUMENT HEADER START ##([\s\S]*?)## DOCUMENT HEADER END ##/);
+    if (headerMatch && headerMatch[1]) {
+      // Prioritize header section, but keep full text as backup
+      headerSection = headerMatch[1];
+    } else {
+      // Limit to first page if no specific header section was found
+      const firstPageMatch = text.match(/[\s\S]*?========= PAGE 1 =========/);
+      if (firstPageMatch) {
+        headerSection = firstPageMatch[0];
+      }
+    }
+    
+    // Extract Term Name and Number with improved patterns
+    
+    // Look for term name and number patterns with more variations
+    // Term patterns like "FALL TERM 2025" or "TERM IV - SUMMER 2025" or "2023 JANUARY TERM"
     const termPatterns = [
+      // Standard term formats
       /([A-Z]+\s+TERM\s+(?:OF\s+)?(\d{4}))/i,
       /TERM\s+([IVX]+)[\s-]+([A-Za-z]+\s+\d{4})/i,
       /([A-Za-z]+)\s+TERM[\s-]+([IVX]+)/i,
-      /TERM\s+([IVX]+|\d)[\s-]+([A-Za-z]+)/i,
+      /TERM\s+([IVX]+|\d+)[\s-]+([A-Za-z]+)/i,
       /([A-Za-z]+\s+\d{4})\s+TERM/i,
-      /ASSIGNMENT\s+OF\s+JUSTICES\s+([A-Za-z]+\s+\d{4})/i
+      
+      // Assignment-based formats
+      /ASSIGNMENT\s+OF\s+JUSTICES\s+(?:FOR|IN|TO)?\s+(?:THE\s+)?([A-Za-z]+\s+\d{4})/i,
+      /ASSIGNMENT\s+OF\s+JUSTICES\s+(?:FOR|IN|TO)?\s+(?:THE\s+)?TERM\s+([IVX]+|\d+)/i,
+      /JUSTICE\s+ASSIGNMENTS?\s+(?:FOR|IN|TO)?\s+(?:THE\s+)?([A-Za-z]+\s+\d{4})/i,
+      
+      // Year-first formats
+      /(\d{4})\s+([A-Za-z]+)\s+TERM/i,
+      /(\d{4})\s+([A-Za-z]+)\s+ASSIGNMENT/i,
+      
+      // Header-marked formats
+      /## HEADER ##[^\n]*\b(?:TERM|ASSIGNMENT)[^\n]*?([A-Za-z]+\s+\d{4})[^\n]*?## HEADER ##/i,
+      /## HEADER ##[^\n]*\b(?:TERM|ASSIGNMENT)[^\n]*?TERM\s+([IVX]+|\d+)[^\n]*?## HEADER ##/i,
+      
+      // New variations
+      /SCHEDULE\s+(?:FOR|OF)\s+([A-Za-z]+\s+\d{4})/i,
+      /([A-Za-z]+)\s+SESSION\s+\d{4}/i,
+      /JUDICIAL\s+ASSIGNMENTS?\s+(?:FOR|IN|TO)?\s+(?:THE\s+)?([A-Za-z]+\s+\d{4})/i,
     ];
     
-    // Try each pattern
+    // Try each pattern on both full text and header section
+    let bestTermMatch: RegExpMatchArray | null = null;
+    let bestConfidence = 0;
+    
+    // First try header section for higher confidence
     for (const pattern of termPatterns) {
-      const match = text.match(pattern);
+      const match = headerSection.match(pattern);
       if (match) {
-        if (match[1] && match[2]) {
-          // Different patterns have different group arrangements
-          if (/TERM\s+[IVX]+/i.test(match[1])) {
-            // Pattern like "TERM IV - SUMMER 2025"
-            metadata.termNumber = match[1].replace(/TERM\s+/i, '').trim();
-            metadata.termName = match[2].trim();
-          } else if (/^\d{4}$/.test(match[2])) {
-            // Pattern like "FALL TERM 2025"
-            metadata.termName = match[1].replace(/\s+\d{4}$/, '').trim();
-            metadata.termNumber = ""; // No explicit term number
-          } else if (/[IVX]+/i.test(match[2])) {
-            // Pattern like "FALL TERM - IV"
-            metadata.termName = match[1].trim();
-            metadata.termNumber = match[2].trim();
-          } else {
-            // Generic fallback
-            metadata.termName = match[1].trim();
-            metadata.termNumber = match[2] ? match[2].trim() : '';
+        // Higher confidence for matches in header section with ## markers
+        const confidenceScore = headerSection.includes('## HEADER ##') ? 0.9 : 0.8;
+        if (confidenceScore > bestConfidence) {
+          bestTermMatch = match;
+          bestConfidence = confidenceScore;
+        }
+      }
+    }
+    
+    // If no good match in header, try full text
+    if (bestConfidence < 0.7) {
+      for (const pattern of termPatterns) {
+        const match = text.match(pattern);
+        if (match) {
+          // Lower confidence for matches in full text
+          const confidenceScore = 0.6;
+          if (confidenceScore > bestConfidence) {
+            bestTermMatch = match;
+            bestConfidence = confidenceScore;
           }
-          
+        }
+      }
+    }
+    
+    // Process best match if found
+    if (bestTermMatch) {
+      // Different patterns have different group arrangements
+      if (bestTermMatch[0].match(/TERM\s+[IVX]+/i)) {
+        // Pattern like "TERM IV - SUMMER 2025"
+        metadata.termNumber = bestTermMatch[1]?.replace(/TERM\s+/i, '').trim();
+        metadata.termName = bestTermMatch[2]?.trim();
+        metadata.confidence!.termNumber = bestConfidence;
+        metadata.confidence!.termName = bestConfidence - 0.1; // Slightly lower confidence for derived name
+      } else if (bestTermMatch[0].match(/ASSIGNMENT/i)) {
+        // Pattern like "ASSIGNMENT OF JUSTICES FOR FALL 2025"
+        metadata.termName = bestTermMatch[1]?.trim();
+        // Try to find term number nearby
+        const termNumNearby = text.match(/TERM\s+([IVX]+|\d+)/i);
+        if (termNumNearby) {
+          metadata.termNumber = termNumNearby[1].trim();
+          metadata.confidence!.termNumber = 0.5; // Lower confidence for derived number
+        }
+        metadata.confidence!.termName = bestConfidence;
+      } else if (bestTermMatch[0].match(/\d{4}\s+[A-Za-z]+\s+TERM/i)) {
+        // Pattern like "2023 JANUARY TERM"
+        metadata.termName = `${bestTermMatch[2]} ${bestTermMatch[1]}`.trim();
+        metadata.confidence!.termName = bestConfidence;
+      } else if (bestTermMatch[1] && bestTermMatch[2]) {
+        // Pattern has both term name and number
+        if (/^\d{4}$/.test(bestTermMatch[2])) {
+          // Pattern like "FALL TERM 2025"
+          metadata.termName = `${bestTermMatch[1].replace(/\s+\d{4}$/, '')} ${bestTermMatch[2]}`.trim();
+          metadata.confidence!.termName = bestConfidence;
+        } else if (/[IVX]+/i.test(bestTermMatch[2])) {
+          // Pattern like "FALL TERM - IV"
+          metadata.termName = bestTermMatch[1].trim();
+          metadata.termNumber = bestTermMatch[2].trim();
+          metadata.confidence!.termName = bestConfidence;
+          metadata.confidence!.termNumber = bestConfidence;
+        } else {
+          // Generic fallback
+          metadata.termName = bestTermMatch[1].trim();
+          metadata.termNumber = bestTermMatch[2] ? bestTermMatch[2].trim() : '';
+          metadata.confidence!.termName = bestConfidence;
+          metadata.confidence!.termNumber = bestTermMatch[2] ? bestConfidence : 0;
+        }
+      } else if (bestTermMatch[1]) {
+        // Simple match found
+        metadata.termName = bestTermMatch[1].trim();
+        metadata.confidence!.termName = bestConfidence;
+      }
+      
+      // Cleanup and enhancement of term name
+      if (metadata.termName) {
+        // Clean up term name - standardize format
+        let termName = metadata.termName;
+        
+        // Extract year if present
+        const yearMatch = termName.match(/\b(20\d{2})\b/);
+        let year = yearMatch ? yearMatch[1] : '';
+        
+        // Clean term name of year if present
+        if (year) {
+          termName = termName.replace(year, '').trim();
+        }
+        
+        // Extract season/month if present
+        const seasonRegex = /\b(SPRING|SUMMER|FALL|WINTER|JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\b/i;
+        const seasonMatch = termName.match(seasonRegex);
+        let season = seasonMatch ? seasonMatch[1].toUpperCase() : '';
+        
+        // If we have both season and year, format consistently
+        if (season && year) {
+          metadata.termName = `${season} ${year}`;
+        }
+      }
+    }
+    
+    // Extract dates - looking for date patterns with enhanced formats
+    const datePatterns = [
+      // Standard date ranges
+      /(?:FROM|PERIOD|DATES?)?\s*:\s*([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?,?\s*\d{4})\s*(?:TO|-|–|THROUGH)\s*([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?,?\s*\d{4})/i,
+      /(?:FROM|PERIOD|DATES?)?\s*([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?,?\s*\d{4})\s*(?:TO|-|–|THROUGH)\s*([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?,?\s*\d{4})/i,
+      
+      // Same year formats
+      /([A-Za-z]+\s+\d{1,2})\s*(?:TO|-|–|THROUGH)\s*([A-Za-z]+\s+\d{1,2},?\s*\d{4})/i,
+      
+      // Single date formats (effective date)
+      /EFFECTIVE\s+(?:DATE)?\s*:?\s*([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?,?\s*\d{4})/i,
+      /COMMENCING\s+(?:ON)?\s*:?\s*([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?,?\s*\d{4})/i,
+      
+      // Header-marked date patterns
+      /## DATE ##[^\n]*?([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?,?\s*\d{4})\s*(?:TO|-|–|THROUGH)\s*([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?,?\s*\d{4})[^\n]*?## DATE ##/i,
+      
+      // Numeric date formats (MM/DD/YYYY)
+      /(?:FROM|PERIOD|DATES?)?\s*:\s*(\d{1,2}\/\d{1,2}\/\d{4})\s*(?:TO|-|–|THROUGH)\s*(\d{1,2}\/\d{1,2}\/\d{4})/i,
+      
+      // New formats
+      /(?:TERM|SESSION)\s+(?:DATES?|PERIOD)?\s*:?\s*([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?,?\s*\d{4})\s*(?:TO|-|–|THROUGH)\s*([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?,?\s*\d{4})/i,
+      /FOR\s+THE\s+PERIOD\s+(?:OF)?\s*([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?,?\s*\d{4})\s*(?:TO|-|–|THROUGH)\s*([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?,?\s*\d{4})/i
+    ];
+    
+    // Try each date pattern first on header text (higher confidence) then full text
+    let bestDateMatch: RegExpMatchArray | null = null;
+    let dateConfidence = 0;
+    
+    // First try header or marked sections
+    for (const pattern of datePatterns) {
+      // Check for dates in header marked sections first
+      const headerDateSection = text.match(/## DATE ##([\s\S]*?)## DATE ##/);
+      if (headerDateSection && headerDateSection[1]) {
+        const match = headerDateSection[1].match(pattern);
+        if (match) {
+          bestDateMatch = match;
+          dateConfidence = 0.95;
           break;
-        } else if (match[1]) {
-          // Simple match found
-          metadata.termName = match[1].trim();
+        }
+      }
+      
+      // Try header section next
+      const match = headerSection.match(pattern);
+      if (match) {
+        bestDateMatch = match;
+        dateConfidence = 0.85;
+        break;
+      }
+    }
+    
+    // If no match in header, try full text
+    if (!bestDateMatch) {
+      for (const pattern of datePatterns) {
+        const match = text.match(pattern);
+        if (match) {
+          bestDateMatch = match;
+          dateConfidence = 0.7;
           break;
         }
       }
     }
     
-    // Extract dates - looking for date patterns
-    const datePatterns = [
-      /(?:FROM|PERIOD|DATES?)?\s*:\s*([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?,?\s*\d{4})\s*(?:TO|-|–|THROUGH)\s*([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?,?\s*\d{4})/i,
-      /([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?,?\s*\d{4})\s*(?:TO|-|–|THROUGH)\s*([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?,?\s*\d{4})/i,
-      /([A-Za-z]+\s+\d{1,2})\s*(?:TO|-|–|THROUGH)\s*([A-Za-z]+\s+\d{1,2},?\s*\d{4})/i,
-      /EFFECTIVE\s+([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?,?\s*\d{4})/i
-    ];
-    
-    // Try each date pattern
-    for (const pattern of datePatterns) {
-      const match = text.match(pattern);
-      if (match) {
-        try {
-          if (match[1] && match[2]) {
-            // Clean the date strings
-            let startDateStr = match[1].replace(/(?:st|nd|rd|th)/g, '');
-            let endDateStr = match[2].replace(/(?:st|nd|rd|th)/g, '');
-            
+    // Process best date match if found
+    if (bestDateMatch) {
+      try {
+        // Clean and parse dates
+        if (bestDateMatch[1] && bestDateMatch[2]) {
+          // Clean the date strings - remove ordinal indicators
+          let startDateStr = bestDateMatch[1].replace(/(?:st|nd|rd|th)/g, '');
+          let endDateStr = bestDateMatch[2].replace(/(?:st|nd|rd|th)/g, '');
+          
+          // Check if these are MM/DD/YYYY format
+          const isNumericDate = /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(startDateStr);
+          
+          // Handle numeric date format
+          if (isNumericDate) {
+            metadata.startDate = new Date(startDateStr);
+            metadata.endDate = new Date(endDateStr);
+          } else {
             // If start date doesn't have a year but end date does, borrow the year
             if (!/\d{4}/.test(startDateStr) && /\d{4}/.test(endDateStr)) {
-              const year = endDateStr.match(/\d{4}/)[0];
-              startDateStr = `${startDateStr} ${year}`;
+              const year = endDateStr.match(/\d{4}/)?.[0];
+              if (year) {
+                startDateStr = `${startDateStr} ${year}`;
+              }
             }
             
             // Try to parse the dates
             metadata.startDate = new Date(startDateStr);
             metadata.endDate = new Date(endDateStr);
-            
-            // Validate dates are valid
-            if (isNaN(metadata.startDate.getTime())) {
-              metadata.startDate = undefined;
-            }
-            if (isNaN(metadata.endDate.getTime())) {
-              metadata.endDate = undefined;
-            }
-            
-            break;
-          } else if (match[1]) {
-            // Only found a single date (like "EFFECTIVE JANUARY 5, 2025")
-            const dateStr = match[1].replace(/(?:st|nd|rd|th)/g, '');
-            metadata.startDate = new Date(dateStr);
-            
-            // Validate date is valid
-            if (isNaN(metadata.startDate.getTime())) {
-              metadata.startDate = undefined;
-            }
-            
-            break;
           }
-        } catch (e) {
-          console.error("Error parsing dates:", e);
+          
+          // Validate dates are valid
+          if (isNaN(metadata.startDate.getTime())) {
+            metadata.startDate = undefined;
+          } else {
+            metadata.confidence!.dates = dateConfidence;
+          }
+          
+          if (isNaN(metadata.endDate.getTime())) {
+            metadata.endDate = undefined;
+          } else if (metadata.startDate) {
+            // If we have both dates, increase confidence
+            metadata.confidence!.dates = dateConfidence;
+          }
+          
+          // If we only found start date, try to infer end date (approximately 3 months later)
+          if (metadata.startDate && !metadata.endDate) {
+            const estimatedEnd = new Date(metadata.startDate);
+            estimatedEnd.setMonth(estimatedEnd.getMonth() + 3);
+            metadata.endDate = estimatedEnd;
+            // Lower confidence for estimated end date
+            metadata.confidence!.dates = Math.max(0.5, dateConfidence - 0.2);
+          }
+        } else if (bestDateMatch[1]) {
+          // Only found a single date (like "EFFECTIVE JANUARY 5, 2025")
+          const dateStr = bestDateMatch[1].replace(/(?:st|nd|rd|th)/g, '');
+          metadata.startDate = new Date(dateStr);
+          
+          // Validate date is valid
+          if (isNaN(metadata.startDate.getTime())) {
+            metadata.startDate = undefined;
+          } else {
+            // Set end date to approximately 3 months after start
+            const estimatedEnd = new Date(metadata.startDate);
+            estimatedEnd.setMonth(estimatedEnd.getMonth() + 3);
+            metadata.endDate = estimatedEnd;
+            metadata.confidence!.dates = 0.6; // Lower confidence for inferred date range
+          }
+        }
+      } catch (e) {
+        console.error("Error parsing dates:", e);
+        metadata.startDate = undefined;
+        metadata.endDate = undefined;
+      }
+    }
+    
+    // Extract location with improved patterns
+    const locationPatterns = [
+      // Standard location patterns
+      /SUPREME COURT(?:,|\s+OF)?\s+([A-Za-z\s]+)(?:,|\s+COUNTY)?/i,
+      /COUNTY\s+OF\s+([A-Za-z\s]+)/i,
+      /([A-Za-z]+)\s+COUNTY/i,
+      /COURTHOUSE,\s+([A-Za-z\s]+)/i,
+      
+      // Enhanced building specific patterns
+      /([A-Za-z]+)\s+SUPREME\s+COURT/i,
+      /SUPREME\s+COURT,\s+([A-Za-z]+)(?:\s+COUNTY)?/i,
+      
+      // Address-based patterns
+      /\b(?:AT|IN)\s+(\d+\s+[A-Za-z\s]+?\s+(?:STREET|ST|AVENUE|AVE|BOULEVARD|BLVD))(?:,|\s+[A-Za-z]+)/i,
+      /\b(\d+\s+(?:CENTRE|CENTER)\s+(?:STREET|ST))(?:,|\s+[A-Za-z]+)/i,
+      
+      // Header-marked location patterns
+      /## LOCATION ##[^\n]*?([A-Z][A-Za-z]+(?:\s+County)?)[^\n]*?## LOCATION ##/i
+    ];
+    
+    // Try each location pattern with confidence scoring
+    let bestLocationMatch: RegExpMatchArray | null = null;
+    let locationConfidence = 0;
+    
+    // First check for location in marked sections
+    const headerLocationSection = text.match(/## LOCATION ##([\s\S]*?)## LOCATION ##/);
+    if (headerLocationSection && headerLocationSection[1]) {
+      for (const pattern of locationPatterns) {
+        const match = headerLocationSection[1].match(pattern);
+        if (match && match[1]) {
+          bestLocationMatch = match;
+          locationConfidence = 0.95;
+          break;
         }
       }
     }
     
-    // Extract location
-    const locationPatterns = [
-      /SUPREME COURT(?:,|\s+OF)?\s+([A-Za-z\s]+)(?:,|\s+COUNTY)?/i,
-      /COUNTY\s+OF\s+([A-Za-z\s]+)/i,
-      /([A-Za-z]+)\s+COUNTY/i,
-      /COURTHOUSE,\s+([A-Za-z\s]+)/i
-    ];
+    // Try header section next
+    if (!bestLocationMatch) {
+      for (const pattern of locationPatterns) {
+        const match = headerSection.match(pattern);
+        if (match && match[1]) {
+          bestLocationMatch = match;
+          locationConfidence = 0.85;
+          break;
+        }
+      }
+    }
     
-    // Try each location pattern
-    for (const pattern of locationPatterns) {
-      const match = text.match(pattern);
-      if (match && match[1]) {
-        let location = match[1].trim();
-        
-        // Clean up the location name
-        location = location.replace(/COUNTY|COURTHOUSE|SUPREME COURT/gi, '').trim();
-        
-        // Map to standardized location if it's recognized
-        const locationMap: Record<string, string> = {
-          "KINGS": "Brooklyn",
-          "NEW YORK": "Manhattan",
-          "QUEENS": "Queens",
-          "BRONX": "Bronx",
-          "RICHMOND": "Staten Island"
-        };
-        
-        metadata.location = locationMap[location.toUpperCase()] || location;
-        break;
+    // If no match in header, try full text
+    if (!bestLocationMatch) {
+      for (const pattern of locationPatterns) {
+        const match = text.match(pattern);
+        if (match && match[1]) {
+          bestLocationMatch = match;
+          locationConfidence = 0.7;
+          break;
+        }
+      }
+    }
+    
+    // Process location match if found
+    if (bestLocationMatch && bestLocationMatch[1]) {
+      let location = bestLocationMatch[1].trim();
+      
+      // Clean up the location name
+      location = location.replace(/COUNTY|COURTHOUSE|SUPREME COURT/gi, '').trim();
+      
+      // Map to standardized location if it's recognized
+      const locationMap: Record<string, string> = {
+        "KINGS": "Brooklyn",
+        "NEW YORK": "Manhattan",
+        "QUEENS": "Queens",
+        "BRONX": "Bronx",
+        "RICHMOND": "Staten Island",
+        "MANHATTAN": "Manhattan",
+        "BROOKLYN": "Brooklyn"
+      };
+      
+      metadata.location = locationMap[location.toUpperCase()] || location;
+      metadata.confidence!.location = locationConfidence;
+      
+      // Additional check for NYC boroughs in address
+      if (!metadata.location || !Object.values(locationMap).includes(metadata.location)) {
+        // Try to find borough names in the text
+        for (const [key, value] of Object.entries(locationMap)) {
+          const boroughRegex = new RegExp(`\\b${key}\\b`, 'i');
+          if (boroughRegex.test(text.substring(0, 2000))) { // Check first 2000 chars
+            metadata.location = value;
+            metadata.confidence!.location = 0.6;
+            break;
+          }
+        }
+      }
+    }
+    
+    // Calculate overall confidence
+    const confidences = [
+      metadata.confidence!.termName || 0,
+      metadata.confidence!.termNumber || 0,
+      metadata.confidence!.location || 0,
+      metadata.confidence!.dates || 0
+    ].filter(c => c > 0);
+    
+    if (confidences.length > 0) {
+      metadata.confidence!.overall = confidences.reduce((a, b) => a + b, 0) / confidences.length;
+    }
+    
+    // Get term year from startDate if available but term name doesn't have year
+    if (metadata.startDate && metadata.termName && !/\d{4}/.test(metadata.termName)) {
+      const year = metadata.startDate.getFullYear();
+      if (year >= 2000 && year <= 2100) { // Sanity check for valid year
+        metadata.termName = `${metadata.termName.trim()} ${year}`;
       }
     }
     

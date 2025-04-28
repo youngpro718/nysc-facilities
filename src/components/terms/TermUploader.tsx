@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileUp, AlertCircle, CalendarRange, Clock, MapPin, Loader2, CheckCircle, XCircle, Info } from "lucide-react";
+import { FileUp, AlertCircle, CalendarRange, Clock, MapPin, Loader2, CheckCircle, XCircle, Info, BrainCircuit } from "lucide-react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -141,8 +140,20 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
         
         setAutoExtracted(fieldsExtracted);
         
-        if (Object.values(fieldsExtracted).some(val => val)) {
-          toast.success("Metadata extracted from PDF");
+        let extractedCount = 0;
+        Object.values(fieldsExtracted).forEach(value => {
+          if (value) extractedCount++;
+        });
+        
+        // Display extraction results with confidence details if available
+        if (extractedCount > 0) {
+          if (metadata.confidence?.overall && metadata.confidence.overall > 0) {
+            // Format the confidence as a percentage
+            const confidencePercent = Math.round(metadata.confidence.overall * 100);
+            toast.success(`Metadata extracted with ${confidencePercent}% confidence (${extractedCount} fields)`);
+          } else {
+            toast.success(`Metadata extracted from PDF (${extractedCount} fields)`);
+          }
         }
         
         // If we found sufficient metadata, automatically trigger assignment analysis
@@ -364,12 +375,30 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
     }
   };
 
-  const getMetadataStatusIcon = (extracted: boolean) => {
+  const getMetadataStatusIcon = (extracted: boolean, confidence?: number) => {
     if (extracted) {
-      return <CheckCircle className="h-3 w-3 text-green-500" />;
+      // High confidence is green, medium confidence is amber
+      const highConfidence = confidence && confidence > 0.75;
+      const mediumConfidence = confidence && confidence > 0.4;
+      
+      if (highConfidence) {
+        return <CheckCircle className="h-3 w-3 text-green-500" />;
+      } else if (mediumConfidence) {
+        return <CheckCircle className="h-3 w-3 text-amber-500" />;
+      } else {
+        return <CheckCircle className="h-3 w-3 text-blue-500" />;
+      }
     } else {
       return <Info className="h-3 w-3 text-amber-500" />;
     }
+  };
+  
+  const getConfidenceLabel = (confidence?: number) => {
+    if (!confidence) return '';
+    
+    if (confidence > 0.85) return 'High confidence';
+    if (confidence > 0.6) return 'Medium confidence';
+    return 'Possible match';
   };
   
   return (
@@ -455,6 +484,9 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
                                 ) : (
                                   <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                                     <CheckCircle className="h-3 w-3 mr-1" /> Metadata extracted
+                                    {termMetadata?.confidence?.overall ? 
+                                      ` (${Math.round(termMetadata.confidence.overall * 100)}%)` : 
+                                      ''}
                                   </Badge>
                                 )}
                               </span>
@@ -474,6 +506,76 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
                       )}
                     </div>
                     
+                    {/* Automated Extraction Banner */}
+                    {pdfFile && (Object.values(autoExtracted).some(Boolean) || extractingMetadata) && (
+                      <Alert className="bg-blue-50 border-blue-200">
+                        <BrainCircuit className="h-4 w-4 text-blue-600" />
+                        <AlertTitle className="text-blue-800">Automated Extraction</AlertTitle>
+                        <AlertDescription className="text-blue-700">
+                          <p className="mb-1">
+                            PDF information has been automatically extracted and pre-filled below.
+                            {termMetadata?.confidence?.overall ? 
+                              ` Overall confidence: ${Math.round(termMetadata.confidence.overall * 100)}%` : 
+                              ''}
+                          </p>
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 text-xs text-blue-700">
+                            <div className="flex items-center">
+                              <span className={`mr-1 ${autoExtracted.termName ? 'text-green-600' : 'text-amber-600'}`}>
+                                {autoExtracted.termName ? 
+                                  <CheckCircle className="h-3 w-3" /> : 
+                                  <XCircle className="h-3 w-3" />}
+                              </span>
+                              Term Name
+                              {autoExtracted.termName && termMetadata?.confidence?.termName && (
+                                <span className="ml-1 text-blue-600">
+                                  ({getConfidenceLabel(termMetadata.confidence.termName)})
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center">
+                              <span className={`mr-1 ${autoExtracted.termNumber ? 'text-green-600' : 'text-amber-600'}`}>
+                                {autoExtracted.termNumber ? 
+                                  <CheckCircle className="h-3 w-3" /> : 
+                                  <XCircle className="h-3 w-3" />}
+                              </span>
+                              Term Number
+                              {autoExtracted.termNumber && termMetadata?.confidence?.termNumber && (
+                                <span className="ml-1 text-blue-600">
+                                  ({getConfidenceLabel(termMetadata.confidence.termNumber)})
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center">
+                              <span className={`mr-1 ${autoExtracted.location ? 'text-green-600' : 'text-amber-600'}`}>
+                                {autoExtracted.location ? 
+                                  <CheckCircle className="h-3 w-3" /> : 
+                                  <XCircle className="h-3 w-3" />}
+                              </span>
+                              Location
+                              {autoExtracted.location && termMetadata?.confidence?.location && (
+                                <span className="ml-1 text-blue-600">
+                                  ({getConfidenceLabel(termMetadata.confidence.location)})
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center">
+                              <span className={`mr-1 ${autoExtracted.dates ? 'text-green-600' : 'text-amber-600'}`}>
+                                {autoExtracted.dates ? 
+                                  <CheckCircle className="h-3 w-3" /> : 
+                                  <XCircle className="h-3 w-3" />}
+                              </span>
+                              Term Dates
+                              {autoExtracted.dates && termMetadata?.confidence?.dates && (
+                                <span className="ml-1 text-blue-600">
+                                  ({getConfidenceLabel(termMetadata.confidence.dates)})
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    
                     <div className="space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <TooltipProvider>
@@ -483,12 +585,17 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <span className="cursor-help">
-                                    {getMetadataStatusIcon(autoExtracted.termName)}
+                                    {getMetadataStatusIcon(
+                                      autoExtracted.termName, 
+                                      termMetadata?.confidence?.termName
+                                    )}
                                   </span>
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   {autoExtracted.termName ? 
-                                    "Automatically extracted from PDF" : 
+                                    `Automatically extracted from PDF${termMetadata?.confidence?.termName ? 
+                                      ` (${Math.round(termMetadata.confidence.termName * 100)}% confidence)` : 
+                                      ''}` : 
                                     "Enter or verify the term name"}
                                 </TooltipContent>
                               </Tooltip>
@@ -511,12 +618,17 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <span className="cursor-help">
-                                    {getMetadataStatusIcon(autoExtracted.termNumber)}
+                                    {getMetadataStatusIcon(
+                                      autoExtracted.termNumber,
+                                      termMetadata?.confidence?.termNumber
+                                    )}
                                   </span>
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   {autoExtracted.termNumber ? 
-                                    "Automatically extracted from PDF" : 
+                                    `Automatically extracted from PDF${termMetadata?.confidence?.termNumber ? 
+                                      ` (${Math.round(termMetadata.confidence.termNumber * 100)}% confidence)` : 
+                                      ''}` : 
                                     "Enter the term number if available"}
                                 </TooltipContent>
                               </Tooltip>
@@ -541,12 +653,17 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <span className="cursor-help">
-                                    {getMetadataStatusIcon(autoExtracted.dates)}
+                                    {getMetadataStatusIcon(
+                                      autoExtracted.dates,
+                                      termMetadata?.confidence?.dates
+                                    )}
                                   </span>
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   {autoExtracted.dates ? 
-                                    "Date range extracted from PDF" : 
+                                    `Date range extracted from PDF${termMetadata?.confidence?.dates ? 
+                                      ` (${Math.round(termMetadata.confidence.dates * 100)}% confidence)` : 
+                                      ''}` : 
                                     "Select the term start date"}
                                 </TooltipContent>
                               </Tooltip>
@@ -567,12 +684,17 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <span className="cursor-help">
-                                    {getMetadataStatusIcon(autoExtracted.dates)}
+                                    {getMetadataStatusIcon(
+                                      autoExtracted.dates,
+                                      termMetadata?.confidence?.dates
+                                    )}
                                   </span>
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   {autoExtracted.dates ? 
-                                    "Date range extracted from PDF" : 
+                                    `Date range extracted from PDF${termMetadata?.confidence?.dates ? 
+                                      ` (${Math.round(termMetadata.confidence.dates * 100)}% confidence)` : 
+                                      ''}` : 
                                     "Select the term end date"}
                                 </TooltipContent>
                               </Tooltip>
@@ -595,12 +717,17 @@ export function TermUploader({ onUploadSuccess }: { onUploadSuccess?: () => void
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <span className="cursor-help">
-                                    {getMetadataStatusIcon(autoExtracted.location)}
+                                    {getMetadataStatusIcon(
+                                      autoExtracted.location,
+                                      termMetadata?.confidence?.location
+                                    )}
                                   </span>
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   {autoExtracted.location ? 
-                                    "Location extracted from PDF" : 
+                                    `Location extracted from PDF${termMetadata?.confidence?.location ? 
+                                      ` (${Math.round(termMetadata.confidence.location * 100)}% confidence)` : 
+                                      ''}` : 
                                     "Select the court location"}
                                 </TooltipContent>
                               </Tooltip>
