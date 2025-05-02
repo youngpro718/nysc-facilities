@@ -80,7 +80,7 @@ export function EditTermAssignmentDialog({
           phone: values.phone || null,
           tel_extension: values.tel_extension || null,
           sergeant_name: values.sergeant_name || null,
-          clerk_names: Array.isArray(values.clerk_names) ? values.clerk_names : [],
+          clerk_names: values.clerk_names, // This is already transformed to string[] by the schema
           fax: values.fax || null,
         })
         .eq("id", assignment.id);
