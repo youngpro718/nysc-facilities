@@ -71,6 +71,9 @@ export function EditTermAssignmentDialog({
 
   const mutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
+      // Extract the transformed clerk_names from the form values
+      const transformedValues = formSchema.parse(values);
+      
       const { error } = await supabase
         .from("term_assignments")
         .update({
@@ -80,7 +83,7 @@ export function EditTermAssignmentDialog({
           phone: values.phone || null,
           tel_extension: values.tel_extension || null,
           sergeant_name: values.sergeant_name || null,
-          clerk_names: values.clerk_names, // This is already transformed to string[] by the schema
+          clerk_names: transformedValues.clerk_names, // Use the transformed value
           fax: values.fax || null,
         })
         .eq("id", assignment.id);
