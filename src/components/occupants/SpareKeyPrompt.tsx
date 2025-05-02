@@ -17,6 +17,7 @@ interface SpareKeyPromptProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: (reason: string) => void;
+  isSubmitting?: boolean;
   currentSpareCount?: number;
 }
 
@@ -24,6 +25,7 @@ export function SpareKeyPrompt({
   open,
   onOpenChange,
   onConfirm,
+  isSubmitting = false,
   currentSpareCount = 0,
 }: SpareKeyPromptProps) {
   const [reason, setReason] = useState("");
@@ -65,8 +67,10 @@ export function SpareKeyPrompt({
           }}>
             Cancel
           </AlertDialogCancel>
-          <AlertDialogAction onClick={handleConfirm} disabled={!reason.trim()}>
-            Assign as Spare
+          <AlertDialogAction 
+            onClick={handleConfirm} 
+            disabled={!reason.trim() || isSubmitting}>
+            {isSubmitting ? "Assigning..." : "Assign as Spare"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

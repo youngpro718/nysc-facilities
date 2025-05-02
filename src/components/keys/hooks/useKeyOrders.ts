@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { KeyOrder, CreateKeyOrderData, ReceiveKeysData } from "../types/OrderTypes";
 import { toast } from "sonner";
@@ -8,6 +8,7 @@ import { toast } from "sonner";
 export function useKeyOrders() {
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [isReceivingOrder, setIsReceivingOrder] = useState(false);
+  const queryClient = useQueryClient();
 
   // Fetch all key orders
   const { 
@@ -85,8 +86,8 @@ export function useKeyOrders() {
       // Invalidate relevant queries
       await refetchOrders();
       await Promise.all([
-        supabase.queryClient?.invalidateQueries({ queryKey: ["keys-inventory"] }),
-        supabase.queryClient?.invalidateQueries({ queryKey: ["keys-stats"] })
+        queryClient.invalidateQueries({ queryKey: ["keys-inventory"] }),
+        queryClient.invalidateQueries({ queryKey: ["keys-stats"] })
       ]);
       
       return true;
