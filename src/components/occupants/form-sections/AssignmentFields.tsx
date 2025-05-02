@@ -85,7 +85,7 @@ export function AssignmentFields({ form }: AssignmentFieldsProps) {
                         field.onChange(newRooms);
                       }}
                     >
-                      ×
+                      Remove
                     </Button>
                   </div>
                 ) : null;
@@ -140,7 +140,7 @@ export function AssignmentFields({ form }: AssignmentFieldsProps) {
                         field.onChange(newKeys);
                       }}
                     >
-                      ×
+                      Remove
                     </Button>
                   </div>
                 ) : null;

@@ -167,14 +167,14 @@ export function CreateKeyOrderDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Recipient (Optional)</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value || undefined}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a recipient" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">General inventory</SelectItem>
+                      <SelectItem value="general">General inventory</SelectItem>
                       {isLoadingOccupants ? (
                         <SelectItem value="loading" disabled>
                           Loading occupants...
@@ -226,6 +226,7 @@ export function CreateKeyOrderDialog({
                         onSelect={field.onChange}
                         initialFocus
                         disabled={(date) => date < new Date()}
+                        className="p-3 pointer-events-auto"
                       />
                     </PopoverContent>
                   </Popover>
