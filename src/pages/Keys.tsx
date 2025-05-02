@@ -2,9 +2,10 @@
 import { KeyInventorySection } from "@/components/keys/sections/KeyInventorySection";
 import { KeyAssignmentSection } from "@/components/keys/sections/KeyAssignmentSection";
 import { KeyHistorySection } from "@/components/keys/sections/KeyHistorySection";
+import { KeyOrderSection } from "@/components/keys/sections/KeyOrderSection";
 import { KeyStatisticsCards } from "@/components/keys/KeyStatisticsCards";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Users, History } from "lucide-react";
+import { Package, Users, History, ShoppingCart } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { KeyData } from "@/components/keys/types/KeyTypes";
@@ -54,6 +55,10 @@ export default function Keys() {
             <Package className="h-4 w-4" />
             Inventory
           </TabsTrigger>
+          <TabsTrigger value="orders" className="flex items-center gap-2">
+            <ShoppingCart className="h-4 w-4" />
+            Orders
+          </TabsTrigger>
           <TabsTrigger value="assignments" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             Assignments
@@ -66,6 +71,10 @@ export default function Keys() {
 
         <TabsContent value="inventory" className="space-y-4">
           <KeyInventorySection />
+        </TabsContent>
+
+        <TabsContent value="orders" className="space-y-4">
+          <KeyOrderSection />
         </TabsContent>
 
         <TabsContent value="assignments" className="space-y-4">

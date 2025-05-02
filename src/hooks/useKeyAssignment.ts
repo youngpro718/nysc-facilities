@@ -13,6 +13,8 @@ export function useKeyAssignment(
   const [isAssigning, setIsAssigning] = useState(false);
   const [showSpareKeyPrompt, setShowSpareKeyPrompt] = useState(false);
   const [currentSpareCount, setCurrentSpareCount] = useState(0);
+  const [showCreateOrderPrompt, setShowCreateOrderPrompt] = useState(false);
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
 
   const { data: availableKeys, isLoading } = useQuery({
     queryKey: ["available-keys"],
@@ -22,7 +24,6 @@ export function useKeyAssignment(
       const { data, error } = await supabase
         .from("key_inventory_view")
         .select("id, name, type, available_quantity, is_passkey")
-        .gt("available_quantity", 0)
         .eq("status", "available");
 
       if (error) {
@@ -49,7 +50,15 @@ export function useKeyAssignment(
         is_spare: !!spareKeyReason
       });
 
-      if (error) throw error;
+      if (error) {
+        // Check if error is due to insufficient stock
+        if (error.message.includes("not available") || error.message.includes("available_quantity")) {
+          // Show order prompt instead of error
+          setShowCreateOrderPrompt(true);
+          return;
+        }
+        throw error;
+      }
 
       toast.success(`Successfully assigned keys to ${selectedOccupants.length} occupants`);
       onSuccess();
@@ -64,15 +73,59 @@ export function useKeyAssignment(
     }
   };
 
+  const handleCreateOrder = async (quantity: number = 1) => {
+    if (!selectedKey || selectedOccupants.length === 0) {
+      toast.error("Please select both a key and recipient");
+      return;
+    }
+
+    setIsCreatingOrder(true);
+
+    try {
+      // Get current user
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      
+      const userId = userData.user?.id;
+      if (!userId) throw new Error("User not authenticated");
+
+      // Create order using RPC function
+      const { data, error } = await supabase.rpc("create_key_order", {
+        p_key_id: selectedKey,
+        p_quantity: quantity,
+        p_requestor_id: userId,
+        p_recipient_id: selectedOccupants[0],
+        p_notes: "Order created during key assignment process due to insufficient stock"
+      });
+
+      if (error) throw error;
+
+      toast.success(`Successfully created order for ${quantity} keys`);
+      onSuccess();
+      setShowCreateOrderPrompt(false);
+      onOpenChange(false);
+      setSelectedKey("");
+    } catch (error: any) {
+      console.error("Error creating key order:", error);
+      toast.error(error.message || "Failed to create key order");
+    } finally {
+      setIsCreatingOrder(false);
+    }
+  };
+
   return {
     selectedKey,
     setSelectedKey,
     isAssigning,
     showSpareKeyPrompt,
     setShowSpareKeyPrompt,
+    showCreateOrderPrompt,
+    setShowCreateOrderPrompt,
     currentSpareCount,
     availableKeys,
     isLoading,
-    handleAssign
+    isCreatingOrder,
+    handleAssign,
+    handleCreateOrder
   };
 }

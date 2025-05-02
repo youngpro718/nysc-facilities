@@ -2780,12 +2780,150 @@ export type Database = {
           },
         ]
       }
+      key_order_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          order_id: string
+          quantity_ordered: number
+          quantity_received: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          order_id: string
+          quantity_ordered: number
+          quantity_received?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          order_id?: string
+          quantity_ordered?: number
+          quantity_received?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "key_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "key_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "key_orders_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      key_orders: {
+        Row: {
+          created_at: string | null
+          expected_delivery_date: string | null
+          id: string
+          key_id: string
+          notes: string | null
+          ordered_at: string | null
+          quantity: number
+          received_at: string | null
+          recipient_id: string | null
+          requestor_id: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expected_delivery_date?: string | null
+          id?: string
+          key_id: string
+          notes?: string | null
+          ordered_at?: string | null
+          quantity: number
+          received_at?: string | null
+          recipient_id?: string | null
+          requestor_id?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expected_delivery_date?: string | null
+          id?: string
+          key_id?: string
+          notes?: string | null
+          ordered_at?: string | null
+          quantity?: number
+          received_at?: string | null
+          recipient_id?: string | null
+          requestor_id?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "key_orders_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_assignment_stats"
+            referencedColumns: ["key_id"]
+          },
+          {
+            foreignKeyName: "key_orders_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_assignments_view"
+            referencedColumns: ["key_id"]
+          },
+          {
+            foreignKeyName: "key_orders_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_door_locations"
+            referencedColumns: ["key_id"]
+          },
+          {
+            foreignKeyName: "key_orders_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_inventory_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_orders_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "keys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_orders_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "occupant_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_orders_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "occupants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       key_stock_transactions: {
         Row: {
           created_at: string | null
           id: string
           key_id: string | null
           notes: string | null
+          order_id: string | null
           performed_by: string | null
           quantity: number
           reason: string | null
@@ -2796,6 +2934,7 @@ export type Database = {
           id?: string
           key_id?: string | null
           notes?: string | null
+          order_id?: string | null
           performed_by?: string | null
           quantity: number
           reason?: string | null
@@ -2806,6 +2945,7 @@ export type Database = {
           id?: string
           key_id?: string | null
           notes?: string | null
+          order_id?: string | null
           performed_by?: string | null
           quantity?: number
           reason?: string | null
@@ -2845,6 +2985,20 @@ export type Database = {
             columns: ["key_id"]
             isOneToOne: false
             referencedRelation: "keys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_stock_transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "key_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_stock_transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "key_orders_view"
             referencedColumns: ["id"]
           },
         ]
@@ -6884,6 +7038,77 @@ export type Database = {
         }
         Relationships: []
       }
+      key_orders_view: {
+        Row: {
+          expected_delivery_date: string | null
+          id: string | null
+          key_id: string | null
+          key_name: string | null
+          key_type: Database["public"]["Enums"]["key_type_enum"] | null
+          notes: string | null
+          ordered_at: string | null
+          quantity: number | null
+          received_at: string | null
+          recipient_department: string | null
+          recipient_id: string | null
+          recipient_name: string | null
+          requestor_email: string | null
+          requestor_id: string | null
+          requestor_name: string | null
+          status: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "key_orders_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_assignment_stats"
+            referencedColumns: ["key_id"]
+          },
+          {
+            foreignKeyName: "key_orders_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_assignments_view"
+            referencedColumns: ["key_id"]
+          },
+          {
+            foreignKeyName: "key_orders_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_door_locations"
+            referencedColumns: ["key_id"]
+          },
+          {
+            foreignKeyName: "key_orders_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_inventory_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_orders_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "keys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_orders_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "occupant_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_orders_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "occupants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lighting_assignments: {
         Row: {
           building_id: string | null
@@ -7668,6 +7893,17 @@ export type Database = {
         Args: { creator_id: string; batch_metadata: Json }
         Returns: string
       }
+      create_key_order: {
+        Args: {
+          p_key_id: string
+          p_quantity: number
+          p_requestor_id: string
+          p_recipient_id?: string
+          p_expected_delivery_date?: string
+          p_notes?: string
+        }
+        Returns: string
+      }
       find_doors_by_room_number: {
         Args: { p_room_number: string }
         Returns: {
@@ -7728,6 +7964,14 @@ export type Database = {
       }
       migrate_spaces_data: {
         Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      process_key_order_receipt: {
+        Args: {
+          p_order_id: string
+          p_quantity_received: number
+          p_performed_by: string
+        }
         Returns: undefined
       }
       safely_delete_key: {
