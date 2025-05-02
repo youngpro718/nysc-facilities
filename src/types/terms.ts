@@ -37,3 +37,22 @@ export interface TermFilterState {
   location: string | null;
   search: string;
 }
+
+export interface TermPersonnel {
+  id: string;
+  term_id: string;
+  name: string;
+  role: string;
+  phone?: string;
+  extension?: string;
+  room?: string;
+  floor?: string;
+}
+
+export interface TermMetadata {
+  parsed_by: string;
+  parse_date: string;
+  confidence_score: number;
+  document_pages: number;
+  original_filename?: string;
+}

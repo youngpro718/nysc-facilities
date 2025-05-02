@@ -15,8 +15,16 @@ interface TermsTableProps {
 }
 
 export function TermsTable({ terms }: TermsTableProps) {
+  if (terms.length === 0) {
+    return (
+      <div className="text-center p-8 border rounded-md">
+        <p className="text-muted-foreground">No terms found matching your filters.</p>
+      </div>
+    );
+  }
+  
   return (
-    <div className="overflow-x-auto">
+    <div className="border rounded-md overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>

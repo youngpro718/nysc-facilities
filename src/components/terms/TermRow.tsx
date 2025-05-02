@@ -46,34 +46,12 @@ export function TermRow({ term }: TermRowProps) {
     }
   };
   
-  const viewAssignments = async (termId: string) => {
-    try {
-      setLoading('assignments');
-      navigate(`/term-assignments/${termId}`);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load assignments. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(null);
-    }
+  const viewAssignments = () => {
+    navigate(`/terms/${term.id}`);
   };
   
-  const viewPersonnel = async (termId: string) => {
-    try {
-      setLoading('personnel');
-      navigate(`/term-personnel/${termId}`);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load personnel. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(null);
-    }
+  const viewPersonnel = () => {
+    navigate(`/terms/${term.id}`);
   };
   
   const downloadPdf = async (pdfUrl: string, termName: string) => {
@@ -150,7 +128,7 @@ export function TermRow({ term }: TermRowProps) {
                 variant="ghost" 
                 size="sm" 
                 className="h-8"
-                onClick={() => viewAssignments(term.id)}
+                onClick={viewAssignments}
                 disabled={loading === 'assignments'}
               >
                 {loading === 'assignments' ? (
@@ -172,7 +150,7 @@ export function TermRow({ term }: TermRowProps) {
                 variant="ghost" 
                 size="sm" 
                 className="h-8"
-                onClick={() => viewPersonnel(term.id)}
+                onClick={viewPersonnel}
                 disabled={loading === 'personnel'}
               >
                 {loading === 'personnel' ? (
