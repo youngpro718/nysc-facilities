@@ -32,6 +32,7 @@ interface TermAssignmentsListProps {
 export function TermAssignmentsList({ termId, assignments: initialAssignments }: TermAssignmentsListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [editingAssignment, setEditingAssignment] = useState<TermAssignment | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const { data: assignments, isLoading } = useQuery({
     queryKey: ["term-assignments", termId],
@@ -62,6 +63,16 @@ export function TermAssignmentsList({ termId, assignments: initialAssignments }:
       (assignment.sergeant_name && assignment.sergeant_name.toLowerCase().includes(query))
     );
   });
+  
+  const handleAddAssignment = () => {
+    setEditingAssignment(null);
+    setIsDialogOpen(true);
+  };
+
+  const handleEditAssignment = (assignment: TermAssignment) => {
+    setEditingAssignment(assignment);
+    setIsDialogOpen(true);
+  };
 
   if (isLoading) {
     return (
@@ -75,7 +86,7 @@ export function TermAssignmentsList({ termId, assignments: initialAssignments }:
     return (
       <div className="text-center p-8 border rounded-md">
         <p className="text-muted-foreground mb-4">No assignments found for this term.</p>
-        <Button>
+        <Button onClick={handleAddAssignment}>
           <PencilIcon className="h-4 w-4 mr-2" />
           Add Assignment
         </Button>
@@ -95,7 +106,7 @@ export function TermAssignmentsList({ termId, assignments: initialAssignments }:
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <Button>
+        <Button onClick={handleAddAssignment}>
           <PencilIcon className="h-4 w-4 mr-2" />
           Add Assignment
         </Button>
@@ -150,7 +161,7 @@ export function TermAssignmentsList({ termId, assignments: initialAssignments }:
                     <Button 
                       variant="ghost" 
                       size="sm"
-                      onClick={() => setEditingAssignment(assignment)}
+                      onClick={() => handleEditAssignment(assignment)}
                     >
                       <PencilIcon className="h-4 w-4" />
                     </Button>
@@ -162,13 +173,12 @@ export function TermAssignmentsList({ termId, assignments: initialAssignments }:
         </div>
       </div>
 
-      {editingAssignment && (
-        <EditTermAssignmentDialog
-          assignment={editingAssignment}
-          open={!!editingAssignment}
-          onOpenChange={() => setEditingAssignment(null)}
-        />
-      )}
+      <EditTermAssignmentDialog
+        assignment={editingAssignment || undefined}
+        termId={termId}
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+      />
     </div>
   );
 }

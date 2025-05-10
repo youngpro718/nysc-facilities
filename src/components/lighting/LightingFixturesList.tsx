@@ -32,11 +32,11 @@ import { CreateLightingDialog } from "./CreateLightingDialog";
 import { Card } from "@/components/ui/card";
 
 interface LightingFixturesListProps {
-  selectedBuilding: string;
-  selectedFloor: string;
+  selectedBuilding?: string;
+  selectedFloor?: string;
 }
 
-export function LightingFixturesList({ selectedBuilding, selectedFloor }: LightingFixturesListProps) {
+export function LightingFixturesList({ selectedBuilding = 'all', selectedFloor = 'all' }: LightingFixturesListProps) {
   const [selectedFixtures, setSelectedFixtures] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filters, setFilters] = useState({
@@ -58,12 +58,16 @@ export function LightingFixturesList({ selectedBuilding, selectedFloor }: Lighti
 
   // Fetch zones for filtering
   const { data: zones } = useQuery({
-    queryKey: ['lighting-zones'],
+    queryKey: ['lighting-zones', selectedBuilding, selectedFloor],
     queryFn: async () => {
       let query = supabase.from('lighting_zones').select('id, name');
       
       if (selectedFloor !== 'all') {
         query = query.eq('floor_id', selectedFloor);
+      }
+      
+      if (selectedBuilding !== 'all') {
+        query = query.eq('building_id', selectedBuilding);
       }
       
       const { data, error } = await query;
@@ -72,7 +76,8 @@ export function LightingFixturesList({ selectedBuilding, selectedFloor }: Lighti
         label: zone.name, 
         value: zone.id 
       }));
-    }
+    },
+    enabled: !!selectedBuilding || !!selectedFloor
   });
 
   // Reset selected fixtures when filters change

@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -26,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
+import { TermAssignment } from "@/types/terms";
 
 const assignmentSchema = z.object({
   termId: z.string({
@@ -46,12 +48,14 @@ interface EditTermAssignmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   termId?: string;
+  assignment?: TermAssignment;
 }
 
 export function EditTermAssignmentDialog({
   open,
   onOpenChange,
   termId,
+  assignment,
 }: EditTermAssignmentDialogProps) {
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -61,8 +65,8 @@ export function EditTermAssignmentDialog({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("court_terms")
-        .select("id, name")
-        .order("name");
+        .select("id, term_name")
+        .order("term_name");
 
       if (error) {
         console.error("Error fetching terms:", error);
@@ -97,25 +101,31 @@ export function EditTermAssignmentDialog({
       notes: "",
     },
   });
+  
+  // Update form when assignment is provided (edit mode)
+  useEffect(() => {
+    if (assignment) {
+      form.reset({
+        termId: assignment.term_id,
+        personnelId: "", // This will need to be mapped from your data
+        assignmentType: "", // This will need to be mapped from your data
+        notes: "", // Add if available in your data
+      });
+    }
+  }, [assignment, form]);
 
   const onSubmit = async (formData: AssignmentFormValues) => {
     setIsSubmitting(true);
     try {
-      // Assuming this is where the type error is happening
-      // We'll convert the string to an array with a single string element
-      const selectedPersonnel = formData.personnelId ? [formData.personnelId] : [];
-
       const { data, error } = await supabase
         .from("term_assignments")
-        .insert([
-          {
-            term_id: formData.termId,
-            personnel_id: selectedPersonnel, // Use the array here
-            assignment_type: formData.assignmentType,
-            notes: formData.notes,
-          },
-        ])
-        .select();
+        .insert({
+          term_id: formData.termId,
+          justice_name: personnel?.find(p => p.id === formData.personnelId)?.first_name + " " + 
+                       personnel?.find(p => p.id === formData.personnelId)?.last_name || "Unknown",
+          assignment_type: formData.assignmentType,
+          notes: formData.notes || null
+        });
 
       if (error) {
         console.error("Error creating assignment:", error);
@@ -142,9 +152,9 @@ export function EditTermAssignmentDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Edit Term Assignment</DialogTitle>
+          <DialogTitle>{assignment ? "Edit Term Assignment" : "Create Term Assignment"}</DialogTitle>
           <DialogDescription>
-            Assign personnel to specific court terms.
+            {assignment ? "Edit assigned personnel for this term." : "Assign personnel to specific court terms."}
           </DialogDescription>
         </DialogHeader>
 
@@ -159,7 +169,7 @@ export function EditTermAssignmentDialog({
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
-                    disabled={loadingTerms}
+                    disabled={loadingTerms || !!termId}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -169,7 +179,7 @@ export function EditTermAssignmentDialog({
                     <SelectContent>
                       {terms?.map((term) => (
                         <SelectItem key={term.id} value={term.id}>
-                          {term.name}
+                          {term.term_name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -263,10 +273,10 @@ export function EditTermAssignmentDialog({
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Submitting...
+                    {assignment ? "Updating..." : "Creating..."}
                   </>
                 ) : (
-                  "Create Assignment"
+                  assignment ? "Update Assignment" : "Create Assignment"
                 )}
               </Button>
             </DialogFooter>

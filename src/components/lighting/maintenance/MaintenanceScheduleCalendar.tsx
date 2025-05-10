@@ -118,7 +118,7 @@ export function MaintenanceScheduleCalendar() {
           }}
           modifiers={{
             booked: (day) => {
-              return maintenanceEvents?.has(day.toDateString()) || false;
+              return maintenanceEvents?.has(day?.toDateString() || "") || false;
             }
           }}
           modifiersStyles={{
