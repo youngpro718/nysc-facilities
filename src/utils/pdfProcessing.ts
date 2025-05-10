@@ -572,14 +572,25 @@ export function extractAssignmentsByPattern(text: string): TermAssignment[] {
     // Split text into lines and clean them
     const lines = text.split(/\n/).map(line => line.trim()).filter(Boolean);
     
+    // Debug log number of lines
+    console.info(`Analyzing ${lines.length} lines for assignments`);
+    
     // Enhanced pattern to match various assignment formats
-    // This regex is more flexible with spacing and format variations
-    const assignmentPattern = /\b([A-Z0-9][-A-Z0-9]*)\s+([A-Za-z\s\.\-,']+?)(?:\s+(?:[Rr]oom\s*)?(\d+[A-Za-z]?))?(?:\s*[-–]?\s*(?:\(?\s*(?:Tel|TEL|Phone|PHONE)?\.?\s*(?:\(?\s*(\d{1,2})\s*\)?\s*[-\s]?(\d{3,4}))?\s*\)?)?)?/i;
+    // This regex is more flexible with spacing and format variations, focusing on PART first
+    const assignmentPattern = /\b([A-Z0-9][-A-Z0-9]*)\s+([A-Za-z\s\.\-,']+?)(?:\s+(?:Room\s*)?(\d+[A-Za-z]?))?(?:\s*[-–]?\s*(?:\(?\s*(?:[Tt][Ee][Ll]|FAX)?\.?\s*(?:[#:]?\s*)?(?:\(?\s*(\d{1,2})\s*\)?\s*[-\s]?(\d{3,4}))?\s*\)?)?)?/i;
     
     const assignments: TermAssignment[] = [];
     
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
+      
+      // Skip lines that look like headers
+      if (/\b(PART|JUSTICE|JUDGE|ROOM|FAX|[*]?TEL[*]?|SERGEANT|CLERK)\b/i.test(line)) {
+        console.info(`Found possible header line: ${line}`);
+        continue;
+      }
+      
+      // Try the primary assignment pattern
       const match = line.match(assignmentPattern);
       
       if (match) {
@@ -589,6 +600,14 @@ export function extractAssignmentsByPattern(text: string): TermAssignment[] {
         // Clean up justice name - trim trailing periods, commas
         const justice = justiceRaw.replace(/[,\s\.]+$/, '').trim();
         
+        // Only process if we have both part and justice (must have values)
+        if (!part || !justice) {
+          continue;
+        }
+        
+        // Debug log the match
+        console.info(`Found assignment match: Part=${part}, Justice=${justice}, Room=${room}`);
+        
         // Prepare phone number and extension if available
         let tel = null;
         let extension = null;
@@ -596,6 +615,7 @@ export function extractAssignmentsByPattern(text: string): TermAssignment[] {
         if (extRaw && phoneRaw) {
           tel = `(${extRaw})${phoneRaw}`;
           extension = extRaw;
+          console.info(`Found phone: ${tel}, Extension: ${extension}`);
         } else if (phoneRaw) {
           tel = phoneRaw;
         }
@@ -605,19 +625,24 @@ export function extractAssignmentsByPattern(text: string): TermAssignment[] {
           part: part.trim(),
           justice: justice,
           room: room?.trim() || null,
-          tel: tel
+          tel: tel,
+          extension: extension
         };
         
-        // Look ahead for additional information - check for SGT and clerks more intelligently
+        // Look ahead for additional information - check for SGT, FAX, and clerks more intelligently
         let sgtFound = false;
+        let faxFound = false;
         let clerksCollecting = false;
         let clerkLines: string[] = [];
         let sgtLine = '';
         let faxLine = '';
         
-        // Scan subsequent lines for SGT, clerks, and other data
+        // Scan subsequent lines for SGT, clerks, FAX and other data
+        // This is enhanced to look for specific patterns in following lines
         let j = i + 1;
-        while (j < lines.length && j < i + 8) { // Look ahead up to 8 lines
+        const maxLookAhead = Math.min(lines.length, i + 8); // Look ahead up to 8 lines
+        
+        while (j < maxLookAhead) {
           const nextLine = lines[j].trim();
           
           // Skip empty lines
@@ -626,31 +651,47 @@ export function extractAssignmentsByPattern(text: string): TermAssignment[] {
             continue;
           }
           
-          // Check for fax information
-          const faxMatch = nextLine.match(/FAX\s*[.:]\s*(\(?\d{1,2}\)?[-\s]?\d{3,4})/i);
-          if (faxMatch && faxMatch[1]) {
-            assignment.fax = faxMatch[1].trim();
-            j++;
-            continue;
-          }
-          
-          // Check for extension information if not already found
-          const extMatch = nextLine.match(/EXT(?:ENSION)?\.?\s*[.:]\s*(\d+)/i);
-          if (extMatch && extMatch[1] && !assignment.extension) {
-            assignment.extension = extMatch[1].trim();
-            j++;
-            continue;
-          }
-          
-          // Detect SGT line with more patterns
-          if (!sgtFound && /\b(?:SGT|SERGEANT|SGT\.|S(?:er)?g(?:ean)?t\.?)\b/i.test(nextLine)) {
-            sgtLine = nextLine.replace(/\b(?:SGT|SERGEANT|SGT\.|S(?:er)?g(?:ean)?t\.?)\b/i, '').trim();
+          // Check for SGT line with improved patterns
+          if (!sgtFound && /\b(?:SGT|SERGEANT|SGT\.|Sgt\.?)\b/i.test(nextLine)) {
+            sgtLine = nextLine.replace(/\b(?:SGT|SERGEANT|SGT\.|Sgt\.?)\b/i, '').trim();
             sgtFound = true;
+            console.info(`Found SGT: ${sgtLine}`);
+            j++;
+            continue;
+          }
+          
+          // Check for FAX information
+          if (!faxFound && /\b(?:FAX|Facsimile|Fax\.?)\b/i.test(nextLine)) {
+            const faxMatch = nextLine.match(/(?:FAX|Facsimile|Fax\.?)[.:]\s*(\(?\d{1,2}\)?[-\s]?\d{3,4})/i);
+            if (faxMatch && faxMatch[1]) {
+              assignment.fax = faxMatch[1].trim();
+              faxFound = true;
+              console.info(`Found FAX: ${assignment.fax}`);
+            }
+            j++;
+            continue;
+          }
+          
+          // Enhanced check for TEL patterns that might be on separate lines
+          if (!tel && /\b(?:TEL|PHONE|Tel\.?|Phone\.?)[.:]?\s*(\(?\d{1,2}\)?[-\s]?\d{3,4})/i.test(nextLine)) {
+            const telMatch = nextLine.match(/\b(?:TEL|PHONE|Tel\.?|Phone\.?)[.:]?\s*(\(?\d{1,2}\)?[-\s]?\d{3,4})/i);
+            if (telMatch && telMatch[1]) {
+              tel = telMatch[1].trim();
+              // Extract extension from TEL if in format (6)4107
+              const extMatch = tel.match(/\((\d{1,2})\)(\d{3,4})/);
+              if (extMatch) {
+                extension = extMatch[1];
+                assignment.tel = tel;
+                assignment.extension = extension;
+                console.info(`Found TEL on separate line: ${tel}, Extension: ${extension}`);
+              }
+            }
             j++;
             continue;
           }
           
           // Start collecting clerks after SGT or if we see clerk indicators
+          // Enhanced pattern to detect various clerk name formats
           if (sgtFound || 
               /\b(?:CLERK|CLK\.?|Court Clerk)\b/i.test(nextLine) || 
               /^[A-Z]\.\s+[A-Za-z]+/.test(nextLine) ||
@@ -658,14 +699,19 @@ export function extractAssignmentsByPattern(text: string): TermAssignment[] {
             
             clerksCollecting = true;
             
-            // Don't include lines that look like new assignments
+            // Don't include lines that look like new assignments or headers
             if (!nextLine.match(assignmentPattern) && 
                 !/^[A-Z0-9]{1,3}\s+[A-Z]/.test(nextLine) &&
-                !/^PART\s+[A-Z0-9]{1,3}/.test(nextLine)) {
+                !/^PART\s+[A-Z0-9]{1,3}/.test(nextLine) &&
+                !/\b(PART|JUSTICE|JUDGE|ROOM|FAX|[*]?TEL[*]?)\b/i.test(nextLine)) {
+              
               clerkLines.push(nextLine);
+              console.info(`Found potential clerk line: ${nextLine}`);
             } else {
-              break; // Stop if we hit what looks like a new assignment
+              break; // Stop if we hit what looks like a new assignment or header
             }
+            j++;
+            continue;
           }
           
           // Stop if we encounter a likely new assignment pattern
@@ -708,12 +754,15 @@ export function extractAssignmentsByPattern(text: string): TermAssignment[] {
           }
           
           assignment.clerks = clerks;
+          console.info(`Processed clerks: ${JSON.stringify(clerks)}`);
         }
         
         assignments.push(assignment);
+        i = j - 1; // Skip the lines we've processed
       }
     }
     
+    console.info(`Found ${assignments.length} assignments using pattern matching`);
     return assignments;
   } catch (error) {
     console.error("Error in extractAssignmentsByPattern:", error);
@@ -722,29 +771,36 @@ export function extractAssignmentsByPattern(text: string): TermAssignment[] {
 }
 
 /**
- * Table-based extraction method for tabular term assignments
+ * Table-based extraction method for tabular term assignments with improved column detection
  * @param text The extracted PDF text
  * @returns Array of parsed assignments
  */
 export function extractAssignmentsByTable(text: string): TermAssignment[] {
   try {
+    console.info("Starting table-based extraction");
     const lines = text.split(/\n/).map(line => line.trim()).filter(Boolean);
     const assignments: TermAssignment[] = [];
     
-    // Look for table headers to identify columns
+    // Enhanced header patterns to better match real-world PDFs
     const headerPatterns = [
-      /PART.*JUSTICE.*(?:ROOM|LOCATION).*(?:PHONE|TEL)/i,
-      /PART.*JUDGE.*(?:ROOM|LOCATION).*(?:PHONE|TEL)/i
+      /\b(PART|PARTS?).*\b(JUSTICE|JUDGE|HON).*(?:ROOM|LOCATION).*(?:FAX)?.*(?:TEL|PHONE|[*]TEL[*])/i,
+      /\b(PART|PARTS?).*\b(JUSTICE|JUDGE|HON).*(?:ROOM|LOCATION)/i,
+      /\b(PART|PARTS?).*\b(JUSTICE|JUDGE|HON)/i
     ];
     
     let headerIndex = -1;
     let headerLine = '';
     
-    for (let i = 0; i < lines.length; i++) {
+    // Find the header line
+    for (let i = 0; i < Math.min(lines.length, 50); i++) { // Only check first 50 lines
+      const line = lines[i];
+      console.info(`Checking line ${i} for header: ${line}`);
+      
       for (const pattern of headerPatterns) {
-        if (pattern.test(lines[i])) {
+        if (pattern.test(line)) {
           headerIndex = i;
-          headerLine = lines[i];
+          headerLine = line;
+          console.info(`Found header at line ${i}: ${line}`);
           break;
         }
       }
@@ -756,106 +812,154 @@ export function extractAssignmentsByTable(text: string): TermAssignment[] {
       return [];
     }
     
-    // Determine column positions based on header
+    // Extract column positions more accurately
+    // This is improved to handle various header formats
     const getColumnPos = (text: string, patterns: RegExp[]) => {
       for (const pattern of patterns) {
         const match = text.match(pattern);
-        if (match) return match.index || -1;
+        if (match) {
+          console.info(`Found column match for ${pattern}: ${match[0]} at position ${match.index}`);
+          return match.index || -1;
+        }
       }
       return -1;
     };
     
-    const partCol = getColumnPos(headerLine, [/PART/i]);
+    // Enhanced column patterns
+    const partCol = getColumnPos(headerLine, [/\bPART/i, /\bPARTS\b/i]);
     const justiceCol = Math.max(
-      getColumnPos(headerLine, [/JUSTICE/i]),
-      getColumnPos(headerLine, [/JUDGE/i])
+      getColumnPos(headerLine, [/\bJUSTICE/i]),
+      getColumnPos(headerLine, [/\bJUDGE/i]),
+      getColumnPos(headerLine, [/\bHON/i])
     );
     const roomCol = Math.max(
-      getColumnPos(headerLine, [/ROOM/i]),
-      getColumnPos(headerLine, [/LOCATION/i])
+      getColumnPos(headerLine, [/\bROOM/i]),
+      getColumnPos(headerLine, [/\bLOCATION/i])
     );
+    const faxCol = getColumnPos(headerLine, [/\bFAX/i]);
     const phoneCol = Math.max(
-      getColumnPos(headerLine, [/PHONE/i]),
-      getColumnPos(headerLine, [/TEL/i])
+      getColumnPos(headerLine, [/\b[*]?TEL[*]?/i]),
+      getColumnPos(headerLine, [/\bPHONE/i])
     );
-    const sgtCol = getColumnPos(headerLine, [/SGT/i, /SERGEANT/i]);
-    const clerkCol = getColumnPos(headerLine, [/CLERK/i]);
+    const sgtCol = getColumnPos(headerLine, [/\bSGT/i, /\bSERGEANT/i]);
+    const clerkCol = getColumnPos(headerLine, [/\bCLERK/i]);
     
-    // Process data rows
+    console.info(`Column positions - Part: ${partCol}, Justice: ${justiceCol}, Room: ${roomCol}, FAX: ${faxCol}, Phone: ${phoneCol}, SGT: ${sgtCol}, Clerk: ${clerkCol}`);
+    
+    // Process data rows with better error handling and column extraction
     for (let i = headerIndex + 1; i < lines.length; i++) {
       const line = lines[i].trim();
       
       // Skip empty lines
       if (!line || line.length < 3) continue;
       
-      // Skip lines that don't look like data rows
-      if (!/[A-Z0-9]/.test(line.substring(0, Math.min(10, line.length)))) continue;
+      // Skip lines that don't look like data rows or appear to be headers
+      if (!/[A-Z0-9]/.test(line.substring(0, Math.min(10, line.length))) || 
+          headerPatterns.some(pattern => pattern.test(line))) {
+        continue;
+      }
+      
+      console.info(`Processing data row: ${line}`);
       
       const assignment: TermAssignment = {};
       let hasData = false;
       
-      // Extract data based on column positions
+      // Extract data based on column positions - enhanced for better accuracy
       if (partCol !== -1) {
         const endPos = justiceCol !== -1 ? justiceCol : line.length;
         const partText = line.substring(partCol, endPos).trim();
+        
+        // More robust part extraction
         const partMatch = partText.match(/([A-Z0-9][-A-Z0-9]*)/);
         if (partMatch) {
           assignment.part = partMatch[1].trim();
           hasData = true;
+          console.info(`Found part: ${assignment.part}`);
         }
       }
       
       if (justiceCol !== -1) {
         const endPos = roomCol !== -1 ? roomCol : 
+                      faxCol !== -1 ? faxCol :
                       phoneCol !== -1 ? phoneCol : line.length;
         assignment.justice = line.substring(justiceCol, endPos).trim();
+        // Clean up justice name (remove asterisks or other markers)
+        assignment.justice = assignment.justice.replace(/[*]/g, '').trim();
         hasData = true;
+        console.info(`Found justice: ${assignment.justice}`);
       }
       
       if (roomCol !== -1 && roomCol < line.length) {
-        const endPos = phoneCol !== -1 ? phoneCol : 
+        const endPos = faxCol !== -1 ? faxCol : 
+                      phoneCol !== -1 ? phoneCol :
                       sgtCol !== -1 ? sgtCol : line.length;
         const roomText = line.substring(roomCol, endPos).trim();
+        
         // Extract numeric part with possible letter suffix
         const roomMatch = roomText.match(/\b(\d+[A-Za-z]?)\b/);
         assignment.room = roomMatch ? roomMatch[1] : null;
+        console.info(`Found room: ${assignment.room}`);
+      }
+      
+      if (faxCol !== -1 && faxCol < line.length) {
+        const endPos = phoneCol !== -1 ? phoneCol : 
+                      sgtCol !== -1 ? sgtCol :
+                      clerkCol !== -1 ? clerkCol : line.length;
+        const faxText = line.substring(faxCol, endPos).trim();
+        
+        // Extract fax number
+        const faxMatch = faxText.match(/\(?\s*(\d{1,2})\s*\)?\s*[-\s]?(\d{3,4})/);
+        if (faxMatch) {
+          assignment.fax = faxMatch[0];
+          console.info(`Found fax: ${assignment.fax}`);
+        }
       }
       
       if (phoneCol !== -1 && phoneCol < line.length) {
         const endPos = sgtCol !== -1 ? sgtCol : 
                       clerkCol !== -1 ? clerkCol : line.length;
         const phoneText = line.substring(phoneCol, endPos).trim();
-        // Extract formatted phone number
-        const phoneMatch = phoneText.match(/\(?\s*(\d{1,2})\s*\)?\s*[-\s]?(\d{3,4})/);
+        
+        // Enhanced phone extraction to handle (6)4107 format
+        const phoneMatch = phoneText.match(/\(?(\d{1,2})\)?[-\s]?(\d{3,4})/);
         if (phoneMatch) {
-          assignment.tel = `(${phoneMatch[1]})${phoneMatch[2]}`;
+          assignment.tel = phoneText.trim();
           assignment.extension = phoneMatch[1];
+          console.info(`Found tel: ${assignment.tel}, extension: ${assignment.extension}`);
         }
       }
       
       if (sgtCol !== -1 && sgtCol < line.length) {
         const endPos = clerkCol !== -1 ? clerkCol : line.length;
         assignment.sgt = line.substring(sgtCol, endPos).trim();
+        console.info(`Found sgt: ${assignment.sgt}`);
       }
       
       if (clerkCol !== -1 && clerkCol < line.length) {
         const clerkText = line.substring(clerkCol).trim();
-        // Handle multiple clerks
-        if (clerkText.includes(',') || clerkText.includes('/')) {
-          assignment.clerks = clerkText
-            .split(/[,\/]/)
-            .map(c => c.trim())
-            .filter(Boolean);
-        } else {
-          assignment.clerks = clerkText;
+        
+        // Enhanced clerk name processing
+        if (clerkText) {
+          // Handle multiple clerks
+          if (clerkText.includes(',') || clerkText.includes('/')) {
+            assignment.clerks = clerkText
+              .split(/[,\/]/)
+              .map(name => name.trim())
+              .filter(name => name.length > 0);
+          } else {
+            assignment.clerks = [clerkText];
+          }
+          console.info(`Found clerks: ${JSON.stringify(assignment.clerks)}`);
         }
       }
       
-      if (hasData) {
+      // Only add if we have the minimum required data (part and justice)
+      if (assignment.part && assignment.justice) {
         assignments.push(assignment);
       }
     }
     
+    console.info(`Found ${assignments.length} assignments using table extraction`);
     return assignments;
   } catch (error) {
     console.error("Error in extractAssignmentsByTable:", error);
@@ -1022,61 +1126,37 @@ export function extractAssignmentsByStructure(text: string): TermAssignment[] {
 }
 
 /**
- * Extract part assignments from PDF text using multiple strategies
+ * Combined parser that chooses the best extraction method based on document structure
  * @param text The extracted PDF text
- * @returns Array of assignments and the method used
+ * @returns Object with assignments and the method used
  */
-export function parseAssignmentsFromText(text: string): { 
-  assignments: TermAssignment[],
-  method: string
-} {
-  console.log("Beginning assignment parsing with text length:", text.length);
+export function parseAssignmentsFromText(text: string): { assignments: TermAssignment[], method: string } {
+  console.info("Starting assignment extraction from text");
   
-  try {
-    // Try multiple extraction methods and use the one that produces the best results
-    const strategies = [
-      { name: 'Pattern Matching', fn: extractAssignmentsByPattern },
-      { name: 'Table Format', fn: extractAssignmentsByTable },
-      { name: 'Structural Pattern', fn: extractAssignmentsByStructure }
-    ];
-    
-    let bestResults: TermAssignment[] = [];
-    let bestResultCount = 0;
-    let bestMethod = '';
-    
-    // Try each extraction method
-    for (const strategy of strategies) {
-      console.info(`Trying extraction strategy: ${strategy.name}`);
-      const results = strategy.fn(text);
-      console.info(`${strategy.name} found ${results.length} assignments`);
-      
-      // Keep track of the strategy that finds the most assignments
-      if (results.length > bestResultCount) {
-        bestResults = results;
-        bestResultCount = results.length;
-        bestMethod = strategy.name;
-      }
-    }
-    
-    console.info(`Using results from ${bestMethod} strategy with ${bestResultCount} assignments`);
-    
-    // Validate and clean up the results
-    const validatedResults = bestResults.filter(assignment => {
-      // Must have at least a part or justice name
-      return assignment.part || assignment.justice;
-    });
-    
-    console.log(`Final validated results: ${validatedResults.length} assignments`);
-    return {
-      assignments: validatedResults,
-      method: bestMethod
-    };
-  } catch (error) {
-    console.error("Error parsing assignments:", error);
-    return {
-      assignments: [],
-      method: 'Error'
-    };
+  // Try table method first - it's more structured and reliable when it works
+  const tableAssignments = extractAssignmentsByTable(text);
+  
+  // If table extraction found a reasonable number, use it
+  if (tableAssignments.length > 5) {
+    console.info(`Using table extraction method: found ${tableAssignments.length} assignments`);
+    return { assignments: tableAssignments, method: "Table Structure" };
+  }
+  
+  // Otherwise fall back to pattern matching
+  const patternAssignments = extractAssignmentsByPattern(text);
+  
+  if (patternAssignments.length > 0) {
+    console.info(`Using pattern matching method: found ${patternAssignments.length} assignments`);
+    return { assignments: patternAssignments, method: "Pattern Matching" };
+  }
+  
+  // If both methods failed, return whichever found more (could be empty)
+  if (tableAssignments.length >= patternAssignments.length) {
+    console.info(`Defaulting to table results (${tableAssignments.length} items)`);
+    return { assignments: tableAssignments, method: "Table Structure (limited results)" };
+  } else {
+    console.info(`Defaulting to pattern results (${patternAssignments.length} items)`);
+    return { assignments: patternAssignments, method: "Pattern Matching (limited results)" };
   }
 }
 
