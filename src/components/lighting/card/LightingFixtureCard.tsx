@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { LightingFixture } from "@/components/lighting/types";
 import { CardFront } from "./CardFront";
@@ -23,7 +24,7 @@ export const LightingFixtureCard = ({
 
   return (
     <div 
-      className="relative w-full h-[300px]"
+      className="relative w-full h-[320px]"
       style={{ perspective: '1000px' }}
     >
       <div 
@@ -36,7 +37,7 @@ export const LightingFixtureCard = ({
       >
         {/* Front of card */}
         <div 
-          className="absolute w-full h-full"
+          className="absolute w-full h-full backface-hidden"
           style={{ backfaceVisibility: 'hidden' }}
         >
           <CardFront
@@ -51,7 +52,7 @@ export const LightingFixtureCard = ({
 
         {/* Back of card */}
         <div 
-          className="absolute w-full h-full [transform:rotateY(180deg)]"
+          className="absolute w-full h-full [transform:rotateY(180deg)] backface-hidden"
           style={{ backfaceVisibility: 'hidden' }}
         >
           <CardBack

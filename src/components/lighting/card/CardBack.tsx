@@ -1,124 +1,137 @@
-import { LightingFixture } from "@/components/lighting/types";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { format } from "date-fns";
-import { AlertTriangle, Zap, RotateCcw } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { LightingFixture } from "@/components/lighting/types";
+import { RotateCw, Clock, AlertCircle, Battery, CalendarClock } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface CardBackProps {
   fixture: LightingFixture;
-  onFlip: (e?: React.MouseEvent) => void;
+  onFlip: () => void;
 }
 
-export const CardBack = ({ fixture, onFlip }: CardBackProps) => {
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'functional':
-        return <Badge className="bg-green-100 text-green-800">Functional</Badge>;
-      case 'maintenance_needed':
-        return <Badge className="bg-yellow-100 text-yellow-800">Needs Maintenance</Badge>;
-      case 'non_functional':
-        return <Badge className="bg-red-100 text-red-800">Non-functional</Badge>;
-      default:
-        return <Badge variant="outline">{status.replace(/_/g, ' ')}</Badge>;
-    }
+export function CardBack({ fixture, onFlip }: CardBackProps) {
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return "Not set";
+    return new Date(dateString).toLocaleDateString();
+  };
+  
+  const hasElectricalIssues = () => {
+    if (!fixture.electrical_issues) return false;
+    return Object.values(fixture.electrical_issues).some(value => value === true);
+  };
+  
+  const formatMaintenanceHistory = (history: any[] | null | undefined) => {
+    if (!history || history.length === 0) return [];
+    return history.slice(0, 3).map((item) => ({
+      date: item.date ? formatDate(item.date) : "Unknown date",
+      type: item.type || "General maintenance",
+      notes: item.notes || "No notes"
+    }));
   };
 
   return (
-    <Card className="w-full h-full bg-card">
-      <CardContent className="p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-medium">Fixture History</h3>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              onFlip(e);
-            }}
-          >
-            <RotateCcw className="h-4 w-4" />
-          </Button>
+    <Card className="w-full h-full overflow-auto">
+      <div className="absolute top-4 right-4 z-10">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onFlip}
+        >
+          <RotateCw className="h-4 w-4" />
+        </Button>
+      </div>
+
+      <CardHeader className="pt-10 pb-2">
+        <h3 className="font-medium">Fixture Details</h3>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            Maintenance Schedule
+          </h4>
+          
+          <div className="grid grid-cols-2 gap-y-1 text-sm">
+            <div className="text-muted-foreground">Last Maintenance</div>
+            <div>{formatDate(fixture.last_maintenance_date)}</div>
+            
+            <div className="text-muted-foreground">Next Maintenance</div>
+            <div>{formatDate(fixture.next_maintenance_date)}</div>
+            
+            <div className="text-muted-foreground">Installation</div>
+            <div>{formatDate(fixture.installation_date)}</div>
+          </div>
         </div>
 
-        <ScrollArea className="h-[200px] pr-4">
-          <div className="space-y-4">
-            {/* Current Issues Section */}
-            {(fixture.electrical_issues?.short_circuit || 
-              fixture.electrical_issues?.wiring_issues || 
-              fixture.electrical_issues?.voltage_problems || 
-              fixture.ballast_issue) && (
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-red-500" />
-                  Current Issues
-                </h4>
-                <div className="space-y-1">
-                  {Object.entries(fixture.electrical_issues || {}).map(([issue, hasIssue]) => 
-                    hasIssue && (
-                      <div key={issue} className="flex items-center gap-2">
-                        <Zap className="h-3 w-3 text-yellow-500" />
-                        <span className="text-sm">{issue.replace(/_/g, ' ')}</span>
-                      </div>
-                    )
-                  )}
-                  {fixture.ballast_issue && (
-                    <div className="flex items-center gap-2">
-                      <Zap className="h-3 w-3 text-yellow-500" />
-                      <span className="text-sm">Ballast issue</span>
-                    </div>
-                  )}
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium flex items-center gap-2">
+            <AlertCircle className="h-4 w-4" />
+            Electrical Status
+          </h4>
+          
+          {hasElectricalIssues() ? (
+            <div className="space-y-1">
+              {fixture.electrical_issues?.short_circuit && (
+                <Badge variant="destructive" className="mr-1">Short Circuit</Badge>
+              )}
+              {fixture.electrical_issues?.wiring_issues && (
+                <Badge variant="destructive" className="mr-1">Wiring Issues</Badge>
+              )}
+              {fixture.electrical_issues?.voltage_problems && (
+                <Badge variant="destructive" className="mr-1">Voltage Problems</Badge>
+              )}
+            </div>
+          ) : (
+            <Badge variant="outline" className="bg-green-50 text-green-700">No Electrical Issues</Badge>
+          )}
+          
+          {fixture.ballast_issue && (
+            <div className="mt-2">
+              <Badge variant="destructive" className="mb-1">Ballast Issue</Badge>
+              {fixture.ballast_check_notes && (
+                <p className="text-xs text-muted-foreground">{fixture.ballast_check_notes}</p>
+              )}
+            </div>
+          )}
+        </div>
+        
+        {fixture.maintenance_history && fixture.maintenance_history.length > 0 && (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium flex items-center gap-2">
+              <CalendarClock className="h-4 w-4" />
+              Recent Maintenance
+            </h4>
+            
+            <div className="space-y-2">
+              {formatMaintenanceHistory(fixture.maintenance_history).map((item, idx) => (
+                <div key={idx} className="bg-muted p-2 rounded text-xs">
+                  <div className="flex justify-between">
+                    <span className="font-medium">{item.type}</span>
+                    <span>{item.date}</span>
+                  </div>
+                  {item.notes && <p className="text-muted-foreground mt-1">{item.notes}</p>}
                 </div>
-              </div>
-            )}
-
-            {/* Maintenance History Section */}
-            {fixture.maintenance_records && fixture.maintenance_records.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium">Maintenance History</h4>
-                <div className="space-y-2">
-                  {fixture.maintenance_records.map((record, index) => (
-                    <div key={index} className="text-sm space-y-1 border rounded-md p-2">
-                      <div className="flex justify-between">
-                        <span className="font-medium">{record.type}</span>
-                        <span className="text-muted-foreground">
-                          {format(new Date(record.date), 'MMM d, yyyy')}
-                        </span>
-                      </div>
-                      {record.notes && (
-                        <p className="text-muted-foreground">{record.notes}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Inspection History Section */}
-            {fixture.inspection_records && fixture.inspection_records.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium">Inspection History</h4>
-                <div className="space-y-2">
-                  {fixture.inspection_records.map((record, index) => (
-                    <div key={index} className="text-sm space-y-1 border rounded-md p-2">
-                      <div className="flex justify-between items-center">
-                        {getStatusBadge(record.status)}
-                        <span className="text-muted-foreground">
-                          {format(new Date(record.date), 'MMM d, yyyy')}
-                        </span>
-                      </div>
-                      {record.notes && (
-                        <p className="text-muted-foreground">{record.notes}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
+              ))}
+            </div>
+            
+            {fixture.maintenance_history?.length > 3 && (
+              <p className="text-xs text-muted-foreground">
+                + {fixture.maintenance_history.length - 3} more records
+              </p>
             )}
           </div>
-        </ScrollArea>
+        )}
+        
+        {fixture.maintenance_notes && (
+          <div className="space-y-1">
+            <h4 className="text-sm font-medium">Additional Notes</h4>
+            <p className="text-xs text-muted-foreground">{fixture.maintenance_notes}</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
-};
+}
