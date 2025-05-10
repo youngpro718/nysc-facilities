@@ -64,6 +64,7 @@ export function EditTermAssignmentDialog({
       phone: assignment.phone || "",
       tel_extension: assignment.tel_extension || "",
       sergeant_name: assignment.sergeant_name || "",
+      // Convert clerk_names array to comma-separated string for form input
       clerk_names: Array.isArray(assignment.clerk_names) ? assignment.clerk_names.join(", ") : "",
       fax: assignment.fax || "",
     },
