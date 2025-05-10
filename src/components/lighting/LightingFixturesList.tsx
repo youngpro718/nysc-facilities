@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useLightingFixtures } from "./hooks/useLightingFixtures";
 import { LightingFixtureCard } from "./card/LightingFixtureCard";
@@ -56,7 +55,7 @@ export function LightingFixturesList({ selectedBuilding = 'all', selectedFloor =
     refetch 
   } = useLightingFixtures();
 
-  // Fetch zones for filtering
+  // Fetch zones for filtering - Modified to fix the infinite type instantiation
   const { data: zones } = useQuery({
     queryKey: ['lighting-zones', selectedBuilding, selectedFloor],
     queryFn: async () => {
@@ -72,12 +71,12 @@ export function LightingFixturesList({ selectedBuilding = 'all', selectedFloor =
       
       const { data, error } = await query;
       if (error) throw error;
-      return data.map(zone => ({ 
+      return (data || []).map(zone => ({ 
         label: zone.name, 
         value: zone.id 
       }));
     },
-    enabled: !!selectedBuilding || !!selectedFloor
+    enabled: true // Changed from conditional logic that was causing the issue
   });
 
   // Reset selected fixtures when filters change
@@ -167,7 +166,7 @@ export function LightingFixturesList({ selectedBuilding = 'all', selectedFloor =
         <LightingFilters 
           filters={filters}
           onFilterChange={(newFilters) => setFilters({ ...filters, ...newFilters })}
-          zoneOptions={zones}
+          zoneOptions={zones || []}
         />
         
         <div className="flex justify-between items-center">
