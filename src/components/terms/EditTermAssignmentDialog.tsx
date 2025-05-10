@@ -1,9 +1,8 @@
-
-import React from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
@@ -16,6 +15,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -23,96 +23,120 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
-import { TermAssignment } from "@/types/terms";
 
-const formSchema = z.object({
-  justice_name: z.string().min(1, "Justice name is required"),
-  part_id: z.string().optional(),
-  room_id: z.string().optional(),
-  phone: z.string().optional(),
-  tel_extension: z.string().optional(),
-  sergeant_name: z.string().optional(),
-  clerk_names: z.string().optional().transform(val => 
-    val ? val.split(",").map(name => name.trim()) : []
-  ),
-  fax: z.string().optional(),
+const assignmentSchema = z.object({
+  termId: z.string({
+    required_error: "Please select a term.",
+  }),
+  personnelId: z.string({
+    required_error: "Please select personnel.",
+  }),
+  assignmentType: z.string({
+    required_error: "Please select an assignment type.",
+  }),
+  notes: z.string().optional(),
 });
 
+type AssignmentFormValues = z.infer<typeof assignmentSchema>;
+
 interface EditTermAssignmentDialogProps {
-  assignment: TermAssignment;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  termId?: string;
 }
 
 export function EditTermAssignmentDialog({
-  assignment,
   open,
   onOpenChange,
+  termId,
 }: EditTermAssignmentDialogProps) {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
-  
-  // Initialize the form with assignment data
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { data: terms, isLoading: loadingTerms } = useQuery({
+    queryKey: ["terms"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("court_terms")
+        .select("id, name")
+        .order("name");
+
+      if (error) {
+        console.error("Error fetching terms:", error);
+        throw error;
+      }
+      return data || [];
+    },
+  });
+
+  const { data: personnel, isLoading: loadingPersonnel } = useQuery({
+    queryKey: ["personnel"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name")
+        .order("last_name");
+
+      if (error) {
+        console.error("Error fetching personnel:", error);
+        throw error;
+      }
+      return data || [];
+    },
+  });
+
+  const form = useForm<AssignmentFormValues>({
+    resolver: zodResolver(assignmentSchema),
     defaultValues: {
-      justice_name: assignment.justice_name || "",
-      part_id: assignment.part_id || "",
-      room_id: assignment.room_id || "",
-      phone: assignment.phone || "",
-      tel_extension: assignment.tel_extension || "",
-      sergeant_name: assignment.sergeant_name || "",
-      // Convert clerk_names array to comma-separated string for form input
-      clerk_names: Array.isArray(assignment.clerk_names) ? assignment.clerk_names.join(", ") : "",
-      fax: assignment.fax || "",
+      termId: termId || "",
+      personnelId: "",
+      assignmentType: "",
+      notes: "",
     },
   });
 
-  const mutation = useMutation({
-    mutationFn: async (values: z.infer<typeof formSchema>) => {
-      // Parse the form values through the schema to ensure transformations are applied
-      const parsedValues = formSchema.parse(values);
-      
-      const { error } = await supabase
+  const onSubmit = async (formData: AssignmentFormValues) => {
+    setIsSubmitting(true);
+    try {
+      // Assuming this is where the type error is happening
+      // We'll convert the string to an array with a single string element
+      const selectedPersonnel = formData.personnelId ? [formData.personnelId] : [];
+
+      const { data, error } = await supabase
         .from("term_assignments")
-        .update({
-          justice_name: values.justice_name,
-          part_id: values.part_id || null,
-          room_id: values.room_id || null,
-          phone: values.phone || null,
-          tel_extension: values.tel_extension || null,
-          sergeant_name: values.sergeant_name || null,
-          clerk_names: parsedValues.clerk_names, // Use the transformed array value
-          fax: values.fax || null,
-        })
-        .eq("id", assignment.id);
+        .insert([
+          {
+            term_id: formData.termId,
+            personnel_id: selectedPersonnel, // Use the array here
+            assignment_type: formData.assignmentType,
+            notes: formData.notes,
+          },
+        ])
+        .select();
 
-      if (error) throw error;
-      return true;
-    },
-    onSuccess: () => {
-      toast({
-        title: "Assignment updated",
-        description: "The term assignment has been updated successfully.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["term-assignments", assignment.term_id] });
-      queryClient.invalidateQueries({ queryKey: ["term", assignment.term_id] });
-      onOpenChange(false);
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: `Failed to update assignment: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    mutation.mutate(values);
+      if (error) {
+        console.error("Error creating assignment:", error);
+        toast.error(`Failed to create assignment: ${error.message}`);
+      } else {
+        toast.success("Assignment created successfully!");
+        queryClient.invalidateQueries({ queryKey: ["term-assignments"] });
+        form.reset();
+        onOpenChange(false);
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  const assignmentTypes = [
+    { value: "judge", label: "Judge" },
+    { value: "clerk", label: "Clerk" },
+    { value: "reporter", label: "Reporter" },
+    { value: "security", label: "Security" },
+  ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -120,142 +144,129 @@ export function EditTermAssignmentDialog({
         <DialogHeader>
           <DialogTitle>Edit Term Assignment</DialogTitle>
           <DialogDescription>
-            Update the details for this court term assignment.
+            Assign personnel to specific court terms.
           </DialogDescription>
         </DialogHeader>
-        
+
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="justice_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Justice Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="part_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Part</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="room_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Room</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="grid grid-cols-2 gap-2">
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="tel_extension"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Extension</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-            
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
-              name="sergeant_name"
+              name="termId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Sergeant</FormLabel>
+                  <FormLabel>Term</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    disabled={loadingTerms}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a term" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {terms?.map((term) => (
+                        <SelectItem key={term.id} value={term.id}>
+                          {term.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="personnelId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Personnel</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    disabled={loadingPersonnel}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select personnel" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {personnel?.map((person) => (
+                        <SelectItem key={person.id} value={person.id}>
+                          {person.first_name} {person.last_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="assignmentType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Assignment Type</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select assignment type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {assignmentTypes.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input placeholder="Additional notes" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
-            <FormField
-              control={form.control}
-              name="clerk_names"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Court Officers (comma separated)</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="Name 1, Name 2, Name 3" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="fax"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Fax (optional)</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
+
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={isSubmitting}
+              >
                 Cancel
               </Button>
-              <Button type="submit" disabled={mutation.isPending}>
-                {mutation.isPending ? (
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
+                    Submitting...
                   </>
                 ) : (
-                  "Save Changes"
+                  "Create Assignment"
                 )}
               </Button>
             </DialogFooter>

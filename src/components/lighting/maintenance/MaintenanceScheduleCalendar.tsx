@@ -7,6 +7,14 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 
+// Define the proper type for the DayContent props
+interface DayContentProps {
+  date: Date;
+  activeMonth?: Date;
+  selected?: boolean;
+  disabled?: boolean;
+}
+
 export function MaintenanceScheduleCalendar() {
   const [date, setDate] = useState<Date | undefined>(new Date());
   
@@ -82,12 +90,14 @@ export function MaintenanceScheduleCalendar() {
   
   // Function to render custom day contents for the calendar
   const getDayClass = (day: Date) => {
+    if (!day || !maintenanceEvents) return "";
+    
     const dayString = day.toDateString();
-    const hasEvents = maintenanceEvents?.has(dayString);
+    const hasEvents = maintenanceEvents.has(dayString);
     
     if (!hasEvents) return "";
     
-    const events = maintenanceEvents?.get(dayString);
+    const events = maintenanceEvents.get(dayString);
     if (events?.hasHighPriority) {
       return "bg-red-100 text-red-800";
     }
@@ -102,7 +112,7 @@ export function MaintenanceScheduleCalendar() {
           mode="single"
           selected={date}
           onSelect={setDate}
-          className="rounded-md border"
+          className="rounded-md border pointer-events-auto"
           modifiersClassNames={{
             selected: "bg-primary text-primary-foreground",
           }}
@@ -115,14 +125,16 @@ export function MaintenanceScheduleCalendar() {
             booked: { border: '2px solid var(--primary)' },
           }}
           components={{
-            DayContent: ({ day }) => {
-              const dayString = day.toDateString();
-              const dayClass = getDayClass(day);
+            DayContent: ({ date: dayDate }: DayContentProps) => {
+              if (!dayDate) return null;
+              
+              const dayString = dayDate.toDateString();
+              const dayClass = getDayClass(dayDate);
               const events = maintenanceEvents?.get(dayString);
               
               return (
                 <div className="relative w-full h-full flex items-center justify-center">
-                  {day.getDate()}
+                  {dayDate.getDate()}
                   {events?.count > 0 && (
                     <span className={`absolute bottom-1 right-1 w-2 h-2 rounded-full ${events?.hasHighPriority ? 'bg-red-500' : 'bg-blue-500'}`} />
                   )}
