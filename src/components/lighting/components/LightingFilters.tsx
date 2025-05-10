@@ -1,273 +1,216 @@
 
 import { useState } from "react";
+import { 
+  Search,
+  SlidersHorizontal,
+  X
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuCheckboxItem,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Search, 
-  Lightbulb, 
-  AlertCircle,
-  Layers,
-  X,
-  SlidersHorizontal 
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
-interface FiltersState {
-  search: string;
-  type: string;
-  status: string;
-  zone_id: string;
-  technology: string | null;
+interface FilterOption {
+  label: string;
+  value: string;
 }
 
 interface LightingFiltersProps {
-  filters: FiltersState;
-  onFilterChange: (newFilters: Partial<FiltersState>) => void;
-  zoneOptions?: { label: string; value: string }[];
+  filters: {
+    search: string;
+    type: string;
+    status: string;
+    zone_id: string;
+    technology: string | null;
+  };
+  onFilterChange: (filters: Partial<{
+    search: string;
+    type: string;
+    status: string;
+    zone_id: string;
+    technology: string | null;
+  }>) => void;
+  zoneOptions?: FilterOption[];
 }
 
-export function LightingFilters({ 
-  filters, 
-  onFilterChange,
-  zoneOptions = []
-}: LightingFiltersProps) {
-  const [expanded, setExpanded] = useState(false);
-  
+export function LightingFilters({ filters, onFilterChange, zoneOptions = [] }: LightingFiltersProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
   const typeOptions = [
     { label: "All Types", value: "all" },
     { label: "Standard", value: "standard" },
     { label: "Emergency", value: "emergency" },
-    { label: "Motion Sensor", value: "motion_sensor" }
+    { label: "Motion Sensor", value: "motion_sensor" },
   ];
-  
+
   const statusOptions = [
     { label: "All Statuses", value: "all" },
     { label: "Functional", value: "functional" },
     { label: "Needs Maintenance", value: "maintenance_needed" },
     { label: "Non-functional", value: "non_functional" },
     { label: "Pending Maintenance", value: "pending_maintenance" },
-    { label: "Scheduled Replacement", value: "scheduled_replacement" }
+    { label: "Scheduled Replacement", value: "scheduled_replacement" },
   ];
-  
+
   const technologyOptions = [
     { label: "All Technologies", value: "all" },
     { label: "LED", value: "LED" },
     { label: "Fluorescent", value: "Fluorescent" },
-    { label: "Bulb", value: "Bulb" }
+    { label: "Bulb", value: "Bulb" },
   ];
-  
-  // Prepare array of active filters for badges
-  const activeFilters = [];
-  if (filters.type !== "all") {
-    activeFilters.push({
-      key: "type",
-      label: typeOptions.find(o => o.value === filters.type)?.label || filters.type,
-    });
-  }
-  
-  if (filters.status !== "all") {
-    activeFilters.push({
-      key: "status",
-      label: statusOptions.find(o => o.value === filters.status)?.label || filters.status,
-    });
-  }
-  
-  if (filters.zone_id !== "all") {
-    const zoneLabel = filters.zone_id === "unassigned" ? "Unassigned" : 
-      zoneOptions.find(o => o.value === filters.zone_id)?.label || "Selected Zone";
-    activeFilters.push({
-      key: "zone_id",
-      label: zoneLabel,
-    });
-  }
-  
-  if (filters.technology && filters.technology !== "all") {
-    activeFilters.push({
-      key: "technology",
-      label: technologyOptions.find(o => o.value === filters.technology)?.label || filters.technology,
-    });
-  }
 
-  // Handle clearing individual filters
-  const clearFilter = (key: string) => {
-    onFilterChange({ [key]: key === "zone_id" ? "all" : key === "technology" ? "all" : "all" });
-  };
+  const allZoneOptions = [
+    { label: "All Zones", value: "all" },
+    { label: "Unassigned", value: "unassigned" },
+    ...(zoneOptions || [])
+  ];
 
-  // Handle clearing all filters
-  const clearAllFilters = () => {
+  const handleReset = () => {
     onFilterChange({
+      search: "",
       type: "all",
       status: "all",
       zone_id: "all",
-      technology: "all",
-      search: ""
+      technology: null,
     });
+    setIsOpen(false);
   };
 
+  const activeFilterCount = [
+    filters.type !== "all" ? 1 : 0,
+    filters.status !== "all" ? 1 : 0,
+    filters.zone_id !== "all" ? 1 : 0,
+    filters.technology !== "all" && filters.technology !== null ? 1 : 0,
+  ].reduce((a, b) => a + b, 0);
+
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search fixtures..."
-            className="pl-8"
-            value={filters.search}
-            onChange={(e) => onFilterChange({ search: e.target.value })}
-          />
-        </div>
-        
-        <div className="flex gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="flex items-center gap-2">
-                <Lightbulb className="h-4 w-4" />
-                <span>Type</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Fixture Type</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {typeOptions.map((option) => (
-                <DropdownMenuCheckboxItem
-                  key={option.value}
-                  checked={filters.type === option.value}
-                  onCheckedChange={() => onFilterChange({ type: option.value })}
-                >
-                  {option.label}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="flex items-center gap-2">
-                <AlertCircle className="h-4 w-4" />
-                <span>Status</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Fixture Status</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {statusOptions.map((option) => (
-                <DropdownMenuCheckboxItem
-                  key={option.value}
-                  checked={filters.status === option.value}
-                  onCheckedChange={() => onFilterChange({ status: option.value })}
-                >
-                  {option.label}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="flex items-center gap-2">
-                <Layers className="h-4 w-4" />
-                <span>Zone</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Zone Filter</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuCheckboxItem 
-                checked={filters.zone_id === "all"}
-                onCheckedChange={() => onFilterChange({ zone_id: "all" })}
-              >
-                All Zones
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem 
-                checked={filters.zone_id === "unassigned"}
-                onCheckedChange={() => onFilterChange({ zone_id: "unassigned" })}
-              >
-                Unassigned
-              </DropdownMenuCheckboxItem>
-              {zoneOptions.map((option) => (
-                <DropdownMenuCheckboxItem 
-                  key={option.value}
-                  checked={filters.zone_id === option.value}
-                  onCheckedChange={() => onFilterChange({ zone_id: option.value })}
-                >
-                  {option.label}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          <Button 
-            variant={expanded ? "default" : "outline"}
+    <div className="flex flex-col gap-4 sm:flex-row">
+      <div className="relative flex-grow">
+        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search fixtures..."
+          className="pl-8"
+          value={filters.search}
+          onChange={(e) => onFilterChange({ search: e.target.value })}
+        />
+        {filters.search && (
+          <Button
+            variant="ghost"
             size="sm"
-            onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-2"
+            className="absolute right-0 top-0 h-full px-3"
+            onClick={() => onFilterChange({ search: "" })}
           >
-            <SlidersHorizontal className="h-4 w-4" />
-            <span className="hidden sm:inline">More Filters</span>
+            <X className="h-4 w-4" />
           </Button>
-        </div>
+        )}
       </div>
       
-      {expanded && (
-        <div className="flex flex-wrap gap-2 pt-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">Technology</Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              {technologyOptions.map((option) => (
-                <DropdownMenuCheckboxItem
-                  key={option.value}
-                  checked={filters.technology === option.value}
-                  onCheckedChange={() => onFilterChange({ technology: option.value === "all" ? null : option.value })}
-                >
-                  {option.label}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      )}
-      
-      {activeFilters.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          {activeFilters.map((filter) => (
-            <Badge 
-              key={filter.key} 
-              variant="secondary"
-              className="flex items-center gap-1 px-2 py-1"
-            >
-              {filter.label}
-              <button
-                onClick={() => clearFilter(filter.key)}
-                className="ml-1 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          ))}
-          
-          {activeFilters.length > 1 && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={clearAllFilters}
-              className="text-xs h-7"
-            >
-              Clear all filters
+      <div className="flex gap-2">
+        <Select
+          value={filters.type}
+          onValueChange={(value) => onFilterChange({ type: value })}
+        >
+          <SelectTrigger className="w-[130px]">
+            <SelectValue placeholder="Type" />
+          </SelectTrigger>
+          <SelectContent>
+            {typeOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={filters.status}
+          onValueChange={(value) => onFilterChange({ status: value })}
+        >
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            {statusOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Popover open={isOpen} onOpenChange={setIsOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="flex items-center gap-1">
+              <SlidersHorizontal className="h-4 w-4" />
+              <span>More Filters</span>
+              {activeFilterCount > 0 && (
+                <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                  {activeFilterCount}
+                </span>
+              )}
             </Button>
-          )}
-        </div>
-      )}
+          </PopoverTrigger>
+          <PopoverContent className="w-80" align="end">
+            <div className="grid gap-4">
+              <div className="space-y-2">
+                <h4 className="font-medium">Zone</h4>
+                <Select
+                  value={filters.zone_id}
+                  onValueChange={(value) => onFilterChange({ zone_id: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select zone" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allZoneOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-medium">Technology</h4>
+                <Select
+                  value={filters.technology || "all"}
+                  onValueChange={(value) => onFilterChange({ 
+                    technology: value === "all" ? null : value 
+                  })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select technology" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {technologyOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex justify-end">
+                <Button variant="outline" onClick={handleReset}>
+                  Reset Filters
+                </Button>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
     </div>
   );
 }

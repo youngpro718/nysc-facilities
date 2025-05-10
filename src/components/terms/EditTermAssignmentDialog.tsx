@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -63,7 +64,7 @@ export function EditTermAssignmentDialog({
       phone: assignment.phone || "",
       tel_extension: assignment.tel_extension || "",
       sergeant_name: assignment.sergeant_name || "",
-      clerk_names: assignment.clerk_names ? assignment.clerk_names.join(", ") : "",
+      clerk_names: Array.isArray(assignment.clerk_names) ? assignment.clerk_names.join(", ") : "",
       fax: assignment.fax || "",
     },
   });

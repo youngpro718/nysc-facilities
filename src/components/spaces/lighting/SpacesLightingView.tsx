@@ -1,7 +1,8 @@
+
 import { Button } from "@/components/ui/button";
 import { CreateZoneDialog } from "../../../components/lighting/CreateZoneDialog";
 import { LightingZonesList } from "../../../components/lighting/LightingZonesList";
-import LightingFixturesList from "../../../components/lighting/LightingFixturesList";
+import { LightingFixturesList } from "../../../components/lighting/LightingFixturesList";
 import { MaintenanceView } from "../../../components/lighting/MaintenanceView";
 import {
   Tabs,

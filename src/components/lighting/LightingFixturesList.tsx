@@ -308,3 +308,6 @@ export function LightingFixturesList({ selectedBuilding, selectedFloor }: Lighti
     </div>
   );
 }
+
+// Export as named and default export to support both import styles
+export default LightingFixturesList;

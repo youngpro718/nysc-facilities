@@ -2,9 +2,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LightingDashboard } from "./LightingDashboard";
+import { LightingDashboard } from "./dashboard/LightingDashboard";
 import { CreateLightingDialog } from "./CreateLightingDialog";
-import LightingFixturesList from "./LightingFixturesList";
+import { LightingFixturesList } from "./LightingFixturesList";
 import { LightingZonesList } from "./LightingZonesList";
 import { Lightbulb, LayoutGrid } from "lucide-react";
 

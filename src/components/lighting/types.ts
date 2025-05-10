@@ -1,3 +1,4 @@
+
 export type LightStatus = 'functional' | 'maintenance_needed' | 'non_functional' | 'pending_maintenance' | 'scheduled_replacement';
 export type LightingType = 'standard' | 'emergency' | 'motion_sensor';
 export type LightingTechnology = 'LED' | 'Fluorescent' | 'Bulb' | null;
@@ -66,6 +67,12 @@ export interface LightingFixture {
   spatial_assignment?: SpatialAssignment;
   maintenance_records?: MaintenanceRecord[];
   inspection_records?: InspectionRecord[];
+  
+  // Adding missing properties
+  last_maintenance_date?: string | null;
+  next_maintenance_date?: string | null;
+  installation_date?: string | null;
+  building_id?: string | null;
 }
 
 export interface RoomLightingConfig {
