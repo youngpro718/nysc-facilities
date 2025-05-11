@@ -17,7 +17,7 @@ export const LightingFilters = ({ onFilterChange, showLightingFilters }: Lightin
         placeholder="Lighting type"
         onValueChange={(value) => 
           onFilterChange({ 
-            lightingType: value as IssueFilters['lightingType'] 
+            lightingType: value === "" ? undefined : value as IssueFilters['lightingType'] 
           })
         }
         options={lightingTypeOptions}
@@ -27,7 +27,7 @@ export const LightingFilters = ({ onFilterChange, showLightingFilters }: Lightin
         placeholder="Fixture status"
         onValueChange={(value) => 
           onFilterChange({ 
-            fixtureStatus: value as IssueFilters['fixtureStatus'] 
+            fixtureStatus: value === "" ? undefined : value as IssueFilters['fixtureStatus'] 
           })
         }
         options={fixtureStatusOptions}
@@ -37,7 +37,7 @@ export const LightingFilters = ({ onFilterChange, showLightingFilters }: Lightin
         placeholder="Electrical issue"
         onValueChange={(value) => 
           onFilterChange({ 
-            electricalIssue: value as IssueFilters['electricalIssue'] 
+            electricalIssue: value === "" ? undefined : value as IssueFilters['electricalIssue'] 
           })
         }
         options={electricalIssueOptions}

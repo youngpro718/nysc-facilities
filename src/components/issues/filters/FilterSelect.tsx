@@ -25,7 +25,11 @@ export const FilterSelect = ({
   return (
     <div className={cn("flex items-center gap-2", fullWidth && "w-full", className)}>
       {Icon && <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />}
-      <Select onValueChange={onValueChange} value={value}>
+      <Select 
+        onValueChange={onValueChange} 
+        value={value}
+        defaultValue={options[0]?.value}
+      >
         <SelectTrigger className={cn("h-9", fullWidth ? "w-full" : "w-[180px]")}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>

@@ -63,7 +63,7 @@ export function LightingFixturesList({ selectedBuilding = 'all', selectedFloor =
   } = useLightingFixtures();
 
   // Fetch zones using useQuery with explicitly typed return
-  const { data: zones = [] } = useQuery<ZoneOption[]>({
+  const { data: zonesData = [] } = useQuery<Array<{id: string, name: string}>>({
     queryKey: ['lighting-zones', selectedBuilding, selectedFloor],
     queryFn: async () => {
       try {
@@ -81,16 +81,19 @@ export function LightingFixturesList({ selectedBuilding = 'all', selectedFloor =
         
         if (error) throw error;
         
-        return (data || []).map(zone => ({ 
-          label: zone.name, 
-          value: zone.id 
-        }));
+        return data || [];
       } catch (error) {
         console.error('Error fetching lighting zones:', error);
         return [];
       }
     }
   });
+  
+  // Transform the raw zone data into the format expected by the components
+  const zones: ZoneOption[] = zonesData.map(zone => ({
+    label: zone.name,
+    value: zone.id
+  }));
 
   // Reset selected fixtures when filters change
   useEffect(() => {
