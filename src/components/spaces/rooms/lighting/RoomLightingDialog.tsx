@@ -20,6 +20,7 @@ import { roomLightingSchema, type RoomLightingFormData } from "./schemas/roomLig
 import { BasicConfigSection } from "./form-sections/BasicConfigSection";
 import { AdditionalSettingsSection } from "./form-sections/AdditionalSettingsSection";
 import { ElectricalIssuesSection } from "./form-sections/ElectricalIssuesSection";
+import { LightingTechnology } from "@/components/lighting/types";
 
 interface RoomLightingDialogProps {
   roomId: string;
@@ -45,7 +46,7 @@ export function RoomLightingDialog({ roomId, fixture }: RoomLightingDialogProps)
       status: fixture?.status || 'functional',
       position: fixture?.position || 'ceiling',
       space_type: fixture?.space_type || 'room',
-      technology: (fixture?.technology || 'LED') as LightingTechnology,
+      technology: fixture?.technology || 'LED',
       bulb_count: fixture?.bulb_count || 1,
       electrical_issues: fixture?.electrical_issues || {
         short_circuit: false,
@@ -61,6 +62,11 @@ export function RoomLightingDialog({ roomId, fixture }: RoomLightingDialogProps)
 
   const onSubmit = async (data: RoomLightingFormData) => {
     try {
+      // Convert lowercase technology values to uppercase if needed
+      let normalizedTechnology = data.technology;
+      if (normalizedTechnology === "led") normalizedTechnology = "LED";
+      if (normalizedTechnology === "fluorescent") normalizedTechnology = "Fluorescent";
+      
       const fixtureData = {
         name: data.name,
         type: data.lighting_type,
@@ -70,7 +76,7 @@ export function RoomLightingDialog({ roomId, fixture }: RoomLightingDialogProps)
         space_id: roomId,
         space_type: data.space_type,
         position: data.position,
-        technology: data.technology,
+        technology: normalizedTechnology,
         electrical_issues: data.electrical_issues,
         ballast_issue: data.ballast_issue,
         ballast_check_notes: data.ballast_check_notes,

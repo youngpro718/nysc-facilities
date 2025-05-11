@@ -149,13 +149,18 @@ export async function fetchLightingZones(buildingId?: string, floorId?: string) 
  * Create a new lighting fixture
  */
 export async function createLightingFixture(data: LightingFixtureFormData) {
+  // First normalize technology values
+  let normalizedTechnology = data.technology;
+  if (normalizedTechnology === "led") normalizedTechnology = "LED";
+  if (normalizedTechnology === "fluorescent") normalizedTechnology = "Fluorescent";
+
   // First create the fixture
   const { data: fixture, error: fixtureError } = await supabase
     .from('lighting_fixtures')
     .insert({
       name: data.name,
       type: data.type,
-      technology: data.technology,
+      technology: normalizedTechnology,
       bulb_count: data.bulb_count,
       status: data.status,
       electrical_issues: data.electrical_issues,

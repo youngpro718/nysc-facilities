@@ -1,6 +1,6 @@
 
 import * as z from "zod";
-import { LightingType, LightingTechnology, LightStatus, LightingPosition } from "@/types/lighting";
+import { LightingPosition, LightingType, LightStatus } from "@/types/lighting";
 
 export const roomLightingSchema = z.object({
   room_id: z.string().uuid(),
