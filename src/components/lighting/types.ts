@@ -1,7 +1,7 @@
 
 export type LightStatus = 'functional' | 'maintenance_needed' | 'non_functional' | 'pending_maintenance' | 'scheduled_replacement';
-export type LightingType = 'standard' | 'emergency' | 'motion_sensor';
-export type LightingTechnology = 'LED' | 'Fluorescent' | 'Bulb' | null;
+export type LightingType = 'standard' | 'emergency' | 'exit_sign' | 'decorative' | 'motion_sensor';
+export type LightingTechnology = 'LED' | 'Fluorescent' | 'Bulb' | 'led' | 'fluorescent' | 'incandescent' | 'halogen' | 'metal_halide' | null;
 export type LightingPosition = 'ceiling' | 'wall' | 'floor' | 'desk';
 export type SpaceType = 'room' | 'hallway';
 

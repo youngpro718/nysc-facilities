@@ -5,7 +5,7 @@ import { LightingFilters } from "./components/LightingFilters";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { LightStatus, LightingType } from "./types";
+import { LightStatus, LightingType } from "@/types/lighting";
 import { 
   Check,
   Filter, 
@@ -61,7 +61,7 @@ export function LightingFixturesList({ selectedBuilding = 'all', selectedFloor =
     refetch 
   } = useLightingFixtures();
 
-  // Fix the TypeScript error by using a simpler query return type
+  // Fix the ZoneOption type to avoid excessive type instantiation
   const { data: zones } = useQuery({
     queryKey: ['lighting-zones', selectedBuilding, selectedFloor],
     queryFn: async () => {
@@ -80,13 +80,10 @@ export function LightingFixturesList({ selectedBuilding = 'all', selectedFloor =
         
         if (error) throw error;
         
-        // Explicitly type the return value
-        const zoneOptions: ZoneOption[] = (data || []).map(zone => ({ 
+        return (data || []).map(zone => ({ 
           label: zone.name, 
           value: zone.id 
-        }));
-        
-        return zoneOptions;
+        })) as ZoneOption[];
       } catch (error) {
         console.error('Error fetching lighting zones:', error);
         return [] as ZoneOption[];

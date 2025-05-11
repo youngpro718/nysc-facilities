@@ -31,8 +31,8 @@ export async function fetchLightingFixtures() {
   return (rawFixtures || []).map((raw): LightingFixture => ({
     id: raw.id,
     name: raw.name || '',
-    type: raw.type as LightingType || 'standard',
-    status: raw.status as LightStatus || 'functional',
+    type: raw.type || 'standard',
+    status: raw.status || 'functional',
     zone_name: null,
     building_name: raw.spaces?.floors?.buildings?.name || null,
     floor_name: raw.spaces?.floors?.name || null,
@@ -152,7 +152,7 @@ export async function createLightingFixture(data: LightingFixtureFormData) {
   // First create the fixture
   const { data: fixture, error: fixtureError } = await supabase
     .from('lighting_fixtures')
-    .insert([{
+    .insert({
       name: data.name,
       type: data.type,
       technology: data.technology,
@@ -163,7 +163,7 @@ export async function createLightingFixture(data: LightingFixtureFormData) {
       maintenance_notes: data.maintenance_notes,
       ballast_check_notes: data.ballast_check_notes,
       zone_id: data.zone_id || null
-    }])
+    })
     .select()
     .single();
 
