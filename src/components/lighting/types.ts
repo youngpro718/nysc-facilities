@@ -1,7 +1,7 @@
 
 export type LightStatus = 'functional' | 'maintenance_needed' | 'non_functional' | 'pending_maintenance' | 'scheduled_replacement';
 export type LightingType = 'standard' | 'emergency' | 'exit_sign' | 'decorative' | 'motion_sensor';
-export type LightingTechnology = 'LED' | 'Fluorescent' | 'Bulb' | 'led' | 'fluorescent' | 'incandescent' | 'halogen' | 'metal_halide' | null;
+export type LightingTechnology = 'LED' | 'Fluorescent' | 'Bulb';
 export type LightingPosition = 'ceiling' | 'wall' | 'floor' | 'desk';
 export type SpaceType = 'room' | 'hallway';
 
@@ -51,7 +51,7 @@ export interface LightingFixture {
   zone_id?: string | null;
   space_name?: string | null;
   room_number?: string | null;
-  technology: LightingTechnology;
+  technology: LightingTechnology | null;
   maintenance_notes?: string | null;
   created_at?: string | null;
   updated_at?: string | null;

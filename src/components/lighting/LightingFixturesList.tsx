@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useLightingFixtures } from "./hooks/useLightingFixtures";
 import { LightingFixtureCard } from "./card/LightingFixtureCard";
@@ -35,7 +36,7 @@ interface LightingFixturesListProps {
   selectedFloor?: string;
 }
 
-// Define the zone option type separately without nesting it
+// Define the zone option type separately to avoid deep nesting
 interface ZoneOption {
   label: string;
   value: string;

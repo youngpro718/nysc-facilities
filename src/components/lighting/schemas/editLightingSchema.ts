@@ -19,7 +19,6 @@ export const editLightingFormSchema = z.object({
   technology: z.enum([
     "LED", "Fluorescent", "Bulb"
   ]).nullable(),
-  maintenance_priority: z.enum(["low", "medium", "high"]).nullable(),
   maintenance_notes: z.string().nullable(),
   bulb_count: z.number().min(1),
   electrical_issues: z.object({

@@ -1,3 +1,4 @@
+
 export type LightStatus = 'functional' | 'non_functional' | 'maintenance_needed' | 'scheduled_replacement' | 'pending_maintenance';
 export type LightingType = 'standard' | 'emergency' | 'exit_sign' | 'decorative' | 'motion_sensor';
 export type LightingPosition = 'ceiling' | 'wall' | 'floor' | 'desk';
