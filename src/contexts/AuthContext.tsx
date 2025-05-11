@@ -1,4 +1,3 @@
-
 import { createContext, useContext, ReactNode, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
@@ -14,6 +13,7 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, userData: UserSignupData) => Promise<void>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
 }
@@ -26,6 +26,21 @@ export interface UserProfile {
   last_name: string;
   verification_status: 'pending' | 'verified' | 'rejected';
   avatar_url?: string;
+}
+
+// Define the shape of signup data
+export interface UserSignupData {
+  first_name: string;
+  last_name: string;
+  title?: string;
+  phone?: string;
+  department_id?: string;
+  court_position?: string;
+  emergency_contact?: {
+    name?: string;
+    phone?: string;
+    relationship?: string;
+  };
 }
 
 // Create the context with a default undefined value
@@ -166,6 +181,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Sign up function
+  const signUp = async (email: string, password: string, userData: UserSignupData) => {
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: userData.first_name,
+            last_name: userData.last_name,
+            title: userData.title || null,
+            phone: userData.phone || null,
+            department_id: userData.department_id || null,
+            court_position: userData.court_position || null,
+            emergency_contact: userData.emergency_contact || null,
+          }
+        }
+      });
+
+      if (error) throw error;
+      
+      toast.success('Account created successfully!', {
+        description: "Please check your email for verification instructions."
+      });
+      
+      // Navigate to verification pending page
+      setTimeout(() => {
+        navigate('/verification-pending');
+      }, 0);
+    } catch (error: any) {
+      console.error('Sign up error:', error);
+      
+      // Handle "User already registered" error specifically
+      if (error.message && error.message.includes("User already registered")) {
+        toast.error("This email is already registered", {
+          description: "Please sign in instead or use a different email address."
+        });
+      } else {
+        toast.error(error.message || 'Registration failed');
+      }
+      
+      throw error;
+    }
+  };
+
   // Sign out function
   const signOut = async () => {
     try {
@@ -268,6 +328,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated,
         isAdmin,
         signIn,
+        signUp,
         signOut,
         refreshSession
       }}

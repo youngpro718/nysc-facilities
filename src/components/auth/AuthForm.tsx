@@ -1,9 +1,11 @@
+
 import { useState, FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
+import { SignupForm } from "./SignupForm";
 
 export interface AuthFormProps {
   isLogin: boolean;
@@ -14,9 +16,9 @@ export function AuthForm({ isLogin, setIsLogin }: AuthFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { signIn, signUp } = useAuth();
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleLoginSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
 
@@ -25,12 +27,27 @@ export function AuthForm({ isLogin, setIsLogin }: AuthFormProps) {
       await signIn(email, password);
     } catch (error) {
       // Error is already handled in signIn
+    } finally {
       setLoading(false);
     }
   };
 
+  if (!isLogin) {
+    return (
+      <SignupForm
+        email={email}
+        setEmail={setEmail}
+        password={password}
+        setPassword={setPassword}
+        loading={loading}
+        setLoading={setLoading}
+        onToggleForm={() => setIsLogin(true)}
+      />
+    );
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 w-full">
+    <form onSubmit={handleLoginSubmit} className="space-y-4 w-full">
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
         <Input
@@ -66,18 +83,18 @@ export function AuthForm({ isLogin, setIsLogin }: AuthFormProps) {
             Signing in...
           </>
         ) : (
-          isLogin ? "Sign In" : "Create Account"
+          "Sign In"
         )}
       </Button>
 
       <div className="text-center text-sm">
         <button
           type="button"
-          onClick={() => setIsLogin(!isLogin)}
+          onClick={() => setIsLogin(false)}
           className="text-primary hover:underline"
           disabled={loading}
         >
-          {isLogin ? "Need an account? Sign up" : "Already have an account? Sign in"}
+          Need an account? Sign up
         </button>
       </div>
     </form>

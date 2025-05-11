@@ -55,7 +55,7 @@ export function LightingFixturesList({ selectedBuilding = 'all', selectedFloor =
     refetch 
   } = useLightingFixtures();
 
-  // Fetch zones for filtering - Modified to fix the infinite type instantiation
+  // Completely rewrite the useQuery for zones to fix the type instantiation issue
   const { data: zones } = useQuery({
     queryKey: ['lighting-zones', selectedBuilding, selectedFloor],
     queryFn: async () => {
@@ -75,8 +75,7 @@ export function LightingFixturesList({ selectedBuilding = 'all', selectedFloor =
         label: zone.name, 
         value: zone.id 
       }));
-    },
-    enabled: true // Changed from conditional logic that was causing the issue
+    }
   });
 
   // Reset selected fixtures when filters change

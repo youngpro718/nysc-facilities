@@ -6,8 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Mail, Lock, Building2, Loader2, User, Users, Phone, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth, UserSignupData } from "@/contexts/AuthContext";
 import { 
   Accordion, 
   AccordionContent, 
@@ -34,7 +34,7 @@ export const SignupForm = ({
   setLoading,
   onToggleForm,
 }: SignupFormProps) => {
-  const navigate = useNavigate();
+  const { signUp } = useAuth();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [title, setTitle] = useState("");
@@ -70,50 +70,19 @@ export const SignupForm = ({
     try {
       setLoading(true);
       
-      const { error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            first_name: firstName,
-            last_name: lastName,
-            title: title || null,
-            phone: phone || null,
-            department_id: departmentId || null,
-            court_position: courtPosition || null,
-            access_level: 'standard',
-            emergency_contact: Object.values(emergencyContact).some(Boolean) ? emergencyContact : null
-          }
-        }
-      });
-
-      if (signUpError) {
-        if (signUpError.message.includes("User already registered")) {
-          toast.error("This email is already registered", {
-            description: "Please sign in instead or use a different email address.",
-            action: {
-              label: "Sign In",
-              onClick: onToggleForm
-            }
-          });
-          return;
-        }
-        throw signUpError;
-      }
+      const userData: UserSignupData = {
+        first_name: firstName,
+        last_name: lastName,
+        title: title || undefined,
+        phone: phone || undefined,
+        department_id: departmentId || undefined,
+        court_position: courtPosition || undefined,
+        emergency_contact: Object.values(emergencyContact).some(Boolean) ? emergencyContact : undefined
+      };
       
-      navigate("/verification-pending");
-    } catch (error: any) {
-      console.error("Auth error:", error);
-      
-      let errorMessage = "Signup failed";
-      try {
-        const errorBody = JSON.parse(error.body);
-        errorMessage = errorBody.message || errorMessage;
-      } catch {
-        errorMessage = error.message || errorMessage;
-      }
-      
-      toast.error(errorMessage);
+      await signUp(email, password, userData);
+    } catch (error) {
+      // Error is already handled in signUp
     } finally {
       setLoading(false);
     }
