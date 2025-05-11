@@ -168,7 +168,7 @@ export async function fetchLightingZones(buildingId?: string, floorId?: string) 
 export async function createLightingFixture(data: LightingFixtureFormData) {
   try {
     // Create the fixture with proper type casting for database compatibility
-    const fixtureData = {
+    const fixtureData: Record<string, any> = {
       name: data.name,
       type: data.type,
       technology: data.technology,
@@ -188,7 +188,7 @@ export async function createLightingFixture(data: LightingFixtureFormData) {
     // Insert into the database using type assertion
     const { data: fixture, error: fixtureError } = await supabase
       .from('lighting_fixtures')
-      .insert(fixtureData as any) // Type assertion to avoid complex mapping
+      .insert(fixtureData)
       .select()
       .single();
 
