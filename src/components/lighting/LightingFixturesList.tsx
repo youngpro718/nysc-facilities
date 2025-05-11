@@ -36,7 +36,7 @@ interface LightingFixturesListProps {
   selectedFloor?: string;
 }
 
-// Define the zone option type separately to avoid deep nesting
+// Define the zone option type as a simple standalone interface
 interface ZoneOption {
   label: string;
   value: string;
@@ -62,8 +62,8 @@ export function LightingFixturesList({ selectedBuilding = 'all', selectedFloor =
     refetch 
   } = useLightingFixtures();
 
-  // Fetch zones using useQuery
-  const { data: zones } = useQuery({
+  // Fetch zones using useQuery with explicitly typed return
+  const { data: zones = [] } = useQuery<ZoneOption[]>({
     queryKey: ['lighting-zones', selectedBuilding, selectedFloor],
     queryFn: async () => {
       try {
@@ -84,10 +84,10 @@ export function LightingFixturesList({ selectedBuilding = 'all', selectedFloor =
         return (data || []).map(zone => ({ 
           label: zone.name, 
           value: zone.id 
-        })) as ZoneOption[];
+        }));
       } catch (error) {
         console.error('Error fetching lighting zones:', error);
-        return [] as ZoneOption[];
+        return [];
       }
     }
   });
@@ -179,7 +179,7 @@ export function LightingFixturesList({ selectedBuilding = 'all', selectedFloor =
         <LightingFilters 
           filters={filters}
           onFilterChange={(newFilters) => setFilters({ ...filters, ...newFilters })}
-          zoneOptions={zones || []}
+          zoneOptions={zones}
         />
         
         <div className="flex justify-between items-center">
