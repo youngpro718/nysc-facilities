@@ -62,8 +62,9 @@ export function RoomLightingDialog({ roomId, fixture }: RoomLightingDialogProps)
   const onSubmit = async (data: RoomLightingFormData) => {
     try {
       // Ensure technology is one of the accepted values
-      const normalizedTechnology = data.technology === "LED" ? "LED" : 
-                                   data.technology === "Fluorescent" ? "Fluorescent" : "Bulb";
+      let normalizedTechnology: "LED" | "Fluorescent" | "Bulb" = 
+        data.technology === "LED" || data.technology === "led" ? "LED" : 
+        data.technology === "Fluorescent" || data.technology === "fluorescent" ? "Fluorescent" : "Bulb";
       
       const fixtureData = {
         name: data.name,
@@ -84,14 +85,14 @@ export function RoomLightingDialog({ roomId, fixture }: RoomLightingDialogProps)
       if (fixture) {
         const { error } = await supabase
           .from('lighting_fixtures')
-          .update(fixtureData as any)
+          .update(fixtureData)
           .eq('id', fixture.id);
 
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('lighting_fixtures')
-          .insert([fixtureData as any]);
+          .insert([fixtureData]);
 
         if (error) throw error;
       }

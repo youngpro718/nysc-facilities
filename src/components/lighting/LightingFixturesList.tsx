@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useLightingFixtures } from "./hooks/useLightingFixtures";
 import { LightingFixtureCard } from "./card/LightingFixtureCard";
@@ -36,7 +35,7 @@ interface LightingFixturesListProps {
   selectedFloor?: string;
 }
 
-// Define a simple interface for zones to avoid excessive type instantiation
+// Simplified interface for zone options
 interface ZoneOption {
   label: string;
   value: string;

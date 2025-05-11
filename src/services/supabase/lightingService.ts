@@ -160,21 +160,24 @@ export async function createLightingFixture(data: LightingFixtureFormData) {
     normalizedTechnology = "Bulb";
   }
 
+  // Create the fixture with precise type annotation
+  const fixtureData = {
+    name: data.name,
+    type: data.type,
+    technology: normalizedTechnology,
+    bulb_count: data.bulb_count,
+    status: data.status,
+    electrical_issues: data.electrical_issues,
+    ballast_issue: data.ballast_issue,
+    maintenance_notes: data.maintenance_notes,
+    ballast_check_notes: data.ballast_check_notes,
+    zone_id: data.zone_id || null
+  };
+
   // First create the fixture
   const { data: fixture, error: fixtureError } = await supabase
     .from('lighting_fixtures')
-    .insert([{
-      name: data.name,
-      type: data.type,
-      technology: normalizedTechnology,
-      bulb_count: data.bulb_count,
-      status: data.status,
-      electrical_issues: data.electrical_issues,
-      ballast_issue: data.ballast_issue,
-      maintenance_notes: data.maintenance_notes,
-      ballast_check_notes: data.ballast_check_notes,
-      zone_id: data.zone_id || null
-    } as any])
+    .insert([fixtureData])
     .select()
     .single();
 

@@ -32,6 +32,7 @@ export function useEditLightingForm(
       space_type: fixture.space_type as 'room' | 'hallway',
       position: fixture.position as 'ceiling' | 'wall' | 'floor' | 'desk',
       zone_id: fixture.zone_id || null,
+      room_number: null, // Adding this field which is in the schema
     },
   });
 
@@ -92,8 +93,16 @@ export function useEditLightingForm(
 
   const onSubmit = async (data: EditLightingFormData) => {
     try {
-      // Normalize the technology value
-      let normalizedTechnology = data.technology;
+      // Normalize the technology value for database compatibility
+      let normalizedTechnology: "LED" | "Fluorescent" | "Bulb" | null = null;
+      
+      if (data.technology === "LED" || data.technology === "led") {
+        normalizedTechnology = "LED";
+      } else if (data.technology === "Fluorescent" || data.technology === "fluorescent") {
+        normalizedTechnology = "Fluorescent";
+      } else if (["Bulb", "incandescent", "halogen", "metal_halide"].includes(data.technology as string)) {
+        normalizedTechnology = "Bulb";
+      }
       
       // Make sure we're sending the exact fields the database expects
       const updateData = {
@@ -114,7 +123,7 @@ export function useEditLightingForm(
 
       const { error } = await supabase
         .from('lighting_fixtures')
-        .update(updateData as any)
+        .update(updateData)
         .eq('id', fixture.id);
 
       if (error) throw error;
