@@ -3,14 +3,14 @@ import { useState } from "react";
 import { useLightingFixtures } from "@/components/lighting/hooks/useLightingFixtures";
 import { LightingFixtureCard } from "@/components/lighting/card/LightingFixtureCard";
 import { LightingHeader } from "@/components/lighting/components/LightingHeader";
+import { LightingFixture } from "@/components/lighting/types";
 
-// Define simple interface to avoid deep type instantiation
-interface Fixture {
-  id: string;
-  [key: string]: any;
+interface LightingFixturesListProps {
+  selectedBuilding?: string;
+  selectedFloor?: string;
 }
 
-export const LightingFixturesList = () => {
+export const LightingFixturesList = ({ selectedBuilding, selectedFloor }: LightingFixturesListProps) => {
   const [selectedFixtures, setSelectedFixtures] = useState<string[]>([]);
   const { 
     fixtures, 
@@ -39,7 +39,7 @@ export const LightingFixturesList = () => {
     <div className="container mx-auto p-6">
       <LightingHeader 
         selectedFixtures={selectedFixtures}
-        fixtures={fixtures as Fixture[] | undefined}
+        fixtures={fixtures}
         onSelectAll={handleSelectAll}
         onBulkDelete={handleBulkDeleteAction}
         onFixtureCreated={refetch}

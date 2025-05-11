@@ -3,8 +3,14 @@ import { useState } from "react";
 import { useLightingFixtures } from "@/components/lighting/hooks/useLightingFixtures";
 import { LightingFixtureCard } from "@/components/lighting/card/LightingFixtureCard";
 import { LightingHeader } from "@/components/lighting/components/LightingHeader";
+import { LightingFixture } from "@/components/lighting/types";
 
-export const LightingFixturesList = () => {
+interface LightingFixturesListProps {
+  selectedBuilding?: string;
+  selectedFloor?: string;
+}
+
+export const LightingFixturesList = ({ selectedBuilding, selectedFloor }: LightingFixturesListProps) => {
   const [selectedFixtures, setSelectedFixtures] = useState<string[]>([]);
   const { 
     fixtures, 
