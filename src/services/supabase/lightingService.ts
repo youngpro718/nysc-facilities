@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { LightingFixture, LightStatus, LightingFixtureFormData, LightingZoneFormData } from '@/types/lighting';
+import { Json } from '@/types/supabase';
 
 /**
  * Fetch all lighting fixtures
@@ -167,21 +168,22 @@ export async function fetchLightingZones(buildingId?: string, floorId?: string) 
  */
 export async function createLightingFixture(data: LightingFixtureFormData) {
   try {
-    // Define the exact shape of the fixture data to prevent type issues
+    // Define the fixture data with explicit casting to string for enum values
+    // This ensures compatibility with Supabase's expected types
     const fixtureData = {
       name: data.name,
-      type: data.type,
-      technology: data.technology,
+      type: data.type as string, // Cast to string to match Supabase's expected type
+      technology: data.technology as string | null,
       bulb_count: data.bulb_count,
-      status: data.status,
-      electrical_issues: data.electrical_issues,
+      status: data.status as string,
+      electrical_issues: data.electrical_issues as unknown as Json,
       ballast_issue: data.ballast_issue,
       maintenance_notes: data.maintenance_notes,
       ballast_check_notes: data.ballast_check_notes,
       zone_id: data.zone_id || null,
       space_id: data.space_id,
-      space_type: data.space_type,
-      position: data.position,
+      space_type: data.space_type as string,
+      position: data.position as string,
       room_number: data.room_number
     };
 
