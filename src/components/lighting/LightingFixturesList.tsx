@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useLightingFixtures } from "./hooks/useLightingFixtures";
 import { LightingFixtureCard } from "./card/LightingFixtureCard";
@@ -36,6 +35,12 @@ interface LightingFixturesListProps {
   selectedFloor?: string;
 }
 
+// Define a simpler interface for zones to avoid deep type instantiation
+interface ZoneOption {
+  label: string;
+  value: string;
+}
+
 export function LightingFixturesList({ selectedBuilding = 'all', selectedFloor = 'all' }: LightingFixturesListProps) {
   const [selectedFixtures, setSelectedFixtures] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -56,7 +61,7 @@ export function LightingFixturesList({ selectedBuilding = 'all', selectedFloor =
     refetch 
   } = useLightingFixtures();
 
-  // Fix the TypeScript error by simplifying the query and removing the type instantiation issue
+  // Fix the TypeScript error by using a simpler query return type
   const { data: zones } = useQuery({
     queryKey: ['lighting-zones', selectedBuilding, selectedFloor],
     queryFn: async () => {
@@ -75,13 +80,16 @@ export function LightingFixturesList({ selectedBuilding = 'all', selectedFloor =
         
         if (error) throw error;
         
-        return (data || []).map(zone => ({ 
+        // Explicitly type the return value
+        const zoneOptions: ZoneOption[] = (data || []).map(zone => ({ 
           label: zone.name, 
           value: zone.id 
         }));
+        
+        return zoneOptions;
       } catch (error) {
         console.error('Error fetching lighting zones:', error);
-        return [];
+        return [] as ZoneOption[];
       }
     }
   });
@@ -124,8 +132,8 @@ export function LightingFixturesList({ selectedBuilding = 'all', selectedFloor =
     }
     
     // Apply search filter
-    if (filters.search && !fixture.name.toLowerCase().includes(filters.search.toLowerCase())) {
-      return false;
+    if (filters.search && fixture.name.toLowerCase().includes(filters.search.toLowerCase())) {
+      return true;
     }
     
     // Apply type filter
