@@ -36,7 +36,7 @@ interface LightingFixturesListProps {
   selectedFloor?: string;
 }
 
-// Define a simpler interface for zones to avoid deep type instantiation
+// Define a simple interface for zones to avoid excessive type instantiation
 interface ZoneOption {
   label: string;
   value: string;
@@ -62,7 +62,7 @@ export function LightingFixturesList({ selectedBuilding = 'all', selectedFloor =
     refetch 
   } = useLightingFixtures();
 
-  // Fix the ZoneOption type to avoid excessive type instantiation
+  // Use the simplified ZoneOption type to fix excessive instantiation
   const { data: zones } = useQuery({
     queryKey: ['lighting-zones', selectedBuilding, selectedFloor],
     queryFn: async () => {

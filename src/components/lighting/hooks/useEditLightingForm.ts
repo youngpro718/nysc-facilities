@@ -92,10 +92,13 @@ export function useEditLightingForm(
 
   const onSubmit = async (data: EditLightingFormData) => {
     try {
-      // Convert lowercase technology values to uppercase if needed
+      // Convert all lighting technology values to the accepted database values
       let normalizedTechnology = data.technology;
       if (normalizedTechnology === "led") normalizedTechnology = "LED";
       if (normalizedTechnology === "fluorescent") normalizedTechnology = "Fluorescent";
+      if (normalizedTechnology === "incandescent") normalizedTechnology = "Bulb";
+      if (normalizedTechnology === "halogen") normalizedTechnology = "Bulb";
+      if (normalizedTechnology === "metal_halide") normalizedTechnology = "Bulb";
       
       // Make sure we're sending the exact fields the database expects
       const updateData = {

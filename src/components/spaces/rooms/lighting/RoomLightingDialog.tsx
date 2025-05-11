@@ -62,10 +62,13 @@ export function RoomLightingDialog({ roomId, fixture }: RoomLightingDialogProps)
 
   const onSubmit = async (data: RoomLightingFormData) => {
     try {
-      // Convert lowercase technology values to uppercase if needed
+      // Convert lighting technology values to the accepted database values
       let normalizedTechnology = data.technology;
       if (normalizedTechnology === "led") normalizedTechnology = "LED";
       if (normalizedTechnology === "fluorescent") normalizedTechnology = "Fluorescent";
+      if (normalizedTechnology === "incandescent") normalizedTechnology = "Bulb";
+      if (normalizedTechnology === "halogen") normalizedTechnology = "Bulb";
+      if (normalizedTechnology === "metal_halide") normalizedTechnology = "Bulb";
       
       const fixtureData = {
         name: data.name,

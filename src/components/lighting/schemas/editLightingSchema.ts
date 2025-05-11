@@ -1,7 +1,8 @@
 
 import * as z from "zod";
-import { LightStatus, LightingType, LightingPosition, LightingTechnology } from "@/types/lighting";
+import { LightStatus, LightingType, LightingPosition } from "@/types/lighting";
 
+// Use a more explicit type definition for technology to match database constraints
 export const editLightingFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
   type: z.enum(["standard", "emergency", "exit_sign", "decorative", "motion_sensor"]),
@@ -16,7 +17,16 @@ export const editLightingFormSchema = z.object({
   space_type: z.enum(["room", "hallway"]),
   room_number: z.string().nullable(),
   position: z.enum(["ceiling", "wall", "floor", "desk"]),
-  technology: z.enum(["LED", "Fluorescent", "Bulb", "led", "fluorescent", "incandescent", "halogen", "metal_halide"]).nullable(),
+  technology: z.enum([
+    "LED", "Fluorescent", "Bulb", 
+    "led", "fluorescent", "incandescent", "halogen", "metal_halide"
+  ]).nullable().transform(val => {
+    // Normalize technology values during validation
+    if (val === "led") return "LED";
+    if (val === "fluorescent") return "Fluorescent";
+    if (val === "incandescent" || val === "halogen" || val === "metal_halide") return "Bulb";
+    return val;
+  }),
   maintenance_priority: z.enum(["low", "medium", "high"]).nullable(),
   maintenance_notes: z.string().nullable(),
   bulb_count: z.number().min(1),

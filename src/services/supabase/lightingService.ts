@@ -153,11 +153,14 @@ export async function createLightingFixture(data: LightingFixtureFormData) {
   let normalizedTechnology = data.technology;
   if (normalizedTechnology === "led") normalizedTechnology = "LED";
   if (normalizedTechnology === "fluorescent") normalizedTechnology = "Fluorescent";
+  if (normalizedTechnology === "incandescent") normalizedTechnology = "Bulb";
+  if (normalizedTechnology === "halogen") normalizedTechnology = "Bulb";
+  if (normalizedTechnology === "metal_halide") normalizedTechnology = "Bulb";
 
   // First create the fixture
   const { data: fixture, error: fixtureError } = await supabase
     .from('lighting_fixtures')
-    .insert({
+    .insert([{
       name: data.name,
       type: data.type,
       technology: normalizedTechnology,
@@ -168,7 +171,7 @@ export async function createLightingFixture(data: LightingFixtureFormData) {
       maintenance_notes: data.maintenance_notes,
       ballast_check_notes: data.ballast_check_notes,
       zone_id: data.zone_id || null
-    })
+    }])
     .select()
     .single();
 
