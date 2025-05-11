@@ -142,10 +142,6 @@ export async function extractTextFromPDF(pdfArrayBuffer: ArrayBuffer): Promise<s
 export function extractTermMetadata(text: string): ExtractedTermMetadata {
   const metadata: ExtractedTermMetadata = {
     confidence: {
-      termName: 0,
-      termNumber: 0,
-      location: 0,
-      dates: 0,
       overall: 0
     }
   };
@@ -775,7 +771,7 @@ export function extractAssignmentsByPattern(text: string): TermAssignment[] {
  * @param text The extracted PDF text
  * @returns Array of parsed assignments
  */
-export function extractAssignmentsByTable(text: string): TermAssignment[] {
+export function extractAssignmentsFromTable(text: string): TermAssignment[] {
   try {
     console.info("Starting table-based extraction");
     const lines = text.split(/\n/).map(line => line.trim()).filter(Boolean);
@@ -962,7 +958,7 @@ export function extractAssignmentsByTable(text: string): TermAssignment[] {
     console.info(`Found ${assignments.length} assignments using table extraction`);
     return assignments;
   } catch (error) {
-    console.error("Error in extractAssignmentsByTable:", error);
+    console.error("Error in extractAssignmentsFromTable:", error);
     return [];
   }
 }
@@ -1134,7 +1130,7 @@ export function parseAssignmentsFromText(text: string): { assignments: TermAssig
   console.info("Starting assignment extraction from text");
   
   // Try table method first - it's more structured and reliable when it works
-  const tableAssignments = extractAssignmentsByTable(text);
+  const tableAssignments = extractAssignmentsFromTable(text);
   
   // If table extraction found a reasonable number, use it
   if (tableAssignments.length > 5) {
