@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useLightingFixtures } from "./hooks/useLightingFixtures";
 import { LightingFixtureCard } from "./card/LightingFixtureCard";
@@ -325,5 +326,4 @@ export function LightingFixturesList({ selectedBuilding = 'all', selectedFloor =
   );
 }
 
-// Export as named and default export to support both import styles
 export default LightingFixturesList;

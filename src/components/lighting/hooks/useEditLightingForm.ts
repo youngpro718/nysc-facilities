@@ -30,7 +30,7 @@ export function useEditLightingForm(
       ballast_check_notes: fixture.ballast_check_notes || null,
       space_id: fixture.space_id!,
       space_type: fixture.space_type as 'room' | 'hallway',
-      position: fixture.position as 'ceiling' | 'wall' | 'floor',
+      position: fixture.position as 'ceiling' | 'wall' | 'floor' | 'desk',
       zone_id: fixture.zone_id || null,
     },
   });
@@ -92,9 +92,26 @@ export function useEditLightingForm(
 
   const onSubmit = async (data: EditLightingFormData) => {
     try {
+      // Make sure we're sending the exact fields the database expects
+      const updateData = {
+        name: data.name,
+        type: data.type,
+        status: data.status,
+        maintenance_notes: data.maintenance_notes,
+        bulb_count: data.bulb_count,
+        technology: data.technology,
+        electrical_issues: data.electrical_issues,
+        ballast_issue: data.ballast_issue,
+        ballast_check_notes: data.ballast_check_notes,
+        space_id: data.space_id,
+        space_type: data.space_type,
+        position: data.position,
+        zone_id: data.zone_id
+      };
+
       const { error } = await supabase
         .from('lighting_fixtures')
-        .update(data)
+        .update(updateData)
         .eq('id', fixture.id);
 
       if (error) throw error;
