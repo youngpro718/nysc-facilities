@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { LightingFixture, LightStatus, LightingFixtureFormData, LightingZoneFormData } from '@/types/lighting';
 
@@ -43,7 +44,7 @@ export async function fetchLightingFixtures() {
     zone_id: raw.zone_id || null,
     space_name: raw.spaces?.name || null,
     room_number: raw.spaces?.room_number || null,
-    technology: raw.technology || null,
+    technology: normalizeTechnology(raw.technology),
     maintenance_notes: raw.maintenance_notes || null,
     created_at: raw.created_at || null,
     updated_at: raw.updated_at || null,
@@ -79,6 +80,23 @@ export async function fetchLightingFixtures() {
         }))
       : []
   }));
+}
+
+// Helper function to normalize technology values
+function normalizeTechnology(tech: string | null) {
+  if (!tech) return null;
+  
+  switch(tech.toLowerCase()) {
+    case 'led': return 'LED';
+    case 'fluorescent': return 'Fluorescent';
+    case 'bulb':
+    case 'incandescent':
+    case 'halogen':
+    case 'metal_halide':
+      return 'Bulb';
+    default:
+      return null;
+  }
 }
 
 /**
@@ -149,7 +167,7 @@ export async function fetchLightingZones(buildingId?: string, floorId?: string) 
  */
 export async function createLightingFixture(data: LightingFixtureFormData) {
   try {
-    // Create the fixture
+    // Create the fixture with proper type casting for database compatibility
     const fixtureData = {
       name: data.name,
       type: data.type,
@@ -163,13 +181,14 @@ export async function createLightingFixture(data: LightingFixtureFormData) {
       zone_id: data.zone_id || null,
       space_id: data.space_id,
       space_type: data.space_type,
-      position: data.position
+      position: data.position,
+      room_number: data.room_number
     };
 
-    // Insert into the database
+    // Insert into the database using type assertion
     const { data: fixture, error: fixtureError } = await supabase
       .from('lighting_fixtures')
-      .insert(fixtureData)
+      .insert(fixtureData as any) // Type assertion to avoid complex mapping
       .select()
       .single();
 

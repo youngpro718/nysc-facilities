@@ -2,7 +2,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { editLightingFormSchema, type EditLightingFormData } from "../schemas/editLightingSchema";
-import { LightingFixture, Space, LightingTechnology } from "../types";
+import { type LightingFixture, type Space, LightingTechnology } from "../types";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { generateFixtureName } from "../schemas/lightingSchema";
@@ -12,6 +12,23 @@ export function useEditLightingForm(
   onFixtureUpdated: () => void,
   onClose: () => void
 ) {
+  // Normalize technology to match our enum
+  const normalizeTechnology = (tech: string | null): LightingTechnology | null => {
+    if (!tech) return null;
+    
+    switch(tech.toLowerCase()) {
+      case 'led': return 'LED';
+      case 'fluorescent': return 'Fluorescent';
+      case 'bulb':
+      case 'incandescent':
+      case 'halogen':
+      case 'metal_halide':
+        return 'Bulb';
+      default:
+        return null;
+    }
+  };
+
   const form = useForm<EditLightingFormData>({
     resolver: zodResolver(editLightingFormSchema),
     defaultValues: {
@@ -19,7 +36,7 @@ export function useEditLightingForm(
       type: fixture.type,
       status: fixture.status,
       maintenance_notes: fixture.maintenance_notes || null,
-      technology: fixture.technology as LightingTechnology | null,
+      technology: normalizeTechnology(fixture.technology),
       bulb_count: fixture.bulb_count || 1,
       electrical_issues: fixture.electrical_issues || {
         short_circuit: false,
@@ -32,7 +49,7 @@ export function useEditLightingForm(
       space_type: fixture.space_type as 'room' | 'hallway',
       position: fixture.position as 'ceiling' | 'wall' | 'floor' | 'desk',
       zone_id: fixture.zone_id || null,
-      room_number: fixture.room_number || null, // Adding room_number field
+      room_number: fixture.room_number || null,
     },
   });
 
@@ -113,7 +130,7 @@ export function useEditLightingForm(
 
       const { error } = await supabase
         .from('lighting_fixtures')
-        .update(updateData)
+        .update(updateData as any) // Using type assertion to avoid complex type mapping
         .eq('id', fixture.id);
 
       if (error) throw error;

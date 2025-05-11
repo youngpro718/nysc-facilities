@@ -1,4 +1,3 @@
-
 export type LightStatus = 'functional' | 'non_functional' | 'maintenance_needed' | 'scheduled_replacement' | 'pending_maintenance';
 export type LightingType = 'standard' | 'emergency' | 'exit_sign' | 'decorative' | 'motion_sensor';
 export type LightingPosition = 'ceiling' | 'wall' | 'floor' | 'desk';
@@ -8,6 +7,7 @@ export interface ElectricalIssues {
   short_circuit: boolean;
   wiring_issues: boolean;
   voltage_problems: boolean;
+  [key: string]: boolean;  // Add index signature to make it compatible with Json
 }
 
 export interface MaintenanceRecord {
@@ -76,6 +76,7 @@ export interface LightingFixtureFormData {
   space_id: string;
   space_type: "room" | "hallway";
   position: LightingPosition;
+  room_number?: string | null;
 }
 
 export interface LightingZoneFormData {

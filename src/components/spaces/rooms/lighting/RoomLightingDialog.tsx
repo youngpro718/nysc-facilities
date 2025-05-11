@@ -32,6 +32,23 @@ export function RoomLightingDialog({ roomId, fixture }: RoomLightingDialogProps)
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
   
+  // Normalize technology to match our enum
+  const normalizeTechnology = (tech: string | null): LightingTechnology | null => {
+    if (!tech) return null;
+    
+    switch(tech.toLowerCase()) {
+      case 'led': return 'LED';
+      case 'fluorescent': return 'Fluorescent';
+      case 'bulb':
+      case 'incandescent':
+      case 'halogen':
+      case 'metal_halide':
+        return 'Bulb';
+      default:
+        return null;
+    }
+  };
+  
   const form = useForm<RoomLightingFormData>({
     resolver: zodResolver(roomLightingSchema),
     defaultValues: {
@@ -45,7 +62,7 @@ export function RoomLightingDialog({ roomId, fixture }: RoomLightingDialogProps)
       status: fixture?.status || 'functional',
       position: fixture?.position || 'ceiling',
       space_type: fixture?.space_type || 'room',
-      technology: fixture?.technology as LightingTechnology || 'LED',
+      technology: normalizeTechnology(fixture?.technology) || 'LED',
       bulb_count: fixture?.bulb_count || 1,
       electrical_issues: fixture?.electrical_issues || {
         short_circuit: false,
@@ -81,14 +98,14 @@ export function RoomLightingDialog({ roomId, fixture }: RoomLightingDialogProps)
       if (fixture) {
         const { error } = await supabase
           .from('lighting_fixtures')
-          .update(fixtureData)
+          .update(fixtureData as any)  // Using type assertion to avoid complex type mapping
           .eq('id', fixture.id);
 
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('lighting_fixtures')
-          .insert([fixtureData]);
+          .insert([fixtureData as any]);  // Using type assertion to avoid complex type mapping
 
         if (error) throw error;
       }

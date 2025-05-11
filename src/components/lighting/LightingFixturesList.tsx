@@ -5,7 +5,7 @@ import { LightingFilters } from "./components/LightingFilters";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { LightStatus, LightingType } from "@/types/lighting";
+import { LightStatus } from "@/types/lighting";
 import { 
   Check,
   Filter, 
@@ -35,6 +35,7 @@ interface LightingFixturesListProps {
   selectedFloor?: string;
 }
 
+// Define the zone option type separately without nesting it
 interface ZoneOption {
   label: string;
   value: string;
@@ -60,6 +61,7 @@ export function LightingFixturesList({ selectedBuilding = 'all', selectedFloor =
     refetch 
   } = useLightingFixtures();
 
+  // Fetch zones using useQuery
   const { data: zones } = useQuery({
     queryKey: ['lighting-zones', selectedBuilding, selectedFloor],
     queryFn: async () => {

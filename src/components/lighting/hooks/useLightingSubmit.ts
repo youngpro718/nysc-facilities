@@ -26,8 +26,12 @@ export const useLightingSubmit = (onFixtureCreated: () => void, onZoneCreated: (
           ballast_issue: data.ballast_issue,
           maintenance_notes: data.maintenance_notes,
           ballast_check_notes: data.ballast_check_notes,
-          zone_id: data.zone_id || null
-        })
+          zone_id: data.zone_id || null,
+          space_id: data.space_id,
+          space_type: data.space_type,
+          position: data.position,
+          room_number: data.room_number
+        } as any) // Using type assertion to avoid complex type mapping
         .select()
         .single();
 
