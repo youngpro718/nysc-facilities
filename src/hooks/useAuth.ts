@@ -1,8 +1,18 @@
-import { createContext, useContext, ReactNode, useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+
+import { useState, useCallback, useEffect, useContext, createContext, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { 
+  getSession, 
+  fetchUserProfile, 
+  signInWithEmail, 
+  signUpWithEmail, 
+  signOut as authSignOut, 
+  updateSessionTracking,
+  deleteUserSession
+} from '@/services/supabase';
+import { UserProfile, UserSignupData } from '@/types/auth';
 
 // Define the shape of our auth context
 export interface AuthContextType {
@@ -18,31 +28,6 @@ export interface AuthContextType {
   refreshSession: () => Promise<void>;
 }
 
-// Define the shape of user profile
-export interface UserProfile {
-  id: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  verification_status: 'pending' | 'verified' | 'rejected';
-  avatar_url?: string;
-}
-
-// Define the shape of signup data
-export interface UserSignupData {
-  first_name: string;
-  last_name: string;
-  title?: string;
-  phone?: string;
-  department_id?: string;
-  court_position?: string;
-  emergency_contact?: {
-    name?: string;
-    phone?: string;
-    relationship?: string;
-  };
-}
-
 // Create the context with a default undefined value
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -55,31 +40,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
 
   // Function to fetch user profile data
-  const fetchUserProfile = useCallback(async (userId: string) => {
+  const getUserProfile = useCallback(async (userId: string) => {
     try {
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .maybeSingle();
+      const userData = await fetchUserProfile(userId);
       
-      if (roleError) throw roleError;
-      
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, email, first_name, last_name, verification_status, avatar_url')
-        .eq('id', userId)
-        .single();
-      
-      if (profileError) throw profileError;
-      
-      setIsAdmin(roleData?.role === 'admin');
-      setProfile(profileData);
+      setIsAdmin(userData.isAdmin);
+      setProfile(userData.profile);
 
-      return {
-        isAdmin: roleData?.role === 'admin',
-        profile: profileData
-      };
+      return userData;
     } catch (error) {
       console.error('Error fetching user data:', error);
       return { isAdmin: false, profile: null };
@@ -91,11 +59,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true);
       
-      const { data: { session }, error } = await supabase.auth.getSession();
+      const currentSession = await getSession();
       
-      if (error) throw error;
-      
-      if (!session) {
+      if (!currentSession) {
         setSession(null);
         setUser(null);
         setProfile(null);
@@ -104,10 +70,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      setSession(session);
-      setUser(session.user);
+      setSession(currentSession);
+      setUser(currentSession.user);
       
-      const userData = await fetchUserProfile(session.user.id);
+      const userData = await getUserProfile(currentSession.user.id);
       setIsAdmin(userData.isAdmin);
       setProfile(userData.profile);
 
@@ -119,36 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
 
       // Using void to execute without awaiting
-      void (async () => {
-        try {
-          const { data: existingSession } = await supabase
-            .from('user_sessions')
-            .select('id')
-            .eq('user_id', session.user.id)
-            .limit(1)
-            .maybeSingle();
-
-          if (existingSession?.id) {
-            await supabase
-              .from('user_sessions')
-              .update({
-                last_active_at: new Date().toISOString(),
-                device_info: deviceInfo
-              })
-              .eq('id', existingSession.id);
-          } else {
-            await supabase
-              .from('user_sessions')
-              .insert([{
-                user_id: session.user.id,
-                device_info: deviceInfo,
-                last_active_at: new Date().toISOString()
-              }]);
-          }
-        } catch (error) {
-          console.error('Session tracking error:', error);
-        }
-      })();
+      void updateSessionTracking(currentSession.user.id, deviceInfo);
 
     } catch (error) {
       console.error('Session refresh error:', error);
@@ -159,17 +96,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [fetchUserProfile]);
+  }, [getUserProfile]);
 
   // Sign in function
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
+      await signInWithEmail(email, password);
 
       toast.success('Welcome back!', {
         description: "You've successfully signed in."
@@ -184,23 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Sign up function
   const signUp = async (email: string, password: string, userData: UserSignupData) => {
     try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            first_name: userData.first_name,
-            last_name: userData.last_name,
-            title: userData.title || null,
-            phone: userData.phone || null,
-            department_id: userData.department_id || null,
-            court_position: userData.court_position || null,
-            emergency_contact: userData.emergency_contact || null,
-          }
-        }
-      });
-
-      if (error) throw error;
+      await signUpWithEmail(email, password, userData);
       
       toast.success('Account created successfully!', {
         description: "Please check your email for verification instructions."
@@ -233,25 +149,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       // Delete user session from database if it exists
       if (user) {
-        const { data } = await supabase
-          .from('user_sessions')
-          .select('id')
-          .eq('user_id', user.id)
-          .limit(1)
-          .maybeSingle();
-
-        if (data?.id) {
-          await supabase
-            .from('user_sessions')
-            .delete()
-            .eq('id', data.id);
-        }
+        await deleteUserSession(user.id);
       }
 
       // Clear storage and sign out
       localStorage.removeItem('app-auth');
       sessionStorage.clear();
-      await supabase.auth.signOut({ scope: 'global' });
+      await authSignOut();
       
       // Clear state
       setSession(null);
@@ -283,7 +187,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           
           // Fetch user profile data
           setTimeout(async () => {
-            const userData = await fetchUserProfile(newSession.user.id);
+            const userData = await getUserProfile(newSession.user.id);
             setIsAdmin(userData.isAdmin);
             setProfile(userData.profile);
             
@@ -312,7 +216,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       subscription.unsubscribe();
     };
-  }, [fetchUserProfile, navigate, refreshSession]);
+  }, [getUserProfile, navigate, refreshSession]);
 
   // Compute isAuthenticated derived from session
   const isAuthenticated = !!session;

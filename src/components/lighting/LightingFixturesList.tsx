@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useLightingFixtures } from "./hooks/useLightingFixtures";
 import { LightingFixtureCard } from "./card/LightingFixtureCard";
@@ -55,26 +56,33 @@ export function LightingFixturesList({ selectedBuilding = 'all', selectedFloor =
     refetch 
   } = useLightingFixtures();
 
-  // Completely rewrite the useQuery for zones to fix the type instantiation issue
+  // Fix the TypeScript error by simplifying the query and removing the type instantiation issue
   const { data: zones } = useQuery({
     queryKey: ['lighting-zones', selectedBuilding, selectedFloor],
     queryFn: async () => {
-      let query = supabase.from('lighting_zones').select('id, name');
-      
-      if (selectedFloor !== 'all') {
-        query = query.eq('floor_id', selectedFloor);
+      try {
+        let query = supabase.from('lighting_zones').select('id, name');
+        
+        if (selectedFloor !== 'all') {
+          query = query.eq('floor_id', selectedFloor);
+        }
+        
+        if (selectedBuilding !== 'all') {
+          query = query.eq('building_id', selectedBuilding);
+        }
+        
+        const { data, error } = await query;
+        
+        if (error) throw error;
+        
+        return (data || []).map(zone => ({ 
+          label: zone.name, 
+          value: zone.id 
+        }));
+      } catch (error) {
+        console.error('Error fetching lighting zones:', error);
+        return [];
       }
-      
-      if (selectedBuilding !== 'all') {
-        query = query.eq('building_id', selectedBuilding);
-      }
-      
-      const { data, error } = await query;
-      if (error) throw error;
-      return (data || []).map(zone => ({ 
-        label: zone.name, 
-        value: zone.id 
-      }));
     }
   });
 
