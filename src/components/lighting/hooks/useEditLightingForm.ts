@@ -19,7 +19,7 @@ export function useEditLightingForm(
       type: fixture.type,
       status: fixture.status,
       maintenance_notes: fixture.maintenance_notes || null,
-      technology: fixture.technology,
+      technology: fixture.technology as "LED" | "Fluorescent" | "Bulb" | null,
       bulb_count: fixture.bulb_count || 1,
       electrical_issues: fixture.electrical_issues || {
         short_circuit: false,
@@ -92,13 +92,8 @@ export function useEditLightingForm(
 
   const onSubmit = async (data: EditLightingFormData) => {
     try {
-      // Convert all lighting technology values to the accepted database values
+      // Normalize the technology value
       let normalizedTechnology = data.technology;
-      if (normalizedTechnology === "led") normalizedTechnology = "LED";
-      if (normalizedTechnology === "fluorescent") normalizedTechnology = "Fluorescent";
-      if (normalizedTechnology === "incandescent") normalizedTechnology = "Bulb";
-      if (normalizedTechnology === "halogen") normalizedTechnology = "Bulb";
-      if (normalizedTechnology === "metal_halide") normalizedTechnology = "Bulb";
       
       // Make sure we're sending the exact fields the database expects
       const updateData = {
@@ -119,7 +114,7 @@ export function useEditLightingForm(
 
       const { error } = await supabase
         .from('lighting_fixtures')
-        .update(updateData)
+        .update(updateData as any)
         .eq('id', fixture.id);
 
       if (error) throw error;

@@ -149,13 +149,16 @@ export async function fetchLightingZones(buildingId?: string, floorId?: string) 
  * Create a new lighting fixture
  */
 export async function createLightingFixture(data: LightingFixtureFormData) {
-  // First normalize technology values
-  let normalizedTechnology = data.technology;
-  if (normalizedTechnology === "led") normalizedTechnology = "LED";
-  if (normalizedTechnology === "fluorescent") normalizedTechnology = "Fluorescent";
-  if (normalizedTechnology === "incandescent") normalizedTechnology = "Bulb";
-  if (normalizedTechnology === "halogen") normalizedTechnology = "Bulb";
-  if (normalizedTechnology === "metal_halide") normalizedTechnology = "Bulb";
+  // First normalize technology values to ensure they match database expectations
+  let normalizedTechnology: "LED" | "Fluorescent" | "Bulb" | null = null;
+  
+  if (data.technology === "LED" || data.technology === "led") {
+    normalizedTechnology = "LED";
+  } else if (data.technology === "Fluorescent" || data.technology === "fluorescent") {
+    normalizedTechnology = "Fluorescent";
+  } else if (["Bulb", "incandescent", "halogen", "metal_halide"].includes(data.technology as string)) {
+    normalizedTechnology = "Bulb";
+  }
 
   // First create the fixture
   const { data: fixture, error: fixtureError } = await supabase
@@ -171,7 +174,7 @@ export async function createLightingFixture(data: LightingFixtureFormData) {
       maintenance_notes: data.maintenance_notes,
       ballast_check_notes: data.ballast_check_notes,
       zone_id: data.zone_id || null
-    }])
+    } as any])
     .select()
     .single();
 

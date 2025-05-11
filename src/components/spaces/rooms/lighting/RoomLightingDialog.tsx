@@ -20,7 +20,6 @@ import { roomLightingSchema, type RoomLightingFormData } from "./schemas/roomLig
 import { BasicConfigSection } from "./form-sections/BasicConfigSection";
 import { AdditionalSettingsSection } from "./form-sections/AdditionalSettingsSection";
 import { ElectricalIssuesSection } from "./form-sections/ElectricalIssuesSection";
-import { LightingTechnology } from "@/components/lighting/types";
 
 interface RoomLightingDialogProps {
   roomId: string;
@@ -46,7 +45,7 @@ export function RoomLightingDialog({ roomId, fixture }: RoomLightingDialogProps)
       status: fixture?.status || 'functional',
       position: fixture?.position || 'ceiling',
       space_type: fixture?.space_type || 'room',
-      technology: fixture?.technology || 'LED',
+      technology: (fixture?.technology as "LED" | "Fluorescent" | "Bulb") || 'LED',
       bulb_count: fixture?.bulb_count || 1,
       electrical_issues: fixture?.electrical_issues || {
         short_circuit: false,
@@ -62,13 +61,9 @@ export function RoomLightingDialog({ roomId, fixture }: RoomLightingDialogProps)
 
   const onSubmit = async (data: RoomLightingFormData) => {
     try {
-      // Convert lighting technology values to the accepted database values
-      let normalizedTechnology = data.technology;
-      if (normalizedTechnology === "led") normalizedTechnology = "LED";
-      if (normalizedTechnology === "fluorescent") normalizedTechnology = "Fluorescent";
-      if (normalizedTechnology === "incandescent") normalizedTechnology = "Bulb";
-      if (normalizedTechnology === "halogen") normalizedTechnology = "Bulb";
-      if (normalizedTechnology === "metal_halide") normalizedTechnology = "Bulb";
+      // Ensure technology is one of the accepted values
+      const normalizedTechnology = data.technology === "LED" ? "LED" : 
+                                   data.technology === "Fluorescent" ? "Fluorescent" : "Bulb";
       
       const fixtureData = {
         name: data.name,
@@ -89,14 +84,14 @@ export function RoomLightingDialog({ roomId, fixture }: RoomLightingDialogProps)
       if (fixture) {
         const { error } = await supabase
           .from('lighting_fixtures')
-          .update(fixtureData)
+          .update(fixtureData as any)
           .eq('id', fixture.id);
 
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('lighting_fixtures')
-          .insert([fixtureData]);
+          .insert([fixtureData as any]);
 
         if (error) throw error;
       }

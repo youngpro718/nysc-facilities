@@ -18,8 +18,7 @@ export const editLightingFormSchema = z.object({
   room_number: z.string().nullable(),
   position: z.enum(["ceiling", "wall", "floor", "desk"]),
   technology: z.enum([
-    "LED", "Fluorescent", "Bulb", 
-    "led", "fluorescent", "incandescent", "halogen", "metal_halide"
+    "LED", "Fluorescent", "Bulb"
   ]).nullable().transform(val => {
     // Normalize technology values during validation
     if (val === "led") return "LED";
