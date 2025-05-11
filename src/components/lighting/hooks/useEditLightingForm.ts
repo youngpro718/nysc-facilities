@@ -2,7 +2,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { editLightingFormSchema, type EditLightingFormData } from "../schemas/editLightingSchema";
-import { LightingFixture, Space } from "../types";
+import { LightingFixture, Space, LightingTechnology } from "../types";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { generateFixtureName } from "../schemas/lightingSchema";
@@ -19,7 +19,7 @@ export function useEditLightingForm(
       type: fixture.type,
       status: fixture.status,
       maintenance_notes: fixture.maintenance_notes || null,
-      technology: fixture.technology as "LED" | "Fluorescent" | "Bulb" | null,
+      technology: fixture.technology as LightingTechnology | null,
       bulb_count: fixture.bulb_count || 1,
       electrical_issues: fixture.electrical_issues || {
         short_circuit: false,
@@ -32,7 +32,7 @@ export function useEditLightingForm(
       space_type: fixture.space_type as 'room' | 'hallway',
       position: fixture.position as 'ceiling' | 'wall' | 'floor' | 'desk',
       zone_id: fixture.zone_id || null,
-      room_number: null, // Adding this field which is in the schema
+      room_number: fixture.room_number || null, // Adding room_number field
     },
   });
 
@@ -93,32 +93,22 @@ export function useEditLightingForm(
 
   const onSubmit = async (data: EditLightingFormData) => {
     try {
-      // Normalize the technology value for database compatibility
-      let normalizedTechnology: "LED" | "Fluorescent" | "Bulb" | null = null;
-      
-      if (data.technology === "LED" || data.technology === "led") {
-        normalizedTechnology = "LED";
-      } else if (data.technology === "Fluorescent" || data.technology === "fluorescent") {
-        normalizedTechnology = "Fluorescent";
-      } else if (["Bulb", "incandescent", "halogen", "metal_halide"].includes(data.technology as string)) {
-        normalizedTechnology = "Bulb";
-      }
-      
-      // Make sure we're sending the exact fields the database expects
+      // Update with the correct data structure that matches database expectations
       const updateData = {
         name: data.name,
         type: data.type,
         status: data.status,
         maintenance_notes: data.maintenance_notes,
+        technology: data.technology,
         bulb_count: data.bulb_count,
-        technology: normalizedTechnology,
         electrical_issues: data.electrical_issues,
         ballast_issue: data.ballast_issue,
         ballast_check_notes: data.ballast_check_notes,
         space_id: data.space_id,
         space_type: data.space_type,
         position: data.position,
-        zone_id: data.zone_id
+        zone_id: data.zone_id,
+        room_number: data.room_number,
       };
 
       const { error } = await supabase

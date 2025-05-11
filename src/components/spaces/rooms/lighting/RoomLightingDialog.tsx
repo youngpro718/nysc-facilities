@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Settings2 } from "lucide-react";
-import { LightingFixture } from "@/components/lighting/types";
+import { LightingFixture, LightingTechnology } from "@/components/lighting/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -45,7 +45,7 @@ export function RoomLightingDialog({ roomId, fixture }: RoomLightingDialogProps)
       status: fixture?.status || 'functional',
       position: fixture?.position || 'ceiling',
       space_type: fixture?.space_type || 'room',
-      technology: (fixture?.technology as "LED" | "Fluorescent" | "Bulb") || 'LED',
+      technology: fixture?.technology as LightingTechnology || 'LED',
       bulb_count: fixture?.bulb_count || 1,
       electrical_issues: fixture?.electrical_issues || {
         short_circuit: false,
@@ -61,11 +61,7 @@ export function RoomLightingDialog({ roomId, fixture }: RoomLightingDialogProps)
 
   const onSubmit = async (data: RoomLightingFormData) => {
     try {
-      // Ensure technology is one of the accepted values
-      let normalizedTechnology: "LED" | "Fluorescent" | "Bulb" = 
-        data.technology === "LED" || data.technology === "led" ? "LED" : 
-        data.technology === "Fluorescent" || data.technology === "fluorescent" ? "Fluorescent" : "Bulb";
-      
+      // Create a properly typed object for database insertion
       const fixtureData = {
         name: data.name,
         type: data.lighting_type,
@@ -75,7 +71,7 @@ export function RoomLightingDialog({ roomId, fixture }: RoomLightingDialogProps)
         space_id: roomId,
         space_type: data.space_type,
         position: data.position,
-        technology: normalizedTechnology,
+        technology: data.technology,
         electrical_issues: data.electrical_issues,
         ballast_issue: data.ballast_issue,
         ballast_check_notes: data.ballast_check_notes,

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { LightingFixture, LightStatus, LightingFixtureFormData, LightingZoneFormData } from '@/types/lighting';
 
@@ -149,62 +148,59 @@ export async function fetchLightingZones(buildingId?: string, floorId?: string) 
  * Create a new lighting fixture
  */
 export async function createLightingFixture(data: LightingFixtureFormData) {
-  // First normalize technology values to ensure they match database expectations
-  let normalizedTechnology: "LED" | "Fluorescent" | "Bulb" | null = null;
-  
-  if (data.technology === "LED" || data.technology === "led") {
-    normalizedTechnology = "LED";
-  } else if (data.technology === "Fluorescent" || data.technology === "fluorescent") {
-    normalizedTechnology = "Fluorescent";
-  } else if (["Bulb", "incandescent", "halogen", "metal_halide"].includes(data.technology as string)) {
-    normalizedTechnology = "Bulb";
-  }
-
-  // Create the fixture with precise type annotation
-  const fixtureData = {
-    name: data.name,
-    type: data.type,
-    technology: normalizedTechnology,
-    bulb_count: data.bulb_count,
-    status: data.status,
-    electrical_issues: data.electrical_issues,
-    ballast_issue: data.ballast_issue,
-    maintenance_notes: data.maintenance_notes,
-    ballast_check_notes: data.ballast_check_notes,
-    zone_id: data.zone_id || null
-  };
-
-  // First create the fixture
-  const { data: fixture, error: fixtureError } = await supabase
-    .from('lighting_fixtures')
-    .insert([fixtureData])
-    .select()
-    .single();
-
-  if (fixtureError) throw fixtureError;
-
-  // Get the next sequence number for this space
-  const { data: sequenceData, error: sequenceError } = await supabase
-    .rpc('get_next_lighting_sequence', {
-      p_space_id: data.space_id
-    });
-
-  if (sequenceError) throw sequenceError;
-
-  // Then create the spatial assignment
-  const { error: assignmentError } = await supabase
-    .from('spatial_assignments')
-    .insert({
-      fixture_id: fixture.id,
+  try {
+    // Create the fixture
+    const fixtureData = {
+      name: data.name,
+      type: data.type,
+      technology: data.technology,
+      bulb_count: data.bulb_count,
+      status: data.status,
+      electrical_issues: data.electrical_issues,
+      ballast_issue: data.ballast_issue,
+      maintenance_notes: data.maintenance_notes,
+      ballast_check_notes: data.ballast_check_notes,
+      zone_id: data.zone_id || null,
       space_id: data.space_id,
       space_type: data.space_type,
-      position: data.position,
-      sequence_number: sequenceData
-    });
+      position: data.position
+    };
 
-  if (assignmentError) throw assignmentError;
+    // Insert into the database
+    const { data: fixture, error: fixtureError } = await supabase
+      .from('lighting_fixtures')
+      .insert(fixtureData)
+      .select()
+      .single();
 
-  return fixture;
+    if (fixtureError) throw fixtureError;
+
+    // Get the next sequence number for this space
+    const { data: sequenceData, error: sequenceError } = await supabase
+      .rpc('get_next_lighting_sequence', {
+        p_space_id: data.space_id
+      });
+
+    if (sequenceError) throw sequenceError;
+
+    // Then create the spatial assignment
+    const { error: assignmentError } = await supabase
+      .from('spatial_assignments')
+      .insert({
+        fixture_id: fixture.id,
+        space_id: data.space_id,
+        space_type: data.space_type,
+        position: data.position,
+        sequence_number: sequenceData
+      });
+
+    if (assignmentError) throw assignmentError;
+
+    return fixture;
+  } catch (error) {
+    console.error("Error in createLightingFixture:", error);
+    throw error;
+  }
 }
 
 /**

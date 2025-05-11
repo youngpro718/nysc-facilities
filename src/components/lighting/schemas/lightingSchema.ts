@@ -9,7 +9,7 @@ export const lightingFixtureSchema = z.object({
       const hallwayPattern = /^Hallway .+ - Light \d+$/;
       return roomPattern.test(name) || hallwayPattern.test(name);
     }, "Name must follow the format: 'Room {number} - {position} Light {sequence}' or 'Hallway {name} - Light {sequence}'"),
-  type: z.enum(["standard", "emergency", "motion_sensor"]),
+  type: z.enum(["standard", "emergency", "exit_sign", "decorative", "motion_sensor"]),
   status: z.enum([
     "functional",
     "maintenance_needed",
