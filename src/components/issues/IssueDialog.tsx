@@ -1,5 +1,5 @@
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { IssueWizard } from "./wizard/components/IssueWizard";
 import type { UserAssignment } from "@/types/dashboard";
 
@@ -12,20 +12,20 @@ export interface IssueDialogProps {
 
 export function IssueDialog({ open, onOpenChange, onSuccess, assignedRooms }: IssueDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Report an Issue</DialogTitle>
-        </DialogHeader>
-        <IssueWizard 
-          onSuccess={() => {
-            onSuccess?.();
-            onOpenChange(false);
-          }}
-          onCancel={() => onOpenChange(false)}
-          assignedRooms={assignedRooms}
-        />
-      </DialogContent>
-    </Dialog>
+    <ResponsiveDialog 
+      open={open} 
+      onOpenChange={onOpenChange}
+      title="Report an Issue"
+      className="max-w-3xl max-h-[90vh] overflow-y-auto"
+    >
+      <IssueWizard 
+        onSuccess={() => {
+          onSuccess?.();
+          onOpenChange(false);
+        }}
+        onCancel={() => onOpenChange(false)}
+        assignedRooms={assignedRooms}
+      />
+    </ResponsiveDialog>
   );
 }
