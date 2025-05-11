@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -45,7 +44,7 @@ export function RoomLightingDialog({ roomId, fixture }: RoomLightingDialogProps)
       status: fixture?.status || 'functional',
       position: fixture?.position || 'ceiling',
       space_type: fixture?.space_type || 'room',
-      technology: fixture?.technology || 'LED',
+      technology: (fixture?.technology || 'LED') as any,
       bulb_count: fixture?.bulb_count || 1,
       electrical_issues: fixture?.electrical_issues || {
         short_circuit: false,

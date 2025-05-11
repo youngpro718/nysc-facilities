@@ -19,7 +19,7 @@ export function useEditLightingForm(
       type: fixture.type,
       status: fixture.status,
       maintenance_notes: fixture.maintenance_notes || null,
-      technology: fixture.technology || null,
+      technology: fixture.technology,
       bulb_count: fixture.bulb_count || 1,
       electrical_issues: fixture.electrical_issues || {
         short_circuit: false,

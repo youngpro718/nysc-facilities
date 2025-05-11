@@ -1,10 +1,10 @@
 
 import * as z from "zod";
-import { LightStatus, LightingType, LightingPosition } from "../types";
+import { LightStatus, LightingType, LightingPosition, LightingTechnology } from "@/types/lighting";
 
 export const editLightingFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  type: z.enum(["standard", "emergency", "motion_sensor"]),
+  type: z.enum(["standard", "emergency", "exit_sign", "decorative", "motion_sensor"]),
   status: z.enum([
     "functional",
     "maintenance_needed",
@@ -16,7 +16,7 @@ export const editLightingFormSchema = z.object({
   space_type: z.enum(["room", "hallway"]),
   room_number: z.string().nullable(),
   position: z.enum(["ceiling", "wall", "floor", "desk"]),
-  technology: z.enum(["LED", "Fluorescent", "Bulb"]).nullable(),
+  technology: z.enum(["LED", "Fluorescent", "Bulb", "led", "fluorescent", "incandescent", "halogen", "metal_halide"]).nullable(),
   maintenance_priority: z.enum(["low", "medium", "high"]).nullable(),
   maintenance_notes: z.string().nullable(),
   bulb_count: z.number().min(1),

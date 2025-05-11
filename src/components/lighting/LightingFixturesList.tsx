@@ -95,7 +95,7 @@ export function LightingFixturesList({ selectedBuilding = 'all', selectedFloor =
   useEffect(() => {
     setSelectedFixtures([]);
   }, [filters, selectedBuilding, selectedFloor]);
-
+  
   const handleSelectAll = () => {
     if (selectedFixtures.length === filteredFixtures.length) {
       setSelectedFixtures([]);
