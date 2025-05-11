@@ -11,8 +11,9 @@ import {
   signOut as authSignOut, 
   updateSessionTracking,
   deleteUserSession
-} from '@/services/supabase';
+} from '@/services/supabase/authService';
 import { UserProfile, UserSignupData } from '@/types/auth';
+import { supabase } from '@/integrations/supabase/client';
 
 // Define the shape of our auth context
 export interface AuthContextType {
