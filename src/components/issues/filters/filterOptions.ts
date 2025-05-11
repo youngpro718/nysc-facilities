@@ -45,3 +45,50 @@ export const assigneeTypeOptions = [
   { value: "it", label: "IT" },
   { value: "security", label: "Security" }
 ];
+
+// Add the missing exports
+export const typeOptions = [
+  { value: "all_types", label: "All Types" },
+  { value: "ACCESS_REQUEST", label: "Access Request" },
+  { value: "BUILDING_SYSTEMS", label: "Building Systems" },
+  { value: "CEILING", label: "Ceiling" },
+  { value: "CLEANING_REQUEST", label: "Cleaning Request" },
+  { value: "CLIMATE_CONTROL", label: "Climate Control" },
+  { value: "DOOR", label: "Door" },
+  { value: "ELECTRICAL_NEEDS", label: "Electrical Needs" },
+  { value: "EMERGENCY", label: "Emergency" },
+  { value: "EXTERIOR_FACADE", label: "Exterior Facade" },
+  { value: "FLAGPOLE_FLAG", label: "Flagpole/Flag" },
+  { value: "FLOORING", label: "Flooring" },
+  { value: "GENERAL_REQUESTS", label: "General Requests" },
+  { value: "LEAK", label: "Leak" },
+  { value: "LIGHTING", label: "Lighting" },
+  { value: "LOCK", label: "Lock" },
+  { value: "PLUMBING_NEEDS", label: "Plumbing Needs" },
+  { value: "RESTROOM_REPAIR", label: "Restroom Repair" },
+  { value: "SIGNAGE", label: "Signage" },
+  { value: "WINDOW", label: "Window" }
+];
+
+// Alias for backward compatibility - using the same as assigneeTypeOptions
+export const assignmentOptions = assigneeTypeOptions;
+
+// Sort and grouping options
+export const sortOptions = [
+  { value: "created_at-desc", label: "Newest first" },
+  { value: "created_at-asc", label: "Oldest first" },
+  { value: "priority-desc", label: "Highest priority" },
+  { value: "priority-asc", label: "Lowest priority" },
+  { value: "status-asc", label: "Status (A-Z)" },
+  { value: "status-desc", label: "Status (Z-A)" },
+  { value: "title-asc", label: "Title (A-Z)" },
+  { value: "title-desc", label: "Title (Z-A)" }
+];
+
+export const groupingOptions = [
+  { value: "none", label: "No grouping" },
+  { value: "status", label: "By status" },
+  { value: "priority", label: "By priority" },
+  { value: "type", label: "By type" },
+  { value: "assigned_to", label: "By assignment" }
+];

@@ -1,7 +1,7 @@
 
 import { Filter } from "lucide-react";
 import { FilterSelect } from "./FilterSelect";
-import { typeOptions, statusOptions, priorityOptions, assignmentOptions } from "./filterOptions";
+import { typeOptions, statusOptions, priorityOptions, assigneeTypeOptions } from "./filterOptions";
 import { IssueFilters } from "../types/FilterTypes";
 
 interface TypeFiltersProps {
@@ -33,7 +33,7 @@ export const TypeFilters = ({ onFilterChange }: TypeFiltersProps) => {
       <FilterSelect
         placeholder="Filter by assignment"
         onValueChange={(value) => onFilterChange({ assigned_to: value as IssueFilters['assigned_to'] })}
-        options={assignmentOptions}
+        options={assigneeTypeOptions}
         fullWidth
       />
     </div>
