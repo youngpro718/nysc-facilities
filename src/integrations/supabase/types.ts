@@ -406,6 +406,107 @@ export type Database = {
         }
         Relationships: []
       }
+      court_assignments: {
+        Row: {
+          calendar_day: string | null
+          clerks: string[] | null
+          created_at: string | null
+          fax: string | null
+          id: string
+          justice: string
+          part: string
+          part_details: Json | null
+          room_id: string | null
+          room_number: string
+          sergeant: string | null
+          tel: string | null
+          term_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          calendar_day?: string | null
+          clerks?: string[] | null
+          created_at?: string | null
+          fax?: string | null
+          id?: string
+          justice: string
+          part: string
+          part_details?: Json | null
+          room_id?: string | null
+          room_number: string
+          sergeant?: string | null
+          tel?: string | null
+          term_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          calendar_day?: string | null
+          clerks?: string[] | null
+          created_at?: string | null
+          fax?: string | null
+          id?: string
+          justice?: string
+          part?: string
+          part_details?: Json | null
+          room_id?: string | null
+          room_number?: string
+          sergeant?: string | null
+          tel?: string | null
+          term_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "court_assignments_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_health_overview"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "court_assignments_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_issue_analytics"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "court_assignments_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_occupancy_stats"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "court_assignments_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_selection_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "court_assignments_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "court_assignments_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "court_terms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "court_assignments_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "term_details"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       court_parts: {
         Row: {
           created_at: string | null
@@ -7872,6 +7973,14 @@ export type Database = {
           | { key_id: string; occupant_id: string; is_spare?: boolean }
         Returns: Json
       }
+      begin_transaction: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      check_admin_status: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
       check_relocation_conflicts: {
         Args: { p_room_id: string; p_start_date: string; p_end_date: string }
         Returns: {
@@ -7883,6 +7992,10 @@ export type Database = {
       }
       cleanup_old_backups: {
         Args: { policy_id: string }
+        Returns: undefined
+      }
+      commit_transaction: {
+        Args: Record<PropertyKey, never>
         Returns: undefined
       }
       complete_backup_restoration: {
@@ -7972,6 +8085,10 @@ export type Database = {
           p_quantity_received: number
           p_performed_by: string
         }
+        Returns: undefined
+      }
+      rollback_transaction: {
+        Args: Record<PropertyKey, never>
         Returns: undefined
       }
       safely_delete_key: {
