@@ -6,18 +6,20 @@ import { ReportCallback, Occupant } from "./types";
 import { downloadPdf, fetchDataWithProgress } from "./reportUtils";
 
 export async function fetchOccupantReport(progressCallback: ReportCallback = () => {}) {
+  const query = supabase
+    .from('occupants')
+    .select(`
+      id,
+      first_name,
+      last_name,
+      email,
+      department,
+      status,
+      room_assignments:occupant_room_assignments(rooms(name))
+    `);
+    
   const data = await fetchDataWithProgress<Occupant>(
-    supabase
-      .from('occupants')
-      .select(`
-        id,
-        first_name,
-        last_name,
-        email,
-        department,
-        status,
-        room_assignments:occupant_room_assignments(rooms(name))
-      `),
+    query,
     progressCallback,
     0,
     50

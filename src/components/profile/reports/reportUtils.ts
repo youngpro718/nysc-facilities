@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { PostgrestFilterBuilder } from "@supabase/postgrest-js";
 import pdfMake from "pdfmake/build/pdfmake";
@@ -6,7 +7,7 @@ import { TDocumentDefinitions } from "pdfmake/interfaces";
 import { ReportTemplate, ScheduledReport, ReportCallback } from "./types";
 
 export async function fetchDataWithProgress<T>(
-  queryBuilder: PostgrestFilterBuilder<any, any, T[]>,
+  queryBuilder: any,
   progressCallback: ReportCallback,
   startProgress: number,
   endProgress: number

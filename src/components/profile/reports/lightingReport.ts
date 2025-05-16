@@ -6,17 +6,19 @@ import { ReportCallback, LightingFixture } from "./types";
 import { downloadPdf, fetchDataWithProgress } from "./reportUtils";
 
 export async function fetchLightingReport(progressCallback: ReportCallback = () => {}) {
+  const query = supabase
+    .from('lighting_fixtures')
+    .select(`
+      id,
+      name,
+      type,
+      status,
+      maintenance_history,
+      zone:lighting_zones(name)
+    `);
+    
   const data = await fetchDataWithProgress<LightingFixture>(
-    supabase
-      .from('lighting_fixtures')
-      .select(`
-        id,
-        name,
-        type,
-        status,
-        maintenance_history,
-        zone:lighting_zones(name)
-      `),
+    query,
     progressCallback,
     0,
     50

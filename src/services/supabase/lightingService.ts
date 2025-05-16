@@ -131,7 +131,7 @@ export async function deleteLightingFixtures(fixtureIds: string[]) {
 export async function updateLightingFixturesStatus(fixtureIds: string[], status: LightStatus) {
   const { error } = await supabase
     .from('lighting_fixtures')
-    .update({ status })
+    .update({ status: status as string })
     .in('id', fixtureIds);
 
   if (error) throw error;
@@ -188,7 +188,7 @@ export async function createLightingFixture(data: LightingFixtureFormData) {
     // Insert into the database
     const { data: fixture, error: fixtureError } = await supabase
       .from('lighting_fixtures')
-      .insert(fixtureData)
+      .insert([fixtureData]) // Wrap in array for proper insert
       .select()
       .single();
 

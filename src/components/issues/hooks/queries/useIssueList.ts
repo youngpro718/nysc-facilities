@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Issue } from '../../types/IssueTypes';
@@ -27,14 +28,14 @@ export function useIssueList(filters: IssueFilters, searchQuery?: string) {
     queryFn: async (): Promise<QueryResponse> => {
       try {
         console.log('Building query with filters:', JSON.stringify(filters, null, 2));
-        let query: PostgrestFilterBuilder<any, any, DatabaseIssue[]> = supabase
+        let query = supabase
           .from('issues')
           .select(`
             *,
             buildings:building_id (name),
             floors:floor_id (name),
             rooms:room_id (name)
-          `);
+          `) as any;
 
         // Apply filters
         if (filters.type && filters.type !== 'all_types') {
