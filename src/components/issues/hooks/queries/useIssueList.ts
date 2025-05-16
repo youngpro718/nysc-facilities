@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Issue } from '../../types/IssueTypes';
 import { IssueFilters } from '../../types/FilterTypes';
 import { transformIssue, DatabaseIssue } from '../../utils/IssueTransformers';
-import { PostgrestFilterBuilder } from '@supabase/postgrest-js';
+import { PostgrestFilterBuilder } from "@supabase/postgrest-js";
 
 type QueryResponse = {
   data: Issue[] | null;

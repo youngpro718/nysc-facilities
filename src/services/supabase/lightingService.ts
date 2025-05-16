@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { LightingFixture, LightStatus, LightingFixtureFormData, LightingZoneFormData } from '@/types/lighting';
 import { Json } from '@/types/supabase';
@@ -169,10 +168,9 @@ export async function fetchLightingZones(buildingId?: string, floorId?: string) 
 export async function createLightingFixture(data: LightingFixtureFormData) {
   try {
     // Convert the data to match the expected database schema types
-    // Cast enum values to strings to match Supabase's expected types
     const fixtureData = {
       name: data.name,
-      type: data.type as string,  // Cast to string to match database expectation
+      type: data.type as string,
       technology: data.technology as string | null,
       bulb_count: data.bulb_count,
       status: data.status as string,
