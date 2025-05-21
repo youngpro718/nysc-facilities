@@ -130,10 +130,9 @@ export async function deleteLightingFixtures(fixtureIds: string[]) {
  * Update lighting fixture status
  */
 export async function updateLightingFixturesStatus(fixtureIds: string[], status: LightStatus) {
-  // Fix: Cast status back to the literal string type expected by Supabase
   const { error } = await supabase
     .from('lighting_fixtures')
-    .update({ status: status })
+    .update({ status })
     .in('id', fixtureIds);
 
   if (error) throw error;
@@ -169,15 +168,14 @@ export async function fetchLightingZones(buildingId?: string, floorId?: string) 
  */
 export async function createLightingFixture(data: LightingFixtureFormData) {
   try {
-    // Fix: Convert the data to match the expected database schema types
-    // and use type assertion to address type compatibility issues
+    // Fix the type issues by using a properly typed object
     const fixtureData = {
       name: data.name,
       type: data.type,
       technology: data.technology,
       bulb_count: data.bulb_count,
       status: data.status,
-      electrical_issues: data.electrical_issues as unknown as Json,
+      electrical_issues: data.electrical_issues,
       ballast_issue: data.ballast_issue,
       maintenance_notes: data.maintenance_notes,
       ballast_check_notes: data.ballast_check_notes,
@@ -188,11 +186,10 @@ export async function createLightingFixture(data: LightingFixtureFormData) {
       room_number: data.room_number
     };
 
-    // Insert into the database
-    // Fix: Using type assertion to avoid TypeScript errors
+    // Insert into the database with proper type casting
     const { data: fixture, error: fixtureError } = await supabase
       .from('lighting_fixtures')
-      .insert(fixtureData as any)
+      .insert(fixtureData)
       .select()
       .single();
 
