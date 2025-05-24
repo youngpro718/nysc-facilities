@@ -29,58 +29,88 @@ export async function fetchLightingFixtures() {
 
   if (error) throw error;
 
-  return (rawFixtures || []).map((raw): LightingFixture => ({
-    id: raw.id,
-    name: raw.name || '',
-    type: raw.type || 'standard',
-    status: raw.status || 'functional',
-    zone_name: null,
-    building_name: raw.spaces?.floors?.buildings?.name || null,
-    floor_name: raw.spaces?.floors?.name || null,
-    floor_id: raw.spaces?.floor_id || null,
-    space_id: raw.space_id || null,
-    space_type: (raw.space_type || 'room') as 'room' | 'hallway',
-    position: (raw.position || 'ceiling') as 'ceiling' | 'wall' | 'floor' | 'desk',
-    sequence_number: raw.sequence_number || null,
-    zone_id: raw.zone_id || null,
-    space_name: raw.spaces?.name || null,
-    room_number: raw.spaces?.room_number || null,
-    technology: normalizeTechnology(raw.technology),
-    maintenance_notes: raw.maintenance_notes || null,
-    created_at: raw.created_at || null,
-    updated_at: raw.updated_at || null,
-    bulb_count: raw.bulb_count || 1,
-    electrical_issues: typeof raw.electrical_issues === 'object' ? {
-      short_circuit: (raw.electrical_issues as any)?.short_circuit || false,
-      wiring_issues: (raw.electrical_issues as any)?.wiring_issues || false,
-      voltage_problems: (raw.electrical_issues as any)?.voltage_problems || false
-    } : {
-      short_circuit: false,
-      wiring_issues: false,
-      voltage_problems: false
-    },
-    ballast_issue: raw.ballast_issue || false,
-    ballast_check_notes: raw.ballast_check_notes || null,
-    emergency_circuit: false,
-    backup_power_source: null,
-    emergency_duration_minutes: null,
-    maintenance_history: Array.isArray(raw.maintenance_history) 
-      ? (raw.maintenance_history as any[]).map(record => ({
-          id: record.id || '',
-          date: record.date || '',
-          type: record.type || '',
-          notes: record.notes || ''
-        }))
-      : [],
-    inspection_history: Array.isArray(raw.inspection_history)
-      ? (raw.inspection_history as any[]).map(record => ({
-          id: record.id || '',
-          date: record.date || '',
-          status: record.status || '',
-          notes: record.notes || ''
-        }))
-      : []
-  }));
+  // Simplify the mapping to avoid deep type instantiation
+  const fixtures: LightingFixture[] = [];
+  
+  if (rawFixtures) {
+    for (const raw of rawFixtures) {
+      const fixture: LightingFixture = {
+        id: raw.id,
+        name: raw.name || '',
+        type: raw.type || 'standard',
+        status: raw.status || 'functional',
+        zone_name: null,
+        building_name: raw.spaces?.floors?.buildings?.name || null,
+        floor_name: raw.spaces?.floors?.name || null,
+        floor_id: raw.spaces?.floor_id || null,
+        space_id: raw.space_id || null,
+        space_type: (raw.space_type || 'room') as 'room' | 'hallway',
+        position: (raw.position || 'ceiling') as 'ceiling' | 'wall' | 'floor' | 'desk',
+        sequence_number: raw.sequence_number || null,
+        zone_id: raw.zone_id || null,
+        space_name: raw.spaces?.name || null,
+        room_number: raw.spaces?.room_number || null,
+        technology: normalizeTechnology(raw.technology),
+        maintenance_notes: raw.maintenance_notes || null,
+        created_at: raw.created_at || null,
+        updated_at: raw.updated_at || null,
+        bulb_count: raw.bulb_count || 1,
+        electrical_issues: parseElectricalIssues(raw.electrical_issues),
+        ballast_issue: raw.ballast_issue || false,
+        ballast_check_notes: raw.ballast_check_notes || null,
+        emergency_circuit: false,
+        backup_power_source: null,
+        emergency_duration_minutes: null,
+        maintenance_history: parseMaintenanceHistory(raw.maintenance_history),
+        inspection_history: parseInspectionHistory(raw.inspection_history)
+      };
+      fixtures.push(fixture);
+    }
+  }
+
+  return fixtures;
+}
+
+// Helper function to parse electrical issues
+function parseElectricalIssues(issues: any) {
+  if (typeof issues === 'object' && issues !== null) {
+    return {
+      short_circuit: issues.short_circuit || false,
+      wiring_issues: issues.wiring_issues || false,
+      voltage_problems: issues.voltage_problems || false
+    };
+  }
+  return {
+    short_circuit: false,
+    wiring_issues: false,
+    voltage_problems: false
+  };
+}
+
+// Helper function to parse maintenance history
+function parseMaintenanceHistory(history: any) {
+  if (Array.isArray(history)) {
+    return history.map(record => ({
+      id: record.id || '',
+      date: record.date || '',
+      type: record.type || '',
+      notes: record.notes || ''
+    }));
+  }
+  return [];
+}
+
+// Helper function to parse inspection history
+function parseInspectionHistory(history: any) {
+  if (Array.isArray(history)) {
+    return history.map(record => ({
+      id: record.id || '',
+      date: record.date || '',
+      status: record.status || '',
+      notes: record.notes || ''
+    }));
+  }
+  return [];
 }
 
 // Helper function to normalize technology values
@@ -168,10 +198,14 @@ export async function fetchLightingZones(buildingId?: string, floorId?: string) 
  */
 export async function createLightingFixture(data: LightingFixtureFormData) {
   try {
-    // Map form data to database schema
+    // Map form data to database schema with proper type handling
+    const fixtureType = data.type === 'exit_sign' ? 'emergency' : 
+                        data.type === 'decorative' ? 'standard' : 
+                        data.type;
+
     const insertData = {
       name: data.name,
-      type: data.type === 'exit_sign' ? 'emergency' : data.type,
+      type: fixtureType,
       technology: data.technology,
       bulb_count: data.bulb_count,
       status: data.status,
@@ -188,7 +222,7 @@ export async function createLightingFixture(data: LightingFixtureFormData) {
 
     const { data: fixture, error: fixtureError } = await supabase
       .from('lighting_fixtures')
-      .insert(insertData)
+      .insert(insertData as any)
       .select()
       .single();
 
