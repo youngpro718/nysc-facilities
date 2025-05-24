@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -53,13 +54,27 @@ export function EditSpaceDialog({
   const form = useForm<RoomFormData>({
     resolver: zodResolver(RoomFormSchema),
     defaultValues: {
-      id: id, // Ensure ID is always included
-      ...initialData,
+      id: id,
       type: type === "room" ? "room" : "hallway",
-      connections: initialData?.space_connections || initialData?.connections || []
+      name: "",
+      roomNumber: "",
+      roomType: undefined,
+      status: undefined,
+      description: "",
+      phoneNumber: "",
+      isStorage: false,
+      storageType: null,
+      storageCapacity: null,
+      storageNotes: null,
+      parentRoomId: null,
+      currentFunction: "",
+      courtroom_photos: null,
+      connections: [],
+      floorId: ""
     },
   });
 
+  // Single useEffect to handle form initialization
   useEffect(() => {
     if (open && initialData) {
       console.log("=== EDIT SPACE DIALOG DEBUG ===");
@@ -72,7 +87,7 @@ export function EditSpaceDialog({
       const mappedConnections = Array.isArray(connections) ? connections.map((conn: any) => {
         let direction = conn.direction || conn.connectionDirection;
         if (!direction || !ConnectionDirections.includes(direction as any)) {
-          direction = "north"; // Default to north if invalid or missing
+          direction = "north";
         }
         
         return {
@@ -83,45 +98,37 @@ export function EditSpaceDialog({
         };
       }) : [];
       
-      // Log the room type from database for debugging
-      console.log("Room type from database:", initialData.room_type);
       const convertedRoomType = initialData.room_type ? stringToRoomType(initialData.room_type) : undefined;
+      console.log("Room type from database:", initialData.room_type);
       console.log("Converted room type:", convertedRoomType);
       
-      // Create a complete reset object with all form fields properly mapped
-      const resetData = {
-        id: id, // Critical: Always include the ID
-        ...initialData,
+      // Create a complete form data object
+      const formData: Partial<RoomFormData> = {
+        id: id,
         type: type === "room" ? "room" : "hallway",
-        roomNumber: initialData.room_number,
+        name: initialData.name || "",
+        roomNumber: initialData.room_number || "",
         roomType: convertedRoomType,
+        status: initialData.status,
+        description: initialData.description || "",
+        phoneNumber: initialData.phone_number || "",
         isStorage: initialData.is_storage || false,
-        storageType: initialData.storage_type ? initialData.storage_type : undefined,
-        storageCapacity: initialData.storage_capacity,
-        storageNotes: initialData.storage_notes,
-        parentRoomId: initialData.parent_room_id,
-        currentFunction: initialData.current_function,
-        phoneNumber: initialData.phone_number,
-        courtroom_photos: courtroom_photos,
-        connections: mappedConnections
+        storageType: initialData.storage_type || null,
+        storageCapacity: initialData.storage_capacity || null,
+        storageNotes: initialData.storage_notes || "",
+        parentRoomId: initialData.parent_room_id || null,
+        currentFunction: initialData.current_function || "",
+        courtroom_photos: courtroom_photos || null,
+        connections: mappedConnections,
+        floorId: initialData.floor_id || ""
       };
       
-      console.log("Form reset data with ID:", resetData);
-      console.log("Form reset data ID specifically:", resetData.id);
+      console.log("Setting form data:", formData);
       
-      form.reset(resetData);
-      
-      // Use setTimeout to ensure the form values are properly set after the initial render
-      setTimeout(() => {
-        if (convertedRoomType) {
-          form.setValue("roomType", convertedRoomType);
-        }
-        // Double-check ID is set
-        form.setValue("id", id);
-        console.log("Form values after timeout:", form.getValues());
-      }, 0);
+      // Reset the form with proper data
+      form.reset(formData);
     }
-  }, [open, form, initialData, type, id]);
+  }, [open, initialData, type, id, form]);
 
   const queryClient = useQueryClient();
 

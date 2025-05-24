@@ -10,7 +10,29 @@ export async function fetchLightingFixtures() {
   // First, get the basic fixture data
   const { data: rawFixtures, error } = await supabase
     .from('lighting_fixtures')
-    .select('*');
+    .select(`
+      id,
+      name,
+      type,
+      status,
+      zone_id,
+      space_id,
+      space_type,
+      position,
+      sequence_number,
+      technology,
+      maintenance_notes,
+      created_at,
+      updated_at,
+      bulb_count,
+      electrical_issues,
+      ballast_issue,
+      ballast_check_notes,
+      maintenance_history,
+      inspection_history,
+      floor_id,
+      room_number
+    `);
 
   if (error) throw error;
 
@@ -25,19 +47,7 @@ export async function fetchLightingFixtures() {
   if (spaceIds.length > 0) {
     const { data: spaces } = await supabase
       .from('spaces')
-      .select(`
-        id,
-        name,
-        room_number,
-        floor_id,
-        floors!floor_id (
-          name,
-          building_id,
-          buildings!building_id (
-            name
-          )
-        )
-      `)
+      .select('id, name, room_number, floor_id')
       .in('id', spaceIds);
 
     if (spaces) {
@@ -47,9 +57,45 @@ export async function fetchLightingFixtures() {
     }
   }
 
+  // Get floor data separately
+  const floorIds = rawFixtures.map(f => f.floor_id).filter(Boolean);
+  const floorData: Record<string, any> = {};
+  
+  if (floorIds.length > 0) {
+    const { data: floors } = await supabase
+      .from('floors')
+      .select('id, name, building_id')
+      .in('id', floorIds);
+
+    if (floors) {
+      floors.forEach(floor => {
+        floorData[floor.id] = floor;
+      });
+    }
+  }
+
+  // Get building data separately
+  const buildingIds = Object.values(floorData).map((f: any) => f.building_id).filter(Boolean);
+  const buildingData: Record<string, any> = {};
+  
+  if (buildingIds.length > 0) {
+    const { data: buildings } = await supabase
+      .from('buildings')
+      .select('id, name')
+      .in('id', buildingIds);
+
+    if (buildings) {
+      buildings.forEach(building => {
+        buildingData[building.id] = building;
+      });
+    }
+  }
+
   // Transform the data into the expected format
   const fixtures: LightingFixture[] = rawFixtures.map((raw): LightingFixture => {
     const space = raw.space_id ? spaceData[raw.space_id] : null;
+    const floor = raw.floor_id ? floorData[raw.floor_id] : null;
+    const building = floor?.building_id ? buildingData[floor.building_id] : null;
     
     return {
       id: raw.id,
@@ -57,16 +103,16 @@ export async function fetchLightingFixtures() {
       type: mapFixtureType(raw.type),
       status: raw.status || 'functional',
       zone_name: null,
-      building_name: space?.floors?.buildings?.name || null,
-      floor_name: space?.floors?.name || null,
-      floor_id: space?.floor_id || null,
+      building_name: building?.name || null,
+      floor_name: floor?.name || null,
+      floor_id: space?.floor_id || raw.floor_id || null,
       space_id: raw.space_id || null,
       space_type: (raw.space_type || 'room') as 'room' | 'hallway',
       position: (raw.position || 'ceiling') as 'ceiling' | 'wall' | 'floor' | 'desk',
       sequence_number: raw.sequence_number || null,
       zone_id: raw.zone_id || null,
       space_name: space?.name || null,
-      room_number: space?.room_number || null,
+      room_number: space?.room_number || raw.room_number || null,
       technology: normalizeTechnology(raw.technology),
       maintenance_notes: raw.maintenance_notes || null,
       created_at: raw.created_at || null,
