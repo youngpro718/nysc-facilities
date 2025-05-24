@@ -32,6 +32,16 @@ export function RoomFormContent({
   const floorId = form.watch("floorId");
   const roomType = form.watch("roomType");
   
+  // Debug form state changes
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      console.log("Form field changed:", name, "New value:", value[name as keyof typeof value]);
+      console.log("Current form values:", value);
+      console.log("Form ID:", value.id);
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
+  
   // Initialize or reset courtroom_photos when room type changes
   useEffect(() => {
     if (roomType === RoomTypeEnum.COURTROOM) {
@@ -66,9 +76,18 @@ export function RoomFormContent({
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log("=== FORM SUBMIT HANDLER ===");
+    
     try {
       // Pre-validation cleanup to ensure proper values for validation
       const formValues = form.getValues();
+      console.log("Current form values before cleanup:", formValues);
+      
+      // Critical: Ensure ID is present
+      if (!formValues.id && roomId) {
+        console.log("Setting missing ID from roomId prop:", roomId);
+        form.setValue("id", roomId, { shouldValidate: false });
+      }
       
       // Ensure type field is set
       if (!formValues.type) {
@@ -85,9 +104,15 @@ export function RoomFormContent({
       const validConnections = connections.filter(conn => conn.toSpaceId && conn.connectionType);
       
       if (connections.length !== validConnections.length) {
+        console.error("Invalid connections found:", connections);
         toast.error("Some connections are invalid. Please check all connections have a space and type selected.");
         return;
       }
+      
+      // Get updated form values after cleanup
+      const cleanedFormValues = form.getValues();
+      console.log("Form values after cleanup:", cleanedFormValues);
+      console.log("Form ID after cleanup:", cleanedFormValues.id);
       
       // Trigger validation
       const isValid = await form.trigger();
@@ -105,6 +130,7 @@ export function RoomFormContent({
         return;
       }
       
+      console.log("Form validation passed, calling onSubmit");
       await form.handleSubmit(onSubmit)(e);
     } catch (error) {
       console.error("Form submission error:", error);

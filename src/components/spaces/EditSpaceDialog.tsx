@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -53,6 +54,7 @@ export function EditSpaceDialog({
   const form = useForm<RoomFormData>({
     resolver: zodResolver(RoomFormSchema),
     defaultValues: {
+      id: id, // Ensure ID is always included
       ...initialData,
       type: type === "room" ? "room" : "hallway",
       connections: initialData?.space_connections || initialData?.connections || []
@@ -61,10 +63,11 @@ export function EditSpaceDialog({
 
   useEffect(() => {
     if (open && initialData) {
-      console.log("Resetting form with initial data:", initialData);
+      console.log("=== EDIT SPACE DIALOG DEBUG ===");
+      console.log("Room ID:", id);
+      console.log("Initial data received:", initialData);
       
       const connections = initialData.space_connections || initialData.connections || [];
-      
       const courtroom_photos = initialData.courtroom_photos;
       
       const mappedConnections = Array.isArray(connections) ? connections.map((conn: any) => {
@@ -88,6 +91,7 @@ export function EditSpaceDialog({
       
       // Create a complete reset object with all form fields properly mapped
       const resetData = {
+        id: id, // Critical: Always include the ID
         ...initialData,
         type: type === "room" ? "room" : "hallway",
         roomNumber: initialData.room_number,
@@ -103,7 +107,9 @@ export function EditSpaceDialog({
         connections: mappedConnections
       };
       
-      console.log("Form reset data:", resetData);
+      console.log("Form reset data with ID:", resetData);
+      console.log("Form reset data ID specifically:", resetData.id);
+      
       form.reset(resetData);
       
       // Use setTimeout to ensure the form values are properly set after the initial render
@@ -111,15 +117,37 @@ export function EditSpaceDialog({
         if (convertedRoomType) {
           form.setValue("roomType", convertedRoomType);
         }
+        // Double-check ID is set
+        form.setValue("id", id);
+        console.log("Form values after timeout:", form.getValues());
       }, 0);
     }
-  }, [open, form, initialData, type]);
+  }, [open, form, initialData, type, id]);
 
   const queryClient = useQueryClient();
 
   const editSpaceMutation = useMutation({
     mutationFn: async (data: RoomFormData) => {
+      console.log("=== MUTATION START ===");
       console.log("Submitting data for room update:", data);
+      console.log("Room ID from data:", data.id);
+      console.log("Room ID from props:", id);
+      
+      // Validate required data
+      if (!data.id && !id) {
+        throw new Error("Room ID is missing - cannot update room");
+      }
+      
+      if (!data.name) {
+        throw new Error("Room name is required");
+      }
+      
+      if (!data.floorId) {
+        throw new Error("Floor ID is required");
+      }
+      
+      const roomId = data.id || id;
+      console.log("Using room ID for update:", roomId);
       
       const updateData = {
         name: data.name,
@@ -138,16 +166,16 @@ export function EditSpaceDialog({
         courtroom_photos: data.courtroom_photos || null
       };
 
-      console.log("Room update data:", updateData);
+      console.log("Update data prepared:", updateData);
       
       if (data.roomType === RoomTypeEnum.COURTROOM) {
         try {
           await storageService.ensureBucketsExist(['courtroom-photos']);
           
-          if (data.courtroom_photos && data.id) {
+          if (data.courtroom_photos && roomId) {
             const validUrls = Object.values(data.courtroom_photos).filter(Boolean) as string[];
             if (validUrls.length > 0) {
-              await storageService.cleanupOrphanedFiles('courtroom-photos', data.id, validUrls);
+              await storageService.cleanupOrphanedFiles('courtroom-photos', roomId, validUrls);
             }
           }
         } catch (bucketError) {
@@ -155,15 +183,18 @@ export function EditSpaceDialog({
         }
       }
       
+      console.log("Executing room update query...");
       const { error: roomError } = await supabase
         .from("rooms")
         .update(updateData as any)
-        .eq('id', id);
+        .eq('id', roomId);
 
       if (roomError) {
         console.error("Room update error:", roomError);
-        throw roomError;
+        throw new Error(`Failed to update room: ${roomError.message}`);
       }
+      
+      console.log("Room update successful");
       
       if (data.connections && data.connections.length > 0) {
         console.log("Processing connections:", data.connections);
@@ -171,12 +202,12 @@ export function EditSpaceDialog({
         const { data: existingConnections, error: fetchError } = await supabase
           .from("space_connections")
           .select("id")
-          .eq("from_space_id", id)
+          .eq("from_space_id", roomId)
           .eq("status", "active");
           
         if (fetchError) {
           console.error("Error fetching connections:", fetchError);
-          throw fetchError;
+          throw new Error(`Failed to fetch connections: ${fetchError.message}`);
         }
         
         const existingIds = (existingConnections || []).map(c => c.id);
@@ -204,14 +235,14 @@ export function EditSpaceDialog({
               
             if (updateError) {
               console.error("Connection update error:", updateError);
-              throw updateError;
+              throw new Error(`Failed to update connection: ${updateError.message}`);
             }
           } else if (connection.toSpaceId && connection.connectionType) {
             console.log("Creating new connection:", connection);
             const { error: insertError } = await supabase
               .from("space_connections")
               .insert({
-                from_space_id: id,
+                from_space_id: roomId,
                 to_space_id: connection.toSpaceId,
                 space_type: "room",
                 connection_type: connection.connectionType,
@@ -221,7 +252,7 @@ export function EditSpaceDialog({
               
             if (insertError) {
               console.error("Connection insert error:", insertError);
-              throw insertError;
+              throw new Error(`Failed to create connection: ${insertError.message}`);
             }
           }
         }
@@ -237,11 +268,12 @@ export function EditSpaceDialog({
             
           if (deleteError) {
             console.error("Connection delete error:", deleteError);
-            throw deleteError;
+            throw new Error(`Failed to deactivate connections: ${deleteError.message}`);
           }
         }
       }
       
+      console.log("=== MUTATION SUCCESS ===");
       return data;
     },
     onSuccess: () => {
@@ -257,13 +289,32 @@ export function EditSpaceDialog({
       }
     },
     onError: (error) => {
+      console.error("=== MUTATION ERROR ===");
       console.error("Update error:", error);
       toast.error(error instanceof Error ? error.message : "Failed to update room");
     },
   });
 
   const handleSubmit = async (data: RoomFormData) => {
+    console.log("=== HANDLE SUBMIT ===");
     console.log("Handling submit with data:", data);
+    console.log("Form validation state:", form.formState.isValid);
+    console.log("Form errors:", form.formState.errors);
+    
+    // Ensure ID is present
+    if (!data.id) {
+      console.warn("ID missing in form data, setting from props");
+      data.id = id;
+    }
+    
+    // Validate the form before submission
+    const isValid = await form.trigger();
+    if (!isValid) {
+      console.error("Form validation failed:", form.formState.errors);
+      toast.error("Please fix the validation errors before submitting");
+      return;
+    }
+    
     await editSpaceMutation.mutateAsync(data);
   };
 
