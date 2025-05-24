@@ -4,16 +4,29 @@ import { LightingFixture, LightStatus, LightingFixtureFormData, LightingZoneForm
 import { Json } from '@/types/supabase';
 
 /**
- * Fetch all lighting fixtures
+ * Fetch all lighting fixtures with simplified queries to avoid deep type instantiation
  */
 export async function fetchLightingFixtures() {
+  // First, get the basic fixture data
   const { data: rawFixtures, error } = await supabase
     .from('lighting_fixtures')
-    .select(`
-      *,
-      floor_id,
-      room_number,
-      spaces!space_id (
+    .select('*');
+
+  if (error) throw error;
+
+  if (!rawFixtures || rawFixtures.length === 0) {
+    return [];
+  }
+
+  // Get space data separately to avoid deep nesting
+  const spaceIds = rawFixtures.map(f => f.space_id).filter(Boolean);
+  const spaceData: Record<string, any> = {};
+  
+  if (spaceIds.length > 0) {
+    const { data: spaces } = await supabase
+      .from('spaces')
+      .select(`
+        id,
         name,
         room_number,
         floor_id,
@@ -24,51 +37,68 @@ export async function fetchLightingFixtures() {
             name
           )
         )
-      )
-    `);
+      `)
+      .in('id', spaceIds);
 
-  if (error) throw error;
-
-  // Simplify the mapping to avoid deep type instantiation
-  const fixtures: LightingFixture[] = [];
-  
-  if (rawFixtures) {
-    for (const raw of rawFixtures) {
-      const fixture: LightingFixture = {
-        id: raw.id,
-        name: raw.name || '',
-        type: raw.type || 'standard',
-        status: raw.status || 'functional',
-        zone_name: null,
-        building_name: raw.spaces?.floors?.buildings?.name || null,
-        floor_name: raw.spaces?.floors?.name || null,
-        floor_id: raw.spaces?.floor_id || null,
-        space_id: raw.space_id || null,
-        space_type: (raw.space_type || 'room') as 'room' | 'hallway',
-        position: (raw.position || 'ceiling') as 'ceiling' | 'wall' | 'floor' | 'desk',
-        sequence_number: raw.sequence_number || null,
-        zone_id: raw.zone_id || null,
-        space_name: raw.spaces?.name || null,
-        room_number: raw.spaces?.room_number || null,
-        technology: normalizeTechnology(raw.technology),
-        maintenance_notes: raw.maintenance_notes || null,
-        created_at: raw.created_at || null,
-        updated_at: raw.updated_at || null,
-        bulb_count: raw.bulb_count || 1,
-        electrical_issues: parseElectricalIssues(raw.electrical_issues),
-        ballast_issue: raw.ballast_issue || false,
-        ballast_check_notes: raw.ballast_check_notes || null,
-        emergency_circuit: false,
-        backup_power_source: null,
-        emergency_duration_minutes: null,
-        maintenance_history: parseMaintenanceHistory(raw.maintenance_history),
-        inspection_history: parseInspectionHistory(raw.inspection_history)
-      };
-      fixtures.push(fixture);
+    if (spaces) {
+      spaces.forEach(space => {
+        spaceData[space.id] = space;
+      });
     }
   }
 
+  // Transform the data into the expected format
+  const fixtures: LightingFixture[] = rawFixtures.map((raw): LightingFixture => {
+    const space = raw.space_id ? spaceData[raw.space_id] : null;
+    
+    return {
+      id: raw.id,
+      name: raw.name || '',
+      type: mapFixtureType(raw.type),
+      status: raw.status || 'functional',
+      zone_name: null,
+      building_name: space?.floors?.buildings?.name || null,
+      floor_name: space?.floors?.name || null,
+      floor_id: space?.floor_id || null,
+      space_id: raw.space_id || null,
+      space_type: (raw.space_type || 'room') as 'room' | 'hallway',
+      position: (raw.position || 'ceiling') as 'ceiling' | 'wall' | 'floor' | 'desk',
+      sequence_number: raw.sequence_number || null,
+      zone_id: raw.zone_id || null,
+      space_name: space?.name || null,
+      room_number: space?.room_number || null,
+      technology: normalizeTechnology(raw.technology),
+      maintenance_notes: raw.maintenance_notes || null,
+      created_at: raw.created_at || null,
+      updated_at: raw.updated_at || null,
+      bulb_count: raw.bulb_count || 1,
+      electrical_issues: parseElectricalIssues(raw.electrical_issues),
+      ballast_issue: raw.ballast_issue || false,
+      ballast_check_notes: raw.ballast_check_notes || null,
+      emergency_circuit: false,
+      backup_power_source: null,
+      emergency_duration_minutes: null,
+      maintenance_history: parseMaintenanceHistory(raw.maintenance_history),
+      inspection_history: parseInspectionHistory(raw.inspection_history)
+    };
+  });
+
   return fixtures;
+}
+
+// Helper function to map fixture types safely
+function mapFixtureType(type: string): 'standard' | 'emergency' | 'motion_sensor' {
+  switch (type) {
+    case 'emergency':
+      return 'emergency';
+    case 'motion_sensor':
+      return 'motion_sensor';
+    case 'decorative':
+    case 'exit_sign':
+    case 'standard':
+    default:
+      return 'standard';
+  }
 }
 
 // Helper function to parse electrical issues
@@ -199,9 +229,7 @@ export async function fetchLightingZones(buildingId?: string, floorId?: string) 
 export async function createLightingFixture(data: LightingFixtureFormData) {
   try {
     // Map form data to database schema with proper type handling
-    const fixtureType = data.type === 'exit_sign' ? 'emergency' : 
-                        data.type === 'decorative' ? 'standard' : 
-                        data.type;
+    const fixtureType = mapFixtureType(data.type);
 
     const insertData = {
       name: data.name,
@@ -222,7 +250,7 @@ export async function createLightingFixture(data: LightingFixtureFormData) {
 
     const { data: fixture, error: fixtureError } = await supabase
       .from('lighting_fixtures')
-      .insert(insertData as any)
+      .insert(insertData)
       .select()
       .single();
 

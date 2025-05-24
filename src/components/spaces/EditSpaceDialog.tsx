@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -291,7 +290,8 @@ export function EditSpaceDialog({
     onError: (error) => {
       console.error("=== MUTATION ERROR ===");
       console.error("Update error:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to update room");
+      const errorMessage = error instanceof Error ? error.message : "Failed to update room";
+      toast.error(`Update failed: ${errorMessage}`);
     },
   });
 
@@ -315,7 +315,12 @@ export function EditSpaceDialog({
       return;
     }
     
-    await editSpaceMutation.mutateAsync(data);
+    try {
+      await editSpaceMutation.mutateAsync(data);
+    } catch (error) {
+      console.error("Mutation failed:", error);
+      // Error is already handled in onError callback
+    }
   };
 
   const renderContent = () => {

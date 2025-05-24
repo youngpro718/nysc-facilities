@@ -134,7 +134,11 @@ export function RoomFormContent({
       await form.handleSubmit(onSubmit)(e);
     } catch (error) {
       console.error("Form submission error:", error);
-      toast.error("Form submission failed. Please check the console for details.");
+      if (error instanceof Error) {
+        toast.error(`Form submission failed: ${error.message}`);
+      } else {
+        toast.error("Form submission failed. Please check the console for details.");
+      }
     }
   };
 
