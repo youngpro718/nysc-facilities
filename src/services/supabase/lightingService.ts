@@ -168,14 +168,14 @@ export async function fetchLightingZones(buildingId?: string, floorId?: string) 
  */
 export async function createLightingFixture(data: LightingFixtureFormData) {
   try {
-    // Convert types to match database schema exactly
+    // Map form data to database schema
     const insertData = {
       name: data.name,
-      type: data.type === 'exit_sign' ? 'emergency' : data.type, // Map exit_sign to emergency
+      type: data.type === 'exit_sign' ? 'emergency' : data.type,
       technology: data.technology,
       bulb_count: data.bulb_count,
       status: data.status,
-      electrical_issues: data.electrical_issues as Json,
+      electrical_issues: JSON.stringify(data.electrical_issues),
       ballast_issue: data.ballast_issue,
       maintenance_notes: data.maintenance_notes,
       ballast_check_notes: data.ballast_check_notes,
@@ -186,10 +186,9 @@ export async function createLightingFixture(data: LightingFixtureFormData) {
       room_number: data.room_number
     };
 
-    // Insert into the database using type assertion to avoid deep type issues
     const { data: fixture, error: fixtureError } = await supabase
       .from('lighting_fixtures')
-      .insert(insertData as any)
+      .insert(insertData)
       .select()
       .single();
 
