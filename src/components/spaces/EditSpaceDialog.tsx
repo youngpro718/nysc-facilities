@@ -55,7 +55,7 @@ export function EditSpaceDialog({
     resolver: zodResolver(RoomFormSchema),
     defaultValues: {
       id: id,
-      type: type === "room" ? "room" : "hallway",
+      type: "room", // Always default to "room" for RoomFormData
       name: "",
       roomNumber: "",
       roomType: undefined,
@@ -74,9 +74,9 @@ export function EditSpaceDialog({
     },
   });
 
-  // Single useEffect to handle form initialization
+  // Initialize form data when dialog opens and we have initial data
   useEffect(() => {
-    if (open && initialData) {
+    if (open && initialData && type === "room") {
       console.log("=== EDIT SPACE DIALOG DEBUG ===");
       console.log("Room ID:", id);
       console.log("Initial data received:", initialData);
@@ -102,10 +102,10 @@ export function EditSpaceDialog({
       console.log("Room type from database:", initialData.room_type);
       console.log("Converted room type:", convertedRoomType);
       
-      // Create a complete form data object
+      // Create form data object with proper type handling
       const formData: Partial<RoomFormData> = {
         id: id,
-        type: type === "room" ? "room" : "hallway",
+        type: "room", // Ensure this is always "room" for RoomFormData
         name: initialData.name || "",
         roomNumber: initialData.room_number || "",
         roomType: convertedRoomType,
@@ -125,7 +125,7 @@ export function EditSpaceDialog({
       
       console.log("Setting form data:", formData);
       
-      // Reset the form with proper data
+      // Reset the form with the prepared data
       form.reset(formData);
     }
   }, [open, initialData, type, id, form]);
@@ -136,8 +136,6 @@ export function EditSpaceDialog({
     mutationFn: async (data: RoomFormData) => {
       console.log("=== MUTATION START ===");
       console.log("Submitting data for room update:", data);
-      console.log("Room ID from data:", data.id);
-      console.log("Room ID from props:", id);
       
       // Validate required data
       if (!data.id && !id) {
@@ -202,6 +200,7 @@ export function EditSpaceDialog({
       
       console.log("Room update successful");
       
+      // Handle connections if present
       if (data.connections && data.connections.length > 0) {
         console.log("Processing connections:", data.connections);
         
@@ -305,8 +304,6 @@ export function EditSpaceDialog({
   const handleSubmit = async (data: RoomFormData) => {
     console.log("=== HANDLE SUBMIT ===");
     console.log("Handling submit with data:", data);
-    console.log("Form validation state:", form.formState.isValid);
-    console.log("Form errors:", form.formState.errors);
     
     // Ensure ID is present
     if (!data.id) {
@@ -326,7 +323,6 @@ export function EditSpaceDialog({
       await editSpaceMutation.mutateAsync(data);
     } catch (error) {
       console.error("Mutation failed:", error);
-      // Error is already handled in onError callback
     }
   };
 

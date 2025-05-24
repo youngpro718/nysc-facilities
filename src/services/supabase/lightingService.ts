@@ -1,7 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { LightingFixture, LightStatus, LightingFixtureFormData, LightingZoneFormData } from '@/types/lighting';
-import { Json } from '@/types/supabase';
 
 /**
  * Fetch all lighting fixtures with simplified queries to avoid deep type instantiation
@@ -41,7 +39,7 @@ export async function fetchLightingFixtures() {
   }
 
   // Get space data separately to avoid deep nesting
-  const spaceIds = rawFixtures.map(f => f.space_id).filter(Boolean);
+  const spaceIds = rawFixtures.map(f => f.space_id).filter(Boolean) as string[];
   const spaceData: Record<string, any> = {};
   
   if (spaceIds.length > 0) {
@@ -58,7 +56,7 @@ export async function fetchLightingFixtures() {
   }
 
   // Get floor data separately
-  const floorIds = rawFixtures.map(f => f.floor_id).filter(Boolean);
+  const floorIds = rawFixtures.map(f => f.floor_id).filter(Boolean) as string[];
   const floorData: Record<string, any> = {};
   
   if (floorIds.length > 0) {
@@ -75,7 +73,9 @@ export async function fetchLightingFixtures() {
   }
 
   // Get building data separately
-  const buildingIds = Object.values(floorData).map((f: any) => f.building_id).filter(Boolean);
+  const buildingIds = Object.values(floorData)
+    .map((f: any) => f?.building_id)
+    .filter(Boolean) as string[];
   const buildingData: Record<string, any> = {};
   
   if (buildingIds.length > 0) {
@@ -100,20 +100,20 @@ export async function fetchLightingFixtures() {
     return {
       id: raw.id,
       name: raw.name || '',
-      type: mapFixtureType(raw.type),
-      status: raw.status || 'functional',
+      type: mapFixtureType(raw.type as string),
+      status: (raw.status as LightStatus) || 'functional',
       zone_name: null,
       building_name: building?.name || null,
       floor_name: floor?.name || null,
       floor_id: space?.floor_id || raw.floor_id || null,
       space_id: raw.space_id || null,
-      space_type: (raw.space_type || 'room') as 'room' | 'hallway',
-      position: (raw.position || 'ceiling') as 'ceiling' | 'wall' | 'floor' | 'desk',
+      space_type: ((raw.space_type as string) || 'room') as 'room' | 'hallway',
+      position: ((raw.position as string) || 'ceiling') as 'ceiling' | 'wall' | 'floor' | 'desk',
       sequence_number: raw.sequence_number || null,
       zone_id: raw.zone_id || null,
       space_name: space?.name || null,
       room_number: space?.room_number || raw.room_number || null,
-      technology: normalizeTechnology(raw.technology),
+      technology: normalizeTechnology(raw.technology as string),
       maintenance_notes: raw.maintenance_notes || null,
       created_at: raw.created_at || null,
       updated_at: raw.updated_at || null,
