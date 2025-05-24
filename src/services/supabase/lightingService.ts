@@ -1,135 +1,83 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { LightingFixture, LightStatus, LightingFixtureFormData, LightingZoneFormData } from '@/types/lighting';
 
 /**
- * Fetch all lighting fixtures with simplified queries to avoid deep type instantiation
+ * Fetch all lighting fixtures with a simplified approach
  */
-export async function fetchLightingFixtures() {
-  // First, get the basic fixture data
-  const { data: rawFixtures, error } = await supabase
-    .from('lighting_fixtures')
-    .select(`
-      id,
-      name,
-      type,
-      status,
-      zone_id,
-      space_id,
-      space_type,
-      position,
-      sequence_number,
-      technology,
-      maintenance_notes,
-      created_at,
-      updated_at,
-      bulb_count,
-      electrical_issues,
-      ballast_issue,
-      ballast_check_notes,
-      maintenance_history,
-      inspection_history,
-      floor_id,
-      room_number
-    `);
+export async function fetchLightingFixtures(): Promise<LightingFixture[]> {
+  try {
+    // Get basic fixture data
+    const { data: fixtures, error } = await supabase
+      .from('lighting_fixtures')
+      .select(`
+        id,
+        name,
+        type,
+        status,
+        zone_id,
+        space_id,
+        space_type,
+        position,
+        sequence_number,
+        technology,
+        maintenance_notes,
+        created_at,
+        updated_at,
+        bulb_count,
+        electrical_issues,
+        ballast_issue,
+        ballast_check_notes,
+        maintenance_history,
+        inspection_history,
+        floor_id,
+        room_number
+      `);
 
-  if (error) throw error;
-
-  if (!rawFixtures || rawFixtures.length === 0) {
-    return [];
-  }
-
-  // Get space data separately to avoid deep nesting
-  const spaceIds = rawFixtures.map(f => f.space_id).filter(Boolean) as string[];
-  const spaceData: Record<string, any> = {};
-  
-  if (spaceIds.length > 0) {
-    const { data: spaces } = await supabase
-      .from('spaces')
-      .select('id, name, room_number, floor_id')
-      .in('id', spaceIds);
-
-    if (spaces) {
-      spaces.forEach(space => {
-        spaceData[space.id] = space;
-      });
+    if (error) {
+      console.error('Error fetching lighting fixtures:', error);
+      throw error;
     }
-  }
 
-  // Get floor data separately
-  const floorIds = rawFixtures.map(f => f.floor_id).filter(Boolean) as string[];
-  const floorData: Record<string, any> = {};
-  
-  if (floorIds.length > 0) {
-    const { data: floors } = await supabase
-      .from('floors')
-      .select('id, name, building_id')
-      .in('id', floorIds);
-
-    if (floors) {
-      floors.forEach(floor => {
-        floorData[floor.id] = floor;
-      });
+    if (!fixtures) {
+      return [];
     }
-  }
 
-  // Get building data separately
-  const buildingIds = Object.values(floorData)
-    .map((f: any) => f?.building_id)
-    .filter(Boolean) as string[];
-  const buildingData: Record<string, any> = {};
-  
-  if (buildingIds.length > 0) {
-    const { data: buildings } = await supabase
-      .from('buildings')
-      .select('id, name')
-      .in('id', buildingIds);
-
-    if (buildings) {
-      buildings.forEach(building => {
-        buildingData[building.id] = building;
-      });
-    }
-  }
-
-  // Transform the data into the expected format
-  const fixtures: LightingFixture[] = rawFixtures.map((raw): LightingFixture => {
-    const space = raw.space_id ? spaceData[raw.space_id] : null;
-    const floor = raw.floor_id ? floorData[raw.floor_id] : null;
-    const building = floor?.building_id ? buildingData[floor.building_id] : null;
-    
-    return {
-      id: raw.id,
-      name: raw.name || '',
-      type: mapFixtureType(raw.type as string),
-      status: (raw.status as LightStatus) || 'functional',
+    // Transform to expected format
+    return fixtures.map((fixture): LightingFixture => ({
+      id: fixture.id,
+      name: fixture.name || '',
+      type: mapFixtureType(fixture.type),
+      status: (fixture.status as LightStatus) || 'functional',
       zone_name: null,
-      building_name: building?.name || null,
-      floor_name: floor?.name || null,
-      floor_id: space?.floor_id || raw.floor_id || null,
-      space_id: raw.space_id || null,
-      space_type: ((raw.space_type as string) || 'room') as 'room' | 'hallway',
-      position: ((raw.position as string) || 'ceiling') as 'ceiling' | 'wall' | 'floor' | 'desk',
-      sequence_number: raw.sequence_number || null,
-      zone_id: raw.zone_id || null,
-      space_name: space?.name || null,
-      room_number: space?.room_number || raw.room_number || null,
-      technology: normalizeTechnology(raw.technology as string),
-      maintenance_notes: raw.maintenance_notes || null,
-      created_at: raw.created_at || null,
-      updated_at: raw.updated_at || null,
-      bulb_count: raw.bulb_count || 1,
-      electrical_issues: parseElectricalIssues(raw.electrical_issues),
-      ballast_issue: raw.ballast_issue || false,
-      ballast_check_notes: raw.ballast_check_notes || null,
+      building_name: null,
+      floor_name: null,
+      floor_id: fixture.floor_id || null,
+      space_id: fixture.space_id || null,
+      space_type: (fixture.space_type as 'room' | 'hallway') || 'room',
+      position: (fixture.position as 'ceiling' | 'wall' | 'floor' | 'desk') || 'ceiling',
+      sequence_number: fixture.sequence_number || null,
+      zone_id: fixture.zone_id || null,
+      space_name: null,
+      room_number: fixture.room_number || null,
+      technology: fixture.technology as string || null,
+      maintenance_notes: fixture.maintenance_notes || null,
+      created_at: fixture.created_at || null,
+      updated_at: fixture.updated_at || null,
+      bulb_count: fixture.bulb_count || 1,
+      electrical_issues: parseElectricalIssues(fixture.electrical_issues),
+      ballast_issue: fixture.ballast_issue || false,
+      ballast_check_notes: fixture.ballast_check_notes || null,
       emergency_circuit: false,
       backup_power_source: null,
       emergency_duration_minutes: null,
-      maintenance_history: parseMaintenanceHistory(raw.maintenance_history),
-      inspection_history: parseInspectionHistory(raw.inspection_history)
-    };
-  });
-
-  return fixtures;
+      maintenance_history: parseMaintenanceHistory(fixture.maintenance_history),
+      inspection_history: parseInspectionHistory(fixture.inspection_history)
+    }));
+  } catch (error) {
+    console.error('Error in fetchLightingFixtures:', error);
+    return [];
+  }
 }
 
 // Helper function to map fixture types safely
@@ -139,9 +87,6 @@ function mapFixtureType(type: string): 'standard' | 'emergency' | 'motion_sensor
       return 'emergency';
     case 'motion_sensor':
       return 'motion_sensor';
-    case 'decorative':
-    case 'exit_sign':
-    case 'standard':
     default:
       return 'standard';
   }
@@ -187,23 +132,6 @@ function parseInspectionHistory(history: any) {
     }));
   }
   return [];
-}
-
-// Helper function to normalize technology values
-function normalizeTechnology(tech: string | null) {
-  if (!tech) return null;
-  
-  switch(tech.toLowerCase()) {
-    case 'led': return 'LED';
-    case 'fluorescent': return 'Fluorescent';
-    case 'bulb':
-    case 'incandescent':
-    case 'halogen':
-    case 'metal_halide':
-      return 'Bulb';
-    default:
-      return null;
-  }
 }
 
 /**
@@ -255,10 +183,6 @@ export async function fetchLightingZones(buildingId?: string, floorId?: string) 
     query = query.eq('floor_id', floorId);
   }
   
-  if (buildingId && buildingId !== 'all') {
-    query = query.eq('building_id', buildingId);
-  }
-  
   const { data, error } = await query;
   
   if (error) throw error;
@@ -274,12 +198,9 @@ export async function fetchLightingZones(buildingId?: string, floorId?: string) 
  */
 export async function createLightingFixture(data: LightingFixtureFormData) {
   try {
-    // Map form data to database schema with proper type handling
-    const fixtureType = mapFixtureType(data.type);
-
     const insertData = {
       name: data.name,
-      type: fixtureType,
+      type: data.type,
       technology: data.technology,
       bulb_count: data.bulb_count,
       status: data.status,
@@ -294,34 +215,13 @@ export async function createLightingFixture(data: LightingFixtureFormData) {
       room_number: data.room_number
     };
 
-    const { data: fixture, error: fixtureError } = await supabase
+    const { data: fixture, error } = await supabase
       .from('lighting_fixtures')
       .insert(insertData)
       .select()
       .single();
 
-    if (fixtureError) throw fixtureError;
-
-    // Get the next sequence number for this space
-    const { data: sequenceData, error: sequenceError } = await supabase
-      .rpc('get_next_lighting_sequence', {
-        p_space_id: data.space_id
-      });
-
-    if (sequenceError) throw sequenceError;
-
-    // Then create the spatial assignment
-    const { error: assignmentError } = await supabase
-      .from('spatial_assignments')
-      .insert({
-        fixture_id: fixture.id,
-        space_id: data.space_id,
-        space_type: data.space_type,
-        position: data.position,
-        sequence_number: sequenceData
-      });
-
-    if (assignmentError) throw assignmentError;
+    if (error) throw error;
 
     return fixture;
   } catch (error) {
