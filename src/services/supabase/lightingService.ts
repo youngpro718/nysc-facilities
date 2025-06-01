@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { LightingFixture, LightStatus, LightingFixtureFormData, LightingZoneFormData } from '@/types/lighting';
 
@@ -91,8 +92,8 @@ function mapFixtureType(type: string): 'standard' | 'emergency' | 'motion_sensor
   }
 }
 
-// Helper function to map fixture types for database insert
-function mapFixtureTypeForInsert(type: string): string {
+// Helper function to map fixture types for database insert - ensuring proper enum values
+function mapFixtureTypeForDatabase(type: string): 'standard' | 'emergency' | 'motion_sensor' {
   switch (type) {
     case 'emergency':
       return 'emergency';
@@ -211,7 +212,7 @@ export async function createLightingFixture(data: LightingFixtureFormData) {
   try {
     const insertData = {
       name: data.name,
-      type: mapFixtureTypeForInsert(data.type),
+      type: mapFixtureTypeForDatabase(data.type),
       technology: data.technology || null,
       bulb_count: data.bulb_count,
       status: data.status,

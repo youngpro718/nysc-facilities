@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useFieldArray, UseFormReturn } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,12 +15,14 @@ interface SimpleConnectionsManagerProps {
   roomId?: string;
 }
 
+type DirectionType = "north" | "south" | "east" | "west";
+
 export function SimpleConnectionsManager({ form, floorId, roomId }: SimpleConnectionsManagerProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [newConnection, setNewConnection] = useState<Partial<RoomConnectionData>>({
     toSpaceId: "",
     connectionType: "",
-    direction: "north"
+    direction: "north" as DirectionType
   });
 
   const { fields, append, remove } = useFieldArray({
@@ -35,13 +38,13 @@ export function SimpleConnectionsManager({ form, floorId, roomId }: SimpleConnec
       append({
         toSpaceId: newConnection.toSpaceId,
         connectionType: newConnection.connectionType,
-        direction: newConnection.direction || "north"
+        direction: (newConnection.direction || "north") as DirectionType
       });
       
       setNewConnection({
         toSpaceId: "",
         connectionType: "",
-        direction: "north"
+        direction: "north" as DirectionType
       });
       setIsAdding(false);
     }
@@ -161,7 +164,7 @@ export function SimpleConnectionsManager({ form, floorId, roomId }: SimpleConnec
                 <label className="text-sm font-medium mb-1 block">Direction</label>
                 <Select
                   value={newConnection.direction}
-                  onValueChange={(value) => setNewConnection(prev => ({ ...prev, direction: value }))}
+                  onValueChange={(value: DirectionType) => setNewConnection(prev => ({ ...prev, direction: value }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select direction" />
