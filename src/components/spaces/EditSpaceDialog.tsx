@@ -55,7 +55,7 @@ export function EditSpaceDialog({
     resolver: zodResolver(RoomFormSchema),
     defaultValues: {
       id: id,
-      type: "room", // Always default to "room" for RoomFormData
+      type: "room",
       name: "",
       roomNumber: "",
       roomType: undefined,
@@ -102,10 +102,9 @@ export function EditSpaceDialog({
       console.log("Room type from database:", initialData.room_type);
       console.log("Converted room type:", convertedRoomType);
       
-      // Create form data object with proper type handling
       const formData: Partial<RoomFormData> = {
         id: id,
-        type: "room", // Ensure this is always "room" for RoomFormData
+        type: "room",
         name: initialData.name || "",
         roomNumber: initialData.room_number || "",
         roomType: convertedRoomType,
@@ -124,8 +123,6 @@ export function EditSpaceDialog({
       };
       
       console.log("Setting form data:", formData);
-      
-      // Reset the form with the prepared data
       form.reset(formData);
     }
   }, [open, initialData, type, id, form]);
@@ -137,7 +134,6 @@ export function EditSpaceDialog({
       console.log("=== MUTATION START ===");
       console.log("Submitting data for room update:", data);
       
-      // Validate required data
       if (!data.id && !id) {
         throw new Error("Room ID is missing - cannot update room");
       }
@@ -200,7 +196,7 @@ export function EditSpaceDialog({
       
       console.log("Room update successful");
       
-      // Handle connections if present
+      // Handle connections using the simplified approach
       if (data.connections && data.connections.length > 0) {
         console.log("Processing connections:", data.connections);
         
@@ -305,13 +301,11 @@ export function EditSpaceDialog({
     console.log("=== HANDLE SUBMIT ===");
     console.log("Handling submit with data:", data);
     
-    // Ensure ID is present
     if (!data.id) {
       console.warn("ID missing in form data, setting from props");
       data.id = id;
     }
     
-    // Validate the form before submission
     const isValid = await form.trigger();
     if (!isValid) {
       console.error("Form validation failed:", form.formState.errors);
