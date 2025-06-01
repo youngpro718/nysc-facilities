@@ -8,7 +8,7 @@ import { StorageFields } from "./StorageFields";
 import { ParentRoomField, CAN_HAVE_PARENT_ROOM_TYPES } from "./ParentRoomField";
 import { type RoomFormData } from "./RoomFormSchema";
 import { Separator } from "@/components/ui/separator";
-import { ConnectionsField } from "./ConnectionsField";
+import { SimpleConnectionsManager } from "./connections/SimpleConnectionsManager";
 import { CourtroomPhotoUpload } from "./CourtroomPhotoUpload";
 import { toast } from "sonner";
 import { useEffect } from "react";
@@ -148,7 +148,8 @@ export function RoomFormContent({
 
         <Separator />
 
-        <ConnectionsField 
+        {/* Simplified Connections Manager */}
+        <SimpleConnectionsManager 
           form={form}
           floorId={floorId}
           roomId={roomId}

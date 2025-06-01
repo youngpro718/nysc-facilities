@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { LightingFixture, LightStatus, LightingFixtureFormData, LightingZoneFormData } from '@/types/lighting';
 
@@ -60,7 +59,7 @@ export async function fetchLightingFixtures(): Promise<LightingFixture[]> {
       zone_id: fixture.zone_id || null,
       space_name: null,
       room_number: fixture.room_number || null,
-      technology: fixture.technology as string || null,
+      technology: fixture.technology || null,
       maintenance_notes: fixture.maintenance_notes || null,
       created_at: fixture.created_at || null,
       updated_at: fixture.updated_at || null,
@@ -82,6 +81,18 @@ export async function fetchLightingFixtures(): Promise<LightingFixture[]> {
 
 // Helper function to map fixture types safely
 function mapFixtureType(type: string): 'standard' | 'emergency' | 'motion_sensor' {
+  switch (type) {
+    case 'emergency':
+      return 'emergency';
+    case 'motion_sensor':
+      return 'motion_sensor';
+    default:
+      return 'standard';
+  }
+}
+
+// Helper function to map fixture types for database insert
+function mapFixtureTypeForInsert(type: string): string {
   switch (type) {
     case 'emergency':
       return 'emergency';
@@ -200,8 +211,8 @@ export async function createLightingFixture(data: LightingFixtureFormData) {
   try {
     const insertData = {
       name: data.name,
-      type: data.type,
-      technology: data.technology,
+      type: mapFixtureTypeForInsert(data.type),
+      technology: data.technology || null,
       bulb_count: data.bulb_count,
       status: data.status,
       electrical_issues: JSON.stringify(data.electrical_issues),
