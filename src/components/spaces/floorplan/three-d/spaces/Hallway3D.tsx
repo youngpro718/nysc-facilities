@@ -139,7 +139,8 @@ export function Hallway3D({
           
           {/* Direction arrows embedded in the floor */}
           <group>
-            {[...Array(Math.floor(hallwayWidth / 60))].map((_, i) => (
+            {/* Ensure width is valid to prevent creating array with negative or NaN length */}
+            {hallwayWidth > 0 ? [...Array(Math.max(1, Math.floor(hallwayWidth / 60)))].map((_, i) => (
               <mesh 
                 key={i} 
                 position={[-hallwayWidth/2 + 40 + i * 60, -hallwayHeight/2 + 1.5, 0]}
@@ -154,7 +155,7 @@ export function Hallway3D({
                   opacity={0.8}
                 />
               </mesh>
-            ))}
+            )) : null}
           </group>
         </group>
       )}

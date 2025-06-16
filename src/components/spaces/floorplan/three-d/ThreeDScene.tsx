@@ -21,7 +21,9 @@ interface ThreeDSceneProps {
   viewMode?: 'default' | 'rooms' | 'hallways' | 'doors';
 }
 
-export function ThreeDScene({ 
+import { forwardRef, useImperativeHandle } from 'react';
+
+export const ThreeDScene = forwardRef<any, ThreeDSceneProps>(function ThreeDScene({ 
   objects = [], 
   connections = [],
   onObjectSelect, 
@@ -31,10 +33,51 @@ export function ThreeDScene({
   showConnections = true,
   lightIntensity = 0.8,
   viewMode = 'default'
-}: ThreeDSceneProps) {
-  const { camera } = useThree();
+}, ref) {
+  // Defensive: filter out objects with missing required props
+  const safeObjects = (objects || []).filter(obj => {
+    if (!obj || !obj.position || !obj.data || !obj.data.size) return false;
+    if (typeof obj.position.x !== 'number' || typeof obj.position.y !== 'number') return false;
+    if (typeof obj.data.size.width !== 'number' || typeof obj.data.size.height !== 'number') return false;
+    return true;
+  });
+  const { camera, gl, size } = useThree();
   const controlsRef = useRef<any>(null);
   const [hasInitialized, setHasInitialized] = useState(false);
+
+  // Fit to floor method
+  useImperativeHandle(ref, () => ({
+    fitToFloor: () => {
+      if (!safeObjects || safeObjects.length === 0) return;
+      // Compute bounding box of all visible objects
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      safeObjects.forEach(obj => {
+        const { x, y } = obj.position;
+        const w = obj.data.size.width;
+        const h = obj.data.size.height;
+        minX = Math.min(minX, x - w / 2);
+        maxX = Math.max(maxX, x + w / 2);
+        minY = Math.min(minY, y - h / 2);
+        maxY = Math.max(maxY, y + h / 2);
+      });
+      // Center
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+      // Fit camera distance
+      const sceneWidth = maxX - minX;
+      const sceneHeight = maxY - minY;
+      const maxDim = Math.max(sceneWidth, sceneHeight, 1);
+      const fov = (camera as any).fov ? (camera as any).fov * (Math.PI / 180) : Math.PI / 4;
+      const fitHeight = maxDim / (2 * Math.tan(fov / 2));
+      const fitDist = fitHeight * 1.25 + 200; // Add margin
+      camera.position.set(centerX, fitDist, centerY + 0.01); // avoid gimbal lock
+      camera.lookAt(centerX, 0, centerY);
+      if (controlsRef.current) {
+        controlsRef.current.target.set(centerX, 0, centerY);
+        controlsRef.current.update();
+      }
+    }
+  }), [safeObjects, camera, size]);
   
   // Group objects by type for better rendering
   const roomObjects = objects?.filter(obj => obj.type === 'room') || [];
@@ -48,47 +91,81 @@ export function ThreeDScene({
     doors: viewMode === 'default' || viewMode === 'doors'
   };
   
+  console.log('Rooms:', roomObjects.length, 'Hallways:', hallwayObjects.length, 'Doors:', doorObjects.length);
+  
   // Find visible connections between spaces
-  const visibleConnections = connections?.filter(conn => {
+  const visibleConnections = (connections || []).filter(conn => {
     // Skip if connections are hidden
     if (!showConnections) return false;
+    if (!conn) return false;
     
-    const sourceObj = objects?.find(obj => obj.id === conn.source);
-    const targetObj = objects?.find(obj => obj.id === conn.target);
-    
-    // If either object is filtered out by view mode, don't show the connection
-    if (!sourceObj || !targetObj) return false;
-    
-    const sourceVisible = 
-      (sourceObj.type === 'room' && visibleObjects.rooms) ||
-      (sourceObj.type === 'hallway' && visibleObjects.hallways) ||
-      (sourceObj.type === 'door' && visibleObjects.doors);
+    try {
+      // Check if source and target exist
+      if (!conn.source || !conn.target) {
+        console.warn('Connection missing source or target:', conn);
+        return false;
+      }
       
-    const targetVisible = 
-      (targetObj.type === 'room' && visibleObjects.rooms) ||
-      (targetObj.type === 'hallway' && visibleObjects.hallways) ||
-      (targetObj.type === 'door' && visibleObjects.doors);
-    
-    return sourceVisible && targetVisible;
-  }) || [];
+      const sourceObj = objects?.find(obj => obj?.id === conn.source);
+      const targetObj = objects?.find(obj => obj?.id === conn.target);
+      
+      // If either object is filtered out by view mode, don't show the connection
+      if (!sourceObj || !targetObj) return false;
+      
+      // Add safety check for type property
+      if (!sourceObj.type || !targetObj.type) {
+        console.warn('Object missing type property:', sourceObj.id || targetObj.id);
+        return false;
+      }
+      
+      const sourceVisible = 
+        (sourceObj.type === 'room' && visibleObjects.rooms) ||
+        (sourceObj.type === 'hallway' && visibleObjects.hallways) ||
+        (sourceObj.type === 'door' && visibleObjects.doors);
+        
+      const targetVisible = 
+        (targetObj.type === 'room' && visibleObjects.rooms) ||
+        (targetObj.type === 'hallway' && visibleObjects.hallways) ||
+        (targetObj.type === 'door' && visibleObjects.doors);
+      
+      return sourceVisible && targetVisible;
+    } catch (err) {
+      console.error('Error processing connection:', err, conn);
+      return false;
+    }
+  });
 
   // Prepare connection data for spaces
   const objectConnectionMap = new Map<string, string[]>();
   
   if (connections) {
     connections.forEach(conn => {
-      if (conn.source && conn.target) {
-        // Add target to source's connections
-        if (!objectConnectionMap.has(conn.source)) {
-          objectConnectionMap.set(conn.source, []);
+      if (!conn) return;
+      
+      try {
+        if (conn.source && conn.target) {
+          // Add target to source's connections
+          if (!objectConnectionMap.has(conn.source)) {
+            objectConnectionMap.set(conn.source, []);
+          }
+          // Using optional chaining and checking for undefined
+          const sourceConns = objectConnectionMap.get(conn.source);
+          if (sourceConns) {
+            sourceConns.push(conn.target);
+          }
+          
+          // Add source to target's connections
+          if (!objectConnectionMap.has(conn.target)) {
+            objectConnectionMap.set(conn.target, []);
+          }
+          // Using optional chaining and checking for undefined
+          const targetConns = objectConnectionMap.get(conn.target);
+          if (targetConns) {
+            targetConns.push(conn.source);
+          }
         }
-        objectConnectionMap.get(conn.source)?.push(conn.target);
-        
-        // Add source to target's connections
-        if (!objectConnectionMap.has(conn.target)) {
-          objectConnectionMap.set(conn.target, []);
-        }
-        objectConnectionMap.get(conn.target)?.push(conn.source);
+      } catch (err) {
+        console.error('Error building connection map:', err, conn);
       }
     });
   }
@@ -401,9 +478,6 @@ export function ThreeDScene({
           );
         })}
       </group>
-      
-      {/* Stats for performance monitoring (only in development) */}
-      {process.env.NODE_ENV === 'development' && <Stats />}
     </>
   );
-}
+});
