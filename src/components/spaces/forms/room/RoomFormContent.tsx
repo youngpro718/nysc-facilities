@@ -8,7 +8,7 @@ import { StorageFields } from "./StorageFields";
 import { ParentRoomField, CAN_HAVE_PARENT_ROOM_TYPES } from "./ParentRoomField";
 import { type RoomFormData } from "./RoomFormSchema";
 import { Separator } from "@/components/ui/separator";
-import { ConnectionsField } from "./ConnectionsField";
+import { SimpleConnectionsManager } from "./connections/SimpleConnectionsManager";
 import { CourtroomPhotoUpload } from "./CourtroomPhotoUpload";
 import { toast } from "sonner";
 import { useEffect } from "react";
@@ -41,37 +41,6 @@ export function RoomFormContent({
     });
     return () => subscription.unsubscribe();
   }, [form]);
-  
-  // Initialize or reset courtroom_photos when room type changes
-  useEffect(() => {
-    if (roomType === RoomTypeEnum.COURTROOM) {
-      // Make sure courtroom_photos is initialized as an object for courtrooms
-      const currentValue = form.getValues("courtroom_photos");
-      if (!currentValue) {
-        form.setValue("courtroom_photos", { judge_view: null, audience_view: null });
-      }
-    } else {
-      // Clear courtroom_photos if room type is not courtroom
-      form.setValue("courtroom_photos", null);
-    }
-  }, [roomType, form]);
-  
-  // Handle parent room field based on room type
-  useEffect(() => {
-    if (!CAN_HAVE_PARENT_ROOM_TYPES.includes(roomType) && form.getValues("parentRoomId")) {
-      form.setValue("parentRoomId", null);
-    }
-  }, [roomType, form]);
-  
-  // Handle storage fields based on isStorage flag
-  useEffect(() => {
-    if (!isStorage) {
-      // If not storage, ensure these values are null
-      form.setValue("storageType", null);
-      form.setValue("storageCapacity", null);
-      form.setValue("storageNotes", null);
-    }
-  }, [isStorage, form]);
   
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -179,7 +148,8 @@ export function RoomFormContent({
 
         <Separator />
 
-        <ConnectionsField 
+        {/* Simplified Connections Manager */}
+        <SimpleConnectionsManager 
           form={form}
           floorId={floorId}
           roomId={roomId}
