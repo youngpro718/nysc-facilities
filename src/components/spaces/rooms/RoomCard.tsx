@@ -18,23 +18,26 @@ export function RoomCard({ room, onDelete }: RoomCardProps) {
   };
 
   return (
-    <Card className="relative h-[320px] group">
-      <CardContent className="p-0 h-full perspective-1000">
+    <Card className="relative h-[320px] group overflow-hidden">
+      <CardContent className="p-0 h-full">
         <div 
-          className="relative w-full h-full transition-all duration-500"
+          className="relative w-full h-full transition-all duration-500 preserve-3d"
           style={{ 
             transformStyle: 'preserve-3d',
             transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0)',
           }}
         >
+          {/* Front of card */}
           <div 
-            className="absolute inset-0 w-full h-full backface-hidden"
+            className="absolute inset-0 w-full h-full bg-card"
             style={{ backfaceVisibility: 'hidden' }}
           >
             <CardFront room={room} onFlip={handleFlip} onDelete={onDelete} />
           </div>
+          
+          {/* Back of card */}
           <div 
-            className="absolute inset-0 w-full h-full backface-hidden"
+            className="absolute inset-0 w-full h-full bg-card"
             style={{ 
               backfaceVisibility: 'hidden',
               transform: 'rotateY(180deg)'

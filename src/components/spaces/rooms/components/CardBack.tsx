@@ -1,5 +1,5 @@
+
 import React, { useState } from 'react';
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Room } from "../types/RoomTypes";
@@ -18,7 +18,7 @@ export function CardBack({ room, onFlip }: CardBackProps) {
   const [isInventoryDialogOpen, setIsInventoryDialogOpen] = useState(false);
 
   return (
-    <div className="p-5 flex flex-col h-full">
+    <div className="p-5 flex flex-col h-full bg-card border rounded-md shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-lg font-semibold text-foreground">
           Room Details
