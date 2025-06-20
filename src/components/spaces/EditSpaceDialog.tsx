@@ -25,7 +25,9 @@ import {
   roomTypeToString, 
   statusToString, 
   storageTypeToString,
-  stringToRoomType
+  stringToRoomType,
+  stringToStatus,
+  stringToStorageType
 } from "./rooms/types/roomEnums";
 
 interface EditSpaceDialogProps {
@@ -98,9 +100,39 @@ export function EditSpaceDialog({
         };
       }) : [];
       
-      const convertedRoomType = initialData.room_type ? stringToRoomType(initialData.room_type) : undefined;
-      console.log("Room type from database:", initialData.room_type);
-      console.log("Converted room type:", convertedRoomType);
+      // Enhanced enum conversions with better error handling and logging
+      let convertedRoomType;
+      if (initialData.room_type) {
+        try {
+          convertedRoomType = stringToRoomType(initialData.room_type);
+          console.log("Room type conversion:", initialData.room_type, "->", convertedRoomType);
+        } catch (error) {
+          console.warn("Failed to convert room type:", initialData.room_type, error);
+          convertedRoomType = RoomTypeEnum.OFFICE; // Safe fallback
+        }
+      }
+      
+      let convertedStatus;
+      if (initialData.status) {
+        try {
+          convertedStatus = stringToStatus(initialData.status);
+          console.log("Status conversion:", initialData.status, "->", convertedStatus);
+        } catch (error) {
+          console.warn("Failed to convert status:", initialData.status, error);
+          convertedStatus = StatusEnum.ACTIVE; // Safe fallback
+        }
+      }
+      
+      let convertedStorageType = null;
+      if (initialData.is_storage && initialData.storage_type) {
+        try {
+          convertedStorageType = stringToStorageType(initialData.storage_type);
+          console.log("Storage type conversion:", initialData.storage_type, "->", convertedStorageType);
+        } catch (error) {
+          console.warn("Failed to convert storage type:", initialData.storage_type, error);
+          convertedStorageType = StorageTypeEnum.GENERAL; // Safe fallback
+        }
+      }
       
       const formData: Partial<RoomFormData> = {
         id: id,
@@ -108,11 +140,11 @@ export function EditSpaceDialog({
         name: initialData.name || "",
         roomNumber: initialData.room_number || "",
         roomType: convertedRoomType,
-        status: initialData.status,
+        status: convertedStatus,
         description: initialData.description || "",
         phoneNumber: initialData.phone_number || "",
-        isStorage: initialData.is_storage || false,
-        storageType: initialData.storage_type || null,
+        isStorage: Boolean(initialData.is_storage),
+        storageType: convertedStorageType,
         storageCapacity: initialData.storage_capacity || null,
         storageNotes: initialData.storage_notes || "",
         parentRoomId: initialData.parent_room_id || null,
@@ -122,8 +154,13 @@ export function EditSpaceDialog({
         floorId: initialData.floor_id || ""
       };
       
-      console.log("Setting form data:", formData);
-      form.reset(formData);
+      console.log("Final form data to be set:", formData);
+      
+      // Use setTimeout to ensure the form is ready
+      setTimeout(() => {
+        form.reset(formData);
+        console.log("Form reset completed. Current form values:", form.getValues());
+      }, 0);
     }
   }, [open, initialData, type, id, form]);
 
