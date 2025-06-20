@@ -100,39 +100,20 @@ export function EditSpaceDialog({
         };
       }) : [];
       
-      // Enhanced enum conversions with better error handling and logging
-      let convertedRoomType;
-      if (initialData.room_type) {
-        try {
-          convertedRoomType = stringToRoomType(initialData.room_type);
-          console.log("Room type conversion:", initialData.room_type, "->", convertedRoomType);
-        } catch (error) {
-          console.warn("Failed to convert room type:", initialData.room_type, error);
-          convertedRoomType = RoomTypeEnum.OFFICE; // Safe fallback
-        }
-      }
-      
-      let convertedStatus;
-      if (initialData.status) {
-        try {
-          convertedStatus = stringToStatus(initialData.status);
-          console.log("Status conversion:", initialData.status, "->", convertedStatus);
-        } catch (error) {
-          console.warn("Failed to convert status:", initialData.status, error);
-          convertedStatus = StatusEnum.ACTIVE; // Safe fallback
-        }
-      }
-      
+      // Convert enum values to their string representations that the form expects
+      let convertedRoomType = initialData.room_type || undefined;
+      let convertedStatus = initialData.status || undefined;
       let convertedStorageType = null;
+      
+      // For storage type, only set if the room is actually storage
       if (initialData.is_storage && initialData.storage_type) {
-        try {
-          convertedStorageType = stringToStorageType(initialData.storage_type);
-          console.log("Storage type conversion:", initialData.storage_type, "->", convertedStorageType);
-        } catch (error) {
-          console.warn("Failed to convert storage type:", initialData.storage_type, error);
-          convertedStorageType = StorageTypeEnum.GENERAL; // Safe fallback
-        }
+        convertedStorageType = initialData.storage_type;
       }
+      
+      console.log("Direct string values being set:");
+      console.log("Room type:", convertedRoomType);
+      console.log("Status:", convertedStatus);
+      console.log("Storage type:", convertedStorageType);
       
       const formData: Partial<RoomFormData> = {
         id: id,
