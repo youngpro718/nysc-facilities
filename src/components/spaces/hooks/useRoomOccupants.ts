@@ -31,7 +31,7 @@ export function useRoomOccupants(roomId: string | undefined) {
           is_primary,
           schedule,
           room_id,
-          rooms!fk_occupant_room_assignments_room (
+          rooms (
             id,
             name,
             room_number,
@@ -42,7 +42,7 @@ export function useRoomOccupants(roomId: string | undefined) {
               )
             )
           ),
-          occupants!fk_occupant_room_assignments_occupant (
+          occupants (
             id,
             first_name,
             last_name,
