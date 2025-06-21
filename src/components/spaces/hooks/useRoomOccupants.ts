@@ -53,17 +53,22 @@ export function useRoomOccupants(roomId: string | undefined) {
 
       if (error) throw error;
 
-      return (data || []).map(assignment => ({
-        ...assignment.occupants,
-        assignment_type: assignment.assignment_type,
-        is_primary: assignment.is_primary,
-        schedule: assignment.schedule,
-        room_id: assignment.room_id,
-        room_name: assignment.rooms?.name,
-        room_number: assignment.rooms?.room_number,
-        floor_name: assignment.rooms?.floors?.name,
-        building_name: assignment.rooms?.floors?.buildings?.name,
-      })) as RoomOccupant[];
+      return (data || [])
+        .filter(assignment => assignment.occupants && assignment.rooms)
+        .map(assignment => ({
+          id: assignment.occupants!.id,
+          first_name: assignment.occupants!.first_name,
+          last_name: assignment.occupants!.last_name,
+          title: assignment.occupants!.title,
+          assignment_type: assignment.assignment_type,
+          is_primary: assignment.is_primary,
+          schedule: assignment.schedule,
+          room_id: assignment.room_id,
+          room_name: assignment.rooms!.name,
+          room_number: assignment.rooms!.room_number,
+          floor_name: assignment.rooms!.floors?.name,
+          building_name: assignment.rooms!.floors?.buildings?.name,
+        })) as RoomOccupant[];
     },
   });
 }
