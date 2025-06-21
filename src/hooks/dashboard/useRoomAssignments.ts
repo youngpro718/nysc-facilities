@@ -8,17 +8,22 @@ export const useRoomAssignments = (userId?: string) => {
     queryKey: ['assignedRooms', userId],
     queryFn: async () => {
       if (!userId) throw new Error('No user ID available');
+      
+      console.log('Fetching room assignments for user:', userId);
+      
       const { data, error } = await supabase
         .from('occupant_room_assignments')
         .select(`
           id,
           assigned_at,
           is_primary,
+          assignment_type,
           room_id,
           rooms (
             id,
             name,
             room_number,
+            status,
             floor_id,
             floors (
               id,
@@ -33,20 +38,31 @@ export const useRoomAssignments = (userId?: string) => {
         `)
         .eq('occupant_id', userId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching room assignments:', error);
+        throw error;
+      }
       
-      return data.map(assignment => ({
+      console.log('Raw room assignment data:', data);
+      
+      const formattedAssignments = data.map(assignment => ({
         id: assignment.id,
         room_id: assignment.room_id,
-        room_name: assignment.rooms?.name,
-        room_number: assignment.rooms?.room_number,
+        room_name: assignment.rooms?.name || 'Unknown Room',
+        room_number: assignment.rooms?.room_number || 'N/A',
         floor_id: assignment.rooms?.floor_id,
         building_id: assignment.rooms?.floors?.building_id,
-        building_name: assignment.rooms?.floors?.buildings?.name,
-        floor_name: assignment.rooms?.floors?.name,
+        building_name: assignment.rooms?.floors?.buildings?.name || 'Unknown Building',
+        floor_name: assignment.rooms?.floors?.name || 'Unknown Floor',
         assigned_at: assignment.assigned_at,
-        is_primary: assignment.is_primary
+        is_primary: assignment.is_primary,
+        assignment_type: assignment.assignment_type,
+        room_status: assignment.rooms?.status
       }));
+      
+      console.log('Formatted room assignments:', formattedAssignments);
+      
+      return formattedAssignments;
     },
     enabled: !!userId,
     staleTime: 60000, // Cache for 1 minute

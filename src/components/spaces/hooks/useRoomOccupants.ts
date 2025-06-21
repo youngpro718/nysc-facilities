@@ -10,6 +10,11 @@ interface RoomOccupant {
   assignment_type: string;
   is_primary: boolean;
   schedule?: any;
+  room_id?: string;
+  room_name?: string;
+  room_number?: string;
+  floor_name?: string;
+  building_name?: string;
 }
 
 export function useRoomOccupants(roomId: string | undefined) {
@@ -25,6 +30,18 @@ export function useRoomOccupants(roomId: string | undefined) {
           assignment_type,
           is_primary,
           schedule,
+          room_id,
+          rooms!fk_occupant_room_assignments_room (
+            id,
+            name,
+            room_number,
+            floors (
+              name,
+              buildings (
+                name
+              )
+            )
+          ),
           occupants!fk_occupant_room_assignments_occupant (
             id,
             first_name,
@@ -41,6 +58,11 @@ export function useRoomOccupants(roomId: string | undefined) {
         assignment_type: assignment.assignment_type,
         is_primary: assignment.is_primary,
         schedule: assignment.schedule,
+        room_id: assignment.room_id,
+        room_name: assignment.rooms?.name,
+        room_number: assignment.rooms?.room_number,
+        floor_name: assignment.rooms?.floors?.name,
+        building_name: assignment.rooms?.floors?.buildings?.name,
       })) as RoomOccupant[];
     },
   });

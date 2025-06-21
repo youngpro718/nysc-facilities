@@ -5775,6 +5775,7 @@ export type Database = {
           floor_id: string
           function_change_date: string | null
           id: string
+          is_parent: boolean
           is_storage: boolean | null
           last_inventory_check: string | null
           maintenance_history: Json[] | null
@@ -5804,6 +5805,7 @@ export type Database = {
           floor_id: string
           function_change_date?: string | null
           id?: string
+          is_parent?: boolean
           is_storage?: boolean | null
           last_inventory_check?: string | null
           maintenance_history?: Json[] | null
@@ -5833,6 +5835,7 @@ export type Database = {
           floor_id?: string
           function_change_date?: string | null
           id?: string
+          is_parent?: boolean
           is_storage?: boolean | null
           last_inventory_check?: string | null
           maintenance_history?: Json[] | null

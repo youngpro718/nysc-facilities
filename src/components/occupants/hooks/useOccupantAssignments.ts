@@ -20,6 +20,7 @@ export function useOccupantAssignments(occupantId: string | undefined) {
             rooms (
               id,
               name,
+              room_number,
               floor_id,
               floors (
                 name,
@@ -43,6 +44,14 @@ export function useOccupantAssignments(occupantId: string | undefined) {
           .eq("occupant_id", occupantId)
           .is("returned_at", null),
       ]);
+
+      if (roomAssignments.error) {
+        console.error("Error fetching room assignments:", roomAssignments.error);
+      }
+
+      if (keyAssignments.error) {
+        console.error("Error fetching key assignments:", keyAssignments.error);
+      }
 
       return {
         rooms: roomAssignments.data?.map((ra) => ra.room_id) || [],
