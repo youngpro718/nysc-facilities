@@ -42,7 +42,7 @@ export function useRoomOccupants(roomId: string | undefined) {
               )
             )
           ),
-          occupants (
+          occupants!occupant_room_assignments_occupant_id_fkey (
             id,
             first_name,
             last_name,
