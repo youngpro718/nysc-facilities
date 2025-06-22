@@ -1,83 +1,105 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { RoomRelocation, ActiveRelocation, RelocationStatus } from "../../types/relocationTypes";
+import { RoomRelocation, ActiveRelocation } from "../../types/relocationTypes";
 
-export async function fetchRelocations(status?: RelocationStatus): Promise<RoomRelocation[]> {
-  let query = supabase
+export const fetchRelocations = async (): Promise<RoomRelocation[]> => {
+  const { data, error } = await supabase
     .from('room_relocations')
     .select(`
       *,
-      original_room:rooms!original_room_id(name, room_number),
-      temporary_room:rooms!temporary_room_id(name, room_number),
-      building:rooms!original_room_id(floor:floors(building:buildings(name)))
-    `);
-
-  if (status) {
-    query = query.eq('status', status);
-  }
-
-  const { data, error } = await query.order('created_at', { ascending: false });
+      original_room:rooms!original_room_id(
+        name,
+        room_number,
+        floors(
+          name,
+          buildings(name)
+        )
+      ),
+      temporary_room:rooms!temporary_room_id(
+        name,
+        room_number,
+        floors(
+          name,
+          buildings(name)
+        )
+      )
+    `)
+    .order('created_at', { ascending: false });
 
   if (error) {
     console.error('Error fetching relocations:', error);
     throw error;
   }
 
-  return (data || []).map(item => ({
-    ...item,
-    original_room_name: item.original_room?.name,
-    original_room_number: item.original_room?.room_number,
-    temporary_room_name: item.temporary_room?.name,
-    temporary_room_number: item.temporary_room?.room_number,
-    building_name: item.building?.floor?.building?.name,
-    floor_name: item.building?.floor?.name
-  })) as RoomRelocation[];
-}
+  return (data || []).map(relocation => ({
+    ...relocation,
+    original_room_name: relocation.original_room?.name || '',
+    original_room_number: relocation.original_room?.room_number || '',
+    temporary_room_name: relocation.temporary_room?.name || '',
+    temporary_room_number: relocation.temporary_room?.room_number || '',
+    building_name: relocation.original_room?.floors?.buildings?.name || '',
+    floor_name: relocation.original_room?.floors?.name || ''
+  }));
+};
 
-export async function fetchActiveRelocations(): Promise<ActiveRelocation[]> {
+export const fetchActiveRelocations = async (): Promise<ActiveRelocation[]> => {
   const { data, error } = await supabase
     .from('active_relocations')
-    .select('*');
+    .select('*')
+    .order('created_at', { ascending: false });
 
   if (error) {
     console.error('Error fetching active relocations:', error);
     throw error;
   }
 
-  return (data || []).map(item => ({
-    ...item,
-    building_name: item.original_building_name || '',
-    floor_name: item.original_floor_name || '',
-    original_room_id: item.original_room_id || '',
-    temporary_room_id: item.temporary_room_id || '',
-    created_by: item.created_by || ''
-  })) as ActiveRelocation[];
-}
+  return (data || []).map(relocation => ({
+    ...relocation,
+    progress_percentage: relocation.progress_percentage || 0,
+    days_active: relocation.days_active || 0,
+    total_days: relocation.total_days || 0
+  }));
+};
 
-export async function fetchRelocationById(id: string): Promise<RoomRelocation> {
+export const fetchRelocationById = async (id: string): Promise<RoomRelocation | null> => {
   const { data, error } = await supabase
     .from('room_relocations')
     .select(`
       *,
-      original_room:rooms!original_room_id(name, room_number),
-      temporary_room:rooms!temporary_room_id(name, room_number),
-      building:rooms!original_room_id(floor:floors(building:buildings(name)))
+      original_room:rooms!original_room_id(
+        name,
+        room_number,
+        floors(
+          name,
+          buildings(name)
+        )
+      ),
+      temporary_room:rooms!temporary_room_id(
+        name,
+        room_number,
+        floors(
+          name,
+          buildings(name)
+        )
+      )
     `)
     .eq('id', id)
     .single();
 
   if (error) {
-    console.error(`Error fetching relocation with ID ${id}:`, error);
+    console.error('Error fetching relocation:', error);
     throw error;
   }
 
+  if (!data) return null;
+
   return {
     ...data,
-    original_room_name: data.original_room?.name,
-    original_room_number: data.original_room?.room_number,
-    temporary_room_name: data.temporary_room?.name,
-    temporary_room_number: data.temporary_room?.room_number,
-    building_name: data.building?.floor?.building?.name,
-    floor_name: data.building?.floor?.name
-  } as RoomRelocation;
-}
+    original_room_name: data.original_room?.name || '',
+    original_room_number: data.original_room?.room_number || '',
+    temporary_room_name: data.temporary_room?.name || '',
+    temporary_room_number: data.temporary_room?.room_number || '',
+    building_name: data.original_room?.floors?.buildings?.name || '',
+    floor_name: data.original_room?.floors?.name || ''
+  };
+};

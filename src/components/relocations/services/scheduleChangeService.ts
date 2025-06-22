@@ -1,39 +1,32 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { CreateScheduleChangeFormData, UpdateScheduleChangeFormData, ScheduleChange, RelocationStatus } from "../types/relocationTypes";
+import { ScheduleChange, CreateScheduleChangeFormData, UpdateScheduleChangeFormData } from "../types/relocationTypes";
 
-export async function fetchScheduleChanges(relocationId: string) {
+export const fetchScheduleChanges = async (relocationId: string): Promise<ScheduleChange[]> => {
   const { data, error } = await supabase
     .from('schedule_changes')
     .select('*')
     .eq('relocation_id', relocationId)
-    .order('start_date', { ascending: false });
+    .order('created_at', { ascending: false });
 
   if (error) {
-    console.error(`Error fetching schedule changes for relocation ${relocationId}:`, error);
+    console.error('Error fetching schedule changes:', error);
     throw error;
   }
 
-  return data as ScheduleChange[];
-}
+  return data || [];
+};
 
-export async function createScheduleChange(formData: CreateScheduleChangeFormData) {
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) {
-    throw new Error('User not authenticated');
-  }
-
+export const createScheduleChange = async (formData: CreateScheduleChangeFormData): Promise<ScheduleChange> => {
   const { data, error } = await supabase
     .from('schedule_changes')
     .insert({
       relocation_id: formData.relocation_id,
-      original_court_part: formData.original_court_part,
-      temporary_assignment: formData.temporary_assignment,
-      start_date: formData.start_date,
-      end_date: formData.end_date,
-      special_instructions: formData.special_instructions,
-      status: 'scheduled' as RelocationStatus,
-      created_by: userData.user.id
+      change_type: formData.change_type,
+      new_start_date: formData.new_start_date,
+      new_end_date: formData.new_end_date,
+      reason: formData.reason,
+      created_at: new Date().toISOString()
     })
     .select()
     .single();
@@ -43,40 +36,40 @@ export async function createScheduleChange(formData: CreateScheduleChangeFormDat
     throw error;
   }
 
-  return data as ScheduleChange;
-}
+  return data;
+};
 
-export async function updateScheduleChange(formData: UpdateScheduleChangeFormData) {
+export const updateScheduleChange = async (formData: UpdateScheduleChangeFormData): Promise<ScheduleChange> => {
   const { data, error } = await supabase
     .from('schedule_changes')
     .update({
-      temporary_assignment: formData.temporary_assignment,
-      end_date: formData.end_date,
-      special_instructions: formData.special_instructions,
-      status: formData.status
+      change_type: formData.change_type,
+      new_start_date: formData.new_start_date,
+      new_end_date: formData.new_end_date,
+      reason: formData.reason,
+      approved_by: formData.approved_by,
+      updated_at: new Date().toISOString()
     })
     .eq('id', formData.id)
     .select()
     .single();
 
   if (error) {
-    console.error(`Error updating schedule change with ID ${formData.id}:`, error);
+    console.error('Error updating schedule change:', error);
     throw error;
   }
 
-  return data as ScheduleChange;
-}
+  return data;
+};
 
-export async function deleteScheduleChange(id: string) {
+export const deleteScheduleChange = async (id: string): Promise<void> => {
   const { error } = await supabase
     .from('schedule_changes')
     .delete()
     .eq('id', id);
 
   if (error) {
-    console.error(`Error deleting schedule change with ID ${id}:`, error);
+    console.error('Error deleting schedule change:', error);
     throw error;
   }
-
-  return true;
-}
+};

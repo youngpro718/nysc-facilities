@@ -9,6 +9,7 @@ import { FilterBar } from "./rooms/components/FilterBar";
 import { RoomsContent } from "./rooms/components/RoomsContent";
 import { useRoomFilters } from "./hooks/useRoomFilters";
 import { useRoomsQuery } from "./hooks/queries/useRoomsQuery";
+import { Room } from "./rooms/types/RoomTypes";
 
 interface RoomsListProps {
   selectedBuilding: string;
@@ -29,7 +30,7 @@ const RoomsList = ({ selectedBuilding, selectedFloor }: RoomsListProps) => {
   });
   
   const { filteredAndSortedRooms } = useRoomFilters({
-    rooms,
+    rooms: rooms || [],
     searchQuery,
     sortBy,
     statusFilter,
