@@ -15,7 +15,7 @@ export function RelocationsCalendar({ relocations }: RelocationsCalendarProps) {
   const events = useMemo<CalendarEvent[]>(() =>
     relocations.map(r => ({
       id: r.id,
-      title: `${r.original_room?.name || 'Unknown'} → ${r.temporary_room?.name || 'Unknown'} (${r.reason})`,
+      title: `${r.original_room_name || 'Unknown'} → ${r.temporary_room_name || 'Unknown'} (${r.reason})`,
       start: new Date(r.start_date),
       end: new Date(r.end_date || r.start_date),
       allDay: true,

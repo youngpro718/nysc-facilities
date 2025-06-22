@@ -98,9 +98,10 @@ export function CourtTermsTab() {
         .select(`
           id, 
           term_number, 
-          title, 
+          term_name as title, 
           location, 
-          date_period, 
+          start_date,
+          end_date,
           building_id,
           created_at,
           updated_at,
@@ -112,7 +113,7 @@ export function CourtTermsTab() {
       
       // Count assignments for each term
       const termsWithCounts = await Promise.all(
-        data.map(async (term) => {
+        (data || []).map(async (term) => {
           const { count, error: countError } = await supabase
             .from('court_assignments')
             .select('*', { count: 'exact', head: true })
@@ -120,7 +121,9 @@ export function CourtTermsTab() {
             
           return {
             ...term,
-            building_name: term.buildings?.name,
+            title: term.title || `Term ${term.term_number}`,
+            date_period: `${term.start_date} - ${term.end_date}`,
+            building_name: (term.buildings as any)?.name,
             assignments_count: count || 0
           };
         })
@@ -158,17 +161,18 @@ export function CourtTermsTab() {
       
       // Fetch clerks for each assignment
       const assignmentsWithClerks = await Promise.all(
-        data.map(async (assignment) => {
+        (data || []).map(async (assignment) => {
           const { data: clerksData, error: clerksError } = await supabase
-            .from('court_clerks')
-            .select('name')
+            .from('court_assignments')
+            .select('clerks')
             .eq('term_id', assignment.term_id)
-            .eq('room_id', assignment.room_id);
+            .eq('room_id', assignment.room_id)
+            .single();
             
           return {
             ...assignment,
-            room_number: assignment.rooms?.room_number,
-            clerks: clerksData?.map(clerk => clerk.name) || []
+            room_number: (assignment.rooms as any)?.room_number || 'Unknown',
+            clerks: clerksData?.clerks || []
           };
         })
       );
@@ -402,7 +406,6 @@ interface CourtTermImporterProps {
 function CourtTermImporter({ isOpen, onOpenChange, onImportComplete }: CourtTermImporterProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [selectedBuilding, setSelectedBuilding] = useState<string>('');
   const [extractedData, setExtractedData] = useState<CourtTermData | null>(null);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -419,7 +422,7 @@ function CourtTermImporter({ isOpen, onOpenChange, onImportComplete }: CourtTerm
     queryFn: async () => {
       const { data, error } = await supabase
         .from('buildings')
-        .select('id, name, room_count, floor_count')
+        .select('id, name')
         .order('name');
         
       if (error) throw error;
@@ -450,20 +453,20 @@ function CourtTermImporter({ isOpen, onOpenChange, onImportComplete }: CourtTerm
   
   const handleProcessPdf = async (file: File) => {
     setIsLoading(true);
-    setError(null); // Clear any previous errors
-    setExtractedData(null); // Clear any previous data
+    setError(null);
+    setExtractedData(null);
     setProgress(20);
     try {
       const data = await processCourtTermPdf(file);
       console.log('Processed PDF data:', data);
-      if (!data || !data.termInfo || !data.assignments || data.assignments.length === 0) {
+      if (!data || !data.term_name || !data.assignments || data.assignments.length === 0) {
         throw new Error('No valid court term data found in PDF');
       }
       setExtractedData(data);
       setProgress(80);
       toast({
         title: 'PDF Processed Successfully',
-        description: `Found ${data.assignments.length} court assignments for Term ${data.termInfo.termNumber}`,
+        description: `Found ${data.assignments.length} court assignments for Term ${data.term_number}`,
       });
     } catch (err) {
       console.error('PDF processing error:', err);
@@ -498,10 +501,10 @@ function CourtTermImporter({ isOpen, onOpenChange, onImportComplete }: CourtTerm
     setIsLoading(true);
     setProgress(20);
     try {
-      const result = await importCourtTermData(extractedData, supabase);
+      const result = await importCourtTermData(extractedData);
       
       if (result.success) {
-        setSuccess(`Court term data imported successfully. Term ID: ${result.data?.termId}`);
+        setSuccess(`Court term data imported successfully. Term ID: ${result.data?.id}`);
         toast({
           title: 'Import Successful',
           description: 'Court term data has been imported successfully',
@@ -596,10 +599,10 @@ function CourtTermImporter({ isOpen, onOpenChange, onImportComplete }: CourtTerm
               <div className="text-sm text-foreground bg-muted p-4 rounded-lg">
                 <div className="font-medium mb-2">Extracted Data:</div>
                 <div className="space-y-1">
-                  <div>Term: {extractedData.termInfo.termNumber}</div>
-                  <div>Title: {extractedData.termInfo.title}</div>
-                  <div>Date: {extractedData.termInfo.datePeriod}</div>
-                  <div>Location: {extractedData.termInfo.location}</div>
+                  <div>Term: {extractedData.term_number}</div>
+                  <div>Title: {extractedData.term_name}</div>
+                  <div>Date: {extractedData.start_date} - {extractedData.end_date}</div>
+                  <div>Location: {extractedData.location}</div>
                   <div>Assignments: {extractedData.assignments.length}</div>
                 </div>
               </div>

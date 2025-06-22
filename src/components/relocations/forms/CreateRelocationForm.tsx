@@ -1,4 +1,3 @@
-
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -37,8 +36,7 @@ export function CreateRelocationForm() {
       end_date: "",
       reason: "",
       notes: "",
-      relocation_type: "maintenance",
-      respect_term_assignments: true
+      relocation_type: "maintenance"
     },
   });
 

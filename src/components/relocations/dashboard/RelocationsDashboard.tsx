@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -155,10 +154,10 @@ export function RelocationsDashboard() {
                       <div className="flex justify-between items-start">
                         <div>
                           <CardTitle className="text-lg">
-                            {relocation.original_room?.name || "Unknown Room"}
+                            {relocation.original_room_name || "Unknown Room"}
                           </CardTitle>
                           <CardDescription>
-                            Relocated to: {relocation.temporary_room?.name || "Unknown Room"}
+                            Relocated to: {relocation.temporary_room_name || "Unknown Room"}
                           </CardDescription>
                         </div>
                         {getStatusBadge(relocation.status)}
@@ -225,10 +224,10 @@ export function RelocationsDashboard() {
                     <div className="flex justify-between items-start">
                       <div>
                         <CardTitle className="text-lg">
-                          {relocation.original_room?.name || "Unknown Room"}
+                          {relocation.original_room_name || "Unknown Room"}
                         </CardTitle>
                         <CardDescription>
-                          Relocated to: {relocation.temporary_room?.name || "Unknown Room"}
+                          Relocated to: {relocation.temporary_room_name || "Unknown Room"}
                         </CardDescription>
                       </div>
                       {getStatusBadge(relocation.status)}
