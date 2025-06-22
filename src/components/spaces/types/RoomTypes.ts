@@ -9,7 +9,7 @@ export interface Room {
   status: StatusEnum;
   description?: string;
   floor_id: string;
-  is_storage?: boolean;
+  is_storage: boolean;
   storage_type?: StorageTypeEnum;
   storage_capacity?: number;
   storage_notes?: string;

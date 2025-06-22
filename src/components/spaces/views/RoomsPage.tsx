@@ -9,7 +9,6 @@ import { RoomsContent } from "../rooms/components/RoomsContent";
 import { useRoomFilters } from "../hooks/useRoomFilters";
 import { useRoomsQuery } from "../hooks/queries/useRoomsQuery";
 import { deleteSpace } from "../services/deleteSpace";
-import RoomsList from "../RoomsList";
 
 // Define a type for sort options to fix the TS error
 export type SortOption = 

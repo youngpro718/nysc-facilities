@@ -13,13 +13,12 @@ import { Trash2 } from "lucide-react";
 import { EditSpaceDialog } from "../EditSpaceDialog";
 import { Room } from "../types/RoomTypes";
 import { StatusEnum } from "./types/roomEnums";
+import { ParentRoomHierarchy } from "./ParentRoomHierarchy";
 
 interface RoomTableProps {
   rooms: Room[];
   onDelete: (id: string) => void;
 }
-
-import { ParentRoomHierarchy } from "./ParentRoomHierarchy";
 
 export function RoomTable({ rooms, onDelete }: RoomTableProps) {
   return (
