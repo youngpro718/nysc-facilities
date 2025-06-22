@@ -28,7 +28,7 @@ export type Occupant = {
 
 // Extended type for occupant details
 export type OccupantDetails = Occupant & {
-  rooms?: RoomDetails;
+  rooms?: RoomDetails[];
 };
 
 export interface RoomDetails {

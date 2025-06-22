@@ -3,19 +3,7 @@ import { format } from 'date-fns';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
-
-export interface KeyAssignment {
-  id: string;
-  assigned_at: string;
-  returned_at?: string;
-  keys?: {
-    name: string;
-    is_passkey: boolean;
-    key_door_locations?: Array<{
-      door_location: string;
-    }>;
-  };
-}
+import type { KeyAssignment } from "../KeyAssignmentSection";
 
 interface KeyAssignmentItemProps {
   assignment: KeyAssignment;

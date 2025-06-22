@@ -23,8 +23,9 @@ interface OccupantDetailsProps {
 function OccupantDetailsComponent({ occupantData }: OccupantDetailsProps) {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState("overview");
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
-  const { data: occupant, isLoading } = useQuery({
+  const { data: occupant, isLoading, refetch } = useQuery({
     queryKey: ["occupant", id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -70,11 +71,16 @@ function OccupantDetailsComponent({ occupantData }: OccupantDetailsProps) {
   }
 
   // Transform the data to match expected interface
-  const transformedOccupant = {
+  const transformedOccupant: OccupantQueryResponse = {
     ...currentOccupant,
     emergency_contact: typeof currentOccupant.emergency_contact === 'string' 
       ? JSON.parse(currentOccupant.emergency_contact || '{}')
-      : currentOccupant.emergency_contact || {}
+      : currentOccupant.emergency_contact || {},
+    rooms: currentOccupant.rooms || [] // Ensure rooms array is always present
+  };
+
+  const handleEditSuccess = () => {
+    refetch();
   };
 
   return (
@@ -93,7 +99,9 @@ function OccupantDetailsComponent({ occupantData }: OccupantDetailsProps) {
             <p className="text-muted-foreground">{transformedOccupant.title}</p>
           </div>
         </div>
-        <EditOccupantDialog occupant={transformedOccupant} />
+        <Button onClick={() => setEditDialogOpen(true)}>
+          Edit Occupant
+        </Button>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -126,6 +134,13 @@ function OccupantDetailsComponent({ occupantData }: OccupantDetailsProps) {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <EditOccupantDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        occupant={transformedOccupant}
+        onSuccess={handleEditSuccess}
+      />
     </div>
   );
 }

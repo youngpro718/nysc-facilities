@@ -3,6 +3,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Key } from "lucide-react";
 import { OccupantQueryResponse } from "../types/occupantTypes";
 
+export interface KeyAssignment {
+  id: string;
+  assigned_at: string;
+  returned_at?: string;
+  keys?: {
+    name: string;
+    is_passkey: boolean;
+    key_door_locations?: Array<{
+      door_location: string;
+    }>;
+  };
+}
+
 interface KeyAssignmentSectionProps {
   occupantData: OccupantQueryResponse;
 }
