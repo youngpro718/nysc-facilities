@@ -1,6 +1,28 @@
+
 import { supabase } from "@/integrations/supabase/client";
-import { EditSpaceFormData } from "../schemas/editSpaceSchema";
 import { RoomTypeEnum, roomTypeToString, statusToString, StorageTypeEnum, storageTypeToString } from "../rooms/types/roomEnums";
+
+// Define a specific type for room updates
+interface RoomUpdateData {
+  id?: string;
+  name?: string;
+  roomNumber?: string;
+  roomType?: RoomTypeEnum;
+  status?: string;
+  floorId?: string;
+  description?: string;
+  phoneNumber?: string;
+  currentFunction?: string;
+  isStorage?: boolean;
+  storageType?: StorageTypeEnum;
+  storageCapacity?: number;
+  storageNotes?: string;
+  parentRoomId?: string;
+  position?: { x: number; y: number };
+  size?: { width: number; height: number };
+  rotation?: number;
+  courtRoomPhotos?: { judge_view?: string | null; audience_view?: string | null };
+}
 
 /**
  * Updates a room in the database, including parent_room_id and all editable fields.
@@ -8,7 +30,7 @@ import { RoomTypeEnum, roomTypeToString, statusToString, StorageTypeEnum, storag
  * @param data Partial room data to update
  * @returns Updated room object or throws error
  */
-export async function updateSpace(id: string, data: Partial<EditSpaceFormData>) {
+export async function updateSpace(id: string, data: Partial<RoomUpdateData>) {
   if (!id) throw new Error("Room ID is required for update");
 
   // Map frontend fields to DB columns as needed
@@ -16,7 +38,7 @@ export async function updateSpace(id: string, data: Partial<EditSpaceFormData>) 
     name: data.name,
     room_number: data.roomNumber,
     room_type: data.roomType ? roomTypeToString(data.roomType as RoomTypeEnum) : undefined,
-    status: data.status ? statusToString(data.status) : undefined,
+    status: data.status ? statusToString(data.status as any) : undefined,
     floor_id: data.floorId,
     description: data.description ?? null,
     phone_number: data.phoneNumber ?? null,
