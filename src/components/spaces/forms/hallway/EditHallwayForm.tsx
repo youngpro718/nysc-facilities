@@ -2,149 +2,159 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Form } from "@/components/ui/form";
-import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { EditSpaceFormData, editSpaceSchema } from "../../schemas/editSpaceSchema";
+import { z } from "zod";
+import { Form } from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { CreateHallwayFields } from "../../forms/space/CreateHallwayFields";
+import { BasicInfoTab } from "./BasicInfoTab";
+import { MaintenanceTab } from "./MaintenanceTab";
+import { SafetyTab } from "./SafetyTab";
+import { EmergencyTab } from "./EmergencyTab";
+
+const hallwayFormSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  status: z.string(),
+  position: z.object({
+    x: z.number().optional(),
+    y: z.number().optional(),
+  }).optional(),
+  size: z.object({
+    width: z.number().optional(),
+    height: z.number().optional(),
+  }).optional(),
+  rotation: z.number().default(0),
+  properties: z.object({
+    description: z.string().optional(),
+  }).optional(),
+});
+
+type HallwayFormData = z.infer<typeof hallwayFormSchema>;
 
 interface EditHallwayFormProps {
   id: string;
-  initialData: Partial<EditSpaceFormData>;
-  onSuccess?: () => void;
+  initialData?: any;
+  onSuccess: () => void;
   onCancel: () => void;
 }
 
-export function EditHallwayForm({
-  id,
-  initialData,
-  onSuccess,
-  onCancel,
-}: EditHallwayFormProps) {
+export function EditHallwayForm({ id, initialData, onSuccess, onCancel }: EditHallwayFormProps) {
+  const { toast } = useToast();
   const queryClient = useQueryClient();
-  
-  const form = useForm<EditSpaceFormData>({
-    resolver: zodResolver(editSpaceSchema),
+  const [activeTab, setActiveTab] = useState("basic");
+
+  const form = useForm<HallwayFormData>({
+    resolver: zodResolver(hallwayFormSchema),
     defaultValues: {
-      ...initialData,
-      type: "hallway", // Force type to be hallway for the edit form
+      name: "",
+      status: "active",
+      position: { x: 0, y: 0 },
+      size: { width: 300, height: 50 },
+      rotation: 0,
+      properties: {
+        description: "",
+      },
     },
   });
 
   useEffect(() => {
     if (initialData) {
-      form.reset(initialData);
-    }
-  }, [form, initialData]);
-
-  const hallwayMutation = useMutation({
-    mutationFn: async (data: EditSpaceFormData) => {
-      if (data.type !== 'hallway') {
-        throw new Error('Invalid space type for hallway edit form');
-      }
-      
-      console.log('Updating hallway with data:', data);
-      
-      // First update the basic space data
-      const spaceData = {
-        name: data.name,
-        status: data.status,
-        position: data.position || { x: 0, y: 0 },
-        size: data.size || { width: 300, height: 50 },
-        rotation: data.rotation || 0,
+      const safeData = {
+        name: typeof initialData.name === 'string' ? initialData.name : "",
+        status: typeof initialData.status === 'string' ? initialData.status : "active",
+        position: initialData.position || { x: 0, y: 0 },
+        size: initialData.size || { width: 300, height: 50 },
+        rotation: typeof initialData.rotation === 'number' ? initialData.rotation : 0,
         properties: {
-          description: data.description
-        }
+          description: typeof initialData.description === 'string' ? initialData.description : "",
+        },
       };
+      form.reset(safeData);
+    }
+  }, [initialData, form]);
 
-      const { error: spaceError } = await supabase
-        .from('new_spaces')
-        .update(spaceData)
-        .eq('id', id);
+  const updateHallwayMutation = useMutation({
+    mutationFn: async (data: HallwayFormData) => {
+      const safeName = typeof data.name === 'string' ? data.name : "";
+      const safeStatus = typeof data.status === 'string' ? data.status : "active";
+      const safeDescription = typeof data.properties?.description === 'string' ? data.properties.description : "";
+      
+      const { error } = await supabase
+        .from("hallways")
+        .update({
+          name: safeName,
+          status: safeStatus,
+          position: data.position || { x: 0, y: 0 },
+          size: data.size || { width: 300, height: 50 },
+          rotation: data.rotation || 0,
+          properties: { description: safeDescription },
+        })
+        .eq("id", id);
 
-      if (spaceError) throw spaceError;
-
-      // Then update the hallway-specific properties
-      const hallwayProps = {
-        section: data.section || 'connector',
-        traffic_flow: data.trafficFlow || 'two_way',
-        accessibility: data.accessibility || 'fully_accessible',
-        emergency_route: data.emergencyRoute || 'not_designated',
-        maintenance_priority: data.maintenancePriority || 'low',
-        capacity_limit: data.capacityLimit
-      };
-
-      // Check if hallway properties exist for this space
-      const { data: existingProps, error: checkError } = await supabase
-        .from('hallway_properties')
-        .select('*')
-        .eq('space_id', id)
-        .maybeSingle();
-
-      if (checkError) throw checkError;
-
-      // Insert or update hallway properties
-      if (existingProps) {
-        const { error: updateError } = await supabase
-          .from('hallway_properties')
-          .update(hallwayProps)
-          .eq('space_id', id);
-
-        if (updateError) throw updateError;
-      } else {
-        const { error: insertError } = await supabase
-          .from('hallway_properties')
-          .insert([{ ...hallwayProps, space_id: id }]);
-
-        if (insertError) throw insertError;
-      }
-
-      return data;
+      if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['hallways'] });
-      queryClient.invalidateQueries({ queryKey: ['spaces'] });
-      toast.success("Hallway updated successfully");
-      if (onSuccess) onSuccess();
+      queryClient.invalidateQueries({ queryKey: ["hallways"] });
+      toast({
+        title: "Success",
+        description: "Hallway updated successfully",
+      });
+      onSuccess();
     },
     onError: (error) => {
-      console.error("Update error:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to update hallway");
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update hallway",
+        variant: "destructive",
+      });
     },
   });
 
-  const handleSubmit = async (data: EditSpaceFormData) => {
-    await hallwayMutation.mutateAsync(data);
+  const onSubmit = (data: HallwayFormData) => {
+    updateHallwayMutation.mutate(data);
   };
+
+  const tabs = [
+    { id: "basic", label: "Basic Info" },
+    { id: "maintenance", label: "Maintenance" },
+    { id: "safety", label: "Safety" },
+    { id: "emergency", label: "Emergency" },
+  ];
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <CreateHallwayFields form={form} />
-        
-        <div className="flex justify-end gap-2 pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
-          >
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="flex border-b">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2 font-medium transition-colors ${
+                activeTab === tab.id
+                  ? "border-b-2 border-primary text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="min-h-[400px]">
+          {activeTab === "basic" && <BasicInfoTab form={form} />}
+          {activeTab === "maintenance" && <MaintenanceTab form={form} />}
+          {activeTab === "safety" && <SafetyTab form={form} />}
+          {activeTab === "emergency" && <EmergencyTab form={form} />}
+        </div>
+
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button 
-            type="submit"
-            disabled={hallwayMutation.isPending || !form.formState.isDirty}
-          >
-            {hallwayMutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Updating...
-              </>
-            ) : (
-              "Update"
-            )}
+          <Button type="submit" disabled={updateHallwayMutation.isPending}>
+            {updateHallwayMutation.isPending ? "Updating..." : "Update Hallway"}
           </Button>
         </div>
       </form>

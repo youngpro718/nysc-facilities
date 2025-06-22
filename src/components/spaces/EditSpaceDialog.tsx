@@ -100,13 +100,13 @@ export function EditSpaceDialog({
         };
       }) : [];
       
-      // Convert string value to RoomTypeEnum for the form
-      let convertedRoomType = initialData.roomType ? stringToRoomType(initialData.roomType) : undefined;
-      let convertedStatus = initialData.status || undefined;
+      // Convert string value to RoomTypeEnum for the form with safe type checking
+      let convertedRoomType = initialData.roomType && typeof initialData.roomType === 'string' ? stringToRoomType(initialData.roomType) : undefined;
+      let convertedStatus = initialData.status && typeof initialData.status === 'string' ? initialData.status : undefined;
       let convertedStorageType = null;
       
       // For storage type, only set if the room is actually storage
-      if (initialData.is_storage && initialData.storage_type) {
+      if (initialData.is_storage && initialData.storage_type && typeof initialData.storage_type === 'string') {
         convertedStorageType = initialData.storage_type;
       }
       
@@ -118,21 +118,21 @@ export function EditSpaceDialog({
       const formData: Partial<RoomFormData> = {
         id: id,
         type: "room",
-        name: initialData.name || "",
-        roomNumber: initialData.roomNumber || "",
+        name: typeof initialData.name === 'string' ? initialData.name : "",
+        roomNumber: typeof initialData.roomNumber === 'string' ? initialData.roomNumber : "",
         roomType: convertedRoomType,
         status: convertedStatus,
-        description: initialData.description || "",
-        phoneNumber: initialData.phoneNumber || "",
+        description: typeof initialData.description === 'string' ? initialData.description : "",
+        phoneNumber: typeof initialData.phoneNumber === 'string' ? initialData.phoneNumber : "",
         isStorage: Boolean(initialData.isStorage),
         storageType: convertedStorageType,
         storageCapacity: initialData.storageCapacity || null,
-        storageNotes: initialData.storageNotes || "",
+        storageNotes: typeof initialData.storageNotes === 'string' ? initialData.storageNotes : "",
         parentRoomId: initialData.parentRoomId || null,
-        currentFunction: initialData.currentFunction || "",
+        currentFunction: typeof initialData.currentFunction === 'string' ? initialData.currentFunction : "",
         courtroom_photos: courtroom_photos || null,
         connections: mappedConnections,
-        floorId: initialData.floorId || ""
+        floorId: typeof initialData.floorId === 'string' ? initialData.floorId : ""
       };
 
       
@@ -188,8 +188,9 @@ export function EditSpaceDialog({
         await updateSpace(roomId, data);
       });
       console.log("Room update successful");
+      
       // Handle connections using the simplified approach
-      if (data.connections && data.connections.length > 0) {
+      if (data.connections && Array.isArray(data.connections) && data.connections.length > 0) {
         console.log("Processing connections:", data.connections);
         
         const { data: existingConnections, error: fetchError } = await supabase
@@ -213,15 +214,15 @@ export function EditSpaceDialog({
             ? connection.direction 
             : "north";
             
-          if (connection.id) {
+          if (connection.id && typeof connection.id === 'string') {
             keepConnectionIds.push(connection.id);
             
             console.log("Updating connection:", connection);
             const { error: updateError } = await supabase
               .from("space_connections")
               .update({
-                to_space_id: connection.toSpaceId,
-                connection_type: connection.connectionType,
+                to_space_id: typeof connection.toSpaceId === 'string' ? connection.toSpaceId : '',
+                connection_type: typeof connection.connectionType === 'string' ? connection.connectionType : '',
                 direction: direction,
               })
               .eq("id", connection.id);
@@ -230,7 +231,7 @@ export function EditSpaceDialog({
               console.error("Connection update error:", updateError);
               throw new Error(`Failed to update connection: ${updateError.message}`);
             }
-          } else if (connection.toSpaceId && connection.connectionType) {
+          } else if (connection.toSpaceId && connection.connectionType && typeof connection.toSpaceId === 'string' && typeof connection.connectionType === 'string') {
             console.log("Creating new connection:", connection);
             const { error: insertError } = await supabase
               .from("space_connections")

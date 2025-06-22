@@ -1,6 +1,39 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { ScheduleChange, CreateScheduleChangeFormData, UpdateScheduleChangeFormData } from "../types/relocationTypes";
+
+// Update types to match actual database schema
+export interface ScheduleChange {
+  id: string;
+  relocation_id: string;
+  original_court_part: string;
+  temporary_assignment: string;
+  start_date: string;
+  end_date: string;
+  status: 'active' | 'scheduled' | 'completed' | 'cancelled';
+  special_instructions: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateScheduleChangeFormData {
+  relocation_id: string;
+  original_court_part: string;
+  temporary_assignment: string;
+  start_date: string;
+  end_date: string;
+  special_instructions?: string;
+}
+
+export interface UpdateScheduleChangeFormData {
+  id: string;
+  original_court_part: string;
+  temporary_assignment: string;
+  start_date: string;
+  end_date: string;
+  special_instructions?: string;
+  created_by?: string;
+}
 
 export const fetchScheduleChanges = async (relocationId: string): Promise<ScheduleChange[]> => {
   const { data, error } = await supabase
@@ -22,10 +55,12 @@ export const createScheduleChange = async (formData: CreateScheduleChangeFormDat
     .from('schedule_changes')
     .insert({
       relocation_id: formData.relocation_id,
-      change_type: formData.change_type,
-      new_start_date: formData.new_start_date,
-      new_end_date: formData.new_end_date,
-      reason: formData.reason,
+      original_court_part: formData.original_court_part,
+      temporary_assignment: formData.temporary_assignment,
+      start_date: formData.start_date,
+      end_date: formData.end_date,
+      special_instructions: formData.special_instructions || '',
+      status: 'scheduled',
       created_at: new Date().toISOString()
     })
     .select()
@@ -43,11 +78,12 @@ export const updateScheduleChange = async (formData: UpdateScheduleChangeFormDat
   const { data, error } = await supabase
     .from('schedule_changes')
     .update({
-      change_type: formData.change_type,
-      new_start_date: formData.new_start_date,
-      new_end_date: formData.new_end_date,
-      reason: formData.reason,
-      approved_by: formData.approved_by,
+      original_court_part: formData.original_court_part,
+      temporary_assignment: formData.temporary_assignment,
+      start_date: formData.start_date,
+      end_date: formData.end_date,
+      special_instructions: formData.special_instructions || '',
+      created_by: formData.created_by,
       updated_at: new Date().toISOString()
     })
     .eq('id', formData.id)
