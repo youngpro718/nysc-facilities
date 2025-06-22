@@ -44,14 +44,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-// Types for building selection
-interface Building {
-  id: string;
-  name: string;
-  room_count?: number;
-  floor_count?: number;
-}
-
 // Types for the Court Term data
 interface CourtTerm {
   id: string;
@@ -68,15 +60,15 @@ interface CourtTerm {
 interface CourtAssignment {
   id: string;
   term_id: string;
-  room_id: string;
+  room_id: string | null;
   part: string;
-  part_details?: string;
-  calendar_day?: string;
+  part_details: string | null;
+  calendar_day: string | null;
   justice: string;
   room_number: string;
-  fax?: string;
-  tel?: string;
-  sergeant?: string;
+  fax: string | null;
+  tel: string | null;
+  sergeant: string | null;
   clerks: string[];
 }
 
@@ -157,7 +149,12 @@ export function CourtTermsTab() {
       
       return (data || []).map(assignment => ({
         ...assignment,
-        clerks: assignment.clerks || []
+        part_details: assignment.part_details as string | null,
+        calendar_day: assignment.calendar_day as string | null,
+        fax: assignment.fax as string | null,
+        tel: assignment.tel as string | null,
+        sergeant: assignment.sergeant as string | null,
+        clerks: (assignment.clerks as string[]) || []
       }));
     },
     enabled: !!selectedTerm
@@ -320,7 +317,7 @@ export function CourtTermsTab() {
             <CardContent>
               {isLoadingAssignments ? (
                 <div className="flex justify-center py-8">Loading assignments...</div>
-              ) : assignments?.length === 0 ? (
+              ) : !assignments || assignments.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <AlertCircle size={48} className="text-muted-foreground mb-4" />
                   <h3 className="text-lg font-medium">No Assignments Found</h3>
@@ -342,7 +339,7 @@ export function CourtTermsTab() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {assignments?.map((assignment) => (
+                    {assignments.map((assignment) => (
                       <TableRow key={assignment.id}>
                         <TableCell className="font-medium">
                           {assignment.part_details || assignment.part}
