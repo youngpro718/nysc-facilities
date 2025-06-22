@@ -103,6 +103,23 @@ export function RelocationsDashboard() {
     );
   }
 
+  const activeRelocations = relocations?.filter(r => r.status === 'active') || [];
+  const upcomingRelocations = relocations?.filter(r => {
+    const startDate = new Date(r.start_date);
+    const today = new Date();
+    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+    return r.status === 'scheduled' && startDate >= today && startDate <= nextWeek;
+  }) || [];
+
+  const activeRelocationsSummary = activeRelocations.map(r => ({
+    id: r.id,
+    room: r.original_room_name || 'Unknown Room',
+    tempRoom: r.temporary_room_name || 'Unknown Room',
+    startDate: r.start_date,
+    endDate: r.end_date,
+    status: r.status
+  }));
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -126,7 +143,7 @@ export function RelocationsDashboard() {
         </TabsList>
         
         <TabsContent value="active" className="space-y-4">
-          {relocations.filter(r => r.status === "active").length === 0 ? (
+          {activeRelocations.length === 0 ? (
             <Card>
               <CardHeader>
                 <CardTitle>No Active Relocations</CardTitle>
@@ -146,8 +163,7 @@ export function RelocationsDashboard() {
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {relocations
-                .filter(relocation => relocation.status === "active")
+              {activeRelocations
                 .map(relocation => (
                   <Card key={relocation.id}>
                     <CardHeader>

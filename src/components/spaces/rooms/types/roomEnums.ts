@@ -55,6 +55,31 @@ export const roomTypeToString = (type: RoomTypeEnum): string => {
   return typeMap[type] || type;
 };
 
+export const stringToRoomType = (typeString: string): RoomTypeEnum => {
+  const normalizedType = typeString.toLowerCase().replace(/[^a-z0-9]/g, '_') as keyof typeof RoomTypeEnum;
+  
+  const typeMap: Record<string, RoomTypeEnum> = {
+    'courtroom': RoomTypeEnum.COURTROOM,
+    'judges_chambers': RoomTypeEnum.JUDGES_CHAMBERS,
+    'jury_room': RoomTypeEnum.JURY_ROOM,
+    'conference_room': RoomTypeEnum.CONFERENCE_ROOM,
+    'office': RoomTypeEnum.OFFICE,
+    'filing_room': RoomTypeEnum.FILING_ROOM,
+    'male_locker_room': RoomTypeEnum.MALE_LOCKER_ROOM,
+    'female_locker_room': RoomTypeEnum.FEMALE_LOCKER_ROOM,
+    'storage': RoomTypeEnum.STORAGE,
+    'kitchen': RoomTypeEnum.KITCHEN,
+    'bathroom': RoomTypeEnum.BATHROOM,
+    'hallway': RoomTypeEnum.HALLWAY,
+    'lobby': RoomTypeEnum.LOBBY,
+    'elevator': RoomTypeEnum.ELEVATOR,
+    'stairwell': RoomTypeEnum.STAIRWELL,
+    'conference': RoomTypeEnum.CONFERENCE
+  };
+  
+  return typeMap[normalizedType] || RoomTypeEnum.OFFICE;
+};
+
 export const storageTypeToString = (type: StorageTypeEnum): string => {
   const typeMap: Record<StorageTypeEnum, string> = {
     [StorageTypeEnum.GENERAL]: 'General Storage',

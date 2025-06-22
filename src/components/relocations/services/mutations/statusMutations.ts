@@ -1,5 +1,6 @@
+
 import { supabase } from "@/integrations/supabase/client";
-import { RoomRelocation, RelocationStatus } from "../../types/relocationTypes";
+import { RoomRelocation } from "../../types/relocationTypes";
 
 export async function activateRelocation(id: string) {
   const { data, error } = await supabase

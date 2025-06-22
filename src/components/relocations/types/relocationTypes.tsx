@@ -1,3 +1,4 @@
+
 export interface RoomRelocation {
   id: string;
   original_room_id: string;
@@ -10,21 +11,19 @@ export interface RoomRelocation {
   created_at: string;
   updated_at: string;
   created_by: string;
-  relocation_type: 'planned' | 'emergency' | 'maintenance';
+  relocation_type: 'planned' | 'emergency' | 'maintenance' | 'construction' | 'other';
   special_instructions?: string;
   metadata?: any;
-  // Additional fields for expanded data
+  actual_end_date?: string;
+  // Additional fields for expanded data (from joins)
   original_room_name?: string;
   original_room_number?: string;
   temporary_room_name?: string;
   temporary_room_number?: string;
   building_name?: string;
   floor_name?: string;
-  actual_end_date?: string;
   term_id?: string;
 }
-
-export type RelocationStatus = 'scheduled' | 'active' | 'completed' | 'cancelled';
 
 export interface ActiveRelocation extends RoomRelocation {
   original_room_name: string;
@@ -36,7 +35,10 @@ export interface ActiveRelocation extends RoomRelocation {
   progress_percentage: number;
   days_active: number;
   total_days: number;
+  created_by: string;
 }
+
+export type RelocationStatus = 'scheduled' | 'active' | 'completed' | 'cancelled';
 
 export interface CreateRelocationFormData {
   original_room_id: string;
@@ -46,7 +48,7 @@ export interface CreateRelocationFormData {
   start_date: string;
   end_date: string;
   reason: string;
-  relocation_type: 'planned' | 'emergency' | 'maintenance';
+  relocation_type: 'planned' | 'emergency' | 'maintenance' | 'construction' | 'other';
   notes?: string;
   special_instructions?: string;
   term_id?: string;
@@ -108,4 +110,14 @@ export interface CreateScheduleChangeFormData {
 export interface UpdateScheduleChangeFormData extends Partial<CreateScheduleChangeFormData> {
   id: string;
   approved_by?: string;
+}
+
+export interface CourtTermData {
+  id: string;
+  term_name: string;
+  term_number: string;
+  start_date: string;
+  end_date: string;
+  location: string;
+  buildings?: { name: string }[];
 }
