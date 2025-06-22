@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import type { Room } from '../rooms/types/RoomTypes';
+import { useMemo } from "react";
+import { Room } from "../types/RoomTypes";
 
 interface UseRoomFiltersProps {
   rooms: Room[] | undefined;

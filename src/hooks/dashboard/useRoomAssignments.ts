@@ -19,17 +19,17 @@ export const useRoomAssignments = (userId?: string) => {
           is_primary,
           assignment_type,
           room_id,
-          rooms!occupant_room_assignments_room_id_fkey (
+          rooms (
             id,
             name,
             room_number,
             status,
             floor_id,
-            floors!rooms_floor_id_fkey (
+            floors (
               id,
               name,
               building_id,
-              buildings!floors_building_id_fkey (
+              buildings (
                 id,
                 name
               )
@@ -45,7 +45,7 @@ export const useRoomAssignments = (userId?: string) => {
       
       console.log('Raw room assignment data:', data);
       
-      const formattedAssignments = data.map(assignment => ({
+      const formattedAssignments = data?.map(assignment => ({
         id: assignment.id,
         room_id: assignment.room_id,
         room_name: assignment.rooms?.name || 'Unknown Room',
@@ -58,7 +58,7 @@ export const useRoomAssignments = (userId?: string) => {
         is_primary: assignment.is_primary,
         assignment_type: assignment.assignment_type,
         room_status: assignment.rooms?.status
-      }));
+      })) || [];
       
       console.log('Formatted room assignments:', formattedAssignments);
       

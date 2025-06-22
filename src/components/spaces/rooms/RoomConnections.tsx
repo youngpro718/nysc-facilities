@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { 
   ArrowLeft, 
@@ -10,7 +9,7 @@ import {
   ChevronsUp,
   ChevronsDown
 } from "lucide-react";
-import { RoomConnection } from "./types/RoomTypes";
+import { RoomConnection } from "../types/RoomTypes";
 
 interface RoomConnectionsProps {
   connections: RoomConnection[];

@@ -10,7 +10,7 @@ import {
   ChevronsUp,
   ChevronsDown
 } from "lucide-react";
-import { RoomConnection } from "../types/RoomTypes";
+import { RoomConnection } from "../../types/RoomTypes";
 
 interface HallwayConnectionsProps {
   connections: RoomConnection[];

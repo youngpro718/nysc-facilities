@@ -1,6 +1,7 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Room } from '../types/RoomTypes';
+import { Room } from '../../types/RoomTypes';
 import { getRoomTypeColor, getRoomTypeName } from "../../utils/roomTypeUtils";
 import { CourtroomPhotos } from "../components/CourtroomPhotos";
 import { ClearCourtroomPhotos } from "../components/ClearCourtroomPhotos";

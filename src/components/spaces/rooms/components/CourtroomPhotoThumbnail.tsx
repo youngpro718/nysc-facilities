@@ -1,87 +1,59 @@
-
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Image } from "lucide-react";
-import { CourtroomPhotos } from '../types/RoomTypes';
-import { cn } from "@/lib/utils";
+import React from 'react';
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { CourtroomPhotos } from "../../types/RoomTypes";
 
 interface CourtroomPhotoThumbnailProps {
-  photos: CourtroomPhotos | null;
-  size?: 'sm' | 'md' | 'lg';
-  className?: string;
+  photos: CourtroomPhotos | null | undefined;
+  type: 'judge_view' | 'audience_view';
 }
 
-export function CourtroomPhotoThumbnail({ 
-  photos, 
-  size = 'md',
-  className 
-}: CourtroomPhotoThumbnailProps) {
-  // If no photos object or all photos are null/empty, return nothing
-  if (!photos || (!photos.judge_view && !photos.audience_view)) {
-    return null;
-  }
-  
-  // Select both views if they exist
-  const hasJudgeView = !!photos.judge_view;
-  const hasAudienceView = !!photos.audience_view;
-  
-  // Determine size classes
-  const sizeClasses = {
-    sm: 'h-10 w-14',
-    md: 'h-12 w-16',
-    lg: 'h-16 w-24'
-  };
-  
+export function CourtroomPhotoThumbnail({ photos, type }: CourtroomPhotoThumbnailProps) {
+  const imageUrl = photos?.[type] || '';
+  const title = type === 'judge_view' ? 'Judge View' : 'Audience View';
+
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className={cn("flex items-center mt-2", className)}>
-            {photos.judge_view && (
-              <div className={cn("relative rounded overflow-hidden border mr-2", sizeClasses[size])}>
-                <img
-                  src={photos.judge_view}
-                  alt="Judge View"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = "/placeholder.svg";
-                  }}
-                />
-                <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[9px] text-center">
-                  Judge
-                </div>
+    <Dialog>
+      <DialogTrigger asChild>
+        <div className="relative rounded-md overflow-hidden w-32 h-24 cursor-pointer">
+          <AspectRatio ratio={4 / 3}>
+            {imageUrl ? (
+              <img
+                src={imageUrl}
+                alt={title}
+                className="object-cover aspect-video"
+              />
+            ) : (
+              <div className="bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500 dark:text-gray-400">
+                No Photo
               </div>
             )}
-            
-            {photos.audience_view && (
-              <div className={cn("relative rounded overflow-hidden border mr-2", sizeClasses[size])}>
-                <img
-                  src={photos.audience_view}
-                  alt="Audience View"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = "/placeholder.svg";
-                  }}
-                />
-                <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[9px] text-center">
-                  Audience
-                </div>
-              </div>
-            )}
-            
-            <span className="text-xs text-muted-foreground flex items-center">
-              <Image className="h-3 w-3 mr-1" />
-              {hasJudgeView && hasAudienceView 
-                ? 'Both views' 
-                : hasJudgeView 
-                  ? 'Judge view' 
-                  : 'Audience view'}
-            </span>
+          </AspectRatio>
+          <div className="absolute inset-0 bg-black opacity-0 hover:opacity-60 transition-opacity flex items-center justify-center text-white font-semibold text-sm">
+            View {title}
           </div>
-        </TooltipTrigger>
-        <TooltipContent side="right">
-          <p className="text-xs">Click "View Courtroom Photos" for details</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+        </div>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[600px]">
+        <div className="rounded-md overflow-hidden">
+          <AspectRatio ratio={16 / 9}>
+            {imageUrl ? (
+              <img
+                src={imageUrl}
+                alt={title}
+                className="object-cover aspect-video"
+              />
+            ) : (
+              <div className="bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500 dark:text-gray-400">
+                No Photo
+              </div>
+            )}
+          </AspectRatio>
+        </div>
+        <div className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">
+          {title}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
