@@ -12,18 +12,12 @@ import { ArrowLeft, Calendar, CalendarClock, CircleAlert, Clock, FileText } from
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-interface TermInfo {
-  id: string;
-  term_name: string;
-  term_number: string;
-  status: string;
-  pdf_url: string | null;
-}
+
 
 export function RelocationDetails({ id }: { id: string }) {
   const navigate = useNavigate();
   const [relocation, setRelocation] = useState<RoomRelocation | null>(null);
-  const [termInfo, setTermInfo] = useState<TermInfo | null>(null);
+
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -34,20 +28,7 @@ export function RelocationDetails({ id }: { id: string }) {
         const data = await fetchRelocationById(id);
         setRelocation(data);
         
-        // If the relocation has a term_id, fetch the term info
-        if (data.term_id) {
-          const { data: termData, error } = await supabase
-            .from('court_terms')
-            .select('id, term_name, term_number, status, pdf_url')
-            .eq('id', data.term_id)
-            .single();
-            
-          if (error) {
-            console.error("Error fetching term data:", error);
-          } else {
-            setTermInfo(termData as TermInfo);
-          }
-        }
+
       } catch (error) {
         console.error("Error loading relocation:", error);
         toast.error("Failed to load relocation details");
@@ -302,47 +283,7 @@ export function RelocationDetails({ id }: { id: string }) {
                   </div>
                 </div>
                 
-                {termInfo && (
-                  <div className="pt-2 border-t">
-                    <h3 className="text-sm font-medium text-muted-foreground mb-2">Court Term Information</h3>
-                    
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <strong>Term:</strong> {termInfo.term_name} ({termInfo.term_number})
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          className={
-                            termInfo.status === "active" 
-                              ? "bg-green-500" 
-                              : termInfo.status === "upcoming" 
-                              ? "bg-yellow-500" 
-                              : "bg-gray-500"
-                          }
-                        >
-                          {termInfo.status.charAt(0).toUpperCase() + termInfo.status.slice(1)}
-                        </Badge>
-                      </div>
-                      
-                      {termInfo.pdf_url && (
-                        <div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => window.open(termInfo.pdf_url!, "_blank")}
-                          >
-                            <FileText className="mr-2 h-4 w-4" />
-                            View Term Sheet
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
+
               </CardContent>
             </Card>
             

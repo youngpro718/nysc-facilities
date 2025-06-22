@@ -21,54 +21,14 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { CreateRelocationFormData } from "../../types/relocationTypes";
 
-interface Term {
-  id: string;
-  term_name: string;
-  term_number: string;
-  start_date: string;
-  end_date: string;
-  status: string;
-}
+
 
 export function RelocationDetailsSection({
   form,
 }: {
   form: UseFormReturn<CreateRelocationFormData>;
 }) {
-  const [terms, setTerms] = useState<Term[]>([]);
-  const [isLoadingTerms, setIsLoadingTerms] = useState(false);
 
-  useEffect(() => {
-    const fetchTerms = async () => {
-      setIsLoadingTerms(true);
-      try {
-        const { data, error } = await supabase
-          .from('court_terms')
-          .select('id, term_name, term_number, start_date, end_date, status')
-          .order('start_date', { ascending: false });
-          
-        if (error) {
-          throw error;
-        }
-        
-        setTerms(data as Term[]);
-      } catch (error) {
-        console.error("Error fetching terms:", error);
-      } finally {
-        setIsLoadingTerms(false);
-      }
-    };
-    
-    fetchTerms();
-  }, []);
-
-  const handleTermSelect = (termId: string) => {
-    const selectedTerm = terms.find(term => term.id === termId);
-    if (selectedTerm) {
-      form.setValue("start_date", selectedTerm.start_date);
-      form.setValue("end_date", selectedTerm.end_date);
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -105,28 +65,7 @@ export function RelocationDetailsSection({
           )}
         />
 
-        {!isLoadingTerms && terms.length > 0 && (
-          <FormItem>
-            <FormLabel>Court Term (Optional)</FormLabel>
-            <Select onValueChange={handleTermSelect}>
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a court term" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {terms.map((term) => (
-                  <SelectItem key={term.id} value={term.id}>
-                    {term.term_name} ({term.term_number})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <FormDescription>
-              Selecting a term will automatically set start and end dates
-            </FormDescription>
-          </FormItem>
-        )}
+
 
         <FormField
           control={form.control}

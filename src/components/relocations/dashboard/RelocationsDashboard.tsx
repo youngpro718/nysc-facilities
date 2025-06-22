@@ -109,10 +109,7 @@ export function RelocationsDashboard() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Temporary Relocations</h1>
         <div className="flex gap-2">
-          <Button onClick={handleGoToTerms} variant="outline">
-            <Calendar className="mr-2 h-4 w-4" />
-            Court Terms
-          </Button>
+
           <Button onClick={handleCreateRelocation}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Create Relocation
