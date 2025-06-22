@@ -63,11 +63,15 @@ export function BasicRoomFields({ form }: BasicRoomFieldsProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {Object.entries(RoomTypeEnum).map(([key, value]) => (
-                      <SelectItem key={key} value={value}>
-                        {key.split('_').map(word => 
-                          word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-                        ).join(' ')}
+                    {[
+                      { value: RoomTypeEnum.COURTROOM, label: "Courtroom" },
+                      { value: RoomTypeEnum.MALE_LOCKER_ROOM, label: "Male Locker Room" },
+                      { value: RoomTypeEnum.FEMALE_LOCKER_ROOM, label: "Female Locker Room" },
+                      { value: RoomTypeEnum.OFFICE, label: "Office" },
+                      { value: RoomTypeEnum.STORAGE, label: "Storage" }
+                    ].map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
                       </SelectItem>
                     ))}
                   </SelectContent>

@@ -19,10 +19,14 @@ interface RoomTableProps {
   onDelete: (id: string) => void;
 }
 
+import { ParentRoomHierarchy } from "./ParentRoomHierarchy";
+
 export function RoomTable({ rooms, onDelete }: RoomTableProps) {
   return (
-    <div className="rounded-md border">
-      <Table>
+    <div>
+      <ParentRoomHierarchy rooms={rooms} />
+      <div className="rounded-md border">
+        <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Name</TableHead>
@@ -88,6 +92,7 @@ export function RoomTable({ rooms, onDelete }: RoomTableProps) {
           ))}
         </TableBody>
       </Table>
+      </div>
     </div>
   );
 }

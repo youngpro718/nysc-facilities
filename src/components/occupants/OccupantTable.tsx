@@ -54,6 +54,7 @@ export function OccupantTable({
                 <TableHead className="min-w-[180px]">Name</TableHead>
                 <TableHead className="hidden sm:table-cell">Department</TableHead>
                 <TableHead className="hidden md:table-cell">Title</TableHead>
+                <TableHead className="min-w-[200px]">Rooms</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-center hidden sm:table-cell">Access</TableHead>
                 <TableHead className="w-[100px] text-right">Actions</TableHead>
@@ -94,6 +95,13 @@ export function OccupantTable({
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">{occupant.department || "—"}</TableCell>
                   <TableCell className="hidden md:table-cell">{occupant.title || "—"}</TableCell>
+                  <TableCell className="min-w-[200px]">
+                    {
+                      occupant.rooms && occupant.rooms.length > 0
+                        ? occupant.rooms.map(r => `${r.floors?.buildings?.name ? r.floors.buildings.name + ' - ' : ''}${r.room_number || r.name}`).join(', ')
+                        : '—'
+                    }
+                  </TableCell>
                   <TableCell className="hidden sm:table-cell">
                     <Badge variant={occupant.status === 'active' ? 'default' : 'secondary'}>
                       {occupant.status}

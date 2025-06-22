@@ -22,7 +22,13 @@ export const RoomConnectionSchema = z.object({
 });
 
 // Get all enum values for RoomTypeEnum to use in the schema
-const roomTypeValues = Object.values(RoomTypeEnum);
+const roomTypeValues = [
+  RoomTypeEnum.OFFICE,
+  RoomTypeEnum.COURTROOM,
+  RoomTypeEnum.MALE_LOCKER_ROOM,
+  RoomTypeEnum.FEMALE_LOCKER_ROOM,
+  RoomTypeEnum.STORAGE
+];
 
 // Define the room form schema with all fields
 export const RoomFormSchema = z.object({

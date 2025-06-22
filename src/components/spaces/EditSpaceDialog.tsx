@@ -100,8 +100,8 @@ export function EditSpaceDialog({
         };
       }) : [];
       
-      // Convert enum values to their string representations that the form expects
-      let convertedRoomType = initialData.room_type || undefined;
+      // Convert string value to RoomTypeEnum for the form
+      let convertedRoomType = initialData.roomType ? stringToRoomType(initialData.roomType) : undefined;
       let convertedStatus = initialData.status || undefined;
       let convertedStorageType = null;
       
@@ -119,21 +119,22 @@ export function EditSpaceDialog({
         id: id,
         type: "room",
         name: initialData.name || "",
-        roomNumber: initialData.room_number || "",
+        roomNumber: initialData.roomNumber || "",
         roomType: convertedRoomType,
         status: convertedStatus,
         description: initialData.description || "",
-        phoneNumber: initialData.phone_number || "",
-        isStorage: Boolean(initialData.is_storage),
+        phoneNumber: initialData.phoneNumber || "",
+        isStorage: Boolean(initialData.isStorage),
         storageType: convertedStorageType,
-        storageCapacity: initialData.storage_capacity || null,
-        storageNotes: initialData.storage_notes || "",
-        parentRoomId: initialData.parent_room_id || null,
-        currentFunction: initialData.current_function || "",
+        storageCapacity: initialData.storageCapacity || null,
+        storageNotes: initialData.storageNotes || "",
+        parentRoomId: initialData.parentRoomId || null,
+        currentFunction: initialData.currentFunction || "",
         courtroom_photos: courtroom_photos || null,
         connections: mappedConnections,
-        floorId: initialData.floor_id || ""
+        floorId: initialData.floorId || ""
       };
+
       
       console.log("Final form data to be set:", formData);
       
@@ -167,29 +168,10 @@ export function EditSpaceDialog({
       const roomId = data.id || id;
       console.log("Using room ID for update:", roomId);
       
-      const updateData = {
-        name: data.name,
-        room_number: data.roomNumber,
-        room_type: data.roomType ? roomTypeToString(data.roomType as RoomTypeEnum) : null,
-        status: data.status ? statusToString(data.status as StatusEnum) : null,
-        description: data.description || null,
-        is_storage: data.isStorage,
-        storage_type: data.isStorage && data.storageType ? storageTypeToString(data.storageType as StorageTypeEnum) : null,
-        storage_capacity: data.storageCapacity || null,
-        storage_notes: data.storageNotes || null,
-        parent_room_id: data.parentRoomId || null,
-        current_function: data.currentFunction || null,
-        phone_number: data.phoneNumber || null,
-        floor_id: data.floorId,
-        courtroom_photos: data.courtroom_photos || null
-      };
-
-      console.log("Update data prepared:", updateData);
-      
+      // Handle courtroom photo storage cleanup if needed
       if (data.roomType === RoomTypeEnum.COURTROOM) {
         try {
           await storageService.ensureBucketsExist(['courtroom-photos']);
-          
           if (data.courtroom_photos && roomId) {
             const validUrls = Object.values(data.courtroom_photos).filter(Boolean) as string[];
             if (validUrls.length > 0) {
@@ -200,20 +182,12 @@ export function EditSpaceDialog({
           console.error('Error verifying storage bucket:', bucketError);
         }
       }
-      
-      console.log("Executing room update query...");
-      const { error: roomError } = await supabase
-        .from("rooms")
-        .update(updateData as any)
-        .eq('id', roomId);
 
-      if (roomError) {
-        console.error("Room update error:", roomError);
-        throw new Error(`Failed to update room: ${roomError.message}`);
-      }
-      
+      // Use the new updateSpace service for updating the room
+      await import("./services/updateSpace").then(async ({ updateSpace }) => {
+        await updateSpace(roomId, data);
+      });
       console.log("Room update successful");
-      
       // Handle connections using the simplified approach
       if (data.connections && data.connections.length > 0) {
         console.log("Processing connections:", data.connections);

@@ -12,7 +12,9 @@ export async function createRelocation(formData: CreateRelocationFormData) {
     .from('room_relocations')
     .insert({
       original_room_id: formData.original_room_id,
+      original_parent_room_id: formData.original_parent_room_id || null,
       temporary_room_id: formData.temporary_room_id,
+      temporary_parent_room_id: formData.temporary_parent_room_id || null,
       start_date: formData.start_date,
       end_date: formData.end_date,
       reason: formData.reason,
@@ -62,6 +64,8 @@ export async function updateRelocation(formData: UpdateRelocationFormData) {
     .from('room_relocations')
     .update({
       temporary_room_id: formData.temporary_room_id,
+      temporary_parent_room_id: formData.temporary_parent_room_id || null,
+      original_parent_room_id: formData.original_parent_room_id || null,
       end_date: formData.end_date,
       actual_end_date: formData.actual_end_date,
       reason: formData.reason,

@@ -50,49 +50,108 @@ export function RoomSelectionSection({ form }: RoomSelectionSectionProps) {
       />
 
       <div className="grid gap-6 md:grid-cols-2">
-        <FormField
-          control={form.control}
-          name="original_room_id"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Original Room</FormLabel>
-              <FormControl>
-                <BaseRoomSelectionSection
-                  searchQuery={originalSearchQuery}
-                  onSearchChange={setOriginalSearchQuery}
-                  selectedRoom={field.value}
-                  onRoomChange={field.onChange}
-                  filteredRooms={filteredOriginalRooms}
-                  isLoadingRooms={isLoadingRooms}
-                  label="Original Room"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="temporary_room_id"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Temporary Room</FormLabel>
-              <FormControl>
-                <BaseRoomSelectionSection
-                  searchQuery={temporarySearchQuery}
-                  onSearchChange={setTemporarySearchQuery}
-                  selectedRoom={field.value}
-                  onRoomChange={field.onChange}
-                  filteredRooms={filteredTemporaryRooms}
-                  isLoadingRooms={isLoadingRooms}
-                  label="Temporary Room"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {/* Original Room Selection */}
+        <div className="space-y-4">
+          <FormField
+            control={form.control}
+            name="original_room_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Original Room</FormLabel>
+                <FormControl>
+                  <BaseRoomSelectionSection
+                    searchQuery={originalSearchQuery}
+                    onSearchChange={setOriginalSearchQuery}
+                    selectedRoom={field.value}
+                    onRoomChange={field.onChange}
+                    filteredRooms={filteredOriginalRooms}
+                    isLoadingRooms={isLoadingRooms}
+                    label="Original Room"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          {/* Optional Parent Room for Original */}
+          <FormField
+            control={form.control}
+            name="original_parent_room_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Parent Room (optional)</FormLabel>
+                <FormControl>
+                  <select
+                    className="block w-full border rounded px-2 py-1"
+                    value={field.value || ''}
+                    onChange={e => field.onChange(e.target.value || undefined)}
+                  >
+                    <option value="">None</option>
+                    {filteredOriginalRooms
+                      .filter(room => room.id !== form.watch('original_room_id'))
+                      .map(room => (
+                        <option key={room.id} value={room.id}>
+                          {room.name} {room.room_number ? `(${room.room_number})` : ''}
+                        </option>
+                      ))}
+                  </select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        {/* Temporary Room Selection */}
+        <div className="space-y-4">
+          <FormField
+            control={form.control}
+            name="temporary_room_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Temporary Room</FormLabel>
+                <FormControl>
+                  <BaseRoomSelectionSection
+                    searchQuery={temporarySearchQuery}
+                    onSearchChange={setTemporarySearchQuery}
+                    selectedRoom={field.value}
+                    onRoomChange={field.onChange}
+                    filteredRooms={filteredTemporaryRooms}
+                    isLoadingRooms={isLoadingRooms}
+                    label="Temporary Room"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          {/* Optional Parent Room for Temporary */}
+          <FormField
+            control={form.control}
+            name="temporary_parent_room_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Parent Room (optional)</FormLabel>
+                <FormControl>
+                  <select
+                    className="block w-full border rounded px-2 py-1"
+                    value={field.value || ''}
+                    onChange={e => field.onChange(e.target.value || undefined)}
+                  >
+                    <option value="">None</option>
+                    {filteredTemporaryRooms
+                      .filter(room => room.id !== form.watch('temporary_room_id'))
+                      .map(room => (
+                        <option key={room.id} value={room.id}>
+                          {room.name} {room.room_number ? `(${room.room_number})` : ''}
+                        </option>
+                      ))}
+                  </select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
       </div>
     </>
   );

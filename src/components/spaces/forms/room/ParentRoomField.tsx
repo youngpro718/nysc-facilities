@@ -10,15 +10,12 @@ import { RoomTypeEnum } from "../../rooms/types/roomEnums";
 // Define which room types can be parents
 export const PARENT_ROOM_TYPES = [
   RoomTypeEnum.OFFICE,
-  RoomTypeEnum.STORAGE,
-  RoomTypeEnum.UTILITY
+  RoomTypeEnum.STORAGE
 ];
 
 // Define which room types can have parents
 export const CAN_HAVE_PARENT_ROOM_TYPES = [
   RoomTypeEnum.OFFICE,
-  RoomTypeEnum.RECEPTION,
-  RoomTypeEnum.MEETING,
   RoomTypeEnum.STORAGE
 ];
 
@@ -27,6 +24,9 @@ interface ParentRoomFieldProps {
   floorId: string;
   currentRoomId?: string;
 }
+
+// Add a short help text for users
+const HELP_TEXT = "To make a room a parent, leave this as 'None'. To assign a parent, select another room. Only certain room types can be parents.";
 
 export function ParentRoomField({ form, floorId, currentRoomId }: ParentRoomFieldProps) {
   const roomType = form.watch("roomType");
@@ -73,26 +73,34 @@ export function ParentRoomField({ form, floorId, currentRoomId }: ParentRoomFiel
       name="parentRoomId"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Parent Room (Optional)</FormLabel>
-          <Select 
-            onValueChange={(value) => field.onChange(value === "none" ? null : value)} 
-            value={field.value || "none"}
-            disabled={isLoading}
-          >
-            <FormControl>
-              <SelectTrigger>
+          <FormLabel>Parent Room</FormLabel>
+          <div style={{ marginBottom: 4, color: '#2563eb', fontWeight: 500, fontSize: 13 }}>
+            {HELP_TEXT}
+          </div>
+          <FormControl>
+            <Select
+              onValueChange={(value) => {
+                if (value === "none") {
+                  field.onChange(undefined);
+                } else {
+                  field.onChange(value);
+                }
+              }}
+              value={field.value || "none"}
+            >
+              <SelectTrigger style={{ borderColor: '#2563eb', boxShadow: '0 0 0 1.5px #2563eb' }}>
                 <SelectValue placeholder="Select a parent room (optional)" />
               </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              <SelectItem value="none">None</SelectItem>
-              {parentRooms?.map((room) => (
-                <SelectItem key={room.id} value={room.id}>
-                  {room.name} ({room.room_number}) - {room.room_type.toUpperCase()}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {parentRooms?.map((room) => (
+                  <SelectItem key={room.id} value={room.id}>
+                    {room.name} ({room.room_number}) - {room.room_type.toUpperCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormControl>
           <FormMessage />
         </FormItem>
       )}

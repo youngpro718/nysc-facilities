@@ -56,6 +56,15 @@ export function OccupantCard({
             </div>
           </div>
 
+          {/* Assigned Rooms */}
+          <div className="text-sm text-muted-foreground">
+            <strong>Rooms:</strong> {
+              occupant.rooms && occupant.rooms.length > 0
+                ? occupant.rooms.map(r => `${r.floors?.buildings?.name ? r.floors.buildings.name + ' - ' : ''}${r.room_number || r.name}`).join(', ')
+                : '—'
+            }
+          </div>
+
           {/* Access Information */}
           <div className="flex justify-between items-center border-t pt-4">
             <div className="flex gap-4">

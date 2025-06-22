@@ -7,7 +7,9 @@ export type RelocationType = 'emergency' | 'maintenance' | 'other' | 'constructi
 // Base interfaces for specific aspects of a relocation
 export interface RelocationRooms {
   original_room_id: string;
+  original_parent_room_id?: string | null;
   temporary_room_id: string;
+  temporary_parent_room_id?: string | null;
 }
 
 export interface RelocationDates {
@@ -37,7 +39,7 @@ export interface CreateRelocationFormData
           RelocationDates, 
           RelocationDetails {
   schedule_changes?: ScheduleChangeData[];
-}
+} // parent room IDs are now included via RelocationRooms
 
 // Complete relocation interface with all possible fields
 export interface RoomRelocation 
@@ -52,10 +54,14 @@ export interface RoomRelocation
   metadata?: Record<string, any>;
   original_room?: Room;
   temporary_room?: Room;
+  original_parent_room?: Room;
+  temporary_parent_room?: Room;
 }
 
 export interface UpdateRelocationFormData {
   id: string;
+  original_parent_room_id?: string | null;
+  temporary_parent_room_id?: string | null;
   temporary_room_id?: string;
   end_date?: string;
   actual_end_date?: string;
