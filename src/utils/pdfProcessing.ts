@@ -31,8 +31,12 @@ export async function processCourtTermPdf(file: File): Promise<CourtTermData> {
   };
 }
 
-export async function importCourtTermData(data: CourtTermData): Promise<{ success: boolean; message: string }> {
+export async function importCourtTermData(data: CourtTermData): Promise<{ success: boolean; message: string; data?: any }> {
   // This would integrate with the actual import logic
   console.log('Importing court term data:', data);
-  return { success: true, message: 'Court term data imported successfully' };
+  return { 
+    success: true, 
+    message: 'Court term data imported successfully',
+    data: { id: 'temp-id', ...data }
+  };
 }

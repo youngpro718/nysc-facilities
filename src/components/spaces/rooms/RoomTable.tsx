@@ -11,9 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { EditSpaceDialog } from "../EditSpaceDialog";
-import type { Room } from "../types/RoomTypes";
-import { StatusEnum } from "../types/roomEnums";
+import { StatusEnum } from "./types/roomEnums";
 import { ParentRoomHierarchy } from "./ParentRoomHierarchy";
+import type { Room } from "../types/RoomTypes";
 
 interface RoomTableProps {
   rooms: Room[];

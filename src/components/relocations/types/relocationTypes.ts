@@ -14,6 +14,15 @@ export interface RoomRelocation {
   relocation_type: 'planned' | 'emergency' | 'maintenance';
   special_instructions?: string;
   metadata?: any;
+  // Additional fields for expanded data
+  original_room_name?: string;
+  original_room_number?: string;
+  temporary_room_name?: string;
+  temporary_room_number?: string;
+  building_name?: string;
+  floor_name?: string;
+  actual_end_date?: string;
+  term_id?: string;
 }
 
 export interface ActiveRelocation extends RoomRelocation {
@@ -46,6 +55,7 @@ export interface CreateRelocationFormData {
 export interface UpdateRelocationFormData extends Partial<CreateRelocationFormData> {
   id: string;
   status?: RelocationStatus;
+  actual_end_date?: string;
 }
 
 export interface RelocationNotification {
