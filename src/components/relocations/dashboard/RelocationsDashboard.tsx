@@ -1,288 +1,250 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { useRelocations } from "../hooks/useRelocations";
-import { format } from "date-fns";
-import { PlusCircle, ArrowUpRight, Calendar } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Calendar, MapPin, Users, Clock } from "lucide-react";
+import { format, formatDistanceToNow } from "date-fns";
+import { RelocationStatus } from "../types/relocationTypes";
+import { CompleteRelocationDialog } from "../dialogs/CompleteRelocationDialog";
+import { CancelRelocationDialog } from "../dialogs/CancelRelocationDialog";
+import { ActivateRelocationDialog } from "../dialogs/ActivateRelocationDialog";
+import { CourtTermsTab } from "./CourtTermsTab";
 
 export function RelocationsDashboard() {
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("active");
-  const { relocations, isLoading, isError } = useRelocations({
-    status: activeTab === "all" ? undefined : activeTab === "active" ? "active" : undefined
-  });
+  const {
+    relocations,
+    isLoading,
+    activateRelocation,
+    completeRelocation,
+    cancelRelocation,
+  } = useRelocations({ status: 'active' });
 
-  // Handle view details click
-  const handleViewDetails = (id: string) => {
-    navigate(`/relocations/${id}`);
-  };
+  const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  const [isActivateDialogOpen, setIsActivateDialogOpen] = useState(false);
+  const [selectedRelocationId, setSelectedRelocationId] = useState<string | null>(null);
 
-  // Handle create relocation click
-  const handleCreateRelocation = () => {
-    navigate("/relocations/create");
-  };
-
-  // Handle navigate to terms
-  const handleGoToTerms = () => {
-    navigate("/terms");
-  };
-
-  // Get status badge
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "active":
-        return <Badge className="bg-green-500">Active</Badge>;
-      case "scheduled":
-        return <Badge variant="outline" className="text-yellow-500 border-yellow-500">Scheduled</Badge>;
-      case "completed":
-        return <Badge className="bg-blue-500">Completed</Badge>;
-      case "cancelled":
-        return <Badge variant="destructive">Cancelled</Badge>;
-      default:
-        return <Badge variant="outline">Unknown</Badge>;
+  const handleActivate = async (id: string) => {
+    try {
+      await activateRelocation(id);
+      setSelectedRelocationId(null);
+      setIsActivateDialogOpen(false);
+    } catch (error) {
+      console.error('Error activating relocation:', error);
     }
   };
 
-  // Loading state
+  const handleComplete = async (id: string) => {
+    try {
+      await completeRelocation(id);
+      setSelectedRelocationId(null);
+      setIsCompleteDialogOpen(false);
+    } catch (error) {
+      console.error('Error completing relocation:', error);
+    }
+  };
+
+  const handleCancel = async (id: string) => {
+    try {
+      await cancelRelocation(id);
+      setSelectedRelocationId(null);
+      setIsCancelDialogOpen(false);
+    } catch (error) {
+      console.error('Error cancelling relocation:', error);
+    }
+  };
+
+  const activeRelocations = relocations.filter(r => r.status === 'active');
+  const scheduledRelocations = relocations.filter(r => r.status === 'scheduled');
+  const completedRelocations = relocations.filter(r => r.status === 'completed');
+
   if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Temporary Relocations</h1>
-          <Button disabled>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Create Relocation
-          </Button>
-        </div>
-        <Card>
-          <CardHeader>
-            <CardTitle>Loading...</CardTitle>
-            <CardDescription>Please wait while we load the relocations data.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-40 flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <div className="p-4">Loading relocations...</div>;
   }
-
-  // Error state
-  if (isError) {
-    return (
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Temporary Relocations</h1>
-          <Button onClick={handleCreateRelocation}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Create Relocation
-          </Button>
-        </div>
-        <Card className="border-red-200">
-          <CardHeader>
-            <CardTitle className="text-red-500">Error Loading Relocations</CardTitle>
-            <CardDescription>
-              There was a problem loading the relocations data.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p>Please try refreshing the page or contact support if the problem persists.</p>
-          </CardContent>
-          <CardFooter>
-            <Button variant="outline" onClick={() => window.location.reload()}>
-              Retry
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
-    );
-  }
-
-  const activeRelocations = relocations?.filter(r => r.status === 'active') || [];
-  const upcomingRelocations = relocations?.filter(r => {
-    const startDate = new Date(r.start_date);
-    const today = new Date();
-    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-    return r.status === 'scheduled' && startDate >= today && startDate <= nextWeek;
-  }) || [];
-
-  const activeRelocationsSummary = activeRelocations.map(r => ({
-    id: r.id,
-    room: r.original_room_name || 'Unknown Room',
-    tempRoom: r.temporary_room_name || 'Unknown Room',
-    startDate: r.start_date,
-    endDate: r.end_date,
-    status: r.status
-  }));
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Temporary Relocations</h1>
-        <div className="flex gap-2">
-          <Button onClick={handleGoToTerms} variant="outline">
-            <Calendar className="mr-2 h-4 w-4" />
-            Court Terms
-          </Button>
-          <Button onClick={handleCreateRelocation}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Create Relocation
-          </Button>
-        </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>Active Relocations</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{activeRelocations.length}</div>
+            <p className="text-sm text-muted-foreground">Currently in progress</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Scheduled Relocations</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{scheduledRelocations.length}</div>
+            <p className="text-sm text-muted-foreground">Awaiting activation</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Completed Relocations</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{completedRelocations.length}</div>
+            <p className="text-sm text-muted-foreground">Successfully completed</p>
+          </CardContent>
+        </Card>
       </div>
 
-      <Tabs defaultValue="active" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="active">Active</TabsTrigger>
-          <TabsTrigger value="all">All Relocations</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="active" className="space-y-4">
-          {activeRelocations.length === 0 ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>No Active Relocations</CardTitle>
-                <CardDescription>
-                  There are currently no active relocations.
-                </CardDescription>
+      <div className="space-y-4">
+        <h3 className="text-xl font-semibold">Upcoming Court Terms</h3>
+        <CourtTermsTab />
+      </div>
+
+      <div className="space-y-4">
+        <h3 className="text-xl font-semibold">Scheduled Relocations</h3>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {scheduledRelocations.map((relocation) => (
+            <Card key={relocation.id} className="cursor-pointer hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center justify-between">
+                  Relocation ID: {relocation.id.substring(0, 8)}...
+                  <Badge variant="secondary">{relocation.status}</Badge>
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <p>Create a new relocation to get started.</p>
+              <CardContent className="space-y-3">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="w-4 h-4" />
+                  <span>
+                    {format(new Date(relocation.start_date), 'MMM dd, yyyy')} - {format(new Date(relocation.end_date), 'MMM dd, yyyy')}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <MapPin className="w-4 h-4" />
+                  <span>{relocation.building_name}, {relocation.floor_name}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Users className="w-4 h-4" />
+                  <span>Created {formatDistanceToNow(new Date(relocation.created_at), { addSuffix: true })}</span>
+                </div>
+                <div className="flex justify-between">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedRelocationId(relocation.id);
+                      setIsActivateDialogOpen(true);
+                    }}
+                  >
+                    Activate
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedRelocationId(relocation.id);
+                      setIsCancelDialogOpen(true);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
               </CardContent>
-              <CardFooter>
-                <Button onClick={handleCreateRelocation}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Create Relocation
-                </Button>
-              </CardFooter>
             </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {activeRelocations
-                .map(relocation => (
-                  <Card key={relocation.id}>
-                    <CardHeader>
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <CardTitle className="text-lg">
-                            {relocation.original_room_name || "Unknown Room"}
-                          </CardTitle>
-                          <CardDescription>
-                            Relocated to: {relocation.temporary_room_name || "Unknown Room"}
-                          </CardDescription>
-                        </div>
-                        {getStatusBadge(relocation.status)}
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Start Date:</span>
-                          <span>{format(new Date(relocation.start_date), "MMM d, yyyy")}</span>
-                        </div>
-                        {relocation.end_date && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">End Date:</span>
-                            <span>{format(new Date(relocation.end_date), "MMM d, yyyy")}</span>
-                          </div>
-                        )}
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Reason:</span>
-                          <span className="text-right max-w-[200px] truncate">{relocation.reason}</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                    <CardFooter>
-                      <Button 
-                        variant="outline" 
-                        className="w-full" 
-                        onClick={() => handleViewDetails(relocation.id)}
-                      >
-                        View Details
-                        <ArrowUpRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                ))}
-            </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="all" className="space-y-4">
-          {relocations.length === 0 ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>No Relocations Found</CardTitle>
-                <CardDescription>
-                  There are no relocations in the system.
-                </CardDescription>
+          ))}
+        </div>
+        {scheduledRelocations.length === 0 && (
+          <div className="text-center py-4 text-gray-500">No scheduled relocations found.</div>
+        )}
+      </div>
+
+      <div className="space-y-4">
+        <h3 className="text-xl font-semibold">Active Relocations</h3>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {activeRelocations.map((relocation) => (
+            <Card key={relocation.id} className="cursor-pointer hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center justify-between">
+                  Relocation ID: {relocation.id.substring(0, 8)}...
+                  <Badge variant="default">{relocation.status}</Badge>
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <p>Create a new relocation to get started.</p>
+              <CardContent className="space-y-3">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="w-4 h-4" />
+                  <span>
+                    {format(new Date(relocation.start_date), 'MMM dd, yyyy')} - {format(new Date(relocation.end_date), 'MMM dd, yyyy')}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <MapPin className="w-4 h-4" />
+                  <span>{relocation.building_name}, {relocation.floor_name}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Clock className="w-4 h-4" />
+                  <span>Started {formatDistanceToNow(new Date(relocation.start_date), { addSuffix: true })}</span>
+                </div>
+                <div className="flex justify-between">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedRelocationId(relocation.id);
+                      setIsCompleteDialogOpen(true);
+                    }}
+                  >
+                    Complete
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedRelocationId(relocation.id);
+                      setIsCancelDialogOpen(true);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
               </CardContent>
-              <CardFooter>
-                <Button onClick={handleCreateRelocation}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Create Relocation
-                </Button>
-              </CardFooter>
             </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {relocations.map(relocation => (
-                <Card key={relocation.id}>
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-lg">
-                          {relocation.original_room_name || "Unknown Room"}
-                        </CardTitle>
-                        <CardDescription>
-                          Relocated to: {relocation.temporary_room_name || "Unknown Room"}
-                        </CardDescription>
-                      </div>
-                      {getStatusBadge(relocation.status)}
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Start Date:</span>
-                        <span>{format(new Date(relocation.start_date), "MMM d, yyyy")}</span>
-                      </div>
-                      {relocation.end_date && (
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">End Date:</span>
-                          <span>{format(new Date(relocation.end_date), "MMM d, yyyy")}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Reason:</span>
-                        <span className="text-right max-w-[200px] truncate">{relocation.reason}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button 
-                      variant="outline" 
-                      className="w-full" 
-                      onClick={() => handleViewDetails(relocation.id)}
-                    >
-                      View Details
-                      <ArrowUpRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+          ))}
+        </div>
+        {activeRelocations.length === 0 && (
+          <div className="text-center py-4 text-gray-500">No active relocations found.</div>
+        )}
+      </div>
+
+      <CompleteRelocationDialog
+        isOpen={isCompleteDialogOpen}
+        onClose={() => {
+          setIsCompleteDialogOpen(false);
+          setSelectedRelocationId(null);
+        }}
+        onComplete={handleComplete}
+        relocationId={selectedRelocationId}
+      />
+
+      <CancelRelocationDialog
+        isOpen={isCancelDialogOpen}
+        onClose={() => {
+          setIsCancelDialogOpen(false);
+          setSelectedRelocationId(null);
+        }}
+        onCancel={handleCancel}
+        relocationId={selectedRelocationId}
+      />
+
+      <ActivateRelocationDialog
+        isOpen={isActivateDialogOpen}
+        onClose={() => {
+          setIsActivateDialogOpen(false);
+          setSelectedRelocationId(null);
+        }}
+        onActivate={handleActivate}
+        relocationId={selectedRelocationId}
+      />
     </div>
   );
 }

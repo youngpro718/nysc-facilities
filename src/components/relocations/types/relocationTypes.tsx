@@ -25,7 +25,22 @@ export interface RoomRelocation {
   term_id?: string;
 }
 
-export interface ActiveRelocation extends RoomRelocation {
+export interface ActiveRelocation {
+  id: string;
+  original_room_id: string;
+  temporary_room_id: string;
+  start_date: string;
+  end_date: string;
+  reason: string;
+  status: RelocationStatus;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  relocation_type: 'planned' | 'emergency' | 'maintenance' | 'construction' | 'other';
+  special_instructions?: string;
+  metadata?: any;
+  actual_end_date?: string;
   original_room_name: string;
   original_room_number: string;
   temporary_room_name: string;
@@ -35,7 +50,6 @@ export interface ActiveRelocation extends RoomRelocation {
   progress_percentage: number;
   days_active: number;
   total_days: number;
-  created_by: string;
 }
 
 export type RelocationStatus = 'scheduled' | 'active' | 'completed' | 'cancelled';

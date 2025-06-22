@@ -44,7 +44,14 @@ export async function fetchActiveRelocations(): Promise<ActiveRelocation[]> {
     throw error;
   }
 
-  return data as ActiveRelocation[];
+  return (data || []).map(item => ({
+    ...item,
+    building_name: item.original_building_name || '',
+    floor_name: item.original_floor_name || '',
+    original_room_id: item.original_room_id || '',
+    temporary_room_id: item.temporary_room_id || '',
+    created_by: item.created_by || ''
+  })) as ActiveRelocation[];
 }
 
 export async function fetchRelocationById(id: string): Promise<RoomRelocation> {
