@@ -13,6 +13,128 @@ export interface CourtTermData {
   }>;
 }
 
+export interface TermAssignment {
+  part: string;
+  justice: string;
+  room: string;
+  tel?: string;
+  sgt?: string;
+  clerks?: string[];
+  extension?: string;
+  fax?: string;
+}
+
+export interface ExtractedTermMetadata {
+  termName?: string;
+  termNumber?: string;
+  location?: string;
+  startDate?: Date;
+  endDate?: Date;
+  confidence?: {
+    overall?: number;
+    termName?: number;
+    termNumber?: number;
+    location?: number;
+    dates?: number;
+  };
+}
+
+export function validatePDFFile(file: File): { valid: boolean; error?: string } {
+  if (!file) {
+    return { valid: false, error: 'No file provided' };
+  }
+  
+  if (!file.type.includes('pdf')) {
+    return { valid: false, error: 'File must be a PDF' };
+  }
+  
+  if (file.size > 10 * 1024 * 1024) { // 10MB limit
+    return { valid: false, error: 'File size must be less than 10MB' };
+  }
+  
+  return { valid: true };
+}
+
+export async function extractTextFromPDF(arrayBuffer: ArrayBuffer): Promise<string> {
+  // Mock implementation - in a real app you'd use a PDF parsing library
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(`Mock PDF text content from ${arrayBuffer.byteLength} bytes`);
+    }, 500);
+  });
+}
+
+export function parseAssignmentsFromText(text: string): { assignments: TermAssignment[], method: string } {
+  // Mock implementation
+  const mockAssignments: TermAssignment[] = [
+    {
+      part: 'Part 1A',
+      justice: 'Hon. John Smith',
+      room: '101',
+      tel: '555-0123',
+      sgt: 'Sgt. Johnson',
+      clerks: ['Mary Wilson', 'Bob Davis']
+    },
+    {
+      part: 'Part 2B',
+      justice: 'Hon. Jane Doe', 
+      room: '102',
+      tel: '555-0124',
+      sgt: 'Sgt. Williams',
+      clerks: ['Alice Brown', 'Charlie Green']
+    }
+  ];
+  
+  return {
+    assignments: mockAssignments,
+    method: 'Pattern Recognition'
+  };
+}
+
+export function formatPart(part: string, details?: string): string {
+  return details ? `${part} (${details})` : part;
+}
+
+export function formatPhone(phone?: string): string {
+  return phone || '—';
+}
+
+export function formatSergeant(sergeant?: string): string {
+  return sergeant || '—';
+}
+
+export function formatClerks(clerks?: string[]): string {
+  return clerks && clerks.length > 0 ? clerks.join(', ') : '—';
+}
+
+export function getReadableFileSize(bytes: number): string {
+  if (bytes === 0) return '0 Bytes';
+  
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+export function extractTermMetadata(text: string): ExtractedTermMetadata {
+  // Mock implementation
+  return {
+    termName: 'Fall 2025 Term',
+    termNumber: 'Term IV',
+    location: 'Manhattan',
+    startDate: new Date('2025-09-01'),
+    endDate: new Date('2025-12-31'),
+    confidence: {
+      overall: 0.85,
+      termName: 0.90,
+      termNumber: 0.80,
+      location: 0.75,
+      dates: 0.85
+    }
+  };
+}
+
 export async function processCourtTermPdf(file: File): Promise<CourtTermData> {
   // This is a simplified implementation
   // In a real implementation, you would use a PDF parsing library

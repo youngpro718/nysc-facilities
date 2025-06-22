@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { EditSpaceDialog } from "../EditSpaceDialog";
-import { Room } from "./types/RoomTypes";
+import { Room } from "../types/RoomTypes";
 import { StatusEnum } from "./types/roomEnums";
 
 interface RoomTableProps {
@@ -42,8 +42,8 @@ export function RoomTable({ rooms, onDelete }: RoomTableProps) {
             <TableRow key={room.id}>
               <TableCell>{room.name}</TableCell>
               <TableCell>{room.room_number}</TableCell>
-              <TableCell>{room.floor?.building?.name}</TableCell>
-              <TableCell>{room.floor?.name}</TableCell>
+              <TableCell>{room.floor?.building?.name || room.buildingName}</TableCell>
+              <TableCell>{room.floor?.name || room.floorName}</TableCell>
               <TableCell>
                 <Badge variant={room.status === StatusEnum.ACTIVE ? 'default' : 'destructive'}>
                   {room.status}
@@ -59,10 +59,10 @@ export function RoomTable({ rooms, onDelete }: RoomTableProps) {
                       id: room.id,
                       name: room.name,
                       roomNumber: room.room_number || '',
-                      roomType: room.room_type,
+                      roomType: room.room_type || room.roomType,
                       description: room.description || '',
                       status: room.status as StatusEnum,
-                      floorId: room.floor_id,
+                      floorId: room.floor_id || room.floorId,
                       isStorage: room.is_storage || false,
                       storageType: room.storage_type || null,
                       storageCapacity: room.storage_capacity || null,

@@ -199,9 +199,9 @@ export function EditSpaceDialog({
           storageCapacity: data.storageCapacity,
           storageNotes: data.storageNotes,
           parentRoomId: data.parentRoomId,
-          position: data.position,
-          size: data.size,
-          rotation: data.rotation,
+          position: data.position ? { x: data.position.x || 0, y: data.position.y || 0 } : { x: 0, y: 0 },
+          size: data.size ? { width: data.size.width || 150, height: data.size.height || 100 } : { width: 150, height: 100 },
+          rotation: data.rotation || 0,
           courtRoomPhotos: data.courtroom_photos
         });
       });

@@ -1,79 +1,46 @@
 
+import { StatusEnum, RoomTypeEnum, StorageTypeEnum } from "../rooms/types/roomEnums";
+
 export interface Room {
   id: string;
   name: string;
-  roomNumber?: string;
-  roomType: string;
+  room_number?: string;
+  room_type: RoomTypeEnum;
+  status: StatusEnum;
   description?: string;
-  status: string;
-  floorId: string;
-  floorName: string;
-  buildingName: string;
-  buildingId: string;
-  isStorage?: boolean;
-  storageType?: string;
-  storageCapacity?: number;
-  phoneNumber?: string;
-  currentFunction?: string;
-  occupants?: RoomOccupant[];
-  issues?: RoomIssue[];
-  history?: RoomHistoryItem[];
-  lightingFixtures?: LightingFixture[];
-  connections?: RoomConnection[];
-  parentRoomId?: string;
-  parentRoomName?: string;
-  courtroom_photos?: {
-    judge_view: string | null;
-    audience_view: string | null;
-  } | null;
-}
-
-export interface RoomOccupant {
-  id: string;
-  firstName: string;
-  lastName: string;
-  title?: string;
-  assignmentType: string;
-  isPrimary: boolean;
-  schedule?: string;
-}
-
-export interface RoomIssue {
-  id: string;
-  title: string;
-  status: string;
-  type: string;
-  priority: string;
-  createdAt: string;
-}
-
-export interface RoomHistoryItem {
-  id: string;
-  changeType: string;
-  previousValues?: any;
-  newValues?: any;
-  createdAt: string;
-}
-
-export interface LightingFixture {
-  id: string;
-  name: string;
-  status: string;
-  type?: string;
-  position?: string;
-  technology?: string;
-}
-
-export interface RoomConnection {
-  id: string;
-  fromSpaceId: string;
-  toSpaceId: string;
-  connectionType: string;
-  direction?: string;
-  status: string;
-  toSpace?: {
+  floor_id: string;
+  is_storage?: boolean;
+  storage_type?: StorageTypeEnum;
+  storage_capacity?: number;
+  storage_notes?: string;
+  parent_room_id?: string;
+  current_function?: string;
+  phone_number?: string;
+  created_at: string;
+  updated_at: string;
+  
+  // Navigation properties
+  floor?: {
     id: string;
     name: string;
-    type: string;
+    building?: {
+      id: string;
+      name: string;
+    };
   };
+  
+  space_connections?: Array<{
+    id: string;
+    connection_type: string;
+    to_space_id: string;
+    direction?: string;
+  }>;
+
+  // Properties for compatibility
+  roomType: RoomTypeEnum;
+  roomNumber?: string;
+  floorId: string;
+  floorName?: string;
+  buildingName?: string;
+  buildingId?: string;
 }
