@@ -76,7 +76,7 @@ function OccupantDetailsComponent({ occupantData }: OccupantDetailsProps) {
     emergency_contact: typeof currentOccupant.emergency_contact === 'string' 
       ? JSON.parse(currentOccupant.emergency_contact || '{}')
       : currentOccupant.emergency_contact || {},
-    rooms: currentOccupant.rooms || [] // Ensure rooms array is always present
+    rooms: (currentOccupant as any).rooms || [] // Ensure rooms array is always present
   };
 
   const handleEditSuccess = () => {

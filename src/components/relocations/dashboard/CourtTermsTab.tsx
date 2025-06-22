@@ -1,8 +1,9 @@
+
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSupabaseClient } from '@/contexts/SupabaseContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { Database } from '@/types/supabase';
+import { Database } from '@/integrations/supabase/types';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -55,11 +56,10 @@ interface Building {
 interface CourtTerm {
   id: string;
   term_number: string;
-  title: string;
+  term_name: string;
   location: string;
-  date_period: string;
-  building_id: string;
-  building_name?: string;
+  start_date: string;
+  end_date: string;
   created_at: string;
   updated_at: string;
   assignments_count?: number;
@@ -98,13 +98,12 @@ export function CourtTermsTab() {
         .select(`
           id, 
           term_number, 
-          title, 
+          term_name, 
           location, 
-          date_period, 
-          building_id,
+          start_date,
+          end_date,
           created_at,
-          updated_at,
-          buildings:building_id(name)
+          updated_at
         `)
         .order('created_at', { ascending: false });
       
@@ -112,7 +111,7 @@ export function CourtTermsTab() {
       
       // Count assignments for each term
       const termsWithCounts = await Promise.all(
-        data.map(async (term) => {
+        (data || []).map(async (term) => {
           const { count, error: countError } = await supabase
             .from('court_assignments')
             .select('*', { count: 'exact', head: true })
@@ -120,7 +119,6 @@ export function CourtTermsTab() {
             
           return {
             ...term,
-            building_name: term.buildings?.name,
             assignments_count: count || 0
           };
         })
@@ -149,31 +147,18 @@ export function CourtTermsTab() {
           fax,
           tel,
           sergeant,
-          rooms:room_id(room_number)
+          room_number,
+          clerks
         `)
         .eq('term_id', selectedTerm)
         .order('part');
         
       if (error) throw error;
       
-      // Fetch clerks for each assignment
-      const assignmentsWithClerks = await Promise.all(
-        data.map(async (assignment) => {
-          const { data: clerksData, error: clerksError } = await supabase
-            .from('court_clerks')
-            .select('name')
-            .eq('term_id', assignment.term_id)
-            .eq('room_id', assignment.room_id);
-            
-          return {
-            ...assignment,
-            room_number: assignment.rooms?.room_number,
-            clerks: clerksData?.map(clerk => clerk.name) || []
-          };
-        })
-      );
-      
-      return assignmentsWithClerks;
+      return (data || []).map(assignment => ({
+        ...assignment,
+        clerks: assignment.clerks || []
+      }));
     },
     enabled: !!selectedTerm
   });
@@ -185,10 +170,8 @@ export function CourtTermsTab() {
     const searchLower = searchTerm.toLowerCase();
     return (
       term.term_number.toLowerCase().includes(searchLower) ||
-      term.title.toLowerCase().includes(searchLower) ||
-      term.location.toLowerCase().includes(searchLower) ||
-      term.date_period.toLowerCase().includes(searchLower) ||
-      (term.building_name && term.building_name.toLowerCase().includes(searchLower))
+      term.term_name.toLowerCase().includes(searchLower) ||
+      term.location.toLowerCase().includes(searchLower)
     );
   });
   
@@ -282,9 +265,9 @@ export function CourtTermsTab() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Term</TableHead>
-                      <TableHead>Title</TableHead>
+                      <TableHead>Name</TableHead>
                       <TableHead>Period</TableHead>
-                      <TableHead>Building</TableHead>
+                      <TableHead>Location</TableHead>
                       <TableHead className="text-center">Assignments</TableHead>
                       <TableHead className="text-center">Actions</TableHead>
                     </TableRow>
@@ -293,9 +276,9 @@ export function CourtTermsTab() {
                     {filteredTerms?.map((term) => (
                       <TableRow key={term.id}>
                         <TableCell className="font-medium">{term.term_number}</TableCell>
-                        <TableCell>{term.title}</TableCell>
-                        <TableCell>{term.date_period}</TableCell>
-                        <TableCell>{term.building_name}</TableCell>
+                        <TableCell>{term.term_name}</TableCell>
+                        <TableCell>{`${formatDate(term.start_date)} - ${formatDate(term.end_date)}`}</TableCell>
+                        <TableCell>{term.location}</TableCell>
                         <TableCell className="text-center">
                           <Badge variant="outline">{term.assignments_count}</Badge>
                         </TableCell>
@@ -326,7 +309,7 @@ export function CourtTermsTab() {
                     {courtTerms?.find(term => term.id === selectedTerm)?.term_number} Assignments
                   </CardTitle>
                   <CardDescription>
-                    {courtTerms?.find(term => term.id === selectedTerm)?.date_period}
+                    {courtTerms?.find(term => term.id === selectedTerm)?.term_name}
                   </CardDescription>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => setActiveTab('terms')}>
@@ -402,7 +385,6 @@ interface CourtTermImporterProps {
 function CourtTermImporter({ isOpen, onOpenChange, onImportComplete }: CourtTermImporterProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [selectedBuilding, setSelectedBuilding] = useState<string>('');
   const [extractedData, setExtractedData] = useState<CourtTermData | null>(null);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -412,20 +394,6 @@ function CourtTermImporter({ isOpen, onOpenChange, onImportComplete }: CourtTerm
   const supabase = useSupabaseClient() as SupabaseClient<Database>;
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
-  
-  // Fetch buildings data
-  const { data: buildings, isLoading: isLoadingBuildings } = useQuery({
-    queryKey: ['buildings'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('buildings')
-        .select('id, name, room_count, floor_count')
-        .order('name');
-        
-      if (error) throw error;
-      return (data || []) as Building[];
-    }
-  });
   
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
@@ -450,20 +418,20 @@ function CourtTermImporter({ isOpen, onOpenChange, onImportComplete }: CourtTerm
   
   const handleProcessPdf = async (file: File) => {
     setIsLoading(true);
-    setError(null); // Clear any previous errors
-    setExtractedData(null); // Clear any previous data
+    setError(null);
+    setExtractedData(null);
     setProgress(20);
     try {
       const data = await processCourtTermPdf(file);
       console.log('Processed PDF data:', data);
-      if (!data || !data.termInfo || !data.assignments || data.assignments.length === 0) {
+      if (!data || !data.assignments || data.assignments.length === 0) {
         throw new Error('No valid court term data found in PDF');
       }
       setExtractedData(data);
       setProgress(80);
       toast({
         title: 'PDF Processed Successfully',
-        description: `Found ${data.assignments.length} court assignments for Term ${data.termInfo.termNumber}`,
+        description: `Found ${data.assignments.length} court assignments`,
       });
     } catch (err) {
       console.error('PDF processing error:', err);
@@ -498,26 +466,17 @@ function CourtTermImporter({ isOpen, onOpenChange, onImportComplete }: CourtTerm
     setIsLoading(true);
     setProgress(20);
     try {
-      const result = await importCourtTermData(extractedData, supabase);
+      await importCourtTermData(extractedData, supabase);
       
-      if (result.success) {
-        setSuccess(`Court term data imported successfully. Term ID: ${result.data?.termId}`);
-        toast({
-          title: 'Import Successful',
-          description: 'Court term data has been imported successfully',
-        });
-        
-        // Call the onImportComplete callback if provided
-        if (onImportComplete) {
-          onImportComplete();
-        }
-      } else {
-        setError(result.message);
-        toast({
-          variant: 'destructive',
-          title: 'Import Error',
-          description: result.message,
-        });
+      setSuccess('Court term data imported successfully');
+      toast({
+        title: 'Import Successful',
+        description: 'Court term data has been imported successfully',
+      });
+      
+      // Call the onImportComplete callback if provided
+      if (onImportComplete) {
+        onImportComplete();
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to import court term data');
@@ -596,10 +555,6 @@ function CourtTermImporter({ isOpen, onOpenChange, onImportComplete }: CourtTerm
               <div className="text-sm text-foreground bg-muted p-4 rounded-lg">
                 <div className="font-medium mb-2">Extracted Data:</div>
                 <div className="space-y-1">
-                  <div>Term: {extractedData.termInfo.termNumber}</div>
-                  <div>Title: {extractedData.termInfo.title}</div>
-                  <div>Date: {extractedData.termInfo.datePeriod}</div>
-                  <div>Location: {extractedData.termInfo.location}</div>
                   <div>Assignments: {extractedData.assignments.length}</div>
                 </div>
               </div>
