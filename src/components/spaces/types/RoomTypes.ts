@@ -4,7 +4,7 @@ import { StatusEnum, RoomTypeEnum, StorageTypeEnum } from "../rooms/types/roomEn
 export interface Room {
   id: string;
   name: string;
-  room_number?: string;
+  room_number: string;
   room_type: RoomTypeEnum;
   status: StatusEnum;
   description?: string;
@@ -36,9 +36,9 @@ export interface Room {
     direction?: string;
   }>;
 
-  // Properties for compatibility
+  // Compatibility properties for legacy code
   roomType: RoomTypeEnum;
-  roomNumber?: string;
+  roomNumber: string;
   floorId: string;
   floorName?: string;
   buildingName?: string;

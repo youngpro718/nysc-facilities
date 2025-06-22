@@ -8,7 +8,7 @@ export interface Relocation {
   start_date: string;
   end_date: string;
   reason: string;
-  status: string;
+  status: 'scheduled' | 'active' | 'completed' | 'cancelled';
   notes?: string;
   created_by?: string;
   created_at: string;
@@ -29,6 +29,15 @@ export interface CreateRelocationData {
   special_instructions?: string;
 }
 
+export interface RelocationUpdate {
+  temporary_room_id?: string;
+  end_date?: string;
+  reason?: string;
+  status?: 'scheduled' | 'active' | 'completed' | 'cancelled';
+  notes?: string;
+  special_instructions?: string;
+}
+
 export class RelocationService {
   static async getRelocations(): Promise<Relocation[]> {
     const { data, error } = await supabase
@@ -40,12 +49,27 @@ export class RelocationService {
     return data as Relocation[];
   }
 
+  static async listRelocations(): Promise<Relocation[]> {
+    return this.getRelocations();
+  }
+
+  static async getRelocation(id: string): Promise<Relocation> {
+    const { data, error } = await supabase
+      .from('room_relocations')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+    return data as Relocation;
+  }
+
   static async createRelocation(relocationData: CreateRelocationData): Promise<Relocation> {
     const { data, error } = await supabase
       .from('room_relocations')
       .insert({
         ...relocationData,
-        status: 'scheduled'
+        status: 'scheduled' as const
       })
       .select()
       .single();
@@ -54,7 +78,7 @@ export class RelocationService {
     return data as Relocation;
   }
 
-  static async updateRelocation(id: string, updates: Partial<Relocation>): Promise<Relocation> {
+  static async updateRelocation(id: string, updates: RelocationUpdate): Promise<Relocation> {
     const { data, error } = await supabase
       .from('room_relocations')
       .update(updates)

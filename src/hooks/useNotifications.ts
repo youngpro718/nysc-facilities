@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -44,13 +43,13 @@ export function useNotifications() {
             .select(`
               id,
               assigned_at,
-              rooms (
+              rooms!occupant_room_assignments_room_id_fkey (
                 id,
                 name,
                 room_number,
-                floors (
+                floors!rooms_floor_id_fkey (
                   name,
-                  buildings (name)
+                  buildings!floors_building_id_fkey (name)
                 )
               )
             `)
