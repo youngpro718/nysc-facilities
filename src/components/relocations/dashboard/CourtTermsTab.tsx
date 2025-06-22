@@ -25,10 +25,8 @@ export function CourtTermsTab() {
           start_date,
           end_date,
           location,
-          building_id,
           created_at,
-          updated_at,
-          buildings:building_id(name)
+          updated_at
         `);
 
       if (error) {
@@ -43,7 +41,7 @@ export function CourtTermsTab() {
         start_date: term.start_date,
         end_date: term.end_date,
         location: term.location,
-        buildings: term.buildings ? [{ name: term.buildings.name }] : []
+        buildings: []
       })) as CourtTermData[];
     },
   });
@@ -74,12 +72,6 @@ export function CourtTermsTab() {
                 <MapPin className="w-4 h-4" />
                 <span>{term.location}</span>
               </div>
-              {term.buildings && term.buildings.length > 0 && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Users className="w-4 h-4" />
-                  <span>{term.buildings[0].name}</span>
-                </div>
-              )}
               <Button
                 variant="outline"
                 size="sm"

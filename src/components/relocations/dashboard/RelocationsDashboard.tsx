@@ -18,7 +18,7 @@ export function RelocationsDashboard() {
     activateRelocation,
     completeRelocation,
     cancelRelocation,
-  } = useRelocations({ status: 'active' });
+  } = useRelocations();
 
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
