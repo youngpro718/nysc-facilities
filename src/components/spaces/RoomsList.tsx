@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { RoomCard } from "./rooms/RoomCard";
-import { Room } from "./rooms/types/RoomTypes";
+import { Room, CourtroomPhotos } from "./rooms/types/RoomTypes";
 import { RoomTypeEnum, StatusEnum, StorageTypeEnum } from "./rooms/types/roomEnums";
 
 interface RoomsListProps {
@@ -68,7 +68,10 @@ export function RoomsList({
         position: room.position ? (typeof room.position === 'string' ? JSON.parse(room.position) : room.position) : { x: 0, y: 0 },
         size: room.size ? (typeof room.size === 'string' ? JSON.parse(room.size) : room.size) : { width: 150, height: 100 },
         rotation: room.rotation || 0,
-        courtroom_photos: room.courtroom_photos,
+        courtroom_photos: room.courtroom_photos ? 
+          (typeof room.courtroom_photos === 'string' ? 
+            JSON.parse(room.courtroom_photos) as CourtroomPhotos : 
+            room.courtroom_photos as CourtroomPhotos) : null,
         created_at: room.created_at,
         updated_at: room.updated_at
       }));

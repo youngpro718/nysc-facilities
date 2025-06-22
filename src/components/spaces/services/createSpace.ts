@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { CreateSpaceFormData } from "../schemas/createSpaceSchema";
 import { 
@@ -58,13 +59,13 @@ export async function createSpace(data: CreateSpaceFormData) {
       });
       
       // Convert status to string format expected by database
-      let statusValue = 'active';
+      let statusValue: 'active' | 'inactive' | 'under_maintenance' = 'active';
       if (data.status === StatusEnum.INACTIVE) statusValue = 'inactive';
-      if (data.status === StatusEnum.MAINTENANCE || data.status === StatusEnum.UNDER_MAINTENANCE) statusValue = 'under_maintenance';
+      if (data.status === StatusEnum.UNDER_MAINTENANCE) statusValue = 'under_maintenance';
       
       const hallwayData = {
         name: data.name,
-        type: data.type,
+        type: data.type as 'hallway',
         floor_id: data.floorId,
         status: statusValue,
         position: data.position || { x: 0, y: 0 },
@@ -134,7 +135,7 @@ export async function createSpace(data: CreateSpaceFormData) {
             space_type: data.type,
             connection_type: firstConnection.connectionType,
             direction: directionValue,
-            status: data.status as 'active' | 'inactive' | 'under_maintenance',
+            status: statusValue,
             connection_status: 'active',
             hallway_position: getHallwayPosition(firstConnection.direction),
             offset_distance: 50,
@@ -162,13 +163,13 @@ export async function createSpace(data: CreateSpaceFormData) {
     }
 
     // Convert status for other space types
-    let statusValue = 'active';
+    let statusValue: 'active' | 'inactive' | 'under_maintenance' = 'active';
     if (data.status === StatusEnum.INACTIVE) statusValue = 'inactive';
-    if (data.status === StatusEnum.MAINTENANCE || data.status === StatusEnum.UNDER_MAINTENANCE) statusValue = 'under_maintenance';
+    if (data.status === StatusEnum.UNDER_MAINTENANCE) statusValue = 'under_maintenance';
 
     const spaceData = {
       name: data.name,
-      type: data.type,
+      type: data.type as 'door',
       floor_id: data.floorId,
       status: statusValue,
       position: data.position || { x: 0, y: 0 },
@@ -213,7 +214,7 @@ export async function createSpace(data: CreateSpaceFormData) {
           space_type: data.type,
           connection_type: firstConnection.connectionType,
           direction: directionValue,
-          status: data.status as 'active' | 'inactive' | 'under_maintenance',
+          status: statusValue,
           connection_status: 'active',
           is_transition_door: isTransitionDoor,
           hallway_position: getHallwayPosition(firstConnection.direction),

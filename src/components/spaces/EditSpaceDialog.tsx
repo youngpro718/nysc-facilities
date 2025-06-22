@@ -9,13 +9,15 @@ interface EditSpaceDialogProps {
   type: "room" | "hallway" | "door";
   initialData?: any;
   trigger?: React.ReactNode;
+  onSpaceUpdated?: () => void;
 }
 
-export function EditSpaceDialog({ id, type, initialData, trigger }: EditSpaceDialogProps) {
+export function EditSpaceDialog({ id, type, initialData, trigger, onSpaceUpdated }: EditSpaceDialogProps) {
   const [open, setOpen] = useState(false);
 
   const handleSuccess = () => {
     setOpen(false);
+    onSpaceUpdated?.();
   };
 
   const renderContent = () => {
