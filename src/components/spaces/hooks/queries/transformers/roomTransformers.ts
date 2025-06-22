@@ -1,61 +1,65 @@
 
-import { Room, RoomType, StorageType, CourtroomPhotos } from "../../../rooms/types/RoomTypes";
+import { StatusEnum, RoomTypeEnum, StorageTypeEnum } from "../../../rooms/types/roomEnums";
+import type { Room } from "../../../types/RoomTypes";
 
-export const transformRoomData = (
-  roomsData: any[],
-  fixturesByRoomId: Record<string, any>,
+interface RawRoomData {
+  id: string;
+  name: string;
+  room_number?: string;
+  room_type: string;
+  status: string;
+  floor_id: string;
+  description?: string;
+  phone_number?: string;
+  is_storage?: boolean;
+  storage_type?: string;
+  storage_capacity?: number;
+  current_function?: string;
+  parent_room_id?: string;
+  courtroom_photos?: {
+    judge_view: string | null;
+    audience_view: string | null;
+  } | null;
+  floors?: {
+    id: string;
+    name: string;
+    buildings?: {
+      id: string;
+      name: string;
+    };
+  };
+}
+
+export function transformRoomData(
+  roomsData: RawRoomData[],
+  fixturesByRoomId: Record<string, any[]>,
   issuesByRoomId: Record<string, any[]>,
   historyByRoomId: Record<string, any[]>,
   occupantsByRoomId: Record<string, any[]>,
   connectionsByRoomId: Record<string, any[]>
-): Room[] => {
-  return roomsData.map(room => {
-    // Handle courtroom photos - normalize to consistent format
-    let courtroom_photos: CourtroomPhotos | null = null;
-    
-    if (room.courtroom_photos) {
-      // Make sure we have the correct structure regardless of input format
-      courtroom_photos = {
-        judge_view: room.courtroom_photos.judge_view || null,
-        audience_view: room.courtroom_photos.audience_view || null
-      };
-    }
-    
-    return {
-      ...room,
-      room_type: room.room_type as RoomType,
-      storage_type: room.storage_type ? (room.storage_type as StorageType) : null,
-      lighting_fixture: fixturesByRoomId[room.id] ? {
-        id: fixturesByRoomId[room.id].id,
-        type: fixturesByRoomId[room.id].type,
-        status: fixturesByRoomId[room.id].status,
-        technology: fixturesByRoomId[room.id].technology,
-        electrical_issues: fixturesByRoomId[room.id].electrical_issues,
-        ballast_issue: fixturesByRoomId[room.id].ballast_issue,
-        maintenance_notes: fixturesByRoomId[room.id].maintenance_notes
-      } : null,
-      space_connections: connectionsByRoomId[room.id] || [],
-      // Consistent courtroom_photos property
-      courtroom_photos: courtroom_photos,
-      issues: (issuesByRoomId[room.id] || []).map(issue => ({
-        id: issue.id,
-        title: issue.title,
-        status: issue.status,
-        type: issue.type,
-        priority: issue.priority,
-        created_at: issue.created_at
-      })),
-      room_history: historyByRoomId[room.id] || [],
-      current_occupants: occupantsByRoomId[room.id] || [],
-      // Add a floor property that matches the structure used in the components
-      floor: room.floors ? {
-        id: room.floors.id,
-        name: room.floors.name,
-        building: room.floors.buildings ? {
-          id: room.floors.buildings.id,
-          name: room.floors.buildings.name
-        } : undefined
-      } : undefined
-    };
-  });
-};
+): Room[] {
+  return roomsData.map(room => ({
+    id: room.id,
+    name: room.name,
+    roomNumber: room.room_number || '',
+    roomType: room.room_type as RoomTypeEnum,
+    description: room.description || '',
+    status: room.status as StatusEnum,
+    floorId: room.floor_id,
+    floorName: room.floors?.name || '',
+    buildingName: room.floors?.buildings?.name || '',
+    buildingId: room.floors?.buildings?.id || '',
+    isStorage: room.is_storage || false,
+    storageType: room.storage_type as StorageTypeEnum,
+    storageCapacity: room.storage_capacity,
+    phoneNumber: room.phone_number,
+    currentFunction: room.current_function,
+    parentRoomId: room.parent_room_id,
+    courtroom_photos: room.courtroom_photos,
+    occupants: occupantsByRoomId[room.id] || [],
+    issues: issuesByRoomId[room.id] || [],
+    history: historyByRoomId[room.id] || [],
+    lightingFixtures: fixturesByRoomId[room.id] || [],
+    connections: connectionsByRoomId[room.id] || []
+  }));
+}

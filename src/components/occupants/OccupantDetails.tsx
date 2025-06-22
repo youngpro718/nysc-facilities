@@ -28,7 +28,8 @@ export function OccupantDetails({ occupant }: OccupantDetailsProps) {
 
   const totalDoorAccess = keyAssignments?.reduce((count, assignment) => {
     if (assignment.keys?.is_passkey) return count + 5;
-    return count + (assignment.keys?.key_door_locations?.length || 1);
+    // Use the correct property name for door locations
+    return count + (assignment.keys?.key_door_locations_table?.length || 1);
   }, 0) || 0;
 
   const getAssignmentTypeLabel = (type: string) => {

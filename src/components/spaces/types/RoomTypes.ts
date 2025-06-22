@@ -1,17 +1,19 @@
 
+import { StatusEnum, RoomTypeEnum, StorageTypeEnum } from "../rooms/types/roomEnums";
+
 export interface Room {
   id: string;
   name: string;
   roomNumber?: string;
-  roomType: string;
+  roomType: RoomTypeEnum;
   description?: string;
-  status: string;
+  status: StatusEnum;
   floorId: string;
   floorName: string;
   buildingName: string;
   buildingId: string;
   isStorage?: boolean;
-  storageType?: string;
+  storageType?: StorageTypeEnum;
   storageCapacity?: number;
   phoneNumber?: string;
   currentFunction?: string;

@@ -1,41 +1,44 @@
+
 import { supabase } from "@/integrations/supabase/client";
-import { EditSpaceFormData } from "../schemas/editSpaceSchema";
-import { RoomTypeEnum, roomTypeToString, statusToString, StorageTypeEnum, storageTypeToString } from "../rooms/types/roomEnums";
+import { StatusEnum } from "../rooms/types/roomEnums";
+
+interface UpdateRoomData {
+  name?: string;
+  room_number?: string;
+  room_type?: string;
+  status?: string;
+  floor_id?: string;
+  description?: string | null;
+  phone_number?: string | null;
+  current_function?: string | null;
+  is_storage?: boolean;
+  storage_type?: string | null;
+  storage_capacity?: number | null;
+  storage_notes?: string | null;
+  parent_room_id?: string | null;
+  position?: { x: number; y: number };
+  size?: { width: number; height: number };
+  rotation?: number;
+  courtroom_photos?: {
+    judge_view: string | null;
+    audience_view: string | null;
+  } | null;
+}
 
 /**
- * Updates a room in the database, including parent_room_id and all editable fields.
+ * Updates a room in the database
  * @param id Room ID (UUID)
- * @param data Partial room data to update
+ * @param data Room data to update
  * @returns Updated room object or throws error
  */
-export async function updateSpace(id: string, data: Partial<EditSpaceFormData>) {
+export async function updateSpace(id: string, data: UpdateRoomData) {
   if (!id) throw new Error("Room ID is required for update");
 
-  // Map frontend fields to DB columns as needed
-  const updateData: Record<string, any> = {
-    name: data.name,
-    room_number: data.roomNumber,
-    room_type: data.roomType ? roomTypeToString(data.roomType as RoomTypeEnum) : undefined,
-    status: data.status ? statusToString(data.status) : undefined,
-    floor_id: data.floorId,
-    description: data.description ?? null,
-    phone_number: data.phoneNumber ?? null,
-    current_function: data.currentFunction ?? null,
-    is_storage: data.isStorage ?? false,
-    storage_type: data.isStorage && data.storageType ? storageTypeToString(data.storageType as StorageTypeEnum) : null,
-    storage_capacity: data.storageCapacity ?? null,
-    storage_notes: data.storageNotes ?? null,
-    parent_room_id: data.parentRoomId ?? null,
-    position: data.position ?? { x: 0, y: 0 },
-    size: data.size ?? { width: 150, height: 100 },
-    rotation: data.rotation ?? 0,
-    courtroom_photos: data.roomType === RoomTypeEnum.COURTROOM ? (data.courtRoomPhotos || { judge_view: null, audience_view: null }) : null
-  };
-
   // Remove undefined values (don't update those fields)
-  Object.keys(updateData).forEach(key => {
-    if (updateData[key] === undefined) {
-      delete updateData[key];
+  const updateData: Record<string, any> = {};
+  Object.entries(data).forEach(([key, value]) => {
+    if (value !== undefined) {
+      updateData[key] = value;
     }
   });
 
