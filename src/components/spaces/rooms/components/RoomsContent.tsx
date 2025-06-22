@@ -1,7 +1,7 @@
 
 import React, { useMemo } from 'react';
 import { Skeleton } from "@/components/ui/skeleton";
-import { Room } from "../../types/RoomTypes";
+import { Room } from "../types/RoomTypes";
 import { RoomCard } from "../RoomCard";
 import { RoomTable } from "../RoomTable";
 import { SearchResultsInfo } from "./SearchResultsInfo";
@@ -28,7 +28,7 @@ export function RoomsContent({
     const counts: Record<string, number> = {};
     
     filteredRooms.forEach(room => {
-      const type = room.roomType;
+      const type = room.room_type;
       counts[type] = (counts[type] || 0) + 1;
     });
     

@@ -1,56 +1,28 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { CreateScheduleChangeFormData, UpdateScheduleChangeFormData, ScheduleChange, RelocationStatus } from "../types/relocationTypes";
 
-// Update types to match actual database schema
-export interface ScheduleChange {
-  id: string;
-  relocation_id: string;
-  original_court_part: string;
-  temporary_assignment: string;
-  start_date: string;
-  end_date: string;
-  status: 'active' | 'scheduled' | 'completed' | 'cancelled';
-  special_instructions: string;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CreateScheduleChangeFormData {
-  relocation_id: string;
-  original_court_part: string;
-  temporary_assignment: string;
-  start_date: string;
-  end_date: string;
-  special_instructions?: string;
-}
-
-export interface UpdateScheduleChangeFormData {
-  id: string;
-  original_court_part: string;
-  temporary_assignment: string;
-  start_date: string;
-  end_date: string;
-  special_instructions?: string;
-  created_by?: string;
-}
-
-export const fetchScheduleChanges = async (relocationId: string): Promise<ScheduleChange[]> => {
+export async function fetchScheduleChanges(relocationId: string) {
   const { data, error } = await supabase
     .from('schedule_changes')
     .select('*')
     .eq('relocation_id', relocationId)
-    .order('created_at', { ascending: false });
+    .order('start_date', { ascending: false });
 
   if (error) {
-    console.error('Error fetching schedule changes:', error);
+    console.error(`Error fetching schedule changes for relocation ${relocationId}:`, error);
     throw error;
   }
 
-  return data || [];
-};
+  return data as ScheduleChange[];
+}
 
-export const createScheduleChange = async (formData: CreateScheduleChangeFormData): Promise<ScheduleChange> => {
+export async function createScheduleChange(formData: CreateScheduleChangeFormData) {
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) {
+    throw new Error('User not authenticated');
+  }
+
   const { data, error } = await supabase
     .from('schedule_changes')
     .insert({
@@ -59,9 +31,9 @@ export const createScheduleChange = async (formData: CreateScheduleChangeFormDat
       temporary_assignment: formData.temporary_assignment,
       start_date: formData.start_date,
       end_date: formData.end_date,
-      special_instructions: formData.special_instructions || '',
-      status: 'scheduled',
-      created_at: new Date().toISOString()
+      special_instructions: formData.special_instructions,
+      status: 'scheduled' as RelocationStatus,
+      created_by: userData.user.id
     })
     .select()
     .single();
@@ -71,41 +43,40 @@ export const createScheduleChange = async (formData: CreateScheduleChangeFormDat
     throw error;
   }
 
-  return data;
-};
+  return data as ScheduleChange;
+}
 
-export const updateScheduleChange = async (formData: UpdateScheduleChangeFormData): Promise<ScheduleChange> => {
+export async function updateScheduleChange(formData: UpdateScheduleChangeFormData) {
   const { data, error } = await supabase
     .from('schedule_changes')
     .update({
-      original_court_part: formData.original_court_part,
       temporary_assignment: formData.temporary_assignment,
-      start_date: formData.start_date,
       end_date: formData.end_date,
-      special_instructions: formData.special_instructions || '',
-      created_by: formData.created_by,
-      updated_at: new Date().toISOString()
+      special_instructions: formData.special_instructions,
+      status: formData.status
     })
     .eq('id', formData.id)
     .select()
     .single();
 
   if (error) {
-    console.error('Error updating schedule change:', error);
+    console.error(`Error updating schedule change with ID ${formData.id}:`, error);
     throw error;
   }
 
-  return data;
-};
+  return data as ScheduleChange;
+}
 
-export const deleteScheduleChange = async (id: string): Promise<void> => {
+export async function deleteScheduleChange(id: string) {
   const { error } = await supabase
     .from('schedule_changes')
     .delete()
     .eq('id', id);
 
   if (error) {
-    console.error('Error deleting schedule change:', error);
+    console.error(`Error deleting schedule change with ID ${id}:`, error);
     throw error;
   }
-};
+
+  return true;
+}

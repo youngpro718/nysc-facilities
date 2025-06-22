@@ -1,192 +1,153 @@
 
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Form } from "@/components/ui/form";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-
-const editHallwaySchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  status: z.enum(["active", "inactive", "under_maintenance"]).default("active"),
-  position: z.object({
-    x: z.number().default(0),
-    y: z.number().default(0),
-  }).default({ x: 0, y: 0 }),
-  size: z.object({
-    width: z.number().default(300),
-    height: z.number().default(50),
-  }).default({ width: 300, height: 50 }),
-  rotation: z.number().default(0),
-  properties: z.object({
-    description: z.string().optional(),
-  }).default({}),
-});
-
-type EditHallwayFormData = z.infer<typeof editHallwaySchema>;
+import { zodResolver } from "@hookform/resolvers/zod";
+import { EditSpaceFormData, editSpaceSchema } from "../../schemas/editSpaceSchema";
+import { supabase } from "@/integrations/supabase/client";
+import { CreateHallwayFields } from "../../forms/space/CreateHallwayFields";
 
 interface EditHallwayFormProps {
   id: string;
-  initialData?: any;
-  onSuccess: () => void;
+  initialData: Partial<EditSpaceFormData>;
+  onSuccess?: () => void;
   onCancel: () => void;
 }
 
-export function EditHallwayForm({ id, initialData, onSuccess, onCancel }: EditHallwayFormProps) {
+export function EditHallwayForm({
+  id,
+  initialData,
+  onSuccess,
+  onCancel,
+}: EditHallwayFormProps) {
   const queryClient = useQueryClient();
-
-  const form = useForm<EditHallwayFormData>({
-    resolver: zodResolver(editHallwaySchema),
+  
+  const form = useForm<EditSpaceFormData>({
+    resolver: zodResolver(editSpaceSchema),
     defaultValues: {
-      name: initialData?.name || "",
-      status: (initialData?.status === "under_maintenance" ? "under_maintenance" : 
-               initialData?.status === "inactive" ? "inactive" : "active") as "active" | "inactive" | "under_maintenance",
-      position: initialData?.position || { x: 0, y: 0 },
-      size: initialData?.size || { width: 300, height: 50 },
-      rotation: initialData?.rotation || 0,
-      properties: {
-        description: initialData?.properties?.description || initialData?.description || "",
-      },
+      ...initialData,
+      type: "hallway", // Force type to be hallway for the edit form
     },
   });
 
-  const updateMutation = useMutation({
-    mutationFn: async (data: EditHallwayFormData) => {
-      const { error } = await supabase
-        .from("hallways")
-        .update({
-          name: data.name,
-          status: data.status,
-          position: data.position,
-          size: data.size,
-          rotation: data.rotation,
-          description: data.properties.description,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", id);
+  useEffect(() => {
+    if (initialData) {
+      form.reset(initialData);
+    }
+  }, [form, initialData]);
 
-      if (error) throw error;
+  const hallwayMutation = useMutation({
+    mutationFn: async (data: EditSpaceFormData) => {
+      if (data.type !== 'hallway') {
+        throw new Error('Invalid space type for hallway edit form');
+      }
+      
+      console.log('Updating hallway with data:', data);
+      
+      // First update the basic space data
+      const spaceData = {
+        name: data.name,
+        status: data.status,
+        position: data.position || { x: 0, y: 0 },
+        size: data.size || { width: 300, height: 50 },
+        rotation: data.rotation || 0,
+        properties: {
+          description: data.description
+        }
+      };
+
+      const { error: spaceError } = await supabase
+        .from('new_spaces')
+        .update(spaceData)
+        .eq('id', id);
+
+      if (spaceError) throw spaceError;
+
+      // Then update the hallway-specific properties
+      const hallwayProps = {
+        section: data.section || 'connector',
+        traffic_flow: data.trafficFlow || 'two_way',
+        accessibility: data.accessibility || 'fully_accessible',
+        emergency_route: data.emergencyRoute || 'not_designated',
+        maintenance_priority: data.maintenancePriority || 'low',
+        capacity_limit: data.capacityLimit
+      };
+
+      // Check if hallway properties exist for this space
+      const { data: existingProps, error: checkError } = await supabase
+        .from('hallway_properties')
+        .select('*')
+        .eq('space_id', id)
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      // Insert or update hallway properties
+      if (existingProps) {
+        const { error: updateError } = await supabase
+          .from('hallway_properties')
+          .update(hallwayProps)
+          .eq('space_id', id);
+
+        if (updateError) throw updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from('hallway_properties')
+          .insert([{ ...hallwayProps, space_id: id }]);
+
+        if (insertError) throw insertError;
+      }
+
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["hallways"] });
-      queryClient.invalidateQueries({ queryKey: ["spaces"] });
+      queryClient.invalidateQueries({ queryKey: ['hallways'] });
+      queryClient.invalidateQueries({ queryKey: ['spaces'] });
       toast.success("Hallway updated successfully");
-      onSuccess();
+      if (onSuccess) onSuccess();
     },
     onError: (error) => {
-      console.error("Error updating hallway:", error);
-      toast.error("Failed to update hallway");
+      console.error("Update error:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to update hallway");
     },
   });
 
-  const onSubmit = (data: EditHallwayFormData) => {
-    updateMutation.mutate(data);
+  const handleSubmit = async (data: EditSpaceFormData) => {
+    await hallwayMutation.mutateAsync(data);
   };
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-      <div className="space-y-2">
-        <Label htmlFor="name">Name</Label>
-        <Input
-          id="name"
-          {...form.register("name")}
-          placeholder="Enter hallway name"
-        />
-        {form.formState.errors.name && (
-          <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="status">Status</Label>
-        <Select
-          value={form.watch("status")}
-          onValueChange={(value: "active" | "inactive" | "under_maintenance") => 
-            form.setValue("status", value)
-          }
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
-            <SelectItem value="under_maintenance">Under Maintenance</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          {...form.register("properties.description")}
-          placeholder="Enter hallway description"
-          rows={3}
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="position.x">Position X</Label>
-          <Input
-            id="position.x"
-            type="number"
-            {...form.register("position.x", { valueAsNumber: true })}
-          />
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        <CreateHallwayFields form={form} />
+        
+        <div className="flex justify-end gap-2 pt-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+          >
+            Cancel
+          </Button>
+          <Button 
+            type="submit"
+            disabled={hallwayMutation.isPending || !form.formState.isDirty}
+          >
+            {hallwayMutation.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Updating...
+              </>
+            ) : (
+              "Update"
+            )}
+          </Button>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="position.y">Position Y</Label>
-          <Input
-            id="position.y"
-            type="number"
-            {...form.register("position.y", { valueAsNumber: true })}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="size.width">Width</Label>
-          <Input
-            id="size.width"
-            type="number"
-            {...form.register("size.width", { valueAsNumber: true })}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="size.height">Height</Label>
-          <Input
-            id="size.height"
-            type="number"
-            {...form.register("size.height", { valueAsNumber: true })}
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="rotation">Rotation</Label>
-        <Input
-          id="rotation"
-          type="number"
-          {...form.register("rotation", { valueAsNumber: true })}
-          placeholder="Rotation in degrees"
-        />
-      </div>
-
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={updateMutation.isPending}>
-          {updateMutation.isPending ? "Updating..." : "Update Hallway"}
-        </Button>
-      </div>
-    </form>
+      </form>
+    </Form>
   );
 }

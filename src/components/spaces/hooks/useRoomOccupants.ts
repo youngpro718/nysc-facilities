@@ -2,77 +2,73 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export interface RoomOccupant {
+interface RoomOccupant {
   id: string;
   first_name: string;
   last_name: string;
   title?: string;
-  room: {
-    name: string;
-    room_number?: string;
-    floor: {
-      name: string;
-      building: {
-        name: string;
-      };
-    };
-  };
+  assignment_type: string;
+  is_primary: boolean;
+  schedule?: any;
+  room_id?: string;
+  room_name?: string;
+  room_number?: string;
+  floor_name?: string;
+  building_name?: string;
 }
 
-export function useRoomOccupants(roomId?: string) {
+export function useRoomOccupants(roomId: string | undefined) {
   return useQuery({
-    queryKey: ['room-occupants', roomId],
-    queryFn: async (): Promise<RoomOccupant[]> => {
+    queryKey: ["room-occupants", roomId],
+    enabled: !!roomId,
+    queryFn: async () => {
       if (!roomId) return [];
 
-      const { data: assignments, error } = await supabase
-        .from('occupant_room_assignments')
+      const { data, error } = await supabase
+        .from("occupant_room_assignments")
         .select(`
-          occupants!inner (
+          assignment_type,
+          is_primary,
+          schedule,
+          room_id,
+          rooms (
+            id,
+            name,
+            room_number,
+            floors (
+              name,
+              buildings (
+                name
+              )
+            )
+          ),
+          occupants!fk_occupant_room_assignments_occupant (
             id,
             first_name,
             last_name,
             title
-          ),
-          rooms!inner (
-            name,
-            room_number,
-            floors!inner (
-              name,
-              buildings!inner (
-                name
-              )
-            )
           )
         `)
-        .eq('room_id', roomId)
-        .eq('status', 'active');
+        .eq("room_id", roomId);
 
-      if (error) {
-        console.error('Error fetching room occupants:', error);
-        throw error;
-      }
+      if (error) throw error;
 
-      if (!assignments) return [];
-
-      // Transform the data with proper type safety
-      return assignments.map((assignment: any): RoomOccupant => ({
-        id: assignment.occupants?.id || '',
-        first_name: assignment.occupants?.first_name || '',
-        last_name: assignment.occupants?.last_name || '',
-        title: assignment.occupants?.title || '',
-        room: {
-          name: assignment.rooms?.name || '',
-          room_number: assignment.rooms?.room_number || '',
-          floor: {
-            name: assignment.rooms?.floors?.name || '',
-            building: {
-              name: assignment.rooms?.floors?.buildings?.name || ''
-            }
-          }
-        }
-      }));
+      return (data || [])
+        .filter(assignment => assignment.occupants && assignment.rooms)
+        .map(assignment => ({
+          id: assignment.occupants!.id,
+          first_name: assignment.occupants!.first_name,
+          last_name: assignment.occupants!.last_name,
+          title: assignment.occupants!.title,
+          assignment_type: assignment.assignment_type,
+          is_primary: assignment.is_primary,
+          schedule: assignment.schedule,
+          room_id: assignment.room_id,
+          room_name: assignment.rooms!.name,
+          room_number: assignment.rooms!.room_number,
+          floor_name: assignment.rooms!.floors?.name,
+          building_name: assignment.rooms!.floors?.buildings?.name,
+        })) as RoomOccupant[];
     },
-    enabled: !!roomId,
   });
 }

@@ -25,18 +25,18 @@ export function RoomSelectionSection({ form }: RoomSelectionSectionProps) {
   const filteredOriginalRooms = useMemo(() => 
     rooms?.filter(room => 
       room.name.toLowerCase().includes(originalSearchQuery.toLowerCase()) ||
-      room.roomNumber?.toLowerCase().includes(originalSearchQuery.toLowerCase()) ||
-      room.buildingName?.toLowerCase().includes(originalSearchQuery.toLowerCase()) ||
-      room.floorName?.toLowerCase().includes(originalSearchQuery.toLowerCase())
+      room.room_number?.toLowerCase().includes(originalSearchQuery.toLowerCase()) ||
+      room.floor?.building?.name?.toLowerCase().includes(originalSearchQuery.toLowerCase()) ||
+      room.floor?.name?.toLowerCase().includes(originalSearchQuery.toLowerCase())
     ) || [], [rooms, originalSearchQuery]
   );
 
   const filteredTemporaryRooms = useMemo(() => 
     rooms?.filter(room => 
       room.name.toLowerCase().includes(temporarySearchQuery.toLowerCase()) ||
-      room.roomNumber?.toLowerCase().includes(temporarySearchQuery.toLowerCase()) ||
-      room.buildingName?.toLowerCase().includes(temporarySearchQuery.toLowerCase()) ||
-      room.floorName?.toLowerCase().includes(temporarySearchQuery.toLowerCase())
+      room.room_number?.toLowerCase().includes(temporarySearchQuery.toLowerCase()) ||
+      room.floor?.building?.name?.toLowerCase().includes(temporarySearchQuery.toLowerCase()) ||
+      room.floor?.name?.toLowerCase().includes(temporarySearchQuery.toLowerCase())
     ) || [], [rooms, temporarySearchQuery]
   );
 
@@ -91,7 +91,7 @@ export function RoomSelectionSection({ form }: RoomSelectionSectionProps) {
                       .filter(room => room.id !== form.watch('original_room_id'))
                       .map(room => (
                         <option key={room.id} value={room.id}>
-                          {room.name} {room.roomNumber ? `(${room.roomNumber})` : ''}
+                          {room.name} {room.room_number ? `(${room.room_number})` : ''}
                         </option>
                       ))}
                   </select>
@@ -142,7 +142,7 @@ export function RoomSelectionSection({ form }: RoomSelectionSectionProps) {
                       .filter(room => room.id !== form.watch('temporary_room_id'))
                       .map(room => (
                         <option key={room.id} value={room.id}>
-                          {room.name} {room.roomNumber ? `(${room.roomNumber})` : ''}
+                          {room.name} {room.room_number ? `(${room.room_number})` : ''}
                         </option>
                       ))}
                   </select>

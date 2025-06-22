@@ -20,8 +20,8 @@ export function useRelocationFilters(relocations: RoomRelocation[]) {
   const filterRelocations = (relocations: RoomRelocation[]) => {
     return relocations.filter(relocation => {
       const matchesSearch = searchTerm === '' || 
-        (relocation.original_room_name && relocation.original_room_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (relocation.temporary_room_name && relocation.temporary_room_name.toLowerCase().includes(searchTerm.toLowerCase()));
+        relocation.original_room?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        relocation.temporary_room?.name.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesStatus = selectedStatus === 'all' || relocation.status === selectedStatus;
 

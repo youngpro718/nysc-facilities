@@ -1,6 +1,31 @@
 
-import { RoomTypeEnum, StatusEnum, StorageTypeEnum } from './roomEnums';
+import { StatusEnum, RoomTypeEnum, StorageTypeEnum, roomTypeToString, storageTypeToString } from "./roomEnums";
 
+export type RoomType = RoomTypeEnum;
+export type StorageType = StorageTypeEnum;
+
+// Helper functions to convert between enum and string types
+export const getRoomTypeString = (type: RoomTypeEnum): string => roomTypeToString(type);
+export const getRoomTypeEnum = (type: string): RoomTypeEnum => type as RoomTypeEnum;
+
+export const getStorageTypeString = (type: StorageTypeEnum): string => storageTypeToString(type);
+export const getStorageTypeEnum = (type: string): StorageTypeEnum => type as StorageTypeEnum;
+
+export interface RoomConnection {
+  id: string;
+  from_space_id: string;
+  to_space_id: string;
+  connection_type: string;
+  direction?: string | null;
+  status: string;
+  to_space?: {
+    id: string;
+    name: string;
+    type: string;
+  };
+}
+
+// Define the courtroom photos interface for reuse
 export interface CourtroomPhotos {
   judge_view?: string | null;
   audience_view?: string | null;
@@ -9,43 +34,43 @@ export interface CourtroomPhotos {
 export interface Room {
   id: string;
   name: string;
-  room_number?: string;
-  room_type: RoomTypeEnum;
+  room_number: string;
+  room_type: RoomType;
   status: StatusEnum;
-  description?: string;
-  phone_number?: string;
-  is_storage?: boolean;
-  storage_type?: StorageTypeEnum | null;
+  description?: string | null;
+  phone_number?: string | null;
+  is_storage: boolean;
+  storage_type?: StorageType | null;
   storage_capacity?: number | null;
-  storage_notes?: string;
+  storage_notes?: string | null;
   parent_room_id?: string | null;
-  current_function?: string;
+  current_function?: string | null;
   floor_id: string;
+  created_at: string;
+  updated_at: string;
+  function_change_date?: string;
+  previous_functions?: any[];
   position?: { x: number; y: number };
   size?: { width: number; height: number };
   rotation?: number;
+  
+  // Use the consistent CourtroomPhotos type
   courtroom_photos?: CourtroomPhotos | null;
-  created_at: string;
-  updated_at: string;
-  // Additional properties that may be needed by some components
+  
+  // Relationships
   floor?: {
+    id: string;
     name: string;
-    building: {
+    building?: {
+      id: string;
       name: string;
-    };
+    }
   };
-  current_occupants?: any[];
+  
+  // Related data
+  lighting_fixture?: any;
+  space_connections?: RoomConnection[];
   issues?: any[];
-  space_connections?: any[];
-}
-
-// Legacy type alias for backward compatibility
-export type RoomType = Room;
-
-export interface RoomConnection {
-  id: string;
-  from_room_id: string;
-  to_room_id: string;
-  connection_type: string;
-  status: string;
+  room_history?: any[];
+  current_occupants?: any[];
 }

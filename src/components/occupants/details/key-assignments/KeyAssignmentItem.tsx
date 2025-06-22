@@ -33,7 +33,7 @@ export function KeyAssignmentItem({
             <span className="block sm:inline">Access to: </span>
             <span className="truncate">
               {assignment.keys.key_door_locations
-                .map(l => l.door_location)
+                .map(l => l.doors?.name || l.door_id)
                 .join(", ")}
             </span>
           </div>

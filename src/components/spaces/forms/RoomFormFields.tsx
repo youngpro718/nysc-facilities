@@ -13,8 +13,7 @@ interface FormFieldsProps {
 }
 
 export function RoomFormFields({ form, floorId }: FormFieldsProps) {
-  const roomIdValue = form.getValues()?.id;
-  const safeRoomId = typeof roomIdValue === 'string' ? roomIdValue : undefined;
+  const roomIdValue = form.getValues()?.id || undefined; // Safe access with fallback
 
   return (
     <div className="space-y-6">
@@ -23,7 +22,7 @@ export function RoomFormFields({ form, floorId }: FormFieldsProps) {
       <ParentRoomField 
         form={form} 
         floorId={floorId} 
-        currentRoomId={safeRoomId} 
+        currentRoomId={roomIdValue} 
       />
       
       <StorageFields form={form} />
@@ -32,7 +31,7 @@ export function RoomFormFields({ form, floorId }: FormFieldsProps) {
         <ConnectionsField
           form={form}
           floorId={floorId}
-          roomId={safeRoomId}
+          roomId={roomIdValue}
         />
       )}
       
