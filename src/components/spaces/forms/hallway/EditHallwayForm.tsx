@@ -10,7 +10,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { StatusEnum } from "../../rooms/types/roomEnums";
 
 const editHallwaySchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -45,7 +44,8 @@ export function EditHallwayForm({ id, initialData, onSuccess, onCancel }: EditHa
     resolver: zodResolver(editHallwaySchema),
     defaultValues: {
       name: initialData?.name || "",
-      status: (initialData?.status as "active" | "inactive" | "under_maintenance") || "active",
+      status: (initialData?.status === "under_maintenance" ? "under_maintenance" : 
+               initialData?.status === "inactive" ? "inactive" : "active") as "active" | "inactive" | "under_maintenance",
       position: initialData?.position || { x: 0, y: 0 },
       size: initialData?.size || { width: 300, height: 50 },
       rotation: initialData?.rotation || 0,
@@ -61,7 +61,7 @@ export function EditHallwayForm({ id, initialData, onSuccess, onCancel }: EditHa
         .from("hallways")
         .update({
           name: data.name,
-          status: data.status as StatusEnum,
+          status: data.status,
           position: data.position,
           size: data.size,
           rotation: data.rotation,

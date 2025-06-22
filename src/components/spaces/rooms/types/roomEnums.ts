@@ -1,124 +1,109 @@
 
-export enum StatusEnum {
-  ACTIVE = 'active',
-  INACTIVE = 'inactive',
-  MAINTENANCE = 'maintenance',
-  UNDER_MAINTENANCE = 'under_maintenance',
-  CLOSED = 'closed'
+export enum RoomTypeEnum {
+  COURTROOM = "courtroom",
+  OFFICE = "office",
+  CONFERENCE = "conference",
+  STORAGE = "storage",
+  BATHROOM = "bathroom",
+  KITCHEN = "kitchen",
+  LOBBY = "lobby",
+  HALLWAY = "hallway",
+  STAIRWELL = "stairwell",
+  ELEVATOR = "elevator",
+  UTILITY = "utility",
+  MECHANICAL = "mechanical",
+  ELECTRICAL = "electrical",
+  JANITOR = "janitor",
+  SECURITY = "security",
+  RECEPTION = "reception",
+  WAITING = "waiting",
+  LIBRARY = "library",
+  ARCHIVE = "archive",
+  OTHER = "other"
 }
 
-export enum RoomTypeEnum {
-  COURTROOM = 'courtroom',
-  MALE_LOCKER_ROOM = 'male_locker_room',
-  FEMALE_LOCKER_ROOM = 'female_locker_room',
-  OFFICE = 'office',
-  STORAGE = 'storage'
+export enum StatusEnum {
+  ACTIVE = "active",
+  INACTIVE = "inactive",
+  MAINTENANCE = "under_maintenance",
+  UNDER_CONSTRUCTION = "under_construction",
+  RETIRED = "retired"
 }
 
 export enum StorageTypeEnum {
-  GENERAL = 'general',
-  SUPPLIES = 'supplies',
-  EQUIPMENT = 'equipment',
-  DOCUMENTS = 'documents',
-  EVIDENCE = 'evidence'
+  GENERAL = "general",
+  SECURE = "secure",
+  CLIMATE_CONTROLLED = "climate_controlled",
+  HAZARDOUS = "hazardous",
+  ARCHIVE = "archive",
+  EVIDENCE = "evidence",
+  SUPPLY = "supply"
 }
 
-export function statusToString(status: StatusEnum): string {
-  switch (status) {
-    case StatusEnum.ACTIVE:
-      return 'Active';
-    case StatusEnum.INACTIVE:
-      return 'Inactive';
-    case StatusEnum.MAINTENANCE:
-    case StatusEnum.UNDER_MAINTENANCE:
-      return 'Maintenance';
-    case StatusEnum.CLOSED:
-      return 'Closed';
-    default:
-      return 'Unknown';
-  }
-}
-
-export function roomTypeToString(roomType: RoomTypeEnum): string {
-  switch (roomType) {
+export function getRoomTypeDisplayName(type: RoomTypeEnum): string {
+  switch (type) {
     case RoomTypeEnum.COURTROOM:
-      return 'Courtroom';
-    case RoomTypeEnum.MALE_LOCKER_ROOM:
-      return 'Male Locker Room';
-    case RoomTypeEnum.FEMALE_LOCKER_ROOM:
-      return 'Female Locker Room';
+      return "Courtroom";
     case RoomTypeEnum.OFFICE:
-      return 'Office';
+      return "Office";
+    case RoomTypeEnum.CONFERENCE:
+      return "Conference Room";
     case RoomTypeEnum.STORAGE:
-      return 'Storage';
+      return "Storage";
+    case RoomTypeEnum.BATHROOM:
+      return "Bathroom";
+    case RoomTypeEnum.KITCHEN:
+      return "Kitchen";
+    case RoomTypeEnum.LOBBY:
+      return "Lobby";
+    case RoomTypeEnum.HALLWAY:
+      return "Hallway";
+    case RoomTypeEnum.STAIRWELL:
+      return "Stairwell";
+    case RoomTypeEnum.ELEVATOR:
+      return "Elevator";
+    case RoomTypeEnum.UTILITY:
+      return "Utility Room";
+    case RoomTypeEnum.MECHANICAL:
+      return "Mechanical Room";
+    case RoomTypeEnum.ELECTRICAL:
+      return "Electrical Room";
+    case RoomTypeEnum.JANITOR:
+      return "Janitor Closet";
+    case RoomTypeEnum.SECURITY:
+      return "Security Office";
+    case RoomTypeEnum.RECEPTION:
+      return "Reception";
+    case RoomTypeEnum.WAITING:
+      return "Waiting Area";
+    case RoomTypeEnum.LIBRARY:
+      return "Library";
+    case RoomTypeEnum.ARCHIVE:
+      return "Archive";
+    case RoomTypeEnum.OTHER:
+      return "Other";
     default:
-      return 'Unknown';
+      return type;
   }
 }
 
-export function storageTypeToString(type: StorageTypeEnum): string {
+export function getStorageTypeDisplayName(type: StorageTypeEnum): string {
   switch (type) {
     case StorageTypeEnum.GENERAL:
-      return 'General';
-    case StorageTypeEnum.SUPPLIES:
-      return 'Supplies';
-    case StorageTypeEnum.EQUIPMENT:
-      return 'Equipment';
-    case StorageTypeEnum.DOCUMENTS:
-      return 'Documents';
+      return "General Storage";
+    case StorageTypeEnum.SECURE:
+      return "Secure Storage";
+    case StorageTypeEnum.CLIMATE_CONTROLLED:
+      return "Climate Controlled";
+    case StorageTypeEnum.HAZARDOUS:
+      return "Hazardous Materials";
+    case StorageTypeEnum.ARCHIVE:
+      return "Archive Storage";
     case StorageTypeEnum.EVIDENCE:
-      return 'Evidence';
+      return "Evidence Storage";
+    case StorageTypeEnum.SUPPLY:
+      return "Supply Storage";
     default:
-      return 'Unknown';
-  }
-}
-
-export function stringToStatus(status: string): StatusEnum {
-  switch (status.toLowerCase()) {
-    case 'active':
-      return StatusEnum.ACTIVE;
-    case 'inactive':
-      return StatusEnum.INACTIVE;
-    case 'maintenance':
-    case 'under_maintenance':
-      return StatusEnum.UNDER_MAINTENANCE;
-    case 'closed':
-      return StatusEnum.CLOSED;
-    default:
-      return StatusEnum.ACTIVE;
-  }
-}
-
-export function stringToRoomType(type: string): RoomTypeEnum {
-  switch (type.toLowerCase()) {
-    case 'courtroom':
-      return RoomTypeEnum.COURTROOM;
-    case 'male_locker_room':
-      return RoomTypeEnum.MALE_LOCKER_ROOM;
-    case 'female_locker_room':
-      return RoomTypeEnum.FEMALE_LOCKER_ROOM;
-    case 'office':
-      return RoomTypeEnum.OFFICE;
-    case 'storage':
-      return RoomTypeEnum.STORAGE;
-    default:
-      return RoomTypeEnum.OFFICE;
-  }
-}
-
-export function stringToStorageType(type: string): StorageTypeEnum {
-  switch (type.toLowerCase()) {
-    case 'general':
-      return StorageTypeEnum.GENERAL;
-    case 'supplies':
-      return StorageTypeEnum.SUPPLIES;
-    case 'equipment':
-      return StorageTypeEnum.EQUIPMENT;
-    case 'documents':
-      return StorageTypeEnum.DOCUMENTS;
-    case 'evidence':
-      return StorageTypeEnum.EVIDENCE;
-    default:
-      return StorageTypeEnum.GENERAL;
+      return type;
   }
 }

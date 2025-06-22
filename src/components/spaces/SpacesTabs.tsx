@@ -43,7 +43,7 @@ const SpacesTabs = ({ selectedBuilding, selectedFloor }: SpaceViewProps) => {
         </TabsList>
 
         <TabsContent value="rooms" className="mt-4">
-          <RoomsList selectedBuilding={selectedBuilding} selectedFloor={selectedFloor} />
+          <RoomsList floorId={selectedFloor === 'all' ? undefined : selectedFloor} />
         </TabsContent>
 
         <TabsContent value="hallways" className="mt-4">
