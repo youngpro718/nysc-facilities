@@ -55,8 +55,8 @@ export function useRoomOccupants(roomId?: string) {
 
       if (!assignments) return [];
 
-      // Transform the data to match our interface
-      return assignments.map((assignment: any) => ({
+      // Transform the data with proper type safety
+      return assignments.map((assignment: any): RoomOccupant => ({
         id: assignment.occupants?.id || '',
         first_name: assignment.occupants?.first_name || '',
         last_name: assignment.occupants?.last_name || '',

@@ -27,4 +27,25 @@ export interface Room {
   courtroom_photos?: CourtroomPhotos | null;
   created_at: string;
   updated_at: string;
+  // Additional properties that may be needed by some components
+  floor?: {
+    name: string;
+    building: {
+      name: string;
+    };
+  };
+  current_occupants?: any[];
+  issues?: any[];
+  space_connections?: any[];
+}
+
+// Legacy type alias for backward compatibility
+export type RoomType = Room;
+
+export interface RoomConnection {
+  id: string;
+  from_room_id: string;
+  to_room_id: string;
+  connection_type: string;
+  status: string;
 }
