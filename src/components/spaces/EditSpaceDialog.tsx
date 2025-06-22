@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
-import { EditSpaceDialogContent } from "./EditSpaceDialogContent";
+import { EditHallwayForm } from "./forms/hallway/EditHallwayForm";
 
 interface EditSpaceDialogProps {
   id: string;
@@ -18,6 +18,27 @@ export function EditSpaceDialog({ id, type, initialData, trigger }: EditSpaceDia
     setOpen(false);
   };
 
+  const renderContent = () => {
+    if (type === 'hallway') {
+      return (
+        <EditHallwayForm
+          id={id}
+          initialData={initialData}
+          onSuccess={handleSuccess}
+          onCancel={() => setOpen(false)}
+        />
+      );
+    }
+    
+    // For other types, return a placeholder for now
+    return (
+      <div className="p-4">
+        <p>Editing {type} is not yet implemented.</p>
+        <Button onClick={() => setOpen(false)}>Close</Button>
+      </div>
+    );
+  };
+
   return (
     <ResponsiveDialog
       open={open}
@@ -25,13 +46,7 @@ export function EditSpaceDialog({ id, type, initialData, trigger }: EditSpaceDia
       title={`Edit ${type.charAt(0).toUpperCase() + type.slice(1)}`}
     >
       {trigger || <Button variant="outline" size="sm">Edit</Button>}
-      <EditSpaceDialogContent
-        id={id}
-        type={type}
-        initialData={initialData}
-        onSuccess={handleSuccess}
-        onCancel={() => setOpen(false)}
-      />
+      {renderContent()}
     </ResponsiveDialog>
   );
 }

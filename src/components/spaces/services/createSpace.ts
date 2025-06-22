@@ -3,9 +3,7 @@ import { CreateSpaceFormData } from "../schemas/createSpaceSchema";
 import { 
   RoomTypeEnum, 
   StorageTypeEnum, 
-  roomTypeToString, 
-  statusToString, 
-  storageTypeToString 
+  StatusEnum
 } from "../rooms/types/roomEnums";
 import { toast } from "sonner";
 
@@ -17,14 +15,14 @@ export async function createSpace(data: CreateSpaceFormData) {
       const roomData = {
         name: data.name,
         room_number: data.roomNumber,
-        room_type: data.roomType ? roomTypeToString(data.roomType as RoomTypeEnum) : undefined,
-        status: data.status ? statusToString(data.status) : undefined,
+        room_type: data.roomType as string,
+        status: data.status as string,
         floor_id: data.floorId,
         description: data.description || null,
         phone_number: data.phoneNumber || null,
         current_function: data.currentFunction || null,
         is_storage: data.isStorage || false,
-        storage_type: data.isStorage && data.storageType ? storageTypeToString(data.storageType as StorageTypeEnum) : null,
+        storage_type: data.isStorage && data.storageType ? data.storageType as string : null,
         storage_capacity: data.storageCapacity || null,
         parent_room_id: data.parentRoomId || null,
         position: data.position || { x: 0, y: 0 },
@@ -59,11 +57,16 @@ export async function createSpace(data: CreateSpaceFormData) {
         capacityLimit: data.capacityLimit
       });
       
+      // Convert status to string format expected by database
+      let statusValue = 'active';
+      if (data.status === StatusEnum.INACTIVE) statusValue = 'inactive';
+      if (data.status === StatusEnum.MAINTENANCE || data.status === StatusEnum.UNDER_MAINTENANCE) statusValue = 'under_maintenance';
+      
       const hallwayData = {
         name: data.name,
         type: data.type,
         floor_id: data.floorId,
-        status: data.status,
+        status: statusValue,
         position: data.position || { x: 0, y: 0 },
         size: data.size || { width: 300, height: 50 },
         rotation: data.rotation || 0,
@@ -158,11 +161,16 @@ export async function createSpace(data: CreateSpaceFormData) {
       return hallway;
     }
 
+    // Convert status for other space types
+    let statusValue = 'active';
+    if (data.status === StatusEnum.INACTIVE) statusValue = 'inactive';
+    if (data.status === StatusEnum.MAINTENANCE || data.status === StatusEnum.UNDER_MAINTENANCE) statusValue = 'under_maintenance';
+
     const spaceData = {
       name: data.name,
       type: data.type,
       floor_id: data.floorId,
-      status: data.status,
+      status: statusValue,
       position: data.position || { x: 0, y: 0 },
       size: data.type === 'door' ? 
         { width: 60, height: 20 } : 

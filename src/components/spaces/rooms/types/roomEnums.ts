@@ -19,6 +19,8 @@ export enum RoomTypeEnum {
   WAITING = "waiting",
   LIBRARY = "library",
   ARCHIVE = "archive",
+  MALE_LOCKER_ROOM = "male_locker_room",
+  FEMALE_LOCKER_ROOM = "female_locker_room",
   OTHER = "other"
 }
 
@@ -26,6 +28,7 @@ export enum StatusEnum {
   ACTIVE = "active",
   INACTIVE = "inactive",
   MAINTENANCE = "under_maintenance",
+  UNDER_MAINTENANCE = "under_maintenance",
   UNDER_CONSTRUCTION = "under_construction",
   RETIRED = "retired"
 }
@@ -38,6 +41,19 @@ export enum StorageTypeEnum {
   ARCHIVE = "archive",
   EVIDENCE = "evidence",
   SUPPLY = "supply"
+}
+
+// Conversion functions
+export function roomTypeToString(type: RoomTypeEnum): string {
+  return type as string;
+}
+
+export function statusToString(status: StatusEnum): string {
+  return status as string;
+}
+
+export function storageTypeToString(type: StorageTypeEnum): string {
+  return type as string;
 }
 
 export function getRoomTypeDisplayName(type: RoomTypeEnum): string {
@@ -80,6 +96,10 @@ export function getRoomTypeDisplayName(type: RoomTypeEnum): string {
       return "Library";
     case RoomTypeEnum.ARCHIVE:
       return "Archive";
+    case RoomTypeEnum.MALE_LOCKER_ROOM:
+      return "Male Locker Room";
+    case RoomTypeEnum.FEMALE_LOCKER_ROOM:
+      return "Female Locker Room";
     case RoomTypeEnum.OTHER:
       return "Other";
     default:

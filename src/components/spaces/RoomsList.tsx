@@ -65,9 +65,9 @@ export function RoomsList({
         parent_room_id: room.parent_room_id,
         current_function: room.current_function,
         floor_id: room.floor_id,
-        position: room.position,
-        size: room.size,
-        rotation: room.rotation,
+        position: room.position ? (typeof room.position === 'string' ? JSON.parse(room.position) : room.position) : { x: 0, y: 0 },
+        size: room.size ? (typeof room.size === 'string' ? JSON.parse(room.size) : room.size) : { width: 150, height: 100 },
+        rotation: room.rotation || 0,
         courtroom_photos: room.courtroom_photos,
         created_at: room.created_at,
         updated_at: room.updated_at
@@ -77,6 +77,11 @@ export function RoomsList({
     },
     enabled: true
   });
+
+  const handleDelete = (id: string) => {
+    // Add delete functionality here if needed
+    console.log('Delete room:', id);
+  };
 
   if (isLoading) {
     return <div className="text-center py-8">Loading rooms...</div>;
@@ -112,6 +117,7 @@ export function RoomsList({
         <RoomCard
           key={room.id}
           room={room}
+          onDelete={handleDelete}
         />
       ))}
     </div>
