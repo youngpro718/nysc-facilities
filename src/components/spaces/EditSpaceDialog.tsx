@@ -221,8 +221,8 @@ export function EditSpaceDialog({
             const { error: updateError } = await supabase
               .from("space_connections")
               .update({
-                to_space_id: typeof connection.toSpaceId === 'string' ? connection.toSpaceId : '',
-                connection_type: typeof connection.connectionType === 'string' ? connection.connectionType : '',
+                to_space_id: String(connection.toSpaceId),
+                connection_type: String(connection.connectionType),
                 direction: direction,
               })
               .eq("id", connection.id);
@@ -237,9 +237,9 @@ export function EditSpaceDialog({
               .from("space_connections")
               .insert({
                 from_space_id: roomId,
-                to_space_id: connection.toSpaceId,
+                to_space_id: String(connection.toSpaceId),
                 space_type: "room",
-                connection_type: connection.connectionType,
+                connection_type: String(connection.connectionType),
                 direction: direction,
                 status: "active"
               });

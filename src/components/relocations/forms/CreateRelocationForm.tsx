@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,7 +17,7 @@ import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createRelocation } from "../services/relocationService";
+import { createRelocation } from "../services/mutations/relocationMutations";
 
 const createRelocationFormSchema = z.object({
   original_room_id: z.string().min(1, "Original Room ID is required"),
@@ -37,7 +38,17 @@ export function CreateRelocationForm({ onSuccess }: CreateRelocationFormProps) {
   const { toast } = useToast();
 
   const createMutation = useMutation({
-    mutationFn: createRelocation,
+    mutationFn: (data: CreateRelocationFormData) => {
+      const formData = {
+        original_room_id: data.original_room_id,
+        temporary_room_id: data.temporary_room_id,
+        start_date: data.start_date.toISOString(),
+        end_date: data.end_date.toISOString(),
+        reason: data.reason || "",
+        relocation_type: 'planned' as const,
+      };
+      return createRelocation(formData);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['relocations'] });
       toast({
@@ -55,7 +66,8 @@ export function CreateRelocationForm({ onSuccess }: CreateRelocationFormProps) {
     },
   });
 
-  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
   const form = useForm<CreateRelocationFormData>({
     resolver: zodResolver(createRelocationFormSchema),
@@ -98,24 +110,23 @@ export function CreateRelocationForm({ onSuccess }: CreateRelocationFormProps) {
                   variant={"outline"}
                   className={cn(
                     "w-full justify-start text-left font-normal",
-                    !date && "text-muted-foreground"
+                    !startDate && "text-muted-foreground"
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? new Date(date).toLocaleDateString() : <span>Pick a date</span>}
+                  {startDate ? startDate.toLocaleDateString() : <span>Pick a date</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
-                  selected={form.getValues("start_date")}
+                  selected={startDate}
                   onSelect={(date) => {
-                    form.setValue("start_date", date || new Date());
-                    setDate(date);
+                    setStartDate(date);
+                    if (date) {
+                      form.setValue("start_date", date);
+                    }
                   }}
-                  disabled={(date) =>
-                    date > new Date()
-                  }
                   initialFocus
                 />
               </PopoverContent>
@@ -129,24 +140,23 @@ export function CreateRelocationForm({ onSuccess }: CreateRelocationFormProps) {
                   variant={"outline"}
                   className={cn(
                     "w-full justify-start text-left font-normal",
-                    !date && "text-muted-foreground"
+                    !endDate && "text-muted-foreground"
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? new Date(date).toLocaleDateString() : <span>Pick a date</span>}
+                  {endDate ? endDate.toLocaleDateString() : <span>Pick a date</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
-                  selected={form.getValues("end_date")}
+                  selected={endDate}
                   onSelect={(date) => {
-                    form.setValue("end_date", date || new Date());
-                    setDate(date);
+                    setEndDate(date);
+                    if (date) {
+                      form.setValue("end_date", date);
+                    }
                   }}
-                  disabled={(date) =>
-                    date > new Date()
-                  }
                   initialFocus
                 />
               </PopoverContent>

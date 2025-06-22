@@ -1,36 +1,35 @@
 
-import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { BasicInfoTab } from "./BasicInfoTab";
-import { MaintenanceTab } from "./MaintenanceTab";
-import { SafetyTab } from "./SafetyTab";
-import { EmergencyTab } from "./EmergencyTab";
+import { toast } from "sonner";
+import { StatusEnum } from "../../rooms/types/roomEnums";
 
-const hallwayFormSchema = z.object({
+const editHallwaySchema = z.object({
   name: z.string().min(1, "Name is required"),
-  status: z.string(),
+  status: z.enum(["active", "inactive", "under_maintenance"]).default("active"),
   position: z.object({
-    x: z.number().optional(),
-    y: z.number().optional(),
-  }).optional(),
+    x: z.number().default(0),
+    y: z.number().default(0),
+  }).default({ x: 0, y: 0 }),
   size: z.object({
-    width: z.number().optional(),
-    height: z.number().optional(),
-  }).optional(),
+    width: z.number().default(300),
+    height: z.number().default(50),
+  }).default({ width: 300, height: 50 }),
   rotation: z.number().default(0),
   properties: z.object({
     description: z.string().optional(),
-  }).optional(),
+  }).default({}),
 });
 
-type HallwayFormData = z.infer<typeof hallwayFormSchema>;
+type EditHallwayFormData = z.infer<typeof editHallwaySchema>;
 
 interface EditHallwayFormProps {
   id: string;
@@ -40,55 +39,34 @@ interface EditHallwayFormProps {
 }
 
 export function EditHallwayForm({ id, initialData, onSuccess, onCancel }: EditHallwayFormProps) {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("basic");
 
-  const form = useForm<HallwayFormData>({
-    resolver: zodResolver(hallwayFormSchema),
+  const form = useForm<EditHallwayFormData>({
+    resolver: zodResolver(editHallwaySchema),
     defaultValues: {
-      name: "",
-      status: "active",
-      position: { x: 0, y: 0 },
-      size: { width: 300, height: 50 },
-      rotation: 0,
+      name: initialData?.name || "",
+      status: (initialData?.status as "active" | "inactive" | "under_maintenance") || "active",
+      position: initialData?.position || { x: 0, y: 0 },
+      size: initialData?.size || { width: 300, height: 50 },
+      rotation: initialData?.rotation || 0,
       properties: {
-        description: "",
+        description: initialData?.properties?.description || initialData?.description || "",
       },
     },
   });
 
-  useEffect(() => {
-    if (initialData) {
-      const safeData = {
-        name: typeof initialData.name === 'string' ? initialData.name : "",
-        status: typeof initialData.status === 'string' ? initialData.status : "active",
-        position: initialData.position || { x: 0, y: 0 },
-        size: initialData.size || { width: 300, height: 50 },
-        rotation: typeof initialData.rotation === 'number' ? initialData.rotation : 0,
-        properties: {
-          description: typeof initialData.description === 'string' ? initialData.description : "",
-        },
-      };
-      form.reset(safeData);
-    }
-  }, [initialData, form]);
-
-  const updateHallwayMutation = useMutation({
-    mutationFn: async (data: HallwayFormData) => {
-      const safeName = typeof data.name === 'string' ? data.name : "";
-      const safeStatus = typeof data.status === 'string' ? data.status : "active";
-      const safeDescription = typeof data.properties?.description === 'string' ? data.properties.description : "";
-      
+  const updateMutation = useMutation({
+    mutationFn: async (data: EditHallwayFormData) => {
       const { error } = await supabase
         .from("hallways")
         .update({
-          name: safeName,
-          status: safeStatus,
-          position: data.position || { x: 0, y: 0 },
-          size: data.size || { width: 300, height: 50 },
-          rotation: data.rotation || 0,
-          properties: { description: safeDescription },
+          name: data.name,
+          status: data.status as StatusEnum,
+          position: data.position,
+          size: data.size,
+          rotation: data.rotation,
+          description: data.properties.description,
+          updated_at: new Date().toISOString(),
         })
         .eq("id", id);
 
@@ -96,68 +74,119 @@ export function EditHallwayForm({ id, initialData, onSuccess, onCancel }: EditHa
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["hallways"] });
-      toast({
-        title: "Success",
-        description: "Hallway updated successfully",
-      });
+      queryClient.invalidateQueries({ queryKey: ["spaces"] });
+      toast.success("Hallway updated successfully");
       onSuccess();
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update hallway",
-        variant: "destructive",
-      });
+      console.error("Error updating hallway:", error);
+      toast.error("Failed to update hallway");
     },
   });
 
-  const onSubmit = (data: HallwayFormData) => {
-    updateHallwayMutation.mutate(data);
+  const onSubmit = (data: EditHallwayFormData) => {
+    updateMutation.mutate(data);
   };
 
-  const tabs = [
-    { id: "basic", label: "Basic Info" },
-    { id: "maintenance", label: "Maintenance" },
-    { id: "safety", label: "Safety" },
-    { id: "emergency", label: "Emergency" },
-  ];
-
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="flex border-b">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 font-medium transition-colors ${
-                activeTab === tab.id
-                  ? "border-b-2 border-primary text-primary"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <div className="space-y-2">
+        <Label htmlFor="name">Name</Label>
+        <Input
+          id="name"
+          {...form.register("name")}
+          placeholder="Enter hallway name"
+        />
+        {form.formState.errors.name && (
+          <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>
+        )}
+      </div>
 
-        <div className="min-h-[400px]">
-          {activeTab === "basic" && <BasicInfoTab form={form} />}
-          {activeTab === "maintenance" && <MaintenanceTab form={form} />}
-          {activeTab === "safety" && <SafetyTab form={form} />}
-          {activeTab === "emergency" && <EmergencyTab form={form} />}
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="status">Status</Label>
+        <Select
+          value={form.watch("status")}
+          onValueChange={(value: "active" | "inactive" | "under_maintenance") => 
+            form.setValue("status", value)
+          }
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
+            <SelectItem value="under_maintenance">Under Maintenance</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={updateHallwayMutation.isPending}>
-            {updateHallwayMutation.isPending ? "Updating..." : "Update Hallway"}
-          </Button>
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          {...form.register("properties.description")}
+          placeholder="Enter hallway description"
+          rows={3}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="position.x">Position X</Label>
+          <Input
+            id="position.x"
+            type="number"
+            {...form.register("position.x", { valueAsNumber: true })}
+          />
         </div>
-      </form>
-    </Form>
+        <div className="space-y-2">
+          <Label htmlFor="position.y">Position Y</Label>
+          <Input
+            id="position.y"
+            type="number"
+            {...form.register("position.y", { valueAsNumber: true })}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="size.width">Width</Label>
+          <Input
+            id="size.width"
+            type="number"
+            {...form.register("size.width", { valueAsNumber: true })}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="size.height">Height</Label>
+          <Input
+            id="size.height"
+            type="number"
+            {...form.register("size.height", { valueAsNumber: true })}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="rotation">Rotation</Label>
+        <Input
+          id="rotation"
+          type="number"
+          {...form.register("rotation", { valueAsNumber: true })}
+          placeholder="Rotation in degrees"
+        />
+      </div>
+
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={updateMutation.isPending}>
+          {updateMutation.isPending ? "Updating..." : "Update Hallway"}
+        </Button>
+      </div>
+    </form>
   );
 }

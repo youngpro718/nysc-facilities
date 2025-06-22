@@ -1,67 +1,50 @@
 
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { RoomRelocation } from "../types/relocationTypes";
 
 interface ActivateRelocationDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onActivate: (id: string) => Promise<void>;
-  relocationId: string | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  relocation: RoomRelocation;
+  onConfirm: () => void;
+  isLoading: boolean;
 }
 
 export function ActivateRelocationDialog({
-  isOpen,
-  onClose,
-  onActivate,
-  relocationId
+  open,
+  onOpenChange,
+  relocation,
+  onConfirm,
+  isLoading,
 }: ActivateRelocationDialogProps) {
-  const [notes, setNotes] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleActivate = async () => {
-    if (!relocationId) return;
-    
-    setIsLoading(true);
-    try {
-      await onActivate(relocationId);
-      setNotes("");
-      onClose();
-    } catch (error) {
-      console.error("Error activating relocation:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Activate Relocation</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="activation-notes">Activation Notes (Optional)</Label>
-            <Textarea
-              id="activation-notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Add any notes about the activation..."
-            />
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button onClick={handleActivate} disabled={isLoading}>
-              {isLoading ? "Activating..." : "Activate Relocation"}
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Activate Relocation</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to activate the relocation from{" "}
+            {relocation.original_room_name || relocation.original_room_id} to{" "}
+            {relocation.temporary_room_name || relocation.temporary_room_id}?
+            This action will mark the relocation as active.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm} disabled={isLoading}>
+            {isLoading ? "Activating..." : "Activate"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

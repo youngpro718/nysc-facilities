@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { RoomCard } from "./rooms/RoomCard";
 import { Room } from "./rooms/types/RoomTypes";
-import { stringToRoomType, stringToStatus } from "./rooms/types/roomEnums";
+import { RoomTypeEnum, StatusEnum } from "./rooms/types/roomEnums";
 
 interface RoomsListProps {
   floorId?: string;
@@ -54,8 +54,8 @@ export function RoomsList({
         id: room.id,
         name: room.name,
         room_number: room.room_number,
-        room_type: room.room_type,
-        status: room.status,
+        room_type: room.room_type as RoomTypeEnum,
+        status: room.status as StatusEnum,
         description: room.description || "",
         phone_number: room.phone_number,
         is_storage: room.is_storage,
@@ -112,10 +112,12 @@ export function RoomsList({
         <RoomCard
           key={room.id}
           room={room}
-          onClick={() => setSelectedRoom(room)}
           viewMode={viewMode}
         />
       ))}
     </div>
   );
 }
+
+// Default export for compatibility
+export default RoomsList;

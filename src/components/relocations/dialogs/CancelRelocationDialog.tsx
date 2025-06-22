@@ -1,72 +1,54 @@
 
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { RoomRelocation } from "../types/relocationTypes";
 
 interface CancelRelocationDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onCancel: (id: string) => Promise<void>;
-  relocationId: string | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  relocation: RoomRelocation;
+  onConfirm: () => void;
+  isLoading: boolean;
 }
 
 export function CancelRelocationDialog({
-  isOpen,
-  onClose,
-  onCancel,
-  relocationId
+  open,
+  onOpenChange,
+  relocation,
+  onConfirm,
+  isLoading,
 }: CancelRelocationDialogProps) {
-  const [reason, setReason] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleCancel = async () => {
-    if (!relocationId) return;
-    
-    setIsLoading(true);
-    try {
-      await onCancel(relocationId);
-      setReason("");
-      onClose();
-    } catch (error) {
-      console.error("Error cancelling relocation:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Cancel Relocation</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="cancel-reason">Cancellation Reason</Label>
-            <Textarea
-              id="cancel-reason"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Please provide a reason for cancellation..."
-              required
-            />
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button 
-              variant="destructive" 
-              onClick={handleCancel} 
-              disabled={isLoading || !reason.trim()}
-            >
-              {isLoading ? "Cancelling..." : "Cancel Relocation"}
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Cancel Relocation</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to cancel the relocation from{" "}
+            {relocation.original_room_name || relocation.original_room_id} to{" "}
+            {relocation.temporary_room_name || relocation.temporary_room_id}?
+            This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
+          <AlertDialogAction 
+            onClick={onConfirm} 
+            disabled={isLoading}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {isLoading ? "Cancelling..." : "Cancel Relocation"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
