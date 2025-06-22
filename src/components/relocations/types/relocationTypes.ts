@@ -1,71 +1,68 @@
 
-import { Room } from "@/components/spaces/types/RoomTypes";
-
-export interface RelocationWithDetails {
-  id: string;
-  original_room: Room;
-  temporary_room: Room;
-  start_date: string;
-  end_date: string;
-  reason: string;
-  status: 'scheduled' | 'active' | 'completed' | 'cancelled';
-  notes?: string;
-  relocation_type: 'emergency' | 'maintenance' | 'other' | 'construction';
-  special_instructions?: string;
-  created_at: string;
-  updated_at: string;
-}
+import { Room } from "@/components/spaces/rooms/types/RoomTypes";
 
 export type RelocationStatus = 'scheduled' | 'active' | 'completed' | 'cancelled';
+export type RelocationType = 'emergency' | 'maintenance' | 'other' | 'construction';
 
-export interface RoomRelocation {
-  id: string;
+// Base interfaces for specific aspects of a relocation
+export interface RelocationRooms {
   original_room_id: string;
+  original_parent_room_id?: string | null;
   temporary_room_id: string;
-  original_parent_room_id?: string;
-  temporary_parent_room_id?: string;
+  temporary_parent_room_id?: string | null;
+}
+
+export interface RelocationDates {
   start_date: string;
   end_date: string;
   actual_end_date?: string;
+  expected_end_date?: string;
+}
+
+export interface RelocationDetails {
   reason: string;
-  status: RelocationStatus;
   notes?: string;
-  relocation_type: 'emergency' | 'maintenance' | 'other' | 'construction';
+  relocation_type: RelocationType;
+  term_id?: string;
+  respect_term_assignments?: boolean;
+}
+
+export interface ScheduleChangeData {
+  original_court_part: string;
+  temporary_assignment: string;
   special_instructions?: string;
+}
+
+// Form data interface composed of the smaller interfaces
+export interface CreateRelocationFormData 
+  extends RelocationRooms, 
+          RelocationDates, 
+          RelocationDetails {
+  schedule_changes?: ScheduleChangeData[];
+} // parent room IDs are now included via RelocationRooms
+
+// Complete relocation interface with all possible fields
+export interface RoomRelocation 
+  extends RelocationRooms, 
+          RelocationDates, 
+          RelocationDetails {
+  id: string;
+  status: RelocationStatus;
   created_at: string;
   updated_at: string;
   created_by?: string;
-  term_id?: string;
-  respect_term_assignments?: boolean;
+  metadata?: Record<string, any>;
   original_room?: Room;
   temporary_room?: Room;
-}
-
-export interface ActiveRelocation extends RoomRelocation {
-  days_active: number;
-  progress_percentage: number;
-}
-
-export interface CreateRelocationFormData {
-  original_room_id: string;
-  temporary_room_id: string;
-  original_parent_room_id?: string;
-  temporary_parent_room_id?: string;
-  start_date: string;
-  end_date: string;
-  reason: string;
-  notes?: string;
-  relocation_type: 'emergency' | 'maintenance' | 'other' | 'construction';
-  term_id?: string;
-  respect_term_assignments?: boolean;
-  schedule_changes?: CreateScheduleChangeFormData[];
+  original_parent_room?: Room;
+  temporary_parent_room?: Room;
 }
 
 export interface UpdateRelocationFormData {
   id: string;
+  original_parent_room_id?: string | null;
+  temporary_parent_room_id?: string | null;
   temporary_room_id?: string;
-  temporary_parent_room_id?: string;
-  original_parent_room_id?: string;
   end_date?: string;
   actual_end_date?: string;
   reason?: string;
@@ -82,9 +79,9 @@ export interface ScheduleChange {
   end_date?: string;
   special_instructions?: string;
   status: RelocationStatus;
-  created_by?: string;
   created_at: string;
   updated_at: string;
+  created_by?: string;
 }
 
 export interface CreateScheduleChangeFormData {
@@ -92,7 +89,7 @@ export interface CreateScheduleChangeFormData {
   original_court_part: string;
   temporary_assignment: string;
   start_date: string;
-  end_date: string;
+  end_date?: string;
   special_instructions?: string;
 }
 
@@ -104,21 +101,38 @@ export interface UpdateScheduleChangeFormData {
   status?: RelocationStatus;
 }
 
+export interface ScheduleChangeNotification {
+  id: string;
+  relocation_id: string;
+  schedule_change_id: string;
+  message: string;
+  created_at: string;
+  recipients: Array<{ email: string }>;
+  notification_type: string;
+  status: string;
+}
+
 export interface RelocationNotification {
   id: string;
-  relocation_id?: string;
-  schedule_change_id?: string;
-  notification_type: string;
+  relocation_id: string;
   message: string;
-  recipients: string;
-  status: 'pending' | 'sent' | 'failed';
-  sent_at?: string;
+  notification_type: string;
+  scheduled_for?: string;
+  sent_at: string;
+  status: string;
   created_at: string;
-  updated_at: string;
+  recipients: Array<{email: string}>;
   recipient_email?: string;
   subject?: string;
 }
 
-export interface ScheduleChangeNotification extends RelocationNotification {
-  schedule_change_id: string;
+export interface ActiveRelocation extends RoomRelocation {
+  days_active: number;
+  progress_percentage: number;
+  original_building_name?: string;
+  original_floor_name?: string;
+  original_room_name?: string;
+  temporary_building_name?: string;
+  temporary_floor_name?: string;
+  temporary_room_name?: string;
 }

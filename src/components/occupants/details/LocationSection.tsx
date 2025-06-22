@@ -1,38 +1,25 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin } from "lucide-react";
-import { OccupantQueryResponse } from "../types/occupantTypes";
+import { Building2 } from "lucide-react";
 
 interface LocationSectionProps {
-  occupantData: OccupantQueryResponse;
+  building?: {
+    name: string;
+  };
+  roomNumber?: string;
 }
 
-export function LocationSection({ occupantData }: LocationSectionProps) {
+export function LocationSection({ building, roomNumber }: LocationSectionProps) {
+  if (!building?.name || !roomNumber) return null;
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MapPin className="h-4 w-4" />
-          Location
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <p className="text-sm font-medium">Assigned Rooms</p>
-          <div className="text-sm text-muted-foreground">
-            {occupantData.rooms && occupantData.rooms.length > 0 ? (
-              occupantData.rooms.map((room, index) => (
-                <div key={index}>
-                  {room.floors?.buildings?.name && `${room.floors.buildings.name} - `}
-                  {room.room_number || room.name}
-                </div>
-              ))
-            ) : (
-              "No rooms assigned"
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <h3 className="font-medium">Location</h3>
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Building2 className="h-4 w-4 flex-shrink-0" />
+        <span className="truncate">
+          {building.name} - Room {roomNumber}
+        </span>
+      </div>
+    </div>
   );
 }

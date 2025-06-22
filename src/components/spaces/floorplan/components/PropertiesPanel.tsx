@@ -1,171 +1,263 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
-import { Room } from "@/components/spaces/types/RoomTypes";
-import { Edit2, X } from "lucide-react";
 
-interface ObjectProperties {
-  id?: string;
-  type: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  rotation?: number;
-  label?: string;
-  roomType?: string;
-  status?: string;
-  capacity?: number;
-  description?: string;
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Edit2, X, CheckSquare, Square, Trash2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { RoomType } from '@/components/spaces/rooms/types/RoomTypes';
+
+interface PropertiesPanelProps {
+  selectedObject: any;
+  onUpdate: () => void;
+  onPreviewChange?: (values: any) => void;
 }
 
-export function PropertiesPanel({
-  selectedObject,
-  onUpdateObject,
-  onClose
-}: {
-  selectedObject: ObjectProperties | null;
-  onUpdateObject: (id: string, updates: Partial<ObjectProperties>) => void;
-  onClose: () => void;
-}) {
-  const [editingProperty, setEditingProperty] = useState<string | null>(null);
-  const [tempValue, setTempValue] = useState<string>('');
-
+export function PropertiesPanel({ 
+  selectedObject, 
+  onUpdate,
+  onPreviewChange
+}: PropertiesPanelProps) {
+  const [localValues, setLocalValues] = useState<any>({});
+  
+  // Reset local values when selected object changes
   useEffect(() => {
-    setEditingProperty(null);
-    setTempValue('');
+    if (selectedObject) {
+      setLocalValues({
+        positionX: selectedObject.position?.x.toString() || '0',
+        positionY: selectedObject.position?.y.toString() || '0',
+        width: selectedObject.size?.width.toString() || '100',
+        height: selectedObject.size?.height.toString() || '100',
+        rotation: selectedObject.rotation?.toString() || '0',
+        room_number: selectedObject.properties?.room_number || '',
+        room_type: selectedObject.properties?.room_type || '',
+        status: selectedObject.properties?.status || 'active',
+      });
+    } else {
+      setLocalValues({});
+    }
   }, [selectedObject]);
 
+  // Handle live preview as values change
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    const newValues = { ...localValues, [name]: value };
+    setLocalValues(newValues);
+    
+    // Only trigger preview change if the callback exists
+    if (onPreviewChange) {
+      onPreviewChange(newValues);
+    }
+  };
+  
+  const getObjectTypeLabel = (type: string) => {
+    switch (type) {
+      case 'room':
+        return (
+          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+            Room
+          </Badge>
+        );
+      case 'hallway':
+        return (
+          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+            Hallway
+          </Badge>
+        );
+      case 'door':
+        return (
+          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+            Door
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
+            {type}
+          </Badge>
+        );
+    }
+  };
+
+  const getRoomTypeLabel = (roomType: string) => {
+    if (!roomType) return '';
+    
+    const typeMap: Record<string, string> = {
+      'office': 'Office',
+      'meeting': 'Meeting Room',
+      'storage': 'Storage',
+      'restroom': 'Restroom',
+      'utility': 'Utility',
+      'courtroom': 'Courtroom',
+      'judges_chambers': 'Judge\'s Chambers',
+      'jury_room': 'Jury Room',
+      'conference_room': 'Conference Room',
+      'filing_room': 'Filing Room'
+    };
+    
+    return typeMap[roomType] || roomType;
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Active</Badge>;
+      case 'inactive':
+        return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">Inactive</Badge>;
+      case 'under_maintenance':
+        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Under Maintenance</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
   if (!selectedObject) {
-    return null;
+    return (
+      <Card className="h-[600px]">
+        <CardHeader>
+          <CardTitle className="text-md">Properties</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center h-[500px] text-center">
+            <div className="text-gray-400 mb-2">
+              <Edit2 className="h-12 w-12 mx-auto mb-4 opacity-20" />
+              <p>Select an object to view or edit its properties</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
-  const handlePropertyEdit = (property: string, currentValue: any) => {
-    setEditingProperty(property);
-    setTempValue(String(currentValue || ''));
-  };
-
-  const handlePropertySave = (property: string) => {
-    if (selectedObject.id) {
-      let value: any = tempValue;
-      
-      // Convert to appropriate type
-      if (['x', 'y', 'width', 'height', 'rotation', 'capacity'].includes(property)) {
-        value = parseFloat(tempValue) || 0;
-      }
-      
-      onUpdateObject(selectedObject.id, { [property]: value });
-    }
-    setEditingProperty(null);
-    setTempValue('');
-  };
-
-  const handlePropertyCancel = () => {
-    setEditingProperty(null);
-    setTempValue('');
-  };
-
-  const renderEditableProperty = (label: string, property: string, currentValue: any) => {
-    const isEditing = editingProperty === property;
-    
-    return (
-      <div className="flex items-center justify-between py-2">
-        <Label className="text-sm font-medium">{label}:</Label>
-        <div className="flex items-center gap-2">
-          {isEditing ? (
-            <>
-              <Input
-                value={tempValue}
-                onChange={(e) => setTempValue(e.target.value)}
-                className="w-24 h-8"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handlePropertySave(property);
-                  if (e.key === 'Escape') handlePropertyCancel();
-                }}
-                autoFocus
-              />
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => handlePropertySave(property)}
-                className="h-8 w-8 p-0"
-              >
-                ✓
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={handlePropertyCancel}
-                className="h-8 w-8 p-0"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </>
-          ) : (
-            <>
-              <span className="text-sm">{currentValue}</span>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => handlePropertyEdit(property, currentValue)}
-                className="h-8 w-8 p-0"
-              >
-                <Edit2 className="h-4 w-4" />
-              </Button>
-            </>
+  return (
+    <Card className="h-[600px] overflow-y-auto">
+      <CardHeader className="flex flex-row items-start justify-between">
+        <div>
+          <CardTitle className="text-md flex items-center gap-2">
+            {selectedObject.label || 'Properties'}
+            {getObjectTypeLabel(selectedObject.type)}
+          </CardTitle>
+          {selectedObject.id && (
+            <span className="text-xs text-gray-500 mt-1">ID: {selectedObject.id.substring(0, 8)}...</span>
           )}
         </div>
-      </div>
-    );
-  };
-
-  return (
-    <Card className="w-80">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-lg">Properties</CardTitle>
-        <Button variant="ghost" size="sm" onClick={onClose}>
+        <Button variant="ghost" size="icon" onClick={() => setLocalValues({})}>
           <X className="h-4 w-4" />
         </Button>
       </CardHeader>
+      
       <CardContent className="space-y-4">
+        {/* Basic Properties */}
         <div>
-          <Badge variant="secondary" className="mb-4">
-            {selectedObject.type}
-          </Badge>
-        </div>
-
-        <Separator />
-
-        <div className="space-y-2">
-          <h4 className="text-sm font-semibold">Position & Size</h4>
-          {renderEditableProperty('X', 'x', Math.round(selectedObject.x))}
-          {renderEditableProperty('Y', 'y', Math.round(selectedObject.y))}
-          {renderEditableProperty('Width', 'width', Math.round(selectedObject.width))}
-          {renderEditableProperty('Height', 'height', Math.round(selectedObject.height))}
-          {selectedObject.rotation !== undefined && 
-            renderEditableProperty('Rotation', 'rotation', Math.round(selectedObject.rotation))}
-        </div>
-
-        <Separator />
-
-        <div className="space-y-2">
-          <h4 className="text-sm font-semibold">Properties</h4>
-          {renderEditableProperty('Label', 'label', selectedObject.label || '')}
+          <h3 className="text-sm font-medium mb-2">Basic Information</h3>
           
-          {selectedObject.type === 'room' && (
-            <>
-              {renderEditableProperty('Room Type', 'roomType', selectedObject.roomType || '')}
-              {renderEditableProperty('Status', 'status', selectedObject.status || '')}
-              {renderEditableProperty('Capacity', 'capacity', selectedObject.capacity || '')}
-              {renderEditableProperty('Description', 'description', selectedObject.description || '')}
-            </>
+          {selectedObject.type === 'room' && selectedObject.properties?.room_number && (
+            <div className="mb-3">
+              <Label className="text-xs text-gray-500">Room Number</Label>
+              <div className="font-medium">{selectedObject.properties.room_number}</div>
+            </div>
           )}
+          
+          {selectedObject.type === 'room' && selectedObject.properties?.room_type && (
+            <div className="mb-3">
+              <Label className="text-xs text-gray-500">Room Type</Label>
+              <div className="font-medium">{getRoomTypeLabel(selectedObject.properties.room_type)}</div>
+            </div>
+          )}
+          
+          {selectedObject.properties?.status && (
+            <div className="mb-3">
+              <Label className="text-xs text-gray-500">Status</Label>
+              <div>{getStatusBadge(selectedObject.properties.status)}</div>
+            </div>
+          )}
+        </div>
+        
+        <Separator />
+        
+        {/* Physical Properties */}
+        <div>
+          <h3 className="text-sm font-medium mb-2">Physical Properties</h3>
+          
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <Label className="text-xs text-gray-500">Position X</Label>
+              <Input 
+                name="positionX"
+                value={localValues.positionX || ''}
+                onChange={handleInputChange}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-gray-500">Position Y</Label>
+              <Input 
+                name="positionY"
+                value={localValues.positionY || ''}
+                onChange={handleInputChange}
+                className="mt-1"
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <Label className="text-xs text-gray-500">Width</Label>
+              <Input 
+                name="width"
+                value={localValues.width || ''}
+                onChange={handleInputChange}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-gray-500">Height</Label>
+              <Input 
+                name="height"
+                value={localValues.height || ''}
+                onChange={handleInputChange}
+                className="mt-1"
+              />
+            </div>
+          </div>
+          
+          <div className="mb-3">
+            <Label className="text-xs text-gray-500">Rotation (degrees)</Label>
+            <Input 
+              name="rotation"
+              value={localValues.rotation || ''}
+              onChange={handleInputChange}
+              className="mt-1"
+            />
+          </div>
+        </div>
+        
+        {selectedObject.type === 'room' && (
+          <>
+            <Separator />
+            <div>
+              <h3 className="text-sm font-medium mb-2">Room Properties</h3>
+              <div className="mb-3">
+                <Label className="text-xs text-gray-500">Room Number</Label>
+                <Input 
+                  name="room_number"
+                  value={localValues.room_number || ''}
+                  onChange={handleInputChange}
+                  className="mt-1"
+                  placeholder="e.g. 101"
+                />
+              </div>
+            </div>
+          </>
+        )}
+        
+        <div className="pt-4">
+          <Button onClick={onUpdate} className="w-full">
+            <Edit2 className="mr-2 h-4 w-4" />
+            Edit Properties
+          </Button>
         </div>
       </CardContent>
     </Card>

@@ -1,7 +1,13 @@
 
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { RotateCcw, Users, Wrench, Calendar } from "lucide-react";
-import { Room } from "../../types/RoomTypes";
+import { Badge } from "@/components/ui/badge";
+import { Room } from "../types/RoomTypes";
+import { X, Building, Phone, ShoppingBag, Users, CircleAlert, Clipboard } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { format } from "date-fns";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { RoomInventory } from "../../RoomInventory";
 
 interface CardBackProps {
   room: Room;
@@ -9,83 +15,171 @@ interface CardBackProps {
 }
 
 export function CardBack({ room, onFlip }: CardBackProps) {
+  const [isInventoryDialogOpen, setIsInventoryDialogOpen] = useState(false);
+
   return (
-    <div className="p-4 h-full flex flex-col">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="font-semibold text-lg">Room Details</h3>
-        <Button variant="ghost" size="sm" onClick={onFlip}>
-          <RotateCcw className="h-4 w-4" />
+    <div className="p-5 flex flex-col h-full bg-card border rounded-md shadow-sm">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-lg font-semibold text-foreground">
+          Room Details
+        </h3>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onFlip}
+        >
+          <X className="h-4 w-4" />
         </Button>
       </div>
-
-      <div className="space-y-4 flex-1">
-        {room.current_function && (
-          <div className="flex items-start gap-2">
-            <Wrench className="h-4 w-4 mt-0.5 text-muted-foreground" />
-            <div>
-              <p className="text-sm font-medium">Current Function</p>
-              <p className="text-sm text-muted-foreground">{room.current_function}</p>
+      
+      <ScrollArea className="h-[calc(100%-2rem)] pr-2">
+        <div className="space-y-4">
+          {/* Room Location */}
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium flex items-center gap-1">
+              <Building className="h-3.5 w-3.5 text-muted-foreground" />
+              Location
+            </h4>
+            <div className="text-sm text-muted-foreground">
+              <p>Room {room.room_number}</p>
+              <p>{room.floor?.building?.name}, Floor {room.floor?.name}</p>
             </div>
           </div>
-        )}
-
-        {room.phone_number && (
-          <div className="flex items-start gap-2">
-            <div>
-              <p className="text-sm font-medium">Phone</p>
-              <p className="text-sm text-muted-foreground">{room.phone_number}</p>
+          
+          {/* Type Information */}
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium flex items-center gap-1">
+              <Users className="h-3.5 w-3.5 text-muted-foreground" />
+              Type Information
+            </h4>
+            <div className="flex flex-wrap gap-1.5">
+              <Badge variant="outline" className="text-xs capitalize">
+                {typeof room.room_type === 'string' ? room.room_type.replace(/_/g, ' ') : ''}
+              </Badge>
+              {room.current_function && (
+                <Badge variant="outline" className="text-xs capitalize">
+                  {room.current_function.replace(/_/g, ' ')}
+                </Badge>
+              )}
+              {room.is_storage && (
+                <Badge variant="outline" className="text-xs">
+                  Storage
+                </Badge>
+              )}
             </div>
           </div>
-        )}
-
-        {room.current_occupants && room.current_occupants.length > 0 && (
-          <div className="flex items-start gap-2">
-            <Users className="h-4 w-4 mt-0.5 text-muted-foreground" />
-            <div>
-              <p className="text-sm font-medium">Occupants</p>
+          
+          {/* Contact Information */}
+          {room.phone_number && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium flex items-center gap-1">
+                <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                Contact
+              </h4>
               <p className="text-sm text-muted-foreground">
-                {room.current_occupants.length} assigned
+                {room.phone_number}
               </p>
             </div>
-          </div>
-        )}
+          )}
 
-        {room.issues && room.issues.length > 0 && (
-          <div className="flex items-start gap-2">
-            <div>
-              <p className="text-sm font-medium">Active Issues</p>
-              <p className="text-sm text-muted-foreground">
-                {room.issues.length} open issue(s)
-              </p>
+          {/* Storage Information (if storage room) */}
+          {room.is_storage && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium flex items-center gap-1">
+                <ShoppingBag className="h-3.5 w-3.5 text-muted-foreground" />
+                Storage Information
+              </h4>
+              <div className="text-sm text-muted-foreground space-y-1">
+                {room.storage_type && <p>Type: {typeof room.storage_type === 'string' ? room.storage_type.replace(/_/g, ' ') : ''}</p>}
+                {room.storage_capacity && <p>Capacity: {room.storage_capacity}</p>}
+                {room.storage_notes && <p>Notes: {room.storage_notes}</p>}
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-2 w-full flex items-center gap-2"
+                onClick={() => setIsInventoryDialogOpen(true)}
+              >
+                <Clipboard className="h-4 w-4" />
+                View Inventory
+              </Button>
             </div>
-          </div>
-        )}
-
-        {room.space_connections && room.space_connections.length > 0 && (
-          <div className="flex items-start gap-2">
-            <div>
-              <p className="text-sm font-medium">Connections</p>
-              <p className="text-sm text-muted-foreground">
-                Connected to {room.space_connections.length} space(s)
-              </p>
+          )}
+          
+          {/* Occupants Information */}
+          {room.current_occupants && room.current_occupants.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium flex items-center gap-1">
+                <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                Occupants ({room.current_occupants.length})
+              </h4>
+              <div className="space-y-2">
+                {room.current_occupants.map((occupant, index) => (
+                  <div key={index} className="text-sm text-muted-foreground">
+                    <p className="font-medium">
+                      {occupant.first_name} {occupant.last_name}
+                    </p>
+                    {occupant.assignment_type && (
+                      <p className="text-xs capitalize">
+                        {occupant.assignment_type.replace(/_/g, ' ')}
+                        {occupant.is_primary && ' (Primary)'}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-
-        {room.storage_notes && (
-          <div className="flex items-start gap-2">
-            <div>
-              <p className="text-sm font-medium">Storage Notes</p>
-              <p className="text-sm text-muted-foreground">{room.storage_notes}</p>
+          )}
+          
+          {/* Issue History (if any) */}
+          {room.issues && room.issues.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium flex items-center gap-1">
+                <CircleAlert className="h-3.5 w-3.5 text-muted-foreground" />
+                Recent Issues ({room.issues.length})
+              </h4>
+              <div className="space-y-2">
+                {room.issues.slice(0, 3).map((issue, index) => (
+                  <div key={index} className="text-sm bg-muted/50 p-2 rounded-md">
+                    <div className="flex justify-between">
+                      <Badge variant={
+                        issue.status === 'open' ? 'default' :
+                        issue.status === 'in_progress' ? 'secondary' :
+                        issue.status === 'resolved' ? 'outline' : 'destructive'
+                      } className="text-xs">
+                        {issue.status.replace(/_/g, ' ')}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(issue.created_at), 'MMM d, yyyy')}
+                      </span>
+                    </div>
+                    <p className="mt-1 line-clamp-2">{issue.description}</p>
+                  </div>
+                ))}
+                {room.issues.length > 3 && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    + {room.issues.length - 3} more issues
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
-
-      <div className="text-xs text-muted-foreground mt-4">
-        <div>Created: {new Date(room.created_at).toLocaleDateString()}</div>
-        <div>Updated: {new Date(room.updated_at).toLocaleDateString()}</div>
-      </div>
+          )}
+        </div>
+      </ScrollArea>
+      
+      {/* Inventory Dialog */}
+      {room.is_storage && (
+        <Dialog open={isInventoryDialogOpen} onOpenChange={setIsInventoryDialogOpen}>
+          <DialogContent className="max-w-5xl max-h-[90vh]">
+            <DialogHeader>
+              <DialogTitle>Inventory for {room.name}</DialogTitle>
+            </DialogHeader>
+            <div className="h-[calc(90vh-8rem)] overflow-hidden">
+              <RoomInventory roomId={room.id} />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

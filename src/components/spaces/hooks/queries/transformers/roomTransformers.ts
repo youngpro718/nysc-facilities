@@ -1,4 +1,5 @@
-import { Room, RoomTypeEnum, StorageTypeEnum, CourtroomPhotos } from "../../../types/RoomTypes";
+
+import { Room, RoomType, StorageType, CourtroomPhotos } from "../../../rooms/types/RoomTypes";
 
 export const transformRoomData = (
   roomsData: any[],
@@ -22,8 +23,8 @@ export const transformRoomData = (
     
     return {
       ...room,
-      room_type: room.room_type as RoomTypeEnum,
-      storage_type: room.storage_type ? (room.storage_type as StorageTypeEnum) : null,
+      room_type: room.room_type as RoomType,
+      storage_type: room.storage_type ? (room.storage_type as StorageType) : null,
       lighting_fixture: fixturesByRoomId[room.id] ? {
         id: fixturesByRoomId[room.id].id,
         type: fixturesByRoomId[room.id].type,
@@ -54,14 +55,7 @@ export const transformRoomData = (
           id: room.floors.buildings.id,
           name: room.floors.buildings.name
         } : undefined
-      } : undefined,
-      // Add compatibility properties for legacy code
-      roomType: room.room_type as RoomTypeEnum,
-      roomNumber: room.room_number,
-      floorId: room.floor_id,
-      floorName: room.floors?.name,
-      buildingName: room.floors?.buildings?.name,
-      buildingId: room.floors?.buildings?.id
+      } : undefined
     };
   });
 };

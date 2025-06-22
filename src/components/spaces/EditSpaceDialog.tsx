@@ -183,30 +183,11 @@ export function EditSpaceDialog({
         }
       }
 
-      // Use the updateSpace service for updating the room
+      // Use the new updateSpace service for updating the room
       await import("./services/updateSpace").then(async ({ updateSpace }) => {
-        await updateSpace(roomId, {
-          name: data.name,
-          roomNumber: data.roomNumber,
-          roomType: data.roomType,
-          status: data.status,
-          floorId: data.floorId,
-          description: data.description,
-          phoneNumber: data.phoneNumber,
-          currentFunction: data.currentFunction,
-          isStorage: data.isStorage,
-          storageType: data.storageType,
-          storageCapacity: data.storageCapacity,
-          storageNotes: data.storageNotes,
-          parentRoomId: data.parentRoomId,
-          position: data.position ? { x: data.position.x || 0, y: data.position.y || 0 } : { x: 0, y: 0 },
-          size: data.size ? { width: data.size.width || 150, height: data.size.height || 100 } : { width: 150, height: 100 },
-          rotation: data.rotation || 0,
-          courtRoomPhotos: data.courtroom_photos
-        });
+        await updateSpace(roomId, data);
       });
       console.log("Room update successful");
-      
       // Handle connections using the simplified approach
       if (data.connections && data.connections.length > 0) {
         console.log("Processing connections:", data.connections);

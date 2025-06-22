@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Room } from "../types/RoomTypes";
+import { Room } from "./types/RoomTypes";
 import { CardFront } from "./components/CardFront";
 import { CardBack } from "./components/CardBack";
 

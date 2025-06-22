@@ -1,38 +1,39 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Briefcase, UserCircle, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Briefcase } from "lucide-react";
-import { OccupantQueryResponse } from "../types/occupantTypes";
 
 interface EmploymentSectionProps {
-  occupantData: OccupantQueryResponse;
+  department: string | null;
+  title: string | null;
+  status: string | null;
 }
 
-export function EmploymentSection({ occupantData }: EmploymentSectionProps) {
+export function EmploymentSection({ department, title, status }: EmploymentSectionProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Briefcase className="h-4 w-4" />
-          Employment
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <p className="text-sm font-medium">Title</p>
-          <p className="text-sm text-muted-foreground">{occupantData.title || "—"}</p>
-        </div>
-        <div>
-          <p className="text-sm font-medium">Department</p>
-          <p className="text-sm text-muted-foreground">{occupantData.department || "—"}</p>
-        </div>
-        <div>
-          <p className="text-sm font-medium">Status</p>
-          <Badge variant={occupantData.status === 'active' ? 'default' : 'secondary'}>
-            {occupantData.status}
-          </Badge>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <h3 className="font-medium">Employment Details</h3>
+      <div className="space-y-2">
+        {department && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Briefcase className="h-4 w-4 flex-shrink-0" />
+            <span>{department}</span>
+          </div>
+        )}
+        {title && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <UserCircle className="h-4 w-4 flex-shrink-0" />
+            <span>{title}</span>
+          </div>
+        )}
+        {status && (
+          <div className="flex items-center gap-2 text-sm">
+            <AlertCircle className="h-4 w-4 flex-shrink-0" />
+            <Badge variant={status === 'active' ? 'default' : 'secondary'}>
+              {status}
+            </Badge>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

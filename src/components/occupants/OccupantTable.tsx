@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronDown, ChevronUp, Pencil, Trash2, Key, DoorOpen } from "lucide-react";
-import OccupantDetails from "./OccupantDetails";
+import { OccupantDetails } from "./OccupantDetails";
 import { OccupantQueryResponse } from "./types/occupantTypes";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -142,7 +142,7 @@ export function OccupantTable({
                   <TableRow key={`${occupant.id}-details`}>
                     <TableCell colSpan={8} className="p-0">
                       <div className="p-4">
-                        <OccupantDetails occupantData={occupant} />
+                        <OccupantDetails occupant={occupant} />
                       </div>
                     </TableCell>
                   </TableRow>

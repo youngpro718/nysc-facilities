@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -38,13 +37,13 @@ export function useNotifications() {
             .order('performed_at', { ascending: false })
             .limit(10),
 
-          // Get room assignments with proper foreign key references
+          // Get room assignments
           supabase
             .from('occupant_room_assignments')
             .select(`
               id,
               assigned_at,
-              rooms (
+              rooms:room_id (
                 id,
                 name,
                 room_number,
@@ -95,12 +94,12 @@ export function useNotifications() {
             id: assignment.id,
             type: 'new_assignment' as const,
             title: 'New Room Assignment',
-            message: `You have been assigned to ${assignment.rooms?.name} (${assignment.rooms?.room_number}) in ${assignment.rooms?.floors?.buildings?.name}`,
+            message: `You have been assigned to ${assignment.rooms.name} (${assignment.rooms.room_number}) in ${assignment.rooms.floors.buildings.name}`,
             created_at: assignment.assigned_at,
             read: false,
             metadata: {
-              room_id: assignment.rooms?.id,
-              building_name: assignment.rooms?.floors?.buildings?.name
+              room_id: assignment.rooms.id,
+              building_name: assignment.rooms.floors.buildings.name
             }
           })),
 
@@ -200,4 +199,4 @@ export function useNotifications() {
     markAsRead,
     markAllAsRead
   };
-}
+} 
