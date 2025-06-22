@@ -1,7 +1,7 @@
 
 import React, { useMemo } from 'react';
 import { Skeleton } from "@/components/ui/skeleton";
-import { Room } from "../types/RoomTypes";
+import { Room } from "../../types/RoomTypes";
 import { RoomCard } from "../RoomCard";
 import { RoomTable } from "../RoomTable";
 import { SearchResultsInfo } from "./SearchResultsInfo";

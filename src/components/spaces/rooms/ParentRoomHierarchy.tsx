@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Room } from "../types/RoomTypes";
 
@@ -15,8 +16,8 @@ function buildRoomHierarchy(rooms: Room[]) {
   });
 
   rooms.forEach(room => {
-    if (room.parentRoomId && map[room.parentRoomId]) {
-      map[room.parentRoomId].children.push(map[room.id]);
+    if (room.parent_room_id && map[room.parent_room_id]) {
+      map[room.parent_room_id].children.push(map[room.id]);
     } else {
       roots.push(map[room.id]);
     }
