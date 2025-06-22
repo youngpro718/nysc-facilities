@@ -1,6 +1,26 @@
 
 import { StatusEnum, RoomTypeEnum, StorageTypeEnum } from "../rooms/types/roomEnums";
 
+export interface RoomConnection {
+  id: string;
+  from_space_id: string;
+  to_space_id: string;
+  connection_type: string;
+  direction?: string | null;
+  status: string;
+  to_space?: {
+    id: string;
+    name: string;
+    type: string;
+  };
+}
+
+// Define the courtroom photos interface for reuse
+export interface CourtroomPhotos {
+  judge_view?: string | null;
+  audience_view?: string | null;
+}
+
 export interface Room {
   id: string;
   name: string;
@@ -29,12 +49,7 @@ export interface Room {
     };
   };
   
-  space_connections?: Array<{
-    id: string;
-    connection_type: string;
-    to_space_id: string;
-    direction?: string;
-  }>;
+  space_connections?: RoomConnection[];
 
   // Compatibility properties for legacy code
   roomType: RoomTypeEnum;
@@ -43,4 +58,20 @@ export interface Room {
   floorName?: string;
   buildingName?: string;
   buildingId?: string;
+
+  // Additional properties from rooms table
+  function_change_date?: string;
+  previous_functions?: any[];
+  position?: { x: number; y: number };
+  size?: { width: number; height: number };
+  rotation?: number;
+  
+  // Use the consistent CourtroomPhotos type
+  courtroom_photos?: CourtroomPhotos | null;
+  
+  // Related data
+  lighting_fixture?: any;
+  issues?: any[];
+  room_history?: any[];
+  current_occupants?: any[];
 }

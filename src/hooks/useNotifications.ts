@@ -38,19 +38,19 @@ export function useNotifications() {
             .order('performed_at', { ascending: false })
             .limit(10),
 
-          // Get room assignments
+          // Get room assignments with proper foreign key references
           supabase
             .from('occupant_room_assignments')
             .select(`
               id,
               assigned_at,
-              rooms (
+              rooms!occupant_room_assignments_room_id_fkey (
                 id,
                 name,
                 room_number,
-                floors (
+                floors!rooms_floor_id_fkey (
                   name,
-                  buildings (name)
+                  buildings!floors_building_id_fkey (name)
                 )
               )
             `)
