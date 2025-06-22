@@ -35,9 +35,9 @@ export function useRoomOccupants(roomId: string | undefined) {
             id,
             name,
             room_number,
-            floors (
+            floors!rooms_floor_id_fkey (
               name,
-              buildings (
+              buildings!floors_building_id_fkey (
                 name
               )
             )

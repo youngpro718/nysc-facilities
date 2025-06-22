@@ -16,9 +16,9 @@ interface UpdateRoomData {
   storage_capacity?: number | null;
   storage_notes?: string | null;
   parent_room_id?: string | null;
-  position?: { x: number; y: number };
-  size?: { width: number; height: number };
-  rotation?: number;
+  position?: { x: number; y: number } | null;
+  size?: { width: number; height: number } | null;
+  rotation?: number | null;
   courtroom_photos?: {
     judge_view: string | null;
     audience_view: string | null;

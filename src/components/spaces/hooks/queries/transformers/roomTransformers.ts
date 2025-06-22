@@ -16,10 +16,7 @@ interface RawRoomData {
   storage_capacity?: number;
   current_function?: string;
   parent_room_id?: string;
-  courtroom_photos?: {
-    judge_view: string | null;
-    audience_view: string | null;
-  } | null;
+  courtroom_photos?: any;
   floors?: {
     id: string;
     name: string;
@@ -55,7 +52,7 @@ export function transformRoomData(
     phoneNumber: room.phone_number,
     currentFunction: room.current_function,
     parentRoomId: room.parent_room_id,
-    courtroom_photos: room.courtroom_photos,
+    courtroom_photos: room.courtroom_photos ? (typeof room.courtroom_photos === 'string' ? JSON.parse(room.courtroom_photos) : room.courtroom_photos) : null,
     occupants: occupantsByRoomId[room.id] || [],
     issues: issuesByRoomId[room.id] || [],
     history: historyByRoomId[room.id] || [],
