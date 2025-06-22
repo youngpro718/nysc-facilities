@@ -20,9 +20,18 @@ export function useKeyAssignments(occupantId: string) {
             name,
             type,
             is_passkey,
-            key_door_locations (
-              door_location
+            key_door_locations_table (
+              door_id,
+              doors (
+                name
+              )
             )
+          ),
+          occupant:occupants (
+            id,
+            first_name,
+            last_name,
+            department
           )
         `)
         .eq("occupant_id", occupantId)
@@ -35,6 +44,13 @@ export function useKeyAssignments(occupantId: string) {
       }
 
       console.log("Fetched key assignments:", assignments);
+      if (!assignments || assignments.length === 0) {
+        console.warn('No key assignments returned for occupant:', occupantId);
+      } else {
+        assignments.forEach((a: any) => {
+          console.log('Assignment:', a);
+        });
+      }
       return assignments;
     },
     enabled: !!occupantId,

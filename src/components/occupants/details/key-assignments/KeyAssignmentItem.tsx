@@ -32,7 +32,9 @@ export function KeyAssignmentItem({
           <div className="text-sm text-muted-foreground">
             <span className="block sm:inline">Access to: </span>
             <span className="truncate">
-              {assignment.keys.key_door_locations.map(l => l.door_location).join(", ")}
+              {assignment.keys.key_door_locations
+                .map(l => l.doors?.name || l.door_id)
+                .join(", ")}
             </span>
           </div>
         )}

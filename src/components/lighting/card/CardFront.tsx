@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { LightingFixture } from "@/components/lighting/types";
 import { EditLightingDialog } from "../EditLightingDialog";
+import { ReportIssueDialog } from "../issues/ReportIssueDialog";
 import { cn } from "@/lib/utils";
 import { Lightbulb, RotateCw, Trash2, Calendar, Clock } from "lucide-react";
 
@@ -167,6 +168,7 @@ export function CardFront({
             </div>
           ) : (
             <div className="flex items-center gap-2">
+              <ReportIssueDialog fixture={fixture} />
               <EditLightingDialog
                 fixture={fixture}
                 onFixtureUpdated={onFixtureUpdated}

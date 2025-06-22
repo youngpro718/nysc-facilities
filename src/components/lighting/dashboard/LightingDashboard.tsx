@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { Lightbulb, AlertTriangle, CheckCircle, Calendar, Battery, Activity } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { LightingIssuesCard } from "./LightingIssuesCard";
 
 export function LightingDashboard() {
   const { data: stats, isLoading } = useQuery({
@@ -87,7 +88,7 @@ export function LightingDashboard() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center">
@@ -132,6 +133,8 @@ export function LightingDashboard() {
             </div>
           </CardContent>
         </Card>
+        
+        <LightingIssuesCard />
       </div>
     </div>
   );

@@ -14,8 +14,10 @@ import {
   LayoutGrid, 
   CalendarClock, 
   AreaChart, 
-  Settings2 
+  Settings2,
+  AlertCircle 
 } from "lucide-react";
+import LightingIssuesSection from '@/components/lighting/issues/LightingIssuesSection';
 
 export default function Lighting() {
   const [activeTab, setActiveTab] = useState<string>("dashboard");
@@ -52,7 +54,7 @@ export default function Lighting() {
         onValueChange={setActiveTab}
         className="space-y-4"
       >
-        <TabsList className="grid grid-cols-2 md:grid-cols-5 h-auto">
+        <TabsList className="grid grid-cols-2 md:grid-cols-6 h-auto">
           <TabsTrigger value="dashboard" className="flex gap-2 py-2 h-auto">
             <AreaChart className="h-4 w-4" />
             <span className="hidden sm:inline">Dashboard</span>
@@ -73,6 +75,10 @@ export default function Lighting() {
             <Settings2 className="h-4 w-4" />
             <span className="hidden sm:inline">Settings</span>
           </TabsTrigger>
+          <TabsTrigger value="issues" className="flex gap-2 py-2 h-auto">
+            <AlertCircle className="h-4 w-4" />
+            <span className="hidden sm:inline">Lighting Issues</span>
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="dashboard">
@@ -84,6 +90,10 @@ export default function Lighting() {
             selectedBuilding={selectedBuilding} 
             selectedFloor={selectedFloor} 
           />
+        </TabsContent>
+        
+        <TabsContent value="issues">
+          <LightingIssuesSection />
         </TabsContent>
         
         <TabsContent value="zones">
