@@ -102,12 +102,12 @@ export function EditSpaceDialog({
       
       // Convert string value to RoomTypeEnum for the form with safe type checking
       let convertedRoomType = initialData.roomType && typeof initialData.roomType === 'string' ? stringToRoomType(initialData.roomType) : undefined;
-      let convertedStatus = initialData.status && typeof initialData.status === 'string' ? initialData.status : undefined;
+      let convertedStatus = initialData.status && typeof initialData.status === 'string' ? stringToStatus(initialData.status) : StatusEnum.ACTIVE;
       let convertedStorageType = null;
       
       // For storage type, only set if the room is actually storage
       if (initialData.is_storage && initialData.storage_type && typeof initialData.storage_type === 'string') {
-        convertedStorageType = initialData.storage_type;
+        convertedStorageType = stringToStorageType(initialData.storage_type);
       }
       
       console.log("Direct string values being set:");

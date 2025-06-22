@@ -1,143 +1,121 @@
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { useState, useCallback } from "react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
-import { FilterBar } from "./rooms/components/FilterBar";
-import { RoomsContent } from "./rooms/components/RoomsContent";
-import { useRoomFilters } from "./hooks/useRoomFilters";
-import { useRoomsQuery } from "./hooks/queries/useRoomsQuery";
+import { RoomCard } from "./rooms/RoomCard";
 import { Room } from "./rooms/types/RoomTypes";
+import { stringToRoomType, stringToStatus } from "./rooms/types/roomEnums";
 
 interface RoomsListProps {
-  selectedBuilding: string;
-  selectedFloor: string;
+  floorId?: string;
+  searchTerm?: string;
+  selectedRoomType?: string;
+  selectedStatus?: string;
+  viewMode?: "grid" | "list";
 }
 
-const RoomsList = ({ selectedBuilding, selectedFloor }: RoomsListProps) => {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("name_asc");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [view, setView] = useState<"grid" | "list">("grid");
+export function RoomsList({ 
+  floorId, 
+  searchTerm = "", 
+  selectedRoomType = "all", 
+  selectedStatus = "all",
+  viewMode = "grid"
+}: RoomsListProps) {
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 
-  const { data: rooms, isLoading, error, refetch } = useRoomsQuery({
-    buildingId: selectedBuilding === 'all' ? undefined : selectedBuilding,
-    floorId: selectedFloor === 'all' ? undefined : selectedFloor,
-  });
-  
-  const { filteredAndSortedRooms } = useRoomFilters({
-    rooms: rooms || [],
-    searchQuery,
-    sortBy,
-    statusFilter,
-    selectedBuilding: 'all',
-    selectedFloor: 'all',
-  });
-
-  const deleteRoom = useMutation({
-    mutationFn: async (roomId: string) => {
-      const { data: connections } = await supabase
-        .from('space_connections')
-        .select('id')
-        .or(`from_space_id.eq.${roomId},to_space_id.eq.${roomId}`);
-
-      if (connections && connections.length > 0) {
-        throw new Error('Cannot delete room with existing connections. Please remove connections first.');
-      }
-
-      const { data: assignedKeys } = await supabase
-        .from('keys')
-        .select('id')
-        .contains('location_data', { room_id: roomId });
-
-      if (assignedKeys && assignedKeys.length > 0) {
-        throw new Error('Cannot delete room with assigned keys. Please reassign or remove keys first.');
-      }
-
-      const { data: occupants } = await supabase
-        .from('occupant_room_assignments')
-        .select('id')
-        .eq('room_id', roomId);
-
-      if (occupants && occupants.length > 0) {
-        throw new Error('Cannot delete room with assigned occupants. Please reassign occupants first.');
-      }
-
-      const { error } = await supabase
+  const { data: rooms = [], isLoading, error } = useQuery({
+    queryKey: ['rooms', floorId],
+    queryFn: async () => {
+      let query = supabase
         .from('rooms')
-        .delete()
-        .eq('id', roomId);
+        .select(`
+          *,
+          floors!inner(
+            id,
+            name,
+            building_id,
+            buildings!inner(
+              id,
+              name
+            )
+          )
+        `);
+
+      if (floorId) {
+        query = query.eq('floor_id', floorId);
+      }
+
+      const { data, error } = await query;
       
       if (error) throw error;
+
+      // Transform the data to match our Room type
+      const transformedRooms: Room[] = (data || []).map(room => ({
+        id: room.id,
+        name: room.name,
+        room_number: room.room_number,
+        room_type: room.room_type,
+        status: room.status,
+        description: room.description || "",
+        phone_number: room.phone_number,
+        is_storage: room.is_storage,
+        storage_type: room.storage_type,
+        storage_capacity: room.storage_capacity,
+        storage_notes: room.storage_notes,
+        parent_room_id: room.parent_room_id,
+        current_function: room.current_function,
+        floor_id: room.floor_id,
+        position: room.position,
+        size: room.size,
+        rotation: room.rotation,
+        courtroom_photos: room.courtroom_photos,
+        created_at: room.created_at,
+        updated_at: room.updated_at
+      }));
+
+      return transformedRooms;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      toast({
-        title: "Room deleted",
-        description: "The room has been successfully deleted.",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete room. Please try again.",
-        variant: "destructive",
-      });
-      console.error('Error deleting room:', error);
-    },
+    enabled: true
   });
 
-  const handleRefresh = useCallback(() => {
-    refetch();
-    toast({
-      title: "Refreshed",
-      description: "Room list has been refreshed.",
-    });
-  }, [refetch, toast]);
+  if (isLoading) {
+    return <div className="text-center py-8">Loading rooms...</div>;
+  }
 
   if (error) {
+    return <div className="text-center py-8 text-red-500">Error loading rooms: {error.message}</div>;
+  }
+
+  // Filter rooms based on search and filters
+  const filteredRooms = rooms.filter((room) => {
+    const matchesSearch = room.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         room.room_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         room.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesType = selectedRoomType === "all" || room.room_type === selectedRoomType;
+    const matchesStatus = selectedStatus === "all" || room.status === selectedStatus;
+    
+    return matchesSearch && matchesType && matchesStatus;
+  });
+
+  if (filteredRooms.length === 0) {
     return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          Error loading rooms: {(error as Error).message}
-        </AlertDescription>
-      </Alert>
+      <div className="text-center py-8 text-muted-foreground">
+        No rooms found matching your criteria.
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <FilterBar
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        sortBy={sortBy}
-        onSortChange={setSortBy}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
-        view={view}
-        onViewChange={setView}
-        onRefresh={handleRefresh}
-      />
-
-      <RoomsContent
-        isLoading={isLoading}
-        rooms={rooms || []}
-        filteredRooms={filteredAndSortedRooms}
-        view={view}
-        onDelete={(id) => {
-          if (window.confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
-            deleteRoom.mutate(id);
-          }
-        }}
-        searchQuery={searchQuery}
-      />
+    <div className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
+      {filteredRooms.map((room) => (
+        <RoomCard
+          key={room.id}
+          room={room}
+          onClick={() => setSelectedRoom(room)}
+          viewMode={viewMode}
+        />
+      ))}
     </div>
   );
-};
-
-export default RoomsList;
+}

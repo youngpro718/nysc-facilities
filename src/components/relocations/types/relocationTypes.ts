@@ -1,4 +1,3 @@
-
 export interface RoomRelocation {
   id: string;
   original_room_id: string;
@@ -115,15 +114,21 @@ export interface ScheduleChange {
 
 export interface CreateScheduleChangeFormData {
   relocation_id: string;
-  change_type: 'start_date' | 'end_date' | 'both';
-  new_start_date?: string;
-  new_end_date?: string;
-  reason: string;
+  original_court_part: string;
+  temporary_assignment: string;
+  start_date: string;
+  end_date: string;
+  special_instructions?: string;
 }
 
-export interface UpdateScheduleChangeFormData extends Partial<CreateScheduleChangeFormData> {
+export interface UpdateScheduleChangeFormData {
   id: string;
-  approved_by?: string;
+  original_court_part: string;
+  temporary_assignment: string;
+  start_date: string;
+  end_date: string;
+  special_instructions?: string;
+  created_by?: string;
 }
 
 export interface CourtTermData {

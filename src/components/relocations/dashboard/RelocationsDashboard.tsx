@@ -1,250 +1,208 @@
+
 import { useState } from "react";
-import { useRelocations } from "../hooks/useRelocations";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, MapPin, Users, Clock } from "lucide-react";
-import { format, formatDistanceToNow } from "date-fns";
-import { RelocationStatus } from "../types/relocationTypes";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useRelocations, useActiveRelocations } from "../hooks/useRelocations";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { activateRelocation, completeRelocation, cancelRelocation } from "../services/mutations/statusMutations";
 import { CompleteRelocationDialog } from "../dialogs/CompleteRelocationDialog";
 import { CancelRelocationDialog } from "../dialogs/CancelRelocationDialog";
 import { ActivateRelocationDialog } from "../dialogs/ActivateRelocationDialog";
+import { RelocationsCalendar } from "./RelocationsCalendar";
 import { CourtTermsTab } from "./CourtTermsTab";
+import { toast } from "sonner";
+import { RoomRelocation } from "../types/relocationTypes";
 
 export function RelocationsDashboard() {
-  const {
-    relocations,
-    isLoading,
-    activateRelocation,
-    completeRelocation,
-    cancelRelocation,
-  } = useRelocations();
+  const { data: relocations = [], isLoading } = useRelocations();
+  const { data: activeRelocations = [] } = useActiveRelocations();
+  const [selectedRelocation, setSelectedRelocation] = useState<RoomRelocation | null>(null);
+  const [activeDialog, setActiveDialog] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
-  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
-  const [isActivateDialogOpen, setIsActivateDialogOpen] = useState(false);
-  const [selectedRelocationId, setSelectedRelocationId] = useState<string | null>(null);
-
-  const handleActivate = async (id: string) => {
-    try {
-      await activateRelocation(id);
-      setSelectedRelocationId(null);
-      setIsActivateDialogOpen(false);
-    } catch (error) {
-      console.error('Error activating relocation:', error);
+  const activateMutation = useMutation({
+    mutationFn: activateRelocation,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['relocations'] });
+      queryClient.invalidateQueries({ queryKey: ['active-relocations'] });
+      toast.success("Relocation activated successfully");
+      setActiveDialog(null);
+    },
+    onError: (error) => {
+      toast.error(`Failed to activate relocation: ${error.message}`);
     }
-  };
+  });
 
-  const handleComplete = async (id: string) => {
-    try {
-      await completeRelocation(id);
-      setSelectedRelocationId(null);
-      setIsCompleteDialogOpen(false);
-    } catch (error) {
-      console.error('Error completing relocation:', error);
+  const completeMutation = useMutation({
+    mutationFn: completeRelocation,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['relocations'] });
+      queryClient.invalidateQueries({ queryKey: ['active-relocations'] });
+      toast.success("Relocation completed successfully");
+      setActiveDialog(null);
+    },
+    onError: (error) => {
+      toast.error(`Failed to complete relocation: ${error.message}`);
     }
-  };
+  });
 
-  const handleCancel = async (id: string) => {
-    try {
-      await cancelRelocation(id);
-      setSelectedRelocationId(null);
-      setIsCancelDialogOpen(false);
-    } catch (error) {
-      console.error('Error cancelling relocation:', error);
+  const cancelMutation = useMutation({
+    mutationFn: cancelRelocation,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['relocations'] });
+      queryClient.invalidateQueries({ queryKey: ['active-relocations'] });
+      toast.success("Relocation cancelled successfully");
+      setActiveDialog(null);
+    },
+    onError: (error) => {
+      toast.error(`Failed to cancel relocation: ${error.message}`);
     }
-  };
+  });
 
-  const activeRelocations = relocations.filter(r => r.status === 'active');
-  const scheduledRelocations = relocations.filter(r => r.status === 'scheduled');
-  const completedRelocations = relocations.filter(r => r.status === 'completed');
+  const handleStatusChange = (relocation: RoomRelocation, action: string) => {
+    setSelectedRelocation(relocation);
+    setActiveDialog(action);
+  };
 
   if (isLoading) {
-    return <div className="p-4">Loading relocations...</div>;
+    return <div>Loading relocations...</div>;
   }
+
+  const scheduledRelocations = relocations.filter(r => r.status === 'scheduled');
+  const inProgressRelocations = relocations.filter(r => r.status === 'active');
+  const completedRelocations = relocations.filter(r => r.status === 'completed');
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle>Active Relocations</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{activeRelocations.length}</div>
-            <p className="text-sm text-muted-foreground">Currently in progress</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Scheduled Relocations</CardTitle>
+            <CardTitle>Scheduled</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{scheduledRelocations.length}</div>
-            <p className="text-sm text-muted-foreground">Awaiting activation</p>
           </CardContent>
         </Card>
-
+        
         <Card>
           <CardHeader>
-            <CardTitle>Completed Relocations</CardTitle>
+            <CardTitle>In Progress</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{inProgressRelocations.length}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Completed</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{completedRelocations.length}</div>
-            <p className="text-sm text-muted-foreground">Successfully completed</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="space-y-4">
-        <h3 className="text-xl font-semibold">Upcoming Court Terms</h3>
-        <CourtTermsTab />
-      </div>
+      <Tabs defaultValue="overview" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="calendar">Calendar</TabsTrigger>
+          <TabsTrigger value="court-terms">Court Terms</TabsTrigger>
+        </TabsList>
 
-      <div className="space-y-4">
-        <h3 className="text-xl font-semibold">Scheduled Relocations</h3>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {scheduledRelocations.map((relocation) => (
-            <Card key={relocation.id} className="cursor-pointer hover:shadow-md transition-shadow">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center justify-between">
-                  Relocation ID: {relocation.id.substring(0, 8)}...
-                  <Badge variant="secondary">{relocation.status}</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Calendar className="w-4 h-4" />
-                  <span>
-                    {format(new Date(relocation.start_date), 'MMM dd, yyyy')} - {format(new Date(relocation.end_date), 'MMM dd, yyyy')}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <MapPin className="w-4 h-4" />
-                  <span>{relocation.building_name}, {relocation.floor_name}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Users className="w-4 h-4" />
-                  <span>Created {formatDistanceToNow(new Date(relocation.created_at), { addSuffix: true })}</span>
-                </div>
-                <div className="flex justify-between">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedRelocationId(relocation.id);
-                      setIsActivateDialogOpen(true);
-                    }}
-                  >
-                    Activate
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedRelocationId(relocation.id);
-                      setIsCancelDialogOpen(true);
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        {scheduledRelocations.length === 0 && (
-          <div className="text-center py-4 text-gray-500">No scheduled relocations found.</div>
-        )}
-      </div>
+        <TabsContent value="overview" className="space-y-4">
+          <div className="grid gap-4">
+            {relocations.map((relocation) => (
+              <Card key={relocation.id}>
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-semibold">{relocation.original_room_name}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Moving to: {relocation.temporary_room_name}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(relocation.start_date).toLocaleDateString()} - 
+                        {new Date(relocation.end_date).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={
+                        relocation.status === 'active' ? 'default' :
+                        relocation.status === 'completed' ? 'secondary' :
+                        'outline'
+                      }>
+                        {relocation.status}
+                      </Badge>
+                      {relocation.status === 'scheduled' && (
+                        <Button 
+                          size="sm" 
+                          onClick={() => handleStatusChange(relocation, 'activate')}
+                        >
+                          Activate
+                        </Button>
+                      )}
+                      {relocation.status === 'active' && (
+                        <>
+                          <Button 
+                            size="sm" 
+                            onClick={() => handleStatusChange(relocation, 'complete')}
+                          >
+                            Complete
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => handleStatusChange(relocation, 'cancel')}
+                          >
+                            Cancel
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
 
-      <div className="space-y-4">
-        <h3 className="text-xl font-semibold">Active Relocations</h3>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {activeRelocations.map((relocation) => (
-            <Card key={relocation.id} className="cursor-pointer hover:shadow-md transition-shadow">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center justify-between">
-                  Relocation ID: {relocation.id.substring(0, 8)}...
-                  <Badge variant="default">{relocation.status}</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Calendar className="w-4 h-4" />
-                  <span>
-                    {format(new Date(relocation.start_date), 'MMM dd, yyyy')} - {format(new Date(relocation.end_date), 'MMM dd, yyyy')}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <MapPin className="w-4 h-4" />
-                  <span>{relocation.building_name}, {relocation.floor_name}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="w-4 h-4" />
-                  <span>Started {formatDistanceToNow(new Date(relocation.start_date), { addSuffix: true })}</span>
-                </div>
-                <div className="flex justify-between">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedRelocationId(relocation.id);
-                      setIsCompleteDialogOpen(true);
-                    }}
-                  >
-                    Complete
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedRelocationId(relocation.id);
-                      setIsCancelDialogOpen(true);
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        {activeRelocations.length === 0 && (
-          <div className="text-center py-4 text-gray-500">No active relocations found.</div>
-        )}
-      </div>
+        <TabsContent value="calendar">
+          <RelocationsCalendar relocations={activeRelocations} />
+        </TabsContent>
 
-      <CompleteRelocationDialog
-        isOpen={isCompleteDialogOpen}
-        onClose={() => {
-          setIsCompleteDialogOpen(false);
-          setSelectedRelocationId(null);
-        }}
-        onComplete={handleComplete}
-        relocationId={selectedRelocationId}
-      />
+        <TabsContent value="court-terms">
+          <CourtTermsTab />
+        </TabsContent>
+      </Tabs>
 
-      <CancelRelocationDialog
-        isOpen={isCancelDialogOpen}
-        onClose={() => {
-          setIsCancelDialogOpen(false);
-          setSelectedRelocationId(null);
-        }}
-        onCancel={handleCancel}
-        relocationId={selectedRelocationId}
-      />
-
-      <ActivateRelocationDialog
-        isOpen={isActivateDialogOpen}
-        onClose={() => {
-          setIsActivateDialogOpen(false);
-          setSelectedRelocationId(null);
-        }}
-        onActivate={handleActivate}
-        relocationId={selectedRelocationId}
-      />
+      {selectedRelocation && (
+        <>
+          <ActivateRelocationDialog
+            open={activeDialog === 'activate'}
+            onOpenChange={(open) => !open && setActiveDialog(null)}
+            relocation={selectedRelocation}
+            onConfirm={() => activateMutation.mutate(selectedRelocation.id)}
+            isLoading={activateMutation.isPending}
+          />
+          <CompleteRelocationDialog
+            open={activeDialog === 'complete'}
+            onOpenChange={(open) => !open && setActiveDialog(null)}
+            relocation={selectedRelocation}
+            onConfirm={() => completeMutation.mutate(selectedRelocation.id)}
+            isLoading={completeMutation.isPending}
+          />
+          <CancelRelocationDialog
+            open={activeDialog === 'cancel'}
+            onOpenChange={(open) => !open && setActiveDialog(null)}
+            relocation={selectedRelocation}
+            onConfirm={() => cancelMutation.mutate(selectedRelocation.id)}
+            isLoading={cancelMutation.isPending}
+          />
+        </>
+      )}
     </div>
   );
 }
