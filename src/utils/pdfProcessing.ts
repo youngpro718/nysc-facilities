@@ -581,7 +581,7 @@ export function extractAssignmentsByPattern(text: string): TermAssignment[] {
       const line = lines[i];
       
       // Skip lines that look like headers
-      if (/\b(PART|JUSTICE|JUDGE|ROOM|FAX|[*]?TEL[*]?|SERGEANT|CLERK)\b/i.test(line)) {
+      if (/\b(PART|JUSTICE|JUDGE|ROOM|FAX|[*]?TEL[*]?)\b/i.test(line)) {
         console.info(`Found possible header line: ${line}`);
         continue;
       }
@@ -625,7 +625,7 @@ export function extractAssignmentsByPattern(text: string): TermAssignment[] {
           extension: extension
         };
         
-        // Look ahead for additional information - check for SGT, FAX, and clerks more intelligently
+        // Look ahead for additional information - check for SGT, FAX and clerks more intelligently
         let sgtFound = false;
         let faxFound = false;
         let clerksCollecting = false;
@@ -917,7 +917,7 @@ export function extractAssignmentsFromTable(text: string): TermAssignment[] {
         const phoneText = line.substring(phoneCol, endPos).trim();
         
         // Enhanced phone extraction to handle (6)4107 format
-        const phoneMatch = phoneText.match(/\(?(\d{1,2})\)?[-\s]?(\d{3,4})/);
+        const phoneMatch = phoneText.match(/\(?(\d{1,2})\)?[-\s]?\d{3,4}/);
         if (phoneMatch) {
           assignment.tel = phoneText.trim();
           assignment.extension = phoneMatch[1];
@@ -1251,9 +1251,11 @@ export function formatClerks(clerks: string[] | string | undefined): string {
 /**
  * Get file size in readable format
  */
-export function getReadableFileSize(size: number): string {
-  const i = size === 0 ? 0 : Math.floor(Math.log(size) / Math.log(1024));
-  return `${(size / Math.pow(1024, i)).toFixed(2)} ${['B', 'KB', 'MB', 'GB', 'TB'][i]}`;
+export function getReadableFileSize(bytes: number): string {
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  if (bytes === 0) return '0 Byte';
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + ' ' + sizes[i];
 }
 
 /**
@@ -1270,4 +1272,39 @@ export function validatePDFFile(file: File): { valid: boolean; error?: string } 
   }
   
   return { valid: true };
+}
+
+export interface CourtTermData {
+  id: string;
+  term_name: string;
+  start_date: string;
+  end_date: string;
+  status: 'active' | 'inactive' | 'upcoming';
+  created_at: string;
+}
+
+export async function processCourtTermPdf(file: File): Promise<CourtTermData[]> {
+  // Placeholder implementation for PDF processing
+  console.log('Processing court term PDF:', file.name);
+  
+  // This would normally use a PDF processing library like pdf-parse
+  // For now, return mock data
+  return [
+    {
+      id: '1',
+      term_name: 'Spring Term 2024',
+      start_date: '2024-03-01',
+      end_date: '2024-05-31',
+      status: 'active',
+      created_at: new Date().toISOString()
+    }
+  ];
+}
+
+export async function importCourtTermData(data: CourtTermData[]): Promise<void> {
+  // Placeholder implementation for importing data
+  console.log('Importing court term data:', data);
+  
+  // This would normally save to the database
+  // For now, just log the data
 }
