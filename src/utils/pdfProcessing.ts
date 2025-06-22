@@ -581,7 +581,7 @@ export function extractAssignmentsByPattern(text: string): TermAssignment[] {
       const line = lines[i];
       
       // Skip lines that look like headers
-      if (/\b(PART|JUSTICE|JUDGE|ROOM|FAX|[*]?TEL[*]?|SERGEANT|CLERK)\b/i.test(line)) {
+      if (/\b(PART|JUSTICE|JUDGE|ROOM|FAX|[*]?TEL[*]?)\b/i.test(line)) {
         console.info(`Found possible header line: ${line}`);
         continue;
       }
@@ -625,7 +625,7 @@ export function extractAssignmentsByPattern(text: string): TermAssignment[] {
           extension: extension
         };
         
-        // Look ahead for additional information - check for SGT, FAX, and clerks more intelligently
+        // Look ahead for additional information - check for SGT, FAX and clerks more intelligently
         let sgtFound = false;
         let faxFound = false;
         let clerksCollecting = false;
@@ -917,7 +917,7 @@ export function extractAssignmentsFromTable(text: string): TermAssignment[] {
         const phoneText = line.substring(phoneCol, endPos).trim();
         
         // Enhanced phone extraction to handle (6)4107 format
-        const phoneMatch = phoneText.match(/\(?(\d{1,2})\)?[-\s]?(\d{3,4})/);
+        const phoneMatch = phoneText.match(/\(?(\d{1,2})\)?[-\s]?\d{3,4}/);
         if (phoneMatch) {
           assignment.tel = phoneText.trim();
           assignment.extension = phoneMatch[1];
@@ -1270,4 +1270,30 @@ export function validatePDFFile(file: File): { valid: boolean; error?: string } 
   }
   
   return { valid: true };
+}
+
+export interface CourtTermData {
+  id: string;
+  termName: string;
+  startDate: string;
+  endDate: string;
+  location: string;
+  assignments: any[];
+}
+
+export async function processCourtTermPdf(file: File): Promise<CourtTermData> {
+  // Placeholder implementation - in a real app this would parse PDF content
+  return {
+    id: crypto.randomUUID(),
+    termName: `Term from ${file.name}`,
+    startDate: new Date().toISOString(),
+    endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+    location: "Default Location",
+    assignments: []
+  };
+}
+
+export async function importCourtTermData(data: CourtTermData): Promise<void> {
+  // Placeholder implementation - in a real app this would save to database
+  console.log("Importing court term data:", data);
 }

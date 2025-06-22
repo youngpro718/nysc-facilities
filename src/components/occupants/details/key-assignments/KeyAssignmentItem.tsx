@@ -28,12 +28,12 @@ export function KeyAssignmentItem({
         <div className="text-sm text-muted-foreground">
           Assigned: {format(new Date(assignment.assigned_at), "MMM d, yyyy")}
         </div>
-        {assignment.keys?.key_door_locations && assignment.keys.key_door_locations.length > 0 && (
+        {assignment.keys?.key_door_locations_table && assignment.keys.key_door_locations_table.length > 0 && (
           <div className="text-sm text-muted-foreground">
             <span className="block sm:inline">Access to: </span>
             <span className="truncate">
-              {assignment.keys.key_door_locations
-                .map(l => l.doors?.name || l.door_id)
+              {assignment.keys.key_door_locations_table
+                .map(l => l.doors?.name || 'Unknown Door')
                 .join(", ")}
             </span>
           </div>

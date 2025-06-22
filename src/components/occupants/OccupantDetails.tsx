@@ -1,202 +1,113 @@
 
-import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Mail, Phone, Briefcase, UserCircle, Building2, Key, DoorOpen, Calendar, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useKeyAssignments } from "./hooks/useKeyAssignments";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { Separator } from "@/components/ui/separator";
-import { Card } from "@/components/ui/card";
-import { OccupantQueryResponse } from "./types/occupantTypes";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ContactSection } from "./details/ContactSection";
+import { EmploymentSection } from "./details/EmploymentSection";
+import { LocationSection } from "./details/LocationSection";
+import { KeyAssignmentSection } from "./details/KeyAssignmentSection";
+import { EditOccupantDialog } from "./dialogs/EditOccupantDialog";
+import { ArrowLeft, Mail, Phone, User } from "lucide-react";
+import { format } from "date-fns";
 
-interface OccupantDetailsProps {
-  occupant: OccupantQueryResponse;
-}
+export default function OccupantDetails() {
+  const { id } = useParams<{ id: string }>();
+  const [activeTab, setActiveTab] = useState("overview");
 
-export function OccupantDetails({ occupant }: OccupantDetailsProps) {
-  const navigate = useNavigate();
-  const isMobile = useIsMobile();
-  const { keyAssignments, isLoading } = useKeyAssignments(occupant.id);
+  const { data: occupant, isLoading } = useQuery({
+    queryKey: ["occupant", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("occupants")
+        .select(`
+          *,
+          key_assignments!key_assignments_occupant_id_fkey (
+            id,
+            assigned_at,
+            returned_at,
+            keys (
+              id,
+              name,
+              type,
+              is_passkey,
+              key_door_locations_table:key_door_locations (
+                door_id,
+                doors (
+                  name
+                )
+              )
+            )
+          )
+        `)
+        .eq("id", id)
+        .single();
 
-  // Group rooms by assignment type
-  const groupedRooms = occupant.rooms.reduce((acc, room) => {
-    const type = room.assignment_type || 'Other';
-    if (!acc[type]) acc[type] = [];
-    acc[type].push(room);
-    return acc;
-  }, {} as Record<string, typeof occupant.rooms>);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
 
-  const totalDoorAccess = keyAssignments?.reduce((count, assignment) => {
-    if (assignment.keys?.is_passkey) return count + 5;
-    return count + (assignment.keys?.key_door_locations?.length || 1);
-  }, 0) || 0;
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
-  const getAssignmentTypeLabel = (type: string) => {
-    switch (type) {
-      case 'primary_office': return 'Primary Office';
-      case 'work_location': return 'Work Location';
-      case 'support_space': return 'Support Space';
-      default: return type;
-    }
-  };
+  if (!occupant) {
+    return <div>Occupant not found</div>;
+  }
 
   return (
-    <Card className="bg-background/50 p-4 space-y-6">
-      {isMobile && (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="mb-2"
-          onClick={() => navigate("/occupants")}
-        >
-          <ChevronLeft className="h-4 w-4 mr-2" />
-          Back to Occupants
-        </Button>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Contact Information */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-medium text-muted-foreground">Contact Information</h3>
-          <div className="space-y-2">
-            {occupant.email && (
-              <div className="flex items-center gap-2 text-sm">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                <a href={`mailto:${occupant.email}`} className="hover:text-primary">
-                  {occupant.email}
-                </a>
-              </div>
-            )}
-            {occupant.phone && (
-              <div className="flex items-center gap-2 text-sm">
-                <Phone className="h-4 w-4 text-muted-foreground" />
-                <a href={`tel:${occupant.phone}`} className="hover:text-primary">
-                  {occupant.phone}
-                </a>
-              </div>
-            )}
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">
+              {occupant.first_name} {occupant.last_name}
+            </h1>
+            <p className="text-muted-foreground">{occupant.title}</p>
           </div>
         </div>
-
-        {/* Employment Details */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-medium text-muted-foreground">Employment Details</h3>
-          <div className="space-y-2">
-            {occupant.department && (
-              <div className="flex items-center gap-2 text-sm">
-                <Briefcase className="h-4 w-4 text-muted-foreground" />
-                <span>{occupant.department}</span>
-              </div>
-            )}
-            {occupant.title && (
-              <div className="flex items-center gap-2 text-sm">
-                <UserCircle className="h-4 w-4 text-muted-foreground" />
-                <span>{occupant.title}</span>
-              </div>
-            )}
-            {occupant.status && (
-              <div className="flex items-center gap-2">
-                <Badge variant={occupant.status === 'active' ? 'default' : 'secondary'}>
-                  {occupant.status}
-                </Badge>
-              </div>
-            )}
-          </div>
-        </div>
+        <EditOccupantDialog occupant={occupant} />
       </div>
 
-      <Separator />
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="keys">Key Assignments</TabsTrigger>
+          <TabsTrigger value="history">History</TabsTrigger>
+        </TabsList>
 
-      {/* Room Assignments */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-medium text-muted-foreground">Room Assignments</h3>
-        <div className="space-y-6">
-          {Object.entries(groupedRooms).map(([type, rooms]) => (
-            <div key={type} className="space-y-3">
-              <h4 className="text-sm font-medium flex items-center gap-2">
-                <Badge variant="outline">{getAssignmentTypeLabel(type)}</Badge>
-              </h4>
-              <div className="space-y-2">
-                {rooms.map((room, index) => (
-                  <div key={index} className="bg-muted/50 rounded-lg p-3 space-y-2">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Building2 className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">
-                        {room.floors?.buildings?.name} &gt; {room.floors?.name}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">Room {room.room_number}</span>
-                      {room.schedule && (
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Calendar className="h-4 w-4" />
-                          <span>{room.schedule}</span>
-                        </div>
-                      )}
-                    </div>
-                    {room.notes && (
-                      <p className="text-sm text-muted-foreground">{room.notes}</p>
-                    )}
-                    {room.connections?.length > 0 && (
-                      <div className="text-sm text-muted-foreground">
-                        <span className="font-medium">Connected to: </span>
-                        {room.connections.map((conn, i) => (
-                          <span key={i} className="flex items-center gap-1">
-                            <ArrowRight className="h-4 w-4" />
-                            {conn.name}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <ContactSection occupant={occupant} />
+            <EmploymentSection occupant={occupant} />
+            <LocationSection occupant={occupant} />
+          </div>
+        </TabsContent>
 
-      <Separator />
+        <TabsContent value="keys">
+          <KeyAssignmentSection occupantId={occupant.id} />
+        </TabsContent>
 
-      {/* Access Information */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-medium text-muted-foreground">Access Information</h3>
-        <div className="flex flex-wrap gap-4">
-          <div className="flex items-center gap-2">
-            <Key className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm">{keyAssignments?.length || 0} Keys Assigned</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <DoorOpen className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm">{totalDoorAccess} Door Access</span>
-          </div>
-        </div>
-
-        {isLoading ? (
-          <div className="animate-pulse space-y-4">
-            <div className="h-12 bg-muted rounded"></div>
-            <div className="h-12 bg-muted rounded"></div>
-          </div>
-        ) : keyAssignments && keyAssignments.length > 0 ? (
-          <div className="grid gap-2">
-            {keyAssignments.map((assignment) => (
-              <div 
-                key={assignment.id}
-                className="flex items-center justify-between p-2 bg-muted rounded-lg text-sm"
-              >
-                <span>{assignment.keys.name}</span>
-                {assignment.keys.is_passkey && (
-                  <Badge variant="secondary">Passkey</Badge>
-                )}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-4 text-sm text-muted-foreground">
-            No keys currently assigned
-          </div>
-        )}
-      </div>
-    </Card>
+        <TabsContent value="history">
+          <Card>
+            <CardHeader>
+              <CardTitle>Activity History</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">History tracking coming soon...</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }
