@@ -3,7 +3,19 @@ import { format } from 'date-fns';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
-import type { KeyAssignment } from "../KeyAssignmentSection";
+
+export interface KeyAssignment {
+  id: string;
+  assigned_at: string;
+  returned_at?: string;
+  keys?: {
+    name: string;
+    is_passkey: boolean;
+    key_door_locations?: Array<{
+      door_location: string;
+    }>;
+  };
+}
 
 interface KeyAssignmentItemProps {
   assignment: KeyAssignment;
@@ -28,12 +40,12 @@ export function KeyAssignmentItem({
         <div className="text-sm text-muted-foreground">
           Assigned: {format(new Date(assignment.assigned_at), "MMM d, yyyy")}
         </div>
-        {assignment.keys?.key_door_locations_table && assignment.keys.key_door_locations_table.length > 0 && (
+        {assignment.keys?.key_door_locations && assignment.keys.key_door_locations.length > 0 && (
           <div className="text-sm text-muted-foreground">
             <span className="block sm:inline">Access to: </span>
             <span className="truncate">
-              {assignment.keys.key_door_locations_table
-                .map(l => l.doors?.name || 'Unknown Door')
+              {assignment.keys.key_door_locations
+                .map(l => l.door_location || 'Unknown Location')
                 .join(", ")}
             </span>
           </div>

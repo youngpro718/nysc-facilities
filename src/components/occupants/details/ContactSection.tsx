@@ -1,33 +1,46 @@
 
-import { Mail, Phone } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Mail, Phone, User } from "lucide-react";
+import { OccupantQueryResponse } from "../types/occupantTypes";
 
 interface ContactSectionProps {
-  email: string | null;
-  phone: string | null;
+  occupantData: OccupantQueryResponse;
 }
 
-export function ContactSection({ email, phone }: ContactSectionProps) {
+export function ContactSection({ occupantData }: ContactSectionProps) {
+  const emergencyContact = typeof occupantData.emergency_contact === 'string' 
+    ? JSON.parse(occupantData.emergency_contact || '{}')
+    : occupantData.emergency_contact || {};
+
   return (
-    <div className="space-y-4">
-      <h3 className="font-medium">Contact Information</h3>
-      <div className="space-y-2">
-        {email && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Mail className="h-4 w-4 flex-shrink-0" />
-            <a href={`mailto:${email}`} className="hover:text-primary truncate">
-              {email}
-            </a>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <User className="h-4 w-4" />
+          Contact Information
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Mail className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm">{occupantData.email}</span>
+        </div>
+        {occupantData.phone && (
+          <div className="flex items-center gap-2">
+            <Phone className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm">{occupantData.phone}</span>
           </div>
         )}
-        {phone && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Phone className="h-4 w-4 flex-shrink-0" />
-            <a href={`tel:${phone}`} className="hover:text-primary">
-              {phone}
-            </a>
+        {emergencyContact.name && (
+          <div className="pt-2 border-t">
+            <p className="text-sm font-medium">Emergency Contact</p>
+            <p className="text-sm text-muted-foreground">{emergencyContact.name}</p>
+            {emergencyContact.phone && (
+              <p className="text-sm text-muted-foreground">{emergencyContact.phone}</p>
+            )}
           </div>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

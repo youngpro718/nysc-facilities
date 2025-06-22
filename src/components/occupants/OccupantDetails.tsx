@@ -14,8 +14,13 @@ import { KeyAssignmentSection } from "./details/KeyAssignmentSection";
 import { EditOccupantDialog } from "./dialogs/EditOccupantDialog";
 import { ArrowLeft, Mail, Phone, User } from "lucide-react";
 import { format } from "date-fns";
+import { OccupantQueryResponse } from "./types/occupantTypes";
 
-export default function OccupantDetails() {
+interface OccupantDetailsProps {
+  occupantData?: OccupantQueryResponse;
+}
+
+function OccupantDetailsComponent({ occupantData }: OccupantDetailsProps) {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -50,32 +55,45 @@ export default function OccupantDetails() {
       if (error) throw error;
       return data;
     },
-    enabled: !!id,
+    enabled: !!id && !occupantData,
   });
 
-  if (isLoading) {
+  // Use provided data or fetched data
+  const currentOccupant = occupantData || occupant;
+
+  if (isLoading && !occupantData) {
     return <div>Loading...</div>;
   }
 
-  if (!occupant) {
+  if (!currentOccupant) {
     return <div>Occupant not found</div>;
   }
+
+  // Transform the data to match expected interface
+  const transformedOccupant = {
+    ...currentOccupant,
+    emergency_contact: typeof currentOccupant.emergency_contact === 'string' 
+      ? JSON.parse(currentOccupant.emergency_contact || '{}')
+      : currentOccupant.emergency_contact || {}
+  };
 
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+          {!occupantData && (
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          )}
           <div>
             <h1 className="text-2xl font-bold">
-              {occupant.first_name} {occupant.last_name}
+              {transformedOccupant.first_name} {transformedOccupant.last_name}
             </h1>
-            <p className="text-muted-foreground">{occupant.title}</p>
+            <p className="text-muted-foreground">{transformedOccupant.title}</p>
           </div>
         </div>
-        <EditOccupantDialog occupant={occupant} />
+        <EditOccupantDialog occupant={transformedOccupant} />
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -87,14 +105,14 @@ export default function OccupantDetails() {
 
         <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <ContactSection occupant={occupant} />
-            <EmploymentSection occupant={occupant} />
-            <LocationSection occupant={occupant} />
+            <ContactSection occupantData={transformedOccupant} />
+            <EmploymentSection occupantData={transformedOccupant} />
+            <LocationSection occupantData={transformedOccupant} />
           </div>
         </TabsContent>
 
         <TabsContent value="keys">
-          <KeyAssignmentSection occupantId={occupant.id} />
+          <KeyAssignmentSection occupantData={transformedOccupant} />
         </TabsContent>
 
         <TabsContent value="history">
@@ -111,3 +129,5 @@ export default function OccupantDetails() {
     </div>
   );
 }
+
+export default OccupantDetailsComponent;
