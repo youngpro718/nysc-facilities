@@ -33,6 +33,16 @@ export enum StorageTypeEnum {
   ARCHIVE = 'archive'
 }
 
+export const statusToString = (status: StatusEnum): string => {
+  const statusMap: Record<StatusEnum, string> = {
+    [StatusEnum.ACTIVE]: 'Active',
+    [StatusEnum.INACTIVE]: 'Inactive',
+    [StatusEnum.MAINTENANCE]: 'Maintenance',
+    [StatusEnum.UNDER_CONSTRUCTION]: 'Under Construction'
+  };
+  return statusMap[status] || status;
+};
+
 export const roomTypeToString = (type: RoomTypeEnum): string => {
   const typeMap: Record<RoomTypeEnum, string> = {
     [RoomTypeEnum.COURTROOM]: 'Courtroom',
@@ -56,7 +66,7 @@ export const roomTypeToString = (type: RoomTypeEnum): string => {
 };
 
 export const stringToRoomType = (typeString: string): RoomTypeEnum => {
-  const normalizedType = typeString.toLowerCase().replace(/[^a-z0-9]/g, '_') as keyof typeof RoomTypeEnum;
+  const normalizedType = typeString.toLowerCase().replace(/[^a-z0-9]/g, '_');
   
   const typeMap: Record<string, RoomTypeEnum> = {
     'courtroom': RoomTypeEnum.COURTROOM,

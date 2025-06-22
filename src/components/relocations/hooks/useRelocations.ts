@@ -1,12 +1,22 @@
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { createRelocation, updateRelocation } from "../services/mutations/relocationMutations";
 import { activateRelocation, completeRelocation, cancelRelocation } from "../services/mutations/statusMutations";
-import { CreateRelocationFormData, UpdateRelocationFormData, RelocationStatus } from "../types/relocationTypes";
+import { fetchRelocations } from "../services/queries/relocationQueries";
+import { CreateRelocationFormData, UpdateRelocationFormData, RelocationStatus, RoomRelocation } from "../types/relocationTypes";
 import { toast } from "sonner";
 
-export function useRelocations() {
+interface UseRelocationsParams {
+  status?: RelocationStatus;
+}
+
+export function useRelocations(params?: UseRelocationsParams) {
   const queryClient = useQueryClient();
+
+  const relocationsQuery = useQuery({
+    queryKey: ['relocations', params?.status],
+    queryFn: () => fetchRelocations(params?.status),
+  });
 
   const createMutation = useMutation({
     mutationFn: createRelocation,
@@ -73,6 +83,9 @@ export function useRelocations() {
   });
 
   return {
+    relocations: relocationsQuery.data || [],
+    isLoading: relocationsQuery.isLoading,
+    isError: relocationsQuery.isError,
     createRelocation: createMutation.mutateAsync,
     updateRelocation: updateMutation.mutateAsync,
     activateRelocation: activateMutation.mutateAsync,

@@ -15,7 +15,7 @@ export async function createRelocation(formData: CreateRelocationFormData) {
     end_date: formData.end_date,
     reason: formData.reason,
     notes: formData.notes,
-    relocation_type: formData.relocation_type,
+    relocation_type: formData.relocation_type === 'planned' ? 'other' : formData.relocation_type,
     status: 'scheduled' as const,
     created_by: userData.user.id,
     special_instructions: formData.special_instructions,
