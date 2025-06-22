@@ -1,3 +1,4 @@
+
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -7,6 +8,7 @@ import { MobileMenu } from "./components/MobileMenu";
 import { DesktopNavigation } from "./components/DesktopNavigation";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { UserRound, Loader2 } from "lucide-react";
 
 const Layout = () => {
@@ -51,6 +53,9 @@ const Layout = () => {
               </div>
 
               <div className="flex items-center gap-4">
+                {/* Theme Toggle */}
+                <ThemeToggle />
+
                 {/* Profile Section */}
                 <div className="flex items-center gap-3">
                   <div className="hidden md:flex flex-col items-end">

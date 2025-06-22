@@ -3363,6 +3363,42 @@ export type Database = {
           },
         ]
       }
+      lighting_issues: {
+        Row: {
+          bulb_type: string
+          form_factor: string | null
+          id: string
+          issue_type: string
+          location: string
+          notes: string | null
+          reported_at: string
+          resolved_at: string | null
+          status: string
+        }
+        Insert: {
+          bulb_type: string
+          form_factor?: string | null
+          id?: string
+          issue_type: string
+          location: string
+          notes?: string | null
+          reported_at?: string
+          resolved_at?: string | null
+          status?: string
+        }
+        Update: {
+          bulb_type?: string
+          form_factor?: string | null
+          id?: string
+          issue_type?: string
+          location?: string
+          notes?: string | null
+          reported_at?: string
+          resolved_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       lighting_maintenance: {
         Row: {
           assigned_technician: string | null
@@ -4105,6 +4141,20 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_occupant"
+            columns: ["occupant_id"]
+            isOneToOne: false
+            referencedRelation: "occupant_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_occupant"
+            columns: ["occupant_id"]
+            isOneToOne: false
+            referencedRelation: "occupants"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_occupant_room_assignments_occupant"
             columns: ["occupant_id"]
             isOneToOne: false
@@ -4116,6 +4166,41 @@ export type Database = {
             columns: ["occupant_id"]
             isOneToOne: false
             referencedRelation: "occupants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_room"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_health_overview"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "fk_room"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_issue_analytics"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "fk_room"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_occupancy_stats"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "fk_room"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_selection_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_room"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
             referencedColumns: ["id"]
           },
           {
@@ -7563,13 +7648,11 @@ export type Database = {
           first_name: string | null
           hire_date: string | null
           id: string | null
-          key_count: number | null
           last_name: string | null
           notes: string | null
           phone: string | null
-          room_count: number | null
-          room_details: Json | null
           room_id: string | null
+          rooms: Json | null
           start_date: string | null
           status: Database["public"]["Enums"]["occupant_status_enum"] | null
           supervisor_id: string | null
@@ -7645,6 +7728,20 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_occupant"
+            columns: ["occupant_id"]
+            isOneToOne: false
+            referencedRelation: "occupant_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_occupant"
+            columns: ["occupant_id"]
+            isOneToOne: false
+            referencedRelation: "occupants"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_occupant_room_assignments_occupant"
             columns: ["occupant_id"]
             isOneToOne: false
@@ -7656,6 +7753,41 @@ export type Database = {
             columns: ["occupant_id"]
             isOneToOne: false
             referencedRelation: "occupants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_room"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_health_overview"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "fk_room"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_issue_analytics"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "fk_room"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_occupancy_stats"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "fk_room"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_selection_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_room"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
             referencedColumns: ["id"]
           },
           {
