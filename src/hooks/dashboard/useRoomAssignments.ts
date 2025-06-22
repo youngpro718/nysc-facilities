@@ -19,17 +19,17 @@ export const useRoomAssignments = (userId?: string) => {
           is_primary,
           assignment_type,
           room_id,
-          rooms (
+          rooms!room_id (
             id,
             name,
             room_number,
             status,
             floor_id,
-            floors (
+            floors!floor_id (
               id,
               name,
               building_id,
-              buildings (
+              buildings!building_id (
                 id,
                 name
               )
@@ -45,20 +45,26 @@ export const useRoomAssignments = (userId?: string) => {
       
       console.log('Raw room assignment data:', data);
       
-      const formattedAssignments = data?.map(assignment => ({
-        id: assignment.id,
-        room_id: assignment.room_id,
-        room_name: assignment.rooms?.name || 'Unknown Room',
-        room_number: assignment.rooms?.room_number || 'N/A',
-        floor_id: assignment.rooms?.floor_id,
-        building_id: assignment.rooms?.floors?.building_id,
-        building_name: assignment.rooms?.floors?.buildings?.name || 'Unknown Building',
-        floor_name: assignment.rooms?.floors?.name || 'Unknown Floor',
-        assigned_at: assignment.assigned_at,
-        is_primary: assignment.is_primary,
-        assignment_type: assignment.assignment_type,
-        room_status: assignment.rooms?.status
-      })) || [];
+      const formattedAssignments = data?.map(assignment => {
+        const room = assignment.rooms as any;
+        const floor = room?.floors;
+        const building = floor?.buildings;
+        
+        return {
+          id: assignment.id,
+          room_id: assignment.room_id,
+          room_name: room?.name || 'Unknown Room',
+          room_number: room?.room_number || 'N/A',
+          floor_id: room?.floor_id,
+          building_id: floor?.building_id,
+          building_name: building?.name || 'Unknown Building',
+          floor_name: floor?.name || 'Unknown Floor',
+          assigned_at: assignment.assigned_at,
+          is_primary: assignment.is_primary,
+          assignment_type: assignment.assignment_type,
+          room_status: room?.status
+        };
+      }) || [];
       
       console.log('Formatted room assignments:', formattedAssignments);
       

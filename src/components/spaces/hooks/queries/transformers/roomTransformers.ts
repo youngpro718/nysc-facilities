@@ -1,5 +1,4 @@
-
-import { Room, RoomTypeEnum, StorageTypeEnum, CourtroomPhotos } from "../../types/RoomTypes";
+import { Room, RoomTypeEnum, StorageTypeEnum, CourtroomPhotos } from "../../../types/RoomTypes";
 
 export const transformRoomData = (
   roomsData: any[],

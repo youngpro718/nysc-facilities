@@ -1,6 +1,5 @@
-
 import { useQuery } from "@tanstack/react-query";
-import { Room } from "../types/RoomTypes";
+import { Room } from "../../types/RoomTypes";
 import { useToast } from "@/hooks/use-toast";
 import { fetchRoomsData, fetchRelatedRoomData } from "./api/roomQueries";
 import { transformRoomData } from "./transformers/roomTransformers";

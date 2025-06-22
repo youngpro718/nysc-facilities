@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,27 +6,27 @@ import { Badge } from "@/components/ui/badge";
 import { Camera, Eye, Users, Trash2 } from "lucide-react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { CourtroomPhotos, Room } from "../../types/RoomTypes";
+import { type CourtroomPhotos as CourtroomPhotosType, Room } from "../../types/RoomTypes";
 import { CourtroomPhotoThumbnail } from "./CourtroomPhotoThumbnail";
 
 interface CourtroomPhotosProps {
   room: Room;
-  onUpdate: (photos: CourtroomPhotos) => void;
+  onUpdate: (photos: CourtroomPhotosType) => void;
 }
 
 export function CourtroomPhotos({ room, onUpdate }: CourtroomPhotosProps) {
-  const [photos, setPhotos] = React.useState<CourtroomPhotos>({
+  const [photos, setPhotos] = React.useState<CourtroomPhotosType>({
     judge_view: room.courtroom_photos?.judge_view || null,
     audience_view: room.courtroom_photos?.audience_view || null,
   });
 
-  const handlePhotoChange = (type: keyof CourtroomPhotos, newPhoto: string | null) => {
+  const handlePhotoChange = (type: keyof CourtroomPhotosType, newPhoto: string | null) => {
     const updatedPhotos = { ...photos, [type]: newPhoto };
     setPhotos(updatedPhotos);
     onUpdate(updatedPhotos);
   };
 
-  const handleRemovePhoto = (type: keyof CourtroomPhotos) => {
+  const handleRemovePhoto = (type: keyof CourtroomPhotosType) => {
     handlePhotoChange(type, null);
   };
 
@@ -43,9 +44,8 @@ export function CourtroomPhotos({ room, onUpdate }: CourtroomPhotosProps) {
             </div>
             {photos.judge_view ? (
               <CourtroomPhotoThumbnail
-                photoUrl={photos.judge_view}
-                onRemove={() => handleRemovePhoto('judge_view')}
-                photoType="judge_view"
+                photos={photos}
+                type="judge_view"
               />
             ) : (
               <div className="border rounded-md p-4 bg-muted/50 flex items-center justify-center h-32">
@@ -61,9 +61,8 @@ export function CourtroomPhotos({ room, onUpdate }: CourtroomPhotosProps) {
             </div>
             {photos.audience_view ? (
               <CourtroomPhotoThumbnail
-                photoUrl={photos.audience_view}
-                onRemove={() => handleRemovePhoto('audience_view')}
-                photoType="audience_view"
+                photos={photos}
+                type="audience_view"
               />
             ) : (
               <div className="border rounded-md p-4 bg-muted/50 flex items-center justify-center h-32">
