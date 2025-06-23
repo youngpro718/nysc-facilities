@@ -8387,7 +8387,7 @@ export type Database = {
       return_reason_enum: "normal_return" | "lost" | "damaged" | "other"
       room_type_enum:
         | "courtroom"
-        | "judges_chambers"
+        | "chamber"
         | "jury_room"
         | "conference_room"
         | "office"
@@ -8677,7 +8677,7 @@ export const Constants = {
       return_reason_enum: ["normal_return", "lost", "damaged", "other"],
       room_type_enum: [
         "courtroom",
-        "judges_chambers",
+        "chamber",
         "jury_room",
         "conference_room",
         "office",

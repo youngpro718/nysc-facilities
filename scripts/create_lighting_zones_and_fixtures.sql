@@ -54,7 +54,7 @@ WITH room_fixture_counts AS (
         CASE 
             WHEN r.room_type = 'courtroom' THEN 8      -- Courtrooms get more fixtures
             WHEN r.room_type = 'office' THEN 4         -- Offices get a standard number
-            WHEN r.room_type = 'judges_chambers' THEN 6 -- Judges chambers get more fixtures
+            WHEN r.room_type = 'chamber' THEN 6 -- Chambers get more fixtures
             WHEN r.room_type = 'utility_room' THEN 3   -- Utility rooms get fewer fixtures
             ELSE 2                                     -- Other rooms get minimal fixtures
         END AS fixture_count,

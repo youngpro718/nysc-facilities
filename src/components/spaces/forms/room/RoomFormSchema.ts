@@ -25,6 +25,7 @@ export const RoomConnectionSchema = z.object({
 const roomTypeValues = [
   RoomTypeEnum.OFFICE,
   RoomTypeEnum.COURTROOM,
+  RoomTypeEnum.CHAMBER,
   RoomTypeEnum.MALE_LOCKER_ROOM,
   RoomTypeEnum.FEMALE_LOCKER_ROOM,
   RoomTypeEnum.STORAGE

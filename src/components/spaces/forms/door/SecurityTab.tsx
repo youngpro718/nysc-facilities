@@ -43,7 +43,7 @@ export function SecurityTab({ form }: SecurityTabProps) {
                 </SelectContent>
               </Select>
               <FormDescription>
-                High Security for judges' chambers and robing rooms. Restricted for private areas.
+                High Security for chambers and robing rooms. Restricted for private areas.
               </FormDescription>
               <FormMessage />
             </FormItem>

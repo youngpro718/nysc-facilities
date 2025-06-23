@@ -91,7 +91,7 @@ export function PropertiesPanel({
       'restroom': 'Restroom',
       'utility': 'Utility',
       'courtroom': 'Courtroom',
-      'judges_chambers': 'Judge\'s Chambers',
+      'chamber': 'Chamber',
       'jury_room': 'Jury Room',
       'conference_room': 'Conference Room',
       'filing_room': 'Filing Room'

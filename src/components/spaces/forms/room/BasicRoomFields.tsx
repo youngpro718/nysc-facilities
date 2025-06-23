@@ -65,6 +65,7 @@ export function BasicRoomFields({ form }: BasicRoomFieldsProps) {
                   <SelectContent>
                     {[
                       { value: RoomTypeEnum.COURTROOM, label: "Courtroom" },
+                      { value: RoomTypeEnum.CHAMBER, label: "Chamber" },
                       { value: RoomTypeEnum.MALE_LOCKER_ROOM, label: "Male Locker Room" },
                       { value: RoomTypeEnum.FEMALE_LOCKER_ROOM, label: "Female Locker Room" },
                       { value: RoomTypeEnum.OFFICE, label: "Office" },
