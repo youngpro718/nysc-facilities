@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Mail, Phone, Briefcase, UserCircle, Building2, Key, DoorOpen, Calendar, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,9 +10,10 @@ import { OccupantQueryResponse } from "./types/occupantTypes";
 
 interface OccupantDetailsProps {
   occupant: OccupantQueryResponse;
+  onClose?: () => void;
 }
 
-export function OccupantDetails({ occupant }: OccupantDetailsProps) {
+export function OccupantDetails({ occupant, onClose }: OccupantDetailsProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { keyAssignments, isLoading } = useKeyAssignments(occupant.id);
@@ -39,6 +39,27 @@ export function OccupantDetails({ occupant }: OccupantDetailsProps) {
       default: return type;
     }
   };
+
+  const keyAssignments = useMemo(() => {
+    if (!occupant.key_assignments) return [];
+    
+    return occupant.key_assignments.map(assignment => ({
+      id: assignment.id,
+      key: {
+        id: assignment.key.id,
+        name: assignment.key.name,
+        type: assignment.key.type,
+        is_passkey: assignment.key.is_passkey,
+        key_door_locations: assignment.key.key_door_locations_table?.map(kdl => ({
+          door_location: kdl.doors.name
+        })) || []
+      },
+      assigned_at: assignment.assigned_at,
+      returned_at: assignment.returned_at,
+      is_spare: assignment.is_spare,
+      return_reason: assignment.return_reason
+    }));
+  }, [occupant.key_assignments]);
 
   return (
     <Card className="bg-background/50 p-4 space-y-6">

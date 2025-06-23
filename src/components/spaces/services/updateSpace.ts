@@ -1,54 +1,66 @@
+
 import { supabase } from "@/integrations/supabase/client";
-import { EditSpaceFormData } from "../schemas/editSpaceSchema";
-import { RoomTypeEnum, roomTypeToString, statusToString, StorageTypeEnum, storageTypeToString } from "../rooms/types/roomEnums";
+import { StatusEnum } from "../rooms/types/roomEnums";
 
-/**
- * Updates a room in the database, including parent_room_id and all editable fields.
- * @param id Room ID (UUID)
- * @param data Partial room data to update
- * @returns Updated room object or throws error
- */
-export async function updateSpace(id: string, data: Partial<EditSpaceFormData>) {
-  if (!id) throw new Error("Room ID is required for update");
+interface UpdateSpaceData {
+  type?: "room" | "hallway" | "door";
+  name?: string;
+  buildingId?: string;
+  floorId?: string;
+  status?: StatusEnum;
+  description?: string;
+  position?: { x?: number; y?: number; };
+  size?: { width?: number; height?: number; };
+  room_number?: string;
+  room_type?: string;
+  is_storage?: boolean;
+  storage_type?: string;
+  storage_capacity?: number;
+  phone_number?: string;
+  current_function?: string;
+  parent_room_id?: string;
+  courtroom_photos?: {
+    judge_view?: string | null;
+    audience_view?: string | null;
+  };
+}
 
-  // Map frontend fields to DB columns as needed
-  const updateData: Record<string, any> = {
-    name: data.name,
-    room_number: data.roomNumber,
-    room_type: data.roomType ? roomTypeToString(data.roomType as RoomTypeEnum) : undefined,
-    status: data.status ? statusToString(data.status) : undefined,
-    floor_id: data.floorId,
-    description: data.description ?? null,
-    phone_number: data.phoneNumber ?? null,
-    current_function: data.currentFunction ?? null,
-    is_storage: data.isStorage ?? false,
-    storage_type: data.isStorage && data.storageType ? storageTypeToString(data.storageType as StorageTypeEnum) : null,
-    storage_capacity: data.storageCapacity ?? null,
-    storage_notes: data.storageNotes ?? null,
-    parent_room_id: data.parentRoomId ?? null,
-    position: data.position ?? { x: 0, y: 0 },
-    size: data.size ?? { width: 150, height: 100 },
-    rotation: data.rotation ?? 0,
-    courtroom_photos: data.roomType === RoomTypeEnum.COURTROOM ? (data.courtRoomPhotos || { judge_view: null, audience_view: null }) : null
+export const updateSpace = async (id: string, updates: Partial<UpdateSpaceData>) => {
+  const roomUpdates: any = {
+    name: updates.name,
+    status: updates.status,
+    description: updates.description,
   };
 
-  // Remove undefined values (don't update those fields)
-  Object.keys(updateData).forEach(key => {
-    if (updateData[key] === undefined) {
-      delete updateData[key];
+  // Add room-specific fields if they exist in updates
+  if ('room_number' in updates) roomUpdates.room_number = updates.room_number;
+  if ('room_type' in updates) roomUpdates.room_type = updates.room_type;
+  if ('floor_id' in updates) roomUpdates.floor_id = updates.floorId;
+  if ('phone_number' in updates) roomUpdates.phone_number = updates.phone_number;
+  if ('current_function' in updates) roomUpdates.current_function = updates.current_function;
+  if ('is_storage' in updates) roomUpdates.is_storage = updates.is_storage;
+  if ('storage_type' in updates) roomUpdates.storage_type = updates.storage_type;
+  if ('storage_capacity' in updates) roomUpdates.storage_capacity = updates.storage_capacity;
+  if ('parent_room_id' in updates) roomUpdates.parent_room_id = updates.parent_room_id;
+  if ('courtroom_photos' in updates) roomUpdates.courtroom_photos = updates.courtroom_photos;
+
+  // Remove undefined values
+  Object.keys(roomUpdates).forEach(key => {
+    if (roomUpdates[key] === undefined) {
+      delete roomUpdates[key];
     }
   });
 
-  // Perform the update
-  const { data: room, error } = await supabase
-    .from("rooms")
-    .update(updateData)
-    .eq("id", id)
-    .select()
-    .single();
+  const { data, error } = await supabase
+    .from('rooms')
+    .update(roomUpdates)
+    .eq('id', id)
+    .select();
 
   if (error) {
+    console.error('Error updating space:', error);
     throw error;
   }
-  return room;
-}
+
+  return data;
+};

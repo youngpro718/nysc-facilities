@@ -1,3 +1,4 @@
+
 import { useMemo } from 'react';
 import type { Room } from '../rooms/types/RoomTypes';
 import { roomTypeToString } from '../rooms/types/roomEnums';
@@ -46,8 +47,11 @@ export function useRoomFilters({
         room.floor?.building?.id === selectedBuilding;
       const matchesFloor = selectedFloor === 'all' || 
         room.floor_id === selectedFloor;
-      // Fix: compare string value of room_type for filtering (robust for both enum and string)
-      const matchesRoomType = !roomTypeFilter || room.room_type === roomTypeFilter || roomTypeToString(room.room_type as any) === roomTypeFilter;
+      
+      // Enhanced room type filtering - match exact room_type values
+      const matchesRoomType = !roomTypeFilter || roomTypeFilter === "" || 
+        room.room_type === roomTypeFilter || 
+        roomTypeToString(room.room_type as any) === roomTypeFilter;
 
       return matchesSearch && matchesStatus && matchesBuilding && matchesFloor && matchesRoomType;
     });
@@ -63,14 +67,14 @@ export function useRoomFilters({
         case 'created_asc':
           return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
         case 'room_number_asc':
-          return a.room_number.localeCompare(b.room_number);
+          return (a.room_number || '').localeCompare(b.room_number || '');
         case 'room_number_desc':
-          return b.room_number.localeCompare(a.room_number);
+          return (b.room_number || '').localeCompare(a.room_number || '');
         default:
           return 0;
       }
     });
-  }, [rooms, searchQuery, sortBy, statusFilter, selectedBuilding, selectedFloor]);
+  }, [rooms, searchQuery, sortBy, statusFilter, selectedBuilding, selectedFloor, roomTypeFilter]);
 
   const buildings = useMemo(() => {
     if (!rooms) return [];

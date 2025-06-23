@@ -1,52 +1,84 @@
 
-import { format } from 'date-fns';
+import React from 'react';
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { useIsMobile } from "@/hooks/use-mobile";
-import type { KeyAssignment } from "../KeyAssignmentSection";
+import { KeyRound, MapPin } from "lucide-react";
+
+interface KeyAssignment {
+  id: string;
+  key: {
+    name: string;
+    is_passkey: boolean;
+    key_door_locations?: Array<{
+      door_location: string;
+    }>;
+  };
+  assigned_at: string;
+  returned_at?: string;
+  is_spare: boolean;
+  return_reason?: string;
+}
 
 interface KeyAssignmentItemProps {
   assignment: KeyAssignment;
-  onReturnKey: (assignmentId: string) => void;
 }
 
-export function KeyAssignmentItem({ 
-  assignment,
-  onReturnKey 
-}: KeyAssignmentItemProps) {
-  const isMobile = useIsMobile();
+export function KeyAssignmentItem({ assignment }: KeyAssignmentItemProps) {
+  const { key, assigned_at, returned_at, is_spare, return_reason } = assignment;
   
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  const doorLocations = key.key_door_locations || [];
+  const hasLocations = doorLocations.length > 0;
+
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-background rounded-lg border gap-3">
-      <div className="space-y-1">
-        <div className="font-medium flex items-center gap-2 flex-wrap">
-          <span className="truncate">{assignment.keys?.name}</span>
-          {assignment.keys?.is_passkey && (
-            <Badge variant="secondary">Passkey</Badge>
-          )}
-        </div>
-        <div className="text-sm text-muted-foreground">
-          Assigned: {format(new Date(assignment.assigned_at), "MMM d, yyyy")}
-        </div>
-        {assignment.keys?.key_door_locations_table && assignment.keys.key_door_locations_table.length > 0 && (
-          <div className="text-sm text-muted-foreground">
-            <span className="block sm:inline">Access to: </span>
-            <span className="truncate">
-              {assignment.keys.key_door_locations_table
-                .map(l => l.doors?.name || l.door_id)
-                .join(", ")}
-            </span>
+    <div className="flex items-start justify-between p-3 border rounded-lg">
+      <div className="flex items-start gap-3">
+        <KeyRound className="h-4 w-4 mt-1 text-muted-foreground" />
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="font-medium">{key.name}</span>
+            {key.is_passkey && (
+              <Badge variant="secondary" className="text-xs">
+                Passkey
+              </Badge>
+            )}
+            {is_spare && (
+              <Badge variant="outline" className="text-xs">
+                Spare
+              </Badge>
+            )}
           </div>
+          
+          {hasLocations && (
+            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+              <MapPin className="h-3 w-3" />
+              <span>
+                {doorLocations.map(loc => loc.door_location).join(', ')}
+              </span>
+            </div>
+          )}
+          
+          <div className="text-xs text-muted-foreground">
+            Assigned: {formatDate(assigned_at)}
+            {returned_at && (
+              <span className="ml-2">
+                • Returned: {formatDate(returned_at)}
+                {return_reason && ` (${return_reason})`}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+      
+      <div>
+        {returned_at ? (
+          <Badge variant="outline">Returned</Badge>
+        ) : (
+          <Badge variant="default">Active</Badge>
         )}
       </div>
-      <Button
-        variant="outline"
-        size="sm"
-        className={isMobile ? "w-full" : ""}
-        onClick={() => onReturnKey(assignment.id)}
-      >
-        Return Key
-      </Button>
     </div>
   );
 }
