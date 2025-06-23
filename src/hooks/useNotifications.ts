@@ -35,11 +35,11 @@ export function useNotifications() {
         .from("occupant_room_assignments")
         .select(`
           id,
-          rooms (
+          rooms!occupant_room_assignments_room_id_fkey (
             id,
             name,
             room_number,
-            floors (
+            floors!rooms_floor_id_fkey (
               name
             )
           )
