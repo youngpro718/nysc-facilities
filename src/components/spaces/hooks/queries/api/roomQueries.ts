@@ -115,7 +115,7 @@ export const fetchRelatedRoomData = async (roomIds: string[]) => {
         connection_type,
         direction,
         status,
-        to_space:rooms!space_connections_to_space_id_rooms_fkey (
+        to_space:new_spaces!fk_space_connections_to_new_spaces (
           id,
           name,
           room_type

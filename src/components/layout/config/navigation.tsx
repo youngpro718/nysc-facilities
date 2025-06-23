@@ -56,18 +56,8 @@ export const navigationItems: NavigationItem[] = [
     icon: Lightbulb,
     adminOnly: true,
   },
-  {
-    title: 'Relocations',
-    href: '/relocations',
-    icon: Repeat,
-    adminOnly: true,
-  },
-  {
-    title: 'Court Terms',
-    href: '/terms',
-    icon: Calendar,
-    adminOnly: true,
-  },
+
+
 ];
 
 export const userNavigationItems: NavigationItem[] = [
@@ -93,8 +83,8 @@ export const adminNavigation: NavigationTab[] = [
   { title: 'Occupants', icon: User },
   { title: 'Keys', icon: KeyRound },
   { title: 'Lighting', icon: Lightbulb },
-  { title: 'Relocations', icon: Repeat },
-  { title: 'Court Terms', icon: Calendar },
+
+
   { type: "separator" },
   { title: 'Profile', icon: User },
 ];
@@ -115,7 +105,7 @@ export const getNavigationRoutes = (isAdmin: boolean): string[] => {
       '/occupants',
       '/keys',
       '/lighting',
-      '/relocations',
+
       '/terms',
       '', // Separator doesn't have a route
       '/admin-profile',

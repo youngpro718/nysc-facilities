@@ -32,10 +32,7 @@ const SpacesTabs = ({ selectedBuilding, selectedFloor }: SpaceViewProps) => {
             <DoorClosed size={16} />
             Doors
           </TabsTrigger>
-          <TabsTrigger value="lighting" className="flex items-center gap-2">
-            <Lightbulb size={16} />
-            Lighting
-          </TabsTrigger>
+
           <TabsTrigger value="floorplan" className="flex items-center gap-2">
             <LayoutPanelLeft size={16} />
             Floor Plan
@@ -54,9 +51,7 @@ const SpacesTabs = ({ selectedBuilding, selectedFloor }: SpaceViewProps) => {
           <DoorsList selectedBuilding={selectedBuilding} selectedFloor={selectedFloor} />
         </TabsContent>
 
-        <TabsContent value="lighting" className="mt-4">
-          <SpacesLightingView selectedBuilding={selectedBuilding} selectedFloor={selectedFloor} />
-        </TabsContent>
+
 
         <TabsContent value="floorplan" className="mt-4 h-[calc(100vh-16rem)]">
           <Suspense fallback={<div className="flex items-center justify-center h-full">Loading floor plan...</div>}>

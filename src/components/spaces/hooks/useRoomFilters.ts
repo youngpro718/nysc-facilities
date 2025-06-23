@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { Room } from '../rooms/types/RoomTypes';
+import { roomTypeToString } from '../rooms/types/roomEnums';
 
 interface UseRoomFiltersProps {
   rooms: Room[] | undefined;
@@ -8,6 +9,7 @@ interface UseRoomFiltersProps {
   statusFilter: string;
   selectedBuilding: string;
   selectedFloor: string;
+  roomTypeFilter?: string;
 }
 
 interface RoomFiltersResult {
@@ -23,6 +25,7 @@ export function useRoomFilters({
   statusFilter,
   selectedBuilding,
   selectedFloor,
+  roomTypeFilter = "",
 }: UseRoomFiltersProps): RoomFiltersResult {
   const filteredAndSortedRooms = useMemo(() => {
     if (!rooms) return [];
@@ -37,16 +40,16 @@ export function useRoomFilters({
         room.description?.toLowerCase() || ''
       ].join(' ');
 
-      const matchesSearch = searchFields.includes(searchQuery.toLowerCase());
+      const matchesSearch = searchQuery ? searchFields.includes(searchQuery.toLowerCase()) : true;
       const matchesStatus = statusFilter === 'all' || room.status === statusFilter;
-      
       const matchesBuilding = selectedBuilding === 'all' || 
         room.floor?.building?.id === selectedBuilding;
-      
       const matchesFloor = selectedFloor === 'all' || 
         room.floor_id === selectedFloor;
+      // Fix: compare string value of room_type for filtering (robust for both enum and string)
+      const matchesRoomType = !roomTypeFilter || room.room_type === roomTypeFilter || roomTypeToString(room.room_type as any) === roomTypeFilter;
 
-      return matchesSearch && matchesStatus && matchesBuilding && matchesFloor;
+      return matchesSearch && matchesStatus && matchesBuilding && matchesFloor && matchesRoomType;
     });
 
     return filtered.sort((a, b) => {

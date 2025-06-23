@@ -16,6 +16,7 @@ interface RoomsListProps {
 }
 
 const RoomsList = ({ selectedBuilding, selectedFloor }: RoomsListProps) => {
+  const [roomTypeFilter, setRoomTypeFilter] = useState<string>("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
@@ -35,6 +36,7 @@ const RoomsList = ({ selectedBuilding, selectedFloor }: RoomsListProps) => {
     statusFilter,
     selectedBuilding: 'all',
     selectedFloor: 'all',
+    roomTypeFilter,
   });
 
   const deleteRoom = useMutation({
@@ -120,7 +122,12 @@ const RoomsList = ({ selectedBuilding, selectedFloor }: RoomsListProps) => {
         onStatusFilterChange={setStatusFilter}
         view={view}
         onViewChange={setView}
-        onRefresh={handleRefresh}
+        onRefresh={refetch}
+        roomTypeFilter={roomTypeFilter}
+        onRoomTypeFilterChange={(type) => {
+          setRoomTypeFilter(type);
+          setSearchQuery(""); // Clear search for clarity when using quick filter
+        }}
       />
 
       <RoomsContent

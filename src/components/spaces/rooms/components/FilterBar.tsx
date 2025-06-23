@@ -3,9 +3,11 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { GavelIcon } from "lucide-react";
+
 import { ViewToggle } from "../../ViewToggle";
 import { Badge } from "@/components/ui/badge";
+
+import { Briefcase, GavelIcon, Warehouse, Users, User } from "lucide-react";
 
 interface FilterBarProps {
   searchQuery: string;
@@ -17,6 +19,8 @@ interface FilterBarProps {
   view: "grid" | "list";
   onViewChange: (view: "grid" | "list") => void;
   onRefresh: () => void;
+  roomTypeFilter: string;
+  onRoomTypeFilterChange: (value: string) => void;
 }
 
 export function FilterBar({
@@ -29,13 +33,14 @@ export function FilterBar({
   view,
   onViewChange,
   onRefresh,
+  roomTypeFilter,
+  onRoomTypeFilterChange,
 }: FilterBarProps) {
-  const handleQuickFilter = (filterType: string) => {
-    if (filterType === "courtroom") {
-      onSearchChange("courtroom");
-    } else {
-      onSearchChange(filterType);
-    }
+  const handleQuickFilter = (roomType: string) => {
+    onRoomTypeFilterChange(roomType);
+  };
+  const handleClearFilter = () => {
+    onRoomTypeFilterChange("");
   };
 
   return (
@@ -97,7 +102,16 @@ export function FilterBar({
       {/* Quick Filters */}
       <div className="flex gap-2">
         <Button 
-          variant="outline" 
+          variant={roomTypeFilter === "office" ? "default" : "outline"} 
+          size="sm" 
+          className="h-8" 
+          onClick={() => handleQuickFilter("office")}
+        >
+          <Briefcase className="h-4 w-4 mr-1" />
+          Offices
+        </Button>
+        <Button 
+          variant={roomTypeFilter === "courtroom" ? "default" : "outline"} 
           size="sm" 
           className="h-8" 
           onClick={() => handleQuickFilter("courtroom")}
@@ -106,30 +120,40 @@ export function FilterBar({
           Courtrooms
         </Button>
         <Button 
-          variant="outline" 
+          variant={roomTypeFilter === "storage" ? "default" : "outline"} 
           size="sm" 
           className="h-8" 
           onClick={() => handleQuickFilter("storage")}
         >
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            width="16" 
-            height="16" 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-            strokeLinejoin="round" 
-            className="h-4 w-4 mr-1"
-          >
-            <path d="M3 6h18" />
-            <path d="M3 12h18" />
-            <path d="M3 18h18" />
-          </svg>
+          <Warehouse className="h-4 w-4 mr-1" />
           Storage
         </Button>
-        {/* Add more quick filters as needed */}
+        <Button 
+          variant={roomTypeFilter === "male_locker_room" ? "default" : "outline"} 
+          size="sm" 
+          className="h-8" 
+          onClick={() => handleQuickFilter("male_locker_room")}
+        >
+          <User className="h-4 w-4 mr-1" />
+          Male Locker
+        </Button>
+        <Button 
+          variant={roomTypeFilter === "female_locker_room" ? "default" : "outline"} 
+          size="sm" 
+          className="h-8" 
+          onClick={() => handleQuickFilter("female_locker_room")}
+        >
+          <Users className="h-4 w-4 mr-1" />
+          Female Locker
+        </Button>
+        <Button 
+          variant={roomTypeFilter === "" ? "default" : "outline"} 
+          size="sm" 
+          className="h-8" 
+          onClick={handleClearFilter}
+        >
+          Clear
+        </Button>
       </div>
     </div>
   );
