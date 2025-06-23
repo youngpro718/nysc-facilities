@@ -16,7 +16,7 @@ export function useRoomOccupants(roomId?: string) {
           is_primary,
           schedule,
           occupant_id,
-          occupants!occupant_room_assignments_occupant_id_fkey (
+          occupants!fk_occupant_room_assignments_occupant (
             id,
             first_name,
             last_name,
