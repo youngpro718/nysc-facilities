@@ -30,6 +30,8 @@ export function RoomTable({ rooms, onDelete }: RoomTableProps) {
         return 'Office';
       case 'courtroom':
         return 'Courtroom';
+      case 'chamber':
+        return 'Chamber';
       case 'storage':
         return 'Storage';
       case 'male_locker_room':

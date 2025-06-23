@@ -19,17 +19,17 @@ export const useRoomAssignments = (userId?: string) => {
           is_primary,
           assignment_type,
           room_id,
-          rooms!occupant_room_assignments_room_id_fkey (
+          rooms (
             id,
             name,
             room_number,
             status,
             floor_id,
-            floors!rooms_floor_id_fkey (
+            floors (
               id,
               name,
               building_id,
-              buildings!floors_building_id_fkey (
+              buildings (
                 id,
                 name
               )

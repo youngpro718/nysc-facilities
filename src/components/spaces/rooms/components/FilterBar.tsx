@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ViewToggle } from "../../ViewToggle";
 import { Badge } from "@/components/ui/badge";
 
-import { Briefcase, GavelIcon, Warehouse, Users, User } from "lucide-react";
+import { Briefcase, GavelIcon, Warehouse, Users, User, Building } from "lucide-react";
 
 interface FilterBarProps {
   searchQuery: string;
@@ -118,6 +118,15 @@ export function FilterBar({
         >
           <GavelIcon className="h-4 w-4 mr-1" />
           Courtrooms
+        </Button>
+        <Button 
+          variant={roomTypeFilter === "chamber" ? "default" : "outline"} 
+          size="sm" 
+          className="h-8" 
+          onClick={() => handleQuickFilter("chamber")}
+        >
+          <Building className="h-4 w-4 mr-1" />
+          Chambers
         </Button>
         <Button 
           variant={roomTypeFilter === "storage" ? "default" : "outline"} 

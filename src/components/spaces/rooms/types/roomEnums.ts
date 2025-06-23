@@ -1,3 +1,4 @@
+
 export enum StatusEnum {
   ACTIVE = "active",
   INACTIVE = "inactive",
@@ -7,6 +8,7 @@ export enum StatusEnum {
 export enum RoomTypeEnum {
   OFFICE = "office",
   COURTROOM = "courtroom",
+  CHAMBER = "chamber",
   MALE_LOCKER_ROOM = "male_locker_room",
   FEMALE_LOCKER_ROOM = "female_locker_room",
   STORAGE = "storage"
@@ -24,6 +26,7 @@ export enum StorageTypeEnum {
 export type RoomTypeString =
   | "office"
   | "courtroom"
+  | "chamber"
   | "male_locker_room"
   | "female_locker_room"
   | "storage";
@@ -54,6 +57,7 @@ export const roomTypeToString = (type: RoomTypeEnum): RoomTypeString => {
   switch (type) {
     case RoomTypeEnum.OFFICE: return "office";
     case RoomTypeEnum.COURTROOM: return "courtroom";
+    case RoomTypeEnum.CHAMBER: return "chamber";
     case RoomTypeEnum.MALE_LOCKER_ROOM: return "male_locker_room";
     case RoomTypeEnum.FEMALE_LOCKER_ROOM: return "female_locker_room";
     case RoomTypeEnum.STORAGE: return "storage";
@@ -65,6 +69,7 @@ export const stringToRoomType = (str: string): RoomTypeEnum => {
   switch (str) {
     case "office": return RoomTypeEnum.OFFICE;
     case "courtroom": return RoomTypeEnum.COURTROOM;
+    case "chamber": return RoomTypeEnum.CHAMBER;
     case "male_locker_room": return RoomTypeEnum.MALE_LOCKER_ROOM;
     case "female_locker_room": return RoomTypeEnum.FEMALE_LOCKER_ROOM;
     case "storage": return RoomTypeEnum.STORAGE;
