@@ -1,6 +1,20 @@
 
 import { KeyAssignmentItem } from "./KeyAssignmentItem";
-import type { KeyAssignment } from "../KeyAssignmentSection";
+
+export interface KeyAssignment {
+  id: string;
+  assigned_at: string;
+  returned_at?: string;
+  is_spare: boolean;
+  return_reason?: string;
+  key: {
+    id: string;
+    name: string;
+    type: string;
+    is_passkey: boolean;
+    key_door_locations?: { door_location: string }[];
+  };
+}
 
 interface KeyAssignmentListProps {
   assignments: KeyAssignment[];

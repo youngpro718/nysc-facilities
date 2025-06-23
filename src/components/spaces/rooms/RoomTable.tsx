@@ -2,7 +2,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, Users, Phone, MapPin } from "lucide-react";
+import { Edit, Trash2, Phone, MapPin } from "lucide-react";
 import { Room } from "./types/RoomTypes";
 
 interface RoomTableProps {
@@ -83,12 +83,6 @@ export function RoomTable({ rooms, onDelete }: RoomTableProps) {
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  {room.occupants && room.occupants.length > 0 && (
-                    <div className="flex items-center gap-1">
-                      <Users className="h-3 w-3" />
-                      {room.occupants.length}
-                    </div>
-                  )}
                   {room.phone_number && (
                     <div className="flex items-center gap-1">
                       <Phone className="h-3 w-3" />

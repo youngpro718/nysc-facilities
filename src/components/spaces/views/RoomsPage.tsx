@@ -9,7 +9,6 @@ import { RoomsContent } from "../rooms/components/RoomsContent";
 import { useRoomFilters } from "../hooks/useRoomFilters";
 import { useRoomsQuery } from "../hooks/queries/useRoomsQuery";
 import { deleteSpace } from "../services/deleteSpace";
-import RoomsList from "../RoomsList";
 
 // Define a type for sort options to fix the TS error
 export type SortOption = 
@@ -33,6 +32,7 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("name_asc");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [roomTypeFilter, setRoomTypeFilter] = useState("");
   const [view, setView] = useState<"grid" | "list">("grid");
 
   const { data: rooms, isLoading, error, refetch } = useRoomsQuery({
@@ -47,6 +47,7 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
     statusFilter,
     selectedBuilding,
     selectedFloor,
+    roomTypeFilter,
   });
 
   const deleteRoomMutation = useMutation({
@@ -100,6 +101,8 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
         onSortChange={handleSort}
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
+        roomTypeFilter={roomTypeFilter}
+        onRoomTypeFilterChange={setRoomTypeFilter}
         view={view}
         onViewChange={setView}
         onRefresh={handleRefresh}

@@ -1,3 +1,4 @@
+
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Mail, Phone, Briefcase, UserCircle, Building2, Key, DoorOpen, Calendar, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Separator } from "@/components/ui/separator";
 import { Card } from "@/components/ui/card";
 import { OccupantQueryResponse } from "./types/occupantTypes";
+import { useMemo } from "react";
 
 interface OccupantDetailsProps {
   occupant: OccupantQueryResponse;
@@ -16,7 +18,7 @@ interface OccupantDetailsProps {
 export function OccupantDetails({ occupant, onClose }: OccupantDetailsProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { keyAssignments, isLoading } = useKeyAssignments(occupant.id);
+  const { keyAssignments: fetchedKeyAssignments, isLoading } = useKeyAssignments(occupant.id);
 
   // Group rooms by assignment type
   const groupedRooms = occupant.rooms.reduce((acc, room) => {
@@ -26,9 +28,31 @@ export function OccupantDetails({ occupant, onClose }: OccupantDetailsProps) {
     return acc;
   }, {} as Record<string, typeof occupant.rooms>);
 
-  const totalDoorAccess = keyAssignments?.reduce((count, assignment) => {
-    if (assignment.keys?.is_passkey) return count + 5;
-    return count + (assignment.keys?.key_door_locations?.length || 1);
+  // Process key assignments to match the expected format
+  const processedKeyAssignments = useMemo(() => {
+    if (!fetchedKeyAssignments) return [];
+    
+    return fetchedKeyAssignments.map(assignment => ({
+      id: assignment.id,
+      key: {
+        id: assignment.keys?.id || '',
+        name: assignment.keys?.name || 'Unknown Key',
+        type: assignment.keys?.type || 'physical_key',
+        is_passkey: assignment.keys?.is_passkey || false,
+        key_door_locations: assignment.keys?.key_door_locations_table?.map(kdl => ({
+          door_location: kdl.doors.name
+        })) || []
+      },
+      assigned_at: assignment.assigned_at,
+      returned_at: assignment.returned_at,
+      is_spare: false, // Default value since this field might not exist
+      return_reason: null
+    }));
+  }, [fetchedKeyAssignments]);
+
+  const totalDoorAccess = processedKeyAssignments?.reduce((count, assignment) => {
+    if (assignment.key?.is_passkey) return count + 5;
+    return count + (assignment.key?.key_door_locations?.length || 1);
   }, 0) || 0;
 
   const getAssignmentTypeLabel = (type: string) => {
@@ -39,27 +63,6 @@ export function OccupantDetails({ occupant, onClose }: OccupantDetailsProps) {
       default: return type;
     }
   };
-
-  const keyAssignments = useMemo(() => {
-    if (!occupant.key_assignments) return [];
-    
-    return occupant.key_assignments.map(assignment => ({
-      id: assignment.id,
-      key: {
-        id: assignment.key.id,
-        name: assignment.key.name,
-        type: assignment.key.type,
-        is_passkey: assignment.key.is_passkey,
-        key_door_locations: assignment.key.key_door_locations_table?.map(kdl => ({
-          door_location: kdl.doors.name
-        })) || []
-      },
-      assigned_at: assignment.assigned_at,
-      returned_at: assignment.returned_at,
-      is_spare: assignment.is_spare,
-      return_reason: assignment.return_reason
-    }));
-  }, [occupant.key_assignments]);
 
   return (
     <Card className="bg-background/50 p-4 space-y-6">
@@ -185,7 +188,7 @@ export function OccupantDetails({ occupant, onClose }: OccupantDetailsProps) {
         <div className="flex flex-wrap gap-4">
           <div className="flex items-center gap-2">
             <Key className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm">{keyAssignments?.length || 0} Keys Assigned</span>
+            <span className="text-sm">{processedKeyAssignments?.length || 0} Keys Assigned</span>
           </div>
           <div className="flex items-center gap-2">
             <DoorOpen className="h-4 w-4 text-muted-foreground" />
@@ -198,15 +201,15 @@ export function OccupantDetails({ occupant, onClose }: OccupantDetailsProps) {
             <div className="h-12 bg-muted rounded"></div>
             <div className="h-12 bg-muted rounded"></div>
           </div>
-        ) : keyAssignments && keyAssignments.length > 0 ? (
+        ) : processedKeyAssignments && processedKeyAssignments.length > 0 ? (
           <div className="grid gap-2">
-            {keyAssignments.map((assignment) => (
+            {processedKeyAssignments.map((assignment) => (
               <div 
                 key={assignment.id}
                 className="flex items-center justify-between p-2 bg-muted rounded-lg text-sm"
               >
-                <span>{assignment.keys.name}</span>
-                {assignment.keys.is_passkey && (
+                <span>{assignment.key.name}</span>
+                {assignment.key.is_passkey && (
                   <Badge variant="secondary">Passkey</Badge>
                 )}
               </div>
