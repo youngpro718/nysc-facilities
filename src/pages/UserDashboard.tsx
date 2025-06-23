@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -22,11 +23,15 @@ export default function UserDashboard() {
     return null;
   }
 
+  // Get user name from user_metadata or email
+  const firstName = user.user_metadata?.first_name || user.email?.split('@')[0] || 'User';
+  const lastName = user.user_metadata?.last_name || '';
+
   return (
     <div className="space-y-8">
       <div className="space-y-0.5">
         <h2 className="text-2xl font-semibold tracking-tight">
-          Welcome, {user.first_name} {user.last_name}!
+          Welcome, {firstName} {lastName}!
         </h2>
         <p className="text-muted-foreground">
           Here's what's happening in your organization today.

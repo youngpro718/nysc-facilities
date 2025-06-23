@@ -7,7 +7,7 @@ export interface Notification {
   id: string;
   title: string;
   message: string;
-  type: "info" | "warning" | "error" | "success";
+  type: "issue_update" | "new_assignment" | "maintenance";
   created_at: string;
   read: boolean;
   action_url?: string;
@@ -35,11 +35,11 @@ export function useNotifications() {
         .from("occupant_room_assignments")
         .select(`
           id,
-          rooms (
+          rooms!occupant_room_assignments_room_id_fkey (
             id,
             name,
             room_number,
-            floors (
+            floors!rooms_floor_id_fkey (
               name
             )
           )
@@ -56,7 +56,7 @@ export function useNotifications() {
             id: `issue-${issue.id}`,
             title: "New Issue Assigned",
             message: `Issue "${issue.title}" has been assigned to you`,
-            type: issue.priority === "high" ? "warning" : "info",
+            type: issue.priority === "high" ? "issue_update" : "new_assignment",
             created_at: issue.created_at,
             read: false,
             action_url: `/issues?id=${issue.id}`,
@@ -72,7 +72,7 @@ export function useNotifications() {
               id: `room-${assignment.id}`,
               title: "Room Assignment",
               message: `You are assigned to ${assignment.rooms.name} (${assignment.rooms.room_number}) on ${assignment.rooms.floors?.name}`,
-              type: "info",
+              type: "new_assignment",
               created_at: new Date().toISOString(),
               read: false,
               action_url: `/spaces?room=${assignment.rooms.id}`,

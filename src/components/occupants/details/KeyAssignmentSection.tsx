@@ -1,6 +1,6 @@
 
 import { KeyAssignmentSummary } from "./key-assignments/KeyAssignmentSummary";
-import { KeyAssignmentList } from "./key-assignments/KeyAssignmentList";
+import { KeyAssignmentList, KeyAssignment as KeyAssignmentListType } from "./key-assignments/KeyAssignmentList";
 
 export interface KeyAssignment {
   id: string;
@@ -34,6 +34,22 @@ export function KeyAssignmentSection({
     return count + calculateDoorAccess(assignment);
   }, 0) || 0;
 
+  // Transform to match KeyAssignmentList interface
+  const transformedAssignments: KeyAssignmentListType[] = keyAssignments?.map(assignment => ({
+    id: assignment.id,
+    assigned_at: assignment.assigned_at,
+    returned_at: undefined,
+    is_spare: false,
+    return_reason: undefined,
+    key: {
+      id: assignment.id,
+      name: assignment.keys.name,
+      type: 'physical_key',
+      is_passkey: assignment.keys.is_passkey,
+      key_door_locations: assignment.keys.key_door_locations
+    }
+  })) || [];
+
   return (
     <div className="space-y-4">
       <h3 className="font-medium">Access Information</h3>
@@ -50,7 +66,7 @@ export function KeyAssignmentSection({
         </div>
       ) : keyAssignments && keyAssignments.length > 0 ? (
         <KeyAssignmentList 
-          assignments={keyAssignments}
+          assignments={transformedAssignments}
           onReturnKey={onReturnKey}
         />
       ) : (
