@@ -16,7 +16,7 @@ export function useRoomOccupants(roomId?: string) {
           is_primary,
           schedule,
           occupant_id,
-          occupants!occupant_room_assignments_occupant_id_fkey (
+          occupants (
             id,
             first_name,
             last_name,
@@ -38,7 +38,7 @@ export function useRoomOccupants(roomId?: string) {
         assignmentType: assignment.assignment_type,
         isPrimary: assignment.is_primary,
         schedule: assignment.schedule,
-        occupant: {
+        occupant: assignment.occupants ? {
           id: assignment.occupants.id,
           firstName: assignment.occupants.first_name,
           lastName: assignment.occupants.last_name,
@@ -46,8 +46,8 @@ export function useRoomOccupants(roomId?: string) {
           email: assignment.occupants.email,
           phone: assignment.occupants.phone,
           status: assignment.occupants.status
-        }
-      })) || [];
+        } : null
+      })).filter(assignment => assignment.occupant !== null) || [];
     },
     enabled: !!roomId,
   });

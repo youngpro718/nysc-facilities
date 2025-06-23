@@ -48,10 +48,18 @@ export function useRoomFilters({
       const matchesFloor = selectedFloor === 'all' || 
         room.floor_id === selectedFloor;
       
-      // Enhanced room type filtering - match exact room_type values
-      const matchesRoomType = !roomTypeFilter || roomTypeFilter === "" || 
-        room.room_type === roomTypeFilter || 
-        roomTypeToString(room.room_type as any) === roomTypeFilter;
+      // Enhanced room type filtering - handle storage rooms specifically
+      let matchesRoomType = true;
+      if (roomTypeFilter && roomTypeFilter !== "") {
+        if (roomTypeFilter === "storage") {
+          // For storage rooms, check both room_type and is_storage flag
+          matchesRoomType = room.room_type === "storage" || room.is_storage === true;
+        } else {
+          // For other room types, match exact room_type values
+          matchesRoomType = room.room_type === roomTypeFilter || 
+            roomTypeToString(room.room_type as any) === roomTypeFilter;
+        }
+      }
 
       return matchesSearch && matchesStatus && matchesBuilding && matchesFloor && matchesRoomType;
     });
