@@ -66,12 +66,18 @@ const Layout = () => {
                       {isAdmin ? 'Administrator' : 'User'}
                     </span>
                   </div>
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={profile?.avatar_url} />
-                    <AvatarFallback>
-                      <UserRound className="h-4 w-4" />
-                    </AvatarFallback>
-                  </Avatar>
+                  <button
+                    className="focus:outline-none"
+                    title="Profile"
+                    onClick={() => navigate('/profile')}
+                  >
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={profile?.avatar_url} />
+                      <AvatarFallback>
+                        <UserRound className="h-4 w-4" />
+                      </AvatarFallback>
+                    </Avatar>
+                  </button>
                 </div>
                 
                 {/* Mobile Menu */}
@@ -92,6 +98,9 @@ const Layout = () => {
                     onNavigationChange={handleNavigationChange}
                     onSignOut={signOut}
                   />
+                  <Button variant="outline" size="sm" onClick={signOut}>
+                    Logout
+                  </Button>
                 </div>
               </div>
             </div>
