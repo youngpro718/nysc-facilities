@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Plus } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { CreateSpaceFormFields } from "./CreateSpaceFormFields";
 import { createSpace } from "./services/createSpace";
 import { CreateSpaceFormData, createSpaceSchema } from "./schemas/createSpaceSchema";
@@ -21,7 +21,6 @@ import { RoomTypeEnum, StatusEnum } from "./rooms/types/roomEnums";
 
 export function CreateSpaceDialog() {
   const [open, setOpen] = useState(false);
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   
   const form = useForm<CreateSpaceFormData>({
@@ -30,6 +29,7 @@ export function CreateSpaceDialog() {
       name: "",
       type: "room",
       buildingId: "",
+      floorId: "",
       roomType: RoomTypeEnum.OFFICE,
       currentFunction: "office",
       description: "",
@@ -39,33 +39,50 @@ export function CreateSpaceDialog() {
       storageCapacity: null,
       storageType: null,
       storageNotes: "",
-      floorId: "",
       connections: [],
     },
   });
 
   const createSpaceMutation = useMutation({
     mutationFn: createSpace,
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: [`${variables.type}s`] });
+    onSuccess: (data, variables) => {
+      console.log('Space created successfully:', data);
+      
+      // Invalidate all relevant queries
+      queryClient.invalidateQueries({ queryKey: ["rooms"] });
       queryClient.invalidateQueries({ queryKey: ["new_spaces"] });
-      toast({
-        title: "Space created",
-        description: `Successfully created ${variables.type} "${variables.name}"`,
-      });
+      queryClient.invalidateQueries({ queryKey: ["spaces"] });
+      queryClient.invalidateQueries({ queryKey: ["floor-spaces"] });
+      
+      toast.success(`Successfully created ${variables.type} "${variables.name}"`);
       setOpen(false);
       form.reset();
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create space",
-        variant: "destructive",
-      });
+      console.error('Error creating space:', error);
+      toast.error(error instanceof Error ? error.message : "Failed to create space");
     },
   });
 
   const onSubmit = (data: CreateSpaceFormData) => {
+    console.log('Submitting space data:', data);
+    
+    // Validate required fields
+    if (!data.name.trim()) {
+      toast.error("Space name is required");
+      return;
+    }
+    
+    if (!data.buildingId) {
+      toast.error("Building selection is required");
+      return;
+    }
+    
+    if (!data.floorId) {
+      toast.error("Floor selection is required");
+      return;
+    }
+    
     createSpaceMutation.mutate(data);
   };
 

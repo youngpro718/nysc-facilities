@@ -41,20 +41,14 @@ export const useNotifications = (userId?: string) => {
           return [];
         }
 
-        // Get room details
+        // Get room details separately
         const roomIds = assignments.map(a => a.room_id);
         const { data: rooms, error: roomsError } = await supabase
           .from('rooms')
           .select(`
             id,
             name,
-            room_number,
-            floors!rooms_floor_id_fkey (
-              name,
-              buildings!floors_building_id_fkey (
-                name
-              )
-            )
+            room_number
           `)
           .in('id', roomIds);
 
@@ -63,18 +57,50 @@ export const useNotifications = (userId?: string) => {
           return [];
         }
 
+        // Get floor and building info separately
+        const floorIds = rooms?.map(r => r.floor_id).filter(Boolean) || [];
+        const { data: floors, error: floorsError } = await supabase
+          .from('floors')
+          .select(`
+            id,
+            name,
+            building_id
+          `)
+          .in('id', floorIds);
+
+        if (floorsError) {
+          console.error('Error fetching floors:', floorsError);
+          return [];
+        }
+
+        const buildingIds = floors?.map(f => f.building_id).filter(Boolean) || [];
+        const { data: buildings, error: buildingsError } = await supabase
+          .from('buildings')
+          .select(`
+            id,
+            name
+          `)
+          .in('id', buildingIds);
+
+        if (buildingsError) {
+          console.error('Error fetching buildings:', buildingsError);
+          return [];
+        }
+
         const notifications: Notification[] = [];
 
         // Transform assignments to notifications
         assignments.forEach((assignment) => {
           const room = rooms?.find(r => r.id === assignment.room_id);
+          const floor = floors?.find(f => f.id === room?.floor_id);
+          const building = buildings?.find(b => b.id === floor?.building_id);
           
           if (room) {
             notifications.push({
               id: assignment.id,
               type: 'new_assignment',
               title: 'Room Assignment',
-              message: `You have been assigned to ${room.name || room.room_number} in ${room.floors?.buildings?.name}`,
+              message: `You have been assigned to ${room.name || room.room_number} in ${building?.name || 'Unknown Building'}`,
               read: false,
               created_at: assignment.assigned_at,
               urgency: 'medium',
