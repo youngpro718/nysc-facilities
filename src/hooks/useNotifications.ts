@@ -21,42 +21,65 @@ export const useNotifications = (userId?: string) => {
       if (!userId) return [];
 
       try {
-        // Get relocations data
-        const { data: relocationsData } = await supabase
+        // Get room assignments
+        const { data: assignments, error: assignmentsError } = await supabase
           .from('occupant_room_assignments')
           .select(`
             id,
             assigned_at,
-            rooms!occupant_room_assignments_room_id_fkey (
-              id,
-              name,
-              room_number,
-              floors!rooms_floor_id_fkey (
-                name,
-                buildings!floors_building_id_fkey (
-                  name
-                )
-              )
-            )
+            room_id
           `)
           .eq('occupant_id', userId)
           .order('assigned_at', { ascending: false });
 
+        if (assignmentsError) {
+          console.error('Error fetching assignments:', assignmentsError);
+          return [];
+        }
+
+        if (!assignments || assignments.length === 0) {
+          return [];
+        }
+
+        // Get room details
+        const roomIds = assignments.map(a => a.room_id);
+        const { data: rooms, error: roomsError } = await supabase
+          .from('rooms')
+          .select(`
+            id,
+            name,
+            room_number,
+            floors!rooms_floor_id_fkey (
+              name,
+              buildings!floors_building_id_fkey (
+                name
+              )
+            )
+          `)
+          .in('id', roomIds);
+
+        if (roomsError) {
+          console.error('Error fetching room details:', roomsError);
+          return [];
+        }
+
         const notifications: Notification[] = [];
 
-        // Transform relocations to notifications
-        relocationsData?.forEach((assignment) => {
-          if (assignment.rooms?.id) {
+        // Transform assignments to notifications
+        assignments.forEach((assignment) => {
+          const room = rooms?.find(r => r.id === assignment.room_id);
+          
+          if (room) {
             notifications.push({
               id: assignment.id,
               type: 'new_assignment',
               title: 'Room Assignment',
-              message: `You have been assigned to ${assignment.rooms.name || assignment.rooms.room_number} in ${assignment.rooms.floors?.buildings?.name}`,
+              message: `You have been assigned to ${room.name || room.room_number} in ${room.floors?.buildings?.name}`,
               read: false,
               created_at: assignment.assigned_at,
               urgency: 'medium',
               metadata: {
-                room_id: assignment.rooms.id,
+                room_id: room.id,
                 assignment_type: 'room'
               }
             });
