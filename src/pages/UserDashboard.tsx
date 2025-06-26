@@ -15,7 +15,7 @@ import React, { useState } from "react";
 export default function UserDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { data: notifications = [], isLoading: notificationsLoading } = useNotifications();
+  const { notifications = [], isLoading: notificationsLoading } = useNotifications(user?.id);
 
   useEffect(() => {
     if (!user) {

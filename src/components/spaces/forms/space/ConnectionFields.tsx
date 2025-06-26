@@ -50,8 +50,15 @@ export function ConnectionFields({ form, floorId }: ConnectionFieldsProps) {
       return;
     }
 
+    // Properly type the connection data
+    const connectionData = {
+      toSpaceId: newConnection.toSpaceId,
+      connectionType: newConnection.connectionType as "door" | "direct" | "hallway",
+      direction: newConnection.direction || "adjacent"
+    };
+
     const currentConnections = form.getValues("connections") || [];
-    form.setValue("connections", [...currentConnections, newConnection], { shouldValidate: true });
+    form.setValue("connections", [...currentConnections, connectionData], { shouldValidate: true });
     
     setNewConnection({
       toSpaceId: "",
@@ -93,7 +100,7 @@ export function ConnectionFields({ form, floorId }: ConnectionFieldsProps) {
           <SelectContent>
             <SelectItem value="door">Door</SelectItem>
             <SelectItem value="direct">Direct</SelectItem>
-            <SelectItem value="secured">Secured</SelectItem>
+            <SelectItem value="hallway">Hallway</SelectItem>
             {(isHallway && isSelectedSpaceHallway) && (
               <SelectItem value="transition">Transition Door</SelectItem>
             )}

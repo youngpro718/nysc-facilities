@@ -27,13 +27,13 @@ export const useNotifications = (userId?: string) => {
           .select(`
             id,
             assigned_at,
-            rooms!occupant_room_assignments_room_id_fkey (
+            rooms (
               id,
               name,
               room_number,
-              floors!rooms_floor_id_fkey (
+              floors (
                 name,
-                buildings!floors_building_id_fkey (
+                buildings (
                   name
                 )
               )
