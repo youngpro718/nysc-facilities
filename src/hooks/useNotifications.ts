@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface Notification {
   id: string;
-  type: string;
+  type: 'issue_update' | 'new_assignment' | 'maintenance';
   title: string;
   message: string;
   read: boolean;
@@ -27,13 +27,13 @@ export const useNotifications = (userId?: string) => {
           .select(`
             id,
             assigned_at,
-            rooms (
+            rooms!occupant_room_assignments_room_id_fkey (
               id,
               name,
               room_number,
-              floors (
+              floors!rooms_floor_id_fkey (
                 name,
-                buildings (
+                buildings!floors_building_id_fkey (
                   name
                 )
               )
@@ -49,7 +49,7 @@ export const useNotifications = (userId?: string) => {
           if (assignment.rooms?.id) {
             notifications.push({
               id: assignment.id,
-              type: 'assignment',
+              type: 'new_assignment',
               title: 'Room Assignment',
               message: `You have been assigned to ${assignment.rooms.name || assignment.rooms.room_number} in ${assignment.rooms.floors?.buildings?.name}`,
               read: false,
