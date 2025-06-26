@@ -32,7 +32,7 @@ export function BasicSpaceFields({ form }: BasicSpaceFieldsProps) {
           <FormItem>
             <FormLabel>Name</FormLabel>
             <FormControl>
-              <Input placeholder="Enter name" {...field} />
+              <Input placeholder="Enter space name" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>

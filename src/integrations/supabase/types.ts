@@ -3018,6 +3018,93 @@ export type Database = {
           },
         ]
       }
+      key_requests: {
+        Row: {
+          created_at: string | null
+          id: string
+          key_id: string | null
+          reason: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          key_id?: string | null
+          reason?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          key_id?: string | null
+          reason?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "key_requests_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_assignment_stats"
+            referencedColumns: ["key_id"]
+          },
+          {
+            foreignKeyName: "key_requests_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_assignments_view"
+            referencedColumns: ["key_id"]
+          },
+          {
+            foreignKeyName: "key_requests_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_door_locations"
+            referencedColumns: ["key_id"]
+          },
+          {
+            foreignKeyName: "key_requests_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_inventory_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_requests_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "keys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_verification_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_verification_view"
+            referencedColumns: ["profile_id"]
+          },
+        ]
+      }
       key_stock_transactions: {
         Row: {
           created_at: string | null
@@ -8387,7 +8474,7 @@ export type Database = {
       return_reason_enum: "normal_return" | "lost" | "damaged" | "other"
       room_type_enum:
         | "courtroom"
-        | "chamber"
+        | "judges_chambers"
         | "jury_room"
         | "conference_room"
         | "office"
@@ -8403,6 +8490,7 @@ export type Database = {
         | "utility_room"
         | "laboratory"
         | "conference"
+        | "chamber"
       security_level_enum: "standard" | "restricted" | "high_security"
       standardized_issue_type:
         | "ACCESS_REQUEST"
@@ -8677,7 +8765,7 @@ export const Constants = {
       return_reason_enum: ["normal_return", "lost", "damaged", "other"],
       room_type_enum: [
         "courtroom",
-        "chamber",
+        "judges_chambers",
         "jury_room",
         "conference_room",
         "office",
@@ -8693,6 +8781,7 @@ export const Constants = {
         "utility_room",
         "laboratory",
         "conference",
+        "chamber",
       ],
       security_level_enum: ["standard", "restricted", "high_security"],
       standardized_issue_type: [

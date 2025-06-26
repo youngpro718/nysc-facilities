@@ -30,7 +30,6 @@ export function CreateSpaceDialog() {
       name: "",
       type: "room",
       buildingId: "",
-      status: StatusEnum.ACTIVE,
       roomType: RoomTypeEnum.OFFICE,
       currentFunction: "office",
       description: "",
@@ -41,6 +40,7 @@ export function CreateSpaceDialog() {
       storageType: null,
       storageNotes: "",
       floorId: "",
+      connections: [],
     },
   });
 
@@ -48,6 +48,7 @@ export function CreateSpaceDialog() {
     mutationFn: createSpace,
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [`${variables.type}s`] });
+      queryClient.invalidateQueries({ queryKey: ["new_spaces"] });
       toast({
         title: "Space created",
         description: `Successfully created ${variables.type} "${variables.name}"`,
@@ -81,7 +82,7 @@ export function CreateSpaceDialog() {
           <DialogTitle>Create New Space</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <CreateSpaceFormFields form={form} />
             <Button 
               type="submit" 
