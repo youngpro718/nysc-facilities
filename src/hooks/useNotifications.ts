@@ -1,91 +1,96 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 
-export interface Notification {
+interface Notification {
   id: string;
+  type: string;
   title: string;
   message: string;
-  type: "issue_update" | "new_assignment" | "maintenance";
-  created_at: string;
   read: boolean;
+  created_at: string;
+  urgency?: 'low' | 'medium' | 'high';
   action_url?: string;
+  metadata?: any;
 }
 
-export function useNotifications() {
-  const { user } = useAuth();
-
-  return useQuery({
-    queryKey: ["notifications", user?.id],
+export const useNotifications = (userId?: string) => {
+  const { data: notifications = [], isLoading } = useQuery<Notification[]>({
+    queryKey: ['notifications', userId],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!userId) return [];
 
-      // Get issues assigned to the user
-      const { data: issues } = await supabase
-        .from("issues")
-        .select("id, title, status, created_at, priority")
-        .eq("assigned_to", user.id)
-        .eq("status", "open")
-        .order("created_at", { ascending: false })
-        .limit(5);
-
-      // Get user's room assignments for notifications
-      const { data: roomAssignments } = await supabase
-        .from("occupant_room_assignments")
-        .select(`
-          id,
-          rooms!fk_occupant_room_assignments_room (
+      try {
+        // Get relocations data
+        const { data: relocationsData } = await supabase
+          .from('occupant_room_assignments')
+          .select(`
             id,
-            name,
-            room_number,
-            floors!fk_rooms_floor (
-              name
+            assigned_at,
+            rooms!occupant_room_assignments_room_id_fkey (
+              id,
+              name,
+              room_number,
+              floors!rooms_floor_id_fkey (
+                name,
+                buildings!floors_building_id_fkey (
+                  name
+                )
+              )
             )
-          )
-        `)
-        .eq("occupant_id", user.id)
-        .limit(3);
+          `)
+          .eq('occupant_id', userId)
+          .order('assigned_at', { ascending: false });
 
-      const notifications: Notification[] = [];
+        const notifications: Notification[] = [];
 
-      // Convert issues to notifications
-      if (issues) {
-        issues.forEach((issue) => {
-          notifications.push({
-            id: `issue-${issue.id}`,
-            title: "New Issue Assigned",
-            message: `Issue "${issue.title}" has been assigned to you`,
-            type: issue.priority === "high" ? "issue_update" : "new_assignment",
-            created_at: issue.created_at,
-            read: false,
-            action_url: `/issues?id=${issue.id}`,
-          });
-        });
-      }
-
-      // Convert room assignments to notifications
-      if (roomAssignments) {
-        roomAssignments.forEach((assignment) => {
-          if (assignment.rooms) {
+        // Transform relocations to notifications
+        relocationsData?.forEach((assignment) => {
+          if (assignment.rooms?.id) {
             notifications.push({
-              id: `room-${assignment.id}`,
-              title: "Room Assignment",
-              message: `You are assigned to ${assignment.rooms.name} (${assignment.rooms.room_number}) on ${assignment.rooms.floors?.name}`,
-              type: "new_assignment",
-              created_at: new Date().toISOString(),
+              id: assignment.id,
+              type: 'assignment',
+              title: 'Room Assignment',
+              message: `You have been assigned to ${assignment.rooms.name || assignment.rooms.room_number} in ${assignment.rooms.floors?.buildings?.name}`,
               read: false,
-              action_url: `/spaces?room=${assignment.rooms.id}`,
+              created_at: assignment.assigned_at,
+              urgency: 'medium',
+              metadata: {
+                room_id: assignment.rooms.id,
+                assignment_type: 'room'
+              }
             });
           }
         });
-      }
 
-      return notifications.sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
+        console.log('Generated notifications:', notifications);
+        return notifications;
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+        return [];
+      }
     },
-    enabled: !!user?.id,
-    refetchInterval: 300000, // Refetch every 5 minutes
+    enabled: !!userId,
+    staleTime: 300000, // 5 minutes
   });
-}
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const markAsRead = async (notificationId: string) => {
+    // This would typically update the notification in the database
+    console.log('Marking notification as read:', notificationId);
+  };
+
+  const markAllAsRead = async () => {
+    // This would typically update all notifications in the database
+    console.log('Marking all notifications as read');
+  };
+
+  return {
+    notifications,
+    unreadCount,
+    isLoading,
+    markAsRead,
+    markAllAsRead
+  };
+};

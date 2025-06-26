@@ -17,7 +17,7 @@ interface SimpleConnectionFieldProps {
 
 export function SimpleConnectionField({ form, floorId }: SimpleConnectionFieldProps) {
   const [selectedSpace, setSelectedSpace] = useState("");
-  const [connectionType, setConnectionType] = useState("");
+  const [connectionType, setConnectionType] = useState<"door" | "direct" | "hallway" | "">("");
 
   const { data: availableSpaces } = useQuery({
     queryKey: ["floor-spaces", floorId],
@@ -42,8 +42,8 @@ export function SimpleConnectionField({ form, floorId }: SimpleConnectionFieldPr
 
     const newConnection = {
       toSpaceId: selectedSpace,
-      connectionType,
-      direction: "adjacent"
+      connectionType: connectionType as "door" | "direct" | "hallway",
+      direction: "adjacent" as const
     };
 
     form.setValue("connections", [...currentConnections, newConnection]);
@@ -98,7 +98,7 @@ export function SimpleConnectionField({ form, floorId }: SimpleConnectionFieldPr
           </SelectContent>
         </Select>
 
-        <Select value={connectionType} onValueChange={setConnectionType}>
+        <Select value={connectionType} onValueChange={(value) => setConnectionType(value as "door" | "direct" | "hallway")}>
           <SelectTrigger className="w-32">
             <SelectValue placeholder="Type" />
           </SelectTrigger>

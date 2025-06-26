@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { CreateSpaceFormData } from "../schemas/createSpaceSchema";
 import { 
@@ -18,7 +19,6 @@ export async function createSpace(data: CreateSpaceFormData) {
         name: data.name,
         room_number: data.roomNumber,
         room_type: data.roomType ? roomTypeToString(data.roomType as RoomTypeEnum) : undefined,
-        status: data.status ? statusToString(data.status) : undefined,
         floor_id: data.floorId,
         description: data.description || null,
         phone_number: data.phoneNumber || null,
@@ -63,7 +63,6 @@ export async function createSpace(data: CreateSpaceFormData) {
         name: data.name,
         type: data.type,
         floor_id: data.floorId,
-        status: data.status,
         position: data.position || { x: 0, y: 0 },
         size: data.size || { width: 300, height: 50 },
         rotation: data.rotation || 0,
@@ -120,8 +119,8 @@ export async function createSpace(data: CreateSpaceFormData) {
             .eq('id', firstConnection.toSpaceId)
             .single();
             
-          const isTransitionDoor = firstConnection.connectionType === 'transition' || 
-                                  (targetSpaceData?.type === 'hallway' && firstConnection.connectionType === 'door');
+          const isTransitionDoor = firstConnection.connectionType === 'door' && 
+                                  targetSpaceData?.type === 'hallway';
           
           let directionValue = validateDirection(firstConnection.direction);
           
@@ -131,7 +130,6 @@ export async function createSpace(data: CreateSpaceFormData) {
             space_type: data.type,
             connection_type: firstConnection.connectionType,
             direction: directionValue,
-            status: data.status as 'active' | 'inactive' | 'under_maintenance',
             connection_status: 'active',
             hallway_position: getHallwayPosition(firstConnection.direction),
             offset_distance: 50,
@@ -162,7 +160,6 @@ export async function createSpace(data: CreateSpaceFormData) {
       name: data.name,
       type: data.type,
       floor_id: data.floorId,
-      status: data.status,
       position: data.position || { x: 0, y: 0 },
       size: data.type === 'door' ? 
         { width: 60, height: 20 } : 
@@ -194,7 +191,7 @@ export async function createSpace(data: CreateSpaceFormData) {
           .eq('id', firstConnection.toSpaceId)
           .single();
           
-        const isTransitionDoor = firstConnection.connectionType === 'transition' || 
+        const isTransitionDoor = firstConnection.connectionType === 'door' && 
                                 (fromSpaceData?.type === 'hallway' && targetSpaceData?.type === 'hallway');
         
         let directionValue = validateDirection(firstConnection.direction);
@@ -205,7 +202,6 @@ export async function createSpace(data: CreateSpaceFormData) {
           space_type: data.type,
           connection_type: firstConnection.connectionType,
           direction: directionValue,
-          status: data.status as 'active' | 'inactive' | 'under_maintenance',
           connection_status: 'active',
           is_transition_door: isTransitionDoor,
           hallway_position: getHallwayPosition(firstConnection.direction),
