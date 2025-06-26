@@ -85,24 +85,26 @@ export const useRoomAssignments = (userId?: string) => {
         // Combine the data
         const formattedAssignments = assignments.map(assignment => {
           const room = rooms?.find(r => r.id === assignment.room_id);
-          const floor = floors?.find(f => f.id === room?.floor_id);
+          if (!room) return null;
+          
+          const floor = floors?.find(f => f.id === room.floor_id);
           const building = buildings?.find(b => b.id === floor?.building_id);
           
           return {
             id: assignment.id,
             room_id: assignment.room_id,
-            room_name: room?.name || 'Unknown Room',
-            room_number: room?.room_number || 'N/A',
-            floor_id: room?.floor_id,
+            room_name: room.name || 'Unknown Room',
+            room_number: room.room_number || 'N/A',
+            floor_id: room.floor_id,
             building_id: floor?.building_id,
             building_name: building?.name || 'Unknown Building',
             floor_name: floor?.name || 'Unknown Floor',
             assigned_at: assignment.assigned_at,
             is_primary: assignment.is_primary,
             assignment_type: assignment.assignment_type,
-            room_status: room?.status
+            room_status: room.status
           };
-        }).filter(assignment => assignment.room_name !== 'Unknown Room');
+        }).filter(assignment => assignment !== null);
         
         console.log('Formatted room assignments:', formattedAssignments);
         

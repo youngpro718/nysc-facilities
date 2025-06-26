@@ -65,24 +65,28 @@ export function CreateSpaceDialog() {
   });
 
   const onSubmit = (data: CreateSpaceFormData) => {
-    console.log('Submitting space data:', data);
+    console.log('Form submitted with data:', data);
     
     // Validate required fields
     if (!data.name.trim()) {
       toast.error("Space name is required");
+      form.setError("name", { message: "Space name is required" });
       return;
     }
     
     if (!data.buildingId) {
       toast.error("Building selection is required");
+      form.setError("buildingId", { message: "Building selection is required" });
       return;
     }
     
     if (!data.floorId) {
       toast.error("Floor selection is required");
+      form.setError("floorId", { message: "Floor selection is required" });
       return;
     }
     
+    console.log('Submitting space data:', data);
     createSpaceMutation.mutate(data);
   };
 
@@ -101,13 +105,22 @@ export function CreateSpaceDialog() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <CreateSpaceFormFields form={form} />
-            <Button 
-              type="submit" 
-              className="w-full"
-              disabled={createSpaceMutation.isPending}
-            >
-              {createSpaceMutation.isPending ? "Creating..." : "Create Space"}
-            </Button>
+            <div className="flex justify-end gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setOpen(false)}
+                disabled={createSpaceMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={createSpaceMutation.isPending}
+              >
+                {createSpaceMutation.isPending ? "Creating..." : "Create Space"}
+              </Button>
+            </div>
           </form>
         </Form>
       </DialogContent>

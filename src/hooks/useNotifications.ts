@@ -48,7 +48,8 @@ export const useNotifications = (userId?: string) => {
           .select(`
             id,
             name,
-            room_number
+            room_number,
+            floor_id
           `)
           .in('id', roomIds);
 
@@ -92,24 +93,24 @@ export const useNotifications = (userId?: string) => {
         // Transform assignments to notifications
         assignments.forEach((assignment) => {
           const room = rooms?.find(r => r.id === assignment.room_id);
-          const floor = floors?.find(f => f.id === room?.floor_id);
+          if (!room) return;
+          
+          const floor = floors?.find(f => f.id === room.floor_id);
           const building = buildings?.find(b => b.id === floor?.building_id);
           
-          if (room) {
-            notifications.push({
-              id: assignment.id,
-              type: 'new_assignment',
-              title: 'Room Assignment',
-              message: `You have been assigned to ${room.name || room.room_number} in ${building?.name || 'Unknown Building'}`,
-              read: false,
-              created_at: assignment.assigned_at,
-              urgency: 'medium',
-              metadata: {
-                room_id: room.id,
-                assignment_type: 'room'
-              }
-            });
-          }
+          notifications.push({
+            id: assignment.id,
+            type: 'new_assignment',
+            title: 'Room Assignment',
+            message: `You have been assigned to ${room.name || room.room_number} in ${building?.name || 'Unknown Building'}`,
+            read: false,
+            created_at: assignment.assigned_at,
+            urgency: 'medium',
+            metadata: {
+              room_id: room.id,
+              assignment_type: 'room'
+            }
+          });
         });
 
         console.log('Generated notifications:', notifications);
