@@ -17,15 +17,20 @@ export async function createSpace(data: CreateSpaceFormData) {
       // Map the enum to the correct database value
       let dbRoomType = data.roomType ? roomTypeToString(data.roomType as RoomTypeEnum) : 'office';
       
-      // Map storage enum to database value if storage type exists
-      if (dbRoomType === 'storage') {
-        dbRoomType = 'filing_room'; // Map to a valid database enum value
+      // Ensure the room type matches database enum values
+      const validRoomTypes = [
+        'office', 'courtroom', 'chamber', 'male_locker_room', 
+        'female_locker_room', 'filing_room'
+      ];
+      
+      if (!validRoomTypes.includes(dbRoomType)) {
+        dbRoomType = 'office'; // Default fallback
       }
       
       const roomData = {
         name: data.name,
         room_number: data.roomNumber || null,
-        room_type: dbRoomType,
+        room_type: dbRoomType as any, // Cast to avoid type issues
         floor_id: data.floorId,
         description: data.description || null,
         phone_number: data.phoneNumber || null,
@@ -39,14 +44,14 @@ export async function createSpace(data: CreateSpaceFormData) {
         rotation: data.rotation || 0,
         courtroom_photos: data.roomType === RoomTypeEnum.COURTROOM ? 
           (data.courtRoomPhotos || { judge_view: null, audience_view: null }) : null,
-        status: 'active'
+        status: 'active' as any // Cast to match enum
       };
 
       console.log('Inserting room data:', roomData);
 
       const { data: room, error: roomError } = await supabase
         .from('rooms')
-        .insert([roomData])
+        .insert(roomData)
         .select()
         .single();
 
@@ -80,12 +85,12 @@ export async function createSpace(data: CreateSpaceFormData) {
         size: data.size || { width: 300, height: 50 },
         rotation: data.rotation || 0,
         description: data.description || null,
-        status: 'active'
+        status: 'active' as any // Cast to match enum
       };
 
       const { data: hallway, error: hallwayError } = await supabase
         .from('new_spaces')
-        .insert([hallwayData])
+        .insert(hallwayData)
         .select()
         .single();
 
@@ -109,7 +114,7 @@ export async function createSpace(data: CreateSpaceFormData) {
 
       const { error: propsError } = await supabase
         .from('hallway_properties')
-        .insert([hallwayPropsData]);
+        .insert(hallwayPropsData);
 
       if (propsError) {
         console.error('Error saving hallway properties:', propsError);
@@ -130,12 +135,12 @@ export async function createSpace(data: CreateSpaceFormData) {
         { width: 150, height: 100 },
       rotation: data.rotation || 0,
       description: data.description || null,
-      status: 'active'
+      status: 'active' as any // Cast to match enum
     };
 
     const { data: space, error: spaceError } = await supabase
       .from('new_spaces')
-      .insert([spaceData])
+      .insert(spaceData)
       .select()
       .single();
 

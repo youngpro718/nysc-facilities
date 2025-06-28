@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
@@ -56,7 +57,11 @@ export function CreateLightingZoneDialog({ onZoneCreated }: { onZoneCreated: () 
     queryFn: async () => {
       const { data, error } = await supabase
         .from('floors')
-        .select('id, name, buildings(name)')
+        .select(`
+          id, 
+          name, 
+          buildings!floors_building_id_fkey(name)
+        `)
         .order('name');
       
       if (error) throw error;
