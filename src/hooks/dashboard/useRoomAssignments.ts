@@ -12,7 +12,7 @@ export const useRoomAssignments = (userId?: string) => {
       console.log('Fetching room assignments for user:', userId);
       
       try {
-        // First get the room assignments
+        // Get room assignments
         const { data: assignments, error: assignmentsError } = await supabase
           .from('occupant_room_assignments')
           .select(`
@@ -26,14 +26,15 @@ export const useRoomAssignments = (userId?: string) => {
 
         if (assignmentsError) {
           console.error('Error fetching room assignments:', assignmentsError);
-          throw assignmentsError;
-        }
-
-        if (!assignments || assignments.length === 0) {
           return [];
         }
 
-        // Get room details separately to avoid relationship issues
+        if (!assignments || assignments.length === 0) {
+          console.log('No room assignments found for user');
+          return [];
+        }
+
+        // Get room details
         const roomIds = assignments.map(a => a.room_id);
         const { data: rooms, error: roomsError } = await supabase
           .from('rooms')
@@ -48,11 +49,16 @@ export const useRoomAssignments = (userId?: string) => {
 
         if (roomsError) {
           console.error('Error fetching room details:', roomsError);
-          throw roomsError;
+          return [];
         }
 
-        // Get floor and building information separately
-        const floorIds = rooms?.map(r => r.floor_id).filter(Boolean) || [];
+        if (!rooms || rooms.length === 0) {
+          console.log('No room details found');
+          return [];
+        }
+
+        // Get floor and building information
+        const floorIds = rooms.map(r => r.floor_id).filter(Boolean);
         const { data: floors, error: floorsError } = await supabase
           .from('floors')
           .select(`
@@ -64,7 +70,7 @@ export const useRoomAssignments = (userId?: string) => {
 
         if (floorsError) {
           console.error('Error fetching floor details:', floorsError);
-          throw floorsError;
+          return [];
         }
 
         // Get building information
@@ -79,12 +85,12 @@ export const useRoomAssignments = (userId?: string) => {
 
         if (buildingsError) {
           console.error('Error fetching building details:', buildingsError);
-          throw buildingsError;
+          return [];
         }
 
         // Combine the data
         const formattedAssignments = assignments.map(assignment => {
-          const room = rooms?.find(r => r.id === assignment.room_id);
+          const room = rooms.find(r => r.id === assignment.room_id);
           if (!room) return null;
           
           const floor = floors?.find(f => f.id === room.floor_id);

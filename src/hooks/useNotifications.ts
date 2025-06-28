@@ -21,7 +21,7 @@ export const useNotifications = (userId?: string) => {
       if (!userId) return [];
 
       try {
-        // Get room assignments
+        // Get room assignments for the user
         const { data: assignments, error: assignmentsError } = await supabase
           .from('occupant_room_assignments')
           .select(`
@@ -41,7 +41,7 @@ export const useNotifications = (userId?: string) => {
           return [];
         }
 
-        // Get room details separately
+        // Get room details
         const roomIds = assignments.map(a => a.room_id);
         const { data: rooms, error: roomsError } = await supabase
           .from('rooms')
@@ -58,8 +58,12 @@ export const useNotifications = (userId?: string) => {
           return [];
         }
 
-        // Get floor and building info separately
+        // Get floor and building info
         const floorIds = rooms?.map(r => r.floor_id).filter(Boolean) || [];
+        if (floorIds.length === 0) {
+          return [];
+        }
+
         const { data: floors, error: floorsError } = await supabase
           .from('floors')
           .select(`
@@ -75,6 +79,10 @@ export const useNotifications = (userId?: string) => {
         }
 
         const buildingIds = floors?.map(f => f.building_id).filter(Boolean) || [];
+        if (buildingIds.length === 0) {
+          return [];
+        }
+
         const { data: buildings, error: buildingsError } = await supabase
           .from('buildings')
           .select(`
@@ -127,12 +135,10 @@ export const useNotifications = (userId?: string) => {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const markAsRead = async (notificationId: string) => {
-    // This would typically update the notification in the database
     console.log('Marking notification as read:', notificationId);
   };
 
   const markAllAsRead = async () => {
-    // This would typically update all notifications in the database
     console.log('Marking all notifications as read');
   };
 

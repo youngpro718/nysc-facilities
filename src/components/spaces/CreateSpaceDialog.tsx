@@ -17,7 +17,7 @@ import { CreateSpaceFormFields } from "./CreateSpaceFormFields";
 import { createSpace } from "./services/createSpace";
 import { CreateSpaceFormData, createSpaceSchema } from "./schemas/createSpaceSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { RoomTypeEnum, StatusEnum } from "./rooms/types/roomEnums";
+import { RoomTypeEnum } from "./rooms/types/roomEnums";
 
 export function CreateSpaceDialog() {
   const [open, setOpen] = useState(false);
@@ -45,7 +45,7 @@ export function CreateSpaceDialog() {
 
   const createSpaceMutation = useMutation({
     mutationFn: createSpace,
-    onSuccess: (data, variables) => {
+    onSuccess: (data) => {
       console.log('Space created successfully:', data);
       
       // Invalidate all relevant queries
@@ -54,13 +54,17 @@ export function CreateSpaceDialog() {
       queryClient.invalidateQueries({ queryKey: ["spaces"] });
       queryClient.invalidateQueries({ queryKey: ["floor-spaces"] });
       
-      toast.success(`Successfully created ${variables.type} "${variables.name}"`);
+      const spaceType = form.getValues("type");
+      const spaceName = form.getValues("name");
+      
+      toast.success(`Successfully created ${spaceType} "${spaceName}"`);
       setOpen(false);
       form.reset();
     },
     onError: (error) => {
       console.error('Error creating space:', error);
-      toast.error(error instanceof Error ? error.message : "Failed to create space");
+      const errorMessage = error instanceof Error ? error.message : "Failed to create space";
+      toast.error(errorMessage);
     },
   });
 
@@ -68,7 +72,7 @@ export function CreateSpaceDialog() {
     console.log('Form submitted with data:', data);
     
     // Validate required fields
-    if (!data.name.trim()) {
+    if (!data.name?.trim()) {
       toast.error("Space name is required");
       form.setError("name", { message: "Space name is required" });
       return;
@@ -86,7 +90,7 @@ export function CreateSpaceDialog() {
       return;
     }
     
-    console.log('Submitting space data:', data);
+    console.log('Submitting space creation request:', data);
     createSpaceMutation.mutate(data);
   };
 
