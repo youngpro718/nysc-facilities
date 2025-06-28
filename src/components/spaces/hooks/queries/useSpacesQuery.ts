@@ -16,7 +16,8 @@ export function useSpacesQuery(floorId: string) {
           id,
           name,
           type,
-          room_number
+          room_number,
+          status
         `)
         .eq("floor_id", floorId)
         .neq("status", "inactive");

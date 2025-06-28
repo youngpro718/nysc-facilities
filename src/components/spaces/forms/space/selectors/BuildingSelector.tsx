@@ -18,7 +18,7 @@ export function BuildingSelector({ form, onBuildingChange }: BuildingSelectorPro
       console.log("Fetching buildings...");
       const { data, error } = await supabase
         .from("buildings")
-        .select("*")
+        .select("id, name, address, status")
         .eq('status', 'active')
         .order('name');
       
