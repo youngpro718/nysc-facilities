@@ -14,10 +14,18 @@ export async function createSpace(data: CreateSpaceFormData) {
   
   try {
     if (data.type === 'room') {
+      // Map the enum to the correct database value
+      let dbRoomType = data.roomType ? roomTypeToString(data.roomType as RoomTypeEnum) : 'office';
+      
+      // Map storage enum to database value if storage type exists
+      if (dbRoomType === 'storage') {
+        dbRoomType = 'filing_room'; // Map to a valid database enum value
+      }
+      
       const roomData = {
         name: data.name,
         room_number: data.roomNumber || null,
-        room_type: data.roomType ? roomTypeToString(data.roomType as RoomTypeEnum) : 'office',
+        room_type: dbRoomType,
         floor_id: data.floorId,
         description: data.description || null,
         phone_number: data.phoneNumber || null,
@@ -38,7 +46,7 @@ export async function createSpace(data: CreateSpaceFormData) {
 
       const { data: room, error: roomError } = await supabase
         .from('rooms')
-        .insert(roomData)
+        .insert([roomData])
         .select()
         .single();
 

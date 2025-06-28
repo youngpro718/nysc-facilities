@@ -23,9 +23,9 @@ export function useRoomData(authError: boolean | null) {
           room_number,
           capacity,
           current_occupancy,
-          floors (
+          floors!rooms_floor_id_fkey (
             name,
-            buildings (
+            buildings!floors_building_id_fkey (
               name
             )
           )
@@ -43,4 +43,3 @@ export function useRoomData(authError: boolean | null) {
     },
   });
 }
-

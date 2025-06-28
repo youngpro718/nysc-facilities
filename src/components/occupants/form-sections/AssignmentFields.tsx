@@ -1,3 +1,4 @@
+
 import { UseFormReturn } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,7 +18,15 @@ export function AssignmentFields({ form }: AssignmentFieldsProps) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("rooms")
-        .select("*, floors(name, buildings(name))")
+        .select(`
+          *,
+          floors!rooms_floor_id_fkey (
+            name,
+            buildings!floors_building_id_fkey (
+              name
+            )
+          )
+        `)
         .eq("status", "active");
 
       if (error) throw error;

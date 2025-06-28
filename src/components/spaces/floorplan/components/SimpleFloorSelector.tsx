@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -39,7 +40,13 @@ export function SimpleFloorSelector({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("floors")
-        .select("id, name, building_id, floor_number, building:buildings(name)")
+        .select(`
+          id, 
+          name, 
+          building_id, 
+          floor_number, 
+          building:buildings!floors_building_id_fkey(name)
+        `)
         .order("floor_number", { ascending: false });
 
       if (error) throw error;

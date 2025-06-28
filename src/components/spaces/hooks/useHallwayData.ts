@@ -22,9 +22,9 @@ export const useHallwayData = ({ selectedBuilding, selectedFloor }: UseHallwayDa
         .from('hallways')
         .select(`
           *,
-          floors:floor_id (
+          floors:floors!hallways_floor_id_fkey (
             name,
-            buildings:building_id (
+            buildings:buildings!floors_building_id_fkey (
               name
             )
           ),
