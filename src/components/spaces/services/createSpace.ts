@@ -8,10 +8,23 @@ import {
 } from "../rooms/types/roomEnums";
 import { toast } from "sonner";
 
+// Type guard function to check if the data has a valid space type
+function hasValidSpaceType(data: any): data is CreateSpaceFormData {
+  return data && typeof data === 'object' && 
+         data.type && ['room', 'hallway', 'door'].includes(data.type);
+}
+
 export async function createSpace(data: CreateSpaceFormData) {
   console.log('Creating space with data:', data);
   
+  // Validate the data has a valid type
+  if (!hasValidSpaceType(data)) {
+    throw new Error(`Invalid or missing space type: ${String((data as any)?.type || 'unknown')}`);
+  }
+  
   try {
+    // Now TypeScript knows data.type is one of the valid types
+    // Handle room creation
     if (data.type === 'room') {
       // Map the enum to the correct database value
       let dbRoomType = data.roomType ? roomTypeToString(data.roomType as RoomTypeEnum) : 'office';
@@ -185,10 +198,11 @@ export async function createSpace(data: CreateSpaceFormData) {
       return door;
     }
 
-    // Default case - should not reach here if type is properly specified
-    // Use type assertion to avoid TypeScript error
-    const spaceType = data.type as string;
-    throw new Error(`Unsupported space type: ${spaceType}`);
+    // This code should never execute because we've handled all valid space types
+    // and validated at the beginning of the function
+    // Use a type assertion that TypeScript will accept
+    const unknownData = data as unknown as { type: string };
+    throw new Error(`Unsupported space type: ${unknownData.type}`);
     
   } catch (error) {
     console.error('Error in createSpace:', error);
