@@ -13,6 +13,14 @@ interface CreateSpaceFormFieldsProps {
 export function CreateSpaceFormFields({ form }: CreateSpaceFormFieldsProps) {
   const spaceType = form.watch("type");
   const floorId = form.watch("floorId");
+  
+  console.log('=== CreateSpaceFormFields rendered ===');
+  console.log('Current form values:', {
+    spaceType,
+    floorId,
+    name: form.watch("name"),
+    buildingId: form.watch("buildingId")
+  });
 
   return (
     <div className="space-y-6">

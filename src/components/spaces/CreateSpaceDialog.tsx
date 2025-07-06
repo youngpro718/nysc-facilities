@@ -80,31 +80,47 @@ export function CreateSpaceDialog() {
   });
 
   const onSubmit = async (data: CreateSpaceFormData) => {
-    console.log('Form submitted with data:', data);
+    console.log('=== FORM SUBMIT STARTED ===');
+    console.log('Form submitted with data:', JSON.stringify(data, null, 2));
+    console.log('Form errors:', form.formState.errors);
+    console.log('Form isDirty:', form.formState.isDirty);
+    console.log('Form isValid:', form.formState.isValid);
     
     try {
       // Validate required fields
       if (!data.name?.trim()) {
+        console.log('Validation failed: Space name is required');
         toast.error("Space name is required");
         form.setError("name", { message: "Space name is required" });
         return;
       }
       
       if (!data.buildingId) {
+        console.log('Validation failed: Building selection is required');
         toast.error("Building selection is required");
         form.setError("buildingId", { message: "Building selection is required" });
         return;
       }
       
       if (!data.floorId) {
+        console.log('Validation failed: Floor selection is required');
         toast.error("Floor selection is required");
         form.setError("floorId", { message: "Floor selection is required" });
         return;
       }
       
+      console.log('All validations passed, calling mutation...');
+      console.log('Mutation status before call:', {
+        isIdle: createSpaceMutation.isIdle,
+        isPending: createSpaceMutation.isPending,
+        isError: createSpaceMutation.isError,
+        isSuccess: createSpaceMutation.isSuccess
+      });
+      
       // Add debugging to track the mutation execution
       console.log('Calling createSpace mutation with data:', data);
       createSpaceMutation.mutate(data);
+      console.log('Mutation.mutate() called successfully');
     } catch (error) {
       console.error('Error in form submission:', error);
       toast.error('An error occurred while submitting the form');
@@ -138,6 +154,15 @@ export function CreateSpaceDialog() {
       <Button 
         type="submit" 
         disabled={createSpaceMutation.isPending}
+        onClick={() => {
+          console.log('=== CREATE SPACE BUTTON CLICKED ===');
+          console.log('Form state:', {
+            isValid: form.formState.isValid,
+            isDirty: form.formState.isDirty,
+            errors: form.formState.errors,
+            values: form.getValues()
+          });
+        }}
       >
         {createSpaceMutation.isPending ? "Creating..." : "Create Space"}
       </Button>

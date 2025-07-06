@@ -14,9 +14,19 @@ interface BasicSpaceFieldsProps {
 export function BasicSpaceFields({ form }: BasicSpaceFieldsProps) {
   // Get selected building ID
   const selectedBuildingId = form.watch('buildingId');
+  
+  console.log('=== BasicSpaceFields rendered ===');
+  console.log('Selected building ID:', selectedBuildingId);
+  console.log('Current form values in BasicSpaceFields:', {
+    name: form.watch('name'),
+    buildingId: form.watch('buildingId'),
+    floorId: form.watch('floorId'),
+    type: form.watch('type')
+  });
 
   // Reset floor when building changes
   const handleBuildingChange = (buildingId: string) => {
+    console.log('Building changed to:', buildingId);
     form.setValue('buildingId', buildingId);
     form.setValue('floorId', ''); // Reset floor selection when building changes
   };
