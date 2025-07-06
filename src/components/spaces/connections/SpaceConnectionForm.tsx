@@ -48,14 +48,24 @@ export function SpaceConnectionForm({ floorId, onComplete }: SpaceConnectionForm
   const { data: spaces } = useQuery({
     queryKey: ["floor-spaces", floorId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("new_spaces")
-        .select("id, name, type")
-        .eq("floor_id", floorId)
-        .eq("status", "active");
-
-      if (error) throw error;
-      return data || [];
+      // Get rooms, doors, and hallways for the floor
+      const [roomsResult, doorsResult, hallwaysResult] = await Promise.all([
+        supabase.from('rooms').select('id, name').eq('floor_id', floorId).eq('status', 'active'),
+        supabase.from('doors').select('id, name').eq('floor_id', floorId).eq('status', 'active'),
+        supabase.from('hallways').select('id, name').eq('floor_id', floorId).eq('status', 'active')
+      ]);
+      
+      if (roomsResult.error) throw roomsResult.error;
+      if (doorsResult.error) throw doorsResult.error;
+      if (hallwaysResult.error) throw hallwaysResult.error;
+      
+      const allSpaces = [
+        ...(roomsResult.data || []).map(item => ({ ...item, type: 'room' })),
+        ...(doorsResult.data || []).map(item => ({ ...item, type: 'door' })),
+        ...(hallwaysResult.data || []).map(item => ({ ...item, type: 'hallway' }))
+      ];
+      
+      return allSpaces;
     },
   });
 
@@ -72,19 +82,10 @@ export function SpaceConnectionForm({ floorId, onComplete }: SpaceConnectionForm
     try {
       setLoading(true);
       
-      const { error } = await supabase
-        .from("space_connections")
-        .insert({
-          from_space_id: data.fromSpaceId,
-          to_space_id: data.toSpaceId,
-          space_type: data.fromSpaceType,
-          connection_type: data.connectionType,
-          direction: data.direction,
-          status: "active",
-          connection_status: "active"
-        });
-
-      if (error) throw error;
+      // Note: space_connections table doesn't exist, so we'll skip the insertion
+      // In a real implementation, you'd need to create this table first
+      console.log('Would connect spaces:', data);
+      throw new Error('Space connections feature not yet implemented - table does not exist');
 
       toast.success("Spaces connected successfully");
       form.reset();

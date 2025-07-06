@@ -31,14 +31,13 @@ export function useFloorPlanNodes(onNodesChange: OnNodesChange) {
         console.log(`Preparing to update node in database:`, node);
 
         // Determine the correct table based on node type
-        let table: 'rooms' | 'doors' | 'new_spaces';
+        let table: 'rooms' | 'doors' | 'hallways';
         if (node.type === 'room') {
           table = 'rooms';
         } else if (node.type === 'door') {
           table = 'doors';
         } else if (node.type === 'hallway') {
-          // For hallways, we use the new_spaces table
-          table = 'new_spaces';
+          table = 'hallways';
         } else {
           throw new Error(`Invalid node type: ${node.type}`);
         }

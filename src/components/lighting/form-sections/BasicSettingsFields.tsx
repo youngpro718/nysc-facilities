@@ -19,11 +19,32 @@ export function BasicSettingsFields({ form, onSpaceOrPositionChange }: BasicSett
   const { data: spaces } = useQuery({
     queryKey: ['spaces'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('spaces')
-        .select('*');
-      if (error) throw error;
-      return data as Space[];
+      // Get rooms and hallways separately and combine them
+      const [roomsResult, hallwaysResult] = await Promise.all([
+        supabase.from('rooms').select('id, name, room_number, floor_id').eq('status', 'active'),
+        supabase.from('hallways').select('id, name, floor_id').eq('status', 'active')
+      ]);
+      
+      if (roomsResult.error) throw roomsResult.error;
+      if (hallwaysResult.error) throw hallwaysResult.error;
+      
+      const rooms = (roomsResult.data || []).map(room => ({
+        id: room.id,
+        name: room.name,
+        room_number: room.room_number,
+        floor_id: room.floor_id,
+        type: 'room' as const
+      }));
+      
+      const hallways = (hallwaysResult.data || []).map(hallway => ({
+        id: hallway.id,
+        name: hallway.name,
+        room_number: null,
+        floor_id: hallway.floor_id,
+        type: 'hallway' as const
+      }));
+      
+      return [...rooms, ...hallways] as Space[];
     }
   });
 

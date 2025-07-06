@@ -96,8 +96,8 @@ export function formToDbRoom(formData: RoomFormData): Partial<DatabaseRoom> {
     current_function: formData.currentFunction || null,
     parent_room_id: formData.parentRoomId || null,
     courtroom_photos: formData.courtroom_photos || null,
-    position: formData.position || { x: 0, y: 0 },
-    size: formData.size || { width: 150, height: 100 },
+    position: formData.position ? { x: formData.position.x || 0, y: formData.position.y || 0 } : { x: 0, y: 0 },
+    size: formData.size ? { width: formData.size.width || 150, height: formData.size.height || 100 } : { width: 150, height: 100 },
     rotation: formData.rotation || 0,
   };
 }

@@ -41,14 +41,7 @@ const RoomsList = ({ selectedBuilding, selectedFloor }: RoomsListProps) => {
 
   const deleteRoom = useMutation({
     mutationFn: async (roomId: string) => {
-      const { data: connections } = await supabase
-        .from('space_connections')
-        .select('id')
-        .or(`from_space_id.eq.${roomId},to_space_id.eq.${roomId}`);
-
-      if (connections && connections.length > 0) {
-        throw new Error('Cannot delete room with existing connections. Please remove connections first.');
-      }
+      // Note: space_connections table doesn't exist, so we skip this check for now
 
       const { data: assignedKeys } = await supabase
         .from('keys')

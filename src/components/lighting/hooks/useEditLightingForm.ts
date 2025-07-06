@@ -53,18 +53,44 @@ export function useEditLightingForm(
     },
   });
 
-  // Query to get the space details
+  // Query to get the space details from rooms or hallways
   const { data: space } = useQuery({
     queryKey: ['space', fixture.space_id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('spaces')
-        .select('*')
+      // Try to find the space in rooms first, then hallways
+      const roomResult = await supabase
+        .from('rooms')
+        .select('id, name, room_number, floor_id')
         .eq('id', fixture.space_id)
         .single();
-
-      if (error) throw error;
-      return data as Space;
+      
+      if (!roomResult.error && roomResult.data) {
+        return {
+          id: roomResult.data.id,
+          name: roomResult.data.name,
+          room_number: roomResult.data.room_number,
+          floor_id: roomResult.data.floor_id,
+          space_type: 'room'
+        } as Space;
+      }
+      
+      const hallwayResult = await supabase
+        .from('hallways')
+        .select('id, name, floor_id')
+        .eq('id', fixture.space_id)
+        .single();
+        
+      if (!hallwayResult.error && hallwayResult.data) {
+        return {
+          id: hallwayResult.data.id,
+          name: hallwayResult.data.name,
+          room_number: null,
+          floor_id: hallwayResult.data.floor_id,
+          space_type: 'hallway'
+        } as Space;
+      }
+      
+      throw new Error('Space not found');
     },
     enabled: !!fixture.space_id
   });

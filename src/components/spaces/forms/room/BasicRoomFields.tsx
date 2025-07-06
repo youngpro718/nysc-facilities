@@ -68,8 +68,7 @@ export function BasicRoomFields({ form }: BasicRoomFieldsProps) {
                       { value: RoomTypeEnum.CHAMBER, label: "Chamber" },
                       { value: RoomTypeEnum.MALE_LOCKER_ROOM, label: "Male Locker Room" },
                       { value: RoomTypeEnum.FEMALE_LOCKER_ROOM, label: "Female Locker Room" },
-                      { value: RoomTypeEnum.OFFICE, label: "Office" },
-                      { value: RoomTypeEnum.STORAGE, label: "Storage" }
+                      { value: RoomTypeEnum.OFFICE, label: "Office" }
                     ].map(option => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}

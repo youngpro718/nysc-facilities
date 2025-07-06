@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,49 +8,35 @@ import { SpaceOption } from "./types";
 export function useConnections(floorId: string, roomId?: string) {
   const [isAddingConnection, setIsAddingConnection] = useState(false);
   const [newConnection, setNewConnection] = useState<RoomConnectionData>({
-    toSpaceId: undefined,
-    connectionType: undefined,
+    toSpaceId: "",
+    connectionType: "",
     direction: undefined
   });
 
+  // Simplified spaces query using existing tables
   const { data: spaces, isLoading: isLoadingSpaces } = useQuery({
     queryKey: ["floor-spaces", floorId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("new_spaces")
-        .select("id, name, type, room_number")
-        .eq("floor_id", floorId)
-        .eq("status", "active");
-
-      if (error) throw error;
+      const [roomsResult, hallwaysResult] = await Promise.all([
+        supabase.from('rooms').select('id, name, room_number').eq('floor_id', floorId).eq('status', 'active'),
+        supabase.from('hallways').select('id, name').eq('floor_id', floorId).eq('status', 'active')
+      ]);
       
-      return (data || []).filter(space => space.id !== roomId) as SpaceOption[];
+      if (roomsResult.error) throw roomsResult.error;
+      if (hallwaysResult.error) throw hallwaysResult.error;
+      
+      const allSpaces = [
+        ...(roomsResult.data || []).map(item => ({ ...item, type: 'room' })),
+        ...(hallwaysResult.data || []).map(item => ({ ...item, type: 'hallway', room_number: null }))
+      ].filter(space => space.id !== roomId);
+      
+      return allSpaces as SpaceOption[];
     },
     enabled: !!floorId
   });
 
-  const { data: existingConnections } = useQuery({
-    queryKey: ["room-connections", roomId],
-    queryFn: async () => {
-      if (!roomId) return [];
-      
-      const { data, error } = await supabase
-        .from("space_connections")
-        .select(`
-          id, 
-          connection_type,
-          direction,
-          to_space_id,
-          to_space:to_space_id (id, name, type, room_number)
-        `)
-        .eq("from_space_id", roomId)
-        .eq("status", "active");
-
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!roomId
-  });
+  // Disable connections for now since space_connections table doesn't exist
+  const existingConnections: any[] = [];
 
   const handleConnectionChange = (field: keyof RoomConnectionData, value: string) => {
     setNewConnection(prev => ({
@@ -70,8 +55,8 @@ export function useConnections(floorId: string, roomId?: string) {
 
   const resetConnectionForm = () => {
     setNewConnection({
-      toSpaceId: undefined,
-      connectionType: undefined,
+      toSpaceId: "",
+      connectionType: "",
       direction: undefined
     });
     setIsAddingConnection(false);

@@ -12,23 +12,7 @@ export function useLightingFixtures() {
     queryFn: async () => {
       const { data: rawFixtures, error } = await supabase
         .from('lighting_fixtures')
-        .select(`
-          *,
-          floor_id,
-          room_number,
-          spaces!space_id (
-            name,
-            room_number,
-            floor_id,
-            floors!floor_id (
-              name,
-              building_id,
-              buildings!building_id (
-                name
-              )
-            )
-          )
-        `);
+        .select('*');
 
       if (error) throw error;
 
@@ -38,16 +22,16 @@ export function useLightingFixtures() {
         type: raw.type || 'standard',
         status: raw.status || 'functional',
         zone_name: null, // Will implement zone relation later
-        building_name: raw.spaces?.floors?.buildings?.name || null,
-        floor_name: raw.spaces?.floors?.name || null,
-        floor_id: raw.spaces?.floor_id || null,
+        building_name: null, // Will need to fetch separately if needed
+        floor_name: null, // Will need to fetch separately if needed
+        floor_id: raw.floor_id || null,
         space_id: raw.space_id || null,
         space_type: (raw.space_type || 'room') as 'room' | 'hallway',
         position: (raw.position || 'ceiling') as 'ceiling' | 'wall' | 'floor' | 'desk',
         sequence_number: raw.sequence_number || null,
         zone_id: raw.zone_id || null,
-        space_name: raw.spaces?.name || null,
-        room_number: raw.spaces?.room_number || null,
+        space_name: null, // Will need to fetch separately if needed
+        room_number: raw.room_number || null,
         technology: raw.technology || null,
         maintenance_notes: raw.maintenance_notes || null,
         created_at: raw.created_at || null,

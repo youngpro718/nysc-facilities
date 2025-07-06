@@ -12,7 +12,7 @@ export interface HallwayConnection {
 }
 
 export type HallwaySection = 'left_wing' | 'right_wing' | 'connector';
-export type HallwayType = 'public_main' | 'private';
+export type HallwayType = 'public_main' | 'private' | 'private_main';
 export type HallwayStatus = 'active' | 'inactive' | 'under_maintenance';
 export type TrafficFlow = 'one_way' | 'two_way' | 'restricted';
 export type Accessibility = 'fully_accessible' | 'limited_access' | 'stairs_only' | 'restricted';

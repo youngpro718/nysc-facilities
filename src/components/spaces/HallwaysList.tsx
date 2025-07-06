@@ -51,7 +51,7 @@ const HallwaysList = ({ selectedBuilding, selectedFloor }: HallwaysListProps) =>
     }
   };
 
-  const renderGridContent = (hallway: Hallway) => (
+  const renderGridContent = (hallway: any) => (
     <div className="space-y-2">
       <p className="text-sm text-muted-foreground">Type: {hallway.type}</p>
       <div className="flex gap-2 items-center">
@@ -96,7 +96,7 @@ const HallwaysList = ({ selectedBuilding, selectedFloor }: HallwaysListProps) =>
     </div>
   );
 
-  const renderListRow = (hallway: Hallway) => [
+  const renderListRow = (hallway: any) => [
     <TableCell key="name">{hallway.name}</TableCell>,
     <TableCell key="type">{hallway.type}</TableCell>,
     <TableCell key="building">{hallway.floors?.buildings?.name}</TableCell>,
