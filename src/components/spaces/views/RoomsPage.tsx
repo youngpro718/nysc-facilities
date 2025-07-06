@@ -6,7 +6,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { FilterBar } from "../rooms/components/FilterBar";
 import { RoomsContent } from "../rooms/components/RoomsContent";
+import { HierarchyFilters } from "../rooms/components/HierarchyFilters";
+import { GroupedRoomsView } from "../rooms/components/GroupedRoomsView";
 import { useRoomFilters } from "../hooks/useRoomFilters";
+import { useHierarchyFilters } from "../hooks/useHierarchyFilters";
 import { useRoomsQuery } from "../hooks/queries/useRoomsQuery";
 import { deleteSpace } from "../services/deleteSpace";
 
@@ -34,6 +37,11 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [roomTypeFilter, setRoomTypeFilter] = useState("");
   const [view, setView] = useState<"grid" | "list">("grid");
+  
+  // Hierarchy filter states
+  const [showOnlyParents, setShowOnlyParents] = useState(false);
+  const [showOnlyChildren, setShowOnlyChildren] = useState(false);
+  const [groupByParent, setGroupByParent] = useState(false);
 
   const { data: rooms, isLoading, error, refetch } = useRoomsQuery({
     buildingId: selectedBuilding === 'all' ? undefined : selectedBuilding,
@@ -48,6 +56,17 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
     selectedBuilding,
     selectedFloor,
     roomTypeFilter,
+  });
+
+  const { 
+    filteredRooms: hierarchyFilteredRooms, 
+    groupedRooms, 
+    hierarchyStats 
+  } = useHierarchyFilters({
+    rooms: filteredAndSortedRooms,
+    showOnlyParents,
+    showOnlyChildren,
+    groupByParent,
   });
 
   const deleteRoomMutation = useMutation({
@@ -108,18 +127,46 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
         onRefresh={handleRefresh}
       />
 
-      <RoomsContent
-        isLoading={isLoading}
-        rooms={rooms || []}
-        filteredRooms={filteredAndSortedRooms}
-        view={view}
-        onDelete={(id) => {
-          if (window.confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
-            deleteRoomMutation.mutate(id);
-          }
-        }}
-        searchQuery={searchQuery}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="lg:col-span-1">
+          <HierarchyFilters
+            showOnlyParents={showOnlyParents}
+            onShowOnlyParentsChange={setShowOnlyParents}
+            showOnlyChildren={showOnlyChildren}
+            onShowOnlyChildrenChange={setShowOnlyChildren}
+            groupByParent={groupByParent}
+            onGroupByParentChange={setGroupByParent}
+            hierarchyStats={hierarchyStats}
+          />
+        </div>
+        
+        <div className="lg:col-span-3">
+          {groupByParent ? (
+            <GroupedRoomsView
+              groupedRooms={groupedRooms}
+              onDelete={(id) => {
+                if (window.confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
+                  deleteRoomMutation.mutate(id);
+                }
+              }}
+              view={view}
+            />
+          ) : (
+            <RoomsContent
+              isLoading={isLoading}
+              rooms={rooms || []}
+              filteredRooms={hierarchyFilteredRooms}
+              view={view}
+              onDelete={(id) => {
+                if (window.confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
+                  deleteRoomMutation.mutate(id);
+                }
+              }}
+              searchQuery={searchQuery}
+            />
+          )}
+        </div>
+      </div>
     </div>
   );
 };

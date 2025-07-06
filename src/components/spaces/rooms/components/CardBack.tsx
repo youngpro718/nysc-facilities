@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RoomInventory } from "../../RoomInventory";
+import { ParentRoomHierarchy } from "../ParentRoomHierarchy";
 
 interface CardBackProps {
   room: Room;
@@ -44,6 +45,11 @@ export function CardBack({ room, onFlip }: CardBackProps) {
               <p>Room {room.room_number}</p>
               <p>{room.floor?.building?.name}, Floor {room.floor?.name}</p>
             </div>
+          </div>
+          
+          {/* Room Hierarchy */}
+          <div className="space-y-2">
+            <ParentRoomHierarchy roomId={room.id} compact={false} />
           </div>
           
           {/* Type Information */}

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Phone, MapPin } from "lucide-react";
 import { Room } from "./types/RoomTypes";
+import { ParentRoomHierarchy } from "./ParentRoomHierarchy";
 
 interface RoomTableProps {
   rooms: Room[];
@@ -50,6 +51,7 @@ export function RoomTable({ rooms, onDelete }: RoomTableProps) {
           <TableRow>
             <TableHead>Room</TableHead>
             <TableHead>Type</TableHead>
+            <TableHead>Hierarchy</TableHead>
             <TableHead>Location</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Details</TableHead>
@@ -71,6 +73,9 @@ export function RoomTable({ rooms, onDelete }: RoomTableProps) {
                 <Badge variant="outline">
                   {getRoomTypeLabel(room.room_type)}
                 </Badge>
+              </TableCell>
+              <TableCell>
+                <ParentRoomHierarchy roomId={room.id} compact={true} />
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-1 text-sm">
