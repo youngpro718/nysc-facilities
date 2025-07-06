@@ -1,7 +1,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Building2, DoorClosed, GitFork, LayoutPanelLeft } from "lucide-react";
-import RoomsList from "./RoomsList";
+import RoomsPage from "./views/RoomsPage";
 import HallwaysList from "./HallwaysList";
 import DoorsList from "./DoorsList";
 import { FloorPlanView } from "./floorplan/FloorPlanView";
@@ -38,7 +38,7 @@ const SpacesTabs = ({ selectedBuilding, selectedFloor }: SpaceViewProps) => {
         </TabsList>
 
         <TabsContent value="rooms" className="mt-4">
-          <RoomsList selectedBuilding={selectedBuilding} selectedFloor={selectedFloor} />
+          <RoomsPage selectedBuilding={selectedBuilding} selectedFloor={selectedFloor} />
         </TabsContent>
 
         <TabsContent value="hallways" className="mt-4">
