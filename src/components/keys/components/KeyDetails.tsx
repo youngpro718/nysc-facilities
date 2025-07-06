@@ -30,8 +30,16 @@ export function KeyDetails({ assignment }: KeyDetailsProps) {
                 Spare
               </Badge>
             </TooltipTrigger>
-            <TooltipContent>
-              <p>Reason: {assignment.spare_key_reason}</p>
+            <TooltipContent className="max-w-xs">
+              <div className="space-y-1">
+                <p className="font-medium">Spare Key</p>
+                {assignment.spare_key_reason && (
+                  <p className="text-sm">Reason: {assignment.spare_key_reason}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  This is an additional key for the same access
+                </p>
+              </div>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
