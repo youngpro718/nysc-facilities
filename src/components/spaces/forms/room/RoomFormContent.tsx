@@ -36,7 +36,8 @@ export function RoomFormContent({
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log("=== FORM SUBMIT HANDLER ===");
+    console.log("=== FORM SUBMIT HANDLER CALLED ===");
+    console.log("Form submit event triggered!");
     
     try {
       // Pre-validation cleanup to ensure proper values for validation
