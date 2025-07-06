@@ -51,13 +51,21 @@ export function CreateSpaceDialog() {
     onSuccess: (data) => {
       console.log('Space created successfully:', data);
       
-      // Invalidate all relevant queries
-      queryClient.invalidateQueries({ queryKey: ["rooms"] });
-      queryClient.invalidateQueries({ queryKey: ["new_spaces"] });
-      queryClient.invalidateQueries({ queryKey: ["spaces"] });
+      // Invalidate all relevant queries based on space type
+      const spaceType = form.getValues("type");
+      
+      // Invalidate the specific table that was updated
+      if (spaceType === 'room') {
+        queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      } else if (spaceType === 'hallway') {
+        queryClient.invalidateQueries({ queryKey: ["hallways"] });
+      } else if (spaceType === 'door') {
+        queryClient.invalidateQueries({ queryKey: ["doors"] });
+      }
+      
+      // Also invalidate general floor space queries
       queryClient.invalidateQueries({ queryKey: ["floor-spaces"] });
       
-      const spaceType = form.getValues("type");
       const spaceName = form.getValues("name");
       
       toast.success(`Successfully created ${spaceType} "${spaceName}"`);
@@ -71,35 +79,36 @@ export function CreateSpaceDialog() {
     },
   });
 
-  const onSubmit = (data: CreateSpaceFormData) => {
-  console.log('SUBMIT HANDLER FIRED');
-  console.log('Form data received:', data);
-  console.log('FORM ERRORS (before validation):', form.formState.errors);
+  const onSubmit = async (data: CreateSpaceFormData) => {
     console.log('Form submitted with data:', data);
     
-    // Validate required fields
-    if (!data.name?.trim()) {
-      toast.error("Space name is required");
-      form.setError("name", { message: "Space name is required" });
-      return;
+    try {
+      // Validate required fields
+      if (!data.name?.trim()) {
+        toast.error("Space name is required");
+        form.setError("name", { message: "Space name is required" });
+        return;
+      }
+      
+      if (!data.buildingId) {
+        toast.error("Building selection is required");
+        form.setError("buildingId", { message: "Building selection is required" });
+        return;
+      }
+      
+      if (!data.floorId) {
+        toast.error("Floor selection is required");
+        form.setError("floorId", { message: "Floor selection is required" });
+        return;
+      }
+      
+      // Add debugging to track the mutation execution
+      console.log('Calling createSpace mutation with data:', data);
+      createSpaceMutation.mutate(data);
+    } catch (error) {
+      console.error('Error in form submission:', error);
+      toast.error('An error occurred while submitting the form');
     }
-    
-    if (!data.buildingId) {
-      toast.error("Building selection is required");
-      form.setError("buildingId", { message: "Building selection is required" });
-      return;
-    }
-    
-    if (!data.floorId) {
-      toast.error("Floor selection is required");
-      form.setError("floorId", { message: "Floor selection is required" });
-      return;
-    }
-    
-    console.log('Submitting space creation request:', data);
-    console.log('Submitting space data:', data);
-    console.log('MUTATION CALLED');
-    createSpaceMutation.mutate(data);
   };
 
   return (
@@ -114,15 +123,8 @@ export function CreateSpaceDialog() {
         <DialogHeader>
           <DialogTitle>Create New Space</DialogTitle>
         </DialogHeader>
-        <div style={{ marginBottom: 16 }}>
-  {/* Minimal plain form for testing */}
-  <form onSubmit={e => { e.preventDefault(); console.log('PLAIN FORM SUBMIT'); }}>
-    <button type="submit">Plain Submit</button>
-  </form>
-</div>
-{/* Only ONE form: Remove <Form> wrapper and use native <form> */}
-          <FormProvider {...form}>
-  <form onSubmit={e => { console.log('NATIVE FORM SUBMIT'); form.handleSubmit(onSubmit, (errors) => { console.log('FORM VALIDATION ERRORS', errors); })(e); }} className="space-y-6">
+        <FormProvider {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
     <CreateSpaceFormFields form={form} />
     <div className="flex justify-end gap-2">
       <Button 
@@ -140,9 +142,8 @@ export function CreateSpaceDialog() {
         {createSpaceMutation.isPending ? "Creating..." : "Create Space"}
       </Button>
     </div>
-  </form>
-</FormProvider>
-        {/* End minimal plain form test */}
+          </form>
+        </FormProvider>
       </DialogContent>
     </Dialog>
   );
