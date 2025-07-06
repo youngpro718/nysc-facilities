@@ -11,6 +11,8 @@ import Keys from "@/pages/Keys";
 import Profile from "@/pages/Profile";
 import Lighting from "@/pages/Lighting";
 import UserDashboard from "@/pages/UserDashboard";
+import MyRequests from "@/pages/MyRequests";
+import MyIssues from "@/pages/MyIssues";
 import AdminProfile from "@/pages/AdminProfile";
 import VerificationPending from "@/pages/VerificationPending";
 import { ThemeProvider } from "@/providers/ThemeProvider";
@@ -78,6 +80,16 @@ function App() {
                 <Route path="dashboard" element={
                   <ProtectedRoute>
                     <UserDashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="my-requests" element={
+                  <ProtectedRoute>
+                    <MyRequests />
+                  </ProtectedRoute>
+                } />
+                <Route path="my-issues" element={
+                  <ProtectedRoute>
+                    <MyIssues />
                   </ProtectedRoute>
                 } />
                 <Route path="profile" element={
