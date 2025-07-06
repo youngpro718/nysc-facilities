@@ -97,7 +97,7 @@ export async function createSpace(data: CreateSpaceFormData) {
         rotation: data.rotation || 0,
         description: data.description || null,
         status: 'active' as any, // Cast to match enum
-        width_meters: data.widthMeters || 2, // Default width in meters
+        width_meters: data.width || 2, // Use width from schema as width_meters
         accessibility: data.accessibility || 'fully_accessible',
         type: 'hallway' // Required field for the hallways table
       };
@@ -186,7 +186,9 @@ export async function createSpace(data: CreateSpaceFormData) {
     }
 
     // Default case - should not reach here if type is properly specified
-    throw new Error(`Unsupported space type: ${data.type}`);
+    // Use type assertion to avoid TypeScript error
+    const spaceType = data.type as string;
+    throw new Error(`Unsupported space type: ${spaceType}`);
     
   } catch (error) {
     console.error('Error in createSpace:', error);
