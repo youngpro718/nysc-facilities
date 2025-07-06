@@ -51,7 +51,7 @@ export const useOccupantAccess = (occupantId?: string) => {
           is_primary,
           assignment_type,
           assigned_at,
-          rooms (
+          rooms!occupant_room_assignments_room_id_fkey (
             id,
             name,
             room_number,

@@ -69,7 +69,7 @@ export const useRoomAccess = (roomId?: string) => {
           is_primary,
           assignment_type,
           occupant_id,
-          occupants (
+          occupants!fk_occupant_room_assignments_occupant (
             id,
             first_name,
             last_name,
@@ -98,7 +98,7 @@ export const useRoomAccess = (roomId?: string) => {
               )
             )
           ),
-          occupants (
+          occupants!key_assignments_occupant_id_fkey (
             id,
             first_name,
             last_name,
