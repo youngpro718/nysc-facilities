@@ -145,104 +145,13 @@ export const fetchRelatedRoomData = async (roomIds: string[]) => {
 
     // Fetch lighting fixtures
     supabase
-      .from('lighting_fixture_details')
+      .from('lighting_fixtures')
       .select('*')
       .in('space_id', roomIds)
   ]);
   
-  // Now handle the space connections separately to avoid foreign key issues
-  // First, fetch the basic connection data
-  const { data: connections, error: connectionsError } = await supabase
-    .from('space_connections')
-    .select(`
-      id,
-      from_space_id,
-      to_space_id,
-      connection_type,
-      direction,
-      status
-    `)
-    .in('from_space_id', roomIds)
-    .eq('status', 'active');
-  
-  let connectionsResult = { data: [], error: connectionsError };
-  
-  // If we have connections, fetch the connected spaces details
-  if (!connectionsError && connections && connections.length > 0) {
-    // Get all the to_space_ids to fetch their details
-    const toSpaceIds = [...new Set(connections.map(conn => conn.to_space_id))].filter(Boolean);
-    
-    // Fetch the connected spaces from their respective tables
-    // First try rooms table
-    const { data: roomSpaces, error: roomsError } = await supabase
-      .from('rooms')
-      .select('id, name, room_number, room_type')
-      .in('id', toSpaceIds);
-      
-    // Then try hallways table
-    const { data: hallwaySpaces, error: hallwaysError } = await supabase
-      .from('hallways')
-      .select('id, name')
-      .in('id', toSpaceIds);
-      
-    // Finally try doors table
-    const { data: doorSpaces, error: doorsError } = await supabase
-      .from('doors')
-      .select('id, name')
-      .in('id', toSpaceIds);
-      
-    // Define a type for our connected spaces
-    type ConnectedSpace = {
-      id: string;
-      name: string;
-      room_number?: string | null;
-      room_type?: string | null;
-      door_type?: string | null;
-      type: 'room' | 'hallway' | 'door';
-    };
-    
-    // Combine all results with type information
-    const connectedSpaces: ConnectedSpace[] = [
-      ...(roomSpaces || []).map(space => ({ 
-        id: space.id, 
-        name: space.name, 
-        room_number: space.room_number, 
-        room_type: space.room_type, 
-        type: 'room' as const
-      })),
-      ...(hallwaySpaces || []).map(space => ({ 
-        id: space.id, 
-        name: space.name, 
-        type: 'hallway' as const 
-      })),
-      ...(doorSpaces || []).map(space => ({ 
-        id: space.id, 
-        name: space.name, 
-        type: 'door' as const 
-      }))
-    ];
-    
-    const spacesError = roomsError || hallwaysError || doorsError;
-      
-    if (!spacesError && connectedSpaces) {
-      // Create a map for quick lookup
-      const spacesMap: Record<string, any> = {};
-      connectedSpaces.forEach((space: any) => {
-        spacesMap[space.id] = space;
-      });
-      
-      // Attach the connected space details to each connection
-      const enrichedConnections = connections.map(conn => ({
-        ...conn,
-        to_spaces: spacesMap[conn.to_space_id] || null
-      }));
-      
-      connectionsResult = { data: enrichedConnections, error: null };
-    } else {
-      console.error('Error fetching connected spaces:', spacesError);
-      connectionsResult = { data: connections, error: spacesError };
-    }
-  }
+  // Space connections are disabled since space_connections table doesn't exist
+  const connectionsResult = { data: [], error: null };
   
   // Return all results in the same format as before
   return [

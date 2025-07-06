@@ -9,31 +9,47 @@ export function useSpacesQuery(floorId: string) {
     queryFn: async () => {
       if (!floorId) return [];
       
-      // Fetch all active spaces from the floor
-      const { data: spaceData, error: spaceError } = await supabase
-        .from("new_spaces")
-        .select(`
-          id,
-          name,
-          type,
-          room_number,
-          status
-        `)
-        .eq("floor_id", floorId)
-        .neq("status", "inactive");
+      // Fetch rooms and hallways from the floor
+      const [roomsResult, hallwaysResult] = await Promise.all([
+        supabase
+          .from("rooms")
+          .select(`
+            id,
+            name,
+            room_number,
+            status
+          `)
+          .eq("floor_id", floorId)
+          .neq("status", "inactive"),
+        supabase
+          .from("hallways")
+          .select(`
+            id,
+            name,
+            status
+          `)
+          .eq("floor_id", floorId)
+          .neq("status", "inactive")
+      ]);
       
-      if (spaceError) {
-        console.error("Error fetching spaces for connections:", spaceError);
-        throw spaceError;
-      }
+      if (roomsResult.error) throw roomsResult.error;
+      if (hallwaysResult.error) throw hallwaysResult.error;
       
       // Format spaces for dropdown
-      const formattedSpaces: SpaceOption[] = (spaceData || []).map(space => ({
-        id: space.id,
-        name: space.name,
-        type: space.type,
-        room_number: space.room_number
-      }));
+      const formattedSpaces: SpaceOption[] = [
+        ...(roomsResult.data || []).map(room => ({
+          id: room.id,
+          name: room.name,
+          type: 'room' as const,
+          room_number: room.room_number
+        })),
+        ...(hallwaysResult.data || []).map(hallway => ({
+          id: hallway.id,
+          name: hallway.name,
+          type: 'hallway' as const,
+          room_number: null
+        }))
+      ];
       
       return formattedSpaces;
     },

@@ -5,17 +5,6 @@ export async function deleteSpace(id: string, type: 'room' | 'hallway' | 'door')
   console.log(`Deleting ${type} with ID: ${id}`);
   
   try {
-    // First, deactivate any connections to this space
-    const { error: connectionError } = await supabase
-      .from("space_connections")
-      .update({ status: "inactive" })
-      .or(`from_space_id.eq.${id},to_space_id.eq.${id}`);
-      
-    if (connectionError) {
-      console.error("Error deactivating connections:", connectionError);
-      throw connectionError;
-    }
-    
     // Delete the space based on its type
     if (type === 'room') {
       const { error: roomError } = await supabase
@@ -27,29 +16,25 @@ export async function deleteSpace(id: string, type: 'room' | 'hallway' | 'door')
         console.error("Error deleting room:", roomError);
         throw roomError;
       }
-    } else {
-      // For hallways or doors, delete from new_spaces table
-      const { error: spaceError } = await supabase
-        .from("new_spaces")
+    } else if (type === 'hallway') {
+      const { error: hallwayError } = await supabase
+        .from("hallways")
         .delete()
         .eq("id", id);
         
-      if (spaceError) {
-        console.error(`Error deleting ${type}:`, spaceError);
-        throw spaceError;
+      if (hallwayError) {
+        console.error("Error deleting hallway:", hallwayError);
+        throw hallwayError;
       }
-      
-      // Delete type-specific properties
-      if (type === 'hallway') {
-        await supabase
-          .from("hallway_properties")
-          .delete()
-          .eq("space_id", id);
-      } else if (type === 'door') {
-        await supabase
-          .from("door_properties")
-          .delete()
-          .eq("space_id", id);
+    } else if (type === 'door') {
+      const { error: doorError } = await supabase
+        .from("doors")
+        .delete()
+        .eq("id", id);
+        
+      if (doorError) {
+        console.error("Error deleting door:", doorError);
+        throw doorError;
       }
     }
     

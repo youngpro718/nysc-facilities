@@ -40,41 +40,40 @@ export const useAdminDashboardData = () => {
             buildingsData.map(async (building) => {
               const floorIds = building.floors?.map(f => f.id) || [];
               
-              // Fetch spaces for each floor
-              const { data: spacesData } = await supabase
-                .from('new_spaces')
+              // Fetch rooms for each floor
+              const { data: roomsData } = await supabase
+                .from('rooms')
                 .select(`
                   id,
                   name,
-                  type,
                   room_number,
                   status,
                   floor_id
                 `)
                 .in('floor_id', floorIds);
 
-              // Fetch lighting fixtures for the spaces
-              const spaceIds = spacesData?.map(s => s.id) || [];
+              // Fetch lighting fixtures for the rooms
+              const roomIds = roomsData?.map(r => r.id) || [];
               const { data: fixturesData } = await supabase
                 .from('lighting_fixtures')
                 .select('*')
-                .in('space_id', spaceIds);
+                .in('space_id', roomIds);
 
-              // Map spaces to their floors with fixtures
-              const floorsWithSpaces = building.floors?.map(floor => ({
+              // Map rooms to their floors with fixtures
+              const floorsWithRooms = building.floors?.map(floor => ({
                 ...floor,
-                new_spaces: (spacesData || [])
-                  .filter(space => space.floor_id === floor.id)
-                  .map(space => ({
-                    ...space,
+                rooms: (roomsData || [])
+                  .filter(room => room.floor_id === floor.id)
+                  .map(room => ({
+                    ...room,
                     lighting_fixtures: (fixturesData || [])
-                      .filter(fixture => fixture.space_id === space.id)
+                      .filter(fixture => fixture.space_id === room.id)
                   }))
               }));
 
               return {
                 ...building,
-                floors: floorsWithSpaces
+                floors: floorsWithRooms
               };
             })
           );
@@ -98,7 +97,7 @@ export const useAdminDashboardData = () => {
           seen,
           photos,
           space_id,
-          new_spaces (
+          rooms (
             id,
             name,
             room_number
@@ -122,10 +121,10 @@ export const useAdminDashboardData = () => {
         console.log('Issues data:', issuesData);
         const transformedIssues = (issuesData || []).map(issue => ({
           ...issue,
-          rooms: issue.new_spaces ? {
-            id: issue.new_spaces.id,
-            name: issue.new_spaces.name,
-            room_number: issue.new_spaces.room_number
+          rooms: issue.rooms ? {
+            id: issue.rooms.id,
+            name: issue.rooms.name,
+            room_number: issue.rooms.room_number
           } : null,
           buildings: issue.buildings || null,
           floors: issue.floors || null

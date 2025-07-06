@@ -48,7 +48,7 @@ export function BasicConfigSection({ form }: BasicConfigSectionProps) {
     queryFn: async () => {
       if (!floorId) return [];
       const { data, error } = await supabase
-        .from('spaces')
+        .from('rooms')
         .select('*')
         .eq('floor_id', floorId)
         .eq('status', 'active');
@@ -143,7 +143,7 @@ export function BasicConfigSection({ form }: BasicConfigSectionProps) {
               <SelectContent>
                 {spaces?.map((space) => (
                   <SelectItem key={space.id} value={space.id}>
-                    {space.type === 'room' ? `Room ${space.room_number} - ${space.name}` : space.name}
+                    {space.room_number ? `Room ${space.room_number} - ${space.name}` : space.name}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -23,7 +23,7 @@ export function LightingStatusIndicator({ roomId }: LightingStatusIndicatorProps
       if (!roomId) return null;
       
       const { data: room, error } = await supabase
-        .from('spaces')
+        .from('rooms')
         .select(`
           id,
           name,

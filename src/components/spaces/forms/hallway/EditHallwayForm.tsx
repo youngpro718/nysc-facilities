@@ -48,27 +48,14 @@ export function EditHallwayForm({
       
       console.log('Updating hallway with data:', data);
       
-      // First update the basic space data
-      const spaceData = {
+      // Update hallway directly in the hallways table
+      const hallwayData = {
         name: data.name,
         status: data.status,
         position: data.position || { x: 0, y: 0 },
         size: data.size || { width: 300, height: 50 },
         rotation: data.rotation || 0,
-        properties: {
-          description: data.description
-        }
-      };
-
-      const { error: spaceError } = await supabase
-        .from('new_spaces')
-        .update(spaceData)
-        .eq('id', id);
-
-      if (spaceError) throw spaceError;
-
-      // Then update the hallway-specific properties
-      const hallwayProps = {
+        description: data.description,
         section: data.section || 'connector',
         traffic_flow: data.trafficFlow || 'two_way',
         accessibility: data.accessibility || 'fully_accessible',
@@ -77,30 +64,12 @@ export function EditHallwayForm({
         capacity_limit: data.capacityLimit
       };
 
-      // Check if hallway properties exist for this space
-      const { data: existingProps, error: checkError } = await supabase
-        .from('hallway_properties')
-        .select('*')
-        .eq('space_id', id)
-        .maybeSingle();
+      const { error } = await supabase
+        .from('hallways')
+        .update(hallwayData)
+        .eq('id', id);
 
-      if (checkError) throw checkError;
-
-      // Insert or update hallway properties
-      if (existingProps) {
-        const { error: updateError } = await supabase
-          .from('hallway_properties')
-          .update(hallwayProps)
-          .eq('space_id', id);
-
-        if (updateError) throw updateError;
-      } else {
-        const { error: insertError } = await supabase
-          .from('hallway_properties')
-          .insert([{ ...hallwayProps, space_id: id }]);
-
-        if (insertError) throw insertError;
-      }
+      if (error) throw error;
 
       return data;
     },
