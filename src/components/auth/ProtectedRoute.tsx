@@ -16,6 +16,13 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   const { isAuthenticated, isAdmin, isLoading, profile } = useAuth();
 
+  console.log('ProtectedRoute - isAuthenticated:', isAuthenticated);
+  console.log('ProtectedRoute - isAdmin:', isAdmin);
+  console.log('ProtectedRoute - isLoading:', isLoading);
+  console.log('ProtectedRoute - profile:', profile);
+  console.log('ProtectedRoute - requireAdmin:', requireAdmin);
+  console.log('ProtectedRoute - requireVerified:', requireVerified);
+
   // Show loading while auth state is being determined
   if (isLoading) {
     return (

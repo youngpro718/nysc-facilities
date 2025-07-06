@@ -62,7 +62,13 @@ const Layout = () => {
                   <button
                     className="focus:outline-none"
                     title="Profile"
-                    onClick={() => navigate('/profile')}
+                    onClick={() => {
+                      console.log('Profile button clicked');
+                      console.log('Current profile:', profile);
+                      console.log('Is authenticated:', isAuthenticated);
+                      console.log('Verification status:', profile?.verification_status);
+                      navigate('/profile');
+                    }}
                   >
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={profile?.avatar_url} />
