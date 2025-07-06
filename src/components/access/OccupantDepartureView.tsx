@@ -196,9 +196,9 @@ export function OccupantDepartureView({ occupantId, onComplete }: OccupantDepart
                     <div className="text-sm text-muted-foreground">
                       Assigned {format(new Date(assignment.assigned_at), "MMM d, yyyy")}
                     </div>
-                    {assignment.door_access.length > 0 && (
+                    {assignment.access_note && (
                       <div className="text-xs text-muted-foreground mt-1">
-                        Access: {assignment.door_access.join(', ')}
+                        Access: {assignment.access_note}
                       </div>
                     )}
                   </div>

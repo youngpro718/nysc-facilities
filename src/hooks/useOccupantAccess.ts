@@ -22,7 +22,7 @@ export interface OccupantAccessSummary {
     key_name: string;
     is_passkey: boolean;
     assigned_at: string;
-    door_access: string[];
+    access_note: string; // What this key provides access to
   }>;
 }
 
@@ -79,7 +79,7 @@ export const useOccupantAccess = (occupantId?: string) => {
 
       console.log('Room assignments found:', roomAssignments);
 
-      // Get key assignments
+      // Get key assignments (simplified - no door mappings needed)
       const { data: keyAssignments, error: keyError } = await supabase
         .from('key_assignments')
         .select(`
@@ -89,12 +89,7 @@ export const useOccupantAccess = (occupantId?: string) => {
           keys (
             id,
             name,
-            is_passkey,
-            key_door_locations (
-              doors (
-                name
-              )
-            )
+            is_passkey
           )
         `)
         .eq('occupant_id', occupantId)
@@ -119,13 +114,34 @@ export const useOccupantAccess = (occupantId?: string) => {
         assigned_at: assignment.assigned_at
       })) || [];
 
+      // Helper function to generate access note based on key
+      const getAccessNote = (keyName: string, isPasskey: boolean): string => {
+        if (isPasskey) {
+          return `Master Key - General Building Access`;
+        }
+        
+        // Private key - show what it specifically accesses
+        switch (keyName.toLowerCase()) {
+          case 'clerks office':
+            return 'Central Clerks Office Access';
+          case '111 m':
+            return 'Room 111M Access';
+          case 'hogan st.':
+            return 'Hogan Street Entrance Access';
+          case 'm4':
+            return 'M4 Area Access';
+          default:
+            return `Private Key - ${keyName} Access`;
+        }
+      };
+      
       const key_assignments = keyAssignments?.map(assignment => ({
         id: assignment.id,
         key_id: assignment.key_id,
         key_name: assignment.keys?.name || '',
         is_passkey: assignment.keys?.is_passkey || false,
         assigned_at: assignment.assigned_at,
-        door_access: assignment.keys?.key_door_locations?.map((loc: any) => loc.doors?.name).filter(Boolean) || []
+        access_note: getAccessNote(assignment.keys?.name || '', assignment.keys?.is_passkey || false)
       })) || [];
 
       const result = {

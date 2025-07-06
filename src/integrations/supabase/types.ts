@@ -7390,6 +7390,7 @@ export type Database = {
       }
       new_spaces: {
         Row: {
+          floor_id: string | null
           id: string | null
           name: string | null
           room_number: string | null
