@@ -35,6 +35,8 @@ export function RoomFormContent({
   const shouldShowParentRoomField = !!roomType && !!floorId;
   console.log('[RoomFormContent] Watched roomType:', roomType, typeof rawRoomType);
   console.log('[RoomFormContent] Watched floorId:', floorId, typeof floorId);
+  console.log('[RoomFormContent] Should show parent room field:', shouldShowParentRoomField);
+  console.log('[RoomFormContent] Current form values:', form.getValues());
   
   // Debug form state changes
   useEffect(() => {
@@ -125,7 +127,12 @@ export function RoomFormContent({
         {floorId && (
           <>
             <Separator />
-            <ParentRoomField form={form} floorId={floorId} currentRoomId={roomId} />
+            <div style={{border: '2px solid red', padding: '10px', margin: '10px'}}>
+              <h3 style={{color: 'red'}}>DEBUG: Parent Room Field Should Be Here</h3>
+              <p>FloorId: {floorId}</p>
+              <p>RoomId: {roomId}</p>
+              <ParentRoomField form={form} floorId={floorId} currentRoomId={roomId} />
+            </div>
           </>
         )}
         
