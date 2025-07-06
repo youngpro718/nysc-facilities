@@ -1,8 +1,10 @@
 
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building2, MapPin } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Building2, MapPin, Eye, Phone, Calendar } from "lucide-react";
 import { useRoomAssignments } from "@/hooks/dashboard/useRoomAssignments";
+import { format, formatDistanceToNow } from "date-fns";
 
 interface RoomAssignmentCardProps {
   userId: string;
@@ -10,6 +12,11 @@ interface RoomAssignmentCardProps {
 
 export function RoomAssignmentCard({ userId }: RoomAssignmentCardProps) {
   const { assignedRooms } = useRoomAssignments(userId);
+
+  const handleViewRoomDetails = (roomId: string) => {
+    // TODO: Navigate to room details or show modal
+    console.log('View room details:', roomId);
+  };
 
   return (
     <Card className="h-full">
@@ -34,7 +41,7 @@ export function RoomAssignmentCard({ userId }: RoomAssignmentCardProps) {
             {assignedRooms.slice(0, 3).map((assignment) => (
               <div
                 key={assignment.id}
-                className="flex items-start justify-between p-3 rounded-lg border"
+                className="flex items-start justify-between p-3 rounded-lg border bg-muted/20"
               >
                 <div className="flex-1 min-w-0">
                   <div className="font-medium truncate">{assignment.room_name}</div>
@@ -45,12 +52,26 @@ export function RoomAssignmentCard({ userId }: RoomAssignmentCardProps) {
                     <MapPin className="h-3 w-3" />
                     {assignment.building_name} • {assignment.floor_name}
                   </div>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                    <Calendar className="h-3 w-3" />
+                    Assigned {formatDistanceToNow(new Date(assignment.assigned_at), { addSuffix: true })}
+                  </div>
                 </div>
-                {assignment.is_primary && (
-                  <Badge variant="default" className="text-xs ml-2 shrink-0">
-                    Primary
-                  </Badge>
-                )}
+                <div className="flex items-center gap-2 ml-2 shrink-0">
+                  {assignment.is_primary && (
+                    <Badge variant="default" className="text-xs">
+                      Primary
+                    </Badge>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleViewRoomDetails(assignment.room_id || '')}
+                    className="h-6 w-6 p-0"
+                  >
+                    <Eye className="h-3 w-3" />
+                  </Button>
+                </div>
               </div>
             ))}
             {assignedRooms.length > 3 && (

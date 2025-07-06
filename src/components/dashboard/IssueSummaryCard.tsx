@@ -1,8 +1,11 @@
 
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, Clock, CheckCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { AlertCircle, Clock, CheckCircle, Plus, Eye } from "lucide-react";
 import { useUserIssues } from "@/hooks/dashboard/useUserIssues";
+import { useNavigate } from "react-router-dom";
+import { format, formatDistanceToNow } from "date-fns";
 
 interface IssueSummaryCardProps {
   userId: string;
@@ -10,10 +13,19 @@ interface IssueSummaryCardProps {
 
 export function IssueSummaryCard({ userId }: IssueSummaryCardProps) {
   const { userIssues } = useUserIssues(userId);
+  const navigate = useNavigate();
 
   const openIssues = userIssues?.filter(issue => issue.status === 'open') || [];
   const inProgressIssues = userIssues?.filter(issue => issue.status === 'in_progress') || [];
   const resolvedIssues = userIssues?.filter(issue => issue.status === 'resolved') || [];
+
+  const handleReportIssue = () => {
+    navigate('/my-issues');
+  };
+
+  const handleViewAllIssues = () => {
+    navigate('/my-issues');
+  };
 
   return (
     <Card className="h-full">
@@ -22,9 +34,20 @@ export function IssueSummaryCard({ userId }: IssueSummaryCardProps) {
           <AlertCircle className="h-5 w-5 text-muted-foreground" />
           <h2 className="text-lg sm:text-2xl font-semibold">Reported Issues</h2>
         </div>
-        <Badge variant="secondary" className="font-normal">
-          {userIssues?.length || 0} total
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="font-normal">
+            {userIssues?.length || 0} total
+          </Badge>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleViewAllIssues}
+            className="text-xs"
+          >
+            <Eye className="h-3 w-3 mr-1" />
+            View All
+          </Button>
+        </div>
       </div>
       
       <div className="p-4 sm:p-6">
@@ -57,23 +80,28 @@ export function IssueSummaryCard({ userId }: IssueSummaryCardProps) {
             {userIssues.slice(0, 3).map((issue) => (
               <div
                 key={issue.id}
-                className="flex items-start justify-between p-3 rounded-lg border"
+                className="flex items-start justify-between p-3 rounded-lg border bg-muted/20"
               >
                 <div className="flex-1 min-w-0">
                   <div className="font-medium truncate">{issue.title}</div>
                   <div className="text-sm text-muted-foreground truncate">
                     {issue.buildings?.name} • {issue.rooms?.name}
                   </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Reported {formatDistanceToNow(new Date(issue.created_at), { addSuffix: true })}
+                  </div>
                 </div>
-                <Badge
-                  variant={
-                    issue.status === 'open' ? 'destructive' :
-                    issue.status === 'in_progress' ? 'default' : 'secondary'
-                  }
-                  className="text-xs ml-2 shrink-0"
-                >
-                  {issue.status.replace('_', ' ')}
-                </Badge>
+                <div className="flex items-center gap-2 ml-2 shrink-0">
+                  <Badge
+                    variant={
+                      issue.status === 'open' ? 'destructive' :
+                      issue.status === 'in_progress' ? 'default' : 'secondary'
+                    }
+                    className="text-xs"
+                  >
+                    {issue.status.replace('_', ' ')}
+                  </Badge>
+                </div>
               </div>
             ))}
             {userIssues.length > 3 && (
@@ -88,6 +116,18 @@ export function IssueSummaryCard({ userId }: IssueSummaryCardProps) {
             <p>No issues reported</p>
           </div>
         )}
+        
+        <div className="pt-3 border-t">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleReportIssue}
+            className="w-full"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Report New Issue
+          </Button>
+        </div>
       </div>
     </Card>
   );
