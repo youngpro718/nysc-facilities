@@ -177,40 +177,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Setup auth state listener
   useEffect(() => {
+    let isInitialLoad = true;
+    
     // First, set up the auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
-        console.log('Auth state changed:', event);
+        console.log('Auth state changed:', event, 'Initial load:', isInitialLoad);
         
         if (event === 'SIGNED_IN' && newSession) {
           setSession(newSession);
           setUser(newSession.user);
           
           // Fetch user profile data
-          setTimeout(async () => {
-            const userData = await getUserProfile(newSession.user.id);
-            setIsAdmin(userData.isAdmin);
-            setProfile(userData.profile);
-            
+          const userData = await getUserProfile(newSession.user.id);
+          setIsAdmin(userData.isAdmin);
+          setProfile(userData.profile);
+          
+          // Only redirect on actual sign-in, not on session restoration
+          if (!isInitialLoad && event === 'SIGNED_IN') {
             // Redirect based on verification status
             if (userData.profile?.verification_status === 'pending') {
               navigate('/verification-pending');
             } else {
-              // Redirect based on role
-              navigate(userData.isAdmin ? '/' : '/dashboard');
+              // Check current location to avoid unnecessary redirects
+              const currentPath = window.location.pathname;
+              const shouldRedirectAdmin = userData.isAdmin && currentPath === '/login';
+              const shouldRedirectUser = !userData.isAdmin && currentPath === '/login';
+              
+              if (shouldRedirectAdmin) {
+                navigate('/');
+              } else if (shouldRedirectUser) {
+                navigate('/dashboard');
+              }
             }
-          }, 0);
+          }
         } else if (event === 'SIGNED_OUT') {
           setSession(null);
           setUser(null);
           setProfile(null);
           setIsAdmin(false);
-          navigate('/login');
+          // Only navigate to login if not already there
+          if (window.location.pathname !== '/login') {
+            navigate('/login');
+          }
+        }
+        
+        // Mark that initial load is complete
+        if (isInitialLoad) {
+          isInitialLoad = false;
         }
       }
     );
 
-    // Then check for an existing session
+    // Then check for an existing session without triggering navigation
     refreshSession();
 
     // Cleanup subscription on unmount

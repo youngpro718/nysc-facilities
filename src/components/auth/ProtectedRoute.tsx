@@ -31,14 +31,14 @@ export function ProtectedRoute({
       return;
     }
 
-    // Handle verification pending
-    if (requireVerified && profile?.verification_status === 'pending') {
+    // Handle verification pending - only redirect if currently on a protected route
+    if (requireVerified && profile?.verification_status === 'pending' && location.pathname !== '/verification-pending') {
       navigate('/verification-pending', { replace: true });
       return;
     }
 
-    // Handle admin route protection
-    if (requireAdmin && !isAdmin) {
+    // Handle admin route protection - only redirect if access is actually denied
+    if (requireAdmin && !isAdmin && location.pathname !== '/dashboard') {
       navigate('/dashboard', { replace: true });
       return;
     }
@@ -46,7 +46,7 @@ export function ProtectedRoute({
     isAuthenticated, 
     isAdmin, 
     isLoading, 
-    profile, 
+    profile?.verification_status, // Only watch verification_status specifically
     navigate, 
     location.pathname, 
     requireAdmin, 

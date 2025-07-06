@@ -18,14 +18,31 @@ const ThemeContext = createContext<ThemeContextType>({
 });
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(
-    (localStorage.getItem("theme") as Theme) || "light"
-  );
+  const [theme, setTheme] = useState<Theme>(() => {
+    // Check if we're on the client side
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem("theme") as Theme;
+      if (savedTheme && (savedTheme === "light" || savedTheme === "dark")) {
+        return savedTheme;
+      }
+      // Check system preference
+      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        return "dark";
+      }
+    }
+    return "light";
+  });
 
   useEffect(() => {
     const root = window.document.documentElement;
+    
+    // Remove both classes first to avoid conflicts
     root.classList.remove("light", "dark");
+    
+    // Add the correct theme class
     root.classList.add(theme);
+    
+    // Save to localStorage
     localStorage.setItem("theme", theme);
   }, [theme]);
 
