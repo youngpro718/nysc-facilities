@@ -116,7 +116,7 @@ export function EditSpaceDialog({
 
       // Use the new updateSpace service for updating the room
       await import("./services/updateSpace").then(async ({ updateSpace }) => {
-        await updateSpace(roomId, data);
+        await updateSpace(roomId, dbData);
       });
       // Handle connections using simplified approach - removed since space_connections table doesn't exist
       console.log("Room update successful");

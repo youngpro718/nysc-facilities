@@ -7,7 +7,7 @@ interface UpdateSpaceData {
   name?: string;
   buildingId?: string;
   floorId?: string;
-  status?: StatusEnum;
+  status?: string;
   description?: string;
   position?: { x?: number; y?: number; };
   size?: { width?: number; height?: number; };
@@ -18,7 +18,7 @@ interface UpdateSpaceData {
   storage_capacity?: number;
   phone_number?: string;
   current_function?: string;
-  parent_room_id?: string;
+  parent_room_id?: string | null;
   courtroom_photos?: {
     judge_view?: string | null;
     audience_view?: string | null;

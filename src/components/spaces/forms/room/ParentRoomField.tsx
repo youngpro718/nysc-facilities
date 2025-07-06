@@ -38,6 +38,9 @@ export const CAN_HAVE_PARENT_ROOM_TYPES: RoomTypeEnum[] = [
   RoomTypeEnum.IT_ROOM,
   RoomTypeEnum.UTILITY_ROOM,
   RoomTypeEnum.CONFERENCE,
+  RoomTypeEnum.CONFERENCE_ROOM,
+  RoomTypeEnum.RECORDS_ROOM,
+  RoomTypeEnum.FILING_ROOM,
 ];
 
 interface ParentRoomFieldProps {
