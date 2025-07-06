@@ -23,7 +23,7 @@ export function FloorSelector({ form, selectedBuildingId }: FloorSelectorProps) 
           name,
           floor_number,
           building_id,
-          buildings (
+          buildings:floors_building_id_fkey (
             id,
             name
           )

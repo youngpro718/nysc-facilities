@@ -5,7 +5,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { CreateSpaceFormData } from "../../schemas/createSpaceSchema";
-import { ConnectionFields } from "./ConnectionFields";
 
 interface CreateHallwayFieldsProps {
   form: UseFormReturn<CreateSpaceFormData>;
@@ -187,10 +186,6 @@ export function CreateHallwayFields({ form }: CreateHallwayFieldsProps) {
         )}
       />
 
-      <div className="border-t pt-4 mt-4">
-        <h3 className="text-lg font-medium mb-4">Space Connections</h3>
-        {floorId && <ConnectionFields form={form} floorId={floorId} />}
-      </div>
     </div>
   );
 }

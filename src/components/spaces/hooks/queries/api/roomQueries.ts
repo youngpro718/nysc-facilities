@@ -14,7 +14,7 @@ export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
       description,
       status,
       floor_id,
-      parent_room_id,
+
       is_storage,
       storage_capacity,
       storage_type,
@@ -25,6 +25,7 @@ export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
       function_change_date,
       previous_functions,
       courtroom_photos,
+<<<<<<< Updated upstream
       floors!rooms_floor_id_fkey!inner (
         id,
         name,
@@ -39,9 +40,25 @@ export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
       )
     `);
 
+
   // Apply building filter if specified
   if (buildingId && buildingId !== 'all') {
-    query = query.eq('floors.buildings.id', buildingId);
+    // Fetch floor IDs for the given building
+    const { data: floorsData, error: floorsError } = await supabase
+      .from('floors')
+      .select('id')
+      .eq('building_id', buildingId);
+    if (floorsError) {
+      console.error('Error fetching floors for building filter:', floorsError);
+      throw floorsError;
+    }
+    const floorIds = (floorsData || []).map((floor: any) => floor.id);
+    if (floorIds.length > 0) {
+      query = query.in('floor_id', floorIds);
+    } else {
+      // No floors for this building, so no rooms will match
+      return { data: [], error: null };
+    }
   }
 
   // Apply floor filter if specified
@@ -106,23 +123,7 @@ export const fetchRelatedRoomData = async (roomIds: string[]) => {
       .select('*')
       .in('space_id', roomIds),
       
-    // Fetch space connections with detailed to_space information
-    supabase
-      .from('space_connections')
-      .select(`
-        id,
-        from_space_id,
-        to_space_id,
-        connection_type,
-        direction,
-        status,
-        to_space:new_spaces!fk_space_connections_to_new_spaces (
-          id,
-          name,
-          room_type
-        )
-      `)
-      .in('from_space_id', roomIds)
-      .eq('status', 'active')
+    // Space connections feature removed; return empty result to maintain tuple structure
+    Promise.resolve({ data: [], error: null })
   ]);
 };

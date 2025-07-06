@@ -19,7 +19,10 @@ import { CreateSpaceFormData, createSpaceSchema } from "./schemas/createSpaceSch
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RoomTypeEnum } from "./rooms/types/roomEnums";
 
+import { FormProvider } from "react-hook-form";
+
 export function CreateSpaceDialog() {
+  console.log('CreateSpaceDialog rendered');
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
   
@@ -69,6 +72,9 @@ export function CreateSpaceDialog() {
   });
 
   const onSubmit = (data: CreateSpaceFormData) => {
+  console.log('SUBMIT HANDLER FIRED');
+  console.log('Form data received:', data);
+  console.log('FORM ERRORS (before validation):', form.formState.errors);
     console.log('Form submitted with data:', data);
     
     // Validate required fields
@@ -91,6 +97,8 @@ export function CreateSpaceDialog() {
     }
     
     console.log('Submitting space creation request:', data);
+    console.log('Submitting space data:', data);
+    console.log('MUTATION CALLED');
     createSpaceMutation.mutate(data);
   };
 
@@ -106,27 +114,35 @@ export function CreateSpaceDialog() {
         <DialogHeader>
           <DialogTitle>Create New Space</DialogTitle>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <CreateSpaceFormFields form={form} />
-            <div className="flex justify-end gap-2">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => setOpen(false)}
-                disabled={createSpaceMutation.isPending}
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={createSpaceMutation.isPending}
-              >
-                {createSpaceMutation.isPending ? "Creating..." : "Create Space"}
-              </Button>
-            </div>
-          </form>
-        </Form>
+        <div style={{ marginBottom: 16 }}>
+  {/* Minimal plain form for testing */}
+  <form onSubmit={e => { e.preventDefault(); console.log('PLAIN FORM SUBMIT'); }}>
+    <button type="submit">Plain Submit</button>
+  </form>
+</div>
+{/* Only ONE form: Remove <Form> wrapper and use native <form> */}
+          <FormProvider {...form}>
+  <form onSubmit={e => { console.log('NATIVE FORM SUBMIT'); form.handleSubmit(onSubmit, (errors) => { console.log('FORM VALIDATION ERRORS', errors); })(e); }} className="space-y-6">
+    <CreateSpaceFormFields form={form} />
+    <div className="flex justify-end gap-2">
+      <Button 
+        type="button" 
+        variant="outline" 
+        onClick={() => setOpen(false)}
+        disabled={createSpaceMutation.isPending}
+      >
+        Cancel
+      </Button>
+      <Button 
+        type="submit" 
+        disabled={createSpaceMutation.isPending}
+      >
+        {createSpaceMutation.isPending ? "Creating..." : "Create Space"}
+      </Button>
+    </div>
+  </form>
+</FormProvider>
+        {/* End minimal plain form test */}
       </DialogContent>
     </Dialog>
   );

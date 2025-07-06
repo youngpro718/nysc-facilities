@@ -5,10 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { BasicRoomFields } from "./BasicRoomFields";
 import { StorageFields } from "./StorageFields";
-import { ParentRoomField, CAN_HAVE_PARENT_ROOM_TYPES } from "./ParentRoomField";
 import { type RoomFormData } from "./RoomFormSchema";
 import { Separator } from "@/components/ui/separator";
-import { SimpleConnectionsManager } from "./connections/SimpleConnectionsManager";
 import { CourtroomPhotoUpload } from "./CourtroomPhotoUpload";
 import { toast } from "sonner";
 import { useEffect } from "react";
@@ -30,7 +28,12 @@ export function RoomFormContent({
 }: RoomFormContentProps) {
   const isStorage = form.watch("isStorage");
   const floorId = form.watch("floorId");
-  const roomType = form.watch("roomType");
+  // Always normalize roomType to string for UI logic
+  const rawRoomType = form.watch("roomType");
+  const roomType = typeof rawRoomType === 'string' ? rawRoomType : `${rawRoomType ?? ''}`;
+  const shouldShowParentRoomField = !!roomType && !!floorId;
+  console.log('[RoomFormContent] Watched roomType:', roomType, typeof rawRoomType);
+  console.log('[RoomFormContent] Watched floorId:', floorId, typeof floorId);
   
   // Debug form state changes
   useEffect(() => {
@@ -111,8 +114,6 @@ export function RoomFormContent({
     }
   };
 
-  // Determine if this room can have a parent room
-  const canHaveParent = CAN_HAVE_PARENT_ROOM_TYPES.includes(roomType);
 
   return (
     <Form {...form}>
@@ -134,26 +135,10 @@ export function RoomFormContent({
           </>
         )}
 
-        {/* Only show parent room field if this room type can have a parent */}
-        {canHaveParent && (
-          <>
-            <Separator />
-            <ParentRoomField 
-              form={form} 
-              floorId={floorId}
-              currentRoomId={roomId}
-            />
-          </>
-        )}
 
         <Separator />
 
-        {/* Simplified Connections Manager */}
-        <SimpleConnectionsManager 
-          form={form}
-          floorId={floorId}
-          roomId={roomId}
-        />
+
         
         <div className="flex justify-end gap-2 pt-4">
           <Button

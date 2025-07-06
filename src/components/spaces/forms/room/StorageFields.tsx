@@ -33,8 +33,9 @@ export function StorageFields({ form }: StorageFieldsProps) {
 
   // Reset storage fields when isStorage is toggled off
   useEffect(() => {
+    console.log('[StorageFields] useEffect isStorage:', isStorage, 'storageType:', storageType);
     if (!isStorage) {
-      form.setValue("storageType", null, { shouldValidate: true });
+      form.setValue("storageType", undefined, { shouldValidate: true });
       form.setValue("storageCapacity", null, { shouldValidate: true });
       form.setValue("storageNotes", null, { shouldValidate: true });
     } else if (!storageType) {

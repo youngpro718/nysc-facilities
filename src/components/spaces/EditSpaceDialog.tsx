@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { dbToFormRoom, formToDbRoom } from "./forms/room/roomFieldMapping";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -52,97 +53,25 @@ export function EditSpaceDialog({
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen ?? internalOpen;
   const setOpen = controlledSetOpen ?? setInternalOpen;
+  const [formReady, setFormReady] = useState(false);
 
   const form = useForm<RoomFormData>({
     resolver: zodResolver(RoomFormSchema),
-    defaultValues: {
-      id: id,
-      type: "room",
-      name: "",
-      roomNumber: "",
-      roomType: undefined,
-      status: undefined,
-      description: "",
-      phoneNumber: "",
-      isStorage: false,
-      storageType: null,
-      storageCapacity: null,
-      storageNotes: null,
-      parentRoomId: null,
-      currentFunction: "",
-      courtroom_photos: null,
-      connections: [],
-      floorId: ""
-    },
+    defaultValues: dbToFormRoom(initialData || {}, id),
   });
 
   // Initialize form data when dialog opens and we have initial data
   useEffect(() => {
     if (open && initialData && type === "room") {
-      console.log("=== EDIT SPACE DIALOG DEBUG ===");
-      console.log("Room ID:", id);
-      console.log("Initial data received:", initialData);
-      
-      const connections = initialData.space_connections || initialData.connections || [];
-      const courtroom_photos = initialData.courtroom_photos;
-      
-      const mappedConnections = Array.isArray(connections) ? connections.map((conn: any) => {
-        let direction = conn.direction || conn.connectionDirection;
-        if (!direction || !ConnectionDirections.includes(direction as any)) {
-          direction = "north";
-        }
-        
-        return {
-          id: conn.id,
-          toSpaceId: conn.to_space_id || conn.toSpaceId,
-          connectionType: conn.connection_type || conn.connectionType,
-          direction: direction
-        };
-      }) : [];
-      
-      // Convert string value to RoomTypeEnum for the form
-      let convertedRoomType = initialData.roomType ? stringToRoomType(initialData.roomType) : undefined;
-      let convertedStatus = initialData.status || undefined;
-      let convertedStorageType = null;
-      
-      // For storage type, only set if the room is actually storage
-      if (initialData.is_storage && initialData.storage_type) {
-        convertedStorageType = initialData.storage_type;
-      }
-      
-      console.log("Direct string values being set:");
-      console.log("Room type:", convertedRoomType);
-      console.log("Status:", convertedStatus);
-      console.log("Storage type:", convertedStorageType);
-      
-      const formData: Partial<RoomFormData> = {
-        id: id,
-        type: "room",
-        name: initialData.name || "",
-        roomNumber: initialData.roomNumber || "",
-        roomType: convertedRoomType,
-        status: convertedStatus,
-        description: initialData.description || "",
-        phoneNumber: initialData.phoneNumber || "",
-        isStorage: Boolean(initialData.isStorage),
-        storageType: convertedStorageType,
-        storageCapacity: initialData.storageCapacity || null,
-        storageNotes: initialData.storageNotes || "",
-        parentRoomId: initialData.parentRoomId || null,
-        currentFunction: initialData.currentFunction || "",
-        courtroom_photos: courtroom_photos || null,
-        connections: mappedConnections,
-        floorId: initialData.floorId || ""
-      };
-
-      
-      console.log("Final form data to be set:", formData);
-      
-      // Use setTimeout to ensure the form is ready
+      const formData = dbToFormRoom(initialData, id);
+      console.log("[DEBUG] formData before reset:", formData);
       setTimeout(() => {
         form.reset(formData);
+        setFormReady(true);
         console.log("Form reset completed. Current form values:", form.getValues());
       }, 0);
+    } else {
+      setFormReady(false);
     }
   }, [open, initialData, type, id, form]);
 
@@ -151,25 +80,26 @@ export function EditSpaceDialog({
   const editSpaceMutation = useMutation({
     mutationFn: async (data: RoomFormData) => {
       console.log("=== MUTATION START ===");
-      console.log("Submitting data for room update:", data);
+      const dbData = formToDbRoom(data);
+      console.log("Submitting data for room update (DB format):", dbData);
       
-      if (!data.id && !id) {
+      if (!dbData.id && !id) {
         throw new Error("Room ID is missing - cannot update room");
       }
       
-      if (!data.name) {
+      if (!dbData.name) {
         throw new Error("Room name is required");
       }
       
-      if (!data.floorId) {
+      if (!dbData.floor_id) {
         throw new Error("Floor ID is required");
       }
       
-      const roomId = data.id || id;
+      const roomId = dbData.id || id;
       console.log("Using room ID for update:", roomId);
       
       // Handle courtroom photo storage cleanup if needed
-      if (data.roomType === RoomTypeEnum.COURTROOM) {
+      if (dbData.room_type === RoomTypeEnum.COURTROOM) {
         try {
           await storageService.ensureBucketsExist(['courtroom-photos']);
           if (data.courtroom_photos && roomId) {

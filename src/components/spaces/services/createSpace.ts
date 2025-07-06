@@ -32,13 +32,17 @@ export async function createSpace(data: CreateSpaceFormData) {
         room_number: data.roomNumber || null,
         room_type: dbRoomType as any, // Cast to avoid type issues
         floor_id: data.floorId,
+        status: 'active',
         description: data.description || null,
         phone_number: data.phoneNumber || null,
         current_function: data.currentFunction || null,
-        is_storage: data.isStorage || false,
-        storage_type: data.isStorage && data.storageType ? storageTypeToString(data.storageType as StorageTypeEnum) : null,
+        // Always include is_storage flag; default to false
+        is_storage: !!data.isStorage,
+        // Include storage_type only when is_storage is true and a type is provided
+        ...(data.isStorage && data.storageType ? { 
+          storage_type: storageTypeToString(data.storageType as StorageTypeEnum) 
+        } : {}),
         storage_capacity: data.storageCapacity || null,
-        parent_room_id: data.parentRoomId || null,
         position: data.position || { x: 0, y: 0 },
         size: data.size || { width: 150, height: 100 },
         rotation: data.rotation || 0,
@@ -56,6 +60,9 @@ export async function createSpace(data: CreateSpaceFormData) {
         .single();
 
       if (roomError) {
+        if ((roomError as any).code === '23505') {
+          toast.error('Room number already exists. Please use a unique room number.');
+        }
         console.error('Room creation error:', roomError);
         throw new Error(`Failed to create room: ${roomError.message}`);
       }
@@ -118,7 +125,50 @@ export async function createSpace(data: CreateSpaceFormData) {
 
       if (propsError) {
         console.error('Error saving hallway properties:', propsError);
-        // Don't throw here, just log - the main space was created
+      } else {
+        console.log('Created hallway properties:', hallwayPropsData);
+      }
+
+      if (data.connections && data.connections.length > 0) {
+        const firstConnection = data.connections[0];
+
+        if (firstConnection && firstConnection.toSpaceId && firstConnection.connectionType) {
+          const { data: targetSpaceData } = await supabase
+            .from('new_spaces')
+            .select('type')
+            .eq('id', firstConnection.toSpaceId)
+            .single();
+            
+          const isTransitionDoor = firstConnection.connectionType === 'door' && 
+                                  targetSpaceData?.type === 'hallway';
+          
+          let directionValue = validateDirection(firstConnection.direction);
+          
+          const hallwayConnectionData = {
+            from_space_id: hallway.id,
+            to_space_id: firstConnection.toSpaceId,
+            space_type: data.type,
+            connection_type: firstConnection.connectionType,
+            direction: directionValue,
+            connection_status: 'active',
+            hallway_position: getHallwayPosition(firstConnection.direction),
+            offset_distance: 50,
+            position: getPositionFromDirection(firstConnection.direction),
+            is_transition_door: isTransitionDoor
+          };
+
+          console.log('Creating connection with data:', hallwayConnectionData);
+
+          // Space connections feature removed - skip inserting connections
+          let connectionError = null;
+
+          if (connectionError) {
+            console.error('Connection error:', connectionError);
+            toast.error(`Space created but connection failed: ${connectionError.message}`);
+          } else {
+            console.log('Created space connection');
+          }
+        }
       }
 
       return hallway;
@@ -147,6 +197,51 @@ export async function createSpace(data: CreateSpaceFormData) {
     if (spaceError) {
       console.error('Error creating space:', spaceError);
       throw new Error(`Failed to create space: ${spaceError.message}`);
+    }
+
+    if (data.connections && data.connections.length > 0) {
+      const firstConnection = data.connections[0];
+
+      if (firstConnection && firstConnection.toSpaceId && firstConnection.connectionType) {
+        const { data: fromSpaceData } = await supabase
+          .from('new_spaces')
+          .select('type')
+          .eq('id', space.id)
+          .single();
+          
+        const { data: targetSpaceData } = await supabase
+          .from('new_spaces')
+          .select('type')
+          .eq('id', firstConnection.toSpaceId)
+          .single();
+          
+        const isTransitionDoor = firstConnection.connectionType === 'door' && 
+                                (fromSpaceData?.type === 'hallway' && targetSpaceData?.type === 'hallway');
+        
+        let directionValue = validateDirection(firstConnection.direction);
+        
+        const spaceConnectionData = {
+          from_space_id: space.id,
+          to_space_id: firstConnection.toSpaceId,
+          space_type: data.type,
+          connection_type: firstConnection.connectionType,
+          direction: directionValue,
+          connection_status: 'active',
+          is_transition_door: isTransitionDoor,
+          hallway_position: getHallwayPosition(firstConnection.direction),
+          position: getPositionFromDirection(firstConnection.direction)
+        };
+
+        console.log('Creating connection with data:', spaceConnectionData);
+
+        // Space connections feature removed - skip inserting connections
+        const connectionError = null;
+
+        if (connectionError) {
+          console.error('Connection error:', connectionError);
+          toast.error(`Space created but connection failed: ${connectionError.message}`);
+        }
+      }
     }
 
     console.log('Space created successfully:', space);

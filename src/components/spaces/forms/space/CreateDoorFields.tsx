@@ -4,7 +4,6 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { CreateSpaceFormData } from "../../schemas/createSpaceSchema";
-import { ConnectionFields } from "./ConnectionFields";
 
 interface CreateDoorFieldsProps {
   form: UseFormReturn<CreateSpaceFormData>;
@@ -80,10 +79,6 @@ export function CreateDoorFields({ form }: CreateDoorFieldsProps) {
         )}
       />
 
-      <div className="border-t pt-4 mt-4">
-        <h3 className="text-lg font-medium mb-4">Space Connections</h3>
-        {floorId && <ConnectionFields form={form} floorId={floorId} />}
-      </div>
     </div>
   );
 }
