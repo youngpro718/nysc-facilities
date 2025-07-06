@@ -117,84 +117,8 @@ export function EditSpaceDialog({
       await import("./services/updateSpace").then(async ({ updateSpace }) => {
         await updateSpace(roomId, data);
       });
+      // Handle connections using simplified approach - removed since space_connections table doesn't exist
       console.log("Room update successful");
-      // Handle connections using the simplified approach
-      if (data.connections && data.connections.length > 0) {
-        console.log("Processing connections:", data.connections);
-        
-        const { data: existingConnections, error: fetchError } = await supabase
-          .from("space_connections")
-          .select("id")
-          .eq("from_space_id", roomId)
-          .eq("status", "active");
-          
-        if (fetchError) {
-          console.error("Error fetching connections:", fetchError);
-          throw new Error(`Failed to fetch connections: ${fetchError.message}`);
-        }
-        
-        const existingIds = (existingConnections || []).map(c => c.id);
-        console.log("Existing connection IDs:", existingIds);
-        
-        const keepConnectionIds: string[] = [];
-        
-        for (const connection of data.connections) {
-          const direction = ConnectionDirections.includes(connection.direction as any) 
-            ? connection.direction 
-            : "north";
-            
-          if (connection.id) {
-            keepConnectionIds.push(connection.id);
-            
-            console.log("Updating connection:", connection);
-            const { error: updateError } = await supabase
-              .from("space_connections")
-              .update({
-                to_space_id: connection.toSpaceId,
-                connection_type: connection.connectionType,
-                direction: direction,
-              })
-              .eq("id", connection.id);
-              
-            if (updateError) {
-              console.error("Connection update error:", updateError);
-              throw new Error(`Failed to update connection: ${updateError.message}`);
-            }
-          } else if (connection.toSpaceId && connection.connectionType) {
-            console.log("Creating new connection:", connection);
-            const { error: insertError } = await supabase
-              .from("space_connections")
-              .insert({
-                from_space_id: roomId,
-                to_space_id: connection.toSpaceId,
-                space_type: "room",
-                connection_type: connection.connectionType,
-                direction: direction,
-                status: "active"
-              });
-              
-            if (insertError) {
-              console.error("Connection insert error:", insertError);
-              throw new Error(`Failed to create connection: ${insertError.message}`);
-            }
-          }
-        }
-        
-        const connectionsToDelete = existingIds.filter(id => !keepConnectionIds.includes(id));
-        console.log("Connections to delete:", connectionsToDelete);
-        
-        if (connectionsToDelete.length > 0) {
-          const { error: deleteError } = await supabase
-            .from("space_connections")
-            .update({ status: "inactive" })
-            .in("id", connectionsToDelete);
-            
-          if (deleteError) {
-            console.error("Connection delete error:", deleteError);
-            throw new Error(`Failed to deactivate connections: ${deleteError.message}`);
-          }
-        }
-      }
       
       console.log("=== MUTATION SUCCESS ===");
       return data;

@@ -1,17 +1,20 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface HallwayFilters {
-  buildingId?: string;
-  floorId?: string;
+  selectedBuilding?: string;
+  selectedFloor?: string;
 }
 
-export function useHallwayData({ buildingId, floorId }: HallwayFilters = {}) {
-  return useQuery({
-    queryKey: ['hallways', buildingId, floorId],
+export function useHallwayData({ selectedBuilding, selectedFloor }: HallwayFilters = {}) {
+  const queryClient = useQueryClient();
+  
+  const query = useQuery({
+    queryKey: ['hallways', selectedBuilding, selectedFloor],
     queryFn: async () => {
-      console.log("Fetching hallways with filters:", { buildingId, floorId });
+      console.log("Fetching hallways with filters:", { selectedBuilding, selectedFloor });
       
       let query = supabase
         .from('hallways')
@@ -28,13 +31,13 @@ export function useHallwayData({ buildingId, floorId }: HallwayFilters = {}) {
         `);
 
       // Apply building filter if specified
-      if (buildingId && buildingId !== 'all') {
-        query = query.eq('floors.buildings.id', buildingId);
+      if (selectedBuilding && selectedBuilding !== 'all') {
+        query = query.eq('floors.buildings.id', selectedBuilding);
       }
 
       // Apply floor filter if specified
-      if (floorId && floorId !== 'all') {
-        query = query.eq('floor_id', floorId);
+      if (selectedFloor && selectedFloor !== 'all') {
+        query = query.eq('floor_id', selectedFloor);
       }
 
       const { data, error } = await query;
@@ -57,4 +60,30 @@ export function useHallwayData({ buildingId, floorId }: HallwayFilters = {}) {
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
     retry: 2
   });
+
+  const deleteHallway = useMutation({
+    mutationFn: async (hallwayId: string) => {
+      const { error } = await supabase
+        .from('hallways')
+        .delete()
+        .eq('id', hallwayId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hallways'] });
+      toast.success('Hallway deleted successfully');
+    },
+    onError: (error) => {
+      console.error('Error deleting hallway:', error);
+      toast.error('Failed to delete hallway');
+    }
+  });
+
+  return {
+    hallways: query.data,
+    isLoading: query.isLoading,
+    error: query.error,
+    deleteHallway
+  };
 }
