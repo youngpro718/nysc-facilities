@@ -15,6 +15,7 @@ import MyRequests from "@/pages/MyRequests";
 import MyIssues from "@/pages/MyIssues";
 import AdminProfile from "@/pages/AdminProfile";
 import VerificationPending from "@/pages/VerificationPending";
+import AccessManagement from "@/pages/AccessManagement";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -73,6 +74,11 @@ function App() {
                 <Route path="admin-profile" element={
                   <ProtectedRoute requireAdmin>
                     <AdminProfile />
+                  </ProtectedRoute>
+                } />
+                <Route path="access-management" element={
+                  <ProtectedRoute requireAdmin>
+                    <AccessManagement />
                   </ProtectedRoute>
                 } />
 
