@@ -73,7 +73,7 @@ const roomSchema = baseSpaceSchema.extend({
   phoneNumber: z.string().optional(),
   storageType: z.nativeEnum(StorageTypeEnum).nullable(),
   storageCapacity: z.number().nullable(),
-  storageNotes: z.string().optional(),
+  storageNotes: z.string().nullable().optional(),
   parentRoomId: z.string().nullable(), // Improved parent room support
   courtRoomPhotos: courtRoomPhotosSchema,
   status: z.nativeEnum(StatusEnum).default(StatusEnum.ACTIVE) // Keep status but with default
