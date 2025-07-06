@@ -32,6 +32,8 @@ export const useOccupantAccess = (occupantId?: string) => {
     queryFn: async () => {
       if (!occupantId) throw new Error('No occupant ID provided');
 
+      console.log('Fetching occupant access for:', occupantId);
+
       // Get occupant details
       const { data: occupant, error: occupantError } = await supabase
         .from('occupants')
@@ -39,8 +41,13 @@ export const useOccupantAccess = (occupantId?: string) => {
         .eq('id', occupantId)
         .single();
 
-      if (occupantError) throw occupantError;
+      if (occupantError) {
+        console.error('Occupant error:', occupantError);
+        throw occupantError;
+      }
       if (!occupant) return null;
+
+      console.log('Occupant found:', occupant);
 
       // Get room assignments
       const { data: roomAssignments, error: roomError } = await supabase
@@ -65,7 +72,12 @@ export const useOccupantAccess = (occupantId?: string) => {
         `)
         .eq('occupant_id', occupantId);
 
-      if (roomError) throw roomError;
+      if (roomError) {
+        console.error('Room assignments error:', roomError);
+        throw roomError;
+      }
+
+      console.log('Room assignments found:', roomAssignments);
 
       // Get key assignments
       const { data: keyAssignments, error: keyError } = await supabase
@@ -88,7 +100,12 @@ export const useOccupantAccess = (occupantId?: string) => {
         .eq('occupant_id', occupantId)
         .is('returned_at', null);
 
-      if (keyError) throw keyError;
+      if (keyError) {
+        console.error('Key assignments error:', keyError);
+        throw keyError;
+      }
+
+      console.log('Key assignments found:', keyAssignments);
 
       const room_assignments = roomAssignments?.map(assignment => ({
         id: assignment.id,
@@ -111,13 +128,16 @@ export const useOccupantAccess = (occupantId?: string) => {
         door_access: assignment.keys?.key_door_locations?.map((loc: any) => loc.doors?.name).filter(Boolean) || []
       })) || [];
 
-      return {
+      const result = {
         occupant_id: occupant.id,
         occupant_name: `${occupant.first_name} ${occupant.last_name}`,
         department: occupant.department,
         room_assignments,
         key_assignments
       };
+
+      console.log('Final occupant access result:', result);
+      return result;
     },
     enabled: !!occupantId,
   });

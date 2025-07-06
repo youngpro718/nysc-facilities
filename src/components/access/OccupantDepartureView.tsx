@@ -20,6 +20,8 @@ export function OccupantDepartureView({ occupantId, onComplete }: OccupantDepart
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [returningKeys, setReturningKeys] = useState(false);
 
+  console.log('OccupantDepartureView - Access Summary:', accessSummary);
+
   const handleKeySelection = (keyAssignmentId: string, checked: boolean) => {
     if (checked) {
       setSelectedKeys([...selectedKeys, keyAssignmentId]);
