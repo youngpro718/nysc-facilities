@@ -6,6 +6,7 @@ import { Trash2, ArrowRightFromLine, Users } from "lucide-react";
 import { EditSpaceDialog } from "../../EditSpaceDialog";
 import { CourtroomPhotos } from './CourtroomPhotos';
 import { CourtroomPhotoThumbnail } from './CourtroomPhotoThumbnail';
+import { ParentRoomHierarchy } from "../ParentRoomHierarchy";
 
 interface CardFrontProps {
   room: Room;
@@ -51,6 +52,11 @@ export function CardFront({ room, onFlip, onDelete }: CardFrontProps) {
               Storage
             </Badge>
           )}
+        </div>
+        
+        {/* Parent-Child Hierarchy Info */}
+        <div className="mt-2">
+          <ParentRoomHierarchy roomId={room.id} compact={true} />
         </div>
         
         {/* Show photo thumbnail on card if room is a courtroom and has photos */}
