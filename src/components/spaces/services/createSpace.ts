@@ -17,7 +17,16 @@ function hasValidSpaceType(data: any): data is CreateSpaceFormData {
 export async function createSpace(data: CreateSpaceFormData) {
   console.log('=== CREATE SPACE STARTED ===');
   console.log('Creating space with data:', data);
-  console.log('User authenticated:', supabase.auth.getUser().then(u => console.log('Current user:', u)));
+  
+  // Check authentication first
+  const { data: { user } } = await supabase.auth.getUser();
+  console.log('Current user:', user);
+  
+  if (!user) {
+    const errorMsg = 'User not authenticated';
+    console.error('Authentication failed:', errorMsg);
+    throw new Error(errorMsg);
+  }
   
   // Validate the data has a valid type
   if (!hasValidSpaceType(data)) {
@@ -48,25 +57,23 @@ export async function createSpace(data: CreateSpaceFormData) {
       const roomData = {
         name: data.name,
         room_number: data.roomNumber || null,
-        room_type: dbRoomType as any, // Cast to avoid type issues
+        room_type: dbRoomType,
         floor_id: data.floorId,
         description: data.description || null,
         phone_number: data.phoneNumber || null,
         current_function: data.currentFunction || null,
-        // Always include is_storage flag; default to false
         is_storage: !!data.isStorage,
-        // Include storage_type only when is_storage is true and a type is provided
-        ...(data.isStorage && data.storageType ? { 
-          storage_type: storageTypeToString(data.storageType as StorageTypeEnum) 
-        } : {}),
-        storage_capacity: data.storageCapacity || null,
+        storage_type: data.isStorage && data.storageType ? 
+          storageTypeToString(data.storageType as StorageTypeEnum) : null,
+        storage_capacity: data.isStorage && data.storageCapacity ? data.storageCapacity : null,
         position: data.position || { x: 0, y: 0 },
         size: data.size || { width: 150, height: 100 },
         rotation: data.rotation || 0,
         courtroom_photos: data.roomType === RoomTypeEnum.COURTROOM ? 
-          (data.courtRoomPhotos || { judge_view: null, audience_view: null }) : null,
-        status: 'active' as any // Cast to match enum
+          (data.courtRoomPhotos || { judge_view: null, audience_view: null }) : null
       };
+      
+      console.log('Final room data being inserted:', roomData);
 
       console.log('Inserting room data:', roomData);
 

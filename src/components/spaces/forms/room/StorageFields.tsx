@@ -33,16 +33,12 @@ export function StorageFields({ form }: StorageFieldsProps) {
 
   // Reset storage fields when isStorage is toggled off
   useEffect(() => {
-    console.log('[StorageFields] useEffect isStorage:', isStorage, 'storageType:', storageType);
     if (!isStorage) {
-      form.setValue("storageType", undefined, { shouldValidate: true });
-      form.setValue("storageCapacity", null, { shouldValidate: true });
-      form.setValue("storageNotes", null, { shouldValidate: true });
-    } else if (!storageType) {
-      // Set default storage type when toggling on
-      form.setValue("storageType", StorageTypeEnum.GENERAL, { shouldValidate: true });
+      form.setValue("storageType", null, { shouldValidate: false });
+      form.setValue("storageCapacity", null, { shouldValidate: false });
+      form.setValue("storageNotes", null, { shouldValidate: false });
     }
-  }, [isStorage, form, storageType]);
+  }, [isStorage, form]);
 
   return (
     <Card>
@@ -80,8 +76,8 @@ export function StorageFields({ form }: StorageFieldsProps) {
                 <FormItem>
                   <FormLabel>Storage Type</FormLabel>
                   <Select
-                    onValueChange={(value) => field.onChange(value || null)}
-                    value={field.value || undefined}
+                    onValueChange={(value) => field.onChange(value)}
+                    value={field.value || ""}
                   >
                     <FormControl>
                       <SelectTrigger>

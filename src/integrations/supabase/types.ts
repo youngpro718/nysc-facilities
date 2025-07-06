@@ -5798,7 +5798,7 @@ export type Database = {
           phone_number: string | null
           position: Json | null
           previous_functions: Json[] | null
-          room_number: string
+          room_number: string | null
           room_type: Database["public"]["Enums"]["room_type_enum"]
           rotation: number | null
           size: Json | null
@@ -5828,7 +5828,7 @@ export type Database = {
           phone_number?: string | null
           position?: Json | null
           previous_functions?: Json[] | null
-          room_number: string
+          room_number?: string | null
           room_type?: Database["public"]["Enums"]["room_type_enum"]
           rotation?: number | null
           size?: Json | null
@@ -5858,7 +5858,7 @@ export type Database = {
           phone_number?: string | null
           position?: Json | null
           previous_functions?: Json[] | null
-          room_number?: string
+          room_number?: string | null
           room_type?: Database["public"]["Enums"]["room_type_enum"]
           rotation?: number | null
           size?: Json | null
