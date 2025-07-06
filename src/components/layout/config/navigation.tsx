@@ -9,6 +9,7 @@ import {
   KeyRound,
   Repeat,
   Calendar,
+  Shield,
 } from 'lucide-react';
 import { NavigationTab, NavigationItem } from '../types';
 
@@ -51,6 +52,12 @@ export const navigationItems: NavigationItem[] = [
     adminOnly: true,
   },
   {
+    title: 'Access Management',
+    href: '/access-management',
+    icon: Shield,
+    adminOnly: true,
+  },
+  {
     title: 'Lighting',
     href: '/lighting',
     icon: Lightbulb,
@@ -82,6 +89,7 @@ export const adminNavigation: NavigationTab[] = [
   { title: 'Issues', icon: Mail },
   { title: 'Occupants', icon: User },
   { title: 'Keys', icon: KeyRound },
+  { title: 'Access Management', icon: Shield },
   { title: 'Lighting', icon: Lightbulb },
 
 
@@ -104,6 +112,7 @@ export const getNavigationRoutes = (isAdmin: boolean): string[] => {
       '/issues',
       '/occupants',
       '/keys',
+      '/access-management',
       '/lighting',
 
       '/terms',
