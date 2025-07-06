@@ -33,6 +33,16 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     return "light";
   });
 
+  // Apply theme immediately on mount to prevent flashing
+  useEffect(() => {
+    const root = window.document.documentElement;
+    const savedTheme = localStorage.getItem("theme") as Theme;
+    if (savedTheme) {
+      root.classList.remove("light", "dark");
+      root.classList.add(savedTheme);
+    }
+  }, []);
+
   useEffect(() => {
     const root = window.document.documentElement;
     

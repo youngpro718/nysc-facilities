@@ -193,22 +193,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsAdmin(userData.isAdmin);
           setProfile(userData.profile);
           
-          // Only redirect on actual sign-in, not on session restoration
-          if (!isInitialLoad && event === 'SIGNED_IN') {
+          // Only redirect on actual sign-in from login page, not on session restoration
+          if (!isInitialLoad && event === 'SIGNED_IN' && window.location.pathname === '/login') {
             // Redirect based on verification status
             if (userData.profile?.verification_status === 'pending') {
               navigate('/verification-pending');
+            } else if (userData.isAdmin) {
+              navigate('/');
             } else {
-              // Check current location to avoid unnecessary redirects
-              const currentPath = window.location.pathname;
-              const shouldRedirectAdmin = userData.isAdmin && currentPath === '/login';
-              const shouldRedirectUser = !userData.isAdmin && currentPath === '/login';
-              
-              if (shouldRedirectAdmin) {
-                navigate('/');
-              } else if (shouldRedirectUser) {
-                navigate('/dashboard');
-              }
+              navigate('/dashboard');
             }
           }
         } else if (event === 'SIGNED_OUT') {
@@ -225,6 +218,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Mark that initial load is complete
         if (isInitialLoad) {
           isInitialLoad = false;
+          setIsLoading(false);
         }
       }
     );

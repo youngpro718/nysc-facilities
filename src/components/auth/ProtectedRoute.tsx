@@ -46,7 +46,7 @@ export function ProtectedRoute({
     isAuthenticated, 
     isAdmin, 
     isLoading, 
-    profile?.verification_status, // Only watch verification_status specifically
+    profile?.verification_status,
     navigate, 
     location.pathname, 
     requireAdmin, 
