@@ -25,7 +25,6 @@ export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
       function_change_date,
       previous_functions,
       courtroom_photos,
-<<<<<<< Updated upstream
       floors!rooms_floor_id_fkey!inner (
         id,
         name,
@@ -34,10 +33,7 @@ export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
           name
         )
       ),
-      parent_room:rooms!rooms_parent_room_id_fkey (
-        id,
-        name
-      )
+      parent_room_id
     `);
 
 
