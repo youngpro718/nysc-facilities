@@ -1,9 +1,12 @@
 
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Briefcase, Building2, ChevronDown, DoorOpen, Key, Mail, Pencil, Phone, Trash2, UserCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Briefcase, Building2, ChevronDown, DoorOpen, Key, Mail, Pencil, Phone, Trash2, UserCircle, Shield, LogOut } from "lucide-react";
 import { OccupantQueryResponse } from "./types/occupantTypes";
+import { OccupantDepartureView } from "@/components/access/OccupantDepartureView";
 
 interface OccupantCardProps {
   occupant: OccupantQueryResponse;
@@ -78,6 +81,46 @@ export function OccupantCard({
               </div>
             </div>
             <div className="flex gap-2">
+              {/* Access Summary Dialog */}
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    title="View Access Summary"
+                  >
+                    <Shield className="h-4 w-4" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Access Summary - {occupant.first_name} {occupant.last_name}</DialogTitle>
+                  </DialogHeader>
+                  <OccupantDepartureView occupantId={occupant.id} />
+                </DialogContent>
+              </Dialog>
+
+              {/* Departure Process Dialog - only show if occupant has assignments */}
+              {(occupant.key_count > 0 || occupant.room_count > 0) && (
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      title="Departure Process"
+                    >
+                      <LogOut className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Departure Process - {occupant.first_name} {occupant.last_name}</DialogTitle>
+                    </DialogHeader>
+                    <OccupantDepartureView occupantId={occupant.id} />
+                  </DialogContent>
+                </Dialog>
+              )}
+
               <Button
                 variant="ghost"
                 size="icon"

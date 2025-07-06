@@ -2,11 +2,13 @@
 import { Room } from "../types/RoomTypes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trash2, ArrowRightFromLine, Users } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Trash2, ArrowRightFromLine, Users, Shield } from "lucide-react";
 import { EditSpaceDialog } from "../../EditSpaceDialog";
 import { CourtroomPhotos } from './CourtroomPhotos';
 import { CourtroomPhotoThumbnail } from './CourtroomPhotoThumbnail';
 import { ParentRoomHierarchy } from "../ParentRoomHierarchy";
+import { RoomAccessSummary } from "@/components/access/RoomAccessSummary";
 
 interface CardFrontProps {
   room: Room;
@@ -108,6 +110,25 @@ export function CardFront({ room, onFlip, onDelete }: CardFrontProps) {
           More Details
         </Button>
         <div className="flex gap-2">
+          {/* Who Has Access Dialog */}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                title="Who Has Access"
+              >
+                <Shield className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Room Access - {room.name}</DialogTitle>
+              </DialogHeader>
+              <RoomAccessSummary roomId={room.id} />
+            </DialogContent>
+          </Dialog>
+
           <EditSpaceDialog
             id={room.id}
             type="room"
