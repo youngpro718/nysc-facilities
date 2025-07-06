@@ -124,17 +124,25 @@ export function RoomFormContent({
         <BasicRoomFields form={form} />
         
         {/* Add parent room field if floor is selected */}
-        {floorId && (
-          <>
-            <Separator />
-            <div style={{border: '2px solid red', padding: '10px', margin: '10px'}}>
-              <h3 style={{color: 'red'}}>DEBUG: Parent Room Field Should Be Here</h3>
-              <p>FloorId: {floorId}</p>
-              <p>RoomId: {roomId}</p>
+        <div style={{border: '2px solid blue', padding: '10px', margin: '10px'}}>
+          <h3 style={{color: 'blue'}}>DEBUG: Parent Room Section</h3>
+          <p>FloorId from form.watch: "{floorId}"</p>
+          <p>FloorId type: {typeof floorId}</p>
+          <p>FloorId exists: {!!floorId ? 'YES' : 'NO'}</p>
+          <p>RoomId: "{roomId}"</p>
+          <p>Should show field: {floorId ? 'YES' : 'NO'}</p>
+          
+          {floorId ? (
+            <div style={{border: '1px solid green', padding: '5px', margin: '5px'}}>
+              <h4 style={{color: 'green'}}>ParentRoomField should render here:</h4>
               <ParentRoomField form={form} floorId={floorId} currentRoomId={roomId} />
             </div>
-          </>
-        )}
+          ) : (
+            <div style={{border: '1px solid red', padding: '5px', margin: '5px'}}>
+              <h4 style={{color: 'red'}}>ParentRoomField NOT rendering - no floorId</h4>
+            </div>
+          )}
+        </div>
         
         <Separator />
         <StorageFields form={form} />
