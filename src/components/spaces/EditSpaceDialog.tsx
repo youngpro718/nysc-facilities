@@ -78,8 +78,11 @@ export function EditSpaceDialog({
   const editSpaceMutation = useMutation({
     mutationFn: async (data: RoomFormData) => {
       console.log("=== MUTATION START ===");
+      console.log("Form data being submitted:", data);
+      console.log("Parent room ID from form:", data.parentRoomId);
       const dbData = formToDbRoom(data);
       console.log("Submitting data for room update (DB format):", dbData);
+      console.log("Parent room ID in DB format:", dbData.parent_room_id);
       
       if (!dbData.id && !id) {
         throw new Error("Room ID is missing - cannot update room");
@@ -123,9 +126,13 @@ export function EditSpaceDialog({
     },
     onSuccess: () => {
       console.log("Update successful, invalidating queries");
+      console.log("Invalidating queries for room hierarchy display");
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
       queryClient.invalidateQueries({ queryKey: ['room-connections', id] });
       queryClient.invalidateQueries({ queryKey: ['floorplan-objects'] });
+      // Also invalidate any parent chain queries
+      queryClient.invalidateQueries({ queryKey: ['parent-chain'] });
+      queryClient.invalidateQueries({ queryKey: ['spaces'] });
       toast.success("Room updated successfully");
       setOpen(false);
       if (onSpaceUpdated) {
