@@ -64,14 +64,9 @@ export function EditSpaceDialog({
   useEffect(() => {
     if (open && initialData && type === "room") {
       const formData = dbToFormRoom(initialData, id);
-      console.log("[DEBUG] initialData passed to dialog:", initialData);
-      console.log("[DEBUG] formData after conversion:", formData);
-      console.log("[DEBUG] formData.floorId:", formData.floorId);
       setTimeout(() => {
         form.reset(formData);
         setFormReady(true);
-        console.log("Form reset completed. Current form values:", form.getValues());
-        console.log("Form floorId after reset:", form.getValues().floorId);
       }, 0);
     } else {
       setFormReady(false);
