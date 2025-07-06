@@ -23,25 +23,26 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     if (typeof window !== 'undefined') {
       const savedTheme = localStorage.getItem("theme") as Theme;
       if (savedTheme && (savedTheme === "light" || savedTheme === "dark")) {
+        // Apply theme immediately to prevent flash
+        const root = window.document.documentElement;
+        root.classList.remove("light", "dark");
+        root.classList.add(savedTheme);
         return savedTheme;
       }
       // Check system preference
       if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        const root = window.document.documentElement;
+        root.classList.remove("light", "dark");
+        root.classList.add("dark");
         return "dark";
       }
+      // Apply default light theme
+      const root = window.document.documentElement;
+      root.classList.remove("light", "dark");
+      root.classList.add("light");
     }
     return "light";
   });
-
-  // Apply theme immediately on mount to prevent flashing
-  useEffect(() => {
-    const root = window.document.documentElement;
-    const savedTheme = localStorage.getItem("theme") as Theme;
-    if (savedTheme) {
-      root.classList.remove("light", "dark");
-      root.classList.add(savedTheme);
-    }
-  }, []);
 
   useEffect(() => {
     const root = window.document.documentElement;

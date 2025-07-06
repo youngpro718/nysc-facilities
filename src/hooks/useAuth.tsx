@@ -194,7 +194,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setProfile(userData.profile);
           
           // Only redirect on actual sign-in from login page, not on session restoration
-          if (!isInitialLoad && event === 'SIGNED_IN' && window.location.pathname === '/login') {
+          if (!isInitialLoad && window.location.pathname === '/login') {
             // Redirect based on verification status
             if (userData.profile?.verification_status === 'pending') {
               navigate('/verification-pending');
@@ -209,13 +209,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(null);
           setProfile(null);
           setIsAdmin(false);
-          // Only navigate to login if not already there
-          if (window.location.pathname !== '/login') {
-            navigate('/login');
-          }
         }
         
-        // Mark that initial load is complete
+        // Mark that initial load is complete and stop loading
         if (isInitialLoad) {
           isInitialLoad = false;
           setIsLoading(false);
@@ -223,14 +219,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    // Then check for an existing session without triggering navigation
-    refreshSession();
+    // Check for existing session only once on mount
+    const initializeAuth = async () => {
+      try {
+        const currentSession = await getSession();
+        if (currentSession) {
+          setSession(currentSession);
+          setUser(currentSession.user);
+          const userData = await getUserProfile(currentSession.user.id);
+          setIsAdmin(userData.isAdmin);
+          setProfile(userData.profile);
+        }
+      } catch (error) {
+        console.error('Initial auth check failed:', error);
+      } finally {
+        // Ensure loading stops even if there's an error
+        if (isInitialLoad) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    initializeAuth();
 
     // Cleanup subscription on unmount
     return () => {
       subscription.unsubscribe();
     };
-  }, [getUserProfile, navigate, refreshSession]);
+  }, []); // Remove all dependencies to prevent re-initialization
 
   // Compute isAuthenticated derived from session
   const isAuthenticated = !!session;

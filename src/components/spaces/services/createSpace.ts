@@ -15,11 +15,15 @@ function hasValidSpaceType(data: any): data is CreateSpaceFormData {
 }
 
 export async function createSpace(data: CreateSpaceFormData) {
+  console.log('=== CREATE SPACE STARTED ===');
   console.log('Creating space with data:', data);
+  console.log('User authenticated:', supabase.auth.getUser().then(u => console.log('Current user:', u)));
   
   // Validate the data has a valid type
   if (!hasValidSpaceType(data)) {
-    throw new Error(`Invalid or missing space type: ${String((data as any)?.type || 'unknown')}`);
+    const errorMsg = `Invalid or missing space type: ${String((data as any)?.type || 'unknown')}`;
+    console.error('Validation failed:', errorMsg);
+    throw new Error(errorMsg);
   }
   
   try {
@@ -73,10 +77,19 @@ export async function createSpace(data: CreateSpaceFormData) {
         .single();
 
       if (roomError) {
+        console.error('=== ROOM CREATION ERROR ===');
+        console.error('Error details:', roomError);
+        console.error('Error code:', (roomError as any).code);
+        console.error('Error hint:', (roomError as any).hint);
+        console.error('Room data that failed:', roomData);
+        
         if ((roomError as any).code === '23505') {
           toast.error('Room number already exists. Please use a unique room number.');
+        } else if ((roomError as any).code === '42501') {
+          toast.error('Permission denied. Please check your authentication status.');
+        } else {
+          toast.error(`Failed to create room: ${roomError.message}`);
         }
-        console.error('Room creation error:', roomError);
         throw new Error(`Failed to create room: ${roomError.message}`);
       }
 
@@ -119,7 +132,16 @@ export async function createSpace(data: CreateSpaceFormData) {
         .single();
 
       if (hallwayError) {
-        console.error('Error creating hallway:', hallwayError);
+        console.error('=== HALLWAY CREATION ERROR ===');
+        console.error('Error details:', hallwayError);
+        console.error('Error code:', (hallwayError as any).code);
+        console.error('Hallway data that failed:', hallwayData);
+        
+        if ((hallwayError as any).code === '42501') {
+          toast.error('Permission denied. Please check your authentication status.');
+        } else {
+          toast.error(`Failed to create hallway: ${hallwayError.message}`);
+        }
         throw new Error(`Failed to create hallway: ${hallwayError.message}`);
       }
 
@@ -151,7 +173,16 @@ export async function createSpace(data: CreateSpaceFormData) {
         .single();
 
       if (doorError) {
-        console.error('Error creating door:', doorError);
+        console.error('=== DOOR CREATION ERROR ===');
+        console.error('Error details:', doorError);
+        console.error('Error code:', (doorError as any).code);
+        console.error('Door data that failed:', doorData);
+        
+        if ((doorError as any).code === '42501') {
+          toast.error('Permission denied. Please check your authentication status.');
+        } else {
+          toast.error(`Failed to create door: ${doorError.message}`);
+        }
         throw new Error(`Failed to create door: ${doorError.message}`);
       }
 

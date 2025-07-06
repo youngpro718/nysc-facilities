@@ -20,26 +20,34 @@ export function ProtectedRoute({
   const location = useLocation();
 
   useEffect(() => {
+    // Only process redirects when not loading and auth state is determined
     if (isLoading) return;
 
+    // Check authentication first
     if (!isAuthenticated) {
-      // Save the attempted URL for redirecting after login
-      navigate('/login', { 
-        state: { from: location.pathname }, 
-        replace: true 
-      });
+      // Only redirect to login if not already on login page
+      if (location.pathname !== '/login') {
+        navigate('/login', { 
+          state: { from: location.pathname }, 
+          replace: true 
+        });
+      }
       return;
     }
 
-    // Handle verification pending - only redirect if currently on a protected route
-    if (requireVerified && profile?.verification_status === 'pending' && location.pathname !== '/verification-pending') {
-      navigate('/verification-pending', { replace: true });
+    // Handle verification pending status
+    if (requireVerified && profile?.verification_status === 'pending') {
+      if (location.pathname !== '/verification-pending') {
+        navigate('/verification-pending', { replace: true });
+      }
       return;
     }
 
-    // Handle admin route protection - only redirect if access is actually denied
-    if (requireAdmin && !isAdmin && location.pathname !== '/dashboard') {
-      navigate('/dashboard', { replace: true });
+    // Handle admin-only routes
+    if (requireAdmin && !isAdmin) {
+      if (location.pathname !== '/dashboard') {
+        navigate('/dashboard', { replace: true });
+      }
       return;
     }
   }, [
@@ -47,11 +55,10 @@ export function ProtectedRoute({
     isAdmin, 
     isLoading, 
     profile?.verification_status,
-    navigate, 
     location.pathname, 
     requireAdmin, 
     requireVerified
-  ]);
+  ]); // Remove navigate from dependencies to prevent loops
 
   if (isLoading) {
     return (
