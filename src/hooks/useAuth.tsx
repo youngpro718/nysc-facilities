@@ -177,76 +177,96 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Setup auth state listener
   useEffect(() => {
-    let isInitialLoad = true;
-    
-    // First, set up the auth state change listener
+    let mounted = true;
+
+    // Single initialization function
+    const initializeAuth = async () => {
+      try {
+        // Check for existing session
+        const currentSession = await getSession();
+        
+        if (!mounted) return;
+
+        if (currentSession) {
+          setSession(currentSession);
+          setUser(currentSession.user);
+          
+          const userData = await getUserProfile(currentSession.user.id);
+          setIsAdmin(userData.isAdmin);
+          setProfile(userData.profile);
+
+          // Handle redirects based on current location and user status
+          const currentPath = window.location.pathname;
+          
+          if (currentPath === '/login') {
+            if (userData.profile?.verification_status === 'pending') {
+              navigate('/verification-pending', { replace: true });
+            } else if (userData.isAdmin) {
+              navigate('/', { replace: true });
+            } else {
+              navigate('/dashboard', { replace: true });
+            }
+          } else if (currentPath === '/verification-pending' && userData.profile?.verification_status === 'verified') {
+            navigate(userData.isAdmin ? '/' : '/dashboard', { replace: true });
+          }
+        } else {
+          // No session, redirect to login if not already there
+          if (window.location.pathname !== '/login' && window.location.pathname !== '/verification-pending') {
+            navigate('/login', { replace: true });
+          }
+        }
+      } catch (error) {
+        console.error('Auth initialization failed:', error);
+        setSession(null);
+        setUser(null);
+        setProfile(null);
+        setIsAdmin(false);
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
-        console.log('Auth state changed:', event, 'Initial load:', isInitialLoad);
-        
+        if (!mounted) return;
+
         if (event === 'SIGNED_IN' && newSession) {
           setSession(newSession);
           setUser(newSession.user);
           
-          // Fetch user profile data
           const userData = await getUserProfile(newSession.user.id);
           setIsAdmin(userData.isAdmin);
           setProfile(userData.profile);
           
-          // Only redirect on actual sign-in from login page, not on session restoration
-          if (!isInitialLoad && window.location.pathname === '/login') {
-            // Redirect based on verification status
-            if (userData.profile?.verification_status === 'pending') {
-              navigate('/verification-pending');
-            } else if (userData.isAdmin) {
-              navigate('/');
-            } else {
-              navigate('/dashboard');
-            }
+          // Handle post-login redirect
+          if (userData.profile?.verification_status === 'pending') {
+            navigate('/verification-pending', { replace: true });
+          } else if (userData.isAdmin) {
+            navigate('/', { replace: true });
+          } else {
+            navigate('/dashboard', { replace: true });
           }
         } else if (event === 'SIGNED_OUT') {
           setSession(null);
           setUser(null);
           setProfile(null);
           setIsAdmin(false);
-        }
-        
-        // Mark that initial load is complete and stop loading
-        if (isInitialLoad) {
-          isInitialLoad = false;
-          setIsLoading(false);
+          navigate('/login', { replace: true });
         }
       }
     );
 
-    // Check for existing session only once on mount
-    const initializeAuth = async () => {
-      try {
-        const currentSession = await getSession();
-        if (currentSession) {
-          setSession(currentSession);
-          setUser(currentSession.user);
-          const userData = await getUserProfile(currentSession.user.id);
-          setIsAdmin(userData.isAdmin);
-          setProfile(userData.profile);
-        }
-      } catch (error) {
-        console.error('Initial auth check failed:', error);
-      } finally {
-        // Ensure loading stops even if there's an error
-        if (isInitialLoad) {
-          setIsLoading(false);
-        }
-      }
-    };
-
+    // Initialize auth
     initializeAuth();
 
-    // Cleanup subscription on unmount
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
-  }, []); // Remove all dependencies to prevent re-initialization
+  }, [])
 
   // Compute isAuthenticated derived from session
   const isAuthenticated = !!session;

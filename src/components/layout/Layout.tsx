@@ -28,14 +28,7 @@ const Layout = () => {
     }
   };
 
-  // Show loading state
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  // Let AuthProvider handle loading state - no additional loading here
 
   return (
     <div className="min-h-screen bg-background">

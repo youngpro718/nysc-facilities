@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { ClipboardCheck, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { SparklesCore } from "@/components/ui/sparkles";
-import { delay } from "@/utils/timing";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function VerificationPending() {
@@ -14,16 +13,15 @@ export default function VerificationPending() {
   const { user, profile, refreshSession, signOut, isLoading } = useAuth();
 
   useEffect(() => {
-    if (!isLoading && !user) {
-      navigate("/login", { replace: true });
-    }
+    // Don't redirect if loading or if user doesn't exist
+    if (isLoading || !user) return;
     
-    // Redirect if user is already verified
+    // If user is verified, let AuthProvider handle the redirect
     if (profile?.verification_status === 'verified') {
       toast.success("Your account has been verified!");
-      navigate("/", { replace: true });
+      // AuthProvider will handle the redirect in its effect
     }
-  }, [user, profile, navigate, isLoading]);
+  }, [user, profile?.verification_status, isLoading]);
 
   const handleCheckStatus = async () => {
     try {
@@ -31,8 +29,7 @@ export default function VerificationPending() {
       
       if (profile?.verification_status === 'verified') {
         toast.success("Your account has been verified!");
-        await delay(100);
-        navigate("/", { replace: true });
+        // AuthProvider will handle the redirect automatically
       } else {
         toast.info("Your account is still pending verification");
       }
