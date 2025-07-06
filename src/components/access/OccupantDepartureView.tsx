@@ -19,6 +19,11 @@ export function OccupantDepartureView({ occupantId, onComplete }: OccupantDepart
   const { handleReturnKey } = useKeyAssignments(occupantId);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [returningKeys, setReturningKeys] = useState(false);
+  const [completedActions, setCompletedActions] = useState<Array<{
+    type: 'key_returned';
+    keyName: string;
+    timestamp: string;
+  }>>([]);
 
   console.log('OccupantDepartureView - Access Summary:', accessSummary);
 
@@ -37,12 +42,25 @@ export function OccupantDepartureView({ occupantId, onComplete }: OccupantDepart
     }
 
     setReturningKeys(true);
+    const returnedKeys: Array<{ type: 'key_returned'; keyName: string; timestamp: string }> = [];
+    
     try {
-      // Return keys one by one
+      // Return keys one by one and track them
       for (const keyId of selectedKeys) {
+        const keyAssignment = accessSummary?.key_assignments.find(k => k.id === keyId);
         await handleReturnKey(keyId);
+        
+        if (keyAssignment) {
+          returnedKeys.push({
+            type: 'key_returned',
+            keyName: keyAssignment.key_name,
+            timestamp: new Date().toISOString()
+          });
+        }
       }
       
+      // Update completed actions
+      setCompletedActions(prev => [...prev, ...returnedKeys]);
       setSelectedKeys([]);
       toast.success(`Successfully returned ${selectedKeys.length} keys`);
       onComplete?.();
@@ -89,6 +107,43 @@ export function OccupantDepartureView({ occupantId, onComplete }: OccupantDepart
 
   return (
     <div className="space-y-6">
+      {/* Completion Summary */}
+      {completedActions.length > 0 && (
+        <Card className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-300">
+              <Key className="h-5 w-5" />
+              Departure Actions Completed
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {completedActions.map((action, index) => (
+                <div key={index} className="flex items-center justify-between p-2 bg-white dark:bg-gray-900 rounded border">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm font-medium">Key Returned: {action.keyName}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {format(new Date(action.timestamp), "MMM d, yyyy 'at' h:mm a")}
+                  </span>
+                </div>
+              ))}
+              <div className="mt-3 p-2 bg-green-100 dark:bg-green-900 rounded">
+                <p className="text-sm text-green-800 dark:text-green-200 font-medium">
+                  ✓ Total: {completedActions.length} key{completedActions.length !== 1 ? 's' : ''} successfully returned
+                </p>
+                {accessSummary.room_assignments.length > 0 && (
+                  <p className="text-xs text-green-700 dark:text-green-300 mt-1">
+                    Note: Room assignments require manual administrative removal
+                  </p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Header */}
       <Card>
         <CardHeader>
