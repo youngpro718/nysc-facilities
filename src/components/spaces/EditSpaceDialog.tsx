@@ -149,21 +149,27 @@ export function EditSpaceDialog({
   });
 
   const handleSubmit = async (data: RoomFormData) => {
-    console.log("=== HANDLE SUBMIT ===");
+    console.log("=== HANDLE SUBMIT CALLED ===");
     console.log("Handling submit with data:", data);
+    console.log("Parent room ID in data:", data.parentRoomId);
     
     if (!data.id) {
       console.warn("ID missing in form data, setting from props");
       data.id = id;
     }
     
+    console.log("About to trigger form validation...");
     const isValid = await form.trigger();
+    console.log("Form validation result:", isValid);
+    
     if (!isValid) {
       console.error("Form validation failed:", form.formState.errors);
+      console.error("Detailed validation errors:", JSON.stringify(form.formState.errors, null, 2));
       toast.error("Please fix the validation errors before submitting");
       return;
     }
     
+    console.log("Form validation passed, calling mutation...");
     try {
       await editSpaceMutation.mutateAsync(data);
     } catch (error) {
