@@ -26,16 +26,20 @@ interface UpdateSpaceData {
 }
 
 export const updateSpace = async (id: string, updates: Partial<UpdateSpaceData>) => {
+  console.log("=== updateSpace called ===");
+  console.log("Updates received:", updates);
+  console.log("Parent room ID in updates:", updates.parent_room_id);
+  
   const roomUpdates: any = {
     name: updates.name,
     status: updates.status,
     description: updates.description,
   };
 
-  // Add room-specific fields if they exist in updates
+  // Add room-specific fields if they exist in updates - FIXED: Check for camelCase interface names
   if ('room_number' in updates) roomUpdates.room_number = updates.room_number;
   if ('room_type' in updates) roomUpdates.room_type = updates.room_type;
-  if ('floor_id' in updates) roomUpdates.floor_id = updates.floorId;
+  if ('floorId' in updates) roomUpdates.floor_id = updates.floorId;
   if ('phone_number' in updates) roomUpdates.phone_number = updates.phone_number;
   if ('current_function' in updates) roomUpdates.current_function = updates.current_function;
   if ('is_storage' in updates) roomUpdates.is_storage = updates.is_storage;
@@ -43,6 +47,9 @@ export const updateSpace = async (id: string, updates: Partial<UpdateSpaceData>)
   if ('storage_capacity' in updates) roomUpdates.storage_capacity = updates.storage_capacity;
   if ('parent_room_id' in updates) roomUpdates.parent_room_id = updates.parent_room_id;
   if ('courtroom_photos' in updates) roomUpdates.courtroom_photos = updates.courtroom_photos;
+
+  console.log("Final roomUpdates before database:", roomUpdates);
+  console.log("Parent room ID being sent to DB:", roomUpdates.parent_room_id);
 
   // Remove undefined values
   Object.keys(roomUpdates).forEach(key => {
