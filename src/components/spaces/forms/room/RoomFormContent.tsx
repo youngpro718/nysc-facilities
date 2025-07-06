@@ -136,12 +136,8 @@ export function RoomFormContent({
           </>
         )}
         
-        {isStorage && (
-          <>
-            <Separator />
-            <StorageFields form={form} />
-          </>
-        )}
+        <Separator />
+        <StorageFields form={form} />
 
         {/* Add courtroom photo upload if room type is courtroom */}
         {roomType === RoomTypeEnum.COURTROOM && (
