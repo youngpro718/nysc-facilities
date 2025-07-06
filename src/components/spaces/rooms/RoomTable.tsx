@@ -128,7 +128,7 @@ export function RoomTable({ rooms, onDelete }: RoomTableProps) {
                        })) || [],
                        type: "room"
                      }}
-                     variant="custom"
+                     variant="button"
                    />
                    <Button 
                      variant="ghost" 
