@@ -1,5 +1,12 @@
 
 import { Building2, AlertCircle, LightbulbIcon, Layers, DoorClosed, Gauge } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface BuildingStatsProps {
   floorCount: number;
@@ -7,6 +14,7 @@ interface BuildingStatsProps {
   issues: number;
   workingFixtures: number;
   totalFixtures: number;
+  buildingId: string;
 }
 
 export const BuildingStats = ({
@@ -15,9 +23,31 @@ export const BuildingStats = ({
   issues,
   workingFixtures,
   totalFixtures,
-}: BuildingStatsProps) => (
-  <div className="grid gap-3 md:grid-cols-3">
-    <div className="space-y-1.5 rounded-lg border bg-card p-3 transition-all duration-200 hover:bg-accent hover:shadow-lg">
+  buildingId,
+}: BuildingStatsProps) => {
+  const navigate = useNavigate();
+
+  const handleBuildingOverviewClick = () => {
+    navigate(`/spaces?building=${buildingId}`);
+  };
+
+  const handleIssuesClick = () => {
+    navigate(`/issues?building=${buildingId}`);
+  };
+
+  const handleLightingClick = () => {
+    navigate(`/lighting?building=${buildingId}`);
+  };
+
+  return (
+    <div className="grid gap-3 md:grid-cols-3">
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div 
+              className="space-y-1.5 rounded-lg border bg-card p-3 transition-all duration-200 hover:bg-accent hover:shadow-lg cursor-pointer transform hover:scale-[1.02]"
+              onClick={handleBuildingOverviewClick}
+            >
       <div className="flex items-center gap-1.5 text-muted-foreground">
         <Building2 className="h-3.5 w-3.5 text-blue-500" />
         <span className="text-xs font-medium">Building Overview</span>
@@ -36,9 +66,21 @@ export const BuildingStats = ({
         </div>
         <DoorClosed className="h-7 w-7 text-muted-foreground/20" />
       </div>
-    </div>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>View building spaces and rooms</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
-    <div className="space-y-1.5 rounded-lg border bg-card p-3 transition-all duration-200 hover:bg-accent hover:shadow-lg">
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div 
+              className="space-y-1.5 rounded-lg border bg-card p-3 transition-all duration-200 hover:bg-accent hover:shadow-lg cursor-pointer transform hover:scale-[1.02]"
+              onClick={handleIssuesClick}
+            >
       <div className="flex items-center gap-1.5 text-muted-foreground">
         <AlertCircle className="h-3.5 w-3.5 text-yellow-500" />
         <span className="text-xs font-medium">Active Issues</span>
@@ -55,9 +97,21 @@ export const BuildingStats = ({
           `${issues} issue${issues === 1 ? '' : 's'} need attention` : 
           'No active issues'}
       </div>
-    </div>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>View all issues for this building</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
-    <div className="space-y-1.5 rounded-lg border bg-card p-3 transition-all duration-200 hover:bg-accent hover:shadow-lg">
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div 
+              className="space-y-1.5 rounded-lg border bg-card p-3 transition-all duration-200 hover:bg-accent hover:shadow-lg cursor-pointer transform hover:scale-[1.02]"
+              onClick={handleLightingClick}
+            >
       <div className="flex items-center gap-1.5 text-muted-foreground">
         <LightbulbIcon className="h-3.5 w-3.5 text-green-500" />
         <span className="text-xs font-medium">Lighting Status</span>
@@ -82,6 +136,13 @@ export const BuildingStats = ({
           </span>
         </div>
       </div>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>View lighting management for this building</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </div>
-  </div>
-);
+  );
+};
