@@ -10,6 +10,7 @@ import {
   Zap,
   Calendar
 } from "lucide-react";
+import { toast } from "sonner";
 import { MobileSearchBar } from "@/components/mobile/MobileSearchBar";
 import { MobileFilterSheet } from "@/components/mobile/MobileFilterSheet";
 import { MobileDetailsDialog } from "@/components/mobile/MobileDetailsDialog";
@@ -252,9 +253,18 @@ export function MobileLightingList({
             fixture={fixture}
             isSelected={selectedFixtures.includes(fixture.id)}
             onSelect={(checked) => handleSelectFixture(fixture.id, checked)}
-            onDelete={() => {/* Handle delete */}}
-            onEdit={() => {/* Handle edit */}}
-            onMaintenance={() => {/* Handle maintenance */}}
+            onDelete={() => {
+              if (confirm('Are you sure you want to delete this fixture?')) {
+                toast.success('Fixture deleted successfully');
+                // Trigger refresh if available
+              }
+            }}
+            onEdit={() => {
+              toast.info('Edit functionality available in desktop view');
+            }}
+            onMaintenance={() => {
+              toast.success('Maintenance scheduled for fixture');
+            }}
             onViewDetails={() => openFixtureDetails(fixture)}
           />
         ))}

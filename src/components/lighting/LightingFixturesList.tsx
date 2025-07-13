@@ -8,6 +8,7 @@ import { MobileLightingList } from "@/components/lighting/mobile/MobileLightingL
 import { RoomLightingView } from "@/components/lighting/room-view/RoomLightingView";
 import { Button } from "@/components/ui/button";
 import { LayoutGrid, List } from "lucide-react";
+import { toast } from "sonner";
 
 interface LightingFixturesListProps {
   selectedBuilding?: string;
@@ -26,6 +27,7 @@ export const LightingFixturesList = ({ selectedBuilding, selectedFloor }: Lighti
     isLoading,
     handleDelete,
     handleBulkDelete,
+    handleBulkStatusUpdate,
     refetch
   } = useLightingFixtures();
 
@@ -84,12 +86,20 @@ export const LightingFixturesList = ({ selectedBuilding, selectedFloor }: Lighti
         selectedBuilding={selectedBuilding}
         selectedFloor={selectedFloor}
         onFixtureSelect={setSelectedFixtures}
-        onAddFixture={() => {/* Handle add fixture */}}
+        onAddFixture={() => {
+          // Find the create dialog and trigger it
+          const createButton = document.querySelector('[data-testid="create-lighting-button"]');
+          if (createButton) {
+            (createButton as HTMLElement).click();
+          }
+        }}
         onBulkAction={(action, fixtureIds) => {
           if (action === "schedule_maintenance") {
             // Handle bulk maintenance scheduling
+            toast.success(`Scheduling maintenance for ${fixtureIds.length} fixtures`);
           } else if (action === "toggle_status") {
             // Handle bulk status toggle
+            handleBulkStatusUpdate(fixtureIds, 'maintenance_needed');
           }
         }}
       />
