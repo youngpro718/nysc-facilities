@@ -1,8 +1,8 @@
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
 
-// Disable worker completely to avoid initialization issues
-console.log('🔧 Forcing PDF.js to run in main thread (no worker)...');
-GlobalWorkerOptions.workerSrc = '';
+// Use a reliable CDN worker source for PDF.js
+console.log('🔧 Setting up PDF.js worker from CDN...');
+GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
 
 // Add polyfill for Promise.withResolvers if not available
 declare global {
@@ -68,10 +68,10 @@ export const parsePDF = async (file: File): Promise<ParsedTermData> => {
     console.log(`📄 PDF parsing attempt ${attemptCount}/${maxAttempts}`);
     
     try {
-      // Ensure worker stays disabled on retry
+      // Ensure worker is properly configured on retry
       if (attemptCount > 1) {
         console.log('🔄 Preparing retry attempt...');
-        GlobalWorkerOptions.workerSrc = '';
+        GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
         await new Promise(resolve => setTimeout(resolve, 500));
       }
       
