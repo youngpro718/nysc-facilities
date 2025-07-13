@@ -4,6 +4,7 @@ import { MobileIssueFilters } from "./MobileIssueFilters";
 import { MobileIssueCard } from "./MobileIssueCard";
 import { MobileDetailsDialog } from "@/components/mobile/MobileDetailsDialog";
 import { Issue } from "./types/IssueTypes";
+import { IssueFiltersType } from "./types/FilterTypes";
 import { Button } from "@/components/ui/button";
 import { RefreshCcw, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -20,13 +21,13 @@ export function MobileIssuesList({ onCreateIssue }: MobileIssuesListProps) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   
-  const [filters, setFilters] = useState({
-    type: 'all_types' as const,
-    status: 'all_statuses' as const,
-    priority: 'all_priorities' as const,
-    assigned_to: 'all_assignments' as const,
+  const [filters, setFilters] = useState<IssueFiltersType>({
+    type: 'all_types',
+    status: 'all_statuses',
+    priority: 'all_priorities',
+    assigned_to: 'all_assignments',
     sortBy: 'created_at',
-    order: 'desc' as const
+    order: 'desc'
   });
 
   // Mock data for now - replace with actual hook
@@ -72,13 +73,28 @@ export function MobileIssuesList({ onCreateIssue }: MobileIssuesListProps) {
         }
       }
       
-      // Apply filters
-      if (filters.status.length > 0 && !filters.status.includes(issue.status)) {
-        return false;
+      // Apply status filter
+      if (filters.status && filters.status !== 'all_statuses') {
+        if (Array.isArray(filters.status)) {
+          if (!filters.status.includes(issue.status as any)) return false;
+        } else {
+          if (issue.status !== filters.status) return false;
+        }
       }
       
-      if (filters.priority.length > 0 && !filters.priority.includes(issue.priority)) {
-        return false;
+      // Apply priority filter
+      if (filters.priority && filters.priority !== 'all_priorities') {
+        if (issue.priority !== filters.priority) return false;
+      }
+      
+      // Apply type filter
+      if (filters.type && filters.type !== 'all_types') {
+        if (issue.type !== filters.type) return false;
+      }
+      
+      // Apply assignment filter
+      if (filters.assigned_to && filters.assigned_to !== 'all_assignments') {
+        if (issue.assigned_to !== filters.assigned_to) return false;
       }
       
       return true;
@@ -116,7 +132,13 @@ export function MobileIssuesList({ onCreateIssue }: MobileIssuesListProps) {
   };
 
   const getActiveFilterCount = () => {
-    return filters.status.length + filters.priority.length + filters.category.length + filters.assignee.length;
+    let count = 0;
+    if (filters.type !== 'all_types') count++;
+    if (filters.status !== 'all_statuses') count++;
+    if (filters.priority !== 'all_priorities') count++;
+    if (filters.assigned_to !== 'all_assignments') count++;
+    if (filters.assignedToMe) count++;
+    return count;
   };
 
   const searchSuggestions = [
@@ -175,8 +197,6 @@ export function MobileIssuesList({ onCreateIssue }: MobileIssuesListProps) {
             <MobileIssueFilters
               filters={filters}
               onFiltersChange={setFilters}
-              categories={categories}
-              assignees={assignees}
             />
             
             {/* Quick filter badges */}
@@ -184,21 +204,21 @@ export function MobileIssuesList({ onCreateIssue }: MobileIssuesListProps) {
               <Badge 
                 variant="outline" 
                 className="cursor-pointer whitespace-nowrap"
-                onClick={() => setFilters(f => ({ ...f, status: ['open'] }))}
+                onClick={() => setFilters(f => ({ ...f, status: 'open' }))}
               >
                 Open
               </Badge>
               <Badge 
                 variant="outline" 
                 className="cursor-pointer whitespace-nowrap"
-                onClick={() => setFilters(f => ({ ...f, priority: ['high'] }))}
+                onClick={() => setFilters(f => ({ ...f, priority: 'high' }))}
               >
                 High Priority
               </Badge>
               <Badge 
                 variant="outline" 
                 className="cursor-pointer whitespace-nowrap"
-                onClick={() => setFilters(f => ({ ...f, assignee: ['current-user'] }))}
+                onClick={() => setFilters(f => ({ ...f, assignedToMe: true }))}
               >
                 My Issues
               </Badge>

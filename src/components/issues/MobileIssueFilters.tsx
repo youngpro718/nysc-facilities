@@ -11,15 +11,11 @@ import { IssueFiltersType } from "./types/FilterTypes";
 interface MobileIssueFiltersProps {
   filters: IssueFiltersType;
   onFiltersChange: (filters: IssueFiltersType) => void;
-  categories: string[];
-  assignees: { id: string; name: string; }[];
 }
 
 export function MobileIssueFilters({
   filters,
-  onFiltersChange,
-  categories,
-  assignees
+  onFiltersChange
 }: MobileIssueFiltersProps) {
   const statusOptions = [
     { value: 'open', label: 'Open' },
@@ -48,7 +44,7 @@ export function MobileIssueFilters({
 
   const handleStatusChange = (status: string, checked: boolean) => {
     if (checked) {
-      onFiltersChange({ ...filters, status: status as any });
+      onFiltersChange({ ...filters, status: status as IssueFiltersType['status'] });
     } else {
       onFiltersChange({ ...filters, status: 'all_statuses' });
     }
@@ -56,7 +52,7 @@ export function MobileIssueFilters({
 
   const handlePriorityChange = (priority: string, checked: boolean) => {
     if (checked) {
-      onFiltersChange({ ...filters, priority: priority as any });
+      onFiltersChange({ ...filters, priority: priority as IssueFiltersType['priority'] });
     } else {
       onFiltersChange({ ...filters, priority: 'all_priorities' });
     }
@@ -64,18 +60,35 @@ export function MobileIssueFilters({
 
   const handleAssignmentChange = (assignment: string, checked: boolean) => {
     if (checked) {
-      onFiltersChange({ ...filters, assigned_to: assignment as any });
+      onFiltersChange({ ...filters, assigned_to: assignment as IssueFiltersType['assigned_to'] });
     } else {
       onFiltersChange({ ...filters, assigned_to: 'all_assignments' });
     }
+  };
+
+  const isStatusChecked = (status: string) => {
+    if (!filters.status || filters.status === 'all_statuses') return false;
+    if (Array.isArray(filters.status)) {
+      return filters.status.includes(status as any);
+    }
+    return filters.status === status;
+  };
+
+  const isPriorityChecked = (priority: string) => {
+    return filters.priority === priority;
+  };
+
+  const isAssignmentChecked = (assignment: string) => {
+    return filters.assigned_to === assignment;
   };
 
   const getActiveFilters = () => {
     const active = [];
     
     if (filters.status && filters.status !== 'all_statuses') {
-      const option = statusOptions.find(o => o.value === filters.status);
-      if (option) active.push({ id: `status-${filters.status}`, label: 'Status', value: option.label });
+      const statusValue = Array.isArray(filters.status) ? filters.status[0] : filters.status;
+      const option = statusOptions.find(o => o.value === statusValue);
+      if (option) active.push({ id: `status-${statusValue}`, label: 'Status', value: option.label });
     }
     
     if (filters.priority && filters.priority !== 'all_priorities') {
@@ -86,6 +99,10 @@ export function MobileIssueFilters({
     if (filters.assigned_to && filters.assigned_to !== 'all_assignments') {
       const option = assignmentOptions.find(o => o.value === filters.assigned_to);
       if (option) active.push({ id: `assigned_to-${filters.assigned_to}`, label: 'Assigned To', value: option.label });
+    }
+    
+    if (filters.assignedToMe) {
+      active.push({ id: 'assignedToMe', label: 'Assigned To Me', value: 'Yes' });
     }
     
     return active;
@@ -104,6 +121,9 @@ export function MobileIssueFilters({
       case 'assigned_to':
         onFiltersChange({ ...filters, assigned_to: 'all_assignments' });
         break;
+      case 'assignedToMe':
+        onFiltersChange({ ...filters, assignedToMe: false });
+        break;
     }
   };
 
@@ -114,7 +134,8 @@ export function MobileIssueFilters({
       priority: 'all_priorities',
       assigned_to: 'all_assignments',
       sortBy: 'created_at',
-      order: 'desc'
+      order: 'desc',
+      assignedToMe: false
     });
   };
 
@@ -136,21 +157,21 @@ export function MobileIssueFilters({
           <Badge 
             variant="outline" 
             className="cursor-pointer"
-            onClick={() => onFiltersChange({ ...filters, status: ['open'], assignee: [] })}
+            onClick={() => onFiltersChange({ ...filters, status: 'open' })}
           >
             Open Issues
           </Badge>
           <Badge 
             variant="outline" 
             className="cursor-pointer"
-            onClick={() => onFiltersChange({ ...filters, assignee: ['current-user'] })}
+            onClick={() => onFiltersChange({ ...filters, assignedToMe: true })}
           >
             My Issues
           </Badge>
           <Badge 
             variant="outline" 
             className="cursor-pointer"
-            onClick={() => onFiltersChange({ ...filters, priority: ['high'] })}
+            onClick={() => onFiltersChange({ ...filters, priority: 'high' })}
           >
             High Priority
           </Badge>
@@ -167,7 +188,7 @@ export function MobileIssueFilters({
             <div key={option.value} className="flex items-center space-x-2">
               <Checkbox
                 id={`status-${option.value}`}
-                checked={filters.status.includes(option.value)}
+                checked={isStatusChecked(option.value)}
                 onCheckedChange={(checked) => handleStatusChange(option.value, checked as boolean)}
               />
               <Label htmlFor={`status-${option.value}`} className="text-sm font-normal">
@@ -188,7 +209,7 @@ export function MobileIssueFilters({
             <div key={option.value} className="flex items-center space-x-2">
               <Checkbox
                 id={`priority-${option.value}`}
-                checked={filters.priority.includes(option.value)}
+                checked={isPriorityChecked(option.value)}
                 onCheckedChange={(checked) => handlePriorityChange(option.value, checked as boolean)}
               />
               <Label htmlFor={`priority-${option.value}`} className="text-sm font-normal">
@@ -201,60 +222,33 @@ export function MobileIssueFilters({
 
       <Separator />
 
-      {/* Category Filter */}
-      {categories.length > 0 && (
-        <>
-          <div>
-            <Label className="text-sm font-medium">Category</Label>
-            <div className="space-y-3 mt-2">
-              {categories.map((category) => (
-                <div key={category} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`category-${category}`}
-                    checked={filters.category.includes(category)}
-                    onCheckedChange={(checked) => handleCategoryChange(category, checked as boolean)}
-                  />
-                  <Label htmlFor={`category-${category}`} className="text-sm font-normal">
-                    {category}
-                  </Label>
-                </div>
-              ))}
+      {/* Assignment Filter */}
+      <div>
+        <Label className="text-sm font-medium">Assigned To</Label>
+        <div className="space-y-3 mt-2">
+          {assignmentOptions.map((option) => (
+            <div key={option.value} className="flex items-center space-x-2">
+              <Checkbox
+                id={`assignment-${option.value}`}
+                checked={isAssignmentChecked(option.value)}
+                onCheckedChange={(checked) => handleAssignmentChange(option.value, checked as boolean)}
+              />
+              <Label htmlFor={`assignment-${option.value}`} className="text-sm font-normal">
+                {option.label}
+              </Label>
             </div>
-          </div>
-          <Separator />
-        </>
-      )}
+          ))}
+        </div>
+      </div>
 
-      {/* Assignee Filter */}
-      {assignees.length > 0 && (
-        <>
-          <div>
-            <Label className="text-sm font-medium">Assignee</Label>
-            <div className="space-y-3 mt-2">
-              {assignees.map((assignee) => (
-                <div key={assignee.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`assignee-${assignee.id}`}
-                    checked={filters.assignee.includes(assignee.id)}
-                    onCheckedChange={(checked) => handleAssigneeChange(assignee.id, checked as boolean)}
-                  />
-                  <Label htmlFor={`assignee-${assignee.id}`} className="text-sm font-normal">
-                    {assignee.name}
-                  </Label>
-                </div>
-              ))}
-            </div>
-          </div>
-          <Separator />
-        </>
-      )}
+      <Separator />
 
       {/* Sort Options */}
       <div>
         <Label className="text-sm font-medium">Sort By</Label>
         <div className="space-y-3 mt-2">
           <Select 
-            value={filters.sortBy} 
+            value={filters.sortBy || 'created_at'} 
             onValueChange={(value) => onFiltersChange({ ...filters, sortBy: value })}
           >
             <SelectTrigger>
@@ -270,8 +264,8 @@ export function MobileIssueFilters({
           </Select>
           
           <Select 
-            value={filters.sortOrder} 
-            onValueChange={(value: 'asc' | 'desc') => onFiltersChange({ ...filters, sortOrder: value })}
+            value={filters.order || 'desc'} 
+            onValueChange={(value: 'asc' | 'desc') => onFiltersChange({ ...filters, order: value })}
           >
             <SelectTrigger>
               <SelectValue />
