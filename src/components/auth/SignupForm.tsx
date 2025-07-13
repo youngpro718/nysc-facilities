@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Mail, Lock, Building2, Loader2, User, Users, Phone, Calendar } from "lucide-react";
+import { Mail, Lock, Building2, Loader2, User, Users, Phone, Camera } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
@@ -14,6 +14,8 @@ import {
   AccordionItem, 
   AccordionTrigger 
 } from "@/components/ui/accordion";
+import { AvatarUploadStep } from "./AvatarUploadStep";
+import { useAvatarUpload } from "@/hooks/useAvatarUpload";
 
 interface SignupFormProps {
   email: string;
@@ -46,6 +48,9 @@ export const SignupForm = ({
     phone: "",
     relationship: ""
   });
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+
+  const { uploadAvatar } = useAvatarUpload();
 
   const { data: departments } = useQuery({
     queryKey: ["departments"],
@@ -81,6 +86,15 @@ export const SignupForm = ({
       };
       
       await signUp(email, password, userData);
+      
+      // Upload avatar if selected
+      if (avatarFile) {
+        // Get the newly created user to upload avatar
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await uploadAvatar(avatarFile, user.id);
+        }
+      }
     } catch (error) {
       // Error is already handled in signUp
     } finally {
@@ -248,6 +262,18 @@ export const SignupForm = ({
             className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
           />
         </div>
+      )
+    },
+    {
+      id: "avatar",
+      icon: <Camera className="h-5 w-5 text-white/50" />,
+      title: "Profile Picture",
+      children: (
+        <AvatarUploadStep 
+          firstName={firstName}
+          lastName={lastName}
+          onAvatarSelect={setAvatarFile}
+        />
       )
     }
   ];

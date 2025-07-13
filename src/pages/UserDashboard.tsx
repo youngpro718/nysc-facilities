@@ -7,24 +7,50 @@ import { NotificationCard } from "@/components/dashboard/NotificationCard";
 import { RoomAssignmentCard } from "@/components/dashboard/RoomAssignmentCard";
 import { KeyAssignmentCard } from "@/components/dashboard/KeyAssignmentCard";
 import { IssueSummaryCard } from "@/components/dashboard/IssueSummaryCard";
+import { ProfileCompletionCard } from "@/components/profile/ProfileCompletionCard";
 import { ReportIssueWizard } from "@/components/issues/wizard/ReportIssueWizard";
 import { MobileFABs } from "@/components/ui/MobileFABs";
 import { BottomTabNavigation } from "@/components/ui/BottomTabNavigation";
 import { KeyRequestForm } from "@/components/requests/KeyRequestForm";
 import { useRoomAssignments } from "@/hooks/dashboard/useRoomAssignments";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { AvatarPromptModal } from "@/components/auth/AvatarPromptModal";
 
 export default function UserDashboard() {
-  const { user, isLoading, isAuthenticated } = useAuth();
+  const { user, profile, isLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const { notifications = [], isLoading: notificationsLoading, markAsRead, markAllAsRead, clearNotification, clearAllNotifications } = useNotifications(user?.id);
   const { assignedRooms } = useRoomAssignments(user?.id);
+
+  const [showKeyRequest, setShowKeyRequest] = useState(false);
+  const [showIssueReport, setShowIssueReport] = useState(false);
+  const [showAvatarPrompt, setShowAvatarPrompt] = useState(false);
+  const [avatarPromptDismissed, setAvatarPromptDismissed] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       navigate("/login");
     }
   }, [isLoading, isAuthenticated, navigate]);
+
+  // Show avatar prompt for users without profile pictures
+  useEffect(() => {
+    if (
+      !isLoading && 
+      isAuthenticated && 
+      profile && 
+      !profile.avatar_url && 
+      !avatarPromptDismissed &&
+      !showAvatarPrompt
+    ) {
+      // Show prompt after a short delay to avoid interrupting page load
+      const timer = setTimeout(() => {
+        setShowAvatarPrompt(true);
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, isAuthenticated, profile, avatarPromptDismissed, showAvatarPrompt]);
 
   // Show loading state while authentication is being determined
   if (isLoading) {
@@ -42,12 +68,9 @@ export default function UserDashboard() {
     return null;
   }
 
-  // Get user name from user_metadata or email
-  const firstName = user.user_metadata?.first_name || user.email?.split('@')[0] || 'User';
-  const lastName = user.user_metadata?.last_name || '';
-
-  const [showKeyRequest, setShowKeyRequest] = useState(false);
-  const [showIssueReport, setShowIssueReport] = useState(false);
+  // Get user name from profile or fallback to user_metadata/email
+  const firstName = profile?.first_name || user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'User';
+  const lastName = profile?.last_name || user?.user_metadata?.last_name || '';
 
   return (
     <div className="space-y-6 sm:space-y-8 pb-20">
@@ -68,7 +91,7 @@ export default function UserDashboard() {
           onClearNotification={clearNotification}
           onClearAllNotifications={clearAllNotifications}
         />
-        {/* Room assignments will be added later */}
+        <ProfileCompletionCard />
         <KeyAssignmentCard userId={user.id} />
         <IssueSummaryCard userId={user.id} />
       </div>
@@ -116,6 +139,16 @@ export default function UserDashboard() {
           />
         </DialogContent>
       </Dialog>
+      
+      <AvatarPromptModal
+        open={showAvatarPrompt}
+        onOpenChange={setShowAvatarPrompt}
+        onComplete={() => {
+          setAvatarPromptDismissed(true);
+          setShowAvatarPrompt(false);
+        }}
+      />
+      
       <BottomTabNavigation />
     </div>
   );

@@ -1,5 +1,6 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 import { Camera, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -87,12 +88,13 @@ export function ProfileHeader() {
   return (
     <div className="flex flex-col md:flex-row items-start md:items-center gap-6 p-6 bg-muted/50 rounded-lg">
       <div className="relative group">
-        <Avatar className="h-24 w-24 ring-2 ring-primary/10">
-          <AvatarImage src={avatarUrl ?? undefined} className="object-cover" />
-          <AvatarFallback>
-            <User className="h-12 w-12" />
-          </AvatarFallback>
-        </Avatar>
+        <UserAvatar
+          src={avatarUrl}
+          firstName="User"
+          lastName=""
+          size="xl"
+          className="ring-2 ring-primary/10"
+        />
         <label 
           htmlFor="avatar-upload" 
           className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"

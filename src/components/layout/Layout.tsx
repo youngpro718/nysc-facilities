@@ -7,7 +7,7 @@ import { adminNavigation, userNavigation, getNavigationRoutes } from "./config/n
 import { MobileMenu } from "./components/MobileMenu";
 import { DesktopNavigationImproved } from "./components/DesktopNavigationImproved";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { NotificationBox } from "@/components/admin/NotificationBox";
 import { UserRound, Loader2 } from "lucide-react";
@@ -77,12 +77,13 @@ const Layout = () => {
                       navigate(isAdmin ? '/admin-profile' : '/profile');
                     }}
                   >
-                    <Avatar className="h-9 w-9 sm:h-8 sm:w-8">
-                      <AvatarImage src={profile?.avatar_url} />
-                      <AvatarFallback>
-                        <UserRound className="h-4 w-4" />
-                      </AvatarFallback>
-                    </Avatar>
+                    <UserAvatar
+                      src={profile?.avatar_url}
+                      firstName={profile?.first_name}
+                      lastName={profile?.last_name}
+                      className="h-9 w-9 sm:h-8 sm:w-8"
+                      showFallbackIcon
+                    />
                   </button>
                 </div>
                 
