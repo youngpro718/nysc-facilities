@@ -17,20 +17,46 @@ export const PdfUploadArea = ({ onPdfParsed, onFileUploaded, disabled }: PdfUplo
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    console.log('onDrop triggered with files:', acceptedFiles);
+    console.log('🎯 File drop triggered with files:', acceptedFiles.length);
     const file = acceptedFiles[0];
     if (!file) {
-      console.log('No file provided');
+      console.log('❌ No file provided');
       return;
     }
 
-    console.log('File details:', { name: file.name, type: file.type, size: file.size });
+    console.log('📁 File details:', { 
+      name: file.name, 
+      type: file.type, 
+      size: file.size,
+      lastModified: new Date(file.lastModified).toISOString()
+    });
 
+    // Enhanced file validation
     if (file.type !== 'application/pdf') {
-      console.log('Invalid file type:', file.type);
+      console.log('❌ Invalid file type:', file.type);
       toast({
         title: 'Invalid File Type',
-        description: 'Please upload a PDF file.',
+        description: 'Please upload a PDF file only.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (file.size > 50 * 1024 * 1024) { // 50MB limit
+      console.log('❌ File too large:', file.size);
+      toast({
+        title: 'File Too Large',
+        description: 'Please upload a PDF file smaller than 50MB.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (file.size === 0) {
+      console.log('❌ Empty file');
+      toast({
+        title: 'Empty File',
+        description: 'The selected file appears to be empty.',
         variant: 'destructive',
       });
       return;
@@ -38,56 +64,114 @@ export const PdfUploadArea = ({ onPdfParsed, onFileUploaded, disabled }: PdfUplo
 
     setIsProcessing(true);
     setUploadedFile(file);
-    console.log('Starting PDF processing...');
+    console.log('🚀 Starting comprehensive PDF processing...');
 
     try {
-      // Parse the PDF
-      console.log('Calling parsePDF...');
+      // Step 1: Parse the PDF
+      console.log('📄 Step 1: Parsing PDF...');
       const parsedData = await parsePDF(file);
-      console.log('PDF parsed successfully:', parsedData);
+      console.log('✅ PDF parsed successfully:', {
+        termName: parsedData.termName,
+        location: parsedData.location,
+        assignmentCount: parsedData.assignments.length
+      });
       
-      // Upload to Supabase storage
-      console.log('Uploading to Supabase storage...');
+      if (parsedData.assignments.length === 0) {
+        toast({
+          title: 'No Data Found',
+          description: 'No court assignments could be extracted from this PDF. Please verify the file format.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      // Step 2: Upload to Supabase storage
+      console.log('☁️ Step 2: Uploading to Supabase storage...');
       const { supabase } = await import('@/integrations/supabase/client');
-      const fileExt = 'pdf';
-      const fileName = `${Date.now()}-${file.name}`;
-      const filePath = `${fileName}`;
+      const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      const filePath = fileName;
 
-      const { error: uploadError, data } = await supabase.storage
+      console.log('📤 Uploading file:', filePath);
+      const { error: uploadError, data: uploadData } = await supabase.storage
         .from('term-pdfs')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) {
-        console.error('Upload error:', uploadError);
-        throw uploadError;
+        console.error('❌ Upload error:', uploadError);
+        if (uploadError.message?.includes('Bucket not found')) {
+          throw new Error('Storage configuration error: term-pdfs bucket not found');
+        } else if (uploadError.message?.includes('permissions')) {
+          throw new Error('Storage permission error: unable to upload file');
+        } else {
+          throw new Error(`Upload failed: ${uploadError.message}`);
+        }
       }
 
-      console.log('Upload successful:', data);
+      console.log('✅ Upload successful:', uploadData);
 
-      // Get public URL
+      // Step 3: Get public URL
+      console.log('🔗 Step 3: Getting public URL...');
       const { data: { publicUrl } } = supabase.storage
         .from('term-pdfs')
         .getPublicUrl(filePath);
 
-      console.log('Public URL:', publicUrl);
+      console.log('✅ Public URL generated:', publicUrl);
 
+      // Step 4: Notify parent components
+      console.log('📢 Step 4: Notifying parent components...');
       onFileUploaded(publicUrl);
       onPdfParsed(parsedData);
 
+      // Success notification
       toast({
-        title: 'PDF Processed',
-        description: `Successfully parsed ${parsedData.assignments.length} court assignments.`,
+        title: 'PDF Processed Successfully',
+        description: `Successfully parsed ${parsedData.assignments.length} court assignments from ${file.name}.`,
       });
+
+      console.log('🎉 PDF processing completed successfully');
+      
     } catch (error) {
-      console.error('Error processing PDF:', error);
+      console.error('💥 Error during PDF processing:', error);
+      
+      // Provide specific error messages
+      let title = 'Processing Error';
+      let description = 'An unexpected error occurred. Please try again.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('timeout')) {
+          title = 'Processing Timeout';
+          description = 'The PDF took too long to process. Try with a smaller or simpler file.';
+        } else if (error.message.includes('worker')) {
+          title = 'PDF Processing Error';
+          description = 'Unable to initialize PDF processor. Please refresh the page and try again.';
+        } else if (error.message.includes('Invalid PDF') || error.message.includes('corrupted')) {
+          title = 'Invalid PDF File';
+          description = 'The PDF file appears to be corrupted or invalid. Please try a different file.';
+        } else if (error.message.includes('Storage')) {
+          title = 'Upload Error';
+          description = error.message;
+        } else if (error.message.includes('No text')) {
+          title = 'Cannot Extract Text';
+          description = 'This PDF might be image-based or encrypted. Please try a text-based PDF.';
+        } else {
+          description = error.message;
+        }
+      }
+      
       toast({
-        title: 'Processing Error',
-        description: 'Failed to process the PDF file. Please try again.',
+        title,
+        description,
         variant: 'destructive',
       });
+      
+      // Reset file on error
+      setUploadedFile(null);
     } finally {
       setIsProcessing(false);
-      console.log('Processing completed');
+      console.log('🏁 PDF processing pipeline completed');
     }
   }, [onPdfParsed, onFileUploaded, toast]);
 
