@@ -3,6 +3,29 @@ import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
 // Set up PDF.js worker
 GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
 
+// Add polyfill for Promise.withResolvers if not available
+declare global {
+  interface PromiseConstructor {
+    withResolvers?<T>(): {
+      promise: Promise<T>;
+      resolve: (value: T | PromiseLike<T>) => void;
+      reject: (reason?: any) => void;
+    };
+  }
+}
+
+if (typeof Promise.withResolvers === 'undefined') {
+  Promise.withResolvers = function<T>() {
+    let resolve: (value: T | PromiseLike<T>) => void;
+    let reject: (reason?: any) => void;
+    const promise = new Promise<T>((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
+    return { promise, resolve: resolve!, reject: reject! };
+  };
+}
+
 export interface ParsedAssignment {
   partCode: string;
   justiceName: string;
