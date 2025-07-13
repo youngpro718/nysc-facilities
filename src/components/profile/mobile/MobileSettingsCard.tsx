@@ -95,9 +95,13 @@ export function MobileSettingsCard({ title, description, settings }: MobileSetti
           <div key={setting.id} className="p-4">
             <div 
               className={`flex items-center gap-3 ${
-                setting.type === 'navigation' ? 'cursor-pointer' : ''
+                (setting.type === 'navigation' || setting.type === 'selection') && setting.action ? 'cursor-pointer' : ''
               }`}
-              onClick={setting.type === 'navigation' ? setting.action : undefined}
+              onClick={() => {
+                if ((setting.type === 'navigation' || setting.type === 'selection') && setting.action) {
+                  setting.action();
+                }
+              }}
             >
               <div className="p-2 rounded-lg bg-muted">
                 <setting.icon className="h-4 w-4" />
