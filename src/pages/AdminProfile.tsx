@@ -33,7 +33,7 @@ export default function AdminProfile() {
       icon: LayoutGrid,
       type: 'selection' as const,
       value: 'System',
-      action: () => {}
+      action: () => navigate('/settings/theme')
     },
     {
       id: 'notifications',
@@ -42,7 +42,10 @@ export default function AdminProfile() {
       icon: Activity,
       type: 'toggle' as const,
       value: true,
-      onChange: (value: boolean) => console.log('Notifications:', value)
+      onChange: (value: boolean) => {
+        // TODO: Implement notification settings update
+        console.log('Notifications:', value);
+      }
     },
     {
       id: 'maintenance',
@@ -51,7 +54,10 @@ export default function AdminProfile() {
       icon: Settings,
       type: 'toggle' as const,
       value: false,
-      onChange: (value: boolean) => console.log('Maintenance:', value)
+      onChange: (value: boolean) => {
+        // TODO: Implement maintenance mode toggle
+        console.log('Maintenance:', value);
+      }
     }
   ];
 
@@ -63,7 +69,7 @@ export default function AdminProfile() {
       icon: Shield,
       type: 'navigation' as const,
       badge: 'Recommended',
-      action: () => {}
+      action: () => navigate('/settings/security/2fa')
     },
     {
       id: 'session-timeout',
@@ -72,7 +78,7 @@ export default function AdminProfile() {
       icon: Shield,
       type: 'selection' as const,
       value: '30 minutes',
-      action: () => {}
+      action: () => navigate('/settings/security/session')
     }
   ];
 

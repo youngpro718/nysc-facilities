@@ -54,7 +54,10 @@ export default function Profile() {
       icon: Bell,
       type: 'toggle' as const,
       value: true,
-      onChange: (value: boolean) => console.log('Email notifications:', value)
+      onChange: (value: boolean) => {
+        // TODO: Implement email notification settings update
+        console.log('Email notifications:', value);
+      }
     },
     {
       id: 'push-notifications',
@@ -63,7 +66,10 @@ export default function Profile() {
       icon: Bell,
       type: 'toggle' as const,
       value: false,
-      onChange: (value: boolean) => console.log('Push notifications:', value)
+      onChange: (value: boolean) => {
+        // TODO: Implement push notification settings update
+        console.log('Push notifications:', value);
+      }
     }
   ];
 
@@ -74,7 +80,7 @@ export default function Profile() {
       description: 'Update your name, email, and contact details',
       icon: User,
       type: 'navigation' as const,
-      action: () => {}
+      action: () => navigate('/profile/edit')
     },
     {
       id: 'privacy',
@@ -82,7 +88,7 @@ export default function Profile() {
       description: 'Control your privacy and data sharing',
       icon: Shield,
       type: 'navigation' as const,
-      action: () => {}
+      action: () => navigate('/profile/privacy')
     }
   ];
 
