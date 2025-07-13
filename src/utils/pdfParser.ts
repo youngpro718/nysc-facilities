@@ -1,26 +1,9 @@
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
 
-// Fix version mismatch and add robust worker setup
-let workerInitialized = false;
-
-const initializeWorker = () => {
-  if (workerInitialized) return;
-  
-  try {
-    console.log('Initializing PDF.js worker...');
-    // Use correct version that matches package.json (5.3.93)
-    GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.3.93/pdf.worker.min.js`;
-    workerInitialized = true;
-    console.log('PDF.js worker initialized successfully');
-  } catch (error) {
-    console.warn('PDF.js worker initialization failed, falling back to no-worker mode:', error);
-    // Disable worker entirely as fallback
-    GlobalWorkerOptions.workerSrc = '';
-  }
-};
-
-// Initialize worker immediately
-initializeWorker();
+// Completely disable worker to avoid initialization issues
+// Force PDF.js to run in main thread mode for reliability
+console.log('🔧 Configuring PDF.js for main-thread processing...');
+GlobalWorkerOptions.workerSrc = false;
 
 // Add polyfill for Promise.withResolvers if not available
 declare global {
@@ -86,11 +69,11 @@ export const parsePDF = async (file: File): Promise<ParsedTermData> => {
     console.log(`📄 PDF parsing attempt ${attemptCount}/${maxAttempts}`);
     
     try {
-      // Re-initialize worker if this is a retry
+      // Ensure worker stays disabled on retry
       if (attemptCount > 1) {
-        console.log('🔄 Reinitializing worker for retry...');
-        GlobalWorkerOptions.workerSrc = '';
-        await new Promise(resolve => setTimeout(resolve, 100));
+        console.log('🔄 Preparing retry attempt...');
+        GlobalWorkerOptions.workerSrc = false;
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
       
       console.log('📖 Reading file as array buffer...');
