@@ -7,7 +7,7 @@ import { NotificationCard } from "@/components/dashboard/NotificationCard";
 import { RoomAssignmentCard } from "@/components/dashboard/RoomAssignmentCard";
 import { KeyAssignmentCard } from "@/components/dashboard/KeyAssignmentCard";
 import { IssueSummaryCard } from "@/components/dashboard/IssueSummaryCard";
-import { IssueWizard } from "@/components/issues/wizard/IssueWizard";
+import { IssueWizard } from "@/components/issues/wizard/components/IssueWizard";
 import { MobileFABs } from "@/components/ui/MobileFABs";
 import { BottomTabNavigation } from "@/components/ui/BottomTabNavigation";
 import { KeyRequestForm } from "@/components/requests/KeyRequestForm";
@@ -100,7 +100,6 @@ export default function UserDashboard() {
             onSuccess={() => setShowIssueReport(false)}
             onCancel={() => setShowIssueReport(false)}
             assignedRooms={assignedRooms}
-            userId={user?.id}
           />
         </DialogContent>
       </Dialog>

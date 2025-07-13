@@ -11,6 +11,7 @@ export interface IssueWizardProps {
   onSuccess?: () => void;
   onCancel?: () => void;
   assignedRooms?: UserAssignment[];
+  userId?: string;
 }
 
 export interface IssueTypeOption {
