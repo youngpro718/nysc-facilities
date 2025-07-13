@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 export default function UserDashboard() {
   const { user, isLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const { notifications = [], isLoading: notificationsLoading } = useNotifications(user?.id);
+  const { notifications = [], isLoading: notificationsLoading, markAsRead, markAllAsRead } = useNotifications(user?.id);
   const { assignedRooms } = useRoomAssignments(user?.id);
 
   useEffect(() => {
@@ -63,8 +63,8 @@ export default function UserDashboard() {
       <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
         <NotificationCard 
           notifications={notifications} 
-          onMarkAsRead={() => {}} 
-          onMarkAllAsRead={() => {}} 
+          onMarkAsRead={markAsRead} 
+          onMarkAllAsRead={markAllAsRead} 
         />
         {/* Room assignments will be added later */}
         <KeyAssignmentCard userId={user.id} />
