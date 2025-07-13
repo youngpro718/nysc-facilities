@@ -21,12 +21,11 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
     description: "",
     maintenance_type: "",
     space_name: "",
-    space_type: "room",
+    space_type: "courtroom",
     scheduled_start_date: "",
     scheduled_end_date: "",
     priority: "medium",
     impact_level: "minimal",
-    estimated_cost: "",
     notes: "",
     special_instructions: "",
   });
@@ -52,7 +51,6 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
         .from("maintenance_schedules")
         .insert({
           ...formData,
-          estimated_cost: formData.estimated_cost ? parseFloat(formData.estimated_cost) : null,
           scheduled_start_date: new Date(formData.scheduled_start_date).toISOString(),
           scheduled_end_date: formData.scheduled_end_date 
             ? new Date(formData.scheduled_end_date).toISOString() 
@@ -71,12 +69,11 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
         description: "",
         maintenance_type: "",
         space_name: "",
-        space_type: "room",
+        space_type: "courtroom",
         scheduled_start_date: "",
         scheduled_end_date: "",
         priority: "medium",
         impact_level: "minimal",
-        estimated_cost: "",
         notes: "",
         special_instructions: "",
       });
@@ -125,6 +122,7 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
                   <SelectItem value="electrical">Electrical</SelectItem>
                   <SelectItem value="hvac">HVAC</SelectItem>
                   <SelectItem value="plumbing">Plumbing</SelectItem>
+                  <SelectItem value="cleaning">Cleaning</SelectItem>
                   <SelectItem value="general">General</SelectItem>
                 </SelectContent>
               </Select>
@@ -152,6 +150,7 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="courtroom">Courtroom</SelectItem>
                   <SelectItem value="room">Room</SelectItem>
                   <SelectItem value="hallway">Hallway</SelectItem>
                   <SelectItem value="door">Door</SelectItem>
@@ -213,7 +212,7 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="priority">Priority</Label>
               <Select 
@@ -249,18 +248,6 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
                   <SelectItem value="full_closure">Full Closure</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="estimated_cost">Estimated Cost</Label>
-              <Input
-                id="estimated_cost"
-                type="number"
-                step="0.01"
-                value={formData.estimated_cost}
-                onChange={(e) => setFormData(prev => ({ ...prev, estimated_cost: e.target.value }))}
-                placeholder="0.00"
-              />
             </div>
           </div>
 

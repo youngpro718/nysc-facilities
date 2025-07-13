@@ -21,7 +21,7 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
     title: "",
     description: "",
     space_name: "",
-    space_type: "room",
+    space_type: "courtroom",
     issue_type: "",
     severity: "medium",
     recurring_issue: false,
@@ -59,7 +59,7 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
         title: "",
         description: "",
         space_name: "",
-        space_type: "room",
+        space_type: "courtroom",
         issue_type: "",
         severity: "medium",
         recurring_issue: false,
@@ -115,6 +115,7 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="courtroom">Courtroom</SelectItem>
                   <SelectItem value="room">Room</SelectItem>
                   <SelectItem value="hallway">Hallway</SelectItem>
                   <SelectItem value="door">Door</SelectItem>
@@ -169,6 +170,7 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
                   <SelectItem value="hvac">HVAC</SelectItem>
                   <SelectItem value="structural">Structural</SelectItem>
                   <SelectItem value="safety">Safety</SelectItem>
+                  <SelectItem value="cleaning">Cleaning</SelectItem>
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
