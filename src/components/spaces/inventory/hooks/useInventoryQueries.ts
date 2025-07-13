@@ -19,6 +19,8 @@ export const useInventoryQueries = (roomId: string) => {
           status,
           category_id,
           storage_room_id,
+          photo_url,
+          location_details,
           inventory_categories!category_id (
             id,
             name,

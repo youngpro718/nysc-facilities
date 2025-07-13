@@ -62,7 +62,7 @@ export function MobileInventoryGrid({
   const sortedItems = [...items].sort((a, b) => a.name.localeCompare(b.name));
 
   return (
-    <div className="grid gap-3">
+    <div className="grid gap-3 max-h-[60vh] overflow-y-auto">
       {sortedItems.map(item => (
         <Card key={item.id} className="overflow-hidden">
           <CardContent className="p-4">
