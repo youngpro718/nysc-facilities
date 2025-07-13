@@ -2,22 +2,19 @@ import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 
 interface KeyRequestFormProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: { keyName: string; reason: string; comments?: string }) => void;
+  onSubmit: (data: { reason: string }) => void;
 }
 
 export const KeyRequestForm: React.FC<KeyRequestFormProps> = ({ open, onClose, onSubmit }) => {
-  const [keyName, setKeyName] = useState("");
   const [reason, setReason] = useState("");
-  const [comments, setComments] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ keyName, reason, comments });
+    onSubmit({ reason });
   };
 
   return (
@@ -28,23 +25,11 @@ export const KeyRequestForm: React.FC<KeyRequestFormProps> = ({ open, onClose, o
             <DialogTitle>Request a Key</DialogTitle>
           </DialogHeader>
           <Input
-            placeholder="Key name or door (e.g., Courtroom 1)"
-            value={keyName}
-            onChange={e => setKeyName(e.target.value)}
-            required
-            autoFocus
-          />
-          <Input
-            placeholder="Reason for request"
+            placeholder="Reason for key request (e.g., access to specific room/area)"
             value={reason}
             onChange={e => setReason(e.target.value)}
             required
-          />
-          <Textarea
-            placeholder="Additional comments (optional)"
-            value={comments}
-            onChange={e => setComments(e.target.value)}
-            rows={2}
+            autoFocus
           />
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>

@@ -62,7 +62,13 @@ export default function MyRequests() {
     setShowMobileForm(false);
     try {
       const { submitKeyRequest } = await import('@/services/supabase/keyRequestService');
-      await submitKeyRequest({ ...data, user_id: user!.id });
+      
+      // Map the form data to the simplified database schema
+      const reason = (data as any).keyType 
+        ? `${(data as any).keyType} key - ${data.reason}` 
+        : data.reason;
+      
+      await submitKeyRequest({ reason, user_id: user!.id });
       const { toast } = await import('sonner');
       toast.success('Key request submitted successfully!');
       refetch();
