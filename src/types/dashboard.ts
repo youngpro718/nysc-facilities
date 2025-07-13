@@ -27,9 +27,12 @@ export interface UserAssignment {
   key_type?: 'standard' | 'restricted' | 'master';
   access_areas?: string;
   expiry_date?: string;
-  building_id?: string;  // Added
-  floor_id?: string;     // Added
-  room_id?: string;      // Added
+  building_id?: string;
+  floor_id?: string;
+  room_id?: string;
+  occupant_count?: number; // Added for room occupant count
+  room_status?: string;    // Added for room status
+  assignment_type?: string; // Added for assignment type
 }
 
 export interface UserIssue {
