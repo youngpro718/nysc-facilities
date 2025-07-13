@@ -11,11 +11,14 @@ import { IssueWizard } from "@/components/issues/wizard/IssueWizard";
 import { MobileFABs } from "@/components/ui/MobileFABs";
 import { BottomTabNavigation } from "@/components/ui/BottomTabNavigation";
 import { KeyRequestForm } from "@/components/requests/KeyRequestForm";
+import { useRoomAssignments } from "@/hooks/dashboard/useRoomAssignments";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 export default function UserDashboard() {
   const { user, isLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const { notifications = [], isLoading: notificationsLoading } = useNotifications(user?.id);
+  const { assignedRooms } = useRoomAssignments(user?.id);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -91,12 +94,16 @@ export default function UserDashboard() {
           }
         } }
       />
-      {showIssueReport && (
-        <IssueWizard
-          onSuccess={() => setShowIssueReport(false)}
-          onCancel={() => setShowIssueReport(false)}
-        />
-      )}
+      <Dialog open={showIssueReport} onOpenChange={setShowIssueReport}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <IssueWizard
+            onSuccess={() => setShowIssueReport(false)}
+            onCancel={() => setShowIssueReport(false)}
+            assignedRooms={assignedRooms}
+            userId={user?.id}
+          />
+        </DialogContent>
+      </Dialog>
       <BottomTabNavigation />
     </div>
   );

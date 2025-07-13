@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
   Building, 
   Key, 
@@ -10,8 +11,14 @@ import {
   Mail, 
   Phone, 
   MoreVertical,
-  ChevronRight
+  ChevronRight,
+  ChevronDown,
+  Crown,
+  MapPin,
+  Calendar
 } from "lucide-react";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,6 +48,8 @@ export function EnhancedMobileOccupantCard({
   isSelected = false,
   onToggleSelect,
 }: EnhancedMobileOccupantCardProps) {
+  const [isRoomsExpanded, setIsRoomsExpanded] = useState(false);
+  const [isKeysExpanded, setIsKeysExpanded] = useState(false);
   const getInitials = (firstName: string, lastName: string) => {
     return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase();
   };
@@ -151,86 +160,125 @@ export function EnhancedMobileOccupantCard({
           )}
         </div>
 
-        {/* Room assignments */}
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium text-muted-foreground">Room Assignments</h4>
-          {occupant.rooms && occupant.rooms.length > 0 ? (
-            <div className="space-y-2">
-              {/* Primary room */}
-              {primaryRoom && (
-                <div className="flex items-center justify-between p-2 bg-primary/5 rounded-md">
-                  <div className="flex items-center gap-2">
-                    <DoorOpen className="h-4 w-4 text-primary" />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">
-                          {primaryRoom.room_number || primaryRoom.name}
-                        </span>
-                        <Badge variant="secondary" className="text-xs">Primary</Badge>
-                      </div>
-                      {primaryRoom.floors?.buildings?.name && (
-                        <div className="text-xs text-muted-foreground">
-                          {primaryRoom.floors.buildings.name}
-                          {primaryRoom.floors?.name && ` - ${primaryRoom.floors.name}`}
+        {/* Room assignments - Expandable */}
+        <Collapsible open={isRoomsExpanded} onOpenChange={setIsRoomsExpanded}>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" className="w-full justify-between p-0 h-auto">
+              <div className="flex items-center gap-2">
+                <DoorOpen className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">
+                  Room Assignments ({occupant.rooms?.length || 0})
+                </span>
+              </div>
+              <ChevronDown className={cn("h-4 w-4 transition-transform", isRoomsExpanded && "rotate-180")} />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-2">
+            {occupant.rooms && occupant.rooms.length > 0 ? (
+              <div className="space-y-2 mt-2">
+                {occupant.rooms.map((room, index) => {
+                  const isPrimary = index === 0; // Assuming first room is primary
+                  return (
+                    <Card key={index} className={cn("p-3", isPrimary && "border-primary/20 bg-primary/5")}>
+                      <div className="flex items-start gap-3">
+                        <div className={cn(
+                          "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
+                          isPrimary ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+                        )}>
+                          {isPrimary ? <Crown className="h-4 w-4" /> : <MapPin className="h-4 w-4" />}
                         </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Additional rooms */}
-              {additionalRooms.length > 0 && (
-                <div className="space-y-1">
-                  {additionalRooms.slice(0, 2).map((room, index) => (
-                    <div key={index} className="flex items-center gap-2 p-2 bg-muted/30 rounded-md">
-                      <DoorOpen className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <span className="text-sm">{room.room_number || room.name}</span>
-                        {room.floors?.buildings?.name && (
-                          <div className="text-xs text-muted-foreground">
-                            {room.floors.buildings.name}
-                            {room.floors?.name && ` - ${room.floors.name}`}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-sm">{room.room_number || room.name}</span>
+                            {isPrimary && <Badge variant="default" className="text-xs">Primary</Badge>}
                           </div>
-                        )}
+                          {room.floors?.buildings?.name && (
+                            <div className="text-xs text-muted-foreground">
+                              {room.floors.buildings.name}
+                              {room.floors?.name && ` • Floor ${room.floors.name}`}
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1 mt-1">
+                            <Calendar className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">
+                              Assigned: {new Date().toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex items-center justify-between p-3 border-2 border-dashed border-muted rounded-md mt-2">
+                <span className="text-sm text-muted-foreground">No rooms assigned</span>
+                {onAssignRooms && (
+                  <Button variant="outline" size="sm" onClick={onAssignRooms}>
+                    Assign Room
+                  </Button>
+                )}
+              </div>
+            )}
+          </CollapsibleContent>
+        </Collapsible>
+
+        {/* Key assignments - Expandable */}
+        <Collapsible open={isKeysExpanded} onOpenChange={setIsKeysExpanded} className="pt-2 border-t">
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" className="w-full justify-between p-0 h-auto">
+              <div className="flex items-center gap-2">
+                <Key className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">
+                  {occupant.key_count || 0} {occupant.key_count === 1 ? 'key' : 'keys'} assigned
+                </span>
+              </div>
+              <ChevronDown className={cn("h-4 w-4 transition-transform", isKeysExpanded && "rotate-180")} />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-2">
+            <div className="mt-2">
+              {occupant.key_count && occupant.key_count > 0 ? (
+                <div className="space-y-2">
+                  {/* Placeholder for key details - you'll need to add key data to the occupant type */}
+                  {Array.from({ length: occupant.key_count }).map((_, index) => (
+                    <Card key={index} className="p-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                          <Key className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-medium text-sm">Key #{index + 1}</div>
+                          <div className="text-xs text-muted-foreground">Standard access key</div>
+                        </div>
+                        <Badge variant="outline" className="text-xs">Active</Badge>
+                      </div>
+                    </Card>
                   ))}
-                  {additionalRooms.length > 2 && (
-                    <div className="text-xs text-muted-foreground text-center py-1">
-                      +{additionalRooms.length - 2} more rooms
-                    </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between p-3 border-2 border-dashed border-muted rounded-md">
+                  <span className="text-sm text-muted-foreground">No keys assigned</span>
+                  {onAssignKeys && (
+                    <Button variant="outline" size="sm" onClick={onAssignKeys}>
+                      Assign Key
+                    </Button>
                   )}
                 </div>
               )}
             </div>
-          ) : (
-            <div className="flex items-center justify-between p-3 border-2 border-dashed border-muted rounded-md">
-              <span className="text-sm text-muted-foreground">No rooms assigned</span>
-              {onAssignRooms && (
-                <Button variant="outline" size="sm" onClick={onAssignRooms}>
-                  Assign Room
-                </Button>
-              )}
-            </div>
-          )}
-        </div>
+          </CollapsibleContent>
+        </Collapsible>
 
-        {/* Keys count */}
-        <div className="flex items-center justify-between pt-2 border-t">
-          <div className="flex items-center gap-2">
-            <Key className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm">
-              {occupant.key_count || 0} {occupant.key_count === 1 ? 'key' : 'keys'} assigned
-            </span>
-          </div>
-          {onClick && (
-            <Button variant="ghost" size="sm" onClick={onClick}>
-              View Details
-              <ChevronRight className="h-4 w-4 ml-1" />
+        {/* Quick actions */}
+        {onClick && (
+          <div className="pt-3 border-t">
+            <Button variant="outline" size="sm" onClick={onClick} className="w-full">
+              View Full Details
+              <ChevronRight className="h-4 w-4 ml-2" />
             </Button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </Card>
   );

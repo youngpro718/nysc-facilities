@@ -28,6 +28,27 @@ export function useRoomAssignment(onSuccess: () => void) {
 
       console.log('Creating room assignments:', assignments);
 
+      // Check for existing primary assignments if this is a primary assignment
+      if (isPrimaryAssignment) {
+        for (const occupantId of selectedOccupants) {
+          const { data: existingPrimary } = await supabase
+            .from("occupant_room_assignments")
+            .select("id")
+            .eq("occupant_id", occupantId)
+            .eq("is_primary", true)
+            .limit(1);
+
+          if (existingPrimary && existingPrimary.length > 0) {
+            // Update existing primary to non-primary
+            await supabase
+              .from("occupant_room_assignments")
+              .update({ is_primary: false })
+              .eq("occupant_id", occupantId)
+              .eq("is_primary", true);
+          }
+        }
+      }
+
       const { data, error: assignmentError } = await supabase
         .from("occupant_room_assignments")
         .insert(assignments)

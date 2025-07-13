@@ -18,6 +18,8 @@ import {
 import { LocationFields } from "../form-sections/LocationFields";
 import { ProblemTypeField } from "../form-sections/ProblemTypeField";
 import { DescriptionField } from "../form-sections/DescriptionField";
+import { SmartLocationStep } from "./components/SmartLocationStep";
+import { useOccupantAssignments } from "@/hooks/occupants/useOccupantAssignments";
 import { IssuePhotoForm } from "./IssuePhotoForm";
 import { usePhotoUpload } from "../hooks/usePhotoUpload";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -34,6 +36,7 @@ interface IssueWizardProps {
   onSuccess?: () => void;
   onCancel?: () => void;
   assignedRooms?: UserAssignment[];
+  userId?: string;
 }
 
 type WizardStep = 'type' | 'details' | 'review';
@@ -91,7 +94,7 @@ const ISSUE_TYPES: IssueTypeOption[] = [
   }
 ];
 
-export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardProps) {
+export function IssueWizard({ onSuccess, onCancel, assignedRooms, userId }: IssueWizardProps) {
   const [currentStep, setCurrentStep] = useState<WizardStep>('type');
   const [isEmergency, setIsEmergency] = useState(false);
   const [useAssignedRoom, setUseAssignedRoom] = useState(true);
@@ -99,7 +102,10 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
   const queryClient = useQueryClient();
   const [selectedIssueType, setSelectedIssueType] = useState<StandardizedIssueType | null>(null);
   
-  const primaryRoom = assignedRooms?.find(room => room.is_primary);
+  // Get detailed room assignments for the user
+  const { data: detailedAssignments } = useOccupantAssignments(userId);
+  const primaryRoom = Array.isArray(detailedAssignments) ? detailedAssignments.find(room => room.is_primary) : undefined;
+  const roomAssignments = Array.isArray(detailedAssignments) ? detailedAssignments : [];
 
   const form = useForm<FormData>({
     defaultValues: {
@@ -108,9 +114,9 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
       due_date: undefined,
       date_info: '',
       ...(primaryRoom && {
-        building_id: primaryRoom.building_id,
-        floor_id: primaryRoom.floor_id,
-        room_id: primaryRoom.room_id
+        building_id: primaryRoom.building_id || '',
+        floor_id: primaryRoom.floor_id || '',
+        room_id: primaryRoom.room_id || ''
       })
     }
   });
@@ -121,9 +127,9 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
       form.setValue('floor_id', '');
       form.setValue('room_id', '');
     } else if (primaryRoom) {
-      form.setValue('building_id', primaryRoom.building_id);
-      form.setValue('floor_id', primaryRoom.floor_id);
-      form.setValue('room_id', primaryRoom.room_id);
+      form.setValue('building_id', primaryRoom.building_id || '');
+      form.setValue('floor_id', primaryRoom.floor_id || '');
+      form.setValue('room_id', primaryRoom.room_id || '');
     }
   }, [useAssignedRoom, primaryRoom, form]);
 
@@ -408,186 +414,65 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
           </div>
 
           {currentStep === 'type' && (
-            <Card className="p-6 animate-fade-in">
-              <h3 className="text-lg font-semibold mb-4">What type of issue are you reporting?</h3>
+            <div className="space-y-6">
+              {/* Location Selection - Use SmartLocationStep */}
+              <SmartLocationStep 
+                form={form}
+                assignedRooms={roomAssignments}
+                primaryRoom={primaryRoom}
+              />
               
-              {!useAssignedRoom && (
-                <div className="mb-6 space-y-6">
-                  <div className="space-y-4">
-                    <h4 className="font-medium">Select Building</h4>
-                    {isLoadingBuildings ? (
-                      <div className="flex items-center justify-center py-4">
-                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                      </div>
-                    ) : (
-                      <RadioGroup
-                        value={form.watch('building_id') || ''}
-                        onValueChange={handleBuildingSelect}
-                        className="grid grid-cols-1 md:grid-cols-2 gap-2 z-10"
+              {/* Issue Type Selection */}
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-4">What type of issue are you reporting?</h3>
+                
+                <RadioGroup
+                  value={selectedIssueType || ''}
+                  onValueChange={(value) => {
+                    setSelectedIssueType(value as StandardizedIssueType);
+                    form.setValue('issue_type', value as StandardizedIssueType);
+                  }}
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                >
+                  {ISSUE_TYPES.map((issueType) => (
+                    <div key={issueType.id} className="relative">
+                      <RadioGroupItem
+                        value={issueType.id}
+                        id={`issue-${issueType.id}`}
+                        className="peer sr-only"
+                      />
+                      <Label
+                        htmlFor={`issue-${issueType.id}`}
+                        className={cn(
+                          "flex flex-col items-center gap-3 p-6 rounded-xl border-2 cursor-pointer",
+                          "transition-all duration-200",
+                          "hover:border-primary/30 hover:bg-primary/5 hover:scale-[1.02]",
+                          "peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10",
+                          "peer-data-[state=checked]:shadow-md"
+                        )}
                       >
-                        {buildings.map((building) => (
-                          <div key={building.id} className="relative">
-                            <RadioGroupItem
-                              value={building.id}
-                              id={`building-${building.id}`}
-                              className="peer sr-only"
-                            />
-                            <Label
-                              htmlFor={`building-${building.id}`}
-                              className={cn(
-                                "flex items-center gap-2 p-4 rounded-lg border cursor-pointer",
-                                "hover:bg-accent hover:text-accent-foreground",
-                                "peer-data-[state=checked]:border-primary",
-                                "peer-data-[state=checked]:bg-primary/5"
-                              )}
-                            >
-                              <Building2 className="h-4 w-4" />
-                              <div>
-                                <div className="font-medium">{building.name}</div>
-                                <div className="text-xs text-muted-foreground">{building.address}</div>
-                              </div>
-                            </Label>
-                          </div>
-                        ))}
-                      </RadioGroup>
-                    )}
-                  </div>
-
-                  {form.watch('building_id') && (
-                    <div className="space-y-4 animate-fade-in">
-                      <h4 className="font-medium">Select Floor</h4>
-                      {isLoadingFloors ? (
-                        <div className="flex items-center justify-center py-4">
-                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                        <div className={cn("transition-colors", issueType.color)}>
+                          {issueType.icon}
                         </div>
-                      ) : (
-                        <RadioGroup
-                          value={form.watch('floor_id') || ''}
-                          onValueChange={handleFloorSelect}
-                          className="grid grid-cols-2 md:grid-cols-4 gap-2 z-20"
-                        >
-                          {floors.length > 0 ? (
-                            floors.map((floor) => (
-                              <div key={floor.id} className="relative">
-                                <RadioGroupItem
-                                  value={floor.id}
-                                  id={`floor-${floor.id}`}
-                                  className="peer sr-only"
-                                />
-                                <Label
-                                  htmlFor={`floor-${floor.id}`}
-                                  className={cn(
-                                    "flex items-center justify-center p-4 rounded-lg border cursor-pointer",
-                                    "hover:bg-accent hover:text-accent-foreground",
-                                    "peer-data-[state=checked]:border-primary",
-                                    "peer-data-[state=checked]:bg-primary/5"
-                                  )}
-                                >
-                                  {floor.name}
-                                </Label>
-                              </div>
-                            ))
-                          ) : (
-                            <div className="col-span-full text-center text-muted-foreground py-2">
-                              No floors found for this building
-                            </div>
-                          )}
-                        </RadioGroup>
-                      )}
-                    </div>
-                  )}
-
-                  {form.watch('floor_id') && (
-                    <div className="space-y-4 animate-fade-in">
-                      <h4 className="font-medium">Select Room</h4>
-                      {isLoadingRooms ? (
-                        <div className="flex items-center justify-center py-4">
-                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                        </div>
-                      ) : (
-                        <ScrollArea className="h-[200px]">
-                          <div className="pr-4">
-                            <RadioGroup
-                              value={form.watch('room_id') || ''}
-                              onValueChange={handleRoomSelect}
-                              className="grid grid-cols-1 md:grid-cols-2 gap-2 z-30"
-                            >
-                              {rooms.length > 0 ? (
-                                rooms.map((room) => (
-                                  <div key={room.id} className="relative">
-                                    <RadioGroupItem
-                                      value={room.id}
-                                      id={`room-${room.id}`}
-                                      className="peer sr-only"
-                                    />
-                                    <Label
-                                      htmlFor={`room-${room.id}`}
-                                      className={cn(
-                                        "flex items-center gap-2 p-4 rounded-lg border cursor-pointer",
-                                        "hover:bg-accent hover:text-accent-foreground",
-                                        "peer-data-[state=checked]:border-primary",
-                                        "peer-data-[state=checked]:bg-primary/5"
-                                      )}
-                                    >
-                                      <DoorClosed className="h-4 w-4" />
-                                      <div>
-                                        <div className="font-medium">{room.name}</div>
-                                        <div className="text-xs text-muted-foreground">Room {room.room_number}</div>
-                                      </div>
-                                    </Label>
-                                  </div>
-                                ))
-                              ) : (
-                                <div className="col-span-full text-center text-muted-foreground py-2">
-                                  No rooms found on this floor
-                                </div>
-                              )}
-                            </RadioGroup>
+                        <div className="text-center">
+                          <div className="font-semibold">{issueType.label}</div>
+                          <div className="text-sm text-muted-foreground mt-1">
+                            {issueType.description}
                           </div>
-                        </ScrollArea>
-                      )}
+                        </div>
+                      </Label>
                     </div>
-                  )}
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {ISSUE_TYPES.map((type) => (
-                  <button
-                    key={type.id}
-                    type="button"
-                    className={cn(
-                      "relative p-6 rounded-lg border-2 transition-all duration-200",
-                      "hover:scale-105 hover:shadow-lg",
-                      "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
-                      "z-0",
-                      form.watch('issue_type') === type.id
-                        ? "border-primary bg-primary/5"
-                        : "border-muted bg-card hover:border-primary/50"
-                    )}
-                    onClick={() => form.setValue('issue_type', type.id)}
-                  >
-                    <div className="flex flex-col items-center text-center gap-2">
-                      <div className={cn("transition-colors", type.color)}>
-                        {type.icon}
-                      </div>
-                      <div>
-                        <div className="font-medium">{type.label}</div>
-                        <p className="text-xs text-muted-foreground">
-                          {type.description}
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-
-              {form.watch('issue_type') && (
-                <div className="mt-6 animate-fade-in">
+                  ))}
+                </RadioGroup>
+              </Card>
+              
+              {/* Problem Type Selection */}
+              {selectedIssueType && (
+                <Card className="p-6 animate-fade-in">
                   <ProblemTypeField form={form} />
-                </div>
+                </Card>
               )}
-            </Card>
+            </div>
           )}
 
           {currentStep === 'details' && (
@@ -613,9 +498,9 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
               <div className="space-y-4">
                 <div className="space-y-2">
                   <h4 className="font-medium">Location</h4>
-                  <p className="text-muted-foreground">
+                   <p className="text-muted-foreground">
                     {primaryRoom && useAssignedRoom
-                      ? `${primaryRoom.room_name} - ${primaryRoom.building_name}, Floor ${primaryRoom.floor_name}`
+                      ? `${primaryRoom.room_name || primaryRoom.room_id} - ${primaryRoom.building_name}, Floor ${primaryRoom.floor_name}`
                       : 'Custom location selected'}
                   </p>
                 </div>
