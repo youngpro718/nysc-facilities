@@ -123,7 +123,7 @@ export default function AdminKeyRequests() {
               ...selectedRequest,
               profiles: {
                 ...selectedRequest.profiles,
-                user_id: selectedRequest.user_id // Ensure user_id is included
+                user_id: selectedRequest.user_id // Ensure user_id is accessible
               }
             },
             status: updates.status,
