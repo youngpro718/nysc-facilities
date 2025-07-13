@@ -98,10 +98,10 @@ export function LocationStep({ form, assignedRooms }: LocationStepProps) {
                     form.setValue('room_id', roomId);
                   }
                 }}
-                className="grid grid-cols-1 gap-2"
+                className="grid grid-cols-1 gap-3"
               >
                 {assignedRooms.map((room) => (
-                  <div key={room.id}>
+                  <div key={room.id} className="relative group">
                     <RadioGroupItem
                       value={room.room_id}
                       id={`assigned-room-${room.room_id}`}
@@ -110,18 +110,36 @@ export function LocationStep({ form, assignedRooms }: LocationStepProps) {
                     <Label
                       htmlFor={`assigned-room-${room.room_id}`}
                       className={cn(
-                        "flex items-center gap-2 p-4 rounded-lg border cursor-pointer",
-                        "hover:bg-accent hover:text-accent-foreground",
-                        "peer-data-[state=checked]:border-primary",
-                        "peer-data-[state=checked]:bg-primary/5"
+                        "flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer",
+                        "transition-all duration-200",
+                        "hover:border-primary/30 hover:bg-primary/5 hover:scale-[1.01]",
+                        "peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10",
+                        "peer-data-[state=checked]:shadow-md",
+                        "touch-manipulation min-h-[60px]" // Better mobile touch targets
                       )}
                     >
-                      <div className="flex-1">
-                        <div className="font-medium">{room.room_name}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {room.building_name} - Floor {room.floor_name}
+                      <div className="flex-shrink-0">
+                        <div className={cn(
+                          "w-10 h-10 rounded-full flex items-center justify-center transition-colors",
+                          "peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground",
+                          "bg-muted text-muted-foreground group-hover:bg-primary/20"
+                        )}>
+                          <DoorClosed className="w-4 h-4" />
                         </div>
                       </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold truncate">{room.room_name}</div>
+                        <div className="text-sm text-muted-foreground truncate">
+                          {room.building_name} • Floor {room.floor_name}
+                        </div>
+                      </div>
+                      {form.watch('room_id') === room.room_id && (
+                        <div className="flex-shrink-0">
+                          <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
+                            <div className="w-2 h-2 bg-primary-foreground rounded-full" />
+                          </div>
+                        </div>
+                      )}
                     </Label>
                   </div>
                 ))}

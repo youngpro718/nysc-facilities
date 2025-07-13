@@ -15,8 +15,7 @@ export function IssueDialog({ open, onOpenChange, onSuccess, assignedRooms }: Is
     <ResponsiveDialog 
       open={open} 
       onOpenChange={onOpenChange}
-      title="Report an Issue"
-      className="max-w-3xl max-h-[90vh] overflow-y-auto"
+      title=""
     >
       <IssueWizard 
         onSuccess={() => {

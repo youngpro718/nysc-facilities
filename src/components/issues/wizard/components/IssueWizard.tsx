@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -11,10 +10,13 @@ import { StandardizedIssueType } from "../../constants/issueTypes";
 import { IssueWizardProps } from "../types";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2, Check, ArrowLeft, ArrowRight } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import { TypeStep } from "./TypeStep";
 import { LocationStep } from "./LocationStep";
 import { DetailsStep } from "./DetailsStep";
+import { cn } from "@/lib/utils";
 
 export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardProps) {
   const [currentStep, setCurrentStep] = useState<'type' | 'location' | 'details'>('type');
@@ -158,99 +160,191 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
     createIssueMutation.mutate(data);
   };
 
-  const wizardContext = {
-    selectedIssueType,
-    setSelectedIssueType,
-    isEmergency,
-    setIsEmergency,
-    selectedPhotos,
-    setSelectedPhotos,
-    uploading,
-    handlePhotoUpload,
-    assignedRooms
-  };
+  // Get current step info for progress
+  const steps = [
+    { key: 'type', label: 'Issue Type', description: 'Select category' },
+    { key: 'location', label: 'Location', description: 'Where is it?' },
+    { key: 'details', label: 'Details', description: 'Describe the issue' }
+  ];
+  
+  const currentStepIndex = steps.findIndex(step => step.key === currentStep);
+  const progressPercentage = ((currentStepIndex + 1) / steps.length) * 100;
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {isEmergency && (
-          <Alert variant="destructive" className="animate-fade-in">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              This issue has been marked as emergency. It will be prioritized.
-            </AlertDescription>
-          </Alert>
-        )}
+    <div className="w-full max-w-4xl mx-auto">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {/* Progress Header */}
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold">Report an Issue</h1>
+                <p className="text-sm text-muted-foreground">
+                  Step {currentStepIndex + 1} of {steps.length}: {steps[currentStepIndex]?.description}
+                </p>
+              </div>
+              {isEmergency && (
+                <Badge variant="destructive" className="w-fit">
+                  <AlertTriangle className="w-3 h-3 mr-1" />
+                  Emergency
+                </Badge>
+              )}
+            </div>
+            
+            {/* Progress Bar */}
+            <div className="space-y-3">
+              <Progress value={progressPercentage} className="h-2" />
+              <div className="hidden sm:flex justify-between text-xs">
+                {steps.map((step, index) => (
+                  <div 
+                    key={step.key}
+                    className={cn(
+                      "flex items-center gap-1.5 transition-colors",
+                      index <= currentStepIndex 
+                        ? "text-primary font-medium" 
+                        : "text-muted-foreground"
+                    )}
+                  >
+                    {index < currentStepIndex ? (
+                      <Check className="w-3 h-3" />
+                    ) : (
+                      <div className={cn(
+                        "w-3 h-3 rounded-full border-2",
+                        index === currentStepIndex 
+                          ? "border-primary bg-primary" 
+                          : "border-muted-foreground"
+                      )} />
+                    )}
+                    <span className="hidden md:inline">{step.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
 
-        <div className="min-h-[400px]">
-          {currentStep === 'type' && (
-            <Card className="p-6">
-              <h2 className="text-lg font-semibold mb-4">What type of issue are you reporting?</h2>
-              <TypeStep 
-                form={form} 
-                onNext={handleNext} 
-                onBack={onCancel}
-                selectedIssueType={selectedIssueType}
-                setSelectedIssueType={setSelectedIssueType}
-              />
-            </Card>
+          {/* Emergency Alert */}
+          {isEmergency && (
+            <Alert variant="destructive" className="animate-fade-in">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                This issue has been marked as emergency. It will be prioritized for immediate attention.
+              </AlertDescription>
+            </Alert>
           )}
-          
-          {currentStep === 'location' && (
-            <Card className="p-6">
-              <h2 className="text-lg font-semibold mb-4">Where is the issue located?</h2>
-              <LocationStep 
-                form={form} 
-                onNext={handleNext} 
-                onBack={handleBack}
-                assignedRooms={assignedRooms}
-              />
-            </Card>
-          )}
-          
-          {currentStep === 'details' && (
-            <Card className="p-6">
-              <h2 className="text-lg font-semibold mb-4">Describe the issue</h2>
-              <DetailsStep 
-                form={form} 
-                onNext={handleNext} 
-                onBack={handleBack}
-                isEmergency={isEmergency}
-                setIsEmergency={setIsEmergency}
-                selectedPhotos={selectedPhotos}
-                setSelectedPhotos={setSelectedPhotos}
-                uploading={uploading}
-                handlePhotoUpload={handlePhotoUpload}
-              />
-            </Card>
-          )}
-        </div>
 
-        <div className="flex justify-between">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={currentStep === 'type' ? onCancel : handleBack}
-          >
-            {currentStep === 'type' ? 'Cancel' : 'Back'}
-          </Button>
+          {/* Step Content */}
+          <div className="min-h-[400px] sm:min-h-[450px]">
+            {currentStep === 'type' && (
+              <Card className="border-0 shadow-sm">
+                <div className="p-4 sm:p-6">
+                  <div className="mb-6">
+                    <h2 className="text-lg sm:text-xl font-semibold mb-2">
+                      What type of issue are you reporting?
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      Select the category that best describes your issue
+                    </p>
+                  </div>
+                  <TypeStep 
+                    form={form} 
+                    onNext={handleNext} 
+                    onBack={onCancel}
+                    selectedIssueType={selectedIssueType}
+                    setSelectedIssueType={setSelectedIssueType}
+                  />
+                </div>
+              </Card>
+            )}
+            
+            {currentStep === 'location' && (
+              <Card className="border-0 shadow-sm">
+                <div className="p-4 sm:p-6">
+                  <div className="mb-6">
+                    <h2 className="text-lg sm:text-xl font-semibold mb-2">
+                      Where is the issue located?
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      Help us locate the problem so we can address it quickly
+                    </p>
+                  </div>
+                  <LocationStep 
+                    form={form} 
+                    onNext={handleNext} 
+                    onBack={handleBack}
+                    assignedRooms={assignedRooms}
+                  />
+                </div>
+              </Card>
+            )}
+            
+            {currentStep === 'details' && (
+              <Card className="border-0 shadow-sm">
+                <div className="p-4 sm:p-6">
+                  <div className="mb-6">
+                    <h2 className="text-lg sm:text-xl font-semibold mb-2">
+                      Provide additional details
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      The more details you provide, the faster we can resolve the issue
+                    </p>
+                  </div>
+                  <DetailsStep 
+                    form={form} 
+                    onNext={handleNext} 
+                    onBack={handleBack}
+                    isEmergency={isEmergency}
+                    setIsEmergency={setIsEmergency}
+                    selectedPhotos={selectedPhotos}
+                    setSelectedPhotos={setSelectedPhotos}
+                    uploading={uploading}
+                    handlePhotoUpload={handlePhotoUpload}
+                  />
+                </div>
+              </Card>
+            )}
+          </div>
 
-          <Button
-            type="button"
-            onClick={handleNext}
-            disabled={createIssueMutation.isPending || (currentStep === 'type' && !selectedIssueType)}
-          >
-            {currentStep === 'details' ? (
-              createIssueMutation.isPending ? (
+          {/* Navigation Buttons */}
+          <div className="flex flex-col-reverse sm:flex-row gap-3 sm:justify-between pt-4 border-t">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={currentStep === 'type' ? onCancel : handleBack}
+              className="w-full sm:w-auto"
+              disabled={createIssueMutation.isPending}
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              {currentStep === 'type' ? 'Cancel' : 'Back'}
+            </Button>
+
+            <Button
+              type="button"
+              onClick={handleNext}
+              disabled={createIssueMutation.isPending || (currentStep === 'type' && !selectedIssueType)}
+              className="w-full sm:w-auto"
+            >
+              {currentStep === 'details' ? (
+                createIssueMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    Submit Issue
+                    <Check className="w-4 h-4 ml-2" />
+                  </>
+                )
+              ) : (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Submitting...
+                  Next
+                  <ArrowRight className="w-4 h-4 ml-2" />
                 </>
-              ) : 'Submit Issue'
-            ) : 'Next'}
-          </Button>
-        </div>
-      </form>
-    </Form>
+              )}
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </div>
   );
 }

@@ -76,34 +76,44 @@ export function DetailsStep({
 
       {/* Photo Upload */}
       <FormItem>
-        <FormLabel className="text-base">Add Photos</FormLabel>
+        <FormLabel className="text-base font-semibold">Add Photos</FormLabel>
+        <p className="text-sm text-muted-foreground mb-4">
+          Photos help us understand and resolve the issue faster
+        </p>
         <FormControl>
           <div className="space-y-4">
             <div className="flex items-center justify-center w-full">
               <label className="w-full cursor-pointer">
                 <div className={cn(
-                  "flex flex-col items-center justify-center w-full h-32",
-                  "border-2 border-dashed rounded-lg",
-                  "border-white/10 bg-background/50 hover:bg-background/70",
-                  "transition-colors duration-200",
-                  uploading && "opacity-50 cursor-not-allowed"
+                  "flex flex-col items-center justify-center w-full",
+                  "h-32 sm:h-36 border-2 border-dashed rounded-xl",
+                  "border-muted-foreground/25 bg-muted/30",
+                  "hover:border-primary/50 hover:bg-primary/5",
+                  "transition-all duration-300 ease-in-out",
+                  uploading && "opacity-50 cursor-not-allowed",
+                  !uploading && "hover:scale-[1.01]"
                 )}>
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6 px-4">
                     {uploading ? (
                       <>
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        <p className="mt-2 text-sm text-muted-foreground">
-                          Uploading...
+                        <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+                        <p className="text-sm font-medium text-primary">
+                          Uploading photos...
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Please wait
                         </p>
                       </>
                     ) : (
                       <>
-                        <Camera className="w-8 h-8 mb-2 text-primary" />
-                        <p className="mb-2 text-sm text-muted-foreground">
-                          <span className="font-medium">Click to upload</span> or drag and drop
+                        <div className="p-3 rounded-full bg-primary/10 mb-3">
+                          <Camera className="w-6 h-6 text-primary" />
+                        </div>
+                        <p className="text-sm font-medium text-center mb-1">
+                          <span className="text-primary">Click to upload</span> or drag and drop
                         </p>
-                        <p className="text-xs text-muted-foreground">
-                          PNG, JPG, GIF up to 10MB
+                        <p className="text-xs text-muted-foreground text-center">
+                          PNG, JPG, GIF up to 10MB • Multiple files supported
                         </p>
                       </>
                     )}
@@ -121,30 +131,53 @@ export function DetailsStep({
             </div>
 
             {selectedPhotos.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-                {selectedPhotos.map((photo, index) => (
-                  <div key={index} className="relative group">
-                    <img
-                      src={photo}
-                      alt={`Photo ${index + 1}`}
-                      className="w-full h-24 object-cover rounded-lg"
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      className={cn(
-                        "absolute -top-2 -right-2 h-6 w-6",
-                        "opacity-0 group-hover:opacity-100 transition-opacity",
-                        "focus:opacity-100"
-                      )}
-                      onClick={() => handlePhotoRemove(index)}
-                    >
-                      <X className="h-4 w-4" />
-                      <span className="sr-only">Remove photo {index + 1}</span>
-                    </Button>
-                  </div>
-                ))}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">
+                    {selectedPhotos.length} photo{selectedPhotos.length > 1 ? 's' : ''} added
+                  </p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedPhotos([])}
+                    className="text-xs text-muted-foreground hover:text-destructive"
+                  >
+                    Remove all
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {selectedPhotos.map((photo, index) => (
+                    <div key={index} className="relative group">
+                      <div className="aspect-square overflow-hidden rounded-lg bg-muted">
+                        <img
+                          src={photo}
+                          alt={`Issue photo ${index + 1}`}
+                          className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                          loading="lazy"
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className={cn(
+                          "absolute -top-2 -right-2 h-6 w-6 shadow-lg",
+                          "opacity-0 group-hover:opacity-100 sm:opacity-100",
+                          "transition-opacity focus:opacity-100",
+                          "touch-manipulation" // Better mobile touch handling
+                        )}
+                        onClick={() => handlePhotoRemove(index)}
+                      >
+                        <X className="h-3 w-3" />
+                        <span className="sr-only">Remove photo {index + 1}</span>
+                      </Button>
+                      <div className="absolute bottom-1 left-1 bg-black/50 text-white text-xs px-1.5 py-0.5 rounded">
+                        {index + 1}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
