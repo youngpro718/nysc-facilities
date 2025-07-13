@@ -1,9 +1,10 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLightingFixtures } from "@/components/lighting/hooks/useLightingFixtures";
 import { LightingFixtureCard } from "@/components/lighting/card/LightingFixtureCard";
 import { LightingHeader } from "@/components/lighting/components/LightingHeader";
 import { LightingFixture } from "@/components/lighting/types";
+import { MobileLightingList } from "@/components/lighting/mobile/MobileLightingList";
 
 interface LightingFixturesListProps {
   selectedBuilding?: string;
@@ -12,6 +13,8 @@ interface LightingFixturesListProps {
 
 export const LightingFixturesList = ({ selectedBuilding, selectedFloor }: LightingFixturesListProps) => {
   const [selectedFixtures, setSelectedFixtures] = useState<string[]>([]);
+  const [isMobile, setIsMobile] = useState(false);
+  
   const { 
     fixtures, 
     isLoading,
@@ -19,6 +22,17 @@ export const LightingFixturesList = ({ selectedBuilding, selectedFloor }: Lighti
     handleBulkDelete,
     refetch
   } = useLightingFixtures();
+
+  // Check if device is mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   
   const handleSelectAll = () => {
     if (selectedFixtures.length === fixtures?.length) {
@@ -34,6 +48,39 @@ export const LightingFixturesList = ({ selectedBuilding, selectedFloor }: Lighti
       setSelectedFixtures([]);
     }
   };
+
+  // Convert fixtures to mobile format
+  const mobileFixtures = fixtures?.map(fixture => ({
+    id: fixture.id,
+    name: fixture.name || `Fixture ${fixture.id.slice(0, 8)}`,
+    type: fixture.type || 'LED',
+    status: fixture.status || 'functional',
+    location: fixture.space_name || fixture.room_number || 'Unknown',
+    wattage: undefined, // Not available in current type
+    lastMaintenance: fixture.last_maintenance_date,
+    nextMaintenance: fixture.next_maintenance_date,
+    energyConsumption: undefined, // Not available in current type
+    issues: 0 // Will be calculated from issues data
+  })) || [];
+
+  if (isMobile) {
+    return (
+      <MobileLightingList
+        fixtures={mobileFixtures}
+        selectedBuilding={selectedBuilding}
+        selectedFloor={selectedFloor}
+        onFixtureSelect={setSelectedFixtures}
+        onAddFixture={() => {/* Handle add fixture */}}
+        onBulkAction={(action, fixtureIds) => {
+          if (action === "schedule_maintenance") {
+            // Handle bulk maintenance scheduling
+          } else if (action === "toggle_status") {
+            // Handle bulk status toggle
+          }
+        }}
+      />
+    );
+  }
 
   return (
     <div className="container mx-auto p-6">
