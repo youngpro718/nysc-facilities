@@ -3,7 +3,7 @@ import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
 // Completely disable worker to avoid initialization issues
 // Force PDF.js to run in main thread mode for reliability
 console.log('🔧 Configuring PDF.js for main-thread processing...');
-GlobalWorkerOptions.workerSrc = false;
+GlobalWorkerOptions.workerSrc = '';
 
 // Add polyfill for Promise.withResolvers if not available
 declare global {
@@ -72,7 +72,7 @@ export const parsePDF = async (file: File): Promise<ParsedTermData> => {
       // Ensure worker stays disabled on retry
       if (attemptCount > 1) {
         console.log('🔄 Preparing retry attempt...');
-        GlobalWorkerOptions.workerSrc = false;
+        GlobalWorkerOptions.workerSrc = '';
         await new Promise(resolve => setTimeout(resolve, 500));
       }
       
