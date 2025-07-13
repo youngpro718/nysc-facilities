@@ -21,7 +21,7 @@ import TwoFactorAuth from "@/pages/settings/TwoFactorAuth";
 import SessionSettings from "@/pages/settings/SessionSettings";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 

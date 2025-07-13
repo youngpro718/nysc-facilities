@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -9,21 +9,33 @@ import { KeyAssignmentCard } from "@/components/dashboard/KeyAssignmentCard";
 import { IssueSummaryCard } from "@/components/dashboard/IssueSummaryCard";
 import { IssueWizard } from "@/components/issues/wizard/IssueWizard";
 import { MobileFABs } from "@/components/ui/MobileFABs";
-
-import React, { useState } from "react";
+import { BottomTabNavigation } from "@/components/ui/BottomTabNavigation";
+import { KeyRequestForm } from "@/components/requests/KeyRequestForm";
 
 export default function UserDashboard() {
-  const { user } = useAuth();
+  const { user, isLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const { notifications = [], isLoading: notificationsLoading } = useNotifications(user?.id);
 
   useEffect(() => {
-    if (!user) {
+    if (!isLoading && !isAuthenticated) {
       navigate("/login");
     }
-  }, [user, navigate]);
+  }, [isLoading, isAuthenticated, navigate]);
 
-  if (!user) {
+  // Show loading state while authentication is being determined
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
     return null;
   }
 
@@ -89,8 +101,3 @@ export default function UserDashboard() {
     </div>
   );
 }
-
-// Import the new mobile navigation, FABs, and forms
-import { BottomTabNavigation } from "@/components/ui/BottomTabNavigation";
-import { KeyRequestForm } from "@/components/requests/KeyRequestForm";
-import { IssueReportForm } from "@/components/issues/IssueReportForm";

@@ -2,7 +2,7 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { adminNavigation, userNavigation, getNavigationRoutes } from "./config/navigation";
 import { MobileMenu } from "./components/MobileMenu";
 import { DesktopNavigationImproved } from "./components/DesktopNavigationImproved";

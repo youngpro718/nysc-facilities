@@ -146,26 +146,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Sign out function
   const signOut = async () => {
     try {
+      console.log('Starting sign out process...');
       setIsLoading(true);
       
       // Delete user session from database if it exists
       if (user) {
+        console.log('Deleting user session for user:', user.id);
         await deleteUserSession(user.id);
       }
 
       // Clear storage and sign out
+      console.log('Clearing storage...');
       localStorage.removeItem('app-auth');
       sessionStorage.clear();
+      
+      console.log('Calling authSignOut...');
       await authSignOut();
       
       // Clear state
+      console.log('Clearing auth state...');
       setSession(null);
       setUser(null);
       setProfile(null);
       setIsAdmin(false);
       
+      console.log('Sign out complete, navigating to login...');
       // Navigate to login page
-      navigate('/login');
+      navigate('/login', { replace: true });
       toast.success('Successfully signed out!');
     } catch (error: any) {
       console.error('Sign out error:', error);
