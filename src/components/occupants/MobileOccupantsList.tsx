@@ -149,13 +149,19 @@ export function MobileOccupantsList({
     { 
       id: "bulk", 
       label: "Bulk Actions", 
-      onClick: () => console.log("Bulk actions"),
+      onClick: () => {
+        // TODO: Implement bulk actions functionality
+        console.log("Bulk actions - not yet implemented");
+      },
       icon: <Users className="h-4 w-4" />
     },
     { 
       id: "export", 
       label: "Export Data", 
-      onClick: () => console.log("Export"),
+      onClick: () => {
+        // TODO: Implement export functionality
+        console.log("Export data - not yet implemented");
+      },
       icon: <Building className="h-4 w-4" />
     }
   ];

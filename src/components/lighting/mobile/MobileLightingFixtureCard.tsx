@@ -113,7 +113,7 @@ export function MobileLightingFixtureCard({
               className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
             />,
             label: "Select",
-            onClick: () => {}
+            onClick: () => onSelect(!isSelected)
           },
           {
             icon: <MoreVertical className="h-4 w-4" />,

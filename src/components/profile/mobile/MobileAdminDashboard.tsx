@@ -167,8 +167,8 @@ export function MobileAdminDashboard() {
       count: stats.activeIssues,
       status: stats.activeIssues > 0 ? 'error' as const : 'success' as const,
       action: () => {
-        // Stay on overview tab for issues - they should be shown here
-        console.log('Show issues in overview tab');
+        // Navigate to the main issues page
+        navigate('/issues');
       }
     },
     {
