@@ -1,10 +1,15 @@
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
 
-// Set up PDF.js worker - use a compatible version
-GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.js',
-  import.meta.url
-).toString();
+// Disable worker to avoid setup issues in development
+GlobalWorkerOptions.workerSrc = '';
+
+// Alternative: try to set up worker but fall back gracefully
+try {
+  GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+} catch (error) {
+  console.warn('PDF worker setup failed, using fallback:', error);
+  GlobalWorkerOptions.workerSrc = '';
+}
 
 // Add polyfill for Promise.withResolvers if not available
 declare global {
@@ -51,20 +56,36 @@ export interface ParsedTermData {
 }
 
 export const parsePDF = async (file: File): Promise<ParsedTermData> => {
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await getDocument({ data: arrayBuffer }).promise;
+  console.log('Starting PDF parsing for file:', file.name);
   
-  let fullText = '';
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const textContent = await page.getTextContent();
-    const pageText = textContent.items
-      .map((item: any) => item.str)
-      .join(' ');
-    fullText += pageText + '\n';
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    console.log('File read as array buffer, size:', arrayBuffer.byteLength);
+    
+    const pdf = await getDocument({ data: arrayBuffer }).promise;
+    console.log('PDF document loaded, pages:', pdf.numPages);
+    
+    let fullText = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items
+        .map((item: any) => item.str)
+        .join(' ');
+      fullText += pageText + '\n';
+    }
+    
+    console.log('Extracted text length:', fullText.length);
+    console.log('First 200 characters:', fullText.substring(0, 200));
+    
+    const result = parseTermSheetText(fullText);
+    console.log('Parsed result:', result);
+    
+    return result;
+  } catch (error) {
+    console.error('PDF parsing failed:', error);
+    throw error;
   }
-  
-  return parseTermSheetText(fullText);
 };
 
 const parseTermSheetText = (text: string): ParsedTermData => {

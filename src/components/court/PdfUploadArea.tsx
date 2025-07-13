@@ -17,10 +17,17 @@ export const PdfUploadArea = ({ onPdfParsed, onFileUploaded, disabled }: PdfUplo
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    console.log('onDrop triggered with files:', acceptedFiles);
     const file = acceptedFiles[0];
-    if (!file) return;
+    if (!file) {
+      console.log('No file provided');
+      return;
+    }
+
+    console.log('File details:', { name: file.name, type: file.type, size: file.size });
 
     if (file.type !== 'application/pdf') {
+      console.log('Invalid file type:', file.type);
       toast({
         title: 'Invalid File Type',
         description: 'Please upload a PDF file.',
@@ -31,12 +38,16 @@ export const PdfUploadArea = ({ onPdfParsed, onFileUploaded, disabled }: PdfUplo
 
     setIsProcessing(true);
     setUploadedFile(file);
+    console.log('Starting PDF processing...');
 
     try {
       // Parse the PDF
+      console.log('Calling parsePDF...');
       const parsedData = await parsePDF(file);
+      console.log('PDF parsed successfully:', parsedData);
       
       // Upload to Supabase storage
+      console.log('Uploading to Supabase storage...');
       const { supabase } = await import('@/integrations/supabase/client');
       const fileExt = 'pdf';
       const fileName = `${Date.now()}-${file.name}`;
@@ -46,12 +57,19 @@ export const PdfUploadArea = ({ onPdfParsed, onFileUploaded, disabled }: PdfUplo
         .from('term-pdfs')
         .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
+
+      console.log('Upload successful:', data);
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('term-pdfs')
         .getPublicUrl(filePath);
+
+      console.log('Public URL:', publicUrl);
 
       onFileUploaded(publicUrl);
       onPdfParsed(parsedData);
@@ -69,6 +87,7 @@ export const PdfUploadArea = ({ onPdfParsed, onFileUploaded, disabled }: PdfUplo
       });
     } finally {
       setIsProcessing(false);
+      console.log('Processing completed');
     }
   }, [onPdfParsed, onFileUploaded, toast]);
 
