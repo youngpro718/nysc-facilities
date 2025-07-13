@@ -79,6 +79,8 @@ function getNavigationPath(title: string, isAdmin?: boolean): string {
     'Occupants': '/occupants',
     'Keys': '/keys',
     'Lighting': '/lighting',
+    'My Requests': '/my-requests',
+    'My Issues': '/my-issues',
     'Admin Profile': '/admin-profile',
     'Profile': '/profile',
   };
@@ -93,6 +95,8 @@ function getNavigationDescription(title: string): string {
     'Occupants': 'Manage people',
     'Keys': 'Key management',
     'Lighting': 'Control lights',
+    'My Requests': 'View your submitted requests',
+    'My Issues': 'Track your reported issues',
     'Admin Profile': 'Admin settings',
     'Profile': 'Your account',
   };

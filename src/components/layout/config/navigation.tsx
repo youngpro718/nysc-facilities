@@ -9,6 +9,8 @@ import {
   KeyRound,
   User,
   UserCog,
+  FileText,
+  MessageSquare,
 } from 'lucide-react';
 import { NavigationTab, NavigationItem } from '../types';
 
@@ -87,6 +89,8 @@ export const adminNavigation: NavigationTab[] = [
 
 export const userNavigation: NavigationTab[] = [
   { title: 'Dashboard', icon: LayoutDashboard },
+  { title: 'My Requests', icon: FileText },
+  { title: 'My Issues', icon: MessageSquare },
   { type: "separator" },
   { title: 'Profile', icon: User },
 ];
@@ -108,6 +112,8 @@ export const getNavigationRoutes = (isAdmin: boolean): string[] => {
   
   return [
     '/dashboard', // User dashboard
+    '/my-requests', // My Requests
+    '/my-issues', // My Issues
     '', // Separator
     '/profile',
   ];

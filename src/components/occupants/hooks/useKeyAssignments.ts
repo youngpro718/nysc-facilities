@@ -15,19 +15,17 @@ export function useKeyAssignments(occupantId: string) {
           id,
           assigned_at,
           returned_at,
+          is_spare,
+          spare_key_reason,
           keys (
             id,
             name,
             type,
             is_passkey,
-            key_door_locations_table (
-              door_id,
-              doors (
-                name
-              )
-            )
+            total_quantity,
+            available_quantity
           ),
-          occupant:occupants (
+          occupant:occupants!key_assignments_occupant_id_fkey (
             id,
             first_name,
             last_name,

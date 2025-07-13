@@ -27,6 +27,8 @@ export const DesktopNavigationImproved = ({
       'Occupants': '/occupants',
       'Keys': '/keys',
       'Lighting': '/lighting',
+      'My Requests': '/my-requests',
+      'My Issues': '/my-issues',
       'Admin Profile': '/admin-profile',
       'Profile': '/profile',
     };
@@ -109,6 +111,8 @@ function getNavigationPath(title: string, isAdmin?: boolean): string {
     'Occupants': '/occupants',
     'Keys': '/keys',
     'Lighting': '/lighting',
+    'My Requests': '/my-requests',
+    'My Issues': '/my-issues',
     'Admin Profile': '/admin-profile',
     'Profile': '/profile',
   };

@@ -39,20 +39,18 @@ export function OccupantDetails({ occupant, onClose }: OccupantDetailsProps) {
         name: assignment.keys?.name || 'Unknown Key',
         type: assignment.keys?.type || 'physical_key',
         is_passkey: assignment.keys?.is_passkey || false,
-        key_door_locations: assignment.keys?.key_door_locations_table?.map(kdl => ({
-          door_location: kdl.doors.name
-        })) || []
+        key_door_locations: [] // Simplified for now since the relationship query was removed
       },
       assigned_at: assignment.assigned_at,
       returned_at: assignment.returned_at,
-      is_spare: false, // Default value since this field might not exist
+      is_spare: assignment.is_spare || false,
       return_reason: null
     }));
   }, [fetchedKeyAssignments]);
 
   const totalDoorAccess = processedKeyAssignments?.reduce((count, assignment) => {
     if (assignment.key?.is_passkey) return count + 5;
-    return count + (assignment.key?.key_door_locations?.length || 1);
+    return count + 1; // Default door access count per key
   }, 0) || 0;
 
   const getAssignmentTypeLabel = (type: string) => {

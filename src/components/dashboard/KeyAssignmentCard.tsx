@@ -17,7 +17,7 @@ export function KeyAssignmentCard({ userId }: KeyAssignmentCardProps) {
 
   const totalDoorAccess = keyAssignments?.reduce((count, assignment) => {
     if (assignment.keys?.is_passkey) return count + 5;
-    return count + (assignment.keys?.key_door_locations_table?.length || 1);
+    return count + 1; // Default door access count per key
   }, 0) || 0;
 
   const handleRequestKey = () => {
