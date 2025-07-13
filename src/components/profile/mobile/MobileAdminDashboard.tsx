@@ -17,6 +17,7 @@ import {
 import { MobileAdminCard } from "./MobileAdminCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 interface SystemStats {
   totalUsers: number;
@@ -38,6 +39,7 @@ export function MobileAdminDashboard() {
   });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadStats();
@@ -92,7 +94,7 @@ export function MobileAdminDashboard() {
       icon: Users,
       count: stats.totalUsers,
       status: 'success' as const,
-      action: () => {/* Navigate to users */}
+      action: () => navigate('/users')
     },
     {
       id: 'pending-verifications',
@@ -101,14 +103,14 @@ export function MobileAdminDashboard() {
       icon: UserCheck,
       count: stats.pendingVerifications,
       status: stats.pendingVerifications > 0 ? 'warning' as const : 'success' as const,
-      action: () => {/* Navigate to verifications */}
+      action: () => navigate('/verification')
     },
     {
       id: 'user-roles',
       title: 'Manage Roles',
       description: 'Assign and modify user roles',
       icon: Shield,
-      action: () => {/* Navigate to roles */}
+      action: () => navigate('/roles')
     }
   ];
 
@@ -119,7 +121,7 @@ export function MobileAdminDashboard() {
       description: 'Monitor database performance',
       icon: Database,
       status: 'success' as const,
-      action: () => {/* Navigate to database */}
+      action: () => navigate('/database')
     },
     {
       id: 'system-backup',
@@ -127,14 +129,14 @@ export function MobileAdminDashboard() {
       description: `Last backup: ${stats.lastBackup}`,
       icon: Shield,
       status: 'success' as const,
-      action: () => {/* Navigate to backup */}
+      action: () => navigate('/backup')
     },
     {
       id: 'activity-logs',
       title: 'Activity Logs',
       description: 'View system activity and audit logs',
       icon: Activity,
-      action: () => {/* Navigate to logs */}
+      action: () => navigate('/activity-logs')
     }
   ];
 
@@ -146,14 +148,14 @@ export function MobileAdminDashboard() {
       icon: AlertTriangle,
       count: stats.activeIssues,
       status: stats.activeIssues > 0 ? 'error' as const : 'success' as const,
-      action: () => {/* Navigate to issues */}
+      action: () => navigate('/issues')
     },
     {
       id: 'issue-reports',
       title: 'Generate Reports',
       description: 'Create issue and performance reports',
       icon: FileText,
-      action: () => {/* Navigate to reports */}
+      action: () => navigate('/reports')
     }
   ];
 
