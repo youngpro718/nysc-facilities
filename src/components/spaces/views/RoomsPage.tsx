@@ -1,17 +1,20 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { FilterBar } from "../rooms/components/FilterBar";
+import { MobileFilterBar } from "../rooms/components/MobileFilterBar";
 import { RoomsContent } from "../rooms/components/RoomsContent";
 import { HierarchyFilters } from "../rooms/components/HierarchyFilters";
 import { GroupedRoomsView } from "../rooms/components/GroupedRoomsView";
+import { RoomDetailsDialog } from "../rooms/components/RoomDetailsDialog";
 import { useRoomFilters } from "../hooks/useRoomFilters";
 import { useHierarchyFilters } from "../hooks/useHierarchyFilters";
 import { useRoomsQuery } from "../hooks/queries/useRoomsQuery";
 import { deleteSpace } from "../services/deleteSpace";
+import { Room } from "../rooms/types/RoomTypes";
 
 // Define a type for sort options to fix the TS error
 export type SortOption = 
@@ -37,6 +40,24 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [roomTypeFilter, setRoomTypeFilter] = useState("");
   const [view, setView] = useState<"grid" | "list">("grid");
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+  const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Check if mobile on mount and resize
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+      // Default to grid view on mobile for better UX
+      if (window.innerWidth < 768) {
+        setView("grid");
+      }
+    };
+    
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
   
   // Hierarchy filter states
   const [showOnlyParents, setShowOnlyParents] = useState(false);
@@ -100,6 +121,11 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
     setSortBy(value as SortOption);
   };
 
+  const handleRoomClick = (room: Room) => {
+    setSelectedRoom(room);
+    setIsRoomDialogOpen(true);
+  };
+
   if (error) {
     return (
       <Alert variant="destructive">
@@ -113,34 +139,50 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
 
   return (
     <div className="space-y-6">
-      <FilterBar
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        sortBy={sortBy}
-        onSortChange={handleSort}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
-        roomTypeFilter={roomTypeFilter}
-        onRoomTypeFilterChange={setRoomTypeFilter}
-        view={view}
-        onViewChange={setView}
-        onRefresh={handleRefresh}
-      />
+      {isMobile ? (
+        <MobileFilterBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          sortBy={sortBy}
+          onSortChange={handleSort}
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
+          roomTypeFilter={roomTypeFilter}
+          onRoomTypeFilterChange={setRoomTypeFilter}
+          onRefresh={handleRefresh}
+        />
+      ) : (
+        <FilterBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          sortBy={sortBy}
+          onSortChange={handleSort}
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
+          roomTypeFilter={roomTypeFilter}
+          onRoomTypeFilterChange={setRoomTypeFilter}
+          view={view}
+          onViewChange={setView}
+          onRefresh={handleRefresh}
+        />
+      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-1">
-          <HierarchyFilters
-            showOnlyParents={showOnlyParents}
-            onShowOnlyParentsChange={setShowOnlyParents}
-            showOnlyChildren={showOnlyChildren}
-            onShowOnlyChildrenChange={setShowOnlyChildren}
-            groupByParent={groupByParent}
-            onGroupByParentChange={setGroupByParent}
-            hierarchyStats={hierarchyStats}
-          />
-        </div>
+      <div className={`grid gap-6 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-4'}`}>
+        {!isMobile && (
+          <div className="lg:col-span-1">
+            <HierarchyFilters
+              showOnlyParents={showOnlyParents}
+              onShowOnlyParentsChange={setShowOnlyParents}
+              showOnlyChildren={showOnlyChildren}
+              onShowOnlyChildrenChange={setShowOnlyChildren}
+              groupByParent={groupByParent}
+              onGroupByParentChange={setGroupByParent}
+              hierarchyStats={hierarchyStats}
+            />
+          </div>
+        )}
         
-        <div className="lg:col-span-3">
+        <div className={isMobile ? 'col-span-1' : 'lg:col-span-3'}>
           {groupByParent ? (
             <GroupedRoomsView
               groupedRooms={groupedRooms}
@@ -149,24 +191,38 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
                   deleteRoomMutation.mutate(id);
                 }
               }}
-              view={view}
+              view={isMobile ? "grid" : view}
+              onRoomClick={isMobile ? handleRoomClick : undefined}
             />
           ) : (
             <RoomsContent
               isLoading={isLoading}
               rooms={rooms || []}
               filteredRooms={hierarchyFilteredRooms}
-              view={view}
+              view={isMobile ? "grid" : view}
               onDelete={(id) => {
                 if (window.confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
                   deleteRoomMutation.mutate(id);
                 }
               }}
               searchQuery={searchQuery}
+              onRoomClick={isMobile ? handleRoomClick : undefined}
             />
           )}
         </div>
       </div>
+
+      <RoomDetailsDialog
+        room={selectedRoom}
+        isOpen={isRoomDialogOpen}
+        onClose={() => {
+          setIsRoomDialogOpen(false);
+          setSelectedRoom(null);
+        }}
+        onDelete={(id) => {
+          deleteRoomMutation.mutate(id);
+        }}
+      />
     </div>
   );
 };

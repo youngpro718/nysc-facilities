@@ -8,9 +8,10 @@ import { CardBack } from "./components/CardBack";
 interface RoomCardProps {
   room: Room;
   onDelete: (id: string) => void;
+  onRoomClick?: (room: Room) => void;
 }
 
-export function RoomCard({ room, onDelete }: RoomCardProps) {
+export function RoomCard({ room, onDelete, onRoomClick }: RoomCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
 
   const handleFlip = () => {
@@ -18,7 +19,10 @@ export function RoomCard({ room, onDelete }: RoomCardProps) {
   };
 
   return (
-    <Card className="relative h-[320px] group overflow-hidden">
+    <Card 
+      className="relative h-[320px] group overflow-hidden cursor-pointer hover:shadow-lg transition-all"
+      onClick={() => onRoomClick?.(room)}
+    >
       <CardContent className="p-0 h-full">
         <div 
           className="relative w-full h-full transition-all duration-500 preserve-3d"

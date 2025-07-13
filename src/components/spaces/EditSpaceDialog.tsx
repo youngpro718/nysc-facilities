@@ -39,6 +39,7 @@ interface EditSpaceDialogProps {
   setOpen?: (open: boolean) => void;
   variant?: "button" | "custom";
   onSpaceUpdated?: () => void;
+  children?: React.ReactNode;
 }
 
 export function EditSpaceDialog({
@@ -49,6 +50,7 @@ export function EditSpaceDialog({
   setOpen: controlledSetOpen,
   variant = "button",
   onSpaceUpdated,
+  children,
 }: EditSpaceDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen ?? internalOpen;
@@ -215,6 +217,11 @@ export function EditSpaceDialog({
           <Pencil className="h-4 w-4" />
           Edit
         </Button>
+      )}
+      {variant === "custom" && children && (
+        <div onClick={() => setOpen(true)}>
+          {children}
+        </div>
       )}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl">

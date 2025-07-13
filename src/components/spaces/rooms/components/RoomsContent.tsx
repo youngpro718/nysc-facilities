@@ -13,6 +13,7 @@ export interface RoomsContentProps {
   view: "grid" | "list";
   onDelete: (id: string) => void;
   searchQuery?: string;
+  onRoomClick?: (room: Room) => void;
 }
 
 export function RoomsContent({
@@ -22,6 +23,7 @@ export function RoomsContent({
   view,
   onDelete,
   searchQuery,
+  onRoomClick,
 }: RoomsContentProps) {
   // Calculate room type counts for the filtered rooms
   const roomTypeCounts = useMemo(() => {
@@ -67,12 +69,13 @@ export function RoomsContent({
       />
 
       {view === 'grid' ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredRooms.map((room) => (
             <RoomCard
               key={room.id}
               room={room}
               onDelete={onDelete}
+              onRoomClick={onRoomClick}
             />
           ))}
         </div>
@@ -80,6 +83,7 @@ export function RoomsContent({
         <RoomTable
           rooms={filteredRooms}
           onDelete={onDelete}
+          onRoomClick={onRoomClick}
         />
       )}
     </div>

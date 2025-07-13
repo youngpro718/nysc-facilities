@@ -10,9 +10,10 @@ import { EditSpaceDialog } from "../EditSpaceDialog";
 interface RoomTableProps {
   rooms: Room[];
   onDelete: (id: string) => void;
+  onRoomClick?: (room: Room) => void;
 }
 
-export function RoomTable({ rooms, onDelete }: RoomTableProps) {
+export function RoomTable({ rooms, onDelete, onRoomClick }: RoomTableProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
@@ -61,7 +62,11 @@ export function RoomTable({ rooms, onDelete }: RoomTableProps) {
         </TableHeader>
         <TableBody>
           {rooms.map((room) => (
-            <TableRow key={room.id}>
+            <TableRow 
+              key={room.id} 
+              className="cursor-pointer hover:bg-muted/50"
+              onClick={() => onRoomClick?.(room)}
+            >
               <TableCell>
                 <div>
                   <div className="font-medium">{room.name}</div>

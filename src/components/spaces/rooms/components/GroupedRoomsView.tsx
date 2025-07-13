@@ -12,9 +12,10 @@ interface GroupedRoomsViewProps {
   groupedRooms: GroupedRooms;
   onDelete: (id: string) => void;
   view: "grid" | "list";
+  onRoomClick?: (room: Room) => void;
 }
 
-export function GroupedRoomsView({ groupedRooms, onDelete, view }: GroupedRoomsViewProps) {
+export function GroupedRoomsView({ groupedRooms, onDelete, view, onRoomClick }: GroupedRoomsViewProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   const toggleGroup = (parentId: string) => {
@@ -91,7 +92,7 @@ export function GroupedRoomsView({ groupedRooms, onDelete, view }: GroupedRoomsV
                 <CardContent className="pt-0">
                   {/* Parent room card */}
                   <div className="mb-4 border-l-4 border-blue-500 pl-4">
-                    <SimpleRoomCard room={parentRoom} onDelete={onDelete} />
+                    <SimpleRoomCard room={parentRoom} onDelete={onDelete} onRoomClick={onRoomClick} />
                   </div>
                   
                   {/* Child rooms */}
@@ -108,7 +109,7 @@ export function GroupedRoomsView({ groupedRooms, onDelete, view }: GroupedRoomsV
                       }>
                         {children.map((childRoom) => (
                           <div key={childRoom.id} className="border-l-2 border-green-500 pl-4">
-                            <SimpleRoomCard room={childRoom} onDelete={onDelete} />
+                            <SimpleRoomCard room={childRoom} onDelete={onDelete} onRoomClick={onRoomClick} />
                           </div>
                         ))}
                       </div>
@@ -140,7 +141,7 @@ export function GroupedRoomsView({ groupedRooms, onDelete, view }: GroupedRoomsV
                 : "space-y-2"
             }>
               {groupedRooms.orphanRooms.map((room) => (
-                <SimpleRoomCard key={room.id} room={room} onDelete={onDelete} />
+                <SimpleRoomCard key={room.id} room={room} onDelete={onDelete} onRoomClick={onRoomClick} />
               ))}
             </div>
           </CardContent>
