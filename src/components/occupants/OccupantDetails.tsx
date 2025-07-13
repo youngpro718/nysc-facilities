@@ -1,6 +1,7 @@
 
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Mail, Phone, Briefcase, UserCircle, Building2, Key, DoorOpen, Calendar, ArrowRight } from "lucide-react";
+import { useState, useMemo } from "react";
+import { ChevronLeft, Mail, Phone, Briefcase, UserCircle, Building2, Key, DoorOpen, Calendar, ArrowRight, Edit2, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useKeyAssignments } from "./hooks/useKeyAssignments";
@@ -8,7 +9,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Separator } from "@/components/ui/separator";
 import { Card } from "@/components/ui/card";
 import { OccupantQueryResponse } from "./types/occupantTypes";
-import { useMemo } from "react";
+import { EditRoomAssignmentDialog } from "./components/EditRoomAssignmentDialog";
 
 interface OccupantDetailsProps {
   occupant: OccupantQueryResponse;
@@ -19,6 +20,9 @@ export function OccupantDetails({ occupant, onClose }: OccupantDetailsProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { keyAssignments: fetchedKeyAssignments, isLoading } = useKeyAssignments(occupant.id);
+  
+  const [editingAssignment, setEditingAssignment] = useState<any>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   // Group rooms by assignment type
   const groupedRooms = occupant.rooms.reduce((acc, room) => {
@@ -60,6 +64,38 @@ export function OccupantDetails({ occupant, onClose }: OccupantDetailsProps) {
       case 'support_space': return 'Support Space';
       default: return type;
     }
+  };
+
+  const getAssignmentTypeVariant = (type: string, isPrimary: boolean) => {
+    if (isPrimary) return 'default';
+    switch (type) {
+      case 'primary_office': return 'default';
+      case 'work_location': return 'secondary';
+      case 'support_space': return 'outline';
+      default: return 'outline';
+    }
+  };
+
+  const handleEditAssignment = (room: any) => {
+    const assignmentToEdit = {
+      id: room.assignment_id,
+      room_id: room.id,
+      assignment_type: room.assignment_type || 'work_location',
+      is_primary: room.is_primary || false,
+      schedule: room.schedule,
+      notes: room.notes,
+      room_number: room.room_number,
+      room_name: room.name,
+      building_name: room.floors?.buildings?.name,
+      floor_name: room.floors?.name
+    };
+    setEditingAssignment(assignmentToEdit);
+    setShowEditDialog(true);
+  };
+
+  const handleEditSuccess = () => {
+    // Refresh the data - in a real app you'd call a refresh function
+    window.location.reload();
   };
 
   return (
@@ -129,53 +165,97 @@ export function OccupantDetails({ occupant, onClose }: OccupantDetailsProps) {
 
       <Separator />
 
-      {/* Room Assignments */}
+        {/* Room Assignments */}
       <div className="space-y-4">
         <h3 className="text-sm font-medium text-muted-foreground">Room Assignments</h3>
-        <div className="space-y-6">
-          {Object.entries(groupedRooms).map(([type, rooms]) => (
-            <div key={type} className="space-y-3">
-              <h4 className="text-sm font-medium flex items-center gap-2">
-                <Badge variant="outline">{getAssignmentTypeLabel(type)}</Badge>
-              </h4>
-              <div className="space-y-2">
-                {rooms.map((room, index) => (
-                  <div key={index} className="bg-muted/50 rounded-lg p-3 space-y-2">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Building2 className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">
-                        {room.floors?.buildings?.name} &gt; {room.floors?.name}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">Room {room.room_number}</span>
-                      {room.schedule && (
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Calendar className="h-4 w-4" />
-                          <span>{room.schedule}</span>
+        {Object.keys(groupedRooms).length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            No room assignments found
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {Object.entries(groupedRooms)
+              .sort(([a], [b]) => {
+                // Sort to show primary offices first, then work locations, then support spaces
+                const order = { 'primary_office': 0, 'work_location': 1, 'support_space': 2 };
+                return (order[a as keyof typeof order] || 3) - (order[b as keyof typeof order] || 3);
+              })
+              .map(([type, rooms]) => (
+              <div key={type} className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-medium flex items-center gap-2">
+                    <Badge variant={getAssignmentTypeVariant(type, false) as any}>
+                      {getAssignmentTypeLabel(type)}
+                    </Badge>
+                    <span className="text-muted-foreground">({rooms.length})</span>
+                  </h4>
+                </div>
+                <div className="space-y-2">
+                  {rooms.map((room, index) => (
+                    <div key={index} className={`rounded-lg p-4 space-y-3 border ${
+                      room.is_primary ? 'bg-primary/5 border-primary/20' : 'bg-muted/30 border-border'
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">Room {room.room_number}</span>
+                              {room.is_primary && (
+                                <Badge variant="default" className="flex items-center gap-1">
+                                  <Star className="h-3 w-3" />
+                                  Primary
+                                </Badge>
+                              )}
+                            </div>
+                            <span className="text-sm text-muted-foreground">
+                              {room.floors?.buildings?.name} • {room.floors?.name}
+                            </span>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditAssignment(room)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      {(room.schedule || room.notes) && (
+                        <div className="space-y-2 pt-2 border-t border-border/50">
+                          {room.schedule && (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Calendar className="h-4 w-4" />
+                              <span>{room.schedule}</span>
+                            </div>
+                          )}
+                          {room.notes && (
+                            <p className="text-sm text-muted-foreground">{room.notes}</p>
+                          )}
+                        </div>
+                      )}
+                      
+                      {room.connections?.length > 0 && (
+                        <div className="text-sm text-muted-foreground pt-2 border-t border-border/50">
+                          <span className="font-medium">Connected to: </span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {room.connections.map((conn, i) => (
+                              <Badge key={i} variant="outline" className="text-xs">
+                                {conn.name}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>
-                    {room.notes && (
-                      <p className="text-sm text-muted-foreground">{room.notes}</p>
-                    )}
-                    {room.connections?.length > 0 && (
-                      <div className="text-sm text-muted-foreground">
-                        <span className="font-medium">Connected to: </span>
-                        {room.connections.map((conn, i) => (
-                          <span key={i} className="flex items-center gap-1">
-                            <ArrowRight className="h-4 w-4" />
-                            {conn.name}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <Separator />
@@ -219,6 +299,15 @@ export function OccupantDetails({ occupant, onClose }: OccupantDetailsProps) {
           </div>
         )}
       </div>
+
+      {/* Edit Room Assignment Dialog */}
+      <EditRoomAssignmentDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        assignment={editingAssignment}
+        occupantId={occupant.id}
+        onSuccess={handleEditSuccess}
+      />
     </Card>
   );
 }

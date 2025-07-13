@@ -32,9 +32,12 @@ export type OccupantDetails = Occupant & {
 };
 
 export interface RoomDetails {
+  id?: string;
   name: string;
   room_number: string;
   assignment_type?: string;
+  assignment_id?: string;
+  is_primary?: boolean;
   schedule?: string;
   notes?: string;
   connections?: Array<{ name: string }>;

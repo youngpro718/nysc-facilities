@@ -29,22 +29,6 @@ export function CurrentOccupantsSection({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center space-x-2">
-        <label className="text-sm font-medium">Primary Assignment</label>
-        <Select
-          value={isPrimaryAssignment ? "yes" : "no"}
-          onValueChange={(value: string) => onPrimaryAssignmentChange(value === "yes")}
-        >
-          <SelectTrigger className="w-[100px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="yes">Yes</SelectItem>
-            <SelectItem value="no">No</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
       <div className="space-y-2">
         <label className="text-sm font-medium">Current Occupants</label>
         <div className="rounded-md border p-4 space-y-2">

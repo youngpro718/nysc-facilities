@@ -9,6 +9,7 @@ export function useRoomAssignment(onSuccess: () => void) {
   const handleAssignRoom = async (
     selectedRoom: string,
     selectedOccupants: string[],
+    assignmentType: string,
     isPrimaryAssignment: boolean
   ) => {
     if (!selectedRoom) {
@@ -22,14 +23,15 @@ export function useRoomAssignment(onSuccess: () => void) {
       const assignments = selectedOccupants.map((occupantId) => ({
         occupant_id: occupantId,
         room_id: selectedRoom,
+        assignment_type: assignmentType,
         assigned_at: new Date().toISOString(),
-        is_primary: isPrimaryAssignment
+        is_primary: assignmentType === 'primary_office' ? isPrimaryAssignment : false
       }));
 
       console.log('Creating room assignments:', assignments);
 
       // Check for existing primary assignments if this is a primary assignment
-      if (isPrimaryAssignment) {
+      if (assignmentType === 'primary_office' && isPrimaryAssignment) {
         for (const occupantId of selectedOccupants) {
           const { data: existingPrimary } = await supabase
             .from("occupant_room_assignments")

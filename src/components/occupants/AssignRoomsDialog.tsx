@@ -12,6 +12,7 @@ import { Building2, Loader2 } from "lucide-react";
 import { useAuthCheck } from "./hooks/useAuthCheck";
 import { useRoomAssignment } from "./hooks/useRoomAssignment";
 import { RoomSelectionSection } from "./components/RoomSelectionSection";
+import { AssignmentTypeSelection } from "./components/AssignmentTypeSelection";
 import { CurrentOccupantsSection } from "./components/CurrentOccupantsSection";
 import { useRoomData } from "./hooks/useRoomData";
 import { useRoomOccupants } from "./hooks/useRoomOccupants";
@@ -24,6 +25,7 @@ export function AssignRoomsDialog({
   onSuccess,
 }: AssignRoomsDialogProps) {
   const [selectedRoom, setSelectedRoom] = useState<string>("");
+  const [assignmentType, setAssignmentType] = useState<string>("work_location");
   const [isPrimaryAssignment, setIsPrimaryAssignment] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -49,6 +51,7 @@ export function AssignRoomsDialog({
   useEffect(() => {
     if (!open) {
       setSelectedRoom("");
+      setAssignmentType("work_location");
       setIsPrimaryAssignment(false);
       setSearchQuery("");
     }
@@ -65,7 +68,7 @@ export function AssignRoomsDialog({
       return;
     }
 
-    const success = await handleAssignRoom(selectedRoom, selectedOccupants, isPrimaryAssignment);
+    const success = await handleAssignRoom(selectedRoom, selectedOccupants, assignmentType, isPrimaryAssignment);
     if (success) {
       onOpenChange(false);
     }
@@ -100,6 +103,13 @@ export function AssignRoomsDialog({
               onRoomChange={setSelectedRoom}
               filteredRooms={filteredRooms()}
               isLoadingRooms={isLoadingRooms}
+            />
+
+            <AssignmentTypeSelection
+              assignmentType={assignmentType}
+              onAssignmentTypeChange={setAssignmentType}
+              isPrimaryAssignment={isPrimaryAssignment}
+              onPrimaryAssignmentChange={setIsPrimaryAssignment}
             />
 
             <CurrentOccupantsSection
