@@ -4,6 +4,7 @@ import { CourtAvailabilityPanel } from "@/components/court/CourtAvailabilityPane
 import { CourtTermsPanel } from "@/components/court/CourtTermsPanel";
 import { CourtMaintenancePanel } from "@/components/court/CourtMaintenancePanel";
 import { TermUploadDialog } from "@/components/court/TermUploadDialog";
+import { TermScheduleView } from "@/components/court/TermScheduleView";
 import { SetTemporaryLocationDialog } from "@/components/court/SetTemporaryLocationDialog";
 import { Button } from "@/components/ui/button";
 import { Upload, MapPin, Calendar, Wrench } from "lucide-react";
@@ -12,6 +13,7 @@ export const CourtOperationsDashboard = () => {
   const [termUploadOpen, setTermUploadOpen] = useState(false);
   const [tempLocationOpen, setTempLocationOpen] = useState(false);
   const [selectedCourtRoom, setSelectedCourtRoom] = useState<string | null>(null);
+  const [selectedTermId, setSelectedTermId] = useState<string | null>(null);
 
   const handleSetTemporaryLocation = (courtroomId: string) => {
     setSelectedCourtRoom(courtroomId);
@@ -60,7 +62,7 @@ export const CourtOperationsDashboard = () => {
         </TabsContent>
 
         <TabsContent value="terms" className="space-y-4">
-          <CourtTermsPanel />
+          <CourtTermsPanel onTermSelected={setSelectedTermId} />
         </TabsContent>
 
         <TabsContent value="maintenance" className="space-y-4">
@@ -68,10 +70,14 @@ export const CourtOperationsDashboard = () => {
         </TabsContent>
 
         <TabsContent value="schedule" className="space-y-4">
-          <div className="text-center py-8 text-muted-foreground">
-            <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>Schedule overview coming soon...</p>
-          </div>
+          {selectedTermId ? (
+            <TermScheduleView termId={selectedTermId} />
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Select a term from the Terms tab to view its schedule</p>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
 

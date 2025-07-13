@@ -6,11 +6,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Upload } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CalendarIcon, Upload, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { PdfUploadArea } from "./PdfUploadArea";
+import { AssignmentPreview } from "./AssignmentPreview";
+import { ParsedTermData, ParsedAssignment } from "@/utils/pdfParser";
 
 interface TermUploadDialogProps {
   open: boolean;
@@ -30,6 +34,28 @@ export const TermUploadDialog = ({ open, onOpenChange }: TermUploadDialogProps) 
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
   const [isUploading, setIsUploading] = useState(false);
+  const [parsedData, setParsedData] = useState<ParsedTermData | null>(null);
+  const [assignments, setAssignments] = useState<ParsedAssignment[]>([]);
+  const [currentTab, setCurrentTab] = useState("upload");
+
+  const handlePdfParsed = (data: ParsedTermData) => {
+    setParsedData(data);
+    setAssignments(data.assignments);
+    
+    // Auto-fill form data from parsed PDF
+    if (data.termName && !formData.term_name) {
+      setFormData(prev => ({ ...prev, term_name: data.termName! }));
+    }
+    if (data.location && !formData.location) {
+      setFormData(prev => ({ ...prev, location: data.location! }));
+    }
+    
+    setCurrentTab("preview");
+  };
+
+  const handleFileUploaded = (url: string) => {
+    setFormData(prev => ({ ...prev, pdf_url: url }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,7 +81,8 @@ export const TermUploadDialog = ({ open, onOpenChange }: TermUploadDialogProps) 
     try {
       setIsUploading(true);
       
-      const { error } = await supabase
+      // Create the term first
+      const { data: termData, error: termError } = await supabase
         .from("court_terms")
         .insert({
           ...formData,
@@ -63,15 +90,36 @@ export const TermUploadDialog = ({ open, onOpenChange }: TermUploadDialogProps) 
           end_date: format(endDate, "yyyy-MM-dd"),
           status: "active",
           term_status: startDate > new Date() ? "upcoming" : "active",
-        });
+        })
+        .select('id')
+        .single();
 
-      if (error) throw error;
+      if (termError) throw termError;
+
+      // If we have assignments, process them via the edge function
+      if (assignments.length > 0 && formData.pdf_url) {
+        const { data: processResult, error: processError } = await supabase.functions
+          .invoke('parse-term-sheet', {
+            body: {
+              term_id: termData.id,
+              pdf_url: formData.pdf_url,
+              client_extracted: { assignments }
+            }
+          });
+
+        if (processError) {
+          console.warn('Edge function error:', processError);
+        } else {
+          console.log('Processing result:', processResult);
+        }
+      }
 
       toast({
         title: "Term Created",
-        description: "The court term has been created successfully.",
+        description: `Successfully created term with ${assignments.length} assignments.`,
       });
 
+      // Reset form
       setFormData({
         term_name: "",
         term_number: "",
@@ -82,6 +130,9 @@ export const TermUploadDialog = ({ open, onOpenChange }: TermUploadDialogProps) 
       });
       setStartDate(undefined);
       setEndDate(undefined);
+      setParsedData(null);
+      setAssignments([]);
+      setCurrentTab("upload");
       onOpenChange(false);
     } catch (error) {
       toast({
@@ -96,12 +147,43 @@ export const TermUploadDialog = ({ open, onOpenChange }: TermUploadDialogProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Upload Court Term</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Upload Court Term
+          </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="upload">Upload PDF</TabsTrigger>
+            <TabsTrigger value="preview" disabled={!parsedData}>Preview & Edit</TabsTrigger>
+            <TabsTrigger value="details">Term Details</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="upload" className="space-y-4">
+            <PdfUploadArea
+              onPdfParsed={handlePdfParsed}
+              onFileUploaded={handleFileUploaded}
+              disabled={isUploading}
+            />
+          </TabsContent>
+
+          <TabsContent value="preview" className="space-y-4">
+            <AssignmentPreview
+              assignments={assignments}
+              onAssignmentsUpdate={setAssignments}
+            />
+            <div className="flex justify-end">
+              <Button onClick={() => setCurrentTab("details")}>
+                Continue to Term Details
+              </Button>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="details">
+            <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="term_name">Term Name *</Label>
@@ -223,25 +305,27 @@ export const TermUploadDialog = ({ open, onOpenChange }: TermUploadDialogProps) 
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isUploading}>
-              {isUploading ? (
-                <>
-                  <Upload className="h-4 w-4 mr-2 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                <>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Create Term
-                </>
-              )}
-            </Button>
-          </div>
-        </form>
+              <div className="flex justify-end gap-2 pt-4">
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isUploading}>
+                  {isUploading ? (
+                    <>
+                      <Upload className="h-4 w-4 mr-2 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Create Term ({assignments.length} assignments)
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

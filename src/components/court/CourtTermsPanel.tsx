@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, FileText, MapPin, Users } from "lucide-react";
+import { Calendar, FileText, MapPin, Users, Eye } from "lucide-react";
 import { format } from "date-fns";
 
 type CourtTerm = {
@@ -23,7 +23,11 @@ type CourtTerm = {
   notes: string;
 };
 
-export const CourtTermsPanel = () => {
+interface CourtTermsPanelProps {
+  onTermSelected?: (termId: string) => void;
+}
+
+export const CourtTermsPanel = ({ onTermSelected }: CourtTermsPanelProps) => {
   const { data: terms, isLoading } = useQuery({
     queryKey: ["court-terms"],
     queryFn: async () => {
@@ -116,6 +120,12 @@ export const CourtTermsPanel = () => {
                             <FileText className="h-4 w-4 mr-2" />
                             View PDF
                           </a>
+                        </Button>
+                      )}
+                      {onTermSelected && (
+                        <Button size="sm" variant="default" onClick={() => onTermSelected(term.id)}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Schedule
                         </Button>
                       )}
                     </div>
