@@ -62,11 +62,21 @@ export function NotificationCard({ notifications, onMarkAsRead, onMarkAllAsRead 
   };
 
   const handleNotificationClick = (notification: Notification) => {
+    console.log('Notification clicked:', { 
+      id: notification.id, 
+      read: notification.read, 
+      title: notification.title 
+    });
+    
     if (!notification.read) {
+      console.log('Calling markAsRead for notification:', notification.id);
       onMarkAsRead(notification.id);
+    } else {
+      console.log('Notification already read, skipping markAsRead');
     }
     
     if (notification.action_url) {
+      console.log('Navigating to:', notification.action_url);
       navigate(notification.action_url);
     }
   };
