@@ -6,8 +6,9 @@ import { CourtMaintenancePanel } from "@/components/court/CourtMaintenancePanel"
 import { TermUploadDialog } from "@/components/court/TermUploadDialog";
 import { TermScheduleView } from "@/components/court/TermScheduleView";
 import { SetTemporaryLocationDialog } from "@/components/court/SetTemporaryLocationDialog";
+import { AssignmentManagementPanel } from "@/components/court/AssignmentManagementPanel";
 import { Button } from "@/components/ui/button";
-import { Upload, MapPin, Calendar, Wrench } from "lucide-react";
+import { Upload, MapPin, Calendar, Wrench, Users } from "lucide-react";
 
 export const CourtOperationsDashboard = () => {
   const [termUploadOpen, setTermUploadOpen] = useState(false);
@@ -38,10 +39,14 @@ export const CourtOperationsDashboard = () => {
       </div>
 
       <Tabs defaultValue="availability" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="availability" className="flex items-center gap-2">
             <MapPin className="h-4 w-4" />
             Courtroom Status
+          </TabsTrigger>
+          <TabsTrigger value="assignments" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Assignments
           </TabsTrigger>
           <TabsTrigger value="terms" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
@@ -59,6 +64,10 @@ export const CourtOperationsDashboard = () => {
 
         <TabsContent value="availability" className="space-y-4">
           <CourtAvailabilityPanel onSetTemporaryLocation={handleSetTemporaryLocation} />
+        </TabsContent>
+
+        <TabsContent value="assignments" className="space-y-4">
+          <AssignmentManagementPanel />
         </TabsContent>
 
         <TabsContent value="terms" className="space-y-4">
