@@ -116,7 +116,10 @@ export default function AdminKeyRequests() {
 
       // Always create user notification and send email if opted in
       try {
-        await supabase.functions.invoke('send-key-request-notification', {
+        console.log('Invoking send-key-request-notification for user:', selectedRequest.user_id);
+        console.log('Request data:', selectedRequest);
+        
+        const functionResponse = await supabase.functions.invoke('send-key-request-notification', {
           body: {
             to: selectedRequest.profiles.email,
             request: {
@@ -130,6 +133,12 @@ export default function AdminKeyRequests() {
             admin_notes: adminNotes,
           }
         });
+        
+        console.log('Function response:', functionResponse);
+        
+        if (functionResponse.error) {
+          console.error('Edge function error:', functionResponse.error);
+        }
       } catch (notificationError) {
         console.error('Failed to send notification:', notificationError);
         // Don't block the main operation if notification fails
