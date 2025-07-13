@@ -14,15 +14,25 @@ import { useState, useEffect } from "react";
 export default function AdminProfile() {
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
     
+    const handleTabSwitch = (event: CustomEvent) => {
+      setActiveTab(event.detail);
+    };
+    
     checkMobile();
     window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener('switchToTab', handleTabSwitch as EventListener);
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+      window.removeEventListener('switchToTab', handleTabSwitch as EventListener);
+    };
   }, []);
 
   const systemSettings = [
@@ -131,7 +141,7 @@ export default function AdminProfile() {
 
       <MobileProfileHeader />
 
-      <Tabs defaultValue="overview" className="space-y-4 sm:space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
         <div className="overflow-x-auto scrollbar-hide">
           <TabsList className="w-full min-w-max flex h-auto p-1 bg-muted rounded-lg">
             <TabsTrigger value="overview" className="flex-1 min-w-fit flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap">

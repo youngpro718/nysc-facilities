@@ -94,7 +94,10 @@ export function MobileAdminDashboard() {
       icon: Users,
       count: stats.totalUsers,
       status: 'success' as const,
-      action: () => navigate('/users')
+      action: () => {
+        // Switch to security tab for user management
+        window.dispatchEvent(new CustomEvent('switchToTab', { detail: 'security' }));
+      }
     },
     {
       id: 'pending-verifications',
@@ -103,14 +106,20 @@ export function MobileAdminDashboard() {
       icon: UserCheck,
       count: stats.pendingVerifications,
       status: stats.pendingVerifications > 0 ? 'warning' as const : 'success' as const,
-      action: () => navigate('/verification')
+      action: () => {
+        // Switch to security tab for verifications
+        window.dispatchEvent(new CustomEvent('switchToTab', { detail: 'security' }));
+      }
     },
     {
       id: 'user-roles',
       title: 'Manage Roles',
       description: 'Assign and modify user roles',
       icon: Shield,
-      action: () => navigate('/roles')
+      action: () => {
+        // Switch to security tab for role management
+        window.dispatchEvent(new CustomEvent('switchToTab', { detail: 'security' }));
+      }
     }
   ];
 
@@ -121,7 +130,10 @@ export function MobileAdminDashboard() {
       description: 'Monitor database performance',
       icon: Database,
       status: 'success' as const,
-      action: () => navigate('/database')
+      action: () => {
+        // Switch to database tab
+        window.dispatchEvent(new CustomEvent('switchToTab', { detail: 'database' }));
+      }
     },
     {
       id: 'system-backup',
@@ -129,14 +141,20 @@ export function MobileAdminDashboard() {
       description: `Last backup: ${stats.lastBackup}`,
       icon: Shield,
       status: 'success' as const,
-      action: () => navigate('/backup')
+      action: () => {
+        // Switch to database tab for backup management
+        window.dispatchEvent(new CustomEvent('switchToTab', { detail: 'database' }));
+      }
     },
     {
       id: 'activity-logs',
       title: 'Activity Logs',
       description: 'View system activity and audit logs',
       icon: Activity,
-      action: () => navigate('/activity-logs')
+      action: () => {
+        // Switch to security tab for activity logs
+        window.dispatchEvent(new CustomEvent('switchToTab', { detail: 'security' }));
+      }
     }
   ];
 
@@ -148,14 +166,20 @@ export function MobileAdminDashboard() {
       icon: AlertTriangle,
       count: stats.activeIssues,
       status: stats.activeIssues > 0 ? 'error' as const : 'success' as const,
-      action: () => navigate('/issues')
+      action: () => {
+        // Stay on overview tab for issues - they should be shown here
+        console.log('Show issues in overview tab');
+      }
     },
     {
       id: 'issue-reports',
       title: 'Generate Reports',
       description: 'Create issue and performance reports',
       icon: FileText,
-      action: () => navigate('/reports')
+      action: () => {
+        // Switch to reports tab
+        window.dispatchEvent(new CustomEvent('switchToTab', { detail: 'reports' }));
+      }
     }
   ];
 
