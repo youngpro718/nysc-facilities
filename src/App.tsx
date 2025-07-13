@@ -7,6 +7,7 @@ import NotFound from "@/pages/NotFound";
 import Spaces from "@/pages/Spaces";
 import Issues from "@/pages/Issues";
 import Occupants from "@/pages/Occupants";
+import RoomAssignments from "@/pages/RoomAssignments";
 import Keys from "@/pages/Keys";
 import Profile from "@/pages/Profile";
 import Lighting from "@/pages/Lighting";
@@ -62,6 +63,11 @@ function App() {
                 <Route path="occupants" element={
                   <ProtectedRoute requireAdmin>
                     <Occupants />
+                  </ProtectedRoute>
+                } />
+                <Route path="occupants/room-assignments" element={
+                  <ProtectedRoute requireAdmin>
+                    <RoomAssignments />
                   </ProtectedRoute>
                 } />
                 <Route path="keys" element={
