@@ -24,6 +24,7 @@ export const DesktopNavigation = ({
       <button
         onClick={onSignOut}
         className="p-2 text-white hover:bg-white/10 rounded-full transition-colors"
+        title="Logout"
       >
         <LogOut size={20} />
       </button>

@@ -63,11 +63,8 @@ const Layout = () => {
                     className="focus:outline-none"
                     title="Profile"
                     onClick={() => {
-                      console.log('Profile button clicked');
-                      console.log('Current profile:', profile);
-                      console.log('Is authenticated:', isAuthenticated);
-                      console.log('Verification status:', profile?.verification_status);
-                      navigate('/profile');
+                      // Navigate to appropriate profile page based on user role
+                      navigate(isAdmin ? '/admin-profile' : '/profile');
                     }}
                   >
                     <Avatar className="h-8 w-8">
@@ -97,9 +94,6 @@ const Layout = () => {
                     onNavigationChange={handleNavigationChange}
                     onSignOut={signOut}
                   />
-                  <Button variant="outline" size="sm" onClick={signOut}>
-                    Logout
-                  </Button>
                 </div>
               </div>
             </div>

@@ -83,10 +83,8 @@ export const adminNavigation: NavigationTab[] = [
   { title: 'Occupants', icon: User },
   { title: 'Keys', icon: KeyRound },
   { title: 'Lighting', icon: Lightbulb },
-
-
   { type: "separator" },
-  { title: 'Profile', icon: User },
+  { title: 'Admin Profile', icon: Building },
 ];
 
 export const userNavigation: NavigationTab[] = [
@@ -105,8 +103,6 @@ export const getNavigationRoutes = (isAdmin: boolean): string[] => {
       '/occupants',
       '/keys',
       '/lighting',
-
-      '/terms',
       '', // Separator doesn't have a route
       '/admin-profile',
     ];
