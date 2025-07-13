@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { IssueDialog } from "@/components/issues/IssueDialog";
-import { IssuesList } from "@/components/issues/IssuesList";
+import { MobileIssuesList } from "@/components/issues/MobileIssuesList";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
 
@@ -27,7 +27,7 @@ const Issues = () => {
         onOpenChange={setShowIssueForm}
       />
       
-      <IssuesList />
+      <MobileIssuesList onCreateIssue={() => setShowIssueForm(true)} />
     </PageContainer>
   );
 };
