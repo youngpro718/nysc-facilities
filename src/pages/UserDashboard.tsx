@@ -63,7 +63,7 @@ export default function UserDashboard() {
           onMarkAsRead={() => {}} 
           onMarkAllAsRead={() => {}} 
         />
-        <RoomAssignmentCard userId={user.id} />
+        {/* Room assignments will be added later */}
         <KeyAssignmentCard userId={user.id} />
         <IssueSummaryCard userId={user.id} />
       </div>
