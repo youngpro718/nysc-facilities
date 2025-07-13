@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useWizardContext } from '../hooks/useWizardContext';
 import { WizardStepProps } from '../types/index';
-import { ISSUE_TYPES } from '../constants/issueTypes';
+import { VISUAL_ISSUE_TYPE_MAPPING } from '../constants/visualMapping';
 
 export function ReviewStep({ form, isLoading }: WizardStepProps) {
   const { selectedPhotos } = useWizardContext();
@@ -57,7 +57,7 @@ export function ReviewStep({ form, isLoading }: WizardStepProps) {
     enabled: !!roomId
   });
 
-  const issueType = ISSUE_TYPES.find(type => type.id === form.watch('issue_type'));
+  const issueType = VISUAL_ISSUE_TYPE_MAPPING[form.watch('issue_type')];
 
   return (
     <Card className="p-6 animate-fade-in">

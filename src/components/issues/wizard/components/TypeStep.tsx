@@ -3,7 +3,7 @@ import React from 'react';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { ISSUE_TYPES } from '../constants/issueTypes';
+import { getAllVisualIssueTypes } from '../constants/visualMapping';
 import { StandardizedIssueType } from '../../constants/issueTypes';
 import { WizardStepProps } from '../types/index';
 
@@ -18,14 +18,21 @@ export function TypeStep({ form, selectedIssueType, setSelectedIssueType }: Type
     form.setValue('issue_type', typeId);
   };
 
+  const allIssueTypes = getAllVisualIssueTypes();
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <div className="text-center space-y-2">
+        <h2 className="text-lg font-semibold">What type of issue are you reporting?</h2>
+        <p className="text-sm text-muted-foreground">Select the category that best describes your issue</p>
+      </div>
+      
       <RadioGroup
         value={selectedIssueType || ""}
         onValueChange={(value) => handleTypeSelect(value as StandardizedIssueType)}
-        className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+        className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
       >
-        {ISSUE_TYPES.map((type) => (
+        {allIssueTypes.map((type) => (
           <div key={type.id} className="relative group">
             <RadioGroupItem
               value={type.id}

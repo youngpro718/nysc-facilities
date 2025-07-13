@@ -1,5 +1,5 @@
 import { UseFormReturn } from "react-hook-form";
-import { StandardizedIssueType } from "../wizard/constants/issueTypes";
+import { StandardizedIssueType } from "../constants/issueTypes";
 import { FormData } from "../types/formTypes";
 
 export interface LocationFieldsProps {
