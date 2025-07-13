@@ -179,8 +179,11 @@ export const useNotifications = (userId?: string) => {
 
       console.log('All notifications cleared successfully');
       // Invalidate and refetch immediately
+      console.log('Invalidating queries for userId:', userId);
       await queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
+      console.log('Refetching queries for userId:', userId);
       await queryClient.refetchQueries({ queryKey: ['notifications', userId] });
+      console.log('Query refetch completed');
     } catch (error) {
       console.error('Failed to clear all notifications:', error);
     }
