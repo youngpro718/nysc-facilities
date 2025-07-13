@@ -114,17 +114,25 @@ export default function AdminKeyRequests() {
 
       if (error) throw error;
 
-      // Send email notification if user opted in
-      if (selectedRequest.email_notifications_enabled) {
-        // Call edge function to send email
+      // Always create user notification and send email if opted in
+      try {
         await supabase.functions.invoke('send-key-request-notification', {
           body: {
             to: selectedRequest.profiles.email,
-            request: selectedRequest,
+            request: {
+              ...selectedRequest,
+              profiles: {
+                ...selectedRequest.profiles,
+                user_id: selectedRequest.user_id // Ensure user_id is included
+              }
+            },
             status: updates.status,
             admin_notes: adminNotes,
           }
         });
+      } catch (notificationError) {
+        console.error('Failed to send notification:', notificationError);
+        // Don't block the main operation if notification fails
       }
 
       toast({

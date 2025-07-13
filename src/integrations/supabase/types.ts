@@ -6808,6 +6808,48 @@ export type Database = {
           },
         ]
       }
+      user_notifications: {
+        Row: {
+          action_url: string | null
+          created_at: string
+          id: string
+          message: string
+          metadata: Json | null
+          read: boolean
+          related_id: string | null
+          title: string
+          type: string
+          urgency: string | null
+          user_id: string
+        }
+        Insert: {
+          action_url?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          metadata?: Json | null
+          read?: boolean
+          related_id?: string | null
+          title: string
+          type: string
+          urgency?: string | null
+          user_id: string
+        }
+        Update: {
+          action_url?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          metadata?: Json | null
+          read?: boolean
+          related_id?: string | null
+          title?: string
+          type?: string
+          urgency?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -8114,6 +8156,19 @@ export type Database = {
           p_recipient_id?: string
           p_expected_delivery_date?: string
           p_notes?: string
+        }
+        Returns: string
+      }
+      create_user_notification: {
+        Args: {
+          p_user_id: string
+          p_type: string
+          p_title: string
+          p_message: string
+          p_urgency?: string
+          p_action_url?: string
+          p_metadata?: Json
+          p_related_id?: string
         }
         Returns: string
       }

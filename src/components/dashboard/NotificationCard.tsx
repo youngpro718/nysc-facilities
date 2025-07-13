@@ -1,20 +1,24 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Check, Clock } from "lucide-react";
+import { Bell, Check, Clock, Key, XCircle, CheckCircle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 export interface Notification {
   id: string;
-  type: 'issue_update' | 'new_assignment' | 'maintenance';
+  type: 'issue_update' | 'new_assignment' | 'maintenance' | 'key_request_approved' | 'key_request_denied' | 'key_request_fulfilled';
   title: string;
   message: string;
   created_at: string;
   read: boolean;
+  urgency?: 'low' | 'medium' | 'high';
+  action_url?: string;
   metadata?: Record<string, any>;
+  related_id?: string;
 }
 
 interface NotificationCardProps {
@@ -26,6 +30,7 @@ interface NotificationCardProps {
 export function NotificationCard({ notifications, onMarkAsRead, onMarkAllAsRead }: NotificationCardProps) {
   const unreadCount = notifications.filter(n => !n.read).length;
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
 
   const getNotificationIcon = (type: Notification['type']) => {
     switch (type) {
@@ -35,8 +40,34 @@ export function NotificationCard({ notifications, onMarkAsRead, onMarkAllAsRead 
         return <Check className="h-4 w-4 text-green-500" />;
       case 'maintenance':
         return <Clock className="h-4 w-4 text-yellow-500" />;
+      case 'key_request_approved':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'key_request_denied':
+        return <XCircle className="h-4 w-4 text-red-500" />;
+      case 'key_request_fulfilled':
+        return <Key className="h-4 w-4 text-blue-500" />;
       default:
         return <Bell className="h-4 w-4" />;
+    }
+  };
+
+  const getNotificationStyle = (notification: Notification) => {
+    if (notification.urgency === 'high') {
+      return 'border-l-4 border-l-red-500';
+    }
+    if (notification.urgency === 'medium') {
+      return 'border-l-4 border-l-yellow-500';
+    }
+    return '';
+  };
+
+  const handleNotificationClick = (notification: Notification) => {
+    if (!notification.read) {
+      onMarkAsRead(notification.id);
+    }
+    
+    if (notification.action_url) {
+      navigate(notification.action_url);
     }
   };
 
@@ -87,9 +118,10 @@ export function NotificationCard({ notifications, onMarkAsRead, onMarkAllAsRead 
                   "group relative rounded-lg border p-3 sm:p-4",
                   "transition-colors hover:bg-accent",
                   !notification.read ? 'bg-muted/50' : '',
+                  getNotificationStyle(notification),
                   "cursor-pointer"
                 )}
-                onClick={() => !notification.read && onMarkAsRead(notification.id)}
+                onClick={() => handleNotificationClick(notification)}
               >
                 <div className="flex items-start gap-3 sm:gap-4">
                   <div className="mt-1 shrink-0">
