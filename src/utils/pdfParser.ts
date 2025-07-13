@@ -1,7 +1,10 @@
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
 
-// Set up PDF.js worker
-GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+// Set up PDF.js worker - use a compatible version
+GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.js',
+  import.meta.url
+).toString();
 
 // Add polyfill for Promise.withResolvers if not available
 declare global {
