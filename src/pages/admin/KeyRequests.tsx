@@ -116,7 +116,7 @@ export default function AdminKeyRequests() {
 
       // Always create user notification and send email if opted in
       try {
-        console.log('Invoking send-key-request-notification for user:', selectedRequest.user_id);
+        console.log('Starting notification process for user:', selectedRequest.user_id);
         console.log('Request data:', selectedRequest);
         
         const functionResponse = await supabase.functions.invoke('send-key-request-notification', {
@@ -138,10 +138,54 @@ export default function AdminKeyRequests() {
         
         if (functionResponse.error) {
           console.error('Edge function error:', functionResponse.error);
+          throw new Error('Edge function failed');
         }
+        
+        console.log('Notification sent successfully via edge function');
       } catch (notificationError) {
-        console.error('Failed to send notification:', notificationError);
-        // Don't block the main operation if notification fails
+        console.error('Edge function failed, creating notification directly:', notificationError);
+        
+        // Fallback: Create notification directly in database
+        try {
+          const notificationType = updates.status === 'approved' ? 'key_request_approved' : 'key_request_denied';
+          const notificationTitle = updates.status === 'approved' 
+            ? 'Key Request Approved' 
+            : 'Key Request Denied';
+          
+          const roomInfo = selectedRequest.rooms 
+            ? `${selectedRequest.rooms.room_number} - ${selectedRequest.rooms.name}`
+            : selectedRequest.room_other || 'unspecified room';
+
+          const notificationMessage = updates.status === 'approved'
+            ? `Your ${selectedRequest.request_type} key request for ${roomInfo} has been approved. The key ordering process will begin shortly.`
+            : `Your ${selectedRequest.request_type} key request for ${roomInfo} has been denied. ${adminNotes ? `Reason: ${adminNotes}` : ''}`;
+
+          const { error: directNotificationError } = await supabase
+            .from('user_notifications')
+            .insert({
+              user_id: selectedRequest.user_id,
+              type: notificationType,
+              title: notificationTitle,
+              message: notificationMessage,
+              urgency: updates.status === 'approved' ? 'medium' : 'high',
+              action_url: '/my-requests',
+              metadata: {
+                request_id: selectedRequest.id,
+                request_type: selectedRequest.request_type,
+                room_info: roomInfo,
+                admin_notes: adminNotes
+              },
+              related_id: selectedRequest.id
+            });
+
+          if (directNotificationError) {
+            console.error('Failed to create direct notification:', directNotificationError);
+          } else {
+            console.log('Direct notification created successfully');
+          }
+        } catch (directError) {
+          console.error('Direct notification creation also failed:', directError);
+        }
       }
 
       toast({
