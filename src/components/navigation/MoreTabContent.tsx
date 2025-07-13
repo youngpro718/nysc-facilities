@@ -5,15 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 
 export const MoreTabContent: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, isAdmin, isLoading } = useAuth();
 
   const handleSignOut = async () => {
     try {
+      console.log("MoreTabContent: Starting sign out...");
       await supabase.auth.signOut();
       toast({
         title: "Signed out successfully",
@@ -21,7 +22,7 @@ export const MoreTabContent: React.FC = () => {
       });
       navigate("/login");
     } catch (error) {
-      console.error("Error signing out:", error);
+      console.error("MoreTabContent: Error signing out:", error);
       toast({
         title: "Error",
         description: "Failed to sign out. Please try again.",
@@ -60,6 +61,27 @@ export const MoreTabContent: React.FC = () => {
     },
   ];
 
+  // Show loading state while auth is being resolved
+  if (isLoading) {
+    return (
+      <div className="flex flex-col h-full bg-background/95 backdrop-blur-sm">
+        <div className="flex-1 p-4 space-y-4">
+          <div className="animate-pulse space-y-4">
+            <div className="h-4 bg-muted rounded w-1/2"></div>
+            <div className="h-3 bg-muted rounded w-3/4"></div>
+            <div className="space-y-2">
+              <div className="h-12 bg-muted rounded"></div>
+              <div className="h-12 bg-muted rounded"></div>
+              <div className="h-12 bg-muted rounded"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  console.log("MoreTabContent: Rendering with user:", user?.id, "isAdmin:", isAdmin);
+
   return (
     <div className="flex flex-col h-full bg-background/95 backdrop-blur-sm">
       <div className="flex-1 p-4 space-y-4">
@@ -74,8 +96,9 @@ export const MoreTabContent: React.FC = () => {
           {menuItems.map((item) => {
             const Icon = item.icon;
             
-            // Skip admin items for non-admin users
-            if (item.adminOnly && !user?.user_metadata?.role) {
+            // Skip admin items for non-admin users - use isAdmin from auth context
+            if (item.adminOnly && !isAdmin) {
+              console.log("MoreTabContent: Skipping admin item for non-admin user");
               return null;
             }
 

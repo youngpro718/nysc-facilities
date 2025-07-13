@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { AvatarPromptModal } from "@/components/auth/AvatarPromptModal";
 
 export default function UserDashboard() {
-  const { user, profile, isLoading, isAuthenticated } = useAuth();
+  const { user, profile, isLoading, isAuthenticated, isAdmin } = useAuth();
   const navigate = useNavigate();
   const { notifications = [], isLoading: notificationsLoading, markAsRead, markAllAsRead, clearNotification, clearAllNotifications } = useNotifications(user?.id);
   const { data: occupantData } = useOccupantAssignments(user?.id || '');
@@ -27,8 +27,12 @@ export default function UserDashboard() {
   const [showAvatarPrompt, setShowAvatarPrompt] = useState(false);
   const [avatarPromptDismissed, setAvatarPromptDismissed] = useState(false);
 
+  // Add debug logging for auth state
+  console.log("UserDashboard: Auth state", { isLoading, isAuthenticated, isAdmin, userId: user?.id });
+
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
+      console.log("UserDashboard: Not authenticated, redirecting to login");
       navigate("/login");
     }
   }, [isLoading, isAuthenticated, navigate]);
@@ -65,8 +69,11 @@ export default function UserDashboard() {
   }
 
   if (!isAuthenticated || !user) {
+    console.log("UserDashboard: Not authenticated or no user, returning null");
     return null;
   }
+
+  console.log("UserDashboard: Rendering dashboard for user", user.id);
 
   // Get user name from profile or fallback to user_metadata/email
   const firstName = profile?.first_name || user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'User';
@@ -96,7 +103,10 @@ export default function UserDashboard() {
           roomAssignments={occupantData?.roomAssignments || []} 
           keyAssignments={occupantData?.keyAssignments || []}
           primaryRoom={occupantData?.primaryRoom}
-          onReportIssue={(roomId) => setShowIssueReport(true)}
+          onReportIssue={(roomId) => {
+            console.log("UserDashboard: Reporting issue for room", roomId);
+            setShowIssueReport(true);
+          }}
         />
         <KeyAssignmentCard userId={user.id} />
         <IssueSummaryCard userId={user.id} />
