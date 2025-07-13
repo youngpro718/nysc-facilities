@@ -24,6 +24,8 @@ import AdminKeyRequests from "@/pages/admin/KeyRequests";
 import { MaintenanceDashboard } from "@/pages/MaintenanceDashboard";
 import { CourtOperationsDashboard } from "@/pages/CourtOperationsDashboard";
 import { ThemeProvider } from "@/providers/ThemeProvider";
+import { EnhancedThemeProvider } from "@/providers/EnhancedThemeProvider";
+import { DashboardCustomizationProvider } from "@/providers/DashboardCustomizationProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -43,9 +45,11 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <BrowserRouter>
-          <AuthProvider>
-            <Routes>
+        <EnhancedThemeProvider>
+          <DashboardCustomizationProvider>
+            <BrowserRouter>
+              <AuthProvider>
+                <Routes>
               <Route element={<Layout />}>
                 {/* Admin Routes */}
                 <Route path="/" element={
@@ -153,10 +157,12 @@ function App() {
                 <Route path="verification-pending" element={<VerificationPending />} />
                 <Route path="*" element={<NotFound />} />
               </Route>
-            </Routes>
-          </AuthProvider>
-        </BrowserRouter>
-        <Toaster />
+                </Routes>
+              </AuthProvider>
+            </BrowserRouter>
+            <Toaster />
+          </DashboardCustomizationProvider>
+        </EnhancedThemeProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

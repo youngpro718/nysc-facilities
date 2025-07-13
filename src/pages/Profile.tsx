@@ -1,6 +1,6 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Shield, ChevronLeft, Bell, Settings } from "lucide-react";
+import { User, Shield, ChevronLeft, Bell, Settings, Palette, LayoutGrid } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { PersonalInfoForm } from "@/components/profile/PersonalInfoForm";
 import { NotificationPreferences } from "@/components/profile/NotificationPreferences";
@@ -8,6 +8,8 @@ import { SecuritySection } from "@/components/profile/SecuritySection";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { MobileProfileHeader } from "@/components/profile/mobile/MobileProfileHeader";
 import { MobileSettingsCard } from "@/components/profile/mobile/MobileSettingsCard";
+import { AppearanceSettings } from "@/components/profile/AppearanceSettings";
+import { DashboardCustomization } from "@/components/profile/DashboardCustomization";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -147,13 +149,27 @@ export default function Profile() {
       
       <Tabs defaultValue="profile" className="w-full space-y-6 sm:space-y-8">
         <div className="overflow-x-auto scrollbar-hide">
-          <TabsList className="grid w-full min-w-max grid-cols-2 gap-1 bg-muted p-1 h-auto">
+          <TabsList className="grid w-full min-w-max grid-cols-4 gap-1 bg-muted p-1 h-auto">
             <TabsTrigger 
               value="profile" 
               className="flex items-center gap-2 px-4 py-3 text-sm data-[state=active]:bg-background data-[state=active]:text-foreground transition-colors whitespace-nowrap"
             >
               <User className="h-4 w-4" />
               Profile
+            </TabsTrigger>
+            <TabsTrigger 
+              value="appearance" 
+              className="flex items-center gap-2 px-4 py-3 text-sm data-[state=active]:bg-background data-[state=active]:text-foreground transition-colors whitespace-nowrap"
+            >
+              <Palette className="h-4 w-4" />
+              Appearance
+            </TabsTrigger>
+            <TabsTrigger 
+              value="dashboard" 
+              className="flex items-center gap-2 px-4 py-3 text-sm data-[state=active]:bg-background data-[state=active]:text-foreground transition-colors whitespace-nowrap"
+            >
+              <LayoutGrid className="h-4 w-4" />
+              Dashboard
             </TabsTrigger>
             <TabsTrigger 
               value="security" 
@@ -195,6 +211,14 @@ export default function Profile() {
               <NotificationPreferences />
             </div>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="appearance" className="mt-6">
+          <AppearanceSettings />
+        </TabsContent>
+
+        <TabsContent value="dashboard" className="mt-6">
+          <DashboardCustomization />
         </TabsContent>
 
         <TabsContent value="security" className="mt-6">

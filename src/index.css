@@ -88,6 +88,85 @@
     --info: 217 91% 60%;
     --info-foreground: 0 0% 98%;
   }
+
+  /* Theme Variants */
+  .blue {
+    --background: 214 32% 91%;
+    --foreground: 214 84% 12%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 214 32% 81%;
+    --secondary-foreground: 214 84% 12%;
+    --muted: 214 32% 81%;
+    --muted-foreground: 214 84% 32%;
+    --accent: 214 32% 81%;
+    --accent-foreground: 214 84% 12%;
+    --border: 214 32% 71%;
+    --input: 214 32% 71%;
+    --ring: 221 83% 53%;
+  }
+
+  .green {
+    --background: 138 62% 91%;
+    --foreground: 138 84% 12%;
+    --primary: 142 71% 45%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 138 62% 81%;
+    --secondary-foreground: 138 84% 12%;
+    --muted: 138 62% 81%;
+    --muted-foreground: 138 84% 32%;
+    --accent: 138 62% 81%;
+    --accent-foreground: 138 84% 12%;
+    --border: 138 62% 71%;
+    --input: 138 62% 71%;
+    --ring: 142 71% 45%;
+  }
+
+  .purple {
+    --background: 276 44% 91%;
+    --foreground: 276 84% 12%;
+    --primary: 271 81% 56%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 276 44% 81%;
+    --secondary-foreground: 276 84% 12%;
+    --muted: 276 44% 81%;
+    --muted-foreground: 276 84% 32%;
+    --accent: 276 44% 81%;
+    --accent-foreground: 276 84% 12%;
+    --border: 276 44% 71%;
+    --input: 276 44% 71%;
+    --ring: 271 81% 56%;
+  }
+
+  /* Layout Density */
+  .density-compact {
+    --spacing-unit: 0.75rem;
+    --card-padding: 1rem;
+    --section-gap: 1rem;
+  }
+
+  .density-comfortable {
+    --spacing-unit: 1rem;
+    --card-padding: 1.5rem;
+    --section-gap: 1.5rem;
+  }
+
+  .density-spacious {
+    --spacing-unit: 1.5rem;
+    --card-padding: 2rem;
+    --section-gap: 2rem;
+  }
+
+  /* High Contrast Mode */
+  .high-contrast {
+    --border: 0 0% 0%;
+    --ring: 0 0% 0%;
+  }
+
+  .high-contrast.dark {
+    --border: 0 0% 100%;
+    --ring: 0 0% 100%;
+  }
 }
  
 @layer base {
