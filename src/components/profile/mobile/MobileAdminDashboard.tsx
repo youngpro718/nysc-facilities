@@ -15,7 +15,7 @@ import {
   FileText
 } from "lucide-react";
 import { MobileAdminCard } from "./MobileAdminCard";
-import { UserManagementModal } from "../modals/UserManagementModal";
+import { EnhancedUserManagementModal } from "../modals/EnhancedUserManagementModal";
 import { SystemSecurityModal } from "../modals/SystemSecurityModal";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -258,7 +258,7 @@ export function MobileAdminDashboard() {
       />
 
       {/* Modals */}
-      <UserManagementModal 
+      <EnhancedUserManagementModal 
         open={userManagementOpen} 
         onOpenChange={setUserManagementOpen} 
       />
