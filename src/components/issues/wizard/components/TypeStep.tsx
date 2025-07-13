@@ -30,7 +30,7 @@ export function TypeStep({ form, selectedIssueType, setSelectedIssueType }: Type
       <RadioGroup
         value={selectedIssueType || ""}
         onValueChange={(value) => handleTypeSelect(value as StandardizedIssueType)}
-        className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+        className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
       >
         {allIssueTypes.map((type) => (
           <div key={type.id} className="relative group">
