@@ -48,7 +48,17 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
       console.log('Inserting into maintenance_issues...');
       const { error } = await supabase
         .from("maintenance_issues")
-        .insert(formData);
+        .insert({
+          title: formData.title,
+          description: formData.description,
+          space_name: formData.space_name,
+          space_type: formData.space_type,
+          issue_type: formData.issue_type,
+          severity: formData.severity,
+          status: 'reported',
+          recurring_issue: formData.recurring_issue,
+          permanent_solution_needed: false
+        });
 
       if (error) {
         console.error('Database error:', error);

@@ -52,11 +52,22 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
       const { error } = await supabase
         .from("maintenance_schedules")
         .insert({
-          ...formData,
+          title: formData.title,
+          description: formData.description || '',
+          maintenance_type: formData.maintenance_type,
+          space_name: formData.space_name,
+          space_type: formData.space_type,
           scheduled_start_date: new Date(formData.scheduled_start_date).toISOString(),
           scheduled_end_date: formData.scheduled_end_date 
             ? new Date(formData.scheduled_end_date).toISOString() 
             : null,
+          status: 'scheduled',
+          priority: formData.priority,
+          impact_level: formData.impact_level,
+          notes: formData.notes || '',
+          special_instructions: formData.special_instructions || '',
+          estimated_cost: null,
+          notification_sent: false
         });
 
       if (error) {
