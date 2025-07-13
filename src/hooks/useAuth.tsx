@@ -210,72 +210,114 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Setup auth state listener
+  // Setup auth state listener and initialization
   useEffect(() => {
     let mounted = true;
+    let isInitialized = false;
 
-    // Single initialization function
+    // Centralized redirect logic
+    const handleRedirect = (userData: { isAdmin: boolean; profile: UserProfile | null }) => {
+      if (!mounted) return;
+      
+      const currentPath = window.location.pathname;
+      
+      // Don't redirect if already on the correct page
+      if (userData.profile?.verification_status === 'pending') {
+        if (currentPath !== '/verification-pending') {
+          navigate('/verification-pending', { replace: true });
+        }
+        return;
+      }
+      
+      // Role-based redirects - admin always to root, user always to dashboard
+      if (userData.isAdmin) {
+        if (currentPath !== '/' && currentPath !== '/login') {
+          // Admin can stay on admin pages, but redirect from user pages or login
+          const isUserPage = currentPath.startsWith('/dashboard') || 
+                            currentPath === '/my-requests' || 
+                            currentPath === '/my-issues' ||
+                            currentPath === '/profile';
+          
+          if (isUserPage || currentPath === '/login') {
+            navigate('/', { replace: true });
+          }
+        } else if (currentPath === '/login') {
+          navigate('/', { replace: true });
+        }
+      } else {
+        if (currentPath !== '/dashboard' && currentPath !== '/login') {
+          // Regular user can stay on user pages, but redirect from admin pages or login
+          const isAdminPage = currentPath === '/' || 
+                             currentPath.startsWith('/spaces') ||
+                             currentPath.startsWith('/occupants') ||
+                             currentPath.startsWith('/keys') ||
+                             currentPath.startsWith('/lighting') ||
+                             currentPath.startsWith('/issues') ||
+                             currentPath.startsWith('/access-management') ||
+                             currentPath.startsWith('/admin') ||
+                             currentPath.startsWith('/maintenance') ||
+                             currentPath.startsWith('/court-operations') ||
+                             currentPath.startsWith('/settings');
+          
+          if (isAdminPage || currentPath === '/login') {
+            navigate('/dashboard', { replace: true });
+          }
+        } else if (currentPath === '/login') {
+          navigate('/dashboard', { replace: true });
+        }
+      }
+    };
+
+    // Initialize auth state
     const initializeAuth = async () => {
       try {
-        // Check for existing session
+        console.log('useAuth: Initializing authentication...');
         const currentSession = await getSession();
         
         if (!mounted) return;
 
         if (currentSession) {
+          console.log('useAuth: Session found, fetching user data...');
           setSession(currentSession);
           setUser(currentSession.user);
           
           const userData = await getUserProfile(currentSession.user.id);
           setIsAdmin(userData.isAdmin);
           setProfile(userData.profile);
-
-          // Handle redirects based on current location and user status
-          const currentPath = window.location.pathname;
           
-          if (currentPath === '/login') {
-            if (userData.profile?.verification_status === 'pending') {
-              navigate('/verification-pending', { replace: true });
-            } else if (userData.isAdmin) {
-              navigate('/', { replace: true });
-            } else {
-              navigate('/dashboard', { replace: true });
-            }
-          } else if (currentPath === '/verification-pending' && userData.profile?.verification_status === 'verified') {
-            navigate(userData.isAdmin ? '/' : '/dashboard', { replace: true });
+          // Only redirect if we're on login page or need verification
+          if (window.location.pathname === '/login' || 
+              (userData.profile?.verification_status === 'pending' && window.location.pathname !== '/verification-pending')) {
+            handleRedirect(userData);
           }
         } else {
-          // No session, redirect to login if not already there
-          if (window.location.pathname !== '/login' && window.location.pathname !== '/verification-pending') {
+          console.log('useAuth: No session found');
+          // Only redirect to login if not already there or on verification page
+          const currentPath = window.location.pathname;
+          if (currentPath !== '/login' && currentPath !== '/verification-pending') {
             navigate('/login', { replace: true });
           }
         }
       } catch (error: any) {
         console.error('useAuth: Auth initialization failed:', error);
         
-        // More detailed error logging
-        if (error.message) {
-          console.error('useAuth: Error message:', error.message);
-        }
-        if (error.stack) {
-          console.error('useAuth: Error stack:', error.stack);
-        }
-        
-        // Reset auth state on initialization failure
-        setSession(null);
-        setUser(null);
-        setProfile(null);
-        setIsAdmin(false);
-        
-        // Show toast for critical initialization errors
-        if (error.message?.includes('network') || error.message?.includes('fetch')) {
-          toast.error('Connection Error', {
-            description: 'Unable to connect to authentication service. Please check your internet connection.'
-          });
+        if (mounted) {
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+          setIsAdmin(false);
+          
+          // Only show network errors to avoid spam
+          if (error.message?.includes('network') || error.message?.includes('fetch')) {
+            toast.error('Connection Error', {
+              description: 'Unable to connect to authentication service.'
+            });
+          }
         }
       } finally {
         if (mounted) {
           setIsLoading(false);
+          isInitialized = true;
         }
       }
     };
@@ -284,41 +326,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
         if (!mounted) return;
+        
+        console.log('useAuth: Auth state changed:', event);
 
         if (event === 'SIGNED_IN' && newSession) {
           setSession(newSession);
           setUser(newSession.user);
           
-          const userData = await getUserProfile(newSession.user.id);
-          setIsAdmin(userData.isAdmin);
-          setProfile(userData.profile);
+          // Defer user data fetching to avoid blocking auth state change
+          setTimeout(async () => {
+            if (!mounted) return;
+            
+            try {
+              const userData = await getUserProfile(newSession.user.id);
+              setIsAdmin(userData.isAdmin);
+              setProfile(userData.profile);
+              
+              // Only redirect after explicit sign in, not during initialization
+              if (isInitialized) {
+                handleRedirect(userData);
+              }
+            } catch (error) {
+              console.error('useAuth: Error fetching user data after sign in:', error);
+            }
+          }, 0);
           
-          // Handle post-login redirect
-          if (userData.profile?.verification_status === 'pending') {
-            navigate('/verification-pending', { replace: true });
-          } else if (userData.isAdmin) {
-            navigate('/', { replace: true });
-          } else {
-            navigate('/dashboard', { replace: true });
-          }
         } else if (event === 'SIGNED_OUT') {
           setSession(null);
           setUser(null);
           setProfile(null);
           setIsAdmin(false);
-          navigate('/login', { replace: true });
+          
+          // Only redirect if not already on login page
+          if (window.location.pathname !== '/login') {
+            navigate('/login', { replace: true });
+          }
         }
       }
     );
 
-    // Initialize auth
+    // Initialize
     initializeAuth();
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [])
+  }, [getUserProfile, navigate])
 
   // Compute isAuthenticated derived from session
   const isAuthenticated = !!session;
