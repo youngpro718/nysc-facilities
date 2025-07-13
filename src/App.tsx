@@ -16,6 +16,9 @@ import MyIssues from "@/pages/MyIssues";
 import AdminProfile from "@/pages/AdminProfile";
 import VerificationPending from "@/pages/VerificationPending";
 import AccessManagement from "@/pages/AccessManagement";
+import ThemeSettings from "@/pages/settings/ThemeSettings";
+import TwoFactorAuth from "@/pages/settings/TwoFactorAuth";
+import SessionSettings from "@/pages/settings/SessionSettings";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -79,6 +82,23 @@ function App() {
                 <Route path="access-management" element={
                   <ProtectedRoute requireAdmin>
                     <AccessManagement />
+                  </ProtectedRoute>
+                } />
+
+                {/* Settings Routes */}
+                <Route path="settings/theme" element={
+                  <ProtectedRoute requireAdmin>
+                    <ThemeSettings />
+                  </ProtectedRoute>
+                } />
+                <Route path="settings/security/2fa" element={
+                  <ProtectedRoute requireAdmin>
+                    <TwoFactorAuth />
+                  </ProtectedRoute>
+                } />
+                <Route path="settings/security/session" element={
+                  <ProtectedRoute requireAdmin>
+                    <SessionSettings />
                   </ProtectedRoute>
                 } />
 

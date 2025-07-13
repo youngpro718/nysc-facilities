@@ -53,8 +53,9 @@ export default function AdminProfile() {
       type: 'toggle' as const,
       value: true,
       onChange: (value: boolean) => {
-        // TODO: Implement notification settings update
-        console.log('Notifications:', value);
+        // TODO: Implement notification settings update with Supabase
+        console.log('Admin notifications:', value);
+        // This would update user preferences in the database
       }
     },
     {
@@ -65,8 +66,9 @@ export default function AdminProfile() {
       type: 'toggle' as const,
       value: false,
       onChange: (value: boolean) => {
-        // TODO: Implement maintenance mode toggle
-        console.log('Maintenance:', value);
+        // TODO: Implement maintenance mode toggle with system-wide effect
+        console.log('Maintenance mode:', value);
+        // This would set a global maintenance flag affecting all users
       }
     }
   ];
