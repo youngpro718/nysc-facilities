@@ -125,7 +125,10 @@ export function NotificationCard({ notifications, onMarkAsRead, onMarkAllAsRead,
                 Mark all as read
               </DropdownMenuItem>
               <DropdownMenuItem 
-                onClick={onClearAllNotifications}
+                onClick={() => {
+                  console.log('Clear all notifications clicked');
+                  onClearAllNotifications();
+                }}
                 disabled={notifications.length === 0}
                 className="text-destructive"
               >
@@ -200,6 +203,7 @@ export function NotificationCard({ notifications, onMarkAsRead, onMarkAllAsRead,
                         <DropdownMenuItem 
                           onClick={(e) => {
                             e.stopPropagation();
+                            console.log('Clear notification clicked:', notification.id);
                             onClearNotification(notification.id);
                           }}
                           className="text-destructive"
