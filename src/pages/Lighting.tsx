@@ -1,5 +1,5 @@
 
-import { SimpleLightingTable } from "@/components/lighting/SimpleLightingTable";
+import { LightingFixturesList } from "@/components/lighting/LightingFixturesList";
 import { CreateLightingDialog } from "@/components/lighting/CreateLightingDialog";
 import { useLightingFixtures } from "@/hooks/useLightingFixtures";
 import { Lightbulb } from "lucide-react";
@@ -30,7 +30,7 @@ export default function Lighting() {
           <div className="text-muted-foreground">Loading lights...</div>
         </div>
       ) : (
-        <SimpleLightingTable fixtures={fixtures} onRefresh={refetch} />
+        <LightingFixturesList />
       )}
     </div>
   );
