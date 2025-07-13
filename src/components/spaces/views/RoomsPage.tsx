@@ -168,22 +168,21 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
         />
       )}
 
-      <div className={`grid gap-6 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-4'}`}>
-        {!isMobile && (
-          <div className="lg:col-span-1">
-            <HierarchyFilters
-              showOnlyParents={showOnlyParents}
-              onShowOnlyParentsChange={setShowOnlyParents}
-              showOnlyChildren={showOnlyChildren}
-              onShowOnlyChildrenChange={setShowOnlyChildren}
-              groupByParent={groupByParent}
-              onGroupByParentChange={setGroupByParent}
-              hierarchyStats={hierarchyStats}
-            />
-          </div>
-        )}
+      {!isMobile && (
+        <HierarchyFilters
+          showOnlyParents={showOnlyParents}
+          onShowOnlyParentsChange={setShowOnlyParents}
+          showOnlyChildren={showOnlyChildren}
+          onShowOnlyChildrenChange={setShowOnlyChildren}
+          groupByParent={groupByParent}
+          onGroupByParentChange={setGroupByParent}
+          hierarchyStats={hierarchyStats}
+        />
+      )}
+
+      <div className="grid gap-6 grid-cols-1">
         
-        <div className={isMobile ? 'col-span-1' : 'lg:col-span-3'}>
+        <div className="col-span-1">
           {groupByParent ? (
             <GroupedRoomsView
               groupedRooms={groupedRooms}
