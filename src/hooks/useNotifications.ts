@@ -76,30 +76,56 @@ export const useNotifications = (userId?: string) => {
   });
 
   const markAsRead = async (notificationId: string) => {
-    if (!userId) return;
+    if (!userId) {
+      console.error('markAsRead: No user ID available');
+      return;
+    }
 
-    const { error } = await supabase
-      .from('user_notifications')
-      .update({ read: true })
-      .eq('id', notificationId)
-      .eq('user_id', userId);
+    console.log('Marking notification as read:', { notificationId, userId });
 
-    if (!error) {
+    try {
+      const { error } = await supabase
+        .from('user_notifications')
+        .update({ read: true })
+        .eq('id', notificationId)
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('Error marking notification as read:', error);
+        throw error;
+      }
+
+      console.log('Notification marked as read successfully');
       queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
     }
   };
 
   const markAllAsRead = async () => {
-    if (!userId) return;
+    if (!userId) {
+      console.error('markAllAsRead: No user ID available');
+      return;
+    }
 
-    const { error } = await supabase
-      .from('user_notifications')
-      .update({ read: true })
-      .eq('user_id', userId)
-      .eq('read', false);
+    console.log('Marking all notifications as read for user:', userId);
 
-    if (!error) {
+    try {
+      const { error } = await supabase
+        .from('user_notifications')
+        .update({ read: true })
+        .eq('user_id', userId)
+        .eq('read', false);
+
+      if (error) {
+        console.error('Error marking all notifications as read:', error);
+        throw error;
+      }
+
+      console.log('All notifications marked as read successfully');
       queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
+    } catch (error) {
+      console.error('Failed to mark all notifications as read:', error);
     }
   };
 
