@@ -171,7 +171,7 @@ export function SystemSecurityModal({ open, onOpenChange }: SystemSecurityModalP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5" />
@@ -181,7 +181,7 @@ export function SystemSecurityModal({ open, onOpenChange }: SystemSecurityModalP
 
         <div className="space-y-6">
           {/* System Status Overview */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {securityCards.map((card) => {
               const Icon = card.icon;
               return (
@@ -230,10 +230,10 @@ export function SystemSecurityModal({ open, onOpenChange }: SystemSecurityModalP
             </div>
           </Card>
 
-          {/* Quick Actions */}
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Quick Actions */}
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <Button onClick={performBackup} className="flex items-center gap-2">
                 <Database className="h-4 w-4" />
                 Backup Database

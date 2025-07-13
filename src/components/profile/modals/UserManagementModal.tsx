@@ -30,6 +30,7 @@ interface User {
   created_at: string;
   department: string;
   title: string;
+  is_admin?: boolean;
 }
 
 export function UserManagementModal({ open, onOpenChange }: UserManagementModalProps) {
@@ -47,13 +48,31 @@ export function UserManagementModal({ open, onOpenChange }: UserManagementModalP
   const loadUsers = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // Get profiles with admin status
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setUsers(data || []);
+      if (profilesError) throw profilesError;
+
+      // Get admin roles
+      const { data: adminRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'admin');
+
+      if (rolesError) throw rolesError;
+
+      const adminUserIds = new Set(adminRoles?.map(role => role.user_id) || []);
+      
+      const usersWithAdminStatus = (profiles || []).map(profile => ({
+        ...profile,
+        is_admin: adminUserIds.has(profile.id)
+      }));
+
+      setUsers(usersWithAdminStatus);
     } catch (error) {
       console.error('Error loading users:', error);
       toast({
@@ -146,6 +165,32 @@ export function UserManagementModal({ open, onOpenChange }: UserManagementModalP
     }
   };
 
+  const removeAdmin = async (userId: string) => {
+    try {
+      const { error } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId)
+        .eq('role', 'admin');
+
+      if (error) throw error;
+
+      toast({
+        title: "Admin Role Removed",
+        description: "User admin privileges have been revoked"
+      });
+      
+      loadUsers();
+    } catch (error) {
+      console.error('Error removing admin role:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove admin role",
+        variant: "destructive"
+      });
+    }
+  };
+
   const filteredUsers = users.filter(user => 
     user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -167,7 +212,7 @@ export function UserManagementModal({ open, onOpenChange }: UserManagementModalP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5" />
@@ -191,16 +236,16 @@ export function UserManagementModal({ open, onOpenChange }: UserManagementModalP
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
           ) : (
-            <div className="border rounded-lg">
+            <div className="border rounded-lg overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Joined</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead className="min-w-[180px]">User</TableHead>
+                    <TableHead className="min-w-[200px] hidden sm:table-cell">Email</TableHead>
+                    <TableHead className="min-w-[120px] hidden md:table-cell">Department</TableHead>
+                    <TableHead className="min-w-[100px]">Status</TableHead>
+                    <TableHead className="min-w-[100px] hidden lg:table-cell">Joined</TableHead>
+                    <TableHead className="min-w-[160px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -208,71 +253,89 @@ export function UserManagementModal({ open, onOpenChange }: UserManagementModalP
                     <TableRow key={user.id}>
                       <TableCell>
                         <div>
-                          <div className="font-medium">
+                          <div className="font-medium flex items-center gap-2">
                             {user.first_name} {user.last_name}
+                            {user.is_admin && (
+                              <Badge variant="outline" className="text-xs">
+                                <Shield className="h-3 w-3 mr-1" />
+                                Admin
+                              </Badge>
+                            )}
                           </div>
                           <div className="text-sm text-muted-foreground">
                             {user.title}
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden sm:table-cell">
                         <div className="flex items-center gap-2">
                           <Mail className="h-4 w-4 text-muted-foreground" />
-                          {user.email}
+                          <span className="truncate max-w-[160px]">{user.email}</span>
                         </div>
                       </TableCell>
-                      <TableCell>{user.department || 'N/A'}</TableCell>
+                      <TableCell className="hidden md:table-cell">{user.department || 'N/A'}</TableCell>
                       <TableCell>
                         {getStatusBadge(user.verification_status, user.is_approved)}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden lg:table-cell">
                         {new Date(user.created_at).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
                           {user.verification_status === 'pending' && (
                             <>
                               <Button
                                 size="sm"
                                 onClick={() => handleVerifyUser(user.id)}
-                                className="bg-green-600 hover:bg-green-700"
+                                className="bg-green-600 hover:bg-green-700 text-xs"
                               >
-                                <UserCheck className="h-4 w-4 mr-1" />
+                                <UserCheck className="h-3 w-3 mr-1" />
                                 Verify
                               </Button>
                               <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleRejectUser(user.id)}
-                                className="border-red-300 text-red-600 hover:bg-red-50"
+                                className="border-red-300 text-red-600 hover:bg-red-50 text-xs"
                               >
-                                <UserX className="h-4 w-4 mr-1" />
+                                <UserX className="h-3 w-3 mr-1" />
                                 Reject
                               </Button>
                             </>
                           )}
-                          {user.verification_status === 'verified' && user.is_approved && (
+                          {user.verification_status === 'verified' && user.is_approved && !user.is_admin && (
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => makeAdmin(user.id)}
+                              className="border-blue-300 text-blue-600 hover:bg-blue-50 text-xs"
                             >
-                              <Shield className="h-4 w-4 mr-1" />
-                              Make Admin
+                              <Shield className="h-3 w-3 mr-1" />
+                              <span className="hidden sm:inline">Make</span> Admin
+                            </Button>
+                          )}
+                          {user.is_admin && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => removeAdmin(user.id)}
+                              className="border-red-300 text-red-600 hover:bg-red-50 text-xs"
+                            >
+                              <Shield className="h-3 w-3 mr-1" />
+                              <span className="hidden sm:inline">Remove</span> Admin
                             </Button>
                           )}
                         </div>
                       </TableCell>
                     </TableRow>
                   ))}
-                  {filteredUsers.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        No users found
-                      </TableCell>
-                    </TableRow>
-                  )}
+                   {filteredUsers.length === 0 && (
+                     <TableRow>
+                       <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                         {searchTerm ? 'No users found matching your search' : 'No users found'}
+                       </TableCell>
+                     </TableRow>
+                   )}
                 </TableBody>
               </Table>
             </div>

@@ -16,6 +16,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ProfileEditModal } from "@/components/profile/modals/ProfileEditModal";
+import { AvatarUploadModal } from "@/components/profile/modals/AvatarUploadModal";
 
 interface UserProfile {
   id: string;
@@ -34,6 +36,8 @@ interface UserProfile {
 export function MobileProfileHeader() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [avatarModalOpen, setAvatarModalOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -133,6 +137,7 @@ export function MobileProfileHeader() {
             size="icon"
             variant="secondary"
             className="absolute -bottom-1 -right-1 w-6 h-6"
+            onClick={() => setAvatarModalOpen(true)}
           >
             <Camera className="w-3 h-3" />
           </Button>
@@ -175,7 +180,11 @@ export function MobileProfileHeader() {
           </div>
         </div>
 
-        <Button size="icon" variant="ghost">
+        <Button 
+          size="icon" 
+          variant="ghost"
+          onClick={() => setEditModalOpen(true)}
+        >
           <Edit3 className="w-4 h-4" />
         </Button>
       </div>
@@ -226,6 +235,20 @@ export function MobileProfileHeader() {
           </div>
         </div>
       </div>
+
+      <ProfileEditModal
+        open={editModalOpen}
+        onOpenChange={setEditModalOpen}
+        profile={profile}
+        onProfileUpdate={loadProfile}
+      />
+
+      <AvatarUploadModal
+        open={avatarModalOpen}
+        onOpenChange={setAvatarModalOpen}
+        currentAvatarUrl={profile?.avatar_url}
+        onAvatarUpdate={loadProfile}
+      />
     </Card>
   );
 }
