@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { FormData } from "../../types/formTypes";
 import { StandardizedIssueType } from "../../constants/issueTypes";
-import { IssueWizardProps } from "../types";
+import { IssueWizardProps } from "../types/index";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, Loader2, Check, ArrowLeft, ArrowRight } from "lucide-react";
@@ -247,8 +247,6 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
                   </div>
                   <TypeStep 
                     form={form} 
-                    onNext={handleNext} 
-                    onBack={onCancel}
                     selectedIssueType={selectedIssueType}
                     setSelectedIssueType={setSelectedIssueType}
                   />
@@ -269,8 +267,6 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
                   </div>
                   <LocationStep 
                     form={form} 
-                    onNext={handleNext} 
-                    onBack={handleBack}
                     assignedRooms={assignedRooms}
                   />
                 </div>
@@ -290,8 +286,6 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
                   </div>
                   <DetailsStep 
                     form={form} 
-                    onNext={handleNext} 
-                    onBack={handleBack}
                     isEmergency={isEmergency}
                     setIsEmergency={setIsEmergency}
                     selectedPhotos={selectedPhotos}

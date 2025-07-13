@@ -5,7 +5,7 @@ import { DescriptionField } from "../../form-sections/DescriptionField";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, Camera, X, Loader2 } from "lucide-react";
-import { WizardStepProps } from '../types';
+import { WizardStepProps } from '../types/index';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";

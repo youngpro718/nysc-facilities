@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { ISSUE_TYPES } from '../constants/issueTypes';
 import { StandardizedIssueType } from '../../constants/issueTypes';
-import { WizardStepProps } from '../types';
+import { WizardStepProps } from '../types/index';
 
 interface TypeStepProps extends WizardStepProps {
   selectedIssueType: StandardizedIssueType | null;

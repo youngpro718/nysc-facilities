@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useWizardContext } from '../hooks/useWizardContext';
-import { WizardStepProps } from '../types';
+import { WizardStepProps } from '../types/index';
 import { ISSUE_TYPES } from '../constants/issueTypes';
 
 export function ReviewStep({ form, isLoading }: WizardStepProps) {

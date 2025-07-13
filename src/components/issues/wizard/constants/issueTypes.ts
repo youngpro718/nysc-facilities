@@ -8,7 +8,7 @@ import {
   Trash2,
   LucideProps 
 } from "lucide-react";
-import { IssueTypeOption } from "../types";
+import { IssueTypeOption } from "../types/index";
 
 export type StandardizedIssueType = 
   | 'ELECTRICAL_NEEDS'

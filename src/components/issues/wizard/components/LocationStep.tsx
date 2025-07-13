@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { Loader2, Building2, DoorClosed } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { WizardStepProps } from '../types';
+import { WizardStepProps } from '../types/index';
 import { UserAssignment } from "@/types/dashboard";
 
 interface LocationStepProps extends WizardStepProps {
