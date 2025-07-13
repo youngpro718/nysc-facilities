@@ -77,12 +77,13 @@ export function EditRoomAssignmentDialog({
     try {
       setIsUpdating(true);
 
-      // If setting as primary office, demote any existing primary offices
-      if (assignmentType === 'primary_office' && isPrimaryAssignment) {
+      // If setting as primary, demote any existing primary assignments of the same type
+      if (isPrimaryAssignment) {
         await supabase
           .from("occupant_room_assignments")
           .update({ is_primary: false })
           .eq("occupant_id", occupantId)
+          .eq("assignment_type", assignmentType)
           .eq("is_primary", true)
           .neq("id", assignment.id);
       }
@@ -91,7 +92,7 @@ export function EditRoomAssignmentDialog({
         .from("occupant_room_assignments")
         .update({
           assignment_type: assignmentType,
-          is_primary: assignmentType === 'primary_office' ? isPrimaryAssignment : false,
+          is_primary: isPrimaryAssignment,
           schedule: schedule.trim() || null,
           notes: notes.trim() || null,
           updated_at: new Date().toISOString()

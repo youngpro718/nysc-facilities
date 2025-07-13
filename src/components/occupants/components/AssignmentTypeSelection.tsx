@@ -73,7 +73,7 @@ export function AssignmentTypeSelection({
         </Select>
       </div>
 
-      {assignmentType === 'primary_office' && (
+      {assignmentType && (
         <div className="space-y-2">
           <Label htmlFor="primary-assignment">Primary Assignment</Label>
           <Select
@@ -87,7 +87,7 @@ export function AssignmentTypeSelection({
               <SelectItem value="yes">
                 <div className="flex items-center gap-2">
                   <Badge variant="default" className="text-xs">Primary</Badge>
-                  <span>Make this the primary office</span>
+                  <span>Make this the primary assignment</span>
                 </div>
               </SelectItem>
               <SelectItem value="no">Secondary assignment</SelectItem>
@@ -95,13 +95,13 @@ export function AssignmentTypeSelection({
           </Select>
           {isPrimaryAssignment && (
             <p className="text-xs text-muted-foreground">
-              This will become the occupant's main office assignment. Any existing primary office will be demoted to secondary.
+              This will become the occupant's main {selectedType?.label.toLowerCase()} assignment. Any existing primary assignment of this type will be demoted to secondary.
             </p>
           )}
         </div>
       )}
 
-      {assignmentType && assignmentType !== 'primary_office' && (
+      {assignmentType && (
         <div className="p-3 bg-muted/50 rounded-lg">
           <p className="text-sm text-muted-foreground">
             {selectedType?.description}

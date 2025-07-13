@@ -25,18 +25,19 @@ export function useRoomAssignment(onSuccess: () => void) {
         room_id: selectedRoom,
         assignment_type: assignmentType,
         assigned_at: new Date().toISOString(),
-        is_primary: assignmentType === 'primary_office' ? isPrimaryAssignment : false
+        is_primary: isPrimaryAssignment
       }));
 
       console.log('Creating room assignments:', assignments);
 
       // Check for existing primary assignments if this is a primary assignment
-      if (assignmentType === 'primary_office' && isPrimaryAssignment) {
+      if (isPrimaryAssignment) {
         for (const occupantId of selectedOccupants) {
           const { data: existingPrimary } = await supabase
             .from("occupant_room_assignments")
             .select("id")
             .eq("occupant_id", occupantId)
+            .eq("assignment_type", assignmentType)
             .eq("is_primary", true)
             .limit(1);
 
@@ -46,6 +47,7 @@ export function useRoomAssignment(onSuccess: () => void) {
               .from("occupant_room_assignments")
               .update({ is_primary: false })
               .eq("occupant_id", occupantId)
+              .eq("assignment_type", assignmentType)
               .eq("is_primary", true);
           }
         }
