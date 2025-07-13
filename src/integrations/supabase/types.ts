@@ -3942,6 +3942,133 @@ export type Database = {
           },
         ]
       }
+      maintenance_issues: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          description: string
+          id: string
+          issue_type: string
+          last_occurrence: string | null
+          maintenance_schedule_id: string | null
+          permanent_solution_needed: boolean | null
+          photos: string[] | null
+          recurring_issue: boolean | null
+          reported_by: string | null
+          resolution_notes: string | null
+          resolved_date: string | null
+          severity: string | null
+          space_id: string | null
+          space_name: string
+          space_type: string | null
+          status: string
+          temporary_fix_date: string | null
+          temporary_fix_description: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          issue_type: string
+          last_occurrence?: string | null
+          maintenance_schedule_id?: string | null
+          permanent_solution_needed?: boolean | null
+          photos?: string[] | null
+          recurring_issue?: boolean | null
+          reported_by?: string | null
+          resolution_notes?: string | null
+          resolved_date?: string | null
+          severity?: string | null
+          space_id?: string | null
+          space_name: string
+          space_type?: string | null
+          status?: string
+          temporary_fix_date?: string | null
+          temporary_fix_description?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          issue_type?: string
+          last_occurrence?: string | null
+          maintenance_schedule_id?: string | null
+          permanent_solution_needed?: boolean | null
+          photos?: string[] | null
+          recurring_issue?: boolean | null
+          reported_by?: string | null
+          resolution_notes?: string | null
+          resolved_date?: string | null
+          severity?: string | null
+          space_id?: string | null
+          space_name?: string
+          space_type?: string | null
+          status?: string
+          temporary_fix_date?: string | null
+          temporary_fix_description?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_issues_maintenance_schedule_id_fkey"
+            columns: ["maintenance_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_notifications: {
+        Row: {
+          created_at: string
+          delivery_method: string | null
+          id: string
+          maintenance_schedule_id: string | null
+          message: string
+          notification_type: string
+          read_at: string | null
+          sent_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          delivery_method?: string | null
+          id?: string
+          maintenance_schedule_id?: string | null
+          message: string
+          notification_type: string
+          read_at?: string | null
+          sent_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          delivery_method?: string | null
+          id?: string
+          maintenance_schedule_id?: string | null
+          message?: string
+          notification_type?: string
+          read_at?: string | null
+          sent_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_notifications_maintenance_schedule_id_fkey"
+            columns: ["maintenance_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_projects: {
         Row: {
           actual_end_date: string | null
@@ -4050,6 +4177,93 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      maintenance_schedules: {
+        Row: {
+          actual_cost: number | null
+          actual_end_date: string | null
+          actual_start_date: string | null
+          assigned_to: string | null
+          contractor_info: Json | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          estimated_cost: number | null
+          id: string
+          impact_level: string | null
+          maintenance_type: string
+          notes: string | null
+          notification_sent: boolean | null
+          priority: string | null
+          recurring_schedule: Json | null
+          reminder_dates: string[] | null
+          scheduled_end_date: string | null
+          scheduled_start_date: string
+          space_id: string | null
+          space_name: string
+          space_type: string | null
+          special_instructions: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          actual_cost?: number | null
+          actual_end_date?: string | null
+          actual_start_date?: string | null
+          assigned_to?: string | null
+          contractor_info?: Json | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          estimated_cost?: number | null
+          id?: string
+          impact_level?: string | null
+          maintenance_type: string
+          notes?: string | null
+          notification_sent?: boolean | null
+          priority?: string | null
+          recurring_schedule?: Json | null
+          reminder_dates?: string[] | null
+          scheduled_end_date?: string | null
+          scheduled_start_date: string
+          space_id?: string | null
+          space_name: string
+          space_type?: string | null
+          special_instructions?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          actual_cost?: number | null
+          actual_end_date?: string | null
+          actual_start_date?: string | null
+          assigned_to?: string | null
+          contractor_info?: Json | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          estimated_cost?: number | null
+          id?: string
+          impact_level?: string | null
+          maintenance_type?: string
+          notes?: string | null
+          notification_sent?: boolean | null
+          priority?: string | null
+          recurring_schedule?: Json | null
+          reminder_dates?: string[] | null
+          scheduled_end_date?: string | null
+          scheduled_start_date?: string
+          space_id?: string | null
+          space_name?: string
+          space_type?: string | null
+          special_instructions?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       occupant_position_history: {
         Row: {

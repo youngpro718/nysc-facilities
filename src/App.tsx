@@ -21,6 +21,7 @@ import ThemeSettings from "@/pages/settings/ThemeSettings";
 import TwoFactorAuth from "@/pages/settings/TwoFactorAuth";
 import SessionSettings from "@/pages/settings/SessionSettings";
 import AdminKeyRequests from "@/pages/admin/KeyRequests";
+import { MaintenanceDashboard } from "@/pages/MaintenanceDashboard";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/hooks/useAuth";
@@ -94,6 +95,11 @@ function App() {
                 <Route path="admin/key-requests" element={
                   <ProtectedRoute requireAdmin>
                     <AdminKeyRequests />
+                  </ProtectedRoute>
+                } />
+                <Route path="maintenance" element={
+                  <ProtectedRoute requireAdmin>
+                    <MaintenanceDashboard />
                   </ProtectedRoute>
                 } />
 
