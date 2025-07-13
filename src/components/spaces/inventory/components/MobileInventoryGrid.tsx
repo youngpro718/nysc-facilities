@@ -66,7 +66,18 @@ export function MobileInventoryGrid({
       {sortedItems.map(item => (
         <Card key={item.id} className="overflow-hidden">
           <CardContent className="p-4">
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              {/* Item Photo */}
+              {item.photo_url && (
+                <div className="shrink-0">
+                  <img 
+                    src={item.photo_url} 
+                    alt={item.name}
+                    className="w-16 h-16 object-cover rounded-lg border"
+                  />
+                </div>
+              )}
+              
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between mb-2">
                   <h4 className="font-medium text-base leading-tight truncate pr-2">
@@ -120,6 +131,12 @@ export function MobileInventoryGrid({
                 {item.description && (
                   <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                     {item.description}
+                  </p>
+                )}
+
+                {item.location_details && (
+                  <p className="text-xs text-muted-foreground mb-3 bg-muted/50 px-2 py-1 rounded">
+                    📍 {item.location_details}
                   </p>
                 )}
 

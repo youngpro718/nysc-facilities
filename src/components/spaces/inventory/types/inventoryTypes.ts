@@ -14,6 +14,9 @@ export interface InventoryItem {
   preferred_vendor?: string;
   reorder_point?: number;
   notes?: string;
+  photo_url?: string;
+  created_at?: string;
+  updated_at?: string;
   category?: {
     id: string;
     name: string;
@@ -52,6 +55,7 @@ export interface InventoryFormInputs {
   location_details?: string;
   preferred_vendor?: string;
   notes?: string;
+  photo_url?: string;
 }
 
 export interface BatchUpdateInput {

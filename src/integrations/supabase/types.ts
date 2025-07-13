@@ -2073,6 +2073,7 @@ export type Database = {
           minimum_quantity: number | null
           name: string
           notes: string | null
+          photo_url: string | null
           preferred_vendor: string | null
           quantity: number
           reorder_point: number | null
@@ -2091,6 +2092,7 @@ export type Database = {
           minimum_quantity?: number | null
           name: string
           notes?: string | null
+          photo_url?: string | null
           preferred_vendor?: string | null
           quantity?: number
           reorder_point?: number | null
@@ -2109,6 +2111,7 @@ export type Database = {
           minimum_quantity?: number | null
           name?: string
           notes?: string | null
+          photo_url?: string | null
           preferred_vendor?: string | null
           quantity?: number
           reorder_point?: number | null

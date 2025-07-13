@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { InventoryFormInputs, InventoryItem } from "../types/inventoryTypes";
 import { exportToExcel, parseExcelFile } from "../excelUtils";
-import { AddInventoryDialog } from "../AddInventoryDialog";
+import { MobileAddInventoryDialog } from "../MobileAddInventoryDialog";
 import { EditInventoryDialog } from "../EditInventoryDialog";
 import { MobileInventoryHeader } from "./MobileInventoryHeader";
 import { MobileInventoryGrid } from "./MobileInventoryGrid";
@@ -169,7 +169,7 @@ export function MobileRoomInventory({ roomId }: { roomId: string }) {
         />
       </ScrollArea>
 
-      <AddInventoryDialog
+      <MobileAddInventoryDialog
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
         onSubmit={handleSubmit}
