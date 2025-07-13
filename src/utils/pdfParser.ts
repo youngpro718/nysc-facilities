@@ -1,8 +1,8 @@
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
 
-// Configure PDF.js worker properly for browser environment
-console.log('🔧 Configuring PDF.js worker for browser...');
-GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+// Disable worker completely to avoid initialization issues
+console.log('🔧 Forcing PDF.js to run in main thread (no worker)...');
+GlobalWorkerOptions.workerSrc = '';
 
 // Add polyfill for Promise.withResolvers if not available
 declare global {
@@ -68,10 +68,10 @@ export const parsePDF = async (file: File): Promise<ParsedTermData> => {
     console.log(`📄 PDF parsing attempt ${attemptCount}/${maxAttempts}`);
     
     try {
-      // Ensure worker is properly configured on retry
+      // Ensure worker stays disabled on retry
       if (attemptCount > 1) {
         console.log('🔄 Preparing retry attempt...');
-        GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+        GlobalWorkerOptions.workerSrc = '';
         await new Promise(resolve => setTimeout(resolve, 500));
       }
       
