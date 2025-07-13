@@ -5,15 +5,21 @@ import { LightingFixtureCard } from "@/components/lighting/card/LightingFixtureC
 import { LightingHeader } from "@/components/lighting/components/LightingHeader";
 import { LightingFixture } from "@/components/lighting/types";
 import { MobileLightingList } from "@/components/lighting/mobile/MobileLightingList";
+import { RoomLightingView } from "@/components/lighting/room-view/RoomLightingView";
+import { Button } from "@/components/ui/button";
+import { LayoutGrid, List } from "lucide-react";
 
 interface LightingFixturesListProps {
   selectedBuilding?: string;
   selectedFloor?: string;
 }
 
+type ViewMode = 'all' | 'by-room';
+
 export const LightingFixturesList = ({ selectedBuilding, selectedFloor }: LightingFixturesListProps) => {
   const [selectedFixtures, setSelectedFixtures] = useState<string[]>([]);
   const [isMobile, setIsMobile] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('by-room');
   
   const { 
     fixtures, 
@@ -46,6 +52,14 @@ export const LightingFixturesList = ({ selectedBuilding, selectedFloor }: Lighti
     if (selectedFixtures.length > 0) {
       await handleBulkDelete(selectedFixtures);
       setSelectedFixtures([]);
+    }
+  };
+
+  const handleFixtureSelect = (fixtureId: string, selected: boolean) => {
+    if (selected) {
+      setSelectedFixtures([...selectedFixtures, fixtureId]);
+    } else {
+      setSelectedFixtures(selectedFixtures.filter(id => id !== fixtureId));
     }
   };
 
@@ -92,29 +106,62 @@ export const LightingFixturesList = ({ selectedBuilding, selectedFloor }: Lighti
         onFixtureCreated={refetch}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {fixtures?.map((fixture) => (
-          <LightingFixtureCard
-            key={fixture.id}
-            fixture={fixture}
-            isSelected={selectedFixtures.includes(fixture.id)}
-            onSelect={(checked) => {
-              if (checked) {
-                setSelectedFixtures([...selectedFixtures, fixture.id]);
-              } else {
-                setSelectedFixtures(selectedFixtures.filter(id => id !== fixture.id));
-              }
-            }}
-            onDelete={() => handleDelete(fixture.id)}
-            onFixtureUpdated={refetch}
-          />
-        ))}
+      {/* View mode toggle */}
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Button
+            variant={viewMode === 'by-room' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('by-room')}
+            className="flex items-center gap-2"
+          >
+            <LayoutGrid className="h-4 w-4" />
+            By Room
+          </Button>
+          <Button
+            variant={viewMode === 'all' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('all')}
+            className="flex items-center gap-2"
+          >
+            <List className="h-4 w-4" />
+            All Fixtures
+          </Button>
+        </div>
       </div>
 
-      {(!fixtures || fixtures.length === 0) && (
-        <div className="text-center py-8 text-gray-500">
-          No lighting fixtures found
-        </div>
+      {/* Render based on view mode */}
+      {viewMode === 'by-room' ? (
+        <RoomLightingView
+          fixtures={fixtures || []}
+          selectedFixtures={selectedFixtures}
+          onFixtureSelect={handleFixtureSelect}
+          onFixtureDelete={handleDelete}
+          onFixtureUpdated={refetch}
+          selectedBuilding={selectedBuilding}
+          selectedFloor={selectedFloor}
+        />
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {fixtures?.map((fixture) => (
+              <LightingFixtureCard
+                key={fixture.id}
+                fixture={fixture}
+                isSelected={selectedFixtures.includes(fixture.id)}
+                onSelect={(checked) => handleFixtureSelect(fixture.id, checked)}
+                onDelete={() => handleDelete(fixture.id)}
+                onFixtureUpdated={refetch}
+              />
+            ))}
+          </div>
+
+          {(!fixtures || fixtures.length === 0) && (
+            <div className="text-center py-8 text-gray-500">
+              No lighting fixtures found
+            </div>
+          )}
+        </>
       )}
     </div>
   );
