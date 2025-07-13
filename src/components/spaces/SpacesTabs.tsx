@@ -1,10 +1,11 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, DoorClosed, GitFork, LayoutPanelLeft } from "lucide-react";
+import { Building2, DoorClosed, GitFork, LayoutPanelLeft, Package } from "lucide-react";
 import RoomsPage from "./views/RoomsPage";
 import HallwaysList from "./HallwaysList";
 import DoorsList from "./DoorsList";
 import { FloorPlanView } from "./floorplan/FloorPlanView";
+import { InventoryDashboard } from "@/components/inventory/InventoryDashboard";
 import { Suspense, useState } from "react";
 
 export interface SpaceViewProps {
@@ -35,6 +36,10 @@ const SpacesTabs = ({ selectedBuilding, selectedFloor }: SpaceViewProps) => {
             <LayoutPanelLeft size={16} />
             Floor Plan
           </TabsTrigger>
+          <TabsTrigger value="inventory" className="flex items-center gap-2">
+            <Package size={16} />
+            Inventory
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="rooms" className="mt-4">
@@ -53,6 +58,10 @@ const SpacesTabs = ({ selectedBuilding, selectedFloor }: SpaceViewProps) => {
           <Suspense fallback={<div className="flex items-center justify-center h-full">Loading floor plan...</div>}>
             <FloorPlanView />
           </Suspense>
+        </TabsContent>
+
+        <TabsContent value="inventory" className="mt-4">
+          <InventoryDashboard />
         </TabsContent>
       </Tabs>
     </div>

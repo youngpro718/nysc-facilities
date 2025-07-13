@@ -13,7 +13,6 @@ import {
   MessageSquare,
   Wrench,
   Gavel,
-  Package,
 } from 'lucide-react';
 import { NavigationTab, NavigationItem } from '../types';
 
@@ -73,12 +72,6 @@ export const navigationItems: NavigationItem[] = [
     icon: Gavel,
     adminOnly: true,
   },
-  {
-    title: 'Inventory',
-    href: '/inventory',
-    icon: Package,
-    adminOnly: true,
-  },
 ];
 
 export const userNavigationItems: NavigationItem[] = [
@@ -106,7 +99,6 @@ export const adminNavigation: NavigationTab[] = [
   { title: 'Lighting', icon: Zap },
   { title: 'Maintenance', icon: Wrench },
   { title: 'Court Operations', icon: Gavel },
-  { title: 'Inventory', icon: Package },
   { type: "separator" },
   { title: 'Admin Profile', icon: UserCog },
 ];
@@ -131,7 +123,6 @@ export const getNavigationRoutes = (isAdmin: boolean): string[] => {
       '/lighting',
       '/maintenance',
       '/court-operations',
-      '/inventory',
       '', // Separator doesn't have a route
       '/admin-profile',
     ];
