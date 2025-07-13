@@ -507,6 +507,13 @@ export type Database = {
             foreignKeyName: "court_assignments_term_id_fkey"
             columns: ["term_id"]
             isOneToOne: false
+            referencedRelation: "court_operations_dashboard"
+            referencedColumns: ["term_id"]
+          },
+          {
+            foreignKeyName: "court_assignments_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
             referencedRelation: "court_terms"
             referencedColumns: ["id"]
           },
@@ -549,9 +556,14 @@ export type Database = {
           created_at: string | null
           id: string
           is_active: boolean | null
+          maintenance_end_date: string | null
+          maintenance_notes: string | null
+          maintenance_start_date: string | null
+          maintenance_status: string | null
           notes: string | null
           room_id: string
           room_number: string
+          temporary_location: string | null
           updated_at: string | null
         }
         Insert: {
@@ -559,9 +571,14 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          maintenance_end_date?: string | null
+          maintenance_notes?: string | null
+          maintenance_start_date?: string | null
+          maintenance_status?: string | null
           notes?: string | null
           room_id: string
           room_number: string
+          temporary_location?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -569,9 +586,14 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          maintenance_end_date?: string | null
+          maintenance_notes?: string | null
+          maintenance_start_date?: string | null
+          maintenance_status?: string | null
           notes?: string | null
           room_id?: string
           room_number?: string
+          temporary_location?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -621,49 +643,64 @@ export type Database = {
       }
       court_terms: {
         Row: {
+          courtroom_assignments: Json | null
           created_at: string | null
           created_by: string | null
           description: string | null
           end_date: string
+          extracted_data: Json | null
           id: string
           location: string
           metadata: Json | null
+          notes: string | null
           pdf_url: string | null
           start_date: string
           status: string | null
           term_name: string
           term_number: string
+          term_status: string | null
           updated_at: string | null
+          uploaded_pdf_path: string | null
         }
         Insert: {
+          courtroom_assignments?: Json | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
           end_date: string
+          extracted_data?: Json | null
           id?: string
           location: string
           metadata?: Json | null
+          notes?: string | null
           pdf_url?: string | null
           start_date: string
           status?: string | null
           term_name: string
           term_number: string
+          term_status?: string | null
           updated_at?: string | null
+          uploaded_pdf_path?: string | null
         }
         Update: {
+          courtroom_assignments?: Json | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
           end_date?: string
+          extracted_data?: Json | null
           id?: string
           location?: string
           metadata?: Json | null
+          notes?: string | null
           pdf_url?: string | null
           start_date?: string
           status?: string | null
           term_name?: string
           term_number?: string
+          term_status?: string | null
           updated_at?: string | null
+          uploaded_pdf_path?: string | null
         }
         Relationships: []
       }
@@ -4020,6 +4057,13 @@ export type Database = {
             foreignKeyName: "maintenance_issues_maintenance_schedule_id_fkey"
             columns: ["maintenance_schedule_id"]
             isOneToOne: false
+            referencedRelation: "court_maintenance_view"
+            referencedColumns: ["maintenance_schedule_id"]
+          },
+          {
+            foreignKeyName: "maintenance_issues_maintenance_schedule_id_fkey"
+            columns: ["maintenance_schedule_id"]
+            isOneToOne: false
             referencedRelation: "maintenance_schedules"
             referencedColumns: ["id"]
           },
@@ -4060,6 +4104,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "maintenance_notifications_maintenance_schedule_id_fkey"
+            columns: ["maintenance_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "court_maintenance_view"
+            referencedColumns: ["maintenance_schedule_id"]
+          },
           {
             foreignKeyName: "maintenance_notifications_maintenance_schedule_id_fkey"
             columns: ["maintenance_schedule_id"]
@@ -6223,6 +6274,13 @@ export type Database = {
             foreignKeyName: "room_relocations_term_id_fkey"
             columns: ["term_id"]
             isOneToOne: false
+            referencedRelation: "court_operations_dashboard"
+            referencedColumns: ["term_id"]
+          },
+          {
+            foreignKeyName: "room_relocations_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
             referencedRelation: "court_terms"
             referencedColumns: ["id"]
           },
@@ -6893,6 +6951,13 @@ export type Database = {
             foreignKeyName: "fk_term_assignments_term"
             columns: ["term_id"]
             isOneToOne: false
+            referencedRelation: "court_operations_dashboard"
+            referencedColumns: ["term_id"]
+          },
+          {
+            foreignKeyName: "fk_term_assignments_term"
+            columns: ["term_id"]
+            isOneToOne: false
             referencedRelation: "court_terms"
             referencedColumns: ["id"]
           },
@@ -6956,6 +7021,13 @@ export type Database = {
             foreignKeyName: "term_assignments_term_id_fkey"
             columns: ["term_id"]
             isOneToOne: false
+            referencedRelation: "court_operations_dashboard"
+            referencedColumns: ["term_id"]
+          },
+          {
+            foreignKeyName: "term_assignments_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
             referencedRelation: "court_terms"
             referencedColumns: ["id"]
           },
@@ -7006,6 +7078,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "term_personnel_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "court_operations_dashboard"
+            referencedColumns: ["term_id"]
+          },
           {
             foreignKeyName: "term_personnel_term_id_fkey"
             columns: ["term_id"]
@@ -7280,6 +7359,87 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      court_maintenance_view: {
+        Row: {
+          building_name: string | null
+          court_room_id: string | null
+          courtroom_number: string | null
+          floor_id: string | null
+          floor_name: string | null
+          impact_level: string | null
+          maintenance_end_date: string | null
+          maintenance_notes: string | null
+          maintenance_schedule_id: string | null
+          maintenance_start_date: string | null
+          maintenance_status: string | null
+          maintenance_status_detail: string | null
+          maintenance_title: string | null
+          maintenance_type: string | null
+          priority: string | null
+          room_name: string | null
+          room_number: string | null
+          scheduled_end_date: string | null
+          scheduled_start_date: string | null
+          temporary_location: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rooms_floor_id_fkey"
+            columns: ["floor_id"]
+            isOneToOne: false
+            referencedRelation: "floorplan_report_data"
+            referencedColumns: ["floor_id"]
+          },
+          {
+            foreignKeyName: "rooms_floor_id_fkey"
+            columns: ["floor_id"]
+            isOneToOne: false
+            referencedRelation: "floors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rooms_floor_id_fkey"
+            columns: ["floor_id"]
+            isOneToOne: false
+            referencedRelation: "key_door_locations"
+            referencedColumns: ["floor_id"]
+          },
+        ]
+      }
+      court_operations_dashboard: {
+        Row: {
+          active_assignments: number | null
+          available_courtrooms: number | null
+          end_date: string | null
+          location: string | null
+          maintenance_courtrooms: number | null
+          relocated_courtrooms: number | null
+          start_date: string | null
+          term_id: string | null
+          term_name: string | null
+          term_number: string | null
+          term_status: string | null
+          total_courtrooms: number | null
+        }
+        Relationships: []
+      }
+      courtroom_availability: {
+        Row: {
+          availability_status: string | null
+          building_name: string | null
+          courtroom_number: string | null
+          floor_name: string | null
+          id: string | null
+          is_active: boolean | null
+          maintenance_end_date: string | null
+          maintenance_start_date: string | null
+          maintenance_status: string | null
+          room_name: string | null
+          room_number: string | null
+          temporary_location: string | null
+        }
+        Relationships: []
       }
       floorplan_report_data: {
         Row: {

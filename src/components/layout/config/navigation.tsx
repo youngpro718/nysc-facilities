@@ -12,6 +12,7 @@ import {
   FileText,
   MessageSquare,
   Wrench,
+  Gavel,
 } from 'lucide-react';
 import { NavigationTab, NavigationItem } from '../types';
 
@@ -65,6 +66,12 @@ export const navigationItems: NavigationItem[] = [
     icon: Wrench,
     adminOnly: true,
   },
+  {
+    title: 'Court Operations',
+    href: '/court-operations',
+    icon: Gavel,
+    adminOnly: true,
+  },
 ];
 
 export const userNavigationItems: NavigationItem[] = [
@@ -91,6 +98,7 @@ export const adminNavigation: NavigationTab[] = [
   { title: 'Keys', icon: KeyRound },
   { title: 'Lighting', icon: Zap },
   { title: 'Maintenance', icon: Wrench },
+  { title: 'Court Operations', icon: Gavel },
   { type: "separator" },
   { title: 'Admin Profile', icon: UserCog },
 ];
@@ -114,6 +122,7 @@ export const getNavigationRoutes = (isAdmin: boolean): string[] => {
       '/keys',
       '/lighting',
       '/maintenance',
+      '/court-operations',
       '', // Separator doesn't have a route
       '/admin-profile',
     ];

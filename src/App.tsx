@@ -22,6 +22,7 @@ import TwoFactorAuth from "@/pages/settings/TwoFactorAuth";
 import SessionSettings from "@/pages/settings/SessionSettings";
 import AdminKeyRequests from "@/pages/admin/KeyRequests";
 import { MaintenanceDashboard } from "@/pages/MaintenanceDashboard";
+import { CourtOperationsDashboard } from "@/pages/CourtOperationsDashboard";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/hooks/useAuth";
@@ -100,6 +101,11 @@ function App() {
                 <Route path="maintenance" element={
                   <ProtectedRoute requireAdmin>
                     <MaintenanceDashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="court-operations" element={
+                  <ProtectedRoute requireAdmin>
+                    <CourtOperationsDashboard />
                   </ProtectedRoute>
                 } />
 
