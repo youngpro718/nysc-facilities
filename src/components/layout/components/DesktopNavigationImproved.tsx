@@ -4,6 +4,7 @@ import { LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NavigationTab } from "../types";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useAuthSession } from "@/hooks/useAuthSession";
 
 interface DesktopNavigationImprovedProps {
   navigation: NavigationTab[];
@@ -16,10 +17,11 @@ export const DesktopNavigationImproved = ({
 }: DesktopNavigationImprovedProps) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAdmin } = useAuthSession();
 
   const handleNavigation = (title: string) => {
     const pathMap: Record<string, string> = {
-      'Dashboard': '/',
+      'Dashboard': isAdmin ? '/' : '/dashboard',
       'Spaces': '/spaces',
       'Issues': '/issues',
       'Occupants': '/occupants',
@@ -51,7 +53,7 @@ export const DesktopNavigationImproved = ({
           // Type assertion since we know this is not a separator
           const navItem = item as { title: string; icon: any };
           const Icon = navItem.icon;
-          const isActive = location.pathname === getNavigationPath(navItem.title);
+          const isActive = location.pathname === getNavigationPath(navItem.title, isAdmin);
           
           return (
             <Tooltip key={navItem.title}>
@@ -99,9 +101,9 @@ export const DesktopNavigationImproved = ({
 };
 
 // Helper function to get navigation path
-function getNavigationPath(title: string): string {
+function getNavigationPath(title: string, isAdmin?: boolean): string {
   const pathMap: Record<string, string> = {
-    'Dashboard': '/',
+    'Dashboard': isAdmin ? '/' : '/dashboard',
     'Spaces': '/spaces',
     'Issues': '/issues',
     'Occupants': '/occupants',

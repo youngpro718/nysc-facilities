@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { NavigationTab } from "../types";
 import { MobileNavigationGrid } from "./MobileNavigationGrid";
+import { useAuthSession } from "@/hooks/useAuthSession";
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ export const MobileMenu = ({
   onNavigationChange,
   onSignOut
 }: MobileMenuProps) => {
+  const { isAdmin } = useAuthSession();
   // Convert navigation tabs to grid items, filtering out separators
   const navigationItems = navigation
     .filter(item => item.type !== "separator")
@@ -29,7 +31,7 @@ export const MobileMenu = ({
       return {
         title: navItem.title,
         icon: navItem.icon,
-        path: getNavigationPath(navItem.title, index),
+        path: getNavigationPath(navItem.title, isAdmin),
         description: getNavigationDescription(navItem.title),
       };
     });
@@ -69,9 +71,9 @@ export const MobileMenu = ({
 };
 
 // Helper functions to map navigation items to paths and descriptions
-function getNavigationPath(title: string, index: number): string {
+function getNavigationPath(title: string, isAdmin?: boolean): string {
   const pathMap: Record<string, string> = {
-    'Dashboard': '/',
+    'Dashboard': isAdmin ? '/' : '/dashboard',
     'Spaces': '/spaces',
     'Issues': '/issues',
     'Occupants': '/occupants',
