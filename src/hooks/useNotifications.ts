@@ -129,11 +129,66 @@ export const useNotifications = (userId?: string) => {
     }
   };
 
+  const clearNotification = async (notificationId: string) => {
+    if (!userId) {
+      console.error('clearNotification: No user ID available');
+      return;
+    }
+
+    console.log('Clearing notification:', { notificationId, userId });
+
+    try {
+      const { error } = await supabase
+        .from('user_notifications')
+        .delete()
+        .eq('id', notificationId)
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('Error clearing notification:', error);
+        throw error;
+      }
+
+      console.log('Notification cleared successfully');
+      queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
+    } catch (error) {
+      console.error('Failed to clear notification:', error);
+    }
+  };
+
+  const clearAllNotifications = async () => {
+    if (!userId) {
+      console.error('clearAllNotifications: No user ID available');
+      return;
+    }
+
+    console.log('Clearing all notifications for user:', userId);
+
+    try {
+      const { error } = await supabase
+        .from('user_notifications')
+        .delete()
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('Error clearing all notifications:', error);
+        throw error;
+      }
+
+      console.log('All notifications cleared successfully');
+      queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
+    } catch (error) {
+      console.error('Failed to clear all notifications:', error);
+    }
+  };
+
   return {
     ...query,
     notifications: query.data || [],
     unreadCount: query.data?.filter(n => !n.read).length || 0,
     markAsRead,
-    markAllAsRead
+    markAllAsRead,
+    clearNotification,
+    clearAllNotifications
   };
 };

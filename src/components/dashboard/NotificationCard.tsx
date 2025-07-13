@@ -1,12 +1,18 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Check, Clock, Key, XCircle, CheckCircle } from "lucide-react";
+import { Bell, Check, Clock, Key, XCircle, CheckCircle, Trash2, MoreVertical } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export interface Notification {
   id: string;
@@ -25,9 +31,11 @@ interface NotificationCardProps {
   notifications: Notification[];
   onMarkAsRead: (id: string) => void;
   onMarkAllAsRead: () => void;
+  onClearNotification: (id: string) => void;
+  onClearAllNotifications: () => void;
 }
 
-export function NotificationCard({ notifications, onMarkAsRead, onMarkAllAsRead }: NotificationCardProps) {
+export function NotificationCard({ notifications, onMarkAsRead, onMarkAllAsRead, onClearNotification, onClearAllNotifications }: NotificationCardProps) {
   const unreadCount = notifications.filter(n => !n.read).length;
   const isMobile = useIsMobile();
   const navigate = useNavigate();
@@ -98,15 +106,34 @@ export function NotificationCard({ notifications, onMarkAsRead, onMarkAllAsRead 
               {unreadCount} unread
             </Badge>
           )}
-          <Button 
-            variant="outline" 
-            size={isMobile ? "sm" : "default"}
-            onClick={onMarkAllAsRead}
-            disabled={unreadCount === 0}
-            className="whitespace-nowrap"
-          >
-            {isMobile ? "Mark all" : "Mark all as read"}
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="outline" 
+                size={isMobile ? "sm" : "default"}
+                className="whitespace-nowrap"
+              >
+                {isMobile ? "Actions" : "Notification Actions"}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem 
+                onClick={onMarkAllAsRead}
+                disabled={unreadCount === 0}
+              >
+                <Check className="h-4 w-4 mr-2" />
+                Mark all as read
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={onClearAllNotifications}
+                disabled={notifications.length === 0}
+                className="text-destructive"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Clear all notifications
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
       
@@ -150,6 +177,38 @@ export function NotificationCard({ notifications, onMarkAsRead, onMarkAllAsRead 
                     <p className="text-xs text-muted-foreground">
                       {format(new Date(notification.created_at), isMobile ? "MMM d, h:mm a" : "PPp")}
                     </p>
+                  </div>
+                  <div className="shrink-0">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {!notification.read && (
+                          <DropdownMenuItem 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onMarkAsRead(notification.id);
+                            }}
+                          >
+                            <Check className="h-4 w-4 mr-2" />
+                            Mark as read
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onClearNotification(notification.id);
+                          }}
+                          className="text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Clear notification
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               </div>
