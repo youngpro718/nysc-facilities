@@ -39,15 +39,17 @@ export function ResponsiveDialog({
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className={cn("max-h-[95vh] pb-safe", className)}>
+        <DrawerContent className={cn("max-h-[95vh] pb-safe flex flex-col", className)}>
           {(title || description) && (
-            <DrawerHeader className="pb-4">
+            <DrawerHeader className="pb-4 flex-shrink-0">
               {title && <DrawerTitle className="text-center">{title}</DrawerTitle>}
               {description && <DrawerDescription className="text-center">{description}</DrawerDescription>}
             </DrawerHeader>
           )}
-          <div className="px-4 pb-6 overflow-y-auto flex-1">
-            {children}
+          <div className="px-4 pb-6 overflow-y-auto flex-1 min-h-0">
+            <div className="space-y-4">
+              {children}
+            </div>
           </div>
         </DrawerContent>
       </Drawer>

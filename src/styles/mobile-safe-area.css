@@ -26,6 +26,20 @@
   padding-bottom: calc(env(safe-area-inset-bottom) + 1rem);
 }
 
+/* Enhanced bottom navigation spacing */
+.pb-nav-safe {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 5rem);
+}
+
+/* Improved scrolling indicators */
+.scroll-indicator-left {
+  background: linear-gradient(to right, var(--background) 0%, transparent 100%);
+}
+
+.scroll-indicator-right {
+  background: linear-gradient(to left, var(--background) 0%, transparent 100%);
+}
+
 /* Custom scrollbar hiding for mobile */
 .scrollbar-hide {
   -ms-overflow-style: none;

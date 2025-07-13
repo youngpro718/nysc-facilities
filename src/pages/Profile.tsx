@@ -127,7 +127,7 @@ export default function Profile() {
   }
 
   return (
-    <div className="space-y-6 sm:space-y-8 pb-20">
+    <div className="space-y-6 sm:space-y-8 pb-nav-safe">
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -150,6 +150,8 @@ export default function Profile() {
       <Tabs defaultValue="profile" className="w-full space-y-6 sm:space-y-8">
         <div className="overflow-x-auto scrollbar-hide">
           <TabsList className="grid w-full min-w-max grid-cols-4 gap-1 bg-muted p-1 h-auto">
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-6 h-full bg-gradient-to-r from-muted to-transparent pointer-events-none z-10 rounded-l-md" />
+            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-6 h-full bg-gradient-to-l from-muted to-transparent pointer-events-none z-10 rounded-r-md" />
             <TabsTrigger 
               value="profile" 
               className="flex items-center gap-2 px-4 py-3 text-sm data-[state=active]:bg-background data-[state=active]:text-foreground transition-colors whitespace-nowrap"
