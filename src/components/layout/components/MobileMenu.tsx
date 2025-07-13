@@ -38,25 +38,27 @@ export const MobileMenu = ({
       </SheetTrigger>
       <SheetContent 
         side="right" 
-        className="w-[85%] sm:w-[385px] border-l border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/75"
+        className="w-[85%] sm:w-[385px] border-l border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/75 safe-area-right"
       >
         <SheetHeader className="border-b border-border pb-4">
           <SheetTitle className="text-lg font-semibold">Menu</SheetTitle>
         </SheetHeader>
-        <nav className="flex flex-col gap-4 pt-6">
+        <nav className="flex flex-col gap-4 pt-6 pb-safe">
           <ExpandableTabs 
             tabs={navigation as any}
             className="flex-col !bg-transparent"
             onChange={onNavigationChange}
           />
-          <Button
-            onClick={onSignOut}
-            className="w-full mt-4"
-            variant="destructive"
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
-          </Button>
+          <div className="mt-auto pt-8">
+            <Button
+              onClick={onSignOut}
+              className="w-full h-12 text-base"
+              variant="destructive"
+            >
+              <LogOut className="mr-2 h-5 w-5" />
+              Sign Out
+            </Button>
+          </div>
         </nav>
       </SheetContent>
     </Sheet>

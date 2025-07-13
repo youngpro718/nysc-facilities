@@ -33,25 +33,29 @@ const Layout = () => {
   return (
     <div className="min-h-screen bg-background">
       {!isLoginPage && isAuthenticated && (
-        <header className="bg-card shadow sticky top-0 z-50">
+        <header className="bg-card shadow sticky top-0 z-50 safe-area-top">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex h-16 items-center justify-between">
-              <div className="flex items-center gap-3">
+            <div className="flex h-14 sm:h-16 items-center justify-between">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <img 
                   src="/lovable-uploads/ca12c24b-cc46-4318-b46d-8af88c0deae9.png" 
                   alt="NYSC Logo" 
-                  className="h-10 w-10"
+                  className="h-8 w-8 sm:h-10 sm:w-10"
                 />
-                <h1 className="text-xl font-bold text-foreground">NYSC Facilities Hub</h1>
+                <h1 className="text-lg sm:text-xl font-bold text-foreground truncate">
+                  NYSC Facilities Hub
+                </h1>
               </div>
 
-              <div className="flex items-center gap-4">
-                {/* Theme Toggle */}
-                <ThemeToggle />
+              <div className="flex items-center gap-2 sm:gap-4">
+                {/* Theme Toggle - Hidden on mobile for space */}
+                <div className="hidden sm:block">
+                  <ThemeToggle />
+                </div>
 
                 {/* Profile Section */}
-                <div className="flex items-center gap-3">
-                  <div className="hidden md:flex flex-col items-end">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="hidden lg:flex flex-col items-end">
                     <span className="text-sm font-medium">
                       {profile?.first_name} {profile?.last_name}
                     </span>
@@ -60,14 +64,14 @@ const Layout = () => {
                     </span>
                   </div>
                   <button
-                    className="focus:outline-none"
+                    className="focus:outline-none p-1 rounded-full hover:bg-muted/50 transition-colors"
                     title="Profile"
                     onClick={() => {
                       // Navigate to appropriate profile page based on user role
                       navigate(isAdmin ? '/admin-profile' : '/profile');
                     }}
                   >
-                    <Avatar className="h-8 w-8">
+                    <Avatar className="h-9 w-9 sm:h-8 sm:w-8">
                       <AvatarImage src={profile?.avatar_url} />
                       <AvatarFallback>
                         <UserRound className="h-4 w-4" />
@@ -101,8 +105,8 @@ const Layout = () => {
         </header>
       )}
 
-      <main className="flex-1">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 pb-safe">
+        <div className="mx-auto max-w-7xl px-3 sm:px-4 lg:px-8 py-4 sm:py-8">
           <Outlet />
         </div>
       </main>

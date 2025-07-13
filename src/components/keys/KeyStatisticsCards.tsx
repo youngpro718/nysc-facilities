@@ -12,14 +12,14 @@ interface KeyStatisticsCardsProps {
 export function KeyStatisticsCards({ keyStats, isLoading }: KeyStatisticsCardsProps) {
   if (isLoading) {
     return (
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
         {Array(4).fill(0).map((_, i) => (
           <Card key={i} className="bg-card">
-            <CardHeader className="pb-2">
-              <Skeleton className="h-4 w-24" />
+            <CardHeader className="pb-2 p-3 sm:p-4">
+              <Skeleton className="h-3 sm:h-4 w-20 sm:w-24" />
             </CardHeader>
-            <CardContent>
-              <Skeleton className="h-8 w-16" />
+            <CardContent className="p-3 sm:p-4 pt-0">
+              <Skeleton className="h-6 sm:h-8 w-12 sm:w-16" />
             </CardContent>
           </Card>
         ))}
@@ -35,49 +35,49 @@ export function KeyStatisticsCards({ keyStats, isLoading }: KeyStatisticsCardsPr
   };
 
   return (
-    <div className="grid gap-4 md:grid-cols-4">
+    <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
       <Card className="bg-card hover:bg-card/90 transition-colors">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <Database className="h-4 w-4" />
-            Total Keys
+        <CardHeader className="pb-2 p-3 sm:p-4">
+          <CardTitle className="text-xs sm:text-sm font-medium flex items-center gap-1.5 sm:gap-2">
+            <Database className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="truncate">Total Keys</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-2xl font-bold">{stats.totalKeys}</p>
+        <CardContent className="p-3 sm:p-4 pt-0">
+          <p className="text-xl sm:text-2xl font-bold">{stats.totalKeys}</p>
         </CardContent>
       </Card>
       <Card className="bg-card hover:bg-card/90 transition-colors">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <Package2 className="h-4 w-4" />
-            Total Stock
+        <CardHeader className="pb-2 p-3 sm:p-4">
+          <CardTitle className="text-xs sm:text-sm font-medium flex items-center gap-1.5 sm:gap-2">
+            <Package2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="truncate">Total Stock</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-2xl font-bold">{stats.totalStock}</p>
+        <CardContent className="p-3 sm:p-4 pt-0">
+          <p className="text-xl sm:text-2xl font-bold">{stats.totalStock}</p>
         </CardContent>
       </Card>
       <Card className="bg-card hover:bg-card/90 transition-colors">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            Assigned
+        <CardHeader className="pb-2 p-3 sm:p-4">
+          <CardTitle className="text-xs sm:text-sm font-medium flex items-center gap-1.5 sm:gap-2">
+            <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="truncate">Assigned</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-2xl font-bold">{stats.assigned}</p>
+        <CardContent className="p-3 sm:p-4 pt-0">
+          <p className="text-xl sm:text-2xl font-bold">{stats.assigned}</p>
         </CardContent>
       </Card>
       <Card className="bg-card hover:bg-card/90 transition-colors">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <List className="h-4 w-4" />
-            Available
+        <CardHeader className="pb-2 p-3 sm:p-4">
+          <CardTitle className="text-xs sm:text-sm font-medium flex items-center gap-1.5 sm:gap-2">
+            <List className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="truncate">Available</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-2xl font-bold">{stats.available}</p>
+        <CardContent className="p-3 sm:p-4 pt-0">
+          <p className="text-xl sm:text-2xl font-bold">{stats.available}</p>
         </CardContent>
       </Card>
     </div>

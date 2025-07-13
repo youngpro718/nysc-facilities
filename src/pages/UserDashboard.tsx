@@ -35,17 +35,17 @@ export default function UserDashboard() {
   const [showIssueReport, setShowIssueReport] = useState(false);
 
   return (
-    <div className="space-y-8 pb-20">
-      <div className="space-y-0.5">
-        <h2 className="text-2xl font-semibold tracking-tight">
+    <div className="space-y-6 sm:space-y-8 pb-20">
+      <div className="space-y-1">
+        <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">
           Welcome, {firstName} {lastName}!
         </h2>
-        <p className="text-muted-foreground">
+        <p className="text-sm sm:text-base text-muted-foreground">
           Here's what's happening in your organization today.
         </p>
       </div>
       
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
         <NotificationCard 
           notifications={notifications} 
           onMarkAsRead={() => {}} 

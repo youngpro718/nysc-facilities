@@ -37,53 +37,58 @@ export default function Profile() {
   };
 
   return (
-    <div className="container mx-auto py-10 px-4 max-w-6xl">
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
+    <div className="space-y-6 sm:space-y-8 pb-20">
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
             <Button 
               variant="ghost" 
               size="icon"
               onClick={() => navigate('/dashboard')}
+              className="h-9 w-9 sm:h-10 sm:w-10"
             >
-              <ChevronLeft className="h-5 w-5" />
+              <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
-            <h1 className="text-3xl font-bold tracking-tight">Profile Settings</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Profile Settings</h1>
           </div>
         </div>
-        <p className="text-muted-foreground mt-2">
+        <p className="text-sm sm:text-base text-muted-foreground ml-12 sm:ml-0">
           Manage your account settings and preferences
         </p>
       </div>
       
-      <Tabs defaultValue="profile" className="w-full space-y-8">
-        <TabsList className="grid w-full grid-cols-1 md:grid-cols-3 gap-4 bg-background p-1">
-          <TabsTrigger 
-            value="profile" 
-            className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
-          >
-            <User className="h-4 w-4" />
-            Profile
-          </TabsTrigger>
-          <TabsTrigger 
-            value="security" 
-            className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
-          >
-            <Shield className="h-4 w-4" />
-            Security
-          </TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="profile" className="w-full space-y-6 sm:space-y-8">
+        <div className="overflow-x-auto scrollbar-hide">
+          <TabsList className="grid w-full min-w-max grid-cols-2 gap-1 bg-muted p-1 h-auto">
+            <TabsTrigger 
+              value="profile" 
+              className="flex items-center gap-2 px-4 py-3 text-sm data-[state=active]:bg-background data-[state=active]:text-foreground transition-colors whitespace-nowrap"
+            >
+              <User className="h-4 w-4" />
+              Profile
+            </TabsTrigger>
+            <TabsTrigger 
+              value="security" 
+              className="flex items-center gap-2 px-4 py-3 text-sm data-[state=active]:bg-background data-[state=active]:text-foreground transition-colors whitespace-nowrap"
+            >
+              <Shield className="h-4 w-4" />
+              Security
+            </TabsTrigger>
+          </TabsList>
+        </div>
         
-        <TabsContent value="profile" className="space-y-6">
-          <Card className="p-6">
-            <ProfileHeader />
+        <TabsContent value="profile" className="space-y-4 sm:space-y-6 mt-6">
+          <Card className="border-0 sm:border sm:shadow-sm">
+            <div className="p-4 sm:p-6">
+              <ProfileHeader />
+            </div>
           </Card>
           
-          <Card className="p-6">
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-semibold tracking-tight">Personal Information</h2>
-                <p className="text-muted-foreground mt-2">
+          <Card className="border-0 sm:border sm:shadow-sm">
+            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+              <div className="space-y-2">
+                <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">Personal Information</h2>
+                <p className="text-sm sm:text-base text-muted-foreground">
                   Update your personal details and contact information
                 </p>
               </div>
@@ -91,11 +96,11 @@ export default function Profile() {
             </div>
           </Card>
 
-          <Card className="p-6">
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-semibold tracking-tight">Notification Settings</h2>
-                <p className="text-muted-foreground mt-2">
+          <Card className="border-0 sm:border sm:shadow-sm">
+            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+              <div className="space-y-2">
+                <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">Notification Settings</h2>
+                <p className="text-sm sm:text-base text-muted-foreground">
                   Choose how you want to receive notifications
                 </p>
               </div>
@@ -104,7 +109,7 @@ export default function Profile() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="security">
+        <TabsContent value="security" className="mt-6">
           <SecuritySection />
         </TabsContent>
       </Tabs>
