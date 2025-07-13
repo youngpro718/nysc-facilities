@@ -29,6 +29,8 @@ import { DashboardCustomizationProvider } from "@/providers/DashboardCustomizati
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import ErrorBoundary from "@/components/error/ErrorBoundary";
+import AuthErrorBoundary from "@/components/error/AuthErrorBoundary";
 
 
 // Create a client
@@ -42,129 +44,135 @@ const queryClient = new QueryClient({
 });
 
 function App() {
+  console.log('App: Starting application render');
+  
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <EnhancedThemeProvider>
-          <DashboardCustomizationProvider>
-            <BrowserRouter>
-              <AuthProvider>
-                <Routes>
-              <Route element={<Layout />}>
-                {/* Admin Routes */}
-                <Route path="/" element={
-                  <ProtectedRoute requireAdmin>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                } />
-                <Route path="spaces" element={
-                  <ProtectedRoute requireAdmin>
-                    <Spaces />
-                  </ProtectedRoute>
-                } />
-                <Route path="issues" element={
-                  <ProtectedRoute requireAdmin>
-                    <Issues />
-                  </ProtectedRoute>
-                } />
-                <Route path="occupants" element={
-                  <ProtectedRoute requireAdmin>
-                    <Occupants />
-                  </ProtectedRoute>
-                } />
-                <Route path="occupants/room-assignments" element={
-                  <ProtectedRoute requireAdmin>
-                    <RoomAssignments />
-                  </ProtectedRoute>
-                } />
-                <Route path="keys" element={
-                  <ProtectedRoute requireAdmin>
-                    <Keys />
-                  </ProtectedRoute>
-                } />
-                <Route path="lighting" element={
-                  <ProtectedRoute requireAdmin>
-                    <Lighting />
-                  </ProtectedRoute>
-                } />
-                <Route path="admin-profile" element={
-                  <ProtectedRoute requireAdmin>
-                    <AdminProfile />
-                  </ProtectedRoute>
-                } />
-                <Route path="access-management" element={
-                  <ProtectedRoute requireAdmin>
-                    <AccessManagement />
-                  </ProtectedRoute>
-                } />
-                <Route path="admin/key-requests" element={
-                  <ProtectedRoute requireAdmin>
-                    <AdminKeyRequests />
-                  </ProtectedRoute>
-                } />
-                <Route path="maintenance" element={
-                  <ProtectedRoute requireAdmin>
-                    <MaintenanceDashboard />
-                  </ProtectedRoute>
-                } />
-                <Route path="court-operations" element={
-                  <ProtectedRoute requireAdmin>
-                    <CourtOperationsDashboard />
-                  </ProtectedRoute>
-                } />
+    <ErrorBoundary onError={(error) => console.error('App: Global error caught:', error)}>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <EnhancedThemeProvider>
+            <DashboardCustomizationProvider>
+              <BrowserRouter>
+                <AuthErrorBoundary onError={(error) => console.error('App: Auth error caught:', error)}>
+                  <AuthProvider>
+                    <Routes>
+                  <Route element={<Layout />}>
+                    {/* Admin Routes */}
+                    <Route path="/" element={
+                      <ProtectedRoute requireAdmin>
+                        <AdminDashboard />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="spaces" element={
+                      <ProtectedRoute requireAdmin>
+                        <Spaces />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="issues" element={
+                      <ProtectedRoute requireAdmin>
+                        <Issues />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="occupants" element={
+                      <ProtectedRoute requireAdmin>
+                        <Occupants />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="occupants/room-assignments" element={
+                      <ProtectedRoute requireAdmin>
+                        <RoomAssignments />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="keys" element={
+                      <ProtectedRoute requireAdmin>
+                        <Keys />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="lighting" element={
+                      <ProtectedRoute requireAdmin>
+                        <Lighting />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="admin-profile" element={
+                      <ProtectedRoute requireAdmin>
+                        <AdminProfile />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="access-management" element={
+                      <ProtectedRoute requireAdmin>
+                        <AccessManagement />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="admin/key-requests" element={
+                      <ProtectedRoute requireAdmin>
+                        <AdminKeyRequests />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="maintenance" element={
+                      <ProtectedRoute requireAdmin>
+                        <MaintenanceDashboard />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="court-operations" element={
+                      <ProtectedRoute requireAdmin>
+                        <CourtOperationsDashboard />
+                      </ProtectedRoute>
+                    } />
 
-                {/* Settings Routes */}
-                <Route path="settings/theme" element={
-                  <ProtectedRoute requireAdmin>
-                    <ThemeSettings />
-                  </ProtectedRoute>
-                } />
-                <Route path="settings/security/2fa" element={
-                  <ProtectedRoute requireAdmin>
-                    <TwoFactorAuth />
-                  </ProtectedRoute>
-                } />
-                <Route path="settings/security/session" element={
-                  <ProtectedRoute requireAdmin>
-                    <SessionSettings />
-                  </ProtectedRoute>
-                } />
+                    {/* Settings Routes */}
+                    <Route path="settings/theme" element={
+                      <ProtectedRoute requireAdmin>
+                        <ThemeSettings />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="settings/security/2fa" element={
+                      <ProtectedRoute requireAdmin>
+                        <TwoFactorAuth />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="settings/security/session" element={
+                      <ProtectedRoute requireAdmin>
+                        <SessionSettings />
+                      </ProtectedRoute>
+                    } />
 
-                {/* User Routes */}
-                <Route path="dashboard" element={
-                  <ProtectedRoute>
-                    <UserDashboard />
-                  </ProtectedRoute>
-                } />
-                <Route path="my-requests" element={
-                  <ProtectedRoute>
-                    <MyRequests />
-                  </ProtectedRoute>
-                } />
-                <Route path="my-issues" element={
-                  <ProtectedRoute>
-                    <MyIssues />
-                  </ProtectedRoute>
-                } />
-                <Route path="profile" element={
-                  <ProtectedRoute>
-                    <Profile />
-                  </ProtectedRoute>
-                } />
+                    {/* User Routes */}
+                    <Route path="dashboard" element={
+                      <ProtectedRoute>
+                        <UserDashboard />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="my-requests" element={
+                      <ProtectedRoute>
+                        <MyRequests />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="my-issues" element={
+                      <ProtectedRoute>
+                        <MyIssues />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="profile" element={
+                      <ProtectedRoute>
+                        <Profile />
+                      </ProtectedRoute>
+                    } />
 
-                {/* Public Routes */}
-                <Route path="login" element={<LoginPage />} />
-                <Route path="verification-pending" element={<VerificationPending />} />
-                <Route path="*" element={<NotFound />} />
-              </Route>
-                </Routes>
-              </AuthProvider>
-            </BrowserRouter>
-            <Toaster />
-          </DashboardCustomizationProvider>
-        </EnhancedThemeProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+                    {/* Public Routes */}
+                    <Route path="login" element={<LoginPage />} />
+                    <Route path="verification-pending" element={<VerificationPending />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Route>
+                    </Routes>
+                  </AuthProvider>
+                </AuthErrorBoundary>
+              </BrowserRouter>
+              <Toaster />
+            </DashboardCustomizationProvider>
+          </EnhancedThemeProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

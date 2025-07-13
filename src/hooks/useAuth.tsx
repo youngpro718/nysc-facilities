@@ -102,14 +102,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Sign in function
   const signIn = async (email: string, password: string) => {
     try {
+      console.log('useAuth: Starting sign in process');
       await signInWithEmail(email, password);
 
       toast.success('Welcome back!', {
         description: "You've successfully signed in."
       });
+      console.log('useAuth: Sign in successful');
     } catch (error: any) {
-      console.error('Sign in error:', error);
-      toast.error(error.message || 'Authentication failed');
+      console.error('useAuth: Sign in error:', error);
+      
+      // Handle specific error types
+      if (error.message?.includes('Invalid login credentials')) {
+        toast.error('Invalid email or password', {
+          description: 'Please check your credentials and try again.'
+        });
+      } else if (error.message?.includes('Email not confirmed')) {
+        toast.error('Email not verified', {
+          description: 'Please check your email and verify your account.'
+        });
+      } else {
+        toast.error(error.message || 'Authentication failed', {
+          description: 'Please try again or contact support if the issue persists.'
+        });
+      }
       throw error;
     }
   };
@@ -117,26 +133,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Sign up function
   const signUp = async (email: string, password: string, userData: UserSignupData) => {
     try {
+      console.log('useAuth: Starting sign up process');
       await signUpWithEmail(email, password, userData);
       
       toast.success('Account created successfully!', {
         description: "Please check your email for verification instructions."
       });
       
+      console.log('useAuth: Sign up successful, navigating to verification');
       // Navigate to verification pending page
       setTimeout(() => {
         navigate('/verification-pending');
       }, 0);
     } catch (error: any) {
-      console.error('Sign up error:', error);
+      console.error('useAuth: Sign up error:', error);
       
-      // Handle "User already registered" error specifically
-      if (error.message && error.message.includes("User already registered")) {
+      // Handle specific error types
+      if (error.message?.includes("User already registered")) {
         toast.error("This email is already registered", {
           description: "Please sign in instead or use a different email address."
         });
+      } else if (error.message?.includes("Password should be at least")) {
+        toast.error("Password too weak", {
+          description: "Password must be at least 6 characters long."
+        });
+      } else if (error.message?.includes("Invalid email")) {
+        toast.error("Invalid email address", {
+          description: "Please enter a valid email address."
+        });
       } else {
-        toast.error(error.message || 'Registration failed');
+        toast.error(error.message || 'Registration failed', {
+          description: 'Please try again or contact support if the issue persists.'
+        });
       }
       
       throw error;
@@ -222,12 +250,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             navigate('/login', { replace: true });
           }
         }
-      } catch (error) {
-        console.error('Auth initialization failed:', error);
+      } catch (error: any) {
+        console.error('useAuth: Auth initialization failed:', error);
+        
+        // More detailed error logging
+        if (error.message) {
+          console.error('useAuth: Error message:', error.message);
+        }
+        if (error.stack) {
+          console.error('useAuth: Error stack:', error.stack);
+        }
+        
+        // Reset auth state on initialization failure
         setSession(null);
         setUser(null);
         setProfile(null);
         setIsAdmin(false);
+        
+        // Show toast for critical initialization errors
+        if (error.message?.includes('network') || error.message?.includes('fetch')) {
+          toast.error('Connection Error', {
+            description: 'Unable to connect to authentication service. Please check your internet connection.'
+          });
+        }
       } finally {
         if (mounted) {
           setIsLoading(false);
