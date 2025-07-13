@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { KeyRequestForm } from "@/components/requests/KeyRequestForm";
+import { MobileRequestCard } from "@/components/requests/mobile/MobileRequestCard";
+import { MobileRequestForm } from "@/components/mobile/MobileRequestForm";
 
 const statusConfig = {
   pending: { 
@@ -39,11 +41,25 @@ const statusConfig = {
 
 export default function MyRequests() {
   const [showRequestForm, setShowRequestForm] = useState(false);
+  const [showMobileForm, setShowMobileForm] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const { user } = useAuth();
   const { data: requests = [], isLoading, refetch } = useKeyRequests(user?.id);
 
+  // Check if device is mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const handleSubmitRequest = async (data: any) => {
     setShowRequestForm(false);
+    setShowMobileForm(false);
     try {
       const { submitKeyRequest } = await import('@/services/supabase/keyRequestService');
       await submitKeyRequest({ ...data, user_id: user!.id });
@@ -73,7 +89,7 @@ export default function MyRequests() {
         title="My Requests" 
         description="Track and manage your key requests"
       >
-        <Button onClick={() => setShowRequestForm(true)}>
+        <Button onClick={() => isMobile ? setShowMobileForm(true) : setShowRequestForm(true)}>
           <Plus className="h-4 w-4 mr-2" />
           New Request
         </Button>
@@ -85,6 +101,13 @@ export default function MyRequests() {
         onSubmit={handleSubmitRequest}
       />
 
+      <MobileRequestForm 
+        open={showMobileForm}
+        onClose={() => setShowMobileForm(false)}
+        onSubmit={handleSubmitRequest}
+        type="key_request"
+      />
+
       {requests.length === 0 ? (
         <Card>
           <CardContent className="text-center py-8">
@@ -93,7 +116,7 @@ export default function MyRequests() {
             <p className="text-muted-foreground mb-4">
               You haven't submitted any key requests. Get started by creating your first request.
             </p>
-            <Button onClick={() => setShowRequestForm(true)}>
+            <Button onClick={() => isMobile ? setShowMobileForm(true) : setShowRequestForm(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Create First Request
             </Button>
@@ -101,7 +124,21 @@ export default function MyRequests() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {requests.map((request) => {
+          {isMobile ? (
+            // Mobile view with enhanced cards
+            requests.map((request) => (
+              <MobileRequestCard
+                key={request.id}
+                request={request}
+                onViewDetails={() => {/* Handle view details */}}
+                onCancel={() => {/* Handle cancel */}}
+                onFollowUp={() => {/* Handle follow up */}}
+                onResubmit={() => {/* Handle resubmit */}}
+              />
+            ))
+          ) : (
+            // Desktop view
+            requests.map((request) => {
             
             return (
               <Card key={request.id}>
@@ -131,7 +168,8 @@ export default function MyRequests() {
                 </CardContent>
               </Card>
             );
-          })}
+            })
+          )}
         </div>
       )}
     </PageContainer>

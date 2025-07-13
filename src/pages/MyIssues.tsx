@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, AlertCircle, Clock, CheckCircle, Settings } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { IssueWizard } from "@/components/issues/wizard/IssueWizard";
+import { MobileIssueCard } from "@/components/issues/mobile/MobileIssueCard";
+import { MobileRequestForm } from "@/components/mobile/MobileRequestForm";
 
 const statusConfig = {
   open: { 
@@ -42,11 +44,25 @@ const priorityConfig = {
 
 export default function MyIssues() {
   const [showIssueWizard, setShowIssueWizard] = useState(false);
+  const [showMobileForm, setShowMobileForm] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const { user } = useAuth();
   const { userIssues: issues = [], refetchIssues } = useUserIssues(user?.id);
 
+  // Check if device is mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const handleIssueCreated = () => {
     setShowIssueWizard(false);
+    setShowMobileForm(false);
     refetchIssues();
   };
 
@@ -56,7 +72,7 @@ export default function MyIssues() {
         title="My Issues" 
         description="Track issues you've reported"
       >
-        <Button onClick={() => setShowIssueWizard(true)}>
+        <Button onClick={() => isMobile ? setShowMobileForm(true) : setShowIssueWizard(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Report Issue
         </Button>
@@ -69,6 +85,13 @@ export default function MyIssues() {
         />
       )}
 
+      <MobileRequestForm 
+        open={showMobileForm}
+        onClose={() => setShowMobileForm(false)}
+        onSubmit={handleIssueCreated}
+        type="issue_report"
+      />
+
       {issues.length === 0 ? (
         <Card>
           <CardContent className="text-center py-8">
@@ -77,7 +100,7 @@ export default function MyIssues() {
             <p className="text-muted-foreground mb-4">
               You haven't reported any issues yet. Help us maintain the facility by reporting problems when you see them.
             </p>
-            <Button onClick={() => setShowIssueWizard(true)}>
+            <Button onClick={() => isMobile ? setShowMobileForm(true) : setShowIssueWizard(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Report Your First Issue
             </Button>
@@ -85,7 +108,21 @@ export default function MyIssues() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {issues.map((issue) => {
+          {isMobile ? (
+            // Mobile view with enhanced cards
+            issues.map((issue) => (
+              <MobileIssueCard
+                key={issue.id}
+                issue={issue}
+                onViewDetails={() => {/* Handle view details */}}
+                onAddComment={() => {/* Handle add comment */}}
+                onFollowUp={() => {/* Handle follow up */}}
+                onEscalate={() => {/* Handle escalate */}}
+              />
+            ))
+          ) : (
+            // Desktop view
+            issues.map((issue) => {
             const statusConf = statusConfig[issue.status as keyof typeof statusConfig];
             const priorityConf = priorityConfig[issue.priority as keyof typeof priorityConfig];
             const StatusIcon = statusConf?.icon || AlertCircle;
@@ -135,7 +172,8 @@ export default function MyIssues() {
                 </CardContent>
               </Card>
             );
-          })}
+            })
+          )}
         </div>
       )}
     </PageContainer>
