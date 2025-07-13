@@ -1,15 +1,7 @@
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
 
-// Disable worker to avoid setup issues in development
-GlobalWorkerOptions.workerSrc = '';
-
-// Alternative: try to set up worker but fall back gracefully
-try {
-  GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
-} catch (error) {
-  console.warn('PDF worker setup failed, using fallback:', error);
-  GlobalWorkerOptions.workerSrc = '';
-}
+// Set up PDF.js worker properly
+GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
 
 // Add polyfill for Promise.withResolvers if not available
 declare global {
