@@ -22,6 +22,7 @@ interface DashboardCustomizationContextType {
   activeLayoutId: string;
   getActiveLayout: () => DashboardLayout | undefined;
   updateLayout: (layoutId: string, updates: Partial<DashboardLayout>) => void;
+  addLayout: (layout: DashboardLayout) => void;
   setActiveLayout: (layoutId: string) => void;
   toggleWidget: (widgetId: string) => void;
   resetToDefault: () => void;
@@ -190,6 +191,7 @@ const DashboardCustomizationContext = createContext<DashboardCustomizationContex
   activeLayoutId: "default",
   getActiveLayout: () => undefined,
   updateLayout: () => null,
+  addLayout: () => null,
   setActiveLayout: () => null,
   toggleWidget: () => null,
   resetToDefault: () => null,
@@ -217,6 +219,16 @@ export function DashboardCustomizationProvider({ children }: { children: React.R
     setLayouts(prev => prev.map(layout => 
       layout.id === layoutId ? { ...layout, ...updates } : layout
     ));
+  };
+
+  const addLayout = (layout: DashboardLayout) => {
+    setLayouts(prev => {
+      const exists = prev.some(l => l.id === layout.id);
+      if (exists) {
+        return prev.map(l => l.id === layout.id ? layout : l);
+      }
+      return [...prev, layout];
+    });
   };
 
   const setActiveLayout = (layoutId: string) => {
@@ -253,6 +265,7 @@ export function DashboardCustomizationProvider({ children }: { children: React.R
       activeLayoutId,
       getActiveLayout,
       updateLayout,
+      addLayout,
       setActiveLayout,
       toggleWidget,
       resetToDefault,

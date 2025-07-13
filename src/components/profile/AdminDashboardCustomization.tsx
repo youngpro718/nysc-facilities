@@ -105,7 +105,7 @@ export function AdminDashboardCustomization() {
     activeLayoutId,
     getActiveLayout,
     setActiveLayout,
-    updateLayout,
+    addLayout,
     toggleWidget,
     resetToDefault,
   } = useDashboardCustomization();
@@ -115,7 +115,7 @@ export function AdminDashboardCustomization() {
     const hasAdminLayouts = layouts.some(layout => layout.id.startsWith('admin-'));
     if (!hasAdminLayouts) {
       adminLayouts.forEach(adminLayout => {
-        updateLayout(adminLayout.id, adminLayout);
+        addLayout(adminLayout);
       });
       setActiveLayout('admin-default');
     }
