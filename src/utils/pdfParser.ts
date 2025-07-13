@@ -1,9 +1,8 @@
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
 
-// Completely disable worker to avoid initialization issues
-// Force PDF.js to run in main thread mode for reliability
-console.log('🔧 Configuring PDF.js for main-thread processing...');
-GlobalWorkerOptions.workerSrc = '';
+// Configure PDF.js worker properly for browser environment
+console.log('🔧 Configuring PDF.js worker for browser...');
+GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
 
 // Add polyfill for Promise.withResolvers if not available
 declare global {
@@ -69,10 +68,10 @@ export const parsePDF = async (file: File): Promise<ParsedTermData> => {
     console.log(`📄 PDF parsing attempt ${attemptCount}/${maxAttempts}`);
     
     try {
-      // Ensure worker stays disabled on retry
+      // Ensure worker is properly configured on retry
       if (attemptCount > 1) {
         console.log('🔄 Preparing retry attempt...');
-        GlobalWorkerOptions.workerSrc = '';
+        GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
         await new Promise(resolve => setTimeout(resolve, 500));
       }
       
@@ -88,7 +87,10 @@ export const parsePDF = async (file: File): Promise<ParsedTermData> => {
       const loadingTask = getDocument({ 
         data: arrayBuffer,
         verbosity: 0, // Reduce PDF.js internal logging
-        stopAtErrors: true
+        stopAtErrors: false, // Allow partial loading
+        disableAutoFetch: false,
+        disableStream: false,
+        isEvalSupported: false // Enhanced security
       });
       
       // Add timeout to prevent hanging

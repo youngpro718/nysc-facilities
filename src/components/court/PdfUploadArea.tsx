@@ -67,14 +67,30 @@ export const PdfUploadArea = ({ onPdfParsed, onFileUploaded, disabled }: PdfUplo
     console.log('🚀 Starting comprehensive PDF processing...');
 
     try {
-      // Step 1: Parse the PDF
+      // Step 1: Parse the PDF with enhanced error handling
       console.log('📄 Step 1: Parsing PDF...');
-      const parsedData = await parsePDF(file);
-      console.log('✅ PDF parsed successfully:', {
-        termName: parsedData.termName,
-        location: parsedData.location,
-        assignmentCount: parsedData.assignments.length
-      });
+      let parsedData;
+      try {
+        parsedData = await parsePDF(file);
+        console.log('✅ PDF parsed successfully:', {
+          termName: parsedData.termName,
+          location: parsedData.location,
+          assignmentCount: parsedData.assignments.length
+        });
+      } catch (parseError) {
+        console.error('❌ PDF parsing failed:', parseError);
+        // Try to provide more helpful error messages
+        if (parseError instanceof Error) {
+          if (parseError.message.includes('worker')) {
+            throw new Error('PDF processing failed. Please refresh the page and try again.');
+          } else if (parseError.message.includes('Invalid PDF')) {
+            throw new Error('This file is not a valid PDF or may be corrupted.');
+          } else if (parseError.message.includes('timeout')) {
+            throw new Error('PDF processing timed out. The file may be too large or complex.');
+          }
+        }
+        throw parseError;
+      }
       
       if (parsedData.assignments.length === 0) {
         toast({
