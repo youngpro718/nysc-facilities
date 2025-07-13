@@ -1,9 +1,9 @@
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Menu, X, LogOut } from "lucide-react";
-import { ExpandableTabs } from "@/components/ui/expandable-tabs";
+import { Menu, X } from "lucide-react";
 import { NavigationTab } from "../types";
+import { MobileNavigationGrid } from "./MobileNavigationGrid";
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -20,13 +20,27 @@ export const MobileMenu = ({
   onNavigationChange,
   onSignOut
 }: MobileMenuProps) => {
+  // Convert navigation tabs to grid items, filtering out separators
+  const navigationItems = navigation
+    .filter(item => item.type !== "separator")
+    .map((item, index) => {
+      // Type assertion since we know these are not separators
+      const navItem = item as { title: string; icon: any };
+      return {
+        title: navItem.title,
+        icon: navItem.icon,
+        path: getNavigationPath(navItem.title, index),
+        description: getNavigationDescription(navItem.title),
+      };
+    });
+
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetTrigger asChild>
         <Button 
           variant="ghost" 
           size="icon"
-          className="relative"
+          className="relative h-9 w-9"
           aria-label="Toggle menu"
         >
           {isOpen ? (
@@ -38,29 +52,47 @@ export const MobileMenu = ({
       </SheetTrigger>
       <SheetContent 
         side="right" 
-        className="w-[85%] sm:w-[385px] border-l border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/75 safe-area-right"
+        className="w-[85%] sm:w-[385px] border-l border-border bg-background safe-area-right"
       >
         <SheetHeader className="border-b border-border pb-4">
-          <SheetTitle className="text-lg font-semibold">Menu</SheetTitle>
+          <SheetTitle className="text-lg font-semibold">Navigation</SheetTitle>
         </SheetHeader>
-        <nav className="flex flex-col gap-4 pt-6 pb-safe">
-          <ExpandableTabs 
-            tabs={navigation as any}
-            className="flex-col !bg-transparent"
-            onChange={onNavigationChange}
-          />
-          <div className="mt-auto pt-8">
-            <Button
-              onClick={onSignOut}
-              className="w-full h-12 text-base"
-              variant="destructive"
-            >
-              <LogOut className="mr-2 h-5 w-5" />
-              Sign Out
-            </Button>
-          </div>
-        </nav>
+        
+        <MobileNavigationGrid
+          items={navigationItems}
+          onSignOut={onSignOut}
+          onClose={() => onOpenChange(false)}
+        />
       </SheetContent>
     </Sheet>
   );
 };
+
+// Helper functions to map navigation items to paths and descriptions
+function getNavigationPath(title: string, index: number): string {
+  const pathMap: Record<string, string> = {
+    'Dashboard': '/',
+    'Spaces': '/spaces',
+    'Issues': '/issues',
+    'Occupants': '/occupants',
+    'Keys': '/keys',
+    'Lighting': '/lighting',
+    'Admin Profile': '/admin-profile',
+    'Profile': '/profile',
+  };
+  return pathMap[title] || '/';
+}
+
+function getNavigationDescription(title: string): string {
+  const descriptionMap: Record<string, string> = {
+    'Dashboard': 'Overview & stats',
+    'Spaces': 'Manage buildings',
+    'Issues': 'Track problems',
+    'Occupants': 'Manage people',
+    'Keys': 'Key management',
+    'Lighting': 'Control lights',
+    'Admin Profile': 'Admin settings',
+    'Profile': 'Your account',
+  };
+  return descriptionMap[title] || '';
+}

@@ -1,14 +1,14 @@
 
 import {
-  Building,
-  Command,
-  Lightbulb,
-  Mail,
-  User,
-  Map,
+  Settings,
+  LayoutDashboard,
+  Zap,
+  AlertTriangle,
+  Users,
+  Building2,
   KeyRound,
-  Repeat,
-  Calendar,
+  User,
+  UserCog,
 } from 'lucide-react';
 import { NavigationTab, NavigationItem } from '../types';
 
@@ -17,31 +17,31 @@ export const navigationItems: NavigationItem[] = [
   {
     title: 'Dashboard',
     href: '/',
-    icon: Command,
+    icon: LayoutDashboard,
     adminOnly: true,
   },
   {
     title: 'User Dashboard',
     href: '/dashboard',
-    icon: Command,
+    icon: LayoutDashboard,
     adminOnly: false,
   },
   {
     title: 'Spaces',
     href: '/spaces',
-    icon: Map,
+    icon: Building2,
     adminOnly: true,
   },
   {
     title: 'Issues',
     href: '/issues',
-    icon: Mail,
+    icon: AlertTriangle,
     adminOnly: true,
   },
   {
     title: 'Occupants',
     href: '/occupants',
-    icon: User,
+    icon: Users,
     adminOnly: true,
   },
   {
@@ -53,11 +53,9 @@ export const navigationItems: NavigationItem[] = [
   {
     title: 'Lighting',
     href: '/lighting',
-    icon: Lightbulb,
+    icon: Zap,
     adminOnly: true,
   },
-
-
 ];
 
 export const userNavigationItems: NavigationItem[] = [
@@ -70,25 +68,25 @@ export const userNavigationItems: NavigationItem[] = [
   {
     title: 'Admin Profile',
     href: '/admin-profile',
-    icon: Building,
+    icon: UserCog,
     adminOnly: true,
   },
 ];
 
 // Create the admin and user navigation arrays for the sidebar
 export const adminNavigation: NavigationTab[] = [
-  { title: 'Dashboard', icon: Command },
-  { title: 'Spaces', icon: Map },
-  { title: 'Issues', icon: Mail },
-  { title: 'Occupants', icon: User },
+  { title: 'Dashboard', icon: LayoutDashboard },
+  { title: 'Spaces', icon: Building2 },
+  { title: 'Issues', icon: AlertTriangle },
+  { title: 'Occupants', icon: Users },
   { title: 'Keys', icon: KeyRound },
-  { title: 'Lighting', icon: Lightbulb },
+  { title: 'Lighting', icon: Zap },
   { type: "separator" },
-  { title: 'Admin Profile', icon: Building },
+  { title: 'Admin Profile', icon: UserCog },
 ];
 
 export const userNavigation: NavigationTab[] = [
-  { title: 'Dashboard', icon: Command },
+  { title: 'Dashboard', icon: LayoutDashboard },
   { type: "separator" },
   { title: 'Profile', icon: User },
 ];

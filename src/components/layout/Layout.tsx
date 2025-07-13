@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { adminNavigation, userNavigation, getNavigationRoutes } from "./config/navigation";
 import { MobileMenu } from "./components/MobileMenu";
-import { DesktopNavigation } from "./components/DesktopNavigation";
+import { DesktopNavigationImproved } from "./components/DesktopNavigationImproved";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -93,9 +93,8 @@ const Layout = () => {
 
                 {/* Desktop Navigation */}
                 <div className="hidden md:flex items-center gap-4">
-                  <DesktopNavigation
+                  <DesktopNavigationImproved
                     navigation={isAdmin ? adminNavigation : userNavigation}
-                    onNavigationChange={handleNavigationChange}
                     onSignOut={signOut}
                   />
                 </div>
