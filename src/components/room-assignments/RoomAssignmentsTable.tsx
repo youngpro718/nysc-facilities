@@ -179,7 +179,12 @@ export function RoomAssignmentsTable({
                   />
                 ) : (
                   <div>
-                    <div className="text-sm">{assignment.schedule || "Not specified"}</div>
+                    <div className="text-sm">
+                      {assignment.schedule && typeof assignment.schedule === 'object' 
+                        ? `${(assignment.schedule as any)?.days?.length || 0} day(s) scheduled`
+                        : assignment.schedule || "Not specified"
+                      }
+                    </div>
                     <div className="text-xs text-muted-foreground">
                       {assignment.notes || "No notes"}
                     </div>
