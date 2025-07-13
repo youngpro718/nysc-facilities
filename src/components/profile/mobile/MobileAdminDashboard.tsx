@@ -15,6 +15,8 @@ import {
   FileText
 } from "lucide-react";
 import { MobileAdminCard } from "./MobileAdminCard";
+import { UserManagementModal } from "../modals/UserManagementModal";
+import { SystemSecurityModal } from "../modals/SystemSecurityModal";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -38,6 +40,8 @@ export function MobileAdminDashboard() {
     databaseSize: 'N/A'
   });
   const [loading, setLoading] = useState(true);
+  const [userManagementOpen, setUserManagementOpen] = useState(false);
+  const [systemSecurityOpen, setSystemSecurityOpen] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -95,8 +99,8 @@ export function MobileAdminDashboard() {
       count: stats.totalUsers,
       status: 'success' as const,
       action: () => {
-        // Switch to security tab for user management
-        window.dispatchEvent(new CustomEvent('switchToTab', { detail: 'security' }));
+        // Open user management modal
+        setUserManagementOpen(true);
       }
     },
     {
@@ -107,8 +111,8 @@ export function MobileAdminDashboard() {
       count: stats.pendingVerifications,
       status: stats.pendingVerifications > 0 ? 'warning' as const : 'success' as const,
       action: () => {
-        // Switch to security tab for verifications
-        window.dispatchEvent(new CustomEvent('switchToTab', { detail: 'security' }));
+        // Open user management modal
+        setUserManagementOpen(true);
       }
     },
     {
@@ -117,8 +121,8 @@ export function MobileAdminDashboard() {
       description: 'Assign and modify user roles',
       icon: Shield,
       action: () => {
-        // Switch to security tab for role management
-        window.dispatchEvent(new CustomEvent('switchToTab', { detail: 'security' }));
+        // Open user management modal
+        setUserManagementOpen(true);
       }
     }
   ];
@@ -131,8 +135,8 @@ export function MobileAdminDashboard() {
       icon: Database,
       status: 'success' as const,
       action: () => {
-        // Switch to database tab
-        window.dispatchEvent(new CustomEvent('switchToTab', { detail: 'database' }));
+        // Open system security modal
+        setSystemSecurityOpen(true);
       }
     },
     {
@@ -142,8 +146,8 @@ export function MobileAdminDashboard() {
       icon: Shield,
       status: 'success' as const,
       action: () => {
-        // Switch to database tab for backup management
-        window.dispatchEvent(new CustomEvent('switchToTab', { detail: 'database' }));
+        // Open system security modal
+        setSystemSecurityOpen(true);
       }
     },
     {
@@ -152,8 +156,8 @@ export function MobileAdminDashboard() {
       description: 'View system activity and audit logs',
       icon: Activity,
       action: () => {
-        // Switch to security tab for activity logs
-        window.dispatchEvent(new CustomEvent('switchToTab', { detail: 'security' }));
+        // Open system security modal
+        setSystemSecurityOpen(true);
       }
     }
   ];
@@ -251,6 +255,16 @@ export function MobileAdminDashboard() {
         description="Track issues and generate reports"
         actions={issueActions}
         variant="activity"
+      />
+
+      {/* Modals */}
+      <UserManagementModal 
+        open={userManagementOpen} 
+        onOpenChange={setUserManagementOpen} 
+      />
+      <SystemSecurityModal 
+        open={systemSecurityOpen} 
+        onOpenChange={setSystemSecurityOpen} 
       />
     </div>
   );

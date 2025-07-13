@@ -35,64 +35,10 @@ export default function AdminProfile() {
     };
   }, []);
 
-  const systemSettings = [
-    {
-      id: 'theme',
-      title: 'Theme',
-      description: 'Choose your preferred theme',
-      icon: LayoutGrid,
-      type: 'selection' as const,
-      value: 'System',
-      action: () => navigate('/settings/theme')
-    },
-    {
-      id: 'notifications',
-      title: 'Admin Notifications',
-      description: 'Receive system alerts and updates',
-      icon: Activity,
-      type: 'toggle' as const,
-      value: true,
-      onChange: (value: boolean) => {
-        // TODO: Implement notification settings update with Supabase
-        console.log('Admin notifications:', value);
-        // This would update user preferences in the database
-      }
-    },
-    {
-      id: 'maintenance',
-      title: 'Maintenance Mode',
-      description: 'Enable system maintenance mode',
-      icon: Settings,
-      type: 'toggle' as const,
-      value: false,
-      onChange: (value: boolean) => {
-        // TODO: Implement maintenance mode toggle with system-wide effect
-        console.log('Maintenance mode:', value);
-        // This would set a global maintenance flag affecting all users
-      }
-    }
-  ];
+  // Remove the broken navigation settings and use modals instead
+  // These functions are now handled by the MobileAdminDashboard modals
 
-  const securitySettings = [
-    {
-      id: 'two-factor',
-      title: 'Two-Factor Authentication',
-      description: 'Add an extra layer of security',
-      icon: Shield,
-      type: 'navigation' as const,
-      badge: 'Recommended',
-      action: () => navigate('/settings/security/2fa')
-    },
-    {
-      id: 'session-timeout',
-      title: 'Session Timeout',
-      description: 'Automatically log out after inactivity',
-      icon: Shield,
-      type: 'selection' as const,
-      value: '30 minutes',
-      action: () => navigate('/settings/security/session')
-    }
-  ];
+  // Remove the broken security navigation - handled by modals now
 
   if (isMobile) {
     return (
@@ -111,18 +57,6 @@ export default function AdminProfile() {
 
         <MobileProfileHeader />
         <MobileAdminDashboard />
-        
-        <MobileSettingsCard
-          title="System Settings"
-          description="Configure system-wide settings"
-          settings={systemSettings}
-        />
-        
-        <MobileSettingsCard
-          title="Security Settings"
-          description="Manage security and authentication"
-          settings={securitySettings}
-        />
       </div>
     );
   }
