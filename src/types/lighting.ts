@@ -30,36 +30,23 @@ export interface LightingFixture {
   name: string;
   type: LightingType;
   status: LightStatus;
-  zone_name: string | null;
-  building_name: string | null;
-  floor_name: string | null;
-  floor_id: string | null;
+  room_number: string | null;
+  space_name: string | null;
   space_id: string | null;
   space_type: 'room' | 'hallway';
   position: LightingPosition;
-  sequence_number: number | null;
-  zone_id: string | null;
-  space_name: string | null;
-  room_number: string | null;
   technology: LightingTechnology | null;
-  maintenance_notes: string | null;
+  bulb_count: number;
+  ballast_issue: boolean;
+  requires_electrician: boolean;
+  reported_out_date: string | null;
+  replaced_date: string | null;
+  notes: string | null;
   created_at: string | null;
   updated_at: string | null;
-  bulb_count: number;
-  electrical_issues: ElectricalIssues;
-  ballast_issue: boolean;
-  ballast_check_notes: string | null;
-  emergency_circuit: boolean;
-  backup_power_source: string | null;
-  emergency_duration_minutes: number | null;
-  maintenance_history: MaintenanceRecord[];
-  inspection_history: InspectionRecord[];
-  spatial_assignment?: {
-    id: string;
-    sequence_number: number;
-    position: string;
-    space_type: string;
-  };
+  // Building info for display
+  building_name?: string | null;
+  floor_name?: string | null;
   building_id?: string;
 }
 
@@ -69,15 +56,13 @@ export interface LightingFixtureFormData {
   technology: LightingTechnology | null;
   bulb_count: number;
   status: LightStatus;
-  electrical_issues: ElectricalIssues;
   ballast_issue: boolean;
-  maintenance_notes: string | null;
-  ballast_check_notes: string | null;
-  zone_id?: string | null;
+  requires_electrician: boolean;
   space_id: string;
   space_type: "room" | "hallway";
   position: LightingPosition;
   room_number?: string | null;
+  notes?: string | null;
 }
 
 export interface LightingZoneFormData {

@@ -3250,7 +3250,11 @@ export type Database = {
           name: string
           next_inspection_date: string | null
           next_maintenance_date: string | null
+          notes: string | null
           position: Database["public"]["Enums"]["lighting_position_enum"] | null
+          replaced_date: string | null
+          reported_out_date: string | null
+          requires_electrician: boolean | null
           room_id: string | null
           room_number: string | null
           scheduled_maintenance_date: string | null
@@ -3286,9 +3290,13 @@ export type Database = {
           name: string
           next_inspection_date?: string | null
           next_maintenance_date?: string | null
+          notes?: string | null
           position?:
             | Database["public"]["Enums"]["lighting_position_enum"]
             | null
+          replaced_date?: string | null
+          reported_out_date?: string | null
+          requires_electrician?: boolean | null
           room_id?: string | null
           room_number?: string | null
           scheduled_maintenance_date?: string | null
@@ -3324,9 +3332,13 @@ export type Database = {
           name?: string
           next_inspection_date?: string | null
           next_maintenance_date?: string | null
+          notes?: string | null
           position?:
             | Database["public"]["Enums"]["lighting_position_enum"]
             | null
+          replaced_date?: string | null
+          reported_out_date?: string | null
+          requires_electrician?: boolean | null
           room_id?: string | null
           room_number?: string | null
           scheduled_maintenance_date?: string | null

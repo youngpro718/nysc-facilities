@@ -15,22 +15,18 @@ export async function fetchLightingFixtures(): Promise<LightingFixture[]> {
         name,
         type,
         status,
-        zone_id,
         space_id,
         space_type,
         position,
-        sequence_number,
         technology,
-        maintenance_notes,
         created_at,
         updated_at,
         bulb_count,
-        electrical_issues,
         ballast_issue,
-        ballast_check_notes,
-        maintenance_history,
-        inspection_history,
-        floor_id,
+        requires_electrician,
+        reported_out_date,
+        replaced_date,
+        notes,
         room_number
       `);
 
@@ -49,30 +45,23 @@ export async function fetchLightingFixtures(): Promise<LightingFixture[]> {
       name: fixture.name || '',
       type: mapFixtureType(fixture.type),
       status: (fixture.status as LightStatus) || 'functional',
-      zone_name: null,
-      building_name: null,
-      floor_name: null,
-      floor_id: fixture.floor_id || null,
+      room_number: fixture.room_number || null,
+      space_name: null,
       space_id: fixture.space_id || null,
       space_type: (fixture.space_type as 'room' | 'hallway') || 'room',
       position: (fixture.position as 'ceiling' | 'wall' | 'floor' | 'desk') || 'ceiling',
-      sequence_number: fixture.sequence_number || null,
-      zone_id: fixture.zone_id || null,
-      space_name: null,
-      room_number: fixture.room_number || null,
       technology: fixture.technology || null,
-      maintenance_notes: fixture.maintenance_notes || null,
+      bulb_count: fixture.bulb_count || 1,
+      ballast_issue: fixture.ballast_issue || false,
+      requires_electrician: fixture.requires_electrician || false,
+      reported_out_date: fixture.reported_out_date || null,
+      replaced_date: fixture.replaced_date || null,
+      notes: fixture.notes || null,
       created_at: fixture.created_at || null,
       updated_at: fixture.updated_at || null,
-      bulb_count: fixture.bulb_count || 1,
-      electrical_issues: parseElectricalIssues(fixture.electrical_issues),
-      ballast_issue: fixture.ballast_issue || false,
-      ballast_check_notes: fixture.ballast_check_notes || null,
-      emergency_circuit: false,
-      backup_power_source: null,
-      emergency_duration_minutes: null,
-      maintenance_history: parseMaintenanceHistory(fixture.maintenance_history),
-      inspection_history: parseInspectionHistory(fixture.inspection_history)
+      building_name: null,
+      floor_name: null,
+      building_id: undefined
     }));
   } catch (error) {
     console.error('Error in fetchLightingFixtures:', error);
@@ -216,15 +205,13 @@ export async function createLightingFixture(data: LightingFixtureFormData) {
       technology: data.technology || null,
       bulb_count: data.bulb_count,
       status: data.status,
-      electrical_issues: JSON.stringify(data.electrical_issues),
       ballast_issue: data.ballast_issue,
-      maintenance_notes: data.maintenance_notes,
-      ballast_check_notes: data.ballast_check_notes,
-      zone_id: data.zone_id || null,
+      requires_electrician: data.requires_electrician,
       space_id: data.space_id,
       space_type: data.space_type,
       position: data.position,
-      room_number: data.room_number
+      room_number: data.room_number,
+      notes: data.notes
     };
 
     const { data: fixture, error } = await supabase
@@ -253,6 +240,54 @@ export async function createLightingZone(data: LightingZoneFormData) {
       type: data.type,
       floor_id: data.floorId,
     });
+
+  if (error) throw error;
+  return true;
+}
+
+/**
+ * Mark lights as out (reported)
+ */
+export async function markLightsOut(fixtureIds: string[], requiresElectrician: boolean = false) {
+  const { error } = await supabase
+    .from('lighting_fixtures')
+    .update({ 
+      status: 'non_functional',
+      reported_out_date: new Date().toISOString(),
+      requires_electrician: requiresElectrician,
+      replaced_date: null
+    })
+    .in('id', fixtureIds);
+
+  if (error) throw error;
+  return true;
+}
+
+/**
+ * Mark lights as fixed (replaced)
+ */
+export async function markLightsFixed(fixtureIds: string[]) {
+  const { error } = await supabase
+    .from('lighting_fixtures')
+    .update({ 
+      status: 'functional',
+      replaced_date: new Date().toISOString(),
+      requires_electrician: false
+    })
+    .in('id', fixtureIds);
+
+  if (error) throw error;
+  return true;
+}
+
+/**
+ * Toggle electrician requirement
+ */
+export async function toggleElectricianRequired(fixtureIds: string[], requiresElectrician: boolean) {
+  const { error } = await supabase
+    .from('lighting_fixtures')
+    .update({ requires_electrician: requiresElectrician })
+    .in('id', fixtureIds);
 
   if (error) throw error;
   return true;
