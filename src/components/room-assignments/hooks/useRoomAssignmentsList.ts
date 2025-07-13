@@ -38,19 +38,19 @@ export function useRoomAssignmentsList() {
         .from("occupant_room_assignments")
         .select(`
           *,
-          occupants!inner (
+          occupants!occupant_room_assignments_occupant_id_fkey (
             first_name,
             last_name,
             email,
             department,
             status
           ),
-          rooms!inner (
+          rooms!occupant_room_assignments_room_id_fkey (
             room_number,
             name,
-            floors!inner (
+            floors!rooms_floor_id_fkey (
               name,
-              buildings!inner (
+              buildings!floors_building_id_fkey (
                 name
               )
             )
