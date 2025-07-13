@@ -42,13 +42,19 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Issue form submitted with data:', formData);
     
     try {
+      console.log('Inserting into maintenance_issues...');
       const { error } = await supabase
         .from("maintenance_issues")
         .insert(formData);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+      console.log('Successfully inserted maintenance issue');
 
       toast({
         title: "Issue Reported",
@@ -66,6 +72,7 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
       });
       onOpenChange(false);
     } catch (error) {
+      console.error('Error reporting issue:', error);
       toast({
         title: "Error",
         description: "Failed to report issue. Please try again.",

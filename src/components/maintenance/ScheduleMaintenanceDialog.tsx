@@ -45,8 +45,10 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submitted with data:', formData);
     
     try {
+      console.log('Inserting into maintenance_schedules...');
       const { error } = await supabase
         .from("maintenance_schedules")
         .insert({
@@ -57,7 +59,11 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
             : null,
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+      console.log('Successfully inserted maintenance schedule');
 
       toast({
         title: "Maintenance Scheduled",
@@ -79,6 +85,7 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
       });
       onOpenChange(false);
     } catch (error) {
+      console.error('Error scheduling maintenance:', error);
       toast({
         title: "Error",
         description: "Failed to schedule maintenance. Please try again.",
