@@ -54,8 +54,7 @@ export const InventoryItemsPanel = () => {
         .from("inventory_items")
         .select(`
           *,
-          inventory_categories(name, color, icon),
-          rooms(name, room_number)
+          inventory_categories(name, color, icon)
         `)
         .order("name");
 
@@ -63,9 +62,32 @@ export const InventoryItemsPanel = () => {
         query = query.or(`name.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
       }
 
-      const { data, error } = await query;
+      const { data: inventoryData, error } = await query;
       if (error) throw error;
-      return data as InventoryItem[];
+
+      // Fetch room data separately for items that have storage_room_id
+      const itemsWithRooms = await Promise.all(
+        (inventoryData || []).map(async (item) => {
+          if (item.storage_room_id) {
+            const { data: roomData } = await supabase
+              .from("rooms")
+              .select("name, room_number")
+              .eq("id", item.storage_room_id)
+              .single();
+            
+            return {
+              ...item,
+              rooms: roomData || null
+            };
+          }
+          return {
+            ...item,
+            rooms: null
+          };
+        })
+      );
+
+      return itemsWithRooms as InventoryItem[];
     },
   });
 
