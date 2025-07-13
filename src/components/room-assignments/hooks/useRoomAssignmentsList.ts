@@ -34,6 +34,19 @@ export function useRoomAssignmentsList() {
   const { data: assignments, isLoading, error, refetch } = useQuery({
     queryKey: ["room-assignments", searchQuery, departmentFilter, assignmentTypeFilter, statusFilter],
     queryFn: async () => {
+      // First try a simple query to test access
+      const { data: testData, error: testError } = await supabase
+        .from("occupant_room_assignments")
+        .select("*")
+        .limit(1);
+
+      if (testError) {
+        console.error("Test query failed:", testError);
+        throw testError;
+      }
+
+      console.log("Test data:", testData);
+
       let query = supabase
         .from("occupant_room_assignments")
         .select(`
