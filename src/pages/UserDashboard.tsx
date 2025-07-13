@@ -83,12 +83,16 @@ export default function UserDashboard() {
             // @ts-ignore
             const { submitKeyRequest } = await import('@/services/supabase/keyRequestService');
             
-            // Map the form data to the simplified database schema  
-            const reason = (data as any).keyType 
-              ? `${(data as any).keyType} key - ${data.reason}` 
-              : data.reason;
-            
-            await submitKeyRequest({ reason, user_id: user.id });
+            await submitKeyRequest({
+              reason: data.reason,
+              user_id: user.id,
+              request_type: data.request_type,
+              room_id: data.room_id || null,
+              room_other: data.room_other || null,
+              quantity: data.quantity,
+              emergency_contact: data.emergency_contact || null,
+              email_notifications_enabled: data.email_notifications_enabled,
+            });
             // @ts-ignore
             const { toast } = await import('sonner');
             toast.success('Key request submitted!');

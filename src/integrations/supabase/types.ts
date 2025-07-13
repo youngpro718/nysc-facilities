@@ -3012,28 +3012,49 @@ export type Database = {
       }
       key_requests: {
         Row: {
+          admin_notes: string | null
           created_at: string | null
+          email_notifications_enabled: boolean | null
+          emergency_contact: string | null
           id: string
           key_id: string | null
+          quantity: number | null
           reason: string | null
+          request_type: Database["public"]["Enums"]["request_type_enum"] | null
+          room_id: string | null
+          room_other: string | null
           status: string | null
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
+          admin_notes?: string | null
           created_at?: string | null
+          email_notifications_enabled?: boolean | null
+          emergency_contact?: string | null
           id?: string
           key_id?: string | null
+          quantity?: number | null
           reason?: string | null
+          request_type?: Database["public"]["Enums"]["request_type_enum"] | null
+          room_id?: string | null
+          room_other?: string | null
           status?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
+          admin_notes?: string | null
           created_at?: string | null
+          email_notifications_enabled?: boolean | null
+          emergency_contact?: string | null
           id?: string
           key_id?: string | null
+          quantity?: number | null
           reason?: string | null
+          request_type?: Database["public"]["Enums"]["request_type_enum"] | null
+          room_id?: string | null
+          room_other?: string | null
           status?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -3072,6 +3093,48 @@ export type Database = {
             columns: ["key_id"]
             isOneToOne: false
             referencedRelation: "keys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_requests_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_health_overview"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "key_requests_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_hierarchy_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_requests_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_issue_analytics"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "key_requests_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_occupancy_stats"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "key_requests_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_selection_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_requests_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
             referencedColumns: ["id"]
           },
           {
@@ -8295,6 +8358,7 @@ export type Database = {
         | "maintenance"
         | "emergency"
         | "other"
+      request_type_enum: "spare" | "replacement" | "new"
       return_reason_enum: "normal_return" | "lost" | "damaged" | "other"
       room_type_enum:
         | "courtroom"
@@ -8598,6 +8662,7 @@ export const Constants = {
         "emergency",
         "other",
       ],
+      request_type_enum: ["spare", "replacement", "new"],
       return_reason_enum: ["normal_return", "lost", "damaged", "other"],
       room_type_enum: [
         "courtroom",

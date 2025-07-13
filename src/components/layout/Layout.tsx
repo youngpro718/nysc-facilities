@@ -9,6 +9,7 @@ import { DesktopNavigationImproved } from "./components/DesktopNavigationImprove
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { NotificationBox } from "@/components/admin/NotificationBox";
 import { UserRound, Loader2 } from "lucide-react";
 
 const Layout = () => {
@@ -48,6 +49,11 @@ const Layout = () => {
               </div>
 
               <div className="flex items-center gap-2 sm:gap-4">
+                {/* Admin Notifications */}
+                {isAdmin && (
+                  <NotificationBox />
+                )}
+                
                 {/* Theme Toggle - Hidden on mobile for space */}
                 <div className="hidden sm:block">
                   <ThemeToggle />

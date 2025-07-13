@@ -9,6 +9,13 @@ export interface KeyRequest {
   created_at: string | null;
   updated_at: string | null;
   user_id: string | null;
+  request_type: 'spare' | 'replacement' | 'new';
+  room_id: string | null;
+  room_other: string | null;
+  quantity: number;
+  emergency_contact: string | null;
+  admin_notes: string | null;
+  email_notifications_enabled: boolean;
 }
 
 export const useKeyRequests = (userId?: string) => {
