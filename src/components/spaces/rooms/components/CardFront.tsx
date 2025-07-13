@@ -12,7 +12,7 @@ import { RoomAccessSummary } from "@/components/access/RoomAccessSummary";
 
 interface CardFrontProps {
   room: Room;
-  onFlip: () => void;
+  onFlip: (e?: React.MouseEvent) => void;
   onDelete: (id: string) => void;
 }
 
@@ -68,6 +68,28 @@ export function CardFront({ room, onFlip, onDelete }: CardFrontProps) {
         
         {/* Display CourtroomPhotos dialog component if room is a courtroom */}
         {room.room_type === 'courtroom' && <CourtroomPhotos room={room} />}
+        
+        {/* Mobile-friendly inventory button for storage rooms */}
+        {room.is_storage && (
+          <div className="mt-2 md:hidden">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full flex items-center gap-2"
+              onClick={(e) => {
+                e.stopPropagation();
+                const event = new CustomEvent('openInventoryDialog', { 
+                  detail: { roomId: room.id, roomName: room.name } 
+                });
+                window.dispatchEvent(event);
+              }}
+            >
+              <Badge variant="secondary" className="text-xs">
+                Inventory
+              </Badge>
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className="flex-1">
@@ -105,7 +127,12 @@ export function CardFront({ room, onFlip, onDelete }: CardFrontProps) {
       </div>
 
       <div className="mt-4 flex justify-between">
-        <Button variant="ghost" size="sm" onClick={onFlip}>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={onFlip}
+          className="hidden md:flex"
+        >
           <ArrowRightFromLine className="h-4 w-4 mr-1" />
           More Details
         </Button>

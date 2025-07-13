@@ -48,12 +48,15 @@ export function useRoomFilters({
       const matchesFloor = selectedFloor === 'all' || 
         room.floor_id === selectedFloor;
       
-      // Enhanced room type filtering
+      // Enhanced room type filtering including storage rooms
       let matchesRoomType = true;
       if (roomTypeFilter && roomTypeFilter !== "") {
         if (roomTypeFilter === "chamber") {
           // For chamber rooms, match exact room_type
           matchesRoomType = room.room_type === "chamber";
+        } else if (roomTypeFilter === "storage") {
+          // For storage filter, check is_storage flag
+          matchesRoomType = room.is_storage === true;
         } else {
           // For other room types, match exact room_type values
           matchesRoomType = room.room_type === roomTypeFilter || 

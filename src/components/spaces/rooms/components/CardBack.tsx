@@ -12,7 +12,7 @@ import { ParentRoomHierarchy } from "../ParentRoomHierarchy";
 
 interface CardBackProps {
   room: Room;
-  onFlip: () => void;
+  onFlip: (e?: React.MouseEvent) => void;
 }
 
 export function CardBack({ room, onFlip }: CardBackProps) {

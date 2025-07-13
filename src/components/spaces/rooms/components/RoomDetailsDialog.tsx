@@ -75,8 +75,8 @@ export function RoomDetailsDialog({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md max-h-[85vh] p-0">
-        <DialogHeader className="p-6 pb-4">
-          <DialogTitle className="flex items-center justify-between">
+        <DialogHeader className="p-6 pb-4 relative">
+          <DialogTitle className="flex items-center justify-between pr-8">
             <span className="text-lg font-semibold">{room.name}</span>
             <Badge variant={getStatusVariant(room.status)}>
               {room.status.replace('_', ' ').toUpperCase()}
@@ -162,6 +162,18 @@ export function RoomDetailsDialog({
                       </div>
                     )}
                   </div>
+                  {/* Mobile-friendly Inventory Button */}
+                  <Button 
+                    variant="outline" 
+                    className="w-full mt-3"
+                    onClick={() => {
+                      const event = new CustomEvent('openInventoryDialog', { detail: { roomId: room.id, roomName: room.name } });
+                      window.dispatchEvent(event);
+                    }}
+                  >
+                    <Archive className="h-4 w-4 mr-2" />
+                    View Inventory
+                  </Button>
                 </div>
               </>
             )}

@@ -10,6 +10,7 @@ import { RoomsContent } from "../rooms/components/RoomsContent";
 import { HierarchyFilters } from "../rooms/components/HierarchyFilters";
 import { GroupedRoomsView } from "../rooms/components/GroupedRoomsView";
 import { RoomDetailsDialog } from "../rooms/components/RoomDetailsDialog";
+import { MobileInventoryDialog } from "../rooms/components/MobileInventoryDialog";
 import { useRoomFilters } from "../hooks/useRoomFilters";
 import { useHierarchyFilters } from "../hooks/useHierarchyFilters";
 import { useRoomsQuery } from "../hooks/queries/useRoomsQuery";
@@ -223,6 +224,9 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
           deleteRoomMutation.mutate(id);
         }}
       />
+      
+      {/* Mobile Inventory Dialog */}
+      <MobileInventoryDialog />
     </div>
   );
 };
