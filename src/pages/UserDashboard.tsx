@@ -12,7 +12,7 @@ import { ReportIssueWizard } from "@/components/issues/wizard/ReportIssueWizard"
 import { MobileFABs } from "@/components/ui/MobileFABs";
 import { BottomTabNavigation } from "@/components/ui/BottomTabNavigation";
 import { KeyRequestForm } from "@/components/requests/KeyRequestForm";
-import { useRoomAssignments } from "@/hooks/dashboard/useRoomAssignments";
+import { useOccupantAssignments } from "@/hooks/occupants/useOccupantAssignments";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { AvatarPromptModal } from "@/components/auth/AvatarPromptModal";
 
@@ -20,7 +20,7 @@ export default function UserDashboard() {
   const { user, profile, isLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const { notifications = [], isLoading: notificationsLoading, markAsRead, markAllAsRead, clearNotification, clearAllNotifications } = useNotifications(user?.id);
-  const { assignedRooms } = useRoomAssignments(user?.id);
+  const { data: occupantData } = useOccupantAssignments(user?.id || '');
 
   const [showKeyRequest, setShowKeyRequest] = useState(false);
   const [showIssueReport, setShowIssueReport] = useState(false);
@@ -92,6 +92,12 @@ export default function UserDashboard() {
           onClearAllNotifications={clearAllNotifications}
         />
         <ProfileCompletionCard />
+        <RoomAssignmentCard 
+          roomAssignments={occupantData?.roomAssignments || []} 
+          keyAssignments={occupantData?.keyAssignments || []}
+          primaryRoom={occupantData?.primaryRoom}
+          onReportIssue={(roomId) => setShowIssueReport(true)}
+        />
         <KeyAssignmentCard userId={user.id} />
         <IssueSummaryCard userId={user.id} />
       </div>
@@ -135,7 +141,7 @@ export default function UserDashboard() {
           <ReportIssueWizard
             onSuccess={() => setShowIssueReport(false)}
             onCancel={() => setShowIssueReport(false)}
-            assignedRooms={assignedRooms}
+            assignedRooms={occupantData?.roomAssignments || []}
           />
         </DialogContent>
       </Dialog>
