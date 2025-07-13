@@ -34,84 +34,109 @@ export function useRoomAssignmentsList() {
   const { data: assignments, isLoading, error, refetch } = useQuery({
     queryKey: ["room-assignments", searchQuery, departmentFilter, assignmentTypeFilter, statusFilter],
     queryFn: async () => {
-      // First try a simple query to test access
-      const { data: testData, error: testError } = await supabase
+      // Try a simple query without joins first
+      const { data: simpleData, error: simpleError } = await supabase
         .from("occupant_room_assignments")
-        .select("*")
-        .limit(1);
+        .select("*");
 
-      if (testError) {
-        console.error("Test query failed:", testError);
-        throw testError;
+      if (simpleError) {
+        console.error("Simple query failed:", simpleError);
+        throw simpleError;
       }
 
-      console.log("Test data:", testData);
+      // Fetch data separately to avoid relationship issues
+      const { data: occupantsData, error: occupantsError } = await supabase
+        .from("occupants")
+        .select("id, first_name, last_name, email, department, status");
 
-      let query = supabase
-        .from("occupant_room_assignments")
+      const { data: roomsData, error: roomsError } = await supabase
+        .from("rooms")
         .select(`
-          *,
-          occupants (
-            first_name,
-            last_name,
-            email,
-            department,
-            status
-          ),
-          rooms (
-            room_number,
+          id, 
+          room_number, 
+          name,
+          floors (
             name,
-            floors (
-              name,
-              buildings (
-                name
-              )
+            buildings (
+              name
             )
           )
         `);
 
-      // Apply filters
+      if (occupantsError) throw occupantsError;
+      if (roomsError) throw roomsError;
+
+      // Create lookup maps
+      const occupantsMap = new Map(occupantsData?.map(o => [o.id, o]) || []);
+      const roomsMap = new Map(roomsData?.map(r => [r.id, r]) || []);
+
+      // Combine the data manually
+      let filteredData = simpleData || [];
+
+      // Apply filters on the raw data
       if (searchQuery) {
-        query = query.or(
-          `occupants.first_name.ilike.%${searchQuery}%,occupants.last_name.ilike.%${searchQuery}%,occupants.email.ilike.%${searchQuery}%,rooms.room_number.ilike.%${searchQuery}%,rooms.name.ilike.%${searchQuery}%`
-        );
+        filteredData = filteredData.filter(assignment => {
+          const occupant = occupantsMap.get(assignment.occupant_id);
+          const room = roomsMap.get(assignment.room_id);
+          const searchTerm = searchQuery.toLowerCase();
+          
+          return (
+            occupant?.first_name?.toLowerCase().includes(searchTerm) ||
+            occupant?.last_name?.toLowerCase().includes(searchTerm) ||
+            occupant?.email?.toLowerCase().includes(searchTerm) ||
+            room?.room_number?.toLowerCase().includes(searchTerm) ||
+            room?.name?.toLowerCase().includes(searchTerm)
+          );
+        });
       }
 
       if (departmentFilter) {
-        query = query.eq("occupants.department", departmentFilter);
+        filteredData = filteredData.filter(assignment => {
+          const occupant = occupantsMap.get(assignment.occupant_id);
+          return occupant?.department === departmentFilter;
+        });
       }
 
       if (assignmentTypeFilter) {
-        query = query.eq("assignment_type", assignmentTypeFilter);
+        filteredData = filteredData.filter(assignment => 
+          assignment.assignment_type === assignmentTypeFilter
+        );
       }
 
       if (statusFilter) {
-        query = query.eq("occupants.status", statusFilter as "active" | "inactive" | "on_leave" | "terminated");
+        filteredData = filteredData.filter(assignment => {
+          const occupant = occupantsMap.get(assignment.occupant_id);
+          return occupant?.status === statusFilter;
+        });
       }
 
-      const { data, error } = await query.order("assigned_at", { ascending: false });
-
-      if (error) throw error;
+      // Sort by assigned_at descending
+      filteredData.sort((a, b) => new Date(b.assigned_at).getTime() - new Date(a.assigned_at).getTime());
 
       // Transform the data to flatten the structure
-      return data?.map((assignment: any): RoomAssignmentWithDetails => ({
-        id: assignment.id,
-        occupant_id: assignment.occupant_id,
-        room_id: assignment.room_id,
-        assignment_type: assignment.assignment_type,
-        is_primary: assignment.is_primary,
-        assigned_at: assignment.assigned_at,
-        schedule: assignment.schedule,
-        notes: assignment.notes,
-        updated_at: assignment.updated_at,
-        occupant_name: `${assignment.occupants.first_name} ${assignment.occupants.last_name}`,
-        occupant_email: assignment.occupants.email,
-        department: assignment.occupants.department,
-        room_number: assignment.rooms.room_number,
-        room_name: assignment.rooms.name,
-        floor_name: assignment.rooms.floors.name,
-        building_name: assignment.rooms.floors.buildings.name,
-      })) || [];
+      return filteredData.map((assignment: any): RoomAssignmentWithDetails => {
+        const occupant = occupantsMap.get(assignment.occupant_id);
+        const room = roomsMap.get(assignment.room_id);
+        
+        return {
+          id: assignment.id,
+          occupant_id: assignment.occupant_id,
+          room_id: assignment.room_id,
+          assignment_type: assignment.assignment_type,
+          is_primary: assignment.is_primary,
+          assigned_at: assignment.assigned_at,
+          schedule: assignment.schedule,
+          notes: assignment.notes,
+          updated_at: assignment.updated_at,
+          occupant_name: occupant ? `${occupant.first_name} ${occupant.last_name}` : 'Unknown',
+          occupant_email: occupant?.email || '',
+          department: occupant?.department,
+          room_number: room?.room_number || '',
+          room_name: room?.name || '',
+          floor_name: (room as any)?.floors?.name || '',
+          building_name: (room as any)?.floors?.buildings?.name || '',
+        };
+      });
     },
   });
 
