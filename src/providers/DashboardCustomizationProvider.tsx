@@ -70,6 +70,96 @@ const defaultWidgets: DashboardWidget[] = [
   }
 ];
 
+const adminWidgets: DashboardWidget[] = [
+  {
+    id: "system-overview",
+    name: "System Overview", 
+    description: "Key system metrics and health status",
+    enabled: true,
+    position: { row: 0, col: 0 },
+    size: { width: 2, height: 1 }
+  },
+  {
+    id: "user-management",
+    name: "User Management",
+    description: "Active users and permission management", 
+    enabled: true,
+    position: { row: 0, col: 2 },
+    size: { width: 2, height: 1 }
+  },
+  {
+    id: "building-status",
+    name: "Building Status",
+    description: "Building and facility status overview",
+    enabled: true,
+    position: { row: 1, col: 0 },
+    size: { width: 2, height: 1 }
+  },
+  {
+    id: "maintenance-alerts",
+    name: "Maintenance Alerts",
+    description: "Critical maintenance and issue notifications",
+    enabled: true,
+    position: { row: 1, col: 2 },
+    size: { width: 2, height: 1 }
+  },
+  {
+    id: "analytics-summary",
+    name: "Analytics Summary",
+    description: "Usage analytics and reporting dashboard",
+    enabled: true,
+    position: { row: 2, col: 0 },
+    size: { width: 4, height: 1 }
+  },
+  {
+    id: "quick-admin-actions",
+    name: "Admin Quick Actions",
+    description: "Frequently used administrative functions",
+    enabled: true,
+    position: { row: 3, col: 0 },
+    size: { width: 4, height: 1 }
+  },
+  {
+    id: "recent-activity",
+    name: "Recent System Activity",
+    description: "Latest system logs and user activity",
+    enabled: false,
+    position: { row: 4, col: 0 },
+    size: { width: 4, height: 1 }
+  }
+];
+
+const adminLayouts: DashboardLayout[] = [
+  {
+    id: "admin-default",
+    name: "Admin Default",
+    description: "Comprehensive admin dashboard with all key widgets",
+    columns: 4,
+    widgets: adminWidgets
+  },
+  {
+    id: "admin-compact", 
+    name: "Admin Compact",
+    description: "Essential admin widgets in a condensed layout",
+    columns: 2,
+    widgets: adminWidgets.filter(w => ["system-overview", "user-management", "maintenance-alerts", "quick-admin-actions"].includes(w.id))
+  },
+  {
+    id: "admin-monitoring",
+    name: "Monitoring Focus", 
+    description: "Dashboard optimized for system monitoring",
+    columns: 3,
+    widgets: adminWidgets.filter(w => ["system-overview", "building-status", "maintenance-alerts", "analytics-summary", "recent-activity"].includes(w.id))
+  },
+  {
+    id: "admin-minimal",
+    name: "Admin Minimal",
+    description: "Streamlined view with only critical information", 
+    columns: 2,
+    widgets: adminWidgets.filter(w => ["system-overview", "maintenance-alerts"].includes(w.id))
+  }
+];
+
 const defaultLayouts: DashboardLayout[] = [
   {
     id: "default",
@@ -91,7 +181,8 @@ const defaultLayouts: DashboardLayout[] = [
     description: "Clean layout with just notifications and quick actions",
     columns: 2,
     widgets: defaultWidgets.filter(w => ["notifications", "quick-actions"].includes(w.id))
-  }
+  },
+  ...adminLayouts
 ];
 
 const DashboardCustomizationContext = createContext<DashboardCustomizationContextType>({
@@ -144,8 +235,8 @@ export function DashboardCustomizationProvider({ children }: { children: React.R
   };
 
   const resetToDefault = () => {
-    setLayouts(defaultLayouts);
-    setActiveLayoutId("default");
+    setLayouts(defaultLayouts);  
+    setActiveLayoutId("admin-default");
   };
 
   useEffect(() => {

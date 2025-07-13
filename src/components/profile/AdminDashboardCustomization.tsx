@@ -1,3 +1,4 @@
+import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -104,13 +105,28 @@ export function AdminDashboardCustomization() {
     activeLayoutId,
     getActiveLayout,
     setActiveLayout,
+    updateLayout,
     toggleWidget,
     resetToDefault,
   } = useDashboardCustomization();
 
-  // Use admin-specific layouts if available, otherwise fall back to regular layouts
-  const availableLayouts = adminLayouts.length > 0 ? adminLayouts : layouts;
-  const currentActiveLayout = getActiveLayout() || availableLayouts[0];
+  // Initialize admin layouts if not present
+  const initializeAdminLayouts = () => {
+    const hasAdminLayouts = layouts.some(layout => layout.id.startsWith('admin-'));
+    if (!hasAdminLayouts) {
+      adminLayouts.forEach(adminLayout => {
+        updateLayout(adminLayout.id, adminLayout);
+      });
+      setActiveLayout('admin-default');
+    }
+  };
+
+  // Initialize admin layouts on component mount
+  React.useEffect(() => {
+    initializeAdminLayouts();
+  }, []);
+
+  const currentActiveLayout = getActiveLayout() || adminLayouts[0];
 
   const getWidgetIcon = (widgetId: string) => {
     switch (widgetId) {
@@ -140,14 +156,14 @@ export function AdminDashboardCustomization() {
             <div>
               <Label className="text-sm font-medium">Layout Style</Label>
               <Select
-                value={activeLayoutId}
+                value={activeLayoutId.startsWith('admin-') ? activeLayoutId : 'admin-default'}
                 onValueChange={setActiveLayout}
               >
                 <SelectTrigger className="mt-2">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableLayouts.map((layout) => (
+                  {adminLayouts.map((layout) => (
                     <SelectItem key={layout.id} value={layout.id}>
                       <div>
                         <div className="font-medium">{layout.name}</div>

@@ -9,7 +9,7 @@ import { SecuritySection } from "@/components/profile/SecuritySection";
 import { AppearanceSettings } from "@/components/profile/AppearanceSettings";
 import { AdminDashboardCustomization } from "@/components/profile/AdminDashboardCustomization";
 import { AdminSystemSettings } from "@/components/profile/AdminSystemSettings";
-import { MobileAdminDashboard } from "@/components/profile/mobile/MobileAdminDashboard";
+import { DynamicAdminDashboard } from "@/components/profile/admin/DynamicAdminDashboard";
 import { MobileProfileHeader } from "@/components/profile/mobile/MobileProfileHeader";
 import { MobileSettingsCard } from "@/components/profile/mobile/MobileSettingsCard";
 import { useState, useEffect } from "react";
@@ -59,7 +59,7 @@ export default function AdminProfile() {
         </div>
 
         <MobileProfileHeader />
-        <MobileAdminDashboard />
+        <DynamicAdminDashboard />
       </div>
     );
   }
@@ -115,7 +115,7 @@ export default function AdminProfile() {
         </div>
 
         <TabsContent value="overview" className="space-y-4 sm:space-y-6 mt-4">
-          <MobileAdminDashboard />
+          <DynamicAdminDashboard />
         </TabsContent>
 
         <TabsContent value="appearance" className="space-y-4 sm:space-y-6 mt-4">
