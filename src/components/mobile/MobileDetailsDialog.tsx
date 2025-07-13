@@ -47,6 +47,7 @@ export function MobileDetailsDialog({
               onClick={() => onOpenChange(false)}
             >
               <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
             </Button>
           </div>
         </DialogHeader>
