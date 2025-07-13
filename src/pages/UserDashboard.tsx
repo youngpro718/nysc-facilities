@@ -7,12 +7,12 @@ import { NotificationCard } from "@/components/dashboard/NotificationCard";
 import { RoomAssignmentCard } from "@/components/dashboard/RoomAssignmentCard";
 import { KeyAssignmentCard } from "@/components/dashboard/KeyAssignmentCard";
 import { IssueSummaryCard } from "@/components/dashboard/IssueSummaryCard";
-import { IssueWizard } from "@/components/issues/wizard/components/IssueWizard";
+import { ReportIssueWizard } from "@/components/issues/wizard/ReportIssueWizard";
 import { MobileFABs } from "@/components/ui/MobileFABs";
 import { BottomTabNavigation } from "@/components/ui/BottomTabNavigation";
 import { KeyRequestForm } from "@/components/requests/KeyRequestForm";
 import { useRoomAssignments } from "@/hooks/dashboard/useRoomAssignments";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 export default function UserDashboard() {
   const { user, isLoading, isAuthenticated } = useAuth();
@@ -96,7 +96,8 @@ export default function UserDashboard() {
       />
       <Dialog open={showIssueReport} onOpenChange={setShowIssueReport}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <IssueWizard
+          <DialogTitle className="sr-only">Report an Issue</DialogTitle>
+          <ReportIssueWizard
             onSuccess={() => setShowIssueReport(false)}
             onCancel={() => setShowIssueReport(false)}
             assignedRooms={assignedRooms}
