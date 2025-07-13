@@ -17,7 +17,7 @@ export const BottomTabNavigation: React.FC = () => {
   const [isMoreSheetOpen, setIsMoreSheetOpen] = useState(false);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-t border-border flex justify-around items-center h-16 shadow-lg md:hidden pb-safe">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-t border-border flex justify-around items-center shadow-lg md:hidden" style={{ height: `calc(4rem + env(safe-area-inset-bottom))`, paddingBottom: 'env(safe-area-inset-bottom)' }}>
       {TABS.map(({ label, icon: Icon, path }) => {
         const isActive = location.pathname === path || (label === "More" && location.pathname.startsWith("/profile"));
         
