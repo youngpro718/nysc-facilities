@@ -5,7 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { RoomInventory } from "../../RoomInventory";
+import { MobileRoomInventory } from "../../inventory/components/MobileRoomInventory";
 
 interface InventoryDialogEvent extends CustomEvent {
   detail: {
@@ -33,14 +33,14 @@ export function MobileInventoryDialog() {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="max-w-4xl max-h-[90vh] p-0">
-        <DialogHeader className="p-6 pb-4">
-          <DialogTitle>
-            Inventory for {roomData?.roomName || 'Storage Room'}
+      <DialogContent className="max-w-lg w-[95vw] max-h-[90vh] h-[90vh] p-0 gap-0">
+        <DialogHeader className="p-4 pb-0 shrink-0">
+          <DialogTitle className="text-base">
+            {roomData?.roomName || 'Storage Room'} - Inventory
           </DialogTitle>
         </DialogHeader>
-        <div className="h-[calc(90vh-8rem)] overflow-hidden px-6 pb-6">
-          {roomData && <RoomInventory roomId={roomData.roomId} />}
+        <div className="flex-1 overflow-hidden">
+          {roomData && <MobileRoomInventory roomId={roomData.roomId} />}
         </div>
       </DialogContent>
     </Dialog>
