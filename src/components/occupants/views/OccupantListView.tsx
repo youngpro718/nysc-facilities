@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LoadingState } from "../LoadingState";
 import { ErrorState } from "../ErrorState";
 import { OccupantHeader } from "../OccupantHeader";
@@ -10,11 +10,23 @@ import { CreateOccupantDialog } from "../CreateOccupantDialog";
 import { EditOccupantDialog } from "../dialogs/EditOccupantDialog";
 import { AssignKeysDialog } from "../AssignKeysDialog";
 import { AssignRoomsDialog } from "../AssignRoomsDialog";
+import { MobileOccupantsList } from "../MobileOccupantsList";
 import { useOccupantList } from "../hooks/useOccupantList";
 import { useOccupantDialogs } from "../hooks/useOccupantDialogs";
 
 export function OccupantListView() {
   const [view, setView] = useState<"grid" | "list">("list");
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
   
   const {
     occupants,
@@ -49,6 +61,57 @@ export function OccupantListView() {
     startEdit,
     closeEdit
   } = useOccupantDialogs();
+
+  // Mobile view
+  if (isMobile) {
+    return (
+      <>
+        <MobileOccupantsList
+          occupants={occupants || []}
+          isLoading={isLoading}
+          onCreateOccupant={() => setIsCreateDialogOpen(true)}
+          onEditOccupant={startEdit}
+          onDeleteOccupant={handleDeleteOccupant}
+          selectedOccupants={selectedOccupants}
+          onToggleSelect={toggleSelectOccupant}
+          onSelectAll={handleSelectAll}
+        />
+
+        <CreateOccupantDialog
+          open={isCreateDialogOpen}
+          onOpenChange={setIsCreateDialogOpen}
+          onSuccess={refetch}
+        />
+
+        {/* Render individual edit dialogs for each editing occupant */}
+        {Object.entries(editingOccupants).map(([id, occupant]) => (
+          <EditOccupantDialog
+            key={id}
+            open={editDialogs[id]}
+            onOpenChange={(open) => {
+              if (!open) closeEdit(id);
+            }}
+            occupant={occupant}
+            onSuccess={refetch}
+          />
+        ))}
+
+        <AssignKeysDialog
+          open={isAssignKeysDialogOpen}
+          onOpenChange={setIsAssignKeysDialogOpen}
+          selectedOccupants={selectedOccupants}
+          onSuccess={refetch}
+        />
+
+        <AssignRoomsDialog
+          open={isAssignRoomsDialogOpen}
+          onOpenChange={setIsAssignRoomsDialogOpen}
+          selectedOccupants={selectedOccupants}
+          onSuccess={refetch}
+        />
+      </>
+    );
+  }
 
   return (
     <div className="space-y-6">
