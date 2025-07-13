@@ -1,12 +1,12 @@
 import { useState, useCallback } from "react";
-import { MobileOccupantCard } from "./MobileOccupantCard";
+import { EnhancedMobileOccupantCard } from "./EnhancedMobileOccupantCard";
 import { MobileOccupantFilters } from "./MobileOccupantFilters";
 import { MobileDetailsDialog } from "@/components/mobile/MobileDetailsDialog";
 import { MobileActionSheet } from "@/components/mobile/MobileActionSheet";
 import { MobileSearchBar } from "@/components/mobile/MobileSearchBar";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Filter, Users, Mail, Phone, MapPin, Calendar, Building } from "lucide-react";
+import { Plus, Filter, Users, Mail, Phone, MapPin, Calendar, Building, Key, DoorOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -16,6 +16,8 @@ interface MobileOccupantsListProps {
   onCreateOccupant?: () => void;
   onEditOccupant?: (occupant: any) => void;
   onDeleteOccupant?: (id: string) => void;
+  onAssignRooms?: () => void;
+  onAssignKeys?: () => void;
   selectedOccupants?: string[];
   onToggleSelect?: (id: string) => void;
   onSelectAll?: () => void;
@@ -27,6 +29,8 @@ export function MobileOccupantsList({
   onCreateOccupant,
   onEditOccupant,
   onDeleteOccupant,
+  onAssignRooms,
+  onAssignKeys,
   selectedOccupants = [],
   onToggleSelect,
   onSelectAll
@@ -147,22 +151,18 @@ export function MobileOccupantsList({
       icon: <Plus className="h-4 w-4" />
     },
     { 
-      id: "bulk", 
-      label: "Bulk Actions", 
-      onClick: () => {
-        // TODO: Implement bulk actions functionality
-        console.log("Bulk actions - not yet implemented");
-      },
-      icon: <Users className="h-4 w-4" />
+      id: "assign_rooms", 
+      label: "Assign Rooms", 
+      onClick: onAssignRooms || (() => {}),
+      icon: <DoorOpen className="h-4 w-4" />,
+      disabled: selectedOccupants.length === 0
     },
     { 
-      id: "export", 
-      label: "Export Data", 
-      onClick: () => {
-        // TODO: Implement export functionality
-        console.log("Export data - not yet implemented");
-      },
-      icon: <Building className="h-4 w-4" />
+      id: "assign_keys", 
+      label: "Assign Keys", 
+      onClick: onAssignKeys || (() => {}),
+      icon: <Key className="h-4 w-4" />,
+      disabled: selectedOccupants.length === 0
     }
   ];
 
@@ -284,12 +284,14 @@ export function MobileOccupantsList({
             </div>
           ) : (
             sortedOccupants.map((occupant) => (
-              <MobileOccupantCard
+              <EnhancedMobileOccupantCard
                 key={occupant.id}
                 occupant={occupant}
                 onClick={() => handleOccupantClick(occupant)}
                 onEdit={() => onEditOccupant?.(occupant)}
                 onDelete={() => onDeleteOccupant?.(occupant.id)}
+                onAssignRooms={onAssignRooms}
+                onAssignKeys={onAssignKeys}
                 isSelected={selectedOccupants.includes(occupant.id)}
                 onToggleSelect={() => onToggleSelect?.(occupant.id)}
               />
@@ -379,6 +381,47 @@ export function MobileOccupantsList({
                     <span className="text-sm">Started: {new Date(selectedOccupant.start_date).toLocaleDateString()}</span>
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Room Assignments */}
+            {selectedOccupant.rooms && selectedOccupant.rooms.length > 0 && (
+              <div>
+                <h4 className="font-medium text-sm text-muted-foreground mb-3">Room Assignments</h4>
+                <div className="space-y-2">
+                  {selectedOccupant.rooms.map((room: any, index: number) => (
+                    <div key={index} className="flex items-center space-x-3 p-2 bg-muted/30 rounded-md">
+                      <DoorOpen className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">
+                            {room.room_number || room.name}
+                          </span>
+                          {index === 0 && (
+                            <Badge variant="secondary" className="text-xs">Primary</Badge>
+                          )}
+                        </div>
+                        {room.floors?.buildings?.name && (
+                          <div className="text-xs text-muted-foreground">
+                            {room.floors.buildings.name}
+                            {room.floors?.name && ` - ${room.floors.name}`}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Key Information */}
+            <div>
+              <h4 className="font-medium text-sm text-muted-foreground mb-3">Access Information</h4>
+              <div className="flex items-center space-x-3">
+                <Key className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">
+                  {selectedOccupant.key_count || 0} {selectedOccupant.key_count === 1 ? 'key' : 'keys'} assigned
+                </span>
               </div>
             </div>
 

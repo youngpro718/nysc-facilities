@@ -54,9 +54,9 @@ export function OccupantTable({
                 <TableHead className="min-w-[180px]">Name</TableHead>
                 <TableHead className="hidden sm:table-cell">Department</TableHead>
                 <TableHead className="hidden md:table-cell">Title</TableHead>
-                <TableHead className="min-w-[200px]">Rooms</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-center hidden sm:table-cell">Access</TableHead>
+                <TableHead className="min-w-[250px]">Room Assignments</TableHead>
+                <TableHead className="min-w-[120px]">Status</TableHead>
+                <TableHead className="text-center hidden sm:table-cell">Keys</TableHead>
                 <TableHead className="w-[100px] text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -95,28 +95,44 @@ export function OccupantTable({
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">{occupant.department || "—"}</TableCell>
                   <TableCell className="hidden md:table-cell">{occupant.title || "—"}</TableCell>
-                  <TableCell className="min-w-[200px]">
-                    {
-                      occupant.rooms && occupant.rooms.length > 0
-                        ? occupant.rooms.map(r => `${r.floors?.buildings?.name ? r.floors.buildings.name + ' - ' : ''}${r.room_number || r.name}`).join(', ')
-                        : '—'
-                    }
+                  <TableCell className="min-w-[250px]">
+                    {occupant.rooms && occupant.rooms.length > 0 ? (
+                      <div className="space-y-1">
+                        {occupant.rooms.slice(0, 2).map((room, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <div className="text-sm">
+                              {room.floors?.buildings?.name && (
+                                <span className="text-muted-foreground">{room.floors.buildings.name} - </span>
+                              )}
+                              <span className="font-medium">{room.room_number || room.name}</span>
+                              {room.floors?.name && (
+                                <span className="text-muted-foreground text-xs ml-1">({room.floors.name})</span>
+                              )}
+                            </div>
+                            {index === 0 && (
+                              <Badge variant="secondary" className="text-xs">Primary</Badge>
+                            )}
+                          </div>
+                        ))}
+                        {occupant.rooms.length > 2 && (
+                          <div className="text-xs text-muted-foreground">
+                            +{occupant.rooms.length - 2} more rooms
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">No rooms assigned</span>
+                    )}
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
                     <Badge variant={occupant.status === 'active' ? 'default' : 'secondary'}>
                       {occupant.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    <div className="flex justify-center gap-4">
-                      <div className="flex items-center gap-1">
-                        <Key className="h-4 w-4" />
-                        <span>{occupant.key_count || 0}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <DoorOpen className="h-4 w-4" />
-                        <span>{occupant.room_count || 0}</span>
-                      </div>
+                  <TableCell className="hidden sm:table-cell text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <Key className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">{occupant.key_count || 0}</span>
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
@@ -139,9 +155,9 @@ export function OccupantTable({
                   </TableCell>
                 </TableRow>,
                 expandedRows.has(occupant.id) && (
-                  <TableRow key={`${occupant.id}-details`}>
-                    <TableCell colSpan={8} className="p-0">
-                      <div className="p-4">
+                <TableRow key={`${occupant.id}-details`}>
+                    <TableCell colSpan={9} className="p-0">
+                      <div className="p-4 bg-muted/30">
                         <OccupantDetails occupant={occupant} />
                       </div>
                     </TableCell>
@@ -150,7 +166,7 @@ export function OccupantTable({
               ].filter(Boolean))}
               {(!occupants || occupants.length === 0) && (
                 <TableRow>
-                  <TableCell colSpan={8} className="h-24 text-center">
+                  <TableCell colSpan={9} className="h-24 text-center">
                     No occupants found
                   </TableCell>
                 </TableRow>

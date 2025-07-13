@@ -72,6 +72,8 @@ export function OccupantListView() {
           onCreateOccupant={() => setIsCreateDialogOpen(true)}
           onEditOccupant={startEdit}
           onDeleteOccupant={handleDeleteOccupant}
+          onAssignRooms={() => setIsAssignRoomsDialogOpen(true)}
+          onAssignKeys={() => setIsAssignKeysDialogOpen(true)}
           selectedOccupants={selectedOccupants}
           onToggleSelect={toggleSelectOccupant}
           onSelectAll={handleSelectAll}
