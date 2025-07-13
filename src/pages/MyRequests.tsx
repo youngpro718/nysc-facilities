@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { Plus, Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Plus, Clock, CheckCircle, XCircle, AlertCircle, Package, Truck, Key } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { useKeyRequests } from "@/hooks/useKeyRequests";
+import { useKeyOrders } from "@/hooks/useKeyOrders";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,31 +12,52 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { KeyRequestForm } from "@/components/requests/KeyRequestForm";
 import { MobileRequestCard } from "@/components/requests/mobile/MobileRequestCard";
 import { MobileRequestForm } from "@/components/mobile/MobileRequestForm";
+import { Progress } from "@/components/ui/progress";
 
 const statusConfig = {
   pending: { 
     icon: Clock, 
     color: "bg-yellow-500", 
-    label: "Pending",
-    variant: "secondary" as const
+    label: "Pending Review",
+    variant: "secondary" as const,
+    description: "Waiting for administrator approval"
   },
   approved: { 
     icon: CheckCircle, 
     color: "bg-green-500", 
     label: "Approved",
-    variant: "default" as const
+    variant: "default" as const,
+    description: "Request approved, processing order"
   },
   rejected: { 
     icon: XCircle, 
     color: "bg-red-500", 
     label: "Rejected",
-    variant: "destructive" as const
+    variant: "destructive" as const,
+    description: "Request was denied"
   },
-  completed: { 
+  fulfilled: { 
     icon: CheckCircle, 
     color: "bg-blue-500", 
-    label: "Completed",
-    variant: "outline" as const
+    label: "Fulfilled",
+    variant: "outline" as const,
+    description: "Key is ready for pickup"
+  }
+};
+
+const orderStatusConfig = {
+  ordered: { icon: Package, label: "Ordered", progress: 25 },
+  received: { icon: Truck, label: "Received", progress: 75 },
+  ready_for_pickup: { icon: Key, label: "Ready for Pickup", progress: 100 },
+  delivered: { icon: CheckCircle, label: "Delivered", progress: 100 }
+};
+
+const getRequestTypeLabel = (type: string) => {
+  switch (type) {
+    case 'spare': return 'Spare Key';
+    case 'replacement': return 'Replacement Key';
+    case 'new': return 'New Access';
+    default: return type;
   }
 };
 
@@ -45,6 +67,7 @@ export default function MyRequests() {
   const [isMobile, setIsMobile] = useState(false);
   const { user } = useAuth();
   const { data: requests = [], isLoading, refetch } = useKeyRequests(user?.id);
+  const { data: orders = [] } = useKeyOrders(user?.id);
 
   // Check if device is mobile
   useEffect(() => {
@@ -150,35 +173,93 @@ export default function MyRequests() {
           ) : (
             // Desktop view
             requests.map((request) => {
-            
-            return (
-              <Card key={request.id}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{request.key_id || 'Key Request'}</CardTitle>
-                    <Badge variant={statusConfig.pending.variant}>
-                      <Clock className="h-3 w-3 mr-1" />
-                      {request.status || 'Pending'}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {request.reason && (
-                    <div>
-                      <p className="font-medium text-sm text-muted-foreground mb-1">Reason</p>
-                      <p className="text-sm">{request.reason}</p>
+              const requestStatus = statusConfig[request.status as keyof typeof statusConfig] || statusConfig.pending;
+              const StatusIcon = requestStatus.icon;
+              
+              // Find related key order
+              const relatedOrder = orders.find(order => 
+                order.notes?.includes(request.id) || 
+                (order.ordered_at && new Date(order.ordered_at) >= new Date(request.created_at || ''))
+              );
+              
+              return (
+                <Card key={request.id} className="transition-all hover:shadow-md">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <StatusIcon className="h-5 w-5" />
+                          {getRequestTypeLabel(request.request_type || 'key')} Request
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {requestStatus.description}
+                        </p>
+                      </div>
+                      <Badge variant={requestStatus.variant}>
+                        {requestStatus.label}
+                      </Badge>
                     </div>
-                  )}
+                  </CardHeader>
                   
-                  <div className="flex items-center justify-between text-sm text-muted-foreground pt-2 border-t">
-                    <span>Submitted: {request.created_at ? format(new Date(request.created_at), "MMM d, yyyy 'at' h:mm a") : 'Unknown'}</span>
-                    {request.updated_at && request.updated_at !== request.created_at && (
-                      <span>Updated: {format(new Date(request.updated_at), "MMM d, yyyy")}</span>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="font-medium text-sm text-muted-foreground mb-1">Reason</p>
+                        <p className="text-sm">{request.reason || 'Not specified'}</p>
+                      </div>
+                      
+                      <div>
+                        <p className="font-medium text-sm text-muted-foreground mb-1">Quantity</p>
+                        <p className="text-sm">{request.quantity || 1} key(s)</p>
+                      </div>
+                    </div>
+
+                    {request.room_other && (
+                      <div>
+                        <p className="font-medium text-sm text-muted-foreground mb-1">Room/Location</p>
+                        <p className="text-sm">{request.room_other}</p>
+                      </div>
                     )}
-                  </div>
-                </CardContent>
-              </Card>
-            );
+
+                    {request.admin_notes && (
+                      <div className="bg-muted p-3 rounded-lg">
+                        <p className="font-medium text-sm text-muted-foreground mb-1">
+                          {request.status === 'rejected' ? 'Rejection Reason' : 'Admin Notes'}
+                        </p>
+                        <p className="text-sm">{request.admin_notes}</p>
+                      </div>
+                    )}
+
+                    {/* Order Tracking for Approved Requests */}
+                    {request.status === 'approved' && relatedOrder && (
+                      <div className="border-t pt-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="font-medium text-sm">Order Progress</p>
+                          <span className="text-sm text-muted-foreground">
+                            {orderStatusConfig[relatedOrder.status as keyof typeof orderStatusConfig]?.label || relatedOrder.status}
+                          </span>
+                        </div>
+                        <Progress 
+                          value={orderStatusConfig[relatedOrder.status as keyof typeof orderStatusConfig]?.progress || 0} 
+                          className="h-2"
+                        />
+                        {relatedOrder.status === 'ready_for_pickup' && (
+                          <p className="text-sm text-green-600 mt-2 font-medium">
+                            🎉 Your key is ready for pickup at the facilities office!
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center justify-between text-sm text-muted-foreground pt-2 border-t">
+                      <span>Submitted: {request.created_at ? format(new Date(request.created_at), "MMM d, yyyy 'at' h:mm a") : 'Unknown'}</span>
+                      {request.updated_at && request.updated_at !== request.created_at && (
+                        <span>Updated: {format(new Date(request.updated_at), "MMM d, yyyy")}</span>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
             })
           )}
         </div>

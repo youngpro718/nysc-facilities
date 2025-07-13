@@ -8105,6 +8105,10 @@ export type Database = {
         Args: { email_to_promote: string }
         Returns: undefined
       }
+      advance_key_order_status: {
+        Args: { p_order_id: string; p_fulfilled_by?: string; p_notes?: string }
+        Returns: undefined
+      }
       approve_user: {
         Args: { user_id: string }
         Returns: undefined
