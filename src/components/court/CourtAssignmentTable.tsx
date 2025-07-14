@@ -68,8 +68,26 @@ export const CourtAssignmentTable = () => {
 
       if (assignmentsError) throw assignmentsError;
 
-      // Join the data manually
-      return courtRooms.map((room: any) => {
+      // Define court part ordering based on the provided document
+      const getPartOrder = (part: string | null): number => {
+        if (!part) return 9999; // Unassigned parts go to the end
+        
+        const partOrderMap: { [key: string]: number } = {
+          'TAP A': 1, 'TAP G': 2, 'GWP1': 3, 'TAP B': 4,
+          'AT1 21': 5, '1': 6, '22 W': 7, '23 W': 8, '32 W': 9,
+          '37': 10, '41 Th': 11, '42 W': 12, '51 Th': 13, '53': 14,
+          '54': 15, '59': 16, '59M': 17, '59M W': 18, '61 T': 19,
+          '62 Th': 20, '66': 21, '71 M': 22, '72': 23, '73': 24,
+          '75': 25, '77': 26, '81 M': 27, '85': 28, 'MDC-92': 29,
+          '93 T': 30, '94 Post Judgment': 31, '95': 32, '99': 33,
+          'IDV': 34, 'N-SCT': 35, '1A Post Judgment': 36
+        };
+        
+        return partOrderMap[part] || 1000; // Unknown parts go near the end
+      };
+
+      // Join the data manually and sort by court part order
+      const result = courtRooms.map((room: any) => {
         const assignment = assignments?.find((a: any) => a.room_id === room.room_id);
         
         return {
@@ -87,6 +105,19 @@ export const CourtAssignmentTable = () => {
           is_active: room.is_active,
         };
       }) as CourtAssignmentRow[];
+
+      // Sort by part order first, then by room number
+      return result.sort((a, b) => {
+        const aPartOrder = getPartOrder(a.part);
+        const bPartOrder = getPartOrder(b.part);
+        
+        if (aPartOrder !== bPartOrder) {
+          return aPartOrder - bPartOrder;
+        }
+        
+        // If same part order (or both unassigned), sort by room number
+        return a.room_number.localeCompare(b.room_number);
+      });
     },
   });
 
