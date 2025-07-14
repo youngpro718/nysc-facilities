@@ -13,7 +13,7 @@ export const useDashboardData = (isAdminDashboard: boolean = false) => {
   const { assignedRooms } = useRoomAssignments(userData?.id);
   const { userIssues, handleMarkAsSeen, refetchIssues } = useUserIssues(userData?.id);
   const { allIssues } = useAdminIssues();
-  const { buildings, buildingsLoading, activities } = useBuildingData(userData?.id);
+  const { buildings, buildingsLoading, activities, refreshData: refreshBuildingData } = useBuildingData(userData?.id);
   const { isAdmin, isLoading, error, checkUserRoleAndFetchData } = useAdminCheck(isAdminDashboard);
 
   useEffect(() => {
@@ -40,6 +40,16 @@ export const useDashboardData = (isAdminDashboard: boolean = false) => {
     };
   }, [userData?.id, refetchIssues]);
 
+  const refreshData = async () => {
+    if (refreshBuildingData) {
+      await refreshBuildingData();
+    }
+    if (refetchIssues) {
+      await refetchIssues();
+    }
+    checkUserRoleAndFetchData();
+  };
+
   return {
     profile,
     assignedRooms,
@@ -53,6 +63,7 @@ export const useDashboardData = (isAdminDashboard: boolean = false) => {
     issues: allIssues,
     isLoading,
     isAdmin,
-    checkUserRoleAndFetchData
+    checkUserRoleAndFetchData,
+    refreshData
   };
 };

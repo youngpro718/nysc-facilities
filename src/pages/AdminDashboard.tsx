@@ -13,6 +13,7 @@ const AdminDashboard = () => {
     activities,
     handleMarkAsSeen,
     checkUserRoleAndFetchData,
+    refreshData,
     isLoading,
     isAdmin
   } = useDashboardData(true); // Pass true for admin dashboard
@@ -40,7 +41,7 @@ const AdminDashboard = () => {
   if (!buildings || buildings.length === 0) {
     return (
       <div className="space-y-8">
-        <DashboardHeader />
+        <DashboardHeader onRefresh={refreshData} isLoading={isLoading} />
         <div className="flex flex-col items-center justify-center min-h-[400px] text-muted-foreground">
           <p>No buildings found</p>
         </div>
@@ -50,7 +51,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <DashboardHeader />
+      <DashboardHeader onRefresh={refreshData} isLoading={isLoading || buildingsLoading} />
       <BuildingsGrid
         buildings={buildings}
         isLoading={buildingsLoading}

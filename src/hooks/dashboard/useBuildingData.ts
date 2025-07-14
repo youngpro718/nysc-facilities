@@ -5,7 +5,7 @@ import type { Building, Activity } from "@/types/dashboard";
 
 export const useBuildingData = (userId?: string) => {
   // Fetch buildings with caching
-  const { data: buildings = [], isLoading: buildingsLoading } = useQuery<Building[]>({
+  const { data: buildings = [], isLoading: buildingsLoading, refetch: refetchBuildings } = useQuery<Building[]>({
     queryKey: ['buildings'],
     queryFn: async () => {
       try {
@@ -98,7 +98,7 @@ export const useBuildingData = (userId?: string) => {
   });
 
   // Fetch recent activities
-  const { data: activities = [] } = useQuery<Activity[]>({
+  const { data: activities = [], refetch: refetchActivities } = useQuery<Activity[]>({
     queryKey: ['building-activities'],
     queryFn: async () => {
       try {
@@ -129,9 +129,14 @@ export const useBuildingData = (userId?: string) => {
     staleTime: 60000, // Consider data fresh for 1 minute
   });
 
+  const refreshData = async () => {
+    await Promise.all([refetchBuildings(), refetchActivities()]);
+  };
+
   return {
     buildings,
     buildingsLoading,
-    activities
+    activities,
+    refreshData
   };
 };
