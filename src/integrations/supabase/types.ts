@@ -6293,6 +6293,85 @@ export type Database = {
           },
         ]
       }
+      room_shutdowns: {
+        Row: {
+          actual_end_date: string | null
+          actual_start_date: string | null
+          court_room_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          impact_level: string | null
+          project_details: Json | null
+          reason: string
+          start_date: string
+          status: string
+          temporary_location: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          actual_end_date?: string | null
+          actual_start_date?: string | null
+          court_room_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          impact_level?: string | null
+          project_details?: Json | null
+          reason: string
+          start_date: string
+          status?: string
+          temporary_location?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          actual_end_date?: string | null
+          actual_start_date?: string | null
+          court_room_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          impact_level?: string | null
+          project_details?: Json | null
+          reason?: string
+          start_date?: string
+          status?: string
+          temporary_location?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_shutdowns_court_room_id_fkey"
+            columns: ["court_room_id"]
+            isOneToOne: false
+            referencedRelation: "court_maintenance_view"
+            referencedColumns: ["court_room_id"]
+          },
+          {
+            foreignKeyName: "room_shutdowns_court_room_id_fkey"
+            columns: ["court_room_id"]
+            isOneToOne: false
+            referencedRelation: "court_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_shutdowns_court_room_id_fkey"
+            columns: ["court_room_id"]
+            isOneToOne: false
+            referencedRelation: "courtroom_availability"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rooms: {
         Row: {
           capacity: number | null
@@ -6648,6 +6727,100 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "maintenance_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shutdown_notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          notification_type: string
+          recipients: Json | null
+          scheduled_for: string
+          sent_at: string | null
+          shutdown_id: string
+          status: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          notification_type: string
+          recipients?: Json | null
+          scheduled_for: string
+          sent_at?: string | null
+          shutdown_id: string
+          status?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          notification_type?: string
+          recipients?: Json | null
+          scheduled_for?: string
+          sent_at?: string | null
+          shutdown_id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shutdown_notifications_shutdown_id_fkey"
+            columns: ["shutdown_id"]
+            isOneToOne: false
+            referencedRelation: "room_shutdowns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shutdown_schedule_changes: {
+        Row: {
+          change_type: string
+          changed_at: string
+          changed_by: string | null
+          id: string
+          impact_description: string | null
+          new_end_date: string | null
+          new_start_date: string | null
+          previous_end_date: string | null
+          previous_start_date: string | null
+          reason: string
+          shutdown_id: string
+        }
+        Insert: {
+          change_type: string
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          impact_description?: string | null
+          new_end_date?: string | null
+          new_start_date?: string | null
+          previous_end_date?: string | null
+          previous_start_date?: string | null
+          reason: string
+          shutdown_id: string
+        }
+        Update: {
+          change_type?: string
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          impact_description?: string | null
+          new_end_date?: string | null
+          new_start_date?: string | null
+          previous_end_date?: string | null
+          previous_start_date?: string | null
+          reason?: string
+          shutdown_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shutdown_schedule_changes_shutdown_id_fkey"
+            columns: ["shutdown_id"]
+            isOneToOne: false
+            referencedRelation: "room_shutdowns"
             referencedColumns: ["id"]
           },
         ]

@@ -8,10 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { AlertTriangle, MapPin, CalendarIcon, Clock, CheckCircle2, Users, Bell } from "lucide-react";
+import { AlertTriangle, MapPin, CalendarIcon, Clock, CheckCircle2, Users, Bell, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useRealtime } from "@/hooks/useRealtime";
+import { CreateShutdownDialog } from "./CreateShutdownDialog";
 
 type ShutdownReason = "Project" | "Maintenance" | "Cleaning" | "Emergency";
 
@@ -42,49 +44,91 @@ export const RoomShutdownTracker = ({ onSetTemporaryLocation }: RoomShutdownTrac
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterReason, setFilterReason] = useState<string>("all");
   const [selectedDate, setSelectedDate] = useState<Date>();
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [selectedCourtroom, setSelectedCourtroom] = useState<{ id: string; room_number: string } | null>(null);
+
+  // Enable real-time updates
+  useRealtime({
+    table: 'room_shutdowns',
+    queryKeys: ['room-shutdowns'],
+    showToasts: true
+  });
 
   const { data: shutdowns, isLoading, refetch } = useQuery({
     queryKey: ["room-shutdowns", filterStatus, filterReason, selectedDate],
     queryFn: async () => {
       let query = supabase
-        .from("court_rooms")
+        .from("room_shutdowns")
         .select(`
           id,
-          room_number,
-          maintenance_status,
-          maintenance_start_date,
-          maintenance_end_date,
+          reason,
+          status,
+          start_date,
+          end_date,
+          title,
+          description,
+          impact_level,
           temporary_location,
-          maintenance_notes
+          court_rooms!inner(
+            id,
+            room_number
+          ),
+          shutdown_notifications(
+            notification_type,
+            sent_at
+          )
         `)
-        .order("maintenance_start_date", { ascending: true });
+        .order("start_date", { ascending: true });
 
       if (filterStatus !== "all") {
-        query = query.eq("maintenance_status", filterStatus);
+        query = query.eq("status", filterStatus);
+      }
+
+      if (filterReason !== "all") {
+        query = query.eq("reason", filterReason);
+      }
+
+      if (selectedDate) {
+        const dateStr = selectedDate.toISOString().split('T')[0];
+        query = query.gte("start_date", dateStr).lte("start_date", dateStr);
       }
 
       const { data, error } = await query;
       if (error) throw error;
 
       // Transform the data to match our interface
-      return data?.map(room => ({
-        id: room.id,
-        room_id: room.id,
-        room_number: room.room_number,
-        reason: "Project" as ShutdownReason, // Default for now
-        start_date: room.maintenance_start_date || "",
-        end_date: room.maintenance_end_date || "",
-        temporary_location: room.temporary_location || "",
-        status: room.maintenance_status === "under_maintenance" ? "in_progress" : 
-                room.maintenance_status === "maintenance_scheduled" ? "scheduled" : "completed",
-        project_notes: room.maintenance_notes || "",
+      return data?.map(shutdown => ({
+        id: shutdown.id,
+        room_id: shutdown.court_rooms.id,
+        room_number: shutdown.court_rooms.room_number,
+        reason: shutdown.reason.charAt(0).toUpperCase() + shutdown.reason.slice(1) as ShutdownReason,
+        start_date: shutdown.start_date,
+        end_date: shutdown.end_date || "",
+        temporary_location: shutdown.temporary_location || "",
+        status: shutdown.status,
+        project_notes: shutdown.description || "",
         notifications_sent: {
-          major: false,
-          court_officer: false,
-          clerks: false,
-          judge: false,
+          major: shutdown.shutdown_notifications?.some(n => n.notification_type === 'one_week' && n.sent_at) || false,
+          court_officer: shutdown.shutdown_notifications?.some(n => n.notification_type === 'three_days' && n.sent_at) || false,
+          clerks: shutdown.shutdown_notifications?.some(n => n.notification_type === 'one_day' && n.sent_at) || false,
+          judge: shutdown.shutdown_notifications?.some(n => n.notification_type === 'start' && n.sent_at) || false,
         }
       })) || [];
+    },
+  });
+
+  // Get available courtrooms for creation
+  const { data: courtrooms } = useQuery({
+    queryKey: ["available-courtrooms"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("court_rooms")
+        .select("id, room_number")
+        .eq("is_active", true)
+        .order("room_number");
+      
+      if (error) throw error;
+      return data || [];
     },
   });
 
@@ -181,9 +225,10 @@ export const RoomShutdownTracker = ({ onSetTemporaryLocation }: RoomShutdownTrac
         </Card>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-4">
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
+      {/* Filters and Actions */}
+      <div className="flex flex-wrap gap-4 items-center justify-between">
+        <div className="flex flex-wrap gap-4">
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
@@ -226,18 +271,47 @@ export const RoomShutdownTracker = ({ onSetTemporaryLocation }: RoomShutdownTrac
           </PopoverContent>
         </Popover>
 
-        {(filterStatus !== "all" || filterReason !== "all" || selectedDate) && (
-          <Button
-            variant="ghost"
-            onClick={() => {
-              setFilterStatus("all");
-              setFilterReason("all");
-              setSelectedDate(undefined);
-            }}
+          {(filterStatus !== "all" || filterReason !== "all" || selectedDate) && (
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setFilterStatus("all");
+                setFilterReason("all");
+                setSelectedDate(undefined);
+              }}
+            >
+              Clear Filters
+            </Button>
+          )}
+        </div>
+
+        <div className="flex gap-2">
+          <Select onValueChange={(value) => {
+            const courtroom = courtrooms?.find(c => c.id === value);
+            if (courtroom) {
+              setSelectedCourtroom(courtroom);
+              setCreateDialogOpen(true);
+            }
+          }}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Select room to schedule" />
+            </SelectTrigger>
+            <SelectContent>
+              {courtrooms?.map((courtroom) => (
+                <SelectItem key={courtroom.id} value={courtroom.id}>
+                  Room {courtroom.room_number}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button 
+            onClick={() => setCreateDialogOpen(true)}
+            disabled={!selectedCourtroom}
           >
-            Clear Filters
+            <Plus className="h-4 w-4 mr-2" />
+            Schedule Shutdown
           </Button>
-        )}
+        </div>
       </div>
 
       {/* Shutdown List */}
@@ -331,6 +405,16 @@ export const RoomShutdownTracker = ({ onSetTemporaryLocation }: RoomShutdownTrac
         <div className="text-center py-8 text-muted-foreground">
           No room shutdowns found
         </div>
+      )}
+
+      {/* Create Shutdown Dialog */}
+      {selectedCourtroom && (
+        <CreateShutdownDialog
+          open={createDialogOpen}
+          onOpenChange={setCreateDialogOpen}
+          courtroomId={selectedCourtroom.id}
+          roomNumber={selectedCourtroom.room_number}
+        />
       )}
     </div>
   );
