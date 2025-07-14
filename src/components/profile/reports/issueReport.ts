@@ -327,6 +327,8 @@ export async function fetchIssueReport(
       message: 'Fetching comprehensive issue data...'
     });
 
+    console.log('Starting issue report generation...');
+
     // Fetch from the actual issues table since issue_report_details view may not exist
     const { data: issuesData, error } = await supabase
       .from('issues')
@@ -338,20 +340,13 @@ export async function fetchIssueReport(
         priority,
         created_at,
         due_date,
-        resolution_date,
-        rooms:room_id (
-          name,
-          room_number,
-          floors:floor_id (
-            name,
-            buildings:building_id (
-              name
-            )
-          )
-        )
+        resolution_date
       `);
 
+    console.log('Database query result:', { issuesData, error });
+
     if (error) {
+      console.error('Database error:', error);
       progressCallback({
         status: 'error',
         progress: 0,
@@ -361,15 +356,52 @@ export async function fetchIssueReport(
     }
 
     const issues = issuesData || [];
+    console.log(`Found ${issues.length} issues`);
 
-    if (!issues || issues.length === 0) {
+    if (issues.length === 0) {
+      console.log('No issues found, generating empty report');
       progressCallback({
         status: 'generating',
-        progress: 100,
-        message: 'No issues found - generating empty report'
+        progress: 50,
+        message: 'No issues found - generating sample report'
       });
       
-      const emptyReport: FormattedIssueReport = {
+      // Generate a sample report with test content
+      const content: Content[] = [
+        { text: 'Issue Analysis Report', style: 'header' },
+        { text: `Generated on ${format(new Date(), 'PPpp')}`, style: 'subheader' },
+        { text: '\n' },
+        { text: 'Executive Summary', style: 'sectionHeader' },
+        { text: 'No issues found in the database.', style: 'normal' },
+        { text: '\n' },
+        { text: 'This appears to be a new system or all issues have been resolved.', style: 'normal' },
+        { text: '\n' },
+        { text: 'Sample Report Structure:', style: 'sectionHeader' },
+        {
+          ul: [
+            'Critical Issues Requiring Immediate Attention',
+            'Weekly and Monthly Trends Analysis', 
+            'Long-Running Issues Analysis',
+            'Location-based Issue Distribution',
+            'Actionable Recommendations'
+          ]
+        }
+      ];
+
+      const docDefinition: TDocumentDefinitions = {
+        content
+      };
+
+      console.log('Generating PDF with sample content...');
+      await downloadPdf(docDefinition, `issue_report_sample_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.pdf`);
+
+      progressCallback({
+        status: 'completed',
+        progress: 100,
+        message: 'Sample issue report generated successfully'
+      });
+
+      return {
         metadata: { generated_at: new Date().toISOString() },
         metrics: {
           total_issues: 0,
@@ -381,7 +413,6 @@ export async function fetchIssueReport(
         },
         sections: []
       };
-      return emptyReport;
     }
 
     progressCallback({
@@ -393,9 +424,9 @@ export async function fetchIssueReport(
     // Transform data to match expected interface
     const formattedIssues: IssueReportDetail[] = issues.map(issue => ({
       ...issue,
-      building_name: issue.rooms?.floors?.buildings?.name || 'Unknown Building',
-      floor_name: issue.rooms?.floors?.name || 'Unknown Floor',
-      room_name: issue.rooms?.name || issue.rooms?.room_number || 'Unknown Room',
+      building_name: 'Unknown Building',
+      floor_name: 'Unknown Floor',
+      room_name: 'Unknown Room',
       resolution_type: issue.status === 'resolved' ? 'completed' : undefined
     }));
 
