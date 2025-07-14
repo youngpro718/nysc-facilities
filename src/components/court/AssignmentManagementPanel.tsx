@@ -75,11 +75,11 @@ export const AssignmentManagementPanel = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("court_rooms")
-        .select("id, room_number, courtroom_number")
+        .select("room_id, room_number, courtroom_number")
         .eq("is_active", true)
         .order("room_number");
       if (error) throw error;
-      return data as CourtRoom[];
+      return data?.map(room => ({ id: room.room_id, room_number: room.room_number, courtroom_number: room.courtroom_number })) as CourtRoom[];
     },
   });
 
