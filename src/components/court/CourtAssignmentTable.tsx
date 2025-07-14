@@ -274,14 +274,29 @@ export const CourtAssignmentTable = () => {
   }, [courtAssignments]);
 
   const updateSortOrderMutation = useMutation({
-    mutationFn: async (updates: { id: string; sort_order: number }[]) => {
-      // Update each assignment individually to avoid the room_number requirement
+    mutationFn: async (updates: (
+      { id: string; sort_order: number } | 
+      { room_id: string; room_number: string; sort_order: number; isNew: true }
+    )[]) => {
       for (const update of updates) {
-        const { error } = await supabase
-          .from("court_assignments")
-          .update({ sort_order: update.sort_order })
-          .eq("id", update.id);
-        if (error) throw error;
+        if ('isNew' in update) {
+          // Create new assignment for unassigned room to store sort order
+          const { error } = await supabase
+            .from("court_assignments")
+            .insert({ 
+              room_id: update.room_id, 
+              room_number: update.room_number, 
+              sort_order: update.sort_order 
+            });
+          if (error) throw error;
+        } else {
+          // Update existing assignment
+          const { error } = await supabase
+            .from("court_assignments")
+            .update({ sort_order: update.sort_order })
+            .eq("id", update.id);
+          if (error) throw error;
+        }
       }
     },
     onSuccess: () => {
@@ -377,17 +392,23 @@ export const CourtAssignmentTable = () => {
       const newData = arrayMove(sortedData, oldIndex, newIndex);
       setSortedData(newData);
 
-      // Update sort orders in database
-      const updates = newData
-        .filter(row => row.assignment_id)
-        .map((row, index) => ({
-          id: row.assignment_id!,
-          sort_order: index + 1
-        }));
+      // Update sort orders in database for all rows
+      const updates = newData.map((row, index) => {
+        if (row.assignment_id) {
+          // Update existing assignment
+          return { id: row.assignment_id, sort_order: index + 1 };
+        } else {
+          // Create assignment for unassigned rooms to store sort order
+          return { 
+            room_id: row.room_id, 
+            room_number: row.room_number, 
+            sort_order: index + 1,
+            isNew: true as const
+          };
+        }
+      });
 
-      if (updates.length > 0) {
-        updateSortOrderMutation.mutate(updates);
-      }
+      updateSortOrderMutation.mutate(updates);
     }
   };
 
