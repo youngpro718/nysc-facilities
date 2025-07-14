@@ -21,6 +21,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { QuickUpdateActions } from "./QuickUpdateActions";
 import { ReporterProfile } from "./ReporterProfile";
 import { RoomOccupantContext } from "./RoomOccupantContext";
+import { MonitorButton } from "@/components/monitoring/MonitorButton";
 import type { EnhancedIssue } from "@/hooks/dashboard/useAdminIssuesData";
 
 interface EnhancedIssueCardProps {
@@ -125,6 +126,18 @@ export function EnhancedIssueCard({ issue, isSelected, onSelect, onUpdate }: Enh
                 <span>{issue.photos.length}</span>
               </div>
             )}
+          </div>
+          
+          {/* Monitor Button */}
+          <div className="mt-3" onClick={(e) => e.stopPropagation()}>
+            <MonitorButton
+              itemType="issue"
+              itemId={issue.id}
+              itemName={issue.title}
+              itemDescription={issue.description}
+              size="sm"
+              variant="ghost"
+            />
           </div>
         </div>
 
