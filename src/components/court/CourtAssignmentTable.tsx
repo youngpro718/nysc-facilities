@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2, Save, X, Filter, Download, GripVertical } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useRealtime } from "@/hooks/useRealtime";
@@ -88,6 +89,32 @@ const SortableRow = ({
     const isEditing = editingCell?.rowId === row.room_id && editingCell?.field === field;
     
     if (isEditing) {
+      // Special handling for calendar_day field
+      if (field === 'calendar_day') {
+        return (
+          <div className="flex items-center gap-2">
+            <Select value={editingValue} onValueChange={setEditingValue}>
+              <SelectTrigger className="h-8 w-32">
+                <SelectValue placeholder="Select day" />
+              </SelectTrigger>
+              <SelectContent className="bg-background border shadow-lg z-50">
+                <SelectItem value="Monday">Monday</SelectItem>
+                <SelectItem value="Tuesday">Tuesday</SelectItem>
+                <SelectItem value="Wednesday">Wednesday</SelectItem>
+                <SelectItem value="Thursday">Thursday</SelectItem>
+                <SelectItem value="Friday">Friday</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button size="sm" variant="ghost" onClick={onSave}>
+              <Save className="h-3 w-3" />
+            </Button>
+            <Button size="sm" variant="ghost" onClick={onCancel}>
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
+        );
+      }
+      
       return (
         <div className="flex items-center gap-2">
           <Input
