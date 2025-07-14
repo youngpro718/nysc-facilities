@@ -135,72 +135,154 @@ export function generateRecommendationsSection(recommendations: string[]): Conte
 
 export async function downloadPdf(docDefinition: TDocumentDefinitions, filename: string) {
   try {
-    console.log('Starting PDF generation with content:', docDefinition);
+    console.log('Starting PDF generation...');
+    console.log('Document definition:', JSON.stringify(docDefinition, null, 2));
     
-    // Validate content exists
-    if (!docDefinition.content || (Array.isArray(docDefinition.content) && docDefinition.content.length === 0)) {
-      throw new Error('PDF content is empty or undefined');
+    // Validate content exists and is properly formatted
+    if (!docDefinition || !docDefinition.content) {
+      throw new Error('PDF document definition is missing');
+    }
+
+    if (Array.isArray(docDefinition.content) && docDefinition.content.length === 0) {
+      throw new Error('PDF content array is empty');
+    }
+
+    // Filter out null/undefined content items
+    const cleanContent = Array.isArray(docDefinition.content) 
+      ? docDefinition.content.filter(item => item != null)
+      : docDefinition.content;
+
+    if (Array.isArray(cleanContent) && cleanContent.length === 0) {
+      throw new Error('PDF content is empty after filtering');
     }
     
-    // Enhanced document definition with simplified styling
+    // Enhanced document definition with robust styling
     const enhancedDocDefinition: TDocumentDefinitions = {
       ...docDefinition,
+      content: cleanContent,
       pageSize: 'A4',
       pageMargins: [40, 60, 40, 60],
+      info: {
+        title: filename.replace('.pdf', ''),
+        author: 'Facility Management System',
+        subject: 'Generated Report',
+        ...docDefinition.info
+      },
       styles: {
-        header: { fontSize: 20, bold: true, margin: [0, 0, 0, 10] },
-        subheader: { fontSize: 14, margin: [0, 0, 0, 10] },
-        sectionHeader: { fontSize: 16, bold: true, margin: [0, 15, 0, 8] },
-        date: { fontSize: 10, alignment: 'right' },
-        metric: { fontSize: 12, margin: [0, 5, 0, 5] },
-        criticalMetric: { fontSize: 12, margin: [0, 5, 0, 5], bold: true, color: 'red' },
-        warningMetric: { fontSize: 12, margin: [0, 5, 0, 5], bold: true, color: 'orange' },
-        recommendation: { fontSize: 11, margin: [0, 3, 0, 3] },
-        normal: { fontSize: 10, margin: [0, 2, 0, 2] },
+        header: { 
+          fontSize: 20, 
+          bold: true, 
+          margin: [0, 0, 0, 10],
+          color: '#2563eb'
+        },
+        subheader: { 
+          fontSize: 14, 
+          margin: [0, 0, 0, 10],
+          italics: true,
+          color: '#64748b'
+        },
+        sectionHeader: { 
+          fontSize: 16, 
+          bold: true, 
+          margin: [0, 15, 0, 8],
+          color: '#1e40af'
+        },
+        date: { 
+          fontSize: 10, 
+          alignment: 'right',
+          color: '#64748b'
+        },
+        metric: { 
+          fontSize: 12, 
+          margin: [0, 5, 0, 5] 
+        },
+        criticalMetric: { 
+          fontSize: 12, 
+          margin: [0, 5, 0, 5], 
+          bold: true, 
+          color: '#dc2626' 
+        },
+        warningMetric: { 
+          fontSize: 12, 
+          margin: [0, 5, 0, 5], 
+          bold: true, 
+          color: '#ea580c' 
+        },
+        recommendation: { 
+          fontSize: 11, 
+          margin: [0, 3, 0, 3],
+          color: '#059669'
+        },
+        normal: { 
+          fontSize: 10, 
+          margin: [0, 2, 0, 2] 
+        },
         ...docDefinition.styles
       },
       defaultStyle: {
-        fontSize: 10
-        // Removed font specification to use browser defaults
+        fontSize: 10,
+        lineHeight: 1.2
       }
     };
 
-    console.log('Enhanced doc definition created:', enhancedDocDefinition);
+    console.log('Enhanced document definition prepared');
+    
+    // Create PDF with timeout
     const pdfDocGenerator = pdfMake.createPdf(enhancedDocDefinition);
 
     return new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('PDF generation timed out after 30 seconds'));
+      }, 30000);
+
       try {
         console.log('Generating PDF blob...');
         pdfDocGenerator.getBlob((blob) => {
+          clearTimeout(timeout);
+          
           try {
-            console.log('PDF blob generated successfully, size:', blob.size);
+            console.log('PDF blob generated, size:', blob.size, 'bytes');
+            
             if (blob.size === 0) {
               throw new Error('Generated PDF is empty (0 bytes)');
             }
+
+            if (blob.size < 100) {
+              console.warn('PDF size is suspiciously small:', blob.size, 'bytes');
+            }
             
+            // Create download link
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', filename);
+            link.download = filename;
+            link.style.display = 'none';
+            
             document.body.appendChild(link);
             link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-            console.log('PDF download initiated successfully');
+            
+            // Cleanup
+            setTimeout(() => {
+              document.body.removeChild(link);
+              URL.revokeObjectURL(url);
+            }, 100);
+            
+            console.log('PDF download initiated successfully:', filename);
             resolve();
-          } catch (error) {
-            console.error('Error during PDF download:', error);
-            reject(error);
+          } catch (downloadError) {
+            console.error('Error during PDF download:', downloadError);
+            reject(new Error(`Download failed: ${downloadError instanceof Error ? downloadError.message : 'Unknown error'}`));
           }
         });
-      } catch (error) {
-        console.error('Error during PDF generation:', error);
-        reject(error);
+      } catch (generationError) {
+        clearTimeout(timeout);
+        console.error('Error during PDF generation:', generationError);
+        reject(new Error(`PDF generation failed: ${generationError instanceof Error ? generationError.message : 'Unknown error'}`));
       }
     });
   } catch (error) {
-    console.error("Failed to download PDF:", error);
-    throw new Error(`PDF generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error("PDF preparation failed:", error);
+    throw new Error(`PDF preparation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 

@@ -329,8 +329,12 @@ export async function fetchIssueReport(
 
     console.log('Starting issue report generation...');
 
-    // Fetch from the actual issues table since issue_report_details view may not exist
-    const { data: issuesData, error } = await supabase
+    // Add timeout to database query
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Database query timed out')), 30000);
+    });
+
+    const queryPromise = supabase
       .from('issues')
       .select(`
         id,
@@ -340,10 +344,17 @@ export async function fetchIssueReport(
         priority,
         created_at,
         due_date,
-        resolution_date
-      `);
+        resolution_date,
+        location
+      `)
+      .limit(1000); // Prevent overly large queries
 
-    console.log('Database query result:', { issuesData, error });
+    const { data: issuesData, error } = await Promise.race([
+      queryPromise,
+      timeoutPromise
+    ]) as any;
+
+    console.log('Database query result:', { count: issuesData?.length, error });
 
     if (error) {
       console.error('Database error:', error);
@@ -358,32 +369,61 @@ export async function fetchIssueReport(
     const issues = issuesData || [];
     console.log(`Found ${issues.length} issues`);
 
+    progressCallback({
+      status: 'generating',
+      progress: 30,
+      message: `Processing ${issues.length} issues...`
+    });
+
     if (issues.length === 0) {
-      console.log('No issues found, generating empty report');
+      console.log('No issues found, generating sample report');
       progressCallback({
         status: 'generating',
         progress: 50,
         message: 'No issues found - generating sample report'
       });
       
-      // Generate a sample report with test content
+      // Generate a comprehensive sample report
       const content: Content[] = [
         { text: 'Issue Analysis Report', style: 'header' },
         { text: `Generated on ${format(new Date(), 'PPpp')}`, style: 'subheader' },
         { text: '\n' },
         { text: 'Executive Summary', style: 'sectionHeader' },
-        { text: 'No issues found in the database.', style: 'normal' },
+        { text: 'No issues found in the database. This indicates either:', style: 'normal' },
         { text: '\n' },
-        { text: 'This appears to be a new system or all issues have been resolved.', style: 'normal' },
-        { text: '\n' },
-        { text: 'Sample Report Structure:', style: 'sectionHeader' },
         {
           ul: [
-            'Critical Issues Requiring Immediate Attention',
-            'Weekly and Monthly Trends Analysis', 
-            'Long-Running Issues Analysis',
-            'Location-based Issue Distribution',
-            'Actionable Recommendations'
+            'This is a new system with no reported issues yet',
+            'All issues have been successfully resolved',
+            'The system is running smoothly with minimal problems',
+            'Users may not be actively reporting issues through the system'
+          ]
+        },
+        { text: '\n' },
+        { text: 'System Status', style: 'sectionHeader' },
+        {
+          table: {
+            headerRows: 1,
+            widths: ['*', 'auto'],
+            body: [
+              ['Metric', 'Value'],
+              ['Total Issues', '0'],
+              ['Open Issues', '0'],
+              ['Resolved Issues', '0'],
+              ['Critical Issues', '0'],
+              ['System Health', 'Excellent']
+            ]
+          },
+          layout: 'lightHorizontalLines'
+        },
+        { text: '\n' },
+        { text: 'Recommendations', style: 'sectionHeader' },
+        {
+          ul: [
+            'Continue monitoring system performance',
+            'Encourage staff to report any issues promptly',
+            'Consider implementing proactive maintenance schedules',
+            'Review system usage to ensure proper adoption'
           ]
         }
       ];
@@ -392,7 +432,13 @@ export async function fetchIssueReport(
         content
       };
 
-      console.log('Generating PDF with sample content...', docDefinition);
+      progressCallback({
+        status: 'generating',
+        progress: 90,
+        message: 'Generating PDF document...'
+      });
+
+      console.log('Generating PDF with sample content...');
       await downloadPdf(docDefinition, `issue_report_sample_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.pdf`);
 
       progressCallback({
