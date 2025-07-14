@@ -7,6 +7,7 @@ import { EnhancedIssuesList } from "@/components/admin-issues/EnhancedIssuesList
 import { IssueAnalyticsPanel } from "@/components/admin-issues/IssueAnalyticsPanel";
 import { BulkIssueManager } from "@/components/admin-issues/BulkIssueManager";
 import { useAdminIssuesData } from "@/hooks/dashboard/useAdminIssuesData";
+import { useBulkUpdateIssueMutation } from "@/components/issues/hooks/mutations/useBulkUpdateIssueMutation";
 import { Button } from "@/components/ui/button";
 import { Plus, BarChart3 } from "lucide-react";
 import { IssueDialog } from "@/components/issues/IssueDialog";
@@ -30,10 +31,59 @@ const AdminIssuesHub = () => {
     refreshData
   } = useAdminIssuesData();
 
-  const handleBulkAction = (action: string, issueIds: string[]) => {
-    // Handle bulk actions (update status, assign, etc.)
+  const bulkUpdateMutation = useBulkUpdateIssueMutation();
+
+  const handleBulkAction = async (action: string, issueIds: string[]) => {
     console.log('Bulk action:', action, 'for issues:', issueIds);
-    refreshData();
+    
+    try {
+      switch (action) {
+        case 'mark_resolved':
+          await bulkUpdateMutation.mutateAsync({
+            issueIds,
+            updates: { status: 'resolved' }
+          });
+          break;
+        case 'mark_in_progress':
+          await bulkUpdateMutation.mutateAsync({
+            issueIds,
+            updates: { status: 'in_progress' }
+          });
+          break;
+        case 'mark_open':
+          await bulkUpdateMutation.mutateAsync({
+            issueIds,
+            updates: { status: 'open' }
+          });
+          break;
+        case 'set_high_priority':
+          await bulkUpdateMutation.mutateAsync({
+            issueIds,
+            updates: { priority: 'high' }
+          });
+          break;
+        case 'set_medium_priority':
+          await bulkUpdateMutation.mutateAsync({
+            issueIds,
+            updates: { priority: 'medium' }
+          });
+          break;
+        case 'set_low_priority':
+          await bulkUpdateMutation.mutateAsync({
+            issueIds,
+            updates: { priority: 'low' }
+          });
+          break;
+        default:
+          console.warn('Unknown bulk action:', action);
+      }
+      
+      // Clear selection after successful action
+      setSelectedIssues([]);
+      refreshData();
+    } catch (error) {
+      console.error('Bulk action failed:', error);
+    }
   };
 
   const handleIssueUpdate = () => {
