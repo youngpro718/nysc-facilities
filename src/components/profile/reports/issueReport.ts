@@ -1,14 +1,10 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { format, subDays, subWeeks, subMonths, differenceInDays, differenceInHours } from "date-fns";
-import { TDocumentDefinitions, Content } from "pdfmake/interfaces";
 import { IssueReportDetail, IssueReportMetrics, IssueReportSection, FormattedIssueReport, ReportCallback } from "./types";
-import { 
-  downloadPdf, 
-  generateReportHeader, 
-  generateRecommendationsSection,
-  generateMetricsSection
-} from "./reportUtils";
+import { executeCustomQuery } from "./utils/databaseQueries";
+import { PdfGenerator, createMetricsTable, createRecommendationsList } from "./utils/pdfGenerator";
+import { handleReportError } from "./utils/reportErrorHandler";
 
 interface IssueTrend {
   period: string;
@@ -321,20 +317,10 @@ export async function fetchIssueReport(
   progressCallback: ReportCallback = () => {}
 ): Promise<FormattedIssueReport> {
   try {
-    progressCallback({
-      status: 'generating',
-      progress: 10,
-      message: 'Fetching comprehensive issue data...'
-    });
-
     console.log('Starting issue report generation...');
 
-    // Add timeout to database query
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Database query timed out')), 30000);
-    });
-
-    const queryPromise = supabase
+    // Use the new database query utility
+    const query = supabase
       .from('issues')
       .select(`
         id,
@@ -347,105 +333,65 @@ export async function fetchIssueReport(
         resolution_date,
         location
       `)
-      .limit(1000); // Prevent overly large queries
+      .limit(1000)
+      .order('created_at', { ascending: false });
 
-    const { data: issuesData, error } = await Promise.race([
-      queryPromise,
-      timeoutPromise
-    ]) as any;
+    const issues = await executeCustomQuery<IssueReportDetail>(
+      query,
+      'issues',
+      progressCallback
+    );
 
-    console.log('Database query result:', { count: issuesData?.length, error });
-
-    if (error) {
-      console.error('Database error:', error);
-      progressCallback({
-        status: 'error',
-        progress: 0,
-        message: `Database error: ${error.message}`
-      });
-      throw new Error(`Database query failed: ${error.message}`);
-    }
-
-    const issues = issuesData || [];
     console.log(`Found ${issues.length} issues`);
-
-    progressCallback({
-      status: 'generating',
-      progress: 30,
-      message: `Processing ${issues.length} issues...`
-    });
 
     if (issues.length === 0) {
       console.log('No issues found, generating sample report');
-      progressCallback({
-        status: 'generating',
-        progress: 50,
-        message: 'No issues found - generating sample report'
-      });
       
-      // Generate a comprehensive sample report
-      const content: Content[] = [
-        { text: 'Issue Analysis Report', style: 'header' },
-        { text: `Generated on ${format(new Date(), 'PPpp')}`, style: 'subheader' },
-        { text: '\n' },
-        { text: 'Executive Summary', style: 'sectionHeader' },
-        { text: 'No issues found in the database. This indicates either:', style: 'normal' },
-        { text: '\n' },
-        {
-          ul: [
-            'This is a new system with no reported issues yet',
-            'All issues have been successfully resolved',
-            'The system is running smoothly with minimal problems',
-            'Users may not be actively reporting issues through the system'
-          ]
-        },
-        { text: '\n' },
-        { text: 'System Status', style: 'sectionHeader' },
-        {
-          table: {
-            headerRows: 1,
-            widths: ['*', 'auto'],
-            body: [
-              ['Metric', 'Value'],
-              ['Total Issues', '0'],
-              ['Open Issues', '0'],
-              ['Resolved Issues', '0'],
-              ['Critical Issues', '0'],
-              ['System Health', 'Excellent']
-            ]
-          },
-          layout: 'lightHorizontalLines'
-        },
-        { text: '\n' },
-        { text: 'Recommendations', style: 'sectionHeader' },
-        {
-          ul: [
-            'Continue monitoring system performance',
-            'Encourage staff to report any issues promptly',
-            'Consider implementing proactive maintenance schedules',
-            'Review system usage to ensure proper adoption'
-          ]
-        }
+      const pdfGenerator = new PdfGenerator(progressCallback);
+      const noDataRecommendations = [
+        'Continue monitoring system performance',
+        'Encourage staff to report any issues promptly',
+        'Consider implementing proactive maintenance schedules',
+        'Review system usage to ensure proper adoption'
       ];
 
-      const docDefinition: TDocumentDefinitions = {
-        content
-      };
-
-      progressCallback({
-        status: 'generating',
-        progress: 90,
-        message: 'Generating PDF document...'
-      });
-
-      console.log('Generating PDF with sample content...');
-      await downloadPdf(docDefinition, `issue_report_sample_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.pdf`);
-
-      progressCallback({
-        status: 'completed',
-        progress: 100,
-        message: 'Sample issue report generated successfully'
-      });
+      await pdfGenerator.generatePdf({
+        title: 'Issue Analysis Report',
+        subtitle: 'System Status: No Issues Found',
+        sections: [
+          {
+            title: 'Executive Summary',
+            content: [
+              { text: 'No issues found in the database. This indicates either:', style: 'normal' },
+              { text: '\n' },
+              {
+                ul: [
+                  'This is a new system with no reported issues yet',
+                  'All issues have been successfully resolved',
+                  'The system is running smoothly with minimal problems',
+                  'Users may not be actively reporting issues through the system'
+                ]
+              }
+            ]
+          },
+          {
+            title: 'System Status',
+            content: [
+              createMetricsTable({
+                'Total Issues': 0,
+                'Open Issues': 0,
+                'Resolved Issues': 0,
+                'Critical Issues': 0,
+                'System Health': 'Excellent'
+              })
+            ]
+          },
+          {
+            title: 'Recommendations',
+            content: [createRecommendationsList(noDataRecommendations)]
+          }
+        ]
+      }, `issue_report_sample_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.pdf`);
 
       return {
         metadata: { generated_at: new Date().toISOString() },
@@ -470,9 +416,9 @@ export async function fetchIssueReport(
     // Transform data to match expected interface
     const formattedIssues: IssueReportDetail[] = issues.map(issue => ({
       ...issue,
-      building_name: 'Unknown Building',
-      floor_name: 'Unknown Floor',
-      room_name: 'Unknown Room',
+      building_name: issue.building_name || 'Unknown Building',
+      floor_name: issue.floor_name || 'Unknown Floor',
+      room_name: issue.room_name || 'Unknown Room',
       resolution_type: issue.status === 'resolved' ? 'completed' : undefined
     }));
 
@@ -482,148 +428,34 @@ export async function fetchIssueReport(
     const ongoingIssues = identifyOngoingIssues(formattedIssues);
     const recommendations = generateIssueRecommendations(metrics, criticalIssues, ongoingIssues);
 
-    progressCallback({
-      status: 'generating',
-      progress: 80,
-      message: 'Generating comprehensive PDF report...'
-    });
-
     console.log('Building comprehensive report with metrics:', metrics);
     console.log('Critical issues:', criticalIssues.length);
     console.log('Ongoing issues:', ongoingIssues.length);
 
-    const content: Content[] = [
-      ...generateReportHeader('Comprehensive Issue Analysis Report', 
-        'Detailed analysis of facility issues, trends, and actionable insights'),
-      
-      // Executive Summary
-      { text: 'Executive Summary', style: 'sectionHeader' },
-      {
-        columns: [
-          {
-            text: [
-              { text: `Total Issues: ${metrics.total_issues}\n`, style: 'metric' },
-              { text: `Open Issues: ${metrics.open_issues}\n`, style: 'metric' },
-              { text: `Critical Overdue: ${metrics.criticalOverdueCount}\n`, style: 'criticalMetric' },
-            ]
-          },
-          {
-            text: [
-              { text: `Resolution Rate: ${((metrics.resolved_issues / metrics.total_issues) * 100).toFixed(1)}%\n`, style: 'metric' },
-              { text: `Avg Resolution: ${Math.round(metrics.avgResolutionTime / 24)} days\n`, style: 'metric' },
-              { text: `Stagnant Issues: ${metrics.stagnantIssuesCount}\n`, style: 'warningMetric' },
-            ]
-          }
-        ]
-      },
-      { text: '\n' },
-
-      // Critical Issues Section
-      { text: 'Critical Issues Requiring Immediate Attention', style: 'sectionHeader' },
-      criticalIssues.length > 0 ? {
-        table: {
-          headerRows: 1,
-          widths: ['*', 'auto', 'auto', 'auto', '*'],
-          body: [
-            ['Issue', 'Priority', 'Days Overdue', 'Location', 'Impact'],
-            ...criticalIssues.slice(0, 10).map(issue => [
-              issue.title,
-              issue.priority,
-              issue.daysOverdue?.toString() || 'N/A',
-              `${issue.building_name} > ${issue.room_name}`,
-              issue.impactDescription
-            ])
+    const pdfGenerator = new PdfGenerator(progressCallback);
+    await pdfGenerator.generatePdf({
+      title: 'Comprehensive Issue Analysis Report',
+      subtitle: 'Detailed analysis of facility issues, trends, and actionable insights',
+      sections: [
+        {
+          title: 'Executive Summary',
+          content: [
+            createMetricsTable({
+              'Total Issues': metrics.total_issues,
+              'Open Issues': metrics.open_issues,
+              'Resolved Issues': metrics.resolved_issues,
+              'Critical Overdue': metrics.criticalOverdueCount,
+              'Resolution Rate (%)': ((metrics.resolved_issues / metrics.total_issues) * 100).toFixed(1),
+              'Avg Resolution (days)': Math.round(metrics.avgResolutionTime / 24)
+            })
           ]
         },
-        layout: 'lightHorizontalLines'
-      } : { text: 'No critical issues identified.', style: 'normal' },
-      { text: '\n' },
-
-      // Trends Analysis
-      ...generateTrendAnalysis(metrics.weeklyTrend, 'Weekly'),
-      ...generateTrendAnalysis(metrics.monthlyTrend, 'Monthly'),
-
-      // Ongoing Issues Analysis
-      { text: 'Long-Running Issues Analysis', style: 'sectionHeader' },
-      ongoingIssues.length > 0 ? {
-        table: {
-          headerRows: 1,
-          widths: ['*', 'auto', 'auto', 'auto', '*'],
-          body: [
-            ['Issue', 'Days Open', 'Priority', 'Stagnation Risk', 'Location'],
-            ...ongoingIssues.slice(0, 15).map(issue => [
-              issue.title,
-              issue.daysSinceCreated.toString(),
-              issue.priority,
-              issue.stagnationRisk.toUpperCase(),
-              `${issue.building_name} > ${issue.room_name}`
-            ])
-          ]
-        },
-        layout: 'lightHorizontalLines'
-      } : { text: 'No long-running issues identified.', style: 'normal' },
-      { text: '\n' },
-
-      // Detailed Analytics
-      { text: 'Detailed Analytics', style: 'sectionHeader' },
-      {
-        columns: [
-          {
-            text: [
-              { text: 'Priority Distribution:\n', style: 'subHeader' },
-              ...Object.entries(metrics.priority_distribution).map(([priority, count]) => 
-                `• ${priority}: ${count} (${((count / metrics.total_issues) * 100).toFixed(1)}%)\n`
-              )
-            ]
-          },
-          {
-            text: [
-              { text: 'Status Distribution:\n', style: 'subHeader' },
-              ...Object.entries(metrics.status_distribution).map(([status, count]) => 
-                `• ${status}: ${count} (${((count / metrics.total_issues) * 100).toFixed(1)}%)\n`
-              )
-            ]
-          }
-        ]
-      },
-      { text: '\n' },
-
-      // Location-based Analysis
-      { text: 'Issues by Location', style: 'sectionHeader' },
-      (() => {
-        const locationGroups = formattedIssues.reduce((acc, issue) => {
-          const location = `${issue.building_name} > ${issue.floor_name}`;
-          if (!acc[location]) acc[location] = [];
-          acc[location].push(issue);
-          return acc;
-        }, {} as Record<string, IssueReportDetail[]>);
-
-        const sortedLocations = Object.entries(locationGroups)
-          .sort(([,a], [,b]) => b.length - a.length)
-          .slice(0, 10);
-
-        return {
-          table: {
-            headerRows: 1,
-            widths: ['*', 'auto', 'auto', 'auto'],
-            body: [
-              ['Location', 'Total Issues', 'Open', 'Critical/High'],
-              ...sortedLocations.map(([location, issues]) => [
-                location,
-                issues.length.toString(),
-                issues.filter(i => i.status !== 'resolved').length.toString(),
-                issues.filter(i => i.priority === 'critical' || i.priority === 'high').length.toString()
-              ])
-            ]
-          },
-          layout: 'lightHorizontalLines'
-        };
-      })(),
-      { text: '\n' },
-
-      // Recommendations
-      ...generateRecommendationsSection(recommendations)
-    ];
+        {
+          title: 'Recommendations',
+          content: [createRecommendationsList(recommendations)]
+        }
+      ]
+    }, `comprehensive_issue_report_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.pdf`);
 
     console.log('Final PDF content structure:', content.length, 'sections');
     console.log('Content preview:', content.slice(0, 3));
