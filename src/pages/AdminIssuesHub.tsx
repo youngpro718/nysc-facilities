@@ -9,7 +9,7 @@ import { BulkIssueManager } from "@/components/admin-issues/BulkIssueManager";
 import { useAdminIssuesData } from "@/hooks/dashboard/useAdminIssuesData";
 import { useBulkUpdateIssueMutation } from "@/components/issues/hooks/mutations/useBulkUpdateIssueMutation";
 import { Button } from "@/components/ui/button";
-import { Plus, BarChart3 } from "lucide-react";
+import { Plus, BarChart3, RefreshCw } from "lucide-react";
 import { IssueDialog } from "@/components/issues/IssueDialog";
 
 export type GroupingMode = 'priority' | 'room' | 'date' | 'reporter' | 'status';
@@ -98,6 +98,14 @@ const AdminIssuesHub = () => {
         description="Central command center for all facility issues"
       >
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => refreshData()}
+            disabled={isLoading}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
           <Button
             variant="outline"
             onClick={() => setShowAnalytics(!showAnalytics)}
