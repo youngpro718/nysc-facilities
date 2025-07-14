@@ -265,7 +265,6 @@ export const AssignmentManagementPanel = () => {
       <CreateAssignmentDialog
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
-        terms={terms || []}
         courtrooms={courtrooms || []}
       />
       

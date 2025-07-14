@@ -36,18 +36,17 @@ type CourtRoom = {
 interface CreateAssignmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  terms: CourtTerm[];
   courtrooms: CourtRoom[];
 }
 
 export const CreateAssignmentDialog = ({
   open,
   onOpenChange,
-  terms,
   courtrooms,
 }: CreateAssignmentDialogProps) => {
   const [formData, setFormData] = useState({
-    term_id: "",
+    term_name: "",
+    term_number: "",
     room_id: "",
     part: "",
     justice: "",
@@ -70,7 +69,6 @@ export const CreateAssignmentDialog = ({
       const { error } = await supabase
         .from("court_assignments")
         .insert({
-          term_id: data.term_id,
           room_id: data.room_id,
           room_number: roomNumber,
           part: data.part,
@@ -104,11 +102,11 @@ export const CreateAssignmentDialog = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.term_id || !formData.room_id || !formData.part || !formData.justice) {
+    if (!formData.room_id || !formData.part || !formData.justice) {
       toast({
         variant: "destructive",
         title: "Missing fields",
-        description: "Please fill in all required fields.",
+        description: "Please fill in Room, Part, and Justice fields.",
       });
       return;
     }
@@ -118,7 +116,8 @@ export const CreateAssignmentDialog = ({
 
   const handleClose = () => {
     setFormData({
-      term_id: "",
+      term_name: "",
+      term_number: "",
       room_id: "",
       part: "",
       justice: "",
@@ -141,47 +140,25 @@ export const CreateAssignmentDialog = ({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            {/* Term Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="term">Court Term *</Label>
-              <Select
-                value={formData.term_id}
-                onValueChange={(value) => setFormData({ ...formData, term_id: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a term" />
-                </SelectTrigger>
-                <SelectContent>
-                  {terms.map((term) => (
-                    <SelectItem key={term.id} value={term.id}>
-                      {term.term_name} (#{term.term_number})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Room Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="room">Courtroom *</Label>
-              <Select
-                value={formData.room_id}
-                onValueChange={(value) => setFormData({ ...formData, room_id: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a courtroom" />
-                </SelectTrigger>
-                <SelectContent>
-                  {courtrooms.map((room) => (
-                    <SelectItem key={room.id} value={room.id}>
-                      Room {room.room_number} 
-                      {room.courtroom_number && ` (${room.courtroom_number})`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          {/* Room Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="room">Courtroom *</Label>
+            <Select
+              value={formData.room_id}
+              onValueChange={(value) => setFormData({ ...formData, room_id: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a courtroom" />
+              </SelectTrigger>
+              <SelectContent>
+                {courtrooms.map((room) => (
+                  <SelectItem key={room.id} value={room.id}>
+                    Room {room.room_number} 
+                    {room.courtroom_number && ` (${room.courtroom_number})`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
