@@ -72,6 +72,9 @@ export const CourtAssignmentTable = () => {
       const getPartOrder = (part: string | null): number => {
         if (!part) return 9999; // Unassigned parts go to the end
         
+        // Handle multiple parts by taking the first one for ordering
+        const firstPart = part.split(',')[0].trim();
+        
         const partOrderMap: { [key: string]: number } = {
           'TAP A': 1, 'TAP G': 2, 'GWP1': 3, 'TAP B': 4,
           'AT1 21': 5, '1': 6, '22 W': 7, '23 W': 8, '32 W': 9,
@@ -83,7 +86,7 @@ export const CourtAssignmentTable = () => {
           'IDV': 34, 'N-SCT': 35, '1A Post Judgment': 36
         };
         
-        return partOrderMap[part] || 1000; // Unknown parts go near the end
+        return partOrderMap[firstPart] || 1000; // Unknown parts go near the end
       };
 
       // Join the data manually and sort by court part order
