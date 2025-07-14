@@ -40,7 +40,7 @@ export const CourtOperationsDashboard = () => {
       </div>
 
       <Tabs defaultValue="availability" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="availability" className="flex items-center gap-2">
             <MapPin className="h-4 w-4" />
             Courtroom Status
@@ -60,10 +60,6 @@ export const CourtOperationsDashboard = () => {
           <TabsTrigger value="maintenance" className="flex items-center gap-2">
             <Wrench className="h-4 w-4" />
             Maintenance Impact
-          </TabsTrigger>
-          <TabsTrigger value="schedule" className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Schedule Overview
           </TabsTrigger>
         </TabsList>
 
@@ -87,16 +83,6 @@ export const CourtOperationsDashboard = () => {
           <CourtMaintenancePanel />
         </TabsContent>
 
-        <TabsContent value="schedule" className="space-y-4">
-          {selectedTermId ? (
-            <TermScheduleView termId={selectedTermId} />
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Select a term from the Terms tab to view its schedule</p>
-            </div>
-          )}
-        </TabsContent>
       </Tabs>
 
       <TermUploadDialog 

@@ -13,7 +13,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
-type ShutdownReason = "Modernization" | "Maintenance" | "Cleaning" | "Emergency";
+type ShutdownReason = "Project" | "Maintenance" | "Cleaning" | "Emergency";
 
 interface RoomShutdown {
   id: string;
@@ -71,7 +71,7 @@ export const RoomShutdownTracker = ({ onSetTemporaryLocation }: RoomShutdownTrac
         id: room.id,
         room_id: room.id,
         room_number: room.room_number,
-        reason: "Modernization" as ShutdownReason, // Default for now
+        reason: "Project" as ShutdownReason, // Default for now
         start_date: room.maintenance_start_date || "",
         end_date: room.maintenance_end_date || "",
         temporary_location: room.temporary_location || "",
@@ -90,21 +90,21 @@ export const RoomShutdownTracker = ({ onSetTemporaryLocation }: RoomShutdownTrac
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "scheduled": return <Clock className="h-4 w-4 text-blue-600" />;
-      case "in_progress": return <AlertTriangle className="h-4 w-4 text-orange-600" />;
+      case "scheduled": return <Clock className="h-4 w-4 text-primary" />;
+      case "in_progress": return <AlertTriangle className="h-4 w-4 text-destructive" />;
       case "completed": return <CheckCircle2 className="h-4 w-4 text-green-600" />;
-      case "delayed": return <AlertTriangle className="h-4 w-4 text-red-600" />;
-      default: return <Clock className="h-4 w-4 text-gray-400" />;
+      case "delayed": return <AlertTriangle className="h-4 w-4 text-destructive" />;
+      default: return <Clock className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "scheduled": return "bg-blue-100 text-blue-800";
-      case "in_progress": return "bg-orange-100 text-orange-800";
+      case "scheduled": return "bg-primary/10 text-primary";
+      case "in_progress": return "bg-destructive/10 text-destructive";
       case "completed": return "bg-green-100 text-green-800";
-      case "delayed": return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "delayed": return "bg-destructive/10 text-destructive";
+      default: return "bg-muted text-muted-foreground";
     }
   };
 
@@ -132,10 +132,10 @@ export const RoomShutdownTracker = ({ onSetTemporaryLocation }: RoomShutdownTrac
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Shutdowns</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-orange-600" />
+            <AlertTriangle className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{activeCount}</div>
+            <div className="text-2xl font-bold text-destructive">{activeCount}</div>
             <p className="text-xs text-muted-foreground">Currently in progress</p>
           </CardContent>
         </Card>
@@ -143,10 +143,10 @@ export const RoomShutdownTracker = ({ onSetTemporaryLocation }: RoomShutdownTrac
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Scheduled</CardTitle>
-            <Clock className="h-4 w-4 text-blue-600" />
+            <Clock className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{scheduledCount}</div>
+            <div className="text-2xl font-bold text-primary">{scheduledCount}</div>
             <p className="text-xs text-muted-foreground">Upcoming shutdowns</p>
           </CardContent>
         </Card>
@@ -154,10 +154,10 @@ export const RoomShutdownTracker = ({ onSetTemporaryLocation }: RoomShutdownTrac
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Delayed</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-600" />
+            <AlertTriangle className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{delayedCount}</div>
+            <div className="text-2xl font-bold text-destructive">{delayedCount}</div>
             <p className="text-xs text-muted-foreground">Require attention</p>
           </CardContent>
         </Card>
@@ -165,10 +165,10 @@ export const RoomShutdownTracker = ({ onSetTemporaryLocation }: RoomShutdownTrac
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">This Week</CardTitle>
-            <CalendarIcon className="h-4 w-4 text-purple-600" />
+            <CalendarIcon className="h-4 w-4 text-accent-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">
+            <div className="text-2xl font-bold text-accent-foreground">
               {shutdowns?.filter(s => {
                 const startDate = new Date(s.start_date);
                 const now = new Date();
@@ -202,7 +202,7 @@ export const RoomShutdownTracker = ({ onSetTemporaryLocation }: RoomShutdownTrac
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Reasons</SelectItem>
-            <SelectItem value="Modernization">Modernization</SelectItem>
+            <SelectItem value="Project">Project</SelectItem>
             <SelectItem value="Maintenance">Maintenance</SelectItem>
             <SelectItem value="Cleaning">Cleaning</SelectItem>
             <SelectItem value="Emergency">Emergency</SelectItem>
@@ -267,25 +267,25 @@ export const RoomShutdownTracker = ({ onSetTemporaryLocation }: RoomShutdownTrac
             <CardContent>
               <div className="space-y-4">
                 {shutdown.temporary_location && (
-                  <div className="bg-blue-50 p-3 rounded-lg">
-                    <div className="flex items-center gap-2 text-blue-800 font-medium">
+                  <div className="bg-primary/5 p-3 rounded-lg border border-primary/20">
+                    <div className="flex items-center gap-2 text-primary font-medium">
                       <MapPin className="h-4 w-4" />
                       Temporary Location
                     </div>
-                    <p className="text-sm mt-1 text-blue-700">{shutdown.temporary_location}</p>
+                    <p className="text-sm mt-1 text-foreground">{shutdown.temporary_location}</p>
                   </div>
                 )}
 
                 {shutdown.project_notes && (
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <div className="font-medium text-gray-800 mb-1">Project Notes</div>
-                    <p className="text-sm text-gray-700">{shutdown.project_notes}</p>
+                  <div className="bg-muted p-3 rounded-lg">
+                    <div className="font-medium text-foreground mb-1">Project Notes</div>
+                    <p className="text-sm text-muted-foreground">{shutdown.project_notes}</p>
                   </div>
                 )}
 
                 {/* Notification Checklist */}
-                <div className="bg-yellow-50 p-3 rounded-lg">
-                  <div className="flex items-center gap-2 text-yellow-800 font-medium mb-2">
+                <div className="bg-accent/10 p-3 rounded-lg border border-accent/20">
+                  <div className="flex items-center gap-2 text-accent-foreground font-medium mb-2">
                     <Bell className="h-4 w-4" />
                     Notification Checklist
                   </div>
