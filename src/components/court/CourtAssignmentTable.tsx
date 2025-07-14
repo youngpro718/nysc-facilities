@@ -52,43 +52,41 @@ export const CourtAssignmentTable = () => {
   const { data: courtAssignments, isLoading } = useQuery({
     queryKey: ["court-assignments-table"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Get all court rooms
+      const { data: courtRooms, error: roomsError } = await supabase
         .from("court_rooms")
-        .select(`
-          room_id,
-          room_number,
-          courtroom_number,
-          is_active,
-          court_assignments (
-            id,
-            part,
-            justice,
-            clerks,
-            sergeant,
-            tel,
-            fax,
-            calendar_day
-          )
-        `)
+        .select("room_id, room_number, courtroom_number, is_active")
         .eq("is_active", true)
         .order("room_number");
 
-      if (error) throw error;
+      if (roomsError) throw roomsError;
 
-      return data.map((room: any) => ({
-        room_id: room.room_id,
-        room_number: room.room_number,
-        courtroom_number: room.courtroom_number,
-        assignment_id: room.court_assignments?.[0]?.id || null,
-        part: room.court_assignments?.[0]?.part || null,
-        justice: room.court_assignments?.[0]?.justice || null,
-        clerks: room.court_assignments?.[0]?.clerks || null,
-        sergeant: room.court_assignments?.[0]?.sergeant || null,
-        tel: room.court_assignments?.[0]?.tel || null,
-        fax: room.court_assignments?.[0]?.fax || null,
-        calendar_day: room.court_assignments?.[0]?.calendar_day || null,
-        is_active: room.is_active,
-      })) as CourtAssignmentRow[];
+      // Get all court assignments
+      const { data: assignments, error: assignmentsError } = await supabase
+        .from("court_assignments")
+        .select("id, room_id, part, justice, clerks, sergeant, tel, fax, calendar_day");
+
+      if (assignmentsError) throw assignmentsError;
+
+      // Join the data manually
+      return courtRooms.map((room: any) => {
+        const assignment = assignments?.find((a: any) => a.room_id === room.room_id);
+        
+        return {
+          room_id: room.room_id,
+          room_number: room.room_number,
+          courtroom_number: room.courtroom_number,
+          assignment_id: assignment?.id || null,
+          part: assignment?.part || null,
+          justice: assignment?.justice || null,
+          clerks: assignment?.clerks || null,
+          sergeant: assignment?.sergeant || null,
+          tel: assignment?.tel || null,
+          fax: assignment?.fax || null,
+          calendar_day: assignment?.calendar_day || null,
+          is_active: room.is_active,
+        };
+      }) as CourtAssignmentRow[];
     },
   });
 
