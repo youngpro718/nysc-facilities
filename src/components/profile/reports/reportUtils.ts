@@ -232,8 +232,8 @@ export async function downloadPdf(docDefinition: TDocumentDefinitions, filename:
 
     return new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(() => {
-        reject(new Error('PDF generation timed out after 30 seconds'));
-      }, 30000);
+        reject(new Error('PDF generation timed out after 60 seconds'));
+      }, 60000);
 
       try {
         console.log('Generating PDF blob...');
