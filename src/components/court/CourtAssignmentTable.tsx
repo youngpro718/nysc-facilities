@@ -107,11 +107,9 @@ export const CourtAssignmentTable = () => {
       }) as CourtAssignmentRow[];
 
       // Sort by part order first, then by room number
-      const sortedResult = result.sort((a, b) => {
+      return result.sort((a, b) => {
         const aPartOrder = getPartOrder(a.part);
         const bPartOrder = getPartOrder(b.part);
-        
-        console.log('Sorting:', a.room_number, 'part:', a.part, 'order:', aPartOrder, 'vs', b.room_number, 'part:', b.part, 'order:', bPartOrder);
         
         if (aPartOrder !== bPartOrder) {
           return aPartOrder - bPartOrder;
@@ -120,9 +118,6 @@ export const CourtAssignmentTable = () => {
         // If same part order (or both unassigned), sort by room number
         return a.room_number.localeCompare(b.room_number);
       });
-      
-      console.log('Final sorted data:', sortedResult.map(r => ({ room: r.room_number, part: r.part })));
-      return sortedResult;
     },
   });
 
