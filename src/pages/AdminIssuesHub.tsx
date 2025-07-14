@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { CriticalIssuesAlert } from "@/components/admin-issues/CriticalIssuesAlert";
+
 import { IssueGroupingControls } from "@/components/admin-issues/IssueGroupingControls";
 import { EnhancedIssuesList } from "@/components/admin-issues/EnhancedIssuesList";
 import { IssueAnalyticsPanel } from "@/components/admin-issues/IssueAnalyticsPanel";
@@ -62,11 +62,6 @@ const AdminIssuesHub = () => {
         </div>
       </PageHeader>
 
-      {/* Critical Issues Alert */}
-      <CriticalIssuesAlert 
-        criticalIssues={criticalIssues}
-        onIssueSelect={(issueId) => console.log('Selected critical issue:', issueId)}
-      />
 
       {/* Analytics Panel */}
       {showAnalytics && (
