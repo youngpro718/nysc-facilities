@@ -6,10 +6,14 @@ import { TDocumentDefinitions, Content } from "pdfmake/interfaces";
 import { ReportTemplate, ScheduledReport, ReportCallback, ReportMetrics, ReportSummary } from "./types";
 import { format } from "date-fns";
 
-// Initialize PDF fonts
-const fonts = pdfFonts as any;
-if (fonts.pdfMake?.vfs) {
-  pdfMake.vfs = fonts.pdfMake.vfs;
+// Initialize PDF fonts - simplified approach
+try {
+  pdfMake.vfs = pdfFonts?.pdfMake?.vfs || {};
+  console.log('PDF fonts initialized successfully');
+} catch (error) {
+  console.error('Failed to initialize PDF fonts:', error);
+  // Fallback: use browser default fonts
+  pdfMake.vfs = {};
 }
 
 export async function fetchDataWithProgress<T>(
@@ -131,46 +135,68 @@ export function generateRecommendationsSection(recommendations: string[]): Conte
 
 export async function downloadPdf(docDefinition: TDocumentDefinitions, filename: string) {
   try {
-    // Enhanced document definition with consistent styling
+    console.log('Starting PDF generation with content:', docDefinition);
+    
+    // Validate content exists
+    if (!docDefinition.content || (Array.isArray(docDefinition.content) && docDefinition.content.length === 0)) {
+      throw new Error('PDF content is empty or undefined');
+    }
+    
+    // Enhanced document definition with simplified styling
     const enhancedDocDefinition: TDocumentDefinitions = {
       ...docDefinition,
       pageSize: 'A4',
       pageMargins: [40, 60, 40, 60],
       styles: {
-        header: { fontSize: 20, bold: true, margin: [0, 0, 0, 10], color: '#1f2937' },
-        subheader: { fontSize: 14, margin: [0, 0, 0, 10], color: '#6b7280' },
-        sectionHeader: { fontSize: 16, bold: true, margin: [0, 15, 0, 8], color: '#374151' },
-        date: { fontSize: 10, color: '#9ca3af', alignment: 'right' },
+        header: { fontSize: 20, bold: true, margin: [0, 0, 0, 10] },
+        subheader: { fontSize: 14, margin: [0, 0, 0, 10] },
+        sectionHeader: { fontSize: 16, bold: true, margin: [0, 15, 0, 8] },
+        date: { fontSize: 10, alignment: 'right' },
         metric: { fontSize: 12, margin: [0, 5, 0, 5] },
+        criticalMetric: { fontSize: 12, margin: [0, 5, 0, 5], bold: true, color: 'red' },
+        warningMetric: { fontSize: 12, margin: [0, 5, 0, 5], bold: true, color: 'orange' },
         recommendation: { fontSize: 11, margin: [0, 3, 0, 3] },
-        tableHeader: { bold: true, fillColor: '#f3f4f6', margin: [5, 5, 5, 5] },
-        tableCell: { margin: [5, 3, 5, 3] },
+        normal: { fontSize: 10, margin: [0, 2, 0, 2] },
         ...docDefinition.styles
       },
       defaultStyle: {
-        fontSize: 10,
-        font: 'Roboto'
+        fontSize: 10
+        // Removed font specification to use browser defaults
       }
     };
 
+    console.log('Enhanced doc definition created:', enhancedDocDefinition);
     const pdfDocGenerator = pdfMake.createPdf(enhancedDocDefinition);
 
     return new Promise<void>((resolve, reject) => {
-      pdfDocGenerator.getBlob((blob) => {
-        try {
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.setAttribute('download', filename);
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-          resolve();
-        } catch (error) {
-          reject(error);
-        }
-      });
+      try {
+        console.log('Generating PDF blob...');
+        pdfDocGenerator.getBlob((blob) => {
+          try {
+            console.log('PDF blob generated successfully, size:', blob.size);
+            if (blob.size === 0) {
+              throw new Error('Generated PDF is empty (0 bytes)');
+            }
+            
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            console.log('PDF download initiated successfully');
+            resolve();
+          } catch (error) {
+            console.error('Error during PDF download:', error);
+            reject(error);
+          }
+        });
+      } catch (error) {
+        console.error('Error during PDF generation:', error);
+        reject(error);
+      }
     });
   } catch (error) {
     console.error("Failed to download PDF:", error);

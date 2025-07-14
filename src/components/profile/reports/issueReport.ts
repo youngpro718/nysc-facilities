@@ -392,7 +392,7 @@ export async function fetchIssueReport(
         content
       };
 
-      console.log('Generating PDF with sample content...');
+      console.log('Generating PDF with sample content...', docDefinition);
       await downloadPdf(docDefinition, `issue_report_sample_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.pdf`);
 
       progressCallback({
@@ -441,6 +441,10 @@ export async function fetchIssueReport(
       progress: 80,
       message: 'Generating comprehensive PDF report...'
     });
+
+    console.log('Building comprehensive report with metrics:', metrics);
+    console.log('Critical issues:', criticalIssues.length);
+    console.log('Ongoing issues:', ongoingIssues.length);
 
     const content: Content[] = [
       ...generateReportHeader('Comprehensive Issue Analysis Report', 
@@ -575,6 +579,9 @@ export async function fetchIssueReport(
       ...generateRecommendationsSection(recommendations)
     ];
 
+    console.log('Final PDF content structure:', content.length, 'sections');
+    console.log('Content preview:', content.slice(0, 3));
+
     const docDefinition: TDocumentDefinitions = {
       content,
       styles: {
@@ -589,6 +596,7 @@ export async function fetchIssueReport(
       }
     };
 
+    console.log('About to generate PDF with definition:', docDefinition);
     await downloadPdf(docDefinition, `comprehensive_issue_report_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.pdf`);
 
     progressCallback({
