@@ -1,4 +1,3 @@
-
 import { PostgrestFilterBuilder } from "@supabase/postgrest-js";
 
 export type ReportProgress = {
@@ -14,7 +13,14 @@ export interface LightingFixture {
   name: string;
   type: string;
   status: string;
-  zone?: {
+  technology?: string;
+  zone_id?: string;
+  maintenance_history?: any[];
+  last_maintenance_date?: string;
+  next_maintenance_date?: string;
+  installation_date?: string;
+  electrical_issues?: any;
+  lighting_zones?: {
     name: string;
   };
 }
@@ -26,9 +32,13 @@ export interface Occupant {
   email: string;
   department: string;
   status: string;
-  room_assignments: {
+  title?: string;
+  phone?: string;
+  employment_type?: string;
+  occupant_room_assignments?: {
     rooms: {
       name: string;
+      room_number: string;
     };
   }[];
 }
@@ -70,20 +80,43 @@ export interface FloorplanReportData {
 }
 
 export interface RoomHealthData {
+  room_id?: string;
   room_name: string;
-  status: string;
-  occupancy_status: string;
+  room_number: string;
+  status?: string;
+  occupancy_status?: string;
   last_inspection_date?: string;
   building_name?: string;
   floor_name?: string;
+  current_occupancy?: number;
+  capacity?: number;
+  health_score?: number;
+  maintenance_compliance_score?: number;
+  active_critical_issues?: number;
+  active_recurring_issues?: number;
+  critical_issues_count?: number;
+  open_issues_count?: number;
+  next_maintenance_due?: string;
 }
 
 export interface KeyInventoryData {
-  name: string;
   type: string;
   total_quantity: number;
   available_quantity: number;
+  active_assignments: number;
+  returned_assignments: number;
+  lost_count: number;
+}
+
+export interface KeyData {
+  id: string;
+  name: string;
+  type: string;
   status: string;
+  total_quantity: number;
+  available_quantity: number;
+  is_passkey: boolean;
+  key_scope?: string;
 }
 
 export interface IssueReportDetail {
@@ -121,4 +154,17 @@ export interface FormattedIssueReport {
   };
   metrics: IssueReportMetrics;
   sections: IssueReportSection[];
+}
+
+export interface ReportMetrics {
+  totalRecords: number;
+  categories: Record<string, number>;
+  trends?: Record<string, any>;
+}
+
+export interface ReportSummary {
+  title: string;
+  description: string;
+  keyMetrics: string[];
+  recommendations?: string[];
 }
