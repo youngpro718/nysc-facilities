@@ -410,55 +410,52 @@ export const TermTemplateBuilder = ({ open, onOpenChange, onAssignmentsCreated }
                         {/* Part */}
                         <div className="col-span-2">
                           <Label className="text-xs">Part</Label>
-                          <Select 
-                            value={assignment.part} 
-                            onValueChange={(value) => updateAssignment(index, "part", value)}
-                          >
-                            <SelectTrigger className="h-8">
-                              <SelectValue placeholder="Part" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {commonValues?.parts.map((part) => (
-                                <SelectItem key={part} value={part}>{part}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <Input
+                            className="h-8"
+                            value={assignment.part}
+                            onChange={(e) => updateAssignment(index, "part", e.target.value)}
+                            placeholder="Part"
+                            list={`parts-list-${index}`}
+                          />
+                          <datalist id={`parts-list-${index}`}>
+                            {commonValues?.parts.map((part) => (
+                              <option key={part} value={part} />
+                            ))}
+                          </datalist>
                         </div>
 
                         {/* Justice */}
                         <div className="col-span-3">
                           <Label className="text-xs">Justice</Label>
-                          <Select 
-                            value={assignment.justice} 
-                            onValueChange={(value) => updateAssignment(index, "justice", value)}
-                          >
-                            <SelectTrigger className="h-8">
-                              <SelectValue placeholder="Justice" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {commonValues?.justices.map((justice) => (
-                                <SelectItem key={justice} value={justice}>{justice}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <Input
+                            className="h-8"
+                            value={assignment.justice}
+                            onChange={(e) => updateAssignment(index, "justice", e.target.value)}
+                            placeholder="Justice"
+                            list={`justices-list-${index}`}
+                          />
+                          <datalist id={`justices-list-${index}`}>
+                            {commonValues?.justices.map((justice) => (
+                              <option key={justice} value={justice} />
+                            ))}
+                          </datalist>
                         </div>
 
                         {/* Room */}
                         <div className="col-span-2">
                           <Label className="text-xs">Room</Label>
-                          <Select 
-                            value={assignment.room_number} 
-                            onValueChange={(value) => updateAssignment(index, "room_number", value)}
-                          >
-                            <SelectTrigger className="h-8">
-                              <SelectValue placeholder="Room" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {commonValues?.rooms.map((room) => (
-                                <SelectItem key={room} value={room}>{room}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <Input
+                            className="h-8"
+                            value={assignment.room_number}
+                            onChange={(e) => updateAssignment(index, "room_number", e.target.value)}
+                            placeholder="Room"
+                            list={`rooms-list-${index}`}
+                          />
+                          <datalist id={`rooms-list-${index}`}>
+                            {commonValues?.rooms.map((room) => (
+                              <option key={room} value={room} />
+                            ))}
+                          </datalist>
                         </div>
 
                         {/* Clerks */}
