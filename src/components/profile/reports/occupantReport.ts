@@ -27,7 +27,7 @@ export async function fetchOccupantReport(progressCallback: ReportCallback = () 
         phone,
         employment_type,
         hire_date,
-        occupant_room_assignments(
+        occupant_room_assignments!fk_occupant(
           rooms(
             name,
             room_number
