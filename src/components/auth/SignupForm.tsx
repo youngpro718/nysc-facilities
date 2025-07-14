@@ -7,7 +7,8 @@ import { Mail, Lock, Building2, Loader2, User, Users, Phone, Camera } from "luci
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
-import { useAuth, UserSignupData } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
+import { UserSignupData } from "@/types/auth";
 import { 
   Accordion, 
   AccordionContent, 

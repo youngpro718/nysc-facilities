@@ -1,34 +1,78 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Trash2, BarChart3 } from "lucide-react";
+import { Eye, Trash2, BarChart3, RefreshCw } from "lucide-react";
 import { useMonitoring, MonitoredItem } from "@/hooks/useMonitoring";
 import { formatDistanceToNow } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 export const MonitoringDashboard = () => {
   const [monitoredItems, setMonitoredItems] = useState<MonitoredItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { getMonitoredItems, removeFromMonitoring } = useMonitoring();
+  const { user } = useAuth();
 
-  useEffect(() => {
-    const fetchMonitoredItems = async () => {
-      setIsLoading(true);
+  const fetchMonitoredItems = useCallback(async (showLoading = true) => {
+    if (!user) return;
+    
+    if (showLoading) setIsLoading(true);
+    else setIsRefreshing(true);
+    
+    try {
       const items = await getMonitoredItems();
       setMonitoredItems(items);
+    } catch (error) {
+      console.error("Error fetching monitored items:", error);
+    } finally {
       setIsLoading(false);
-    };
+      setIsRefreshing(false);
+    }
+  }, [getMonitoredItems, user]);
 
+  useEffect(() => {
     fetchMonitoredItems();
-  }, [getMonitoredItems]);
+  }, [fetchMonitoredItems]);
+
+  // Set up real-time updates
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('monitored_items_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'monitored_items',
+          filter: `monitored_by=eq.${user.id}`,
+        },
+        () => {
+          fetchMonitoredItems(false);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchMonitoredItems]);
 
   const handleRemoveItem = async (itemType: string, itemId: string) => {
     const success = await removeFromMonitoring(itemType, itemId);
     if (success) {
+      // Optimistically update UI
       setMonitoredItems(items => 
         items.filter(item => !(item.item_type === itemType && item.item_id === itemId))
       );
     }
+  };
+
+  const handleRefresh = () => {
+    fetchMonitoredItems(false);
   };
 
   const getItemTypeColor = (itemType: string) => {
@@ -81,12 +125,23 @@ export const MonitoringDashboard = () => {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Eye className="h-5 w-5" />
-          Monitored Items ({monitoredItems.length})
-        </CardTitle>
-      </CardHeader>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Monitored Items ({monitoredItems.length})
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="h-8 w-8 p-0"
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </Button>
+          </CardTitle>
+        </CardHeader>
       <CardContent>
         <div className="space-y-4">
           {monitoredItems.map((item) => (

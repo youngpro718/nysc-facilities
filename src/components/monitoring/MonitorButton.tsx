@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useMonitoring } from "@/hooks/useMonitoring";
+import { useAuth } from "@/hooks/useAuth";
 
 interface MonitorButtonProps {
   itemType: string;
@@ -23,17 +24,36 @@ export const MonitorButton = ({
   variant = "outline",
 }: MonitorButtonProps) => {
   const [isMonitored, setIsMonitored] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
   const { addToMonitoring, removeFromMonitoring, checkIsMonitored, isLoading } = useMonitoring();
+  const { user } = useAuth();
 
-  useEffect(() => {
-    const checkStatus = async () => {
+  const checkStatus = useCallback(async () => {
+    if (!user) {
+      setIsMonitored(false);
+      setIsChecking(false);
+      return;
+    }
+
+    setIsChecking(true);
+    try {
       const monitored = await checkIsMonitored(itemType, itemId);
       setIsMonitored(monitored);
-    };
+    } catch (error) {
+      console.warn("Error checking monitoring status:", error);
+      setIsMonitored(false);
+    } finally {
+      setIsChecking(false);
+    }
+  }, [itemType, itemId, checkIsMonitored, user]);
+
+  useEffect(() => {
     checkStatus();
-  }, [itemType, itemId, checkIsMonitored]);
+  }, [checkStatus]);
 
   const handleToggleMonitoring = async () => {
+    if (!user) return;
+
     if (isMonitored) {
       const success = await removeFromMonitoring(itemType, itemId);
       if (success) {
@@ -53,15 +73,24 @@ export const MonitorButton = ({
     }
   };
 
+  if (!user) {
+    return null;
+  }
+
   return (
     <Button
       onClick={handleToggleMonitoring}
-      disabled={isLoading}
+      disabled={isLoading || isChecking}
       size={size}
       variant={variant}
       className={isMonitored ? "bg-primary/10 text-primary border-primary" : ""}
     >
-      {isMonitored ? (
+      {isLoading || isChecking ? (
+        <>
+          <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+          {isChecking ? "Checking..." : "Loading..."}
+        </>
+      ) : isMonitored ? (
         <>
           <EyeOff className="h-4 w-4 mr-1" />
           Unmonitor

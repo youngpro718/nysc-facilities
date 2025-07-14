@@ -6,7 +6,7 @@ import { UseFormReturn } from "react-hook-form";
 import { RoomFormData } from "./RoomFormSchema";
 import { Loader2, Upload, X, AlertTriangle, Eye } from "lucide-react";
 import { toast } from "sonner";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ClipboardCheck, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { SparklesCore } from "@/components/ui/sparkles";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function VerificationPending() {
   const navigate = useNavigate();
