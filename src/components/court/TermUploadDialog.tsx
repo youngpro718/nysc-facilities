@@ -7,13 +7,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CalendarIcon, Upload, FileText } from "lucide-react";
+import { CalendarIcon, Upload, FileText, FileCheck } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { PdfUploadArea } from "./PdfUploadArea";
 import { AssignmentPreview } from "./AssignmentPreview";
+import { TermTemplateBuilder } from "./TermTemplateBuilder";
 import { ParsedTermData, ParsedAssignment } from "@/utils/pdfParser";
 
 interface TermUploadDialogProps {
@@ -37,6 +38,7 @@ export const TermUploadDialog = ({ open, onOpenChange }: TermUploadDialogProps) 
   const [parsedData, setParsedData] = useState<ParsedTermData | null>(null);
   const [assignments, setAssignments] = useState<ParsedAssignment[]>([]);
   const [currentTab, setCurrentTab] = useState("upload");
+  const [templateBuilderOpen, setTemplateBuilderOpen] = useState(false);
 
   const handlePdfParsed = (data: ParsedTermData) => {
     setParsedData(data);
@@ -55,6 +57,22 @@ export const TermUploadDialog = ({ open, onOpenChange }: TermUploadDialogProps) 
 
   const handleFileUploaded = (url: string) => {
     setFormData(prev => ({ ...prev, pdf_url: url }));
+  };
+
+  const handleTemplateAssignments = (templateAssignments: any[]) => {
+    const formattedAssignments = templateAssignments.map(ta => ({
+      id: ta.id,
+      partCode: ta.part,
+      justiceName: ta.justice,
+      roomNumber: ta.room_number,
+      clerks: ta.clerks || [],
+      sergeant: ta.sergeant || "",
+      tel: ta.tel || "",
+      fax: ta.fax || "",
+      calendarDay: ""
+    }));
+    setAssignments(formattedAssignments);
+    setCurrentTab("preview");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -157,17 +175,35 @@ export const TermUploadDialog = ({ open, onOpenChange }: TermUploadDialogProps) 
 
         <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="upload">Upload PDF</TabsTrigger>
-            <TabsTrigger value="preview" disabled={!parsedData}>Preview & Edit</TabsTrigger>
+            <TabsTrigger value="upload">Upload PDF / Quick Build</TabsTrigger>
+            <TabsTrigger value="preview" disabled={!parsedData && assignments.length === 0}>Preview & Edit</TabsTrigger>
             <TabsTrigger value="details">Term Details</TabsTrigger>
           </TabsList>
 
           <TabsContent value="upload" className="space-y-4">
-            <PdfUploadArea
-              onPdfParsed={handlePdfParsed}
-              onFileUploaded={handleFileUploaded}
-              disabled={isUploading}
-            />
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="text-lg font-medium mb-3">Upload PDF</h3>
+                <PdfUploadArea
+                  onPdfParsed={handlePdfParsed}
+                  onFileUploaded={handleFileUploaded}
+                  disabled={isUploading}
+                />
+              </div>
+              <div>
+                <h3 className="text-lg font-medium mb-3">Quick Build</h3>
+                <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <FileCheck className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                  <p className="text-sm text-gray-600 mb-4">
+                    Create assignments quickly using templates from previous terms
+                  </p>
+                  <Button onClick={() => setTemplateBuilderOpen(true)}>
+                    <FileCheck className="h-4 w-4 mr-2" />
+                    Open Template Builder
+                  </Button>
+                </div>
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="preview" className="space-y-4">
@@ -326,6 +362,12 @@ export const TermUploadDialog = ({ open, onOpenChange }: TermUploadDialogProps) 
             </form>
           </TabsContent>
         </Tabs>
+
+        <TermTemplateBuilder
+          open={templateBuilderOpen}
+          onOpenChange={setTemplateBuilderOpen}
+          onAssignmentsCreated={handleTemplateAssignments}
+        />
       </DialogContent>
     </Dialog>
   );
