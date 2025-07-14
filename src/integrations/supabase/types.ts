@@ -424,6 +424,7 @@ export type Database = {
           room_id: string | null
           room_number: string
           sergeant: string | null
+          sort_order: number | null
           tel: string | null
           term_id: string | null
           updated_at: string | null
@@ -440,6 +441,7 @@ export type Database = {
           room_id?: string | null
           room_number: string
           sergeant?: string | null
+          sort_order?: number | null
           tel?: string | null
           term_id?: string | null
           updated_at?: string | null
@@ -456,6 +458,7 @@ export type Database = {
           room_id?: string | null
           room_number?: string
           sergeant?: string | null
+          sort_order?: number | null
           tel?: string | null
           term_id?: string | null
           updated_at?: string | null
