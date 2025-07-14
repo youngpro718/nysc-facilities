@@ -84,6 +84,6 @@ export async function fetchFullDatabaseReport(progressCallback: ReportCallback =
     message: 'Database export completed'
   });
 
-  downloadPdf(docDefinition, `database_export_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.pdf`);
-  return exportData;
+  // Return the document definition instead of calling downloadPdf directly
+  return docDefinition;
 }
