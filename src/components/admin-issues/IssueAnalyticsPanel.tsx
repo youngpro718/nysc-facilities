@@ -76,7 +76,7 @@ export function IssueAnalyticsPanel({
               
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="w-12 text-xs mx-[15px]">Progress</Badge>
+                  <Badge className="w-12 text-xs bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200">Progress</Badge>
                   <span className="text-sm">{stats.in_progress} issues</span>
                 </div>
                 <div className="text-sm text-muted-foreground">
@@ -86,7 +86,7 @@ export function IssueAnalyticsPanel({
               
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Badge variant="default" className="w-12 text-xs">Resolved</Badge>
+                  <Badge className="w-12 text-xs bg-green-100 text-green-800 border-green-200 hover:bg-green-200">Resolved</Badge>
                   <span className="text-sm">{stats.resolved} issues</span>
                 </div>
                 <div className="text-sm text-muted-foreground">
@@ -115,7 +115,7 @@ export function IssueAnalyticsPanel({
               
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="w-12 text-xs">Medium</Badge>
+                  <Badge className="w-12 text-xs bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200">Medium</Badge>
                   <span className="text-sm">{stats.medium} issues</span>
                 </div>
                 <div className="text-sm text-muted-foreground">
