@@ -100,7 +100,7 @@ export interface RoomHealthData {
 }
 
 export interface KeyInventoryData {
-  type: string;
+  type: "physical_key" | "elevator_pass" | "room_key" | string;
   total_quantity: number;
   available_quantity: number;
   active_assignments: number;

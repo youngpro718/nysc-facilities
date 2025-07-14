@@ -64,7 +64,7 @@ export async function generateKeyInventoryReport(progressCallback: ReportCallbac
         acc[key.type].total_quantity += key.total_quantity || 0;
         acc[key.type].available_quantity += key.available_quantity || 0;
         return acc;
-      }, {} as Record<string, KeyInventoryData>);
+      }, {} as Record<string, any>);
 
       stats = Object.values(typeGroups);
     } else if (error) {
