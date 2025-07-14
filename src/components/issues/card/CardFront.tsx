@@ -4,6 +4,7 @@ import { Issue } from "../types/IssueTypes";
 import { IssueBadges } from "./IssueBadges";
 import { IssueStatusBadge } from "./IssueStatusBadge";
 import { IssueMetadata } from "./IssueMetadata";
+import { MonitorButton } from "@/components/monitoring/MonitorButton";
 
 interface CardFrontProps {
   issue: Issue;
@@ -67,11 +68,21 @@ export function CardFront({ issue, onMarkAsSeen, actions }: CardFrontProps) {
             roomName={issue.rooms?.name}
             assigned_to={issue.assigned_to || "Unassigned"}
           />
-          {actions && (
-            <div className="flex justify-end mt-2" onClick={(e) => e.stopPropagation()}>
-              {actions}
-            </div>
-          )}
+          <div className="flex items-center justify-between mt-2" onClick={(e) => e.stopPropagation()}>
+            <MonitorButton
+              itemType="issue"
+              itemId={issue.id}
+              itemName={issue.title}
+              itemDescription={issue.description}
+              size="sm"
+              variant="ghost"
+            />
+            {actions && (
+              <div className="flex gap-1">
+                {actions}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

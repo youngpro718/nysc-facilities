@@ -1,5 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Database, FileText, ChevronLeft, Settings, Activity, UserCheck, LayoutGrid, Palette, Cog } from "lucide-react";
+import { Shield, Database, FileText, ChevronLeft, Settings, Activity, UserCheck, LayoutGrid, Palette, Cog, Eye } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -12,6 +12,7 @@ import { AdminSystemSettings } from "@/components/profile/AdminSystemSettings";
 import { DynamicAdminDashboard } from "@/components/profile/admin/DynamicAdminDashboard";
 import { MobileProfileHeader } from "@/components/profile/mobile/MobileProfileHeader";
 import { MobileSettingsCard } from "@/components/profile/mobile/MobileSettingsCard";
+import { MonitoringDashboard } from "@/components/monitoring/MonitoringDashboard";
 import { useState, useEffect } from "react";
 
 export default function AdminProfile() {
@@ -113,6 +114,10 @@ export default function AdminProfile() {
               <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               Reports
             </TabsTrigger>
+            <TabsTrigger value="monitoring" className="flex-1 min-w-fit flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap">
+              <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              Monitoring
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -148,6 +153,10 @@ export default function AdminProfile() {
           <Card className="p-4 sm:p-6">
             <ReportsSection />
           </Card>
+        </TabsContent>
+
+        <TabsContent value="monitoring" className="space-y-4 sm:space-y-6 mt-4">
+          <MonitoringDashboard />
         </TabsContent>
       </Tabs>
     </div>

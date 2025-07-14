@@ -4319,6 +4319,89 @@ export type Database = {
         }
         Relationships: []
       }
+      monitored_items: {
+        Row: {
+          alert_thresholds: Json | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          item_description: string | null
+          item_id: string
+          item_name: string
+          item_type: string
+          last_alert_sent: string | null
+          monitored_by: string
+          monitoring_criteria: Json | null
+          updated_at: string
+        }
+        Insert: {
+          alert_thresholds?: Json | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          item_description?: string | null
+          item_id: string
+          item_name: string
+          item_type: string
+          last_alert_sent?: string | null
+          monitored_by: string
+          monitoring_criteria?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          alert_thresholds?: Json | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          item_description?: string | null
+          item_id?: string
+          item_name?: string
+          item_type?: string
+          last_alert_sent?: string | null
+          monitored_by?: string
+          monitoring_criteria?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      monitoring_rules: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean | null
+          monitored_item_id: string
+          rule_config: Json
+          rule_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          monitored_item_id: string
+          rule_config?: Json
+          rule_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          monitored_item_id?: string
+          rule_config?: Json
+          rule_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monitoring_rules_monitored_item_id_fkey"
+            columns: ["monitored_item_id"]
+            isOneToOne: false
+            referencedRelation: "monitored_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       occupant_position_history: {
         Row: {
           created_at: string | null
