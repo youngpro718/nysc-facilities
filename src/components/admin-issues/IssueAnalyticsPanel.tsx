@@ -3,18 +3,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { IssueStats } from "@/hooks/dashboard/useAdminIssuesData";
-
 interface IssueAnalyticsPanelProps {
   stats: IssueStats;
   onClose: () => void;
 }
-
-export function IssueAnalyticsPanel({ stats, onClose }: IssueAnalyticsPanelProps) {
-  const resolutionRate = stats.total > 0 ? ((stats.resolved / stats.total) * 100).toFixed(1) : '0';
-  const criticalRate = stats.total > 0 ? ((stats.critical / stats.total) * 100).toFixed(1) : '0';
-
-  return (
-    <Card>
+export function IssueAnalyticsPanel({
+  stats,
+  onClose
+}: IssueAnalyticsPanelProps) {
+  const resolutionRate = stats.total > 0 ? (stats.resolved / stats.total * 100).toFixed(1) : '0';
+  const criticalRate = stats.total > 0 ? (stats.critical / stats.total * 100).toFixed(1) : '0';
+  return <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-lg">Issues Analytics</CardTitle>
         <Button variant="ghost" size="sm" onClick={onClose}>
@@ -71,7 +70,7 @@ export function IssueAnalyticsPanel({ stats, onClose }: IssueAnalyticsPanelProps
                   <span className="text-sm">{stats.open} issues</span>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {stats.total > 0 ? ((stats.open / stats.total) * 100).toFixed(0) : 0}%
+                  {stats.total > 0 ? (stats.open / stats.total * 100).toFixed(0) : 0}%
                 </div>
               </div>
               
@@ -81,7 +80,7 @@ export function IssueAnalyticsPanel({ stats, onClose }: IssueAnalyticsPanelProps
                   <span className="text-sm">{stats.in_progress} issues</span>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {stats.total > 0 ? ((stats.in_progress / stats.total) * 100).toFixed(0) : 0}%
+                  {stats.total > 0 ? (stats.in_progress / stats.total * 100).toFixed(0) : 0}%
                 </div>
               </div>
               
@@ -91,7 +90,7 @@ export function IssueAnalyticsPanel({ stats, onClose }: IssueAnalyticsPanelProps
                   <span className="text-sm">{stats.resolved} issues</span>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {stats.total > 0 ? ((stats.resolved / stats.total) * 100).toFixed(0) : 0}%
+                  {stats.total > 0 ? (stats.resolved / stats.total * 100).toFixed(0) : 0}%
                 </div>
               </div>
             </div>
@@ -110,17 +109,17 @@ export function IssueAnalyticsPanel({ stats, onClose }: IssueAnalyticsPanelProps
                   <span className="text-sm">{stats.high} issues</span>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {stats.total > 0 ? ((stats.high / stats.total) * 100).toFixed(0) : 0}%
+                  {stats.total > 0 ? (stats.high / stats.total * 100).toFixed(0) : 0}%
                 </div>
               </div>
               
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="w-12 text-xs">Medium</Badge>
+                  <Badge variant="secondary" className="w-12 text-xs mx-0 px-px">Medium</Badge>
                   <span className="text-sm">{stats.medium} issues</span>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {stats.total > 0 ? ((stats.medium / stats.total) * 100).toFixed(0) : 0}%
+                  {stats.total > 0 ? (stats.medium / stats.total * 100).toFixed(0) : 0}%
                 </div>
               </div>
               
@@ -130,7 +129,7 @@ export function IssueAnalyticsPanel({ stats, onClose }: IssueAnalyticsPanelProps
                   <span className="text-sm">{stats.low} issues</span>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {stats.total > 0 ? ((stats.low / stats.total) * 100).toFixed(0) : 0}%
+                  {stats.total > 0 ? (stats.low / stats.total * 100).toFixed(0) : 0}%
                 </div>
               </div>
             </div>
@@ -155,6 +154,5 @@ export function IssueAnalyticsPanel({ stats, onClose }: IssueAnalyticsPanelProps
           </div>
         </div>
       </CardContent>
-    </Card>
-  );
+    </Card>;
 }
