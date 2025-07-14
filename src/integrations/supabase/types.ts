@@ -418,8 +418,8 @@ export type Database = {
           created_at: string | null
           fax: string | null
           id: string
-          justice: string
-          part: string
+          justice: string | null
+          part: string | null
           part_details: Json | null
           room_id: string | null
           room_number: string
@@ -434,8 +434,8 @@ export type Database = {
           created_at?: string | null
           fax?: string | null
           id?: string
-          justice: string
-          part: string
+          justice?: string | null
+          part?: string | null
           part_details?: Json | null
           room_id?: string | null
           room_number: string
@@ -450,8 +450,8 @@ export type Database = {
           created_at?: string | null
           fax?: string | null
           id?: string
-          justice?: string
-          part?: string
+          justice?: string | null
+          part?: string | null
           part_details?: Json | null
           room_id?: string | null
           room_number?: string
