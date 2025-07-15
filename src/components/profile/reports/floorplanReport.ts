@@ -56,7 +56,7 @@ export async function fetchFloorplanReportData(progressCallback: ReportCallback 
             headerRows: 0,
             widths: ['*'],
             body: [[
-              { text: `Floor ID: ${data.floor_id}`, style: 'content' }
+              { text: `Floor: ${data.floor_name} in ${data.building_name}`, style: 'content' }
             ]]
           } as { widths: string[]; body: TableCell[][] },
           layout: 'noBorders',

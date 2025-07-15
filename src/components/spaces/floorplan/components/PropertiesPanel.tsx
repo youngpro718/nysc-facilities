@@ -139,8 +139,8 @@ export function PropertiesPanel({
             {selectedObject.label || 'Properties'}
             {getObjectTypeLabel(selectedObject.type)}
           </CardTitle>
-          {selectedObject.id && (
-            <span className="text-xs text-gray-500 mt-1">ID: {selectedObject.id.substring(0, 8)}...</span>
+          {selectedObject.label && (
+            <span className="text-xs text-gray-500 mt-1">Type: {selectedObject.type}</span>
           )}
         </div>
         <Button variant="ghost" size="icon" onClick={() => setLocalValues({})}>

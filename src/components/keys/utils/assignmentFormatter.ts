@@ -51,7 +51,7 @@ export function formatAssignmentData(
       parts.push("(Passkey)");
     }
   } else if (rawData.key_id) {
-    parts.push(`Key ID: ${rawData.key_id}`);
+    // Skip raw key ID - use key name instead
   }
 
   // Occupant information
@@ -72,7 +72,7 @@ export function formatAssignmentData(
       parts.push(`Location: ${roomLocation}`);
     }
   } else if (rawData.occupant_id) {
-    parts.push(`Occupant ID: ${rawData.occupant_id}`);
+    // Skip raw occupant ID - use occupant name instead
   }
 
   // Assignment date
@@ -104,10 +104,10 @@ export function formatAssignmentStructured(
   enhancedData?: EnhancedAssignmentData
 ) {
   const result = {
-    key: enhancedData?.keys?.name || `ID: ${rawData.key_id}`,
+    key: enhancedData?.keys?.name || `Unknown Key`,
     occupant: enhancedData?.occupant 
       ? `${enhancedData.occupant.first_name} ${enhancedData.occupant.last_name}`
-      : `ID: ${rawData.occupant_id}`,
+      : `Unknown Person`,
     department: enhancedData?.occupant?.department || 'Unknown',
     location: 'Unknown',
     assignedDate: rawData.assigned_at 
