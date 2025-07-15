@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Folder, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { CategoryFormDialog } from "./CategoryFormDialog";
 
 type Category = {
   id: string;
@@ -21,6 +22,9 @@ type Category = {
 export const InventoryCategoriesPanel = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState<"create" | "edit">("create");
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
 
   const { data: categories, isLoading } = useQuery({
     queryKey: ["inventory-categories-with-counts"],
@@ -84,6 +88,18 @@ export const InventoryCategoriesPanel = () => {
     }
   };
 
+  const handleAddCategory = () => {
+    setDialogMode("create");
+    setSelectedCategory(null);
+    setDialogOpen(true);
+  };
+
+  const handleEditCategory = (category: Category) => {
+    setDialogMode("edit");
+    setSelectedCategory(category);
+    setDialogOpen(true);
+  };
+
   const getColorClass = (color: string) => {
     const colorMap: Record<string, string> = {
       red: "bg-red-100 text-red-800",
@@ -110,7 +126,7 @@ export const InventoryCategoriesPanel = () => {
           <h2 className="text-2xl font-bold">Inventory Categories</h2>
           <p className="text-muted-foreground">Organize your inventory items by category</p>
         </div>
-        <Button onClick={() => toast({ title: "Coming Soon", description: "Category creation will be available soon" })}>
+        <Button onClick={handleAddCategory}>
           <Plus className="h-4 w-4 mr-2" />
           Add Category
         </Button>
@@ -125,7 +141,7 @@ export const InventoryCategoriesPanel = () => {
             <p className="text-muted-foreground mb-4">
               Create your first category to organize your inventory items.
             </p>
-            <Button onClick={() => toast({ title: "Coming Soon", description: "Category creation will be available soon" })}>
+            <Button onClick={handleAddCategory}>
               <Plus className="h-4 w-4 mr-2" />
               Create First Category
             </Button>
@@ -151,7 +167,7 @@ export const InventoryCategoriesPanel = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => toast({ title: "Coming Soon", description: "Category editing will be available soon" })}
+                      onClick={() => handleEditCategory(category)}
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -202,6 +218,14 @@ export const InventoryCategoriesPanel = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Category Form Dialog */}
+      <CategoryFormDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        category={selectedCategory}
+        mode={dialogMode}
+      />
     </div>
   );
 };
