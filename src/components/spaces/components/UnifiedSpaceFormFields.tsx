@@ -6,7 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { BuildingFloorSelector } from "../forms/space/BasicSpaceFields";
+import { BuildingSelector } from "../forms/space/selectors/BuildingSelector";
+import { FloorSelector } from "../forms/space/selectors/FloorSelector";
 import { ParentRoomField } from "../forms/room/ParentRoomField";
 import { CourtroomPhotoUpload } from "../forms/room/CourtroomPhotoUpload";
 import { RoomTypeEnum, StorageTypeEnum } from "../rooms/types/roomEnums";
@@ -53,11 +54,17 @@ export function UnifiedSpaceFormFields({ form, mode, roomId }: UnifiedSpaceFormF
 
       {/* Building and Floor Selection */}
       {mode === "create" && (
-        <BuildingFloorSelector 
-          form={form as any} 
-          buildingFieldName="buildingId"
-          floorFieldName="floorId"
-        />
+        <>
+          <BuildingSelector form={form as any} onBuildingChange={(buildingId) => {
+            form.setValue('buildingId', buildingId);
+            form.setValue('floorId', '');
+          }} />
+          
+          <FloorSelector 
+            form={form as any}
+            selectedBuildingId={form.watch('buildingId')}
+          />
+        </>
       )}
 
       {/* Basic Fields */}

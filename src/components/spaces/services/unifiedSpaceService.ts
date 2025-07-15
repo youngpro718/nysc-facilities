@@ -19,14 +19,15 @@ export class UnifiedSpaceService {
       }
 
       // Route to appropriate table based on space type
-      if (data.type === "room") {
-        return await this.createRoom(data);
-      } else if (data.type === "hallway") {
-        return await this.createHallway(data);
-      } else if (data.type === "door") {
-        return await this.createDoor(data);
-      } else {
-        throw new Error(`Unsupported space type: ${data.type}`);
+      switch (data.type) {
+        case "room":
+          return await this.createRoom(data);
+        case "hallway":
+          return await this.createHallway(data);
+        case "door":
+          return await this.createDoor(data);
+        default:
+          throw new Error(`Unsupported space type: ${(data as any).type}`);
       }
     } catch (error) {
       console.error('Error in createSpace:', error);
@@ -44,14 +45,15 @@ export class UnifiedSpaceService {
       console.log('Input data:', data);
 
       // Route to appropriate table based on space type
-      if (data.type === "room") {
-        return await this.updateRoom(id, data);
-      } else if (data.type === "hallway") {
-        return await this.updateHallway(id, data);
-      } else if (data.type === "door") {
-        return await this.updateDoor(id, data);
-      } else {
-        throw new Error(`Unsupported space type: ${data.type}`);
+      switch (data.type) {
+        case "room":
+          return await this.updateRoom(id, data);
+        case "hallway":
+          return await this.updateHallway(id, data);
+        case "door":
+          return await this.updateDoor(id, data);
+        default:
+          throw new Error(`Unsupported space type: ${(data as any).type}`);
       }
     } catch (error) {
       console.error('Error in updateSpace:', error);
@@ -63,6 +65,10 @@ export class UnifiedSpaceService {
   }
 
   private async createRoom(data: UnifiedSpaceFormData): Promise<SpaceServiceResult> {
+    if (data.type !== "room") {
+      throw new Error("Invalid data type for room creation");
+    }
+
     // Convert form data to database format
     const dbData = formToDbRoom(data as any);
     
@@ -70,7 +76,7 @@ export class UnifiedSpaceService {
 
     const { data: result, error } = await supabase
       .from('rooms')
-      .insert(dbData)
+      .insert(dbData as any)
       .select()
       .single();
 
@@ -83,6 +89,10 @@ export class UnifiedSpaceService {
   }
 
   private async updateRoom(id: string, data: UnifiedSpaceFormData): Promise<SpaceServiceResult> {
+    if (data.type !== "room") {
+      throw new Error("Invalid data type for room update");
+    }
+
     // Convert form data to database format
     const dbData = formToDbRoom(data as any);
     
@@ -91,7 +101,7 @@ export class UnifiedSpaceService {
 
     const { data: result, error } = await supabase
       .from('rooms')
-      .update(dbData)
+      .update(dbData as any)
       .eq('id', id)
       .select()
       .single();
@@ -105,7 +115,9 @@ export class UnifiedSpaceService {
   }
 
   private async createHallway(data: UnifiedSpaceFormData): Promise<SpaceServiceResult> {
-    if (data.type !== "hallway") throw new Error("Invalid data type for hallway creation");
+    if (data.type !== "hallway") {
+      throw new Error("Invalid data type for hallway creation");
+    }
     
     const hallwayData = {
       name: data.name,
@@ -143,6 +155,10 @@ export class UnifiedSpaceService {
   }
 
   private async updateHallway(id: string, data: UnifiedSpaceFormData): Promise<SpaceServiceResult> {
+    if (data.type !== "hallway") {
+      throw new Error("Invalid data type for hallway update");
+    }
+
     const hallwayData = {
       name: data.name,
       description: data.description,
@@ -180,6 +196,10 @@ export class UnifiedSpaceService {
   }
 
   private async createDoor(data: UnifiedSpaceFormData): Promise<SpaceServiceResult> {
+    if (data.type !== "door") {
+      throw new Error("Invalid data type for door creation");
+    }
+
     const doorData = {
       name: data.name,
       floor_id: data.floorId,
@@ -197,7 +217,7 @@ export class UnifiedSpaceService {
 
     const { data: result, error } = await supabase
       .from('doors')
-      .insert(doorData)
+      .insert(doorData as any)
       .select()
       .single();
 
@@ -210,6 +230,10 @@ export class UnifiedSpaceService {
   }
 
   private async updateDoor(id: string, data: UnifiedSpaceFormData): Promise<SpaceServiceResult> {
+    if (data.type !== "door") {
+      throw new Error("Invalid data type for door update");
+    }
+
     const doorData = {
       name: data.name,
       type: data.doorType,
@@ -227,7 +251,7 @@ export class UnifiedSpaceService {
 
     const { data: result, error } = await supabase
       .from('doors')
-      .update(doorData)
+      .update(doorData as any)
       .eq('id', id)
       .select()
       .single();
