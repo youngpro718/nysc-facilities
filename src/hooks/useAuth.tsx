@@ -221,7 +221,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       const currentPath = window.location.pathname;
       
-      // Don't redirect if already on the correct page
+      // Handle verification pending
       if (userData.profile?.verification_status === 'pending') {
         if (currentPath !== '/verification-pending') {
           navigate('/verification-pending', { replace: true });
@@ -229,40 +229,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
       
-      // Role-based redirects - admin always to root, user always to dashboard
+      // Skip redirects if already on correct page
       if (userData.isAdmin) {
-        if (currentPath !== '/' && currentPath !== '/login') {
-          // Admin can stay on admin pages, but redirect from user pages or login
-          const isUserPage = currentPath.startsWith('/dashboard') || 
-                            currentPath === '/my-requests' || 
-                            currentPath === '/my-issues' ||
-                            currentPath === '/profile';
-          
-          if (isUserPage || currentPath === '/login') {
-            navigate('/', { replace: true });
-          }
-        } else if (currentPath === '/login') {
+        const isAdminPage = currentPath === '/' || 
+                           currentPath.startsWith('/spaces') ||
+                           currentPath.startsWith('/occupants') ||
+                           currentPath.startsWith('/keys') ||
+                           currentPath.startsWith('/lighting') ||
+                           currentPath.startsWith('/issues') ||
+                           currentPath.startsWith('/access-management') ||
+                           currentPath.startsWith('/admin') ||
+                           currentPath.startsWith('/maintenance') ||
+                           currentPath.startsWith('/court-operations') ||
+                           currentPath.startsWith('/settings');
+        
+        if (currentPath === '/login' || 
+            currentPath.startsWith('/dashboard') || 
+            currentPath === '/my-requests' || 
+            currentPath === '/my-issues' ||
+            currentPath === '/profile') {
           navigate('/', { replace: true });
         }
       } else {
-        if (currentPath !== '/dashboard' && currentPath !== '/login') {
-          // Regular user can stay on user pages, but redirect from admin pages or login
-          const isAdminPage = currentPath === '/' || 
-                             currentPath.startsWith('/spaces') ||
-                             currentPath.startsWith('/occupants') ||
-                             currentPath.startsWith('/keys') ||
-                             currentPath.startsWith('/lighting') ||
-                             currentPath.startsWith('/issues') ||
-                             currentPath.startsWith('/access-management') ||
-                             currentPath.startsWith('/admin') ||
-                             currentPath.startsWith('/maintenance') ||
-                             currentPath.startsWith('/court-operations') ||
-                             currentPath.startsWith('/settings');
-          
-          if (isAdminPage || currentPath === '/login') {
-            navigate('/dashboard', { replace: true });
-          }
-        } else if (currentPath === '/login') {
+        // Regular user redirects
+        const isUserPage = currentPath.startsWith('/dashboard') || 
+                          currentPath === '/my-requests' || 
+                          currentPath === '/my-issues' ||
+                          currentPath === '/profile';
+        
+        if (currentPath === '/login' || !isUserPage) {
           navigate('/dashboard', { replace: true });
         }
       }
@@ -281,18 +276,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setSession(currentSession);
           setUser(currentSession.user);
           
+          // Fetch user profile and role - critical for consistent admin status
           const userData = await getUserProfile(currentSession.user.id);
+          
+          if (!mounted) return;
+          
           setIsAdmin(userData.isAdmin);
           setProfile(userData.profile);
           
-          // Only redirect if we're on login page or need verification
-          if (window.location.pathname === '/login' || 
-              (userData.profile?.verification_status === 'pending' && window.location.pathname !== '/verification-pending')) {
-            handleRedirect(userData);
+          // Update session tracking
+          try {
+            const deviceInfo = {
+              name: navigator.userAgent.split('/')[0],
+              platform: navigator.platform,
+              language: navigator.language,
+            };
+            await updateSessionTracking(currentSession.user.id, deviceInfo);
+          } catch (error) {
+            console.error('Session tracking error:', error);
           }
+          
+          // Handle redirects based on current page and user role
+          handleRedirect(userData);
         } else {
           console.log('useAuth: No session found');
-          // Only redirect to login if not already there or on verification page
           const currentPath = window.location.pathname;
           if (currentPath !== '/login' && currentPath !== '/verification-pending') {
             navigate('/login', { replace: true });
@@ -339,6 +346,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             
             try {
               const userData = await getUserProfile(newSession.user.id);
+              
+              if (!mounted) return;
+              
               setIsAdmin(userData.isAdmin);
               setProfile(userData.profile);
               

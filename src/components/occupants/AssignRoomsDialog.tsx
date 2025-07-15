@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Building2, Loader2 } from "lucide-react";
-import { useAuthCheck } from "./hooks/useAuthCheck";
+import { useAuth } from "@/hooks/useAuth";
 import { useRoomAssignment } from "./hooks/useRoomAssignment";
 import { RoomSelectionSection } from "./components/RoomSelectionSection";
 import { AssignmentTypeSelection } from "./components/AssignmentTypeSelection";
@@ -29,9 +29,10 @@ export function AssignRoomsDialog({
   const [isPrimaryAssignment, setIsPrimaryAssignment] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { authError, authErrorMessage } = useAuthCheck(open);
+  const { isAuthenticated } = useAuth();
   const { isAssigning, handleAssignRoom } = useRoomAssignment(onSuccess);
   
+  const authError = !isAuthenticated;
   const { data: availableRooms, isLoading: isLoadingRooms } = useRoomData(authError);
   const { data: currentOccupants, isLoading: isLoadingOccupants } = useRoomOccupants(selectedRoom, authError);
 
@@ -83,48 +84,35 @@ export function AssignRoomsDialog({
           </DialogTitle>
         </DialogHeader>
 
-        {authErrorMessage ? (
-          <div className="p-4 text-center">
-            <p className="text-destructive">{authErrorMessage}</p>
-            <Button 
-              onClick={() => window.location.reload()} 
-              variant="outline" 
-              className="mt-4"
-            >
-              Refresh Page
-            </Button>
+        <div className="space-y-6 py-4">
+          <RoomSelectionSection
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            selectedRoom={selectedRoom}
+            onRoomChange={setSelectedRoom}
+            filteredRooms={filteredRooms()}
+            isLoadingRooms={isLoadingRooms}
+          />
+
+          <AssignmentTypeSelection
+            assignmentType={assignmentType}
+            onAssignmentTypeChange={setAssignmentType}
+            isPrimaryAssignment={isPrimaryAssignment}
+            onPrimaryAssignmentChange={setIsPrimaryAssignment}
+          />
+
+          <CurrentOccupantsSection
+            selectedRoom={selectedRoom}
+            currentOccupants={currentOccupants}
+            isLoadingOccupants={isLoadingOccupants}
+            isPrimaryAssignment={isPrimaryAssignment}
+            onPrimaryAssignmentChange={setIsPrimaryAssignment}
+          />
+
+          <div className="text-sm text-muted-foreground">
+            Selected occupants: {selectedOccupants.length}
           </div>
-        ) : (
-          <div className="space-y-6 py-4">
-            <RoomSelectionSection
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              selectedRoom={selectedRoom}
-              onRoomChange={setSelectedRoom}
-              filteredRooms={filteredRooms()}
-              isLoadingRooms={isLoadingRooms}
-            />
-
-            <AssignmentTypeSelection
-              assignmentType={assignmentType}
-              onAssignmentTypeChange={setAssignmentType}
-              isPrimaryAssignment={isPrimaryAssignment}
-              onPrimaryAssignmentChange={setIsPrimaryAssignment}
-            />
-
-            <CurrentOccupantsSection
-              selectedRoom={selectedRoom}
-              currentOccupants={currentOccupants}
-              isLoadingOccupants={isLoadingOccupants}
-              isPrimaryAssignment={isPrimaryAssignment}
-              onPrimaryAssignmentChange={setIsPrimaryAssignment}
-            />
-
-            <div className="text-sm text-muted-foreground">
-              Selected occupants: {selectedOccupants.length}
-            </div>
-          </div>
-        )}
+        </div>
 
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>

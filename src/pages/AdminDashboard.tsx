@@ -12,15 +12,10 @@ const AdminDashboard = () => {
     issues,
     activities,
     handleMarkAsSeen,
-    checkUserRoleAndFetchData,
     refreshData,
     isLoading,
     isAdmin
   } = useDashboardData(true); // Pass true for admin dashboard
-
-  useEffect(() => {
-    checkUserRoleAndFetchData();
-  }, [checkUserRoleAndFetchData]);
 
   if (isLoading || buildingsLoading) {
     return (

@@ -6,7 +6,7 @@ import { useRoomAssignments } from "./dashboard/useRoomAssignments";
 import { useUserIssues } from "./dashboard/useUserIssues";
 import { useBuildingData } from "./dashboard/useBuildingData";
 import { useAdminIssues } from "./dashboard/useAdminIssues";
-import { useAdminCheck } from "./dashboard/useAdminCheck";
+import { useAuth } from "./useAuth";
 
 export const useDashboardData = (isAdminDashboard: boolean = false) => {
   const { userData, profile } = useUserData();
@@ -14,7 +14,7 @@ export const useDashboardData = (isAdminDashboard: boolean = false) => {
   const { userIssues, handleMarkAsSeen, refetchIssues } = useUserIssues(userData?.id);
   const { allIssues } = useAdminIssues();
   const { buildings, buildingsLoading, activities, refreshData: refreshBuildingData } = useBuildingData(userData?.id);
-  const { isAdmin, isLoading, error, checkUserRoleAndFetchData } = useAdminCheck(isAdminDashboard);
+  const { isAdmin, isLoading } = useAuth();
 
   useEffect(() => {
     if (!userData?.id) return;
@@ -47,7 +47,6 @@ export const useDashboardData = (isAdminDashboard: boolean = false) => {
     if (refetchIssues) {
       await refetchIssues();
     }
-    checkUserRoleAndFetchData();
   };
 
   return {
@@ -58,12 +57,10 @@ export const useDashboardData = (isAdminDashboard: boolean = false) => {
     buildingsLoading,
     activities,
     handleMarkAsSeen,
-    error,
     // Admin specific properties
     issues: allIssues,
     isLoading,
     isAdmin,
-    checkUserRoleAndFetchData,
     refreshData
   };
 };

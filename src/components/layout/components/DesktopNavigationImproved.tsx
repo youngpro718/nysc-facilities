@@ -4,7 +4,7 @@ import { LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NavigationTab } from "../types";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useAuthSession } from "@/hooks/useAuthSession";
+import { useAuth } from "@/hooks/useAuth";
 
 interface DesktopNavigationImprovedProps {
   navigation: NavigationTab[];
@@ -17,7 +17,7 @@ export const DesktopNavigationImproved = ({
 }: DesktopNavigationImprovedProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAdmin } = useAuthSession();
+  const { isAdmin } = useAuth();
 
   const handleNavigation = (title: string) => {
     const pathMap: Record<string, string> = {

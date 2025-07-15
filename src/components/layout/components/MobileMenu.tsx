@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { NavigationTab } from "../types";
 import { MobileNavigationGrid } from "./MobileNavigationGrid";
-import { useAuthSession } from "@/hooks/useAuthSession";
+import { useAuth } from "@/hooks/useAuth";
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -21,7 +21,7 @@ export const MobileMenu = ({
   onNavigationChange,
   onSignOut
 }: MobileMenuProps) => {
-  const { isAdmin } = useAuthSession();
+  const { isAdmin } = useAuth();
   // Convert navigation tabs to grid items, filtering out separators
   const navigationItems = navigation
     .filter(item => item.type !== "separator")
