@@ -3,8 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { format, subDays, subWeeks, subMonths, differenceInDays, differenceInHours } from "date-fns";
 import { IssueReportDetail, IssueReportMetrics, IssueReportSection, FormattedIssueReport, ReportCallback } from "./types";
 import { executeCustomQuery } from "./utils/databaseQueries";
-import { PdfGenerator, createMetricsTable, createRecommendationsList } from "./utils/pdfGenerator";
+import { PdfGenerator, createMetricsTable, createRecommendationsList, PdfSection } from "./utils/pdfGenerator";
 import { handleReportError } from "./utils/reportErrorHandler";
+import { Content, TDocumentDefinitions } from "pdfmake/interfaces";
 
 interface IssueTrend {
   period: string;
@@ -457,25 +458,6 @@ export async function fetchIssueReport(
       ]
     }, `comprehensive_issue_report_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.pdf`);
 
-    console.log('Final PDF content structure:', content.length, 'sections');
-    console.log('Content preview:', content.slice(0, 3));
-
-    const docDefinition: TDocumentDefinitions = {
-      content,
-      styles: {
-        header: { fontSize: 20, bold: true, margin: [0, 0, 0, 20] },
-        subheader: { fontSize: 16, bold: true, margin: [0, 10, 0, 10] },
-        sectionHeader: { fontSize: 14, bold: true, margin: [0, 15, 0, 8] },
-        subHeader: { fontSize: 12, bold: true, margin: [0, 5, 0, 3] },
-        metric: { fontSize: 11, margin: [0, 2, 0, 2] },
-        criticalMetric: { fontSize: 11, bold: true, color: '#dc2626', margin: [0, 2, 0, 2] },
-        warningMetric: { fontSize: 11, bold: true, color: '#ea580c', margin: [0, 2, 0, 2] },
-        normal: { fontSize: 10, margin: [0, 2, 0, 2] }
-      }
-    };
-
-    console.log('About to generate PDF with definition:', docDefinition);
-    await downloadPdf(docDefinition, `comprehensive_issue_report_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.pdf`);
 
     progressCallback({
       status: 'completed',
