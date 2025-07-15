@@ -38,31 +38,30 @@ export function Hallway3D({
   const [hovered, setHovered] = useState(false);
   const isEmergencyRoute = properties?.emergency_route === 'designated' || properties?.emergencyRoute === 'designated';
   
-  // Create materials with better visual quality
+  // Simplified, cleaner materials
   const hallwayMaterial = new THREE.MeshStandardMaterial({
-    color: new THREE.Color(isEmergencyRoute ? '#dcfce7' : color),
-    roughness: 0.7,
-    metalness: 0.2,
-    transparent: isSelected || hovered,
-    opacity: isSelected || hovered ? 0.92 : 0.85,
+    color: new THREE.Color(isEmergencyRoute ? '#dcfce7' : '#e5e7eb'),
+    roughness: 0.6,
+    metalness: 0.1,
+    transparent: true,
+    opacity: 0.85,
   });
   
   const floorMaterial = new THREE.MeshStandardMaterial({
-    color: new THREE.Color(isEmergencyRoute ? '#86efac' : color).multiplyScalar(0.85),
-    roughness: 0.9,
+    color: new THREE.Color(isEmergencyRoute ? '#86efac' : '#f3f4f6'),
+    roughness: 0.8,
     metalness: 0.0,
-    side: THREE.DoubleSide,
   });
   
-  // Adjust appearance based on selection/hover state
+  // Simplified interaction feedback
   useEffect(() => {
     if (hallwayRef.current) {
       if (isSelected) {
-        hallwayRef.current.scale.set(1.02, 1.02, 1.02);
+        hallwayRef.current.scale.set(1.05, 1.05, 1.05);
         hallwayMaterial.emissive = new THREE.Color(isEmergencyRoute ? '#10b981' : '#3b82f6');
-        hallwayMaterial.emissiveIntensity = 0.15;
+        hallwayMaterial.emissiveIntensity = 0.2;
       } else if (hovered) {
-        hallwayRef.current.scale.set(1.01, 1.01, 1.01);
+        hallwayRef.current.scale.set(1.02, 1.02, 1.02);
         hallwayMaterial.emissive = new THREE.Color(isEmergencyRoute ? '#10b981' : '#60a5fa');
         hallwayMaterial.emissiveIntensity = 0.1;
       } else {

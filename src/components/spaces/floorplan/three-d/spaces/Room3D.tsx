@@ -35,34 +35,32 @@ export function Room3D({
   const [hovered, setHovered] = useState(false);
   const meshRef = useRef<THREE.Mesh>(null);
   
-  // Create materials with better visual quality
+  // Simplified, cleaner materials
   const wallMaterial = new THREE.MeshStandardMaterial({
-    color: new THREE.Color(color),
-    roughness: 0.8,
+    color: new THREE.Color('#e2e8f0'), // Clean, consistent color
+    roughness: 0.7,
     metalness: 0.1,
-    side: THREE.DoubleSide,
-    transparent: isSelected || hovered,
-    opacity: isSelected || hovered ? 0.92 : 0.85,
+    transparent: true,
+    opacity: 0.9,
   });
   
   const floorMaterial = new THREE.MeshStandardMaterial({
-    color: new THREE.Color(color).multiplyScalar(0.85), // Slightly darker for floor
-    roughness: 0.9,
+    color: new THREE.Color('#f1f5f9'), // Slightly lighter for floor
+    roughness: 0.8,
     metalness: 0.0,
-    side: THREE.DoubleSide,
   });
   
-  // Adjust appearance based on selection/hover state
+  // Simplified interaction feedback
   useEffect(() => {
     if (roomRef.current) {
       if (isSelected) {
-        roomRef.current.scale.set(1.02, 1.02, 1.02);
+        roomRef.current.scale.set(1.05, 1.05, 1.05);
         wallMaterial.emissive = new THREE.Color(0x3b82f6);
-        wallMaterial.emissiveIntensity = 0.1;
+        wallMaterial.emissiveIntensity = 0.2;
       } else if (hovered) {
-        roomRef.current.scale.set(1.01, 1.01, 1.01);
+        roomRef.current.scale.set(1.02, 1.02, 1.02);
         wallMaterial.emissive = new THREE.Color(0x60a5fa);
-        wallMaterial.emissiveIntensity = 0.05;
+        wallMaterial.emissiveIntensity = 0.1;
       } else {
         roomRef.current.scale.set(1, 1, 1);
         wallMaterial.emissive = new THREE.Color(0x000000);

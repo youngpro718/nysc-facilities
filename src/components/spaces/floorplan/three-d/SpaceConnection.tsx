@@ -76,52 +76,43 @@ export function SpaceConnection({
     return null;
   }
   
-  // Enhanced connection styles based on type
+  // Simplified, cleaner connection styles
   const getConnectionStyle = () => {
     switch(type) {
       case 'direct':
         return {
-          color: '#3b82f6', // Brighter blue
-          lineWidth: 3.5, // Thicker line
+          color: '#3b82f6',
+          lineWidth: 4,
           dashSize: 0, 
           gapSize: 0,
           emissive: '#3b82f6',
-          emissiveIntensity: 0.5
-        };
-      case 'door':
-        return {
-          color: '#f59e0b', // Amber
-          lineWidth: 3,
-          dashSize: 5,
-          gapSize: 3,
-          emissive: '#f59e0b',
-          emissiveIntensity: 0.4
-        };
-      case 'emergency':
-        return {
-          color: '#ef4444', // Red
-          lineWidth: 4, // Extra thick for emergency routes
-          dashSize: 4,
-          gapSize: 2,
-          emissive: '#ef4444',
-          emissiveIntensity: 0.6
+          emissiveIntensity: 0.3
         };
       case 'hallway':
         return {
-          color: '#10b981', // Green
+          color: '#10b981',
           lineWidth: 3,
           dashSize: 0,
           gapSize: 0,
           emissive: '#10b981',
+          emissiveIntensity: 0.3
+        };
+      case 'emergency':
+        return {
+          color: '#ef4444',
+          lineWidth: 4,
+          dashSize: 8,
+          gapSize: 4,
+          emissive: '#ef4444',
           emissiveIntensity: 0.4
         };
       default:
         return {
-          color: color,
+          color: '#64748b',
           lineWidth: 2,
-          dashSize: 4,
-          gapSize: 4,
-          emissive: color,
+          dashSize: 6,
+          gapSize: 3,
+          emissive: '#64748b',
           emissiveIntensity: 0.2
         };
     }

@@ -7,6 +7,8 @@ import { Hallway3D } from './spaces/Hallway3D';
 import { Door3D } from './spaces/Door3D';
 import { SpaceConnection } from './SpaceConnection';
 import { SceneLighting } from './SceneLighting';
+import { SimpleControls } from './controls/SimpleControls';
+import { GridSnapping } from './interactions/GridSnapping';
 import * as THREE from 'three';
 
 interface ThreeDSceneProps {
@@ -44,6 +46,8 @@ export const ThreeDScene = forwardRef<any, ThreeDSceneProps>(function ThreeDScen
   const { camera, gl, size } = useThree();
   const controlsRef = useRef<any>(null);
   const [hasInitialized, setHasInitialized] = useState(false);
+  const [gridSnapping] = useState(new GridSnapping(50, true));
+  const [gridEnabled, setGridEnabled] = useState(true);
 
   // Fit to floor method
   useImperativeHandle(ref, () => ({
@@ -272,6 +276,52 @@ export const ThreeDScene = forwardRef<any, ThreeDSceneProps>(function ThreeDScen
     }
     
     return 'direct';
+  };
+
+  const handleZoomIn = () => {
+    camera.position.multiplyScalar(0.8);
+    camera.updateProjectionMatrix();
+  };
+
+  const handleZoomOut = () => {
+    camera.position.multiplyScalar(1.2);
+    camera.updateProjectionMatrix();
+  };
+
+  const handleFitToView = () => {
+    if (objects.length > 0) {
+      // Logic to fit all objects in view
+      let minX = Infinity, maxX = -Infinity;
+      let minY = Infinity, maxY = -Infinity;
+      
+      objects.forEach(obj => {
+        const x = obj.position.x;
+        const y = obj.position.y;
+        const width = obj.data.size?.width || 100;
+        const height = obj.data.size?.height || 100;
+        
+        minX = Math.min(minX, x - width/2);
+        maxX = Math.max(maxX, x + width/2);
+        minY = Math.min(minY, y - height/2);
+        maxY = Math.max(maxY, y + height/2);
+      });
+      
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+      
+      const sceneWidth = maxX - minX;
+      const sceneDepth = maxY - minY;
+      const maxDimension = Math.max(sceneWidth, sceneDepth, 600);
+      const cameraDistance = maxDimension * 1.2;
+      
+      camera.position.set(centerX, cameraDistance * 0.7, centerY + cameraDistance * 0.7);
+      camera.lookAt(centerX, 0, centerY);
+      
+      if (controlsRef.current) {
+        controlsRef.current.target.set(centerX, 0, centerY);
+        controlsRef.current.update();
+      }
+    }
   };
 
   return (
