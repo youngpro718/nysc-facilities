@@ -61,7 +61,17 @@ export const calculateRoomLightingStatus = (room: Room): RoomLightingStatus => {
   };
 };
 
-export const calculateBuildingStats = (building: Building): BuildingStats => {
+export const calculateBuildingStats = (building: any): BuildingStats => {
+  // Add defensive checks
+  if (!building) {
+    return {
+      floorCount: 0,
+      roomCount: 0,
+      workingFixtures: 0,
+      totalFixtures: 0,
+    };
+  }
+
   const floorCount = building.floors?.length || 0;
   const roomCount =
     building.floors?.reduce(
@@ -73,15 +83,21 @@ export const calculateBuildingStats = (building: Building): BuildingStats => {
   let totalFixtures = 0;
 
   building.floors?.forEach(floor => {
-    floor.rooms?.forEach(room => {
-      room.lighting_fixtures?.forEach(fixture => {
-        const fixtureCount = fixture.bulb_count || 0;
-        totalFixtures += fixtureCount;
-        if (isWorkingStatus(fixture.status)) {
-          workingFixtures += fixtureCount;
+    if (floor && floor.rooms) {
+      floor.rooms.forEach(room => {
+        if (room && room.lighting_fixtures) {
+          room.lighting_fixtures.forEach(fixture => {
+            if (fixture) {
+              const fixtureCount = fixture.bulb_count || 0;
+              totalFixtures += fixtureCount;
+              if (isWorkingStatus(fixture.status)) {
+                workingFixtures += fixtureCount;
+              }
+            }
+          });
         }
       });
-    });
+    }
   });
 
   return {

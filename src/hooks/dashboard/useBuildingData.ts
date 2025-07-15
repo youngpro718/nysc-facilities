@@ -80,7 +80,10 @@ export const useBuildingData = (userId?: string) => {
                 ...floor,
                 rooms: (roomsByFloor[floor.id] || []).map(room => ({
                   ...room,
-                  lighting_fixtures: room.lighting_fixtures || []
+                  lighting_fixtures: (room.lighting_fixtures || []).map(fixture => ({
+                    ...fixture,
+                    bulb_count: fixture.bulb_count || 1
+                  }))
                 }))
               })) || []
             };

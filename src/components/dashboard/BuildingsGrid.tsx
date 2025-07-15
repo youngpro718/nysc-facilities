@@ -1,7 +1,7 @@
 import { BuildingCard } from "./BuildingCard";
 import { BuildingCardSkeleton } from "./BuildingCardSkeleton";
 import { calculateBuildingStats } from "@/utils/dashboardUtils";
-import { Building } from "@/utils/dashboardUtils";
+import { Building } from "@/types/dashboard";
 
 export interface Issue {
   id: string;
@@ -57,7 +57,7 @@ export function BuildingsGrid({
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
-      {buildings?.map((building, index) => {
+      {buildings?.filter(building => building != null)?.map((building, index) => {
         const { floorCount, roomCount, workingFixtures, totalFixtures } = calculateBuildingStats(building);
 
         const buildingIssues =

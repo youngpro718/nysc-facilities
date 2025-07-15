@@ -79,6 +79,23 @@ export interface Building {
     name: string;
     floor_number: number;
   }[];
+  floors?: {
+    id: string;
+    name: string;
+    floor_number: number;
+    rooms?: {
+      id: string;
+      name: string;
+      room_number?: string;
+      lighting_fixtures?: {
+        id: string;
+        name?: string;
+        type?: string;
+        status: string;
+        bulb_count: number;
+      }[];
+    }[];
+  }[];
 }
 
 export interface Activity {
