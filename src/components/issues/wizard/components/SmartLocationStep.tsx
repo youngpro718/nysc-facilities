@@ -79,7 +79,7 @@ export function SmartLocationStep({ form, assignedRooms, primaryRoom }: SmartLoc
 
   const { data: roomOccupants = [], isLoading: isLoadingOccupants } = useQuery({
     queryKey: ['roomOccupants', form.watch('room_id')],
-    queryFn: async (): Promise<any[]> => {
+    queryFn: async () => {
       const roomId = form.watch('room_id');
       if (!roomId) return [];
       
@@ -87,7 +87,7 @@ export function SmartLocationStep({ form, assignedRooms, primaryRoom }: SmartLoc
         .from('occupant_room_assignments')
         .select(`
           occupant_id,
-          occupants!occupant_room_assignments_occupant_id_fkey (
+          occupants (
             first_name,
             last_name,
             title

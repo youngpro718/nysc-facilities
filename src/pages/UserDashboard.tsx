@@ -8,6 +8,7 @@ import { RoomAssignmentCard } from "@/components/dashboard/RoomAssignmentCard";
 import { KeyAssignmentCard } from "@/components/dashboard/KeyAssignmentCard";
 import { IssueSummaryCard } from "@/components/dashboard/IssueSummaryCard";
 import { StorageRoomCard } from "@/components/dashboard/StorageRoomCard";
+import { SupplyRequestCard } from "@/components/dashboard/SupplyRequestCard";
 import { ProfileCompletionCard } from "@/components/profile/ProfileCompletionCard";
 import { ReportIssueWizard } from "@/components/issues/wizard/ReportIssueWizard";
 import { MobileFABs } from "@/components/ui/MobileFABs";
@@ -111,6 +112,7 @@ export default function UserDashboard() {
         />
         <KeyAssignmentCard userId={user.id} />
         <IssueSummaryCard userId={user.id} />
+        <SupplyRequestCard />
         {occupantData?.storageAssignments && occupantData.storageAssignments.length > 0 && (
           <StorageRoomCard 
             storageAssignments={occupantData.storageAssignments}

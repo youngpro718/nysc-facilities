@@ -7113,6 +7113,141 @@ export type Database = {
         }
         Relationships: []
       }
+      supply_request_items: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          notes: string | null
+          quantity_approved: number | null
+          quantity_fulfilled: number | null
+          quantity_requested: number
+          request_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          notes?: string | null
+          quantity_approved?: number | null
+          quantity_fulfilled?: number | null
+          quantity_requested: number
+          request_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          notes?: string | null
+          quantity_approved?: number | null
+          quantity_fulfilled?: number | null
+          quantity_requested?: number
+          request_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supply_request_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supply_request_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supply_request_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "low_stock_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supply_request_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "storage_room_inventory"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "supply_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "supply_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supply_requests: {
+        Row: {
+          approval_notes: string | null
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          delivery_location: string | null
+          description: string | null
+          fulfilled_at: string | null
+          fulfilled_by: string | null
+          fulfillment_notes: string | null
+          id: string
+          justification: string
+          metadata: Json | null
+          priority: string
+          requested_delivery_date: string | null
+          requester_id: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          approval_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          delivery_location?: string | null
+          description?: string | null
+          fulfilled_at?: string | null
+          fulfilled_by?: string | null
+          fulfillment_notes?: string | null
+          id?: string
+          justification: string
+          metadata?: Json | null
+          priority?: string
+          requested_delivery_date?: string | null
+          requester_id: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          approval_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          delivery_location?: string | null
+          description?: string | null
+          fulfilled_at?: string | null
+          fulfilled_by?: string | null
+          fulfillment_notes?: string | null
+          id?: string
+          justification?: string
+          metadata?: Json | null
+          priority?: string
+          requested_delivery_date?: string | null
+          requester_id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       system_config: {
         Row: {
           created_at: string | null
