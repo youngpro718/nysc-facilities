@@ -17,7 +17,11 @@ export function KeyAssignmentItem({ assignment, onReturnKey }: KeyAssignmentItem
         )}
         {!assignment.returned_at && (
           <button
-            onClick={() => onReturnKey(assignment.id)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onReturnKey(assignment.id);
+            }}
             className="text-xs text-destructive hover:text-destructive/80"
           >
             Return
