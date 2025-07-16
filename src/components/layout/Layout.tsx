@@ -112,7 +112,7 @@ const Layout = () => {
       )}
 
       <main className="flex-1 pb-safe">
-        <div className="mx-auto max-w-7xl px-3 sm:px-4 lg:px-8 py-4 sm:py-8">
+        <div className="mx-auto max-w-none xl:max-w-[95%] 2xl:max-w-[90%] px-3 sm:px-4 lg:px-8 xl:px-12 py-4 sm:py-8 xl:py-12">
           <Outlet />
         </div>
       </main>

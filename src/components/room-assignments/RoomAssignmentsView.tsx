@@ -33,16 +33,16 @@ export function RoomAssignmentsView() {
   } = useRoomAssignmentsList();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 xl:space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between xl:px-2">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Room Assignments</h1>
           <p className="text-muted-foreground">
             Comprehensive management of all room assignments across occupants
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 xl:gap-4">
           <Button
             variant="outline"
             size="sm"
@@ -71,7 +71,7 @@ export function RoomAssignmentsView() {
 
       {/* Filters */}
       {showFilters && (
-        <Card className="p-4">
+        <Card className="p-4 xl:p-6">
           <RoomAssignmentFilters
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}

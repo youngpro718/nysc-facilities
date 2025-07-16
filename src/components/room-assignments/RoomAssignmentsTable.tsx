@@ -101,23 +101,24 @@ export function RoomAssignmentsTable({
         </div>
       )}
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-12">
-              <Checkbox
-                checked={
-                  assignments.length > 0 && 
-                  selectedAssignments.length === assignments.length
-                }
-                onCheckedChange={onSelectAll}
-              />
-            </TableHead>
-            <TableHead>Occupant</TableHead>
-            <TableHead>Department</TableHead>
-            <TableHead>Room</TableHead>
-            <TableHead>Location</TableHead>
-            <TableHead>Assignment Type</TableHead>
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-12">
+                <Checkbox
+                  checked={
+                    assignments.length > 0 && 
+                    selectedAssignments.length === assignments.length
+                  }
+                  onCheckedChange={onSelectAll}
+                />
+              </TableHead>
+              <TableHead className="xl:w-48">Occupant</TableHead>
+              <TableHead className="xl:w-40">Department</TableHead>
+              <TableHead className="xl:w-32">Room</TableHead>
+              <TableHead className="xl:w-48">Location</TableHead>
+              <TableHead className="xl:w-36">Assignment Type</TableHead>
             <TableHead>Assigned Date</TableHead>
             <TableHead>Schedule</TableHead>
             <TableHead>Notes</TableHead>
@@ -207,7 +208,8 @@ export function RoomAssignmentsTable({
             </TableRow>
           ))}
         </TableBody>
-      </Table>
+        </Table>
+      </div>
     </Card>
   );
 }
