@@ -65,12 +65,14 @@ export function EditAssignmentInlineForm({
         <label className="text-sm font-medium">Primary assignment</label>
       </div>
 
-      <Input
-        placeholder="Schedule"
-        value={schedule}
-        onChange={(e) => setSchedule(e.target.value)}
-        className="h-8"
-      />
+      <div className="space-y-2">
+        <Input
+          placeholder="e.g., Monday-Friday 9AM-5PM, Full-time"
+          value={schedule}
+          onChange={(e) => setSchedule(e.target.value)}
+          className="h-8"
+        />
+      </div>
 
       <Textarea
         placeholder="Notes"

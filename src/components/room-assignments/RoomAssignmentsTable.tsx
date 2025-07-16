@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Edit2, Trash2, RefreshCw } from "lucide-react";
+import { Edit2, Trash2, RefreshCw, UserCheck } from "lucide-react";
 import { LoadingState } from "@/components/occupants/LoadingState";
 import { ErrorState } from "@/components/occupants/ErrorState";
 import { RoomAssignmentWithDetails } from "./hooks/useRoomAssignmentsList";
@@ -25,6 +25,8 @@ interface RoomAssignmentsTableProps {
   onToggleSelect: (assignmentId: string) => void;
   onSelectAll: () => void;
   onUpdateAssignment: (assignmentId: string, updates: Partial<RoomAssignmentWithDetails>) => Promise<void>;
+  onDeleteAssignment: (assignmentId: string) => Promise<void>;
+  onReassign: (assignment: RoomAssignmentWithDetails) => void;
   onBulkDelete: () => Promise<void>;
   onRefresh: () => void;
 }
@@ -37,6 +39,8 @@ export function RoomAssignmentsTable({
   onToggleSelect,
   onSelectAll,
   onUpdateAssignment,
+  onDeleteAssignment,
+  onReassign,
   onBulkDelete,
   onRefresh,
 }: RoomAssignmentsTableProps) {
@@ -122,7 +126,7 @@ export function RoomAssignmentsTable({
             <TableHead>Assigned Date</TableHead>
             <TableHead>Schedule</TableHead>
             <TableHead>Notes</TableHead>
-            <TableHead className="w-24">Actions</TableHead>
+            <TableHead className="w-28">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -200,8 +204,26 @@ export function RoomAssignmentsTable({
                     onClick={() => setEditingAssignment(
                       editingAssignment === assignment.id ? null : assignment.id
                     )}
+                    title="Edit assignment"
                   >
                     <Edit2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onReassign(assignment)}
+                    title="Reassign to different room or occupant"
+                  >
+                    <UserCheck className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onDeleteAssignment(assignment.id)}
+                    className="text-destructive hover:text-destructive"
+                    title="Delete assignment"
+                  >
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </TableCell>

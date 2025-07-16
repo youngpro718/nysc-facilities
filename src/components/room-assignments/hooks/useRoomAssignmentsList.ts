@@ -200,6 +200,25 @@ export function useRoomAssignmentsList() {
     }
   }, [selectedAssignments, refetch]);
 
+  const handleDeleteAssignment = useCallback(async (assignmentId: string) => {
+    try {
+      const { error } = await supabase
+        .from("occupant_room_assignments")
+        .delete()
+        .eq("id", assignmentId);
+
+      if (error) throw error;
+
+      toast.success("Assignment deleted successfully");
+      refetch();
+    } catch (error) {
+      console.error("Error deleting assignment:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to delete assignment";
+      toast.error(errorMessage);
+      throw error;
+    }
+  }, [refetch]);
+
   return {
     assignments,
     isLoading,
@@ -217,6 +236,7 @@ export function useRoomAssignmentsList() {
     toggleSelectAssignment,
     handleSelectAll,
     handleBulkDelete,
+    handleDeleteAssignment,
     handleUpdateAssignment,
   };
 }

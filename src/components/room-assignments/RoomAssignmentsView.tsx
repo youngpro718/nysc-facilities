@@ -1,16 +1,22 @@
 import { useState } from "react";
-import { Plus, Download, Upload, Filter } from "lucide-react";
+import { Plus, Download, Upload, Filter, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { RoomAssignmentsTable } from "./RoomAssignmentsTable";
 import { RoomAssignmentFilters } from "./RoomAssignmentFilters";
 import { RoomAssignmentStats } from "./RoomAssignmentStats";
 import { AssignRoomBulkDialog } from "./AssignRoomBulkDialog";
+import { CreateAssignmentDialog } from "./CreateAssignmentDialog";
+import { ReassignmentDialog } from "./ReassignmentDialog";
 import { useRoomAssignmentsList } from "./hooks/useRoomAssignmentsList";
+import { RoomAssignmentWithDetails } from "./hooks/useRoomAssignmentsList";
 
 export function RoomAssignmentsView() {
   const [showFilters, setShowFilters] = useState(false);
   const [showBulkAssignDialog, setShowBulkAssignDialog] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showReassignDialog, setShowReassignDialog] = useState(false);
+  const [assignmentToReassign, setAssignmentToReassign] = useState<RoomAssignmentWithDetails | null>(null);
 
   const {
     assignments,
@@ -29,8 +35,14 @@ export function RoomAssignmentsView() {
     toggleSelectAssignment,
     handleSelectAll,
     handleBulkDelete,
-    handleUpdateAssignment
+    handleDeleteAssignment,
+    handleUpdateAssignment,
   } = useRoomAssignmentsList();
+
+  const handleReassign = (assignment: RoomAssignmentWithDetails) => {
+    setAssignmentToReassign(assignment);
+    setShowReassignDialog(true);
+  };
 
   return (
     <div className="space-y-6 xl:space-y-8">
@@ -51,6 +63,18 @@ export function RoomAssignmentsView() {
             <Filter className="h-4 w-4 mr-2" />
             Filters
           </Button>
+          <Button 
+            onClick={() => setShowCreateDialog(true)}
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <UserPlus className="h-4 w-4" />
+            Create
+          </Button>
+          <Button onClick={() => setShowBulkAssignDialog(true)} size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Bulk Assign
+          </Button>
           <Button variant="outline" size="sm">
             <Download className="h-4 w-4 mr-2" />
             Export
@@ -58,10 +82,6 @@ export function RoomAssignmentsView() {
           <Button variant="outline" size="sm">
             <Upload className="h-4 w-4 mr-2" />
             Import
-          </Button>
-          <Button onClick={() => setShowBulkAssignDialog(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Bulk Assign
           </Button>
         </div>
       </div>
@@ -94,14 +114,29 @@ export function RoomAssignmentsView() {
         onToggleSelect={toggleSelectAssignment}
         onSelectAll={handleSelectAll}
         onUpdateAssignment={handleUpdateAssignment}
+        onDeleteAssignment={handleDeleteAssignment}
+        onReassign={handleReassign}
         onBulkDelete={handleBulkDelete}
         onRefresh={refetch}
       />
 
       {/* Dialogs */}
+      <CreateAssignmentDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        onSuccess={refetch}
+      />
+      
       <AssignRoomBulkDialog
         open={showBulkAssignDialog}
         onOpenChange={setShowBulkAssignDialog}
+        onSuccess={refetch}
+      />
+
+      <ReassignmentDialog
+        open={showReassignDialog}
+        onOpenChange={setShowReassignDialog}
+        assignment={assignmentToReassign}
         onSuccess={refetch}
       />
     </div>
