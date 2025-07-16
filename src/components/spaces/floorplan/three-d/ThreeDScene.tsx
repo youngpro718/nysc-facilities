@@ -1,14 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useThree } from '@react-three/fiber';
-import { OrbitControls, Grid, Stats } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import { FloorPlanNode } from '../types/floorPlanTypes';
-import { Room3D } from './spaces/Room3D';
-import { Hallway3D } from './spaces/Hallway3D';
-import { Door3D } from './spaces/Door3D';
-import { SpaceConnection } from './SpaceConnection';
+import { Space3D } from './components/Space3D';
+import { SimpleConnection } from './components/SimpleConnection';
+import { GridSystem } from './systems/GridSystem';
 import { SceneLighting } from './SceneLighting';
-import { SimpleControls } from './controls/SimpleControls';
-import { GridSnapping } from './interactions/GridSnapping';
+import { PositionUtils } from './utils/PositionUtils';
 import * as THREE from 'three';
 
 interface ThreeDSceneProps {
@@ -36,171 +34,86 @@ export const ThreeDScene = forwardRef<any, ThreeDSceneProps>(function ThreeDScen
   lightIntensity = 0.8,
   viewMode = 'default'
 }, ref) {
-  // Defensive: filter out objects with missing required props
-  const safeObjects = (objects || []).filter(obj => {
-    if (!obj || !obj.position || !obj.data || !obj.data.size) return false;
-    if (typeof obj.position.x !== 'number' || typeof obj.position.y !== 'number') return false;
-    if (typeof obj.data.size.width !== 'number' || typeof obj.data.size.height !== 'number') return false;
-    return true;
-  });
-  const { camera, gl, size } = useThree();
+  // Simplified object validation
+  const safeObjects = (objects || []).filter(obj => 
+    obj && obj.position && obj.data && obj.data.size &&
+    typeof obj.position.x === 'number' && typeof obj.position.y === 'number'
+  );
+
+  const { camera } = useThree();
   const controlsRef = useRef<any>(null);
   const [hasInitialized, setHasInitialized] = useState(false);
-  const [gridSnapping] = useState(new GridSnapping(50, true));
-  const [gridEnabled, setGridEnabled] = useState(true);
+  const [connectingFromId, setConnectingFromId] = useState<string | null>(null);
+  const positionUtils = new PositionUtils(50);
 
-  // Fit to floor method
+  // Simplified fit to floor method
   useImperativeHandle(ref, () => ({
     fitToFloor: () => {
-      if (!safeObjects || safeObjects.length === 0) return;
-      // Compute bounding box of all visible objects
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-      safeObjects.forEach(obj => {
+      if (!safeObjects.length) return;
+      
+      const bounds = safeObjects.reduce((acc, obj) => {
         const { x, y } = obj.position;
-        const w = obj.data.size.width;
-        const h = obj.data.size.height;
-        minX = Math.min(minX, x - w / 2);
-        maxX = Math.max(maxX, x + w / 2);
-        minY = Math.min(minY, y - h / 2);
-        maxY = Math.max(maxY, y + h / 2);
-      });
-      // Center
-      const centerX = (minX + maxX) / 2;
-      const centerY = (minY + maxY) / 2;
-      // Fit camera distance
-      const sceneWidth = maxX - minX;
-      const sceneHeight = maxY - minY;
-      const maxDim = Math.max(sceneWidth, sceneHeight, 1);
-      const fov = (camera as any).fov ? (camera as any).fov * (Math.PI / 180) : Math.PI / 4;
-      const fitHeight = maxDim / (2 * Math.tan(fov / 2));
-      const fitDist = fitHeight * 1.25 + 200; // Add margin
-      camera.position.set(centerX, fitDist, centerY + 0.01); // avoid gimbal lock
+        const { width, height } = obj.data.size;
+        return {
+          minX: Math.min(acc.minX, x - width / 2),
+          maxX: Math.max(acc.maxX, x + width / 2),
+          minY: Math.min(acc.minY, y - height / 2),
+          maxY: Math.max(acc.maxY, y + height / 2),
+        };
+      }, { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity });
+      
+      const centerX = (bounds.minX + bounds.maxX) / 2;
+      const centerY = (bounds.minY + bounds.maxY) / 2;
+      const maxDim = Math.max(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY, 600);
+      const distance = maxDim * 1.5;
+      
+      camera.position.set(centerX, distance * 0.7, centerY + distance * 0.7);
       camera.lookAt(centerX, 0, centerY);
+      
       if (controlsRef.current) {
         controlsRef.current.target.set(centerX, 0, centerY);
         controlsRef.current.update();
       }
     }
-  }), [safeObjects, camera, size]);
+  }), [safeObjects, camera]);
   
-  // Group objects by type for better rendering
-  const roomObjects = objects?.filter(obj => obj.type === 'room') || [];
-  const hallwayObjects = objects?.filter(obj => obj.type === 'hallway') || [];
-  const doorObjects = objects?.filter(obj => obj.type === 'door') || [];
-  
-  // Filter objects based on view mode
-  const visibleObjects = {
-    rooms: viewMode === 'default' || viewMode === 'rooms',
-    hallways: viewMode === 'default' || viewMode === 'hallways',
-    doors: viewMode === 'default' || viewMode === 'doors'
-  };
-  
-  console.log('Rooms:', roomObjects.length, 'Hallways:', hallwayObjects.length, 'Doors:', doorObjects.length);
-  
-  // Find visible connections between spaces
-  const visibleConnections = (connections || []).filter(conn => {
-    // Skip if connections are hidden
-    if (!showConnections) return false;
-    if (!conn) return false;
-    
-    try {
-      // Check if source and target exist
-      if (!conn.source || !conn.target) {
-        console.warn('Connection missing source or target:', conn);
-        return false;
-      }
-      
-      const sourceObj = objects?.find(obj => obj?.id === conn.source);
-      const targetObj = objects?.find(obj => obj?.id === conn.target);
-      
-      // If either object is filtered out by view mode, don't show the connection
-      if (!sourceObj || !targetObj) return false;
-      
-      // Add safety check for type property
-      if (!sourceObj.type || !targetObj.type) {
-        console.warn('Object missing type property:', sourceObj.id || targetObj.id);
-        return false;
-      }
-      
-      const sourceVisible = 
-        (sourceObj.type === 'room' && visibleObjects.rooms) ||
-        (sourceObj.type === 'hallway' && visibleObjects.hallways) ||
-        (sourceObj.type === 'door' && visibleObjects.doors);
-        
-      const targetVisible = 
-        (targetObj.type === 'room' && visibleObjects.rooms) ||
-        (targetObj.type === 'hallway' && visibleObjects.hallways) ||
-        (targetObj.type === 'door' && visibleObjects.doors);
-      
-      return sourceVisible && targetVisible;
-    } catch (err) {
-      console.error('Error processing connection:', err, conn);
-      return false;
+  // Filter objects by view mode
+  const visibleObjects = safeObjects.filter(obj => {
+    switch (viewMode) {
+      case 'rooms': return obj.type === 'room';
+      case 'hallways': return obj.type === 'hallway';
+      case 'doors': return obj.type === 'door';
+      default: return true;
     }
   });
+  
+  // Filter valid connections
+  const validConnections = showConnections ? (connections || []).filter(conn => {
+    if (!conn?.source || !conn?.target) return false;
+    
+    const sourceObj = visibleObjects.find(obj => obj.id === conn.source);
+    const targetObj = visibleObjects.find(obj => obj.id === conn.target);
+    
+    return sourceObj && targetObj;
+  }) : [];
 
-  // Prepare connection data for spaces
-  const objectConnectionMap = new Map<string, string[]>();
+  // Simplified connection mapping
+  const connectionMap = new Map<string, string[]>();
+  validConnections.forEach(conn => {
+    if (!connectionMap.has(conn.source)) connectionMap.set(conn.source, []);
+    if (!connectionMap.has(conn.target)) connectionMap.set(conn.target, []);
+    connectionMap.get(conn.source)?.push(conn.target);
+    connectionMap.get(conn.target)?.push(conn.source);
+  });
   
-  if (connections) {
-    connections.forEach(conn => {
-      if (!conn) return;
-      
-      try {
-        if (conn.source && conn.target) {
-          // Add target to source's connections
-          if (!objectConnectionMap.has(conn.source)) {
-            objectConnectionMap.set(conn.source, []);
-          }
-          // Using optional chaining and checking for undefined
-          const sourceConns = objectConnectionMap.get(conn.source);
-          if (sourceConns) {
-            sourceConns.push(conn.target);
-          }
-          
-          // Add source to target's connections
-          if (!objectConnectionMap.has(conn.target)) {
-            objectConnectionMap.set(conn.target, []);
-          }
-          // Using optional chaining and checking for undefined
-          const targetConns = objectConnectionMap.get(conn.target);
-          if (targetConns) {
-            targetConns.push(conn.source);
-          }
-        }
-      } catch (err) {
-        console.error('Error building connection map:', err, conn);
-      }
-    });
-  }
-  
-  // Initialize camera position based on scene contents
+  // Simplified camera initialization
   useEffect(() => {
-    if (camera && objects.length > 0 && !hasInitialized) {
-      let minX = Infinity, maxX = -Infinity;
-      let minY = Infinity, maxY = -Infinity;
+    if (camera && visibleObjects.length > 0 && !hasInitialized) {
+      const centerX = visibleObjects.reduce((sum, obj) => sum + obj.position.x, 0) / visibleObjects.length;
+      const centerY = visibleObjects.reduce((sum, obj) => sum + obj.position.y, 0) / visibleObjects.length;
+      const maxDim = Math.max(600, Math.max(...visibleObjects.map(obj => Math.max(obj.data.size.width, obj.data.size.height))));
       
-      objects.forEach(obj => {
-        const x = obj.position.x;
-        const y = obj.position.y;
-        const width = obj.data.size?.width || 100;
-        const height = obj.data.size?.height || 100;
-        
-        minX = Math.min(minX, x - width/2);
-        maxX = Math.max(maxX, x + width/2);
-        minY = Math.min(minY, y - height/2);
-        maxY = Math.max(maxY, y + height/2);
-      });
-      
-      const centerX = (minX + maxX) / 2;
-      const centerY = (minY + maxY) / 2;
-      
-      const sceneWidth = maxX - minX;
-      const sceneDepth = maxY - minY;
-      const maxDimension = Math.max(sceneWidth, sceneDepth, 600);
-      const cameraDistance = maxDimension * 1.2;
-      
-      camera.position.set(centerX, cameraDistance * 0.7, centerY + cameraDistance * 0.7);
+      camera.position.set(centerX, maxDim, centerY + maxDim);
       camera.lookAt(centerX, 0, centerY);
       
       if (controlsRef.current) {
@@ -210,118 +123,43 @@ export const ThreeDScene = forwardRef<any, ThreeDSceneProps>(function ThreeDScen
       
       setHasInitialized(true);
     }
-  }, [camera, objects, hasInitialized]);
+  }, [camera, visibleObjects, hasInitialized]);
 
-  // Focus camera on selected object
+  // Simplified camera focus
   useEffect(() => {
     if (controlsRef.current && selectedObjectId) {
-      const selectedObject = objects.find(obj => obj.id === selectedObjectId);
+      const selected = visibleObjects.find(obj => obj.id === selectedObjectId);
       
-      if (selectedObject) {
-        const targetX = selectedObject.position.x;
-        const targetY = selectedObject.position.y;
-        const targetZ = 0;
-        
-        // Animate camera movement for better UX
-        const currentPosition = new THREE.Vector3().copy(camera.position);
-        const targetPosition = new THREE.Vector3(
-          targetX + 200, 
-          camera.position.y * 0.8, 
-          targetY + 200
-        );
-        
-        let startTime = Date.now();
-        const duration = 1000; // 1 second animation
-        
-        const animateCamera = () => {
-          const elapsed = Date.now() - startTime;
-          const progress = Math.min(elapsed / duration, 1);
-          const easeProgress = 1 - Math.pow(1 - progress, 3); // Cubic ease out
-          
-          camera.position.lerpVectors(currentPosition, targetPosition, easeProgress);
-          
-          if (controlsRef.current) {
-            controlsRef.current.target.set(targetX, targetZ, targetY);
-            controlsRef.current.update();
-          }
-          
-          if (progress < 1) {
-            requestAnimationFrame(animateCamera);
-          }
-        };
-        
-        animateCamera();
+      if (selected) {
+        if (controlsRef.current) {
+          controlsRef.current.target.set(selected.position.x, 0, selected.position.y);
+          controlsRef.current.update();
+        }
       }
     }
-  }, [selectedObjectId, objects, camera]);
+  }, [selectedObjectId, visibleObjects]);
 
-  // Determine connection type
+  // Simplified connection type detection
   const getConnectionType = (conn: any) => {
-    if (!conn) return 'standard';
+    if (conn.data?.type === 'emergency' || conn.is_emergency_exit) return 'emergency';
+    const sourceObj = visibleObjects.find(obj => obj.id === conn.source);
+    const targetObj = visibleObjects.find(obj => obj.id === conn.target);
     
-    const sourceObj = objects.find(obj => obj.id === conn.source);
-    const targetObj = objects.find(obj => obj.id === conn.target);
-    
-    if (!sourceObj || !targetObj) return 'standard';
-    
-    if (conn.connection_type === 'door' || conn.data?.type === 'door') return 'door';
-    if (conn.is_emergency_exit || conn.data?.type === 'emergency') return 'emergency';
-    
-    if (sourceObj.type === 'hallway' && targetObj.type === 'hallway') {
-      return 'hallway';
-    }
-    
-    if (sourceObj.type === 'hallway' || targetObj.type === 'hallway') {
-      return 'hallway';
-    }
-    
+    if (sourceObj?.type === 'hallway' || targetObj?.type === 'hallway') return 'hallway';
     return 'direct';
   };
 
-  const handleZoomIn = () => {
-    camera.position.multiplyScalar(0.8);
-    camera.updateProjectionMatrix();
+  // Connection handlers
+  const handleStartConnection = (fromId: string) => {
+    setConnectingFromId(fromId);
   };
 
-  const handleZoomOut = () => {
-    camera.position.multiplyScalar(1.2);
-    camera.updateProjectionMatrix();
-  };
-
-  const handleFitToView = () => {
-    if (objects.length > 0) {
-      // Logic to fit all objects in view
-      let minX = Infinity, maxX = -Infinity;
-      let minY = Infinity, maxY = -Infinity;
-      
-      objects.forEach(obj => {
-        const x = obj.position.x;
-        const y = obj.position.y;
-        const width = obj.data.size?.width || 100;
-        const height = obj.data.size?.height || 100;
-        
-        minX = Math.min(minX, x - width/2);
-        maxX = Math.max(maxX, x + width/2);
-        minY = Math.min(minY, y - height/2);
-        maxY = Math.max(maxY, y + height/2);
-      });
-      
-      const centerX = (minX + maxX) / 2;
-      const centerY = (minY + maxY) / 2;
-      
-      const sceneWidth = maxX - minX;
-      const sceneDepth = maxY - minY;
-      const maxDimension = Math.max(sceneWidth, sceneDepth, 600);
-      const cameraDistance = maxDimension * 1.2;
-      
-      camera.position.set(centerX, cameraDistance * 0.7, centerY + cameraDistance * 0.7);
-      camera.lookAt(centerX, 0, centerY);
-      
-      if (controlsRef.current) {
-        controlsRef.current.target.set(centerX, 0, centerY);
-        controlsRef.current.update();
-      }
+  const handleFinishConnection = (toId: string) => {
+    if (connectingFromId && connectingFromId !== toId) {
+      // Create connection logic would go here
+      console.log('Creating connection from', connectingFromId, 'to', toId);
     }
+    setConnectingFromId(null);
   };
 
   return (
@@ -329,7 +167,7 @@ export const ThreeDScene = forwardRef<any, ThreeDSceneProps>(function ThreeDScen
       <SceneLighting intensity={lightIntensity} />
       <OrbitControls 
         ref={controlsRef} 
-        enableDamping={true}
+        enableDamping
         dampingFactor={0.1}
         rotateSpeed={0.5}
         maxPolarAngle={Math.PI / 2 - 0.1}
@@ -337,37 +175,13 @@ export const ThreeDScene = forwardRef<any, ThreeDSceneProps>(function ThreeDScen
         maxDistance={3000}
       />
       
+      <GridSystem enabled={true} gridSize={50} />
+      
       <group>
-        {/* Improved floor plane with gradient */}
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} receiveShadow>
-          <planeGeometry args={[6000, 6000]} />
-          <meshStandardMaterial 
-            color="#f8fafc" 
-            roughness={0.8} 
-            metalness={0.1}
-            transparent={true}
-            opacity={0.8} 
-          />
-        </mesh>
-        
-        {/* Enhanced grid for better spatial awareness */}
-        <Grid 
-          infiniteGrid 
-          cellSize={50} 
-          cellThickness={0.6} 
-          cellColor="#cbd5e1" 
-          sectionSize={200}
-          sectionThickness={1.2}
-          sectionColor="#64748b"
-          fadeDistance={2000}
-          fadeStrength={1.5}
-          position={[0, -1, 0]}
-        />
-        
-        {/* Render connections between spaces */}
-        {visibleConnections.map((conn, idx) => {
-          const sourceObj = objects.find(obj => obj.id === conn.source);
-          const targetObj = objects.find(obj => obj.id === conn.target);
+        {/* Render connections */}
+        {validConnections.map((conn, idx) => {
+          const sourceObj = visibleObjects.find(obj => obj.id === conn.source);
+          const targetObj = visibleObjects.find(obj => obj.id === conn.target);
           
           if (!sourceObj || !targetObj) return null;
           
@@ -376,19 +190,18 @@ export const ThreeDScene = forwardRef<any, ThreeDSceneProps>(function ThreeDScen
             (conn.source === selectedObjectId || conn.target === selectedObjectId);
           
           return (
-            <SpaceConnection 
+            <SimpleConnection 
               key={`conn-${idx}`}
-              from={sourceObj}
-              to={targetObj}
+              from={sourceObj.position}
+              to={targetObj.position}
               type={connectionType}
-              isDashed={connectionType !== 'hallway' && connectionType !== 'direct'}
-              showLabels={isHighlighted && showLabels}
+              isHighlighted={isHighlighted}
             />
           );
         })}
         
-        {/* Render hallways first (lower) */}
-        {visibleObjects.hallways && hallwayObjects.map(obj => {
+        {/* Render all spaces using unified component */}
+        {visibleObjects.map(obj => {
           let objectData = obj;
           if (previewData && previewData.id === obj.id) {
             objectData = {
@@ -399,131 +212,29 @@ export const ThreeDScene = forwardRef<any, ThreeDSceneProps>(function ThreeDScen
                 ...obj.data,
                 size: previewData.data?.size || obj.data.size,
                 properties: previewData.data?.properties || obj.data.properties,
-                rotation: previewData.data?.rotation ?? obj.data.rotation
               }
             };
           }
           
           const isSelected = selectedObjectId === obj.id;
-          const rotation = objectData.data?.rotation !== undefined 
-            ? objectData.data.rotation 
-            : (objectData.rotation || 0);
-          
-          // Add connection data to properties
-          const enhancedProperties = {
-            ...objectData.data?.properties,
-            connected_spaces: objectConnectionMap.get(obj.id) || []
-          };
-          
-          // Find spaces connected to this hallway
-          const connectedSpaces = objects.filter(otherObj => {
-            return objectConnectionMap.get(obj.id)?.includes(otherObj.id);
-          });
+          const rotation = objectData.rotation || 0;
           
           return (
-            <Hallway3D
+            <Space3D
               key={obj.id}
               id={obj.id}
+              type={obj.type as 'room' | 'hallway' | 'door'}
               position={objectData.position}
               size={objectData.data.size}
               rotation={rotation}
-              color={obj.data?.style?.backgroundColor || '#e5e7eb'}
-              onClick={onObjectSelect}
-              isSelected={isSelected}
-              properties={enhancedProperties}
-              label={obj.data?.label || 'Hallway'}
-              showLabels={showLabels}
-              connectedSpaces={connectedSpaces}
-            />
-          );
-        })}
-        
-        {/* Render doors */}
-        {visibleObjects.doors && doorObjects.map(obj => {
-          let objectData = obj;
-          if (previewData && previewData.id === obj.id) {
-            objectData = {
-              ...obj,
-              position: previewData.position || obj.position,
-              rotation: previewData.rotation ?? obj.rotation,
-              data: {
-                ...obj.data,
-                size: previewData.data?.size || obj.data.size,
-                properties: previewData.data?.properties || obj.data.properties,
-                rotation: previewData.data?.rotation ?? obj.data.rotation
-              }
-            };
-          }
-          
-          const isSelected = selectedObjectId === obj.id;
-          const rotation = objectData.data?.rotation !== undefined 
-            ? objectData.data.rotation 
-            : (objectData.rotation || 0);
-            
-          // Add connection data to properties
-          const enhancedProperties = {
-            ...objectData.data?.properties,
-            connected_spaces: objectConnectionMap.get(obj.id) || []
-          };
-          
-          return (
-            <Door3D
-              key={obj.id}
-              id={obj.id}
-              position={objectData.position}
-              size={objectData.data.size || {width: 40, height: 15}}
-              rotation={rotation}
-              color={obj.data?.style?.backgroundColor || '#94a3b8'}
-              onClick={onObjectSelect}
-              isSelected={isSelected}
-              properties={enhancedProperties}
               label={obj.data?.label}
-              showLabels={showLabels}
-            />
-          );
-        })}
-        
-        {/* Render rooms */}
-        {visibleObjects.rooms && roomObjects.map(obj => {
-          let objectData = obj;
-          if (previewData && previewData.id === obj.id) {
-            objectData = {
-              ...obj,
-              position: previewData.position || obj.position,
-              rotation: previewData.rotation ?? obj.rotation,
-              data: {
-                ...obj.data,
-                size: previewData.data?.size || obj.data.size,
-                properties: previewData.data?.properties || obj.data.properties,
-                rotation: previewData.data?.rotation ?? obj.data.rotation
-              }
-            };
-          }
-          
-          const isSelected = selectedObjectId === obj.id;
-          const rotation = objectData.data?.rotation !== undefined 
-            ? objectData.data.rotation 
-            : (objectData.rotation || 0);
-            
-          // Add connection data to properties
-          const enhancedProperties = {
-            ...objectData.data?.properties,
-            connected_spaces: objectConnectionMap.get(obj.id) || []
-          };
-          
-          return (
-            <Room3D 
-              key={obj.id}
-              id={obj.id}
-              position={objectData.position}
-              size={objectData.data.size}
-              rotation={rotation}
-              color={obj.data?.style?.backgroundColor || '#e2e8f0'}
-              onClick={onObjectSelect}
+              properties={objectData.data?.properties}
               isSelected={isSelected}
-              properties={enhancedProperties}
-              label={obj.data?.label || ''}
               showLabels={showLabels}
+              onClick={onObjectSelect}
+              onStartConnection={handleStartConnection}
+              onFinishConnection={handleFinishConnection}
+              isConnecting={connectingFromId === obj.id}
             />
           );
         })}
