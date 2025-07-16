@@ -7,6 +7,7 @@ import { NotificationCard } from "@/components/dashboard/NotificationCard";
 import { RoomAssignmentCard } from "@/components/dashboard/RoomAssignmentCard";
 import { KeyAssignmentCard } from "@/components/dashboard/KeyAssignmentCard";
 import { IssueSummaryCard } from "@/components/dashboard/IssueSummaryCard";
+import { StorageRoomCard } from "@/components/dashboard/StorageRoomCard";
 import { ProfileCompletionCard } from "@/components/profile/ProfileCompletionCard";
 import { ReportIssueWizard } from "@/components/issues/wizard/ReportIssueWizard";
 import { MobileFABs } from "@/components/ui/MobileFABs";
@@ -110,6 +111,11 @@ export default function UserDashboard() {
         />
         <KeyAssignmentCard userId={user.id} />
         <IssueSummaryCard userId={user.id} />
+        {occupantData?.storageAssignments && occupantData.storageAssignments.length > 0 && (
+          <StorageRoomCard 
+            storageAssignments={occupantData.storageAssignments}
+          />
+        )}
       </div>
       <MobileFABs 
         onRequestKey={() => setShowKeyRequest(true)} 

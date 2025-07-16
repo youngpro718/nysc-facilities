@@ -15,6 +15,9 @@ export interface DetailedRoomAssignment {
   assigned_at: string;
   schedule?: string;
   notes?: string;
+  is_storage?: boolean;
+  storage_type?: string;
+  storage_capacity?: number;
 }
 
 export interface DetailedKeyAssignment {
@@ -34,6 +37,7 @@ export interface OccupantAssignments {
   roomAssignments: DetailedRoomAssignment[];
   keyAssignments: DetailedKeyAssignment[];
   primaryRoom?: DetailedRoomAssignment;
+  storageAssignments: DetailedRoomAssignment[];
 }
 
 export const useOccupantAssignments = (occupantId: string) => {
@@ -59,6 +63,9 @@ export const useOccupantAssignments = (occupantId: string) => {
               name,
               room_number,
               floor_id,
+              is_storage,
+              storage_type,
+              storage_capacity,
               floors!rooms_floor_id_fkey (
                 id,
                 name,
@@ -113,7 +120,10 @@ export const useOccupantAssignments = (occupantId: string) => {
           is_primary: assignment.is_primary || false,
           assigned_at: assignment.assigned_at,
           schedule: typeof assignment.schedule === 'string' ? assignment.schedule : '',
-          notes: assignment.notes || ''
+          notes: assignment.notes || '',
+          is_storage: assignment.rooms?.is_storage || false,
+          storage_type: assignment.rooms?.storage_type || undefined,
+          storage_capacity: assignment.rooms?.storage_capacity || undefined
         }));
 
         // Format key assignments
@@ -132,11 +142,15 @@ export const useOccupantAssignments = (occupantId: string) => {
 
         // Find primary room
         const primaryRoom = formattedRoomAssignments.find(room => room.is_primary);
+        
+        // Separate storage room assignments
+        const storageAssignments = formattedRoomAssignments.filter(room => room.is_storage);
 
         return {
           roomAssignments: formattedRoomAssignments,
           keyAssignments: formattedKeyAssignments,
-          primaryRoom
+          primaryRoom,
+          storageAssignments
         };
       } catch (error) {
         console.error('Error in useOccupantAssignments:', error);
