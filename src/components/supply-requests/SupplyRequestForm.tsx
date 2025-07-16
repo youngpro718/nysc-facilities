@@ -38,7 +38,7 @@ interface SupplyRequestFormProps {
 
 export function SupplyRequestForm({ onSuccess }: SupplyRequestFormProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -88,7 +88,7 @@ export function SupplyRequestForm({ onSuccess }: SupplyRequestFormProps) {
       item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.description?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesCategory = !selectedCategory || 
+    const matchesCategory = !selectedCategory || selectedCategory === "all" || 
       item.inventory_categories?.name === selectedCategory;
     
     return matchesSearch && matchesCategory;
@@ -295,7 +295,7 @@ export function SupplyRequestForm({ onSuccess }: SupplyRequestFormProps) {
                             <SelectValue placeholder="All Categories" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">All Categories</SelectItem>
+                            <SelectItem value="all">All Categories</SelectItem>
                             {categories.map(category => (
                               <SelectItem key={category} value={category}>
                                 {category}
