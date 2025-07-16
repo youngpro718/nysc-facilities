@@ -153,22 +153,15 @@ function StorageRoomItem({
           <Archive className="h-3 w-3 mr-2" />
           Manage Inventory
         </Button>
-        <Button 
-          size="sm" 
-          variant="outline"
-          onClick={() => onManageInventory?.(room.room_id)}
-          className="flex-1"
-        >
-          <Camera className="h-3 w-3 mr-2" />
-          Add Photos
-        </Button>
         {lowStockItems > 0 && (
           <Button 
             size="sm" 
             variant="destructive"
             onClick={() => onManageInventory?.(room.room_id)}
+            title={`${lowStockItems} low stock items`}
           >
             <AlertTriangle className="h-3 w-3" />
+            <span className="ml-1 text-xs">{lowStockItems}</span>
           </Button>
         )}
       </div>

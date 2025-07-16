@@ -20,6 +20,7 @@ export interface InventoryItem {
   storage_room_id?: string;
   updated_at?: string;
   created_at?: string;
+  photo_url?: string;
 }
 
 interface UseInventoryOptions {

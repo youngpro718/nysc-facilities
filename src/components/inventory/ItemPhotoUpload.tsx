@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Camera, Upload, X, Image as ImageIcon, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface ItemPhotoUploadProps {
   open: boolean;
@@ -25,6 +26,7 @@ export function ItemPhotoUpload({
   onPhotoUploaded,
 }: ItemPhotoUploadProps) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -82,6 +84,9 @@ export function ItemPhotoUpload({
 
       if (updateError) throw updateError;
 
+      // Invalidate inventory queries to trigger re-fetch
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      
       onPhotoUploaded(publicUrl.publicUrl);
       onOpenChange(false);
       
@@ -124,6 +129,9 @@ export function ItemPhotoUpload({
         .eq('id', itemId);
 
       if (updateError) throw updateError;
+
+      // Invalidate inventory queries to trigger re-fetch
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
 
       onPhotoUploaded('');
       onOpenChange(false);
