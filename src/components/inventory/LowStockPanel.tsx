@@ -22,20 +22,10 @@ type LowStockItem = {
 export const LowStockPanel = () => {
   const { data: lowStockItems, isLoading } = useQuery({
     queryKey: ["low-stock-items"],
-    queryFn: async () => {
+    queryFn: async (): Promise<LowStockItem[]> => {
       const { data, error } = await supabase
         .from("inventory_items")
-        .select(`
-          id,
-          name,
-          quantity,
-          minimum_quantity,
-          unit,
-          location_details,
-          preferred_vendor,
-          inventory_categories!inner(name, color),
-          rooms(name, room_number)
-        `)
+        .select("*")
         .or("quantity.lt.minimum_quantity,quantity.eq.0")
         .not("minimum_quantity", "is", null)
         .order("quantity", { ascending: true });
@@ -46,34 +36,24 @@ export const LowStockPanel = () => {
         id: item.id,
         name: item.name,
         quantity: item.quantity,
-        minimum_quantity: item.minimum_quantity,
-        unit: item.unit,
-        location_details: item.location_details,
-        preferred_vendor: item.preferred_vendor,
-        category_name: (item.inventory_categories as any)?.name || "Uncategorized",
-        category_color: (item.inventory_categories as any)?.color || "gray",
-        room_name: (item.rooms as any)?.name || "",
-        room_number: (item.rooms as any)?.room_number || "",
-      })) as LowStockItem[];
+        minimum_quantity: item.minimum_quantity || 0,
+        unit: item.unit || '',
+        location_details: item.location_details || '',
+        preferred_vendor: item.preferred_vendor || '',
+        category_name: "General",
+        category_color: "gray",
+        room_name: "",
+        room_number: "",
+      })) || [];
     },
   });
 
   const { data: outOfStockItems } = useQuery({
     queryKey: ["out-of-stock-items"],
-    queryFn: async () => {
+    queryFn: async (): Promise<LowStockItem[]> => {
       const { data, error } = await supabase
         .from("inventory_items")
-        .select(`
-          id,
-          name,
-          quantity,
-          minimum_quantity,
-          unit,
-          location_details,
-          preferred_vendor,
-          inventory_categories!inner(name, color),
-          rooms(name, room_number)
-        `)
+        .select("*")
         .eq("quantity", 0)
         .order("name");
 
@@ -83,15 +63,15 @@ export const LowStockPanel = () => {
         id: item.id,
         name: item.name,
         quantity: item.quantity,
-        minimum_quantity: item.minimum_quantity,
-        unit: item.unit,
-        location_details: item.location_details,
-        preferred_vendor: item.preferred_vendor,
-        category_name: (item.inventory_categories as any)?.name || "Uncategorized",
-        category_color: (item.inventory_categories as any)?.color || "gray",
-        room_name: (item.rooms as any)?.name || "",
-        room_number: (item.rooms as any)?.room_number || "",
-      })) as LowStockItem[];
+        minimum_quantity: item.minimum_quantity || 0,
+        unit: item.unit || '',
+        location_details: item.location_details || '',
+        preferred_vendor: item.preferred_vendor || '',
+        category_name: "General",
+        category_color: "gray",
+        room_name: "",
+        room_number: "",
+      })) || [];
     },
   });
 

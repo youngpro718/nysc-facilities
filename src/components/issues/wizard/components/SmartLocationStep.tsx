@@ -79,7 +79,7 @@ export function SmartLocationStep({ form, assignedRooms, primaryRoom }: SmartLoc
 
   const { data: roomOccupants = [], isLoading: isLoadingOccupants } = useQuery({
     queryKey: ['roomOccupants', form.watch('room_id')],
-    queryFn: async () => {
+    queryFn: async (): Promise<any[]> => {
       const roomId = form.watch('room_id');
       if (!roomId) return [];
       
