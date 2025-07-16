@@ -335,7 +335,7 @@ export function ScheduleMaintenanceDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Unassigned</SelectItem>
+                        <SelectItem value="unassigned">Unassigned</SelectItem>
                         {technicians?.map((tech) => (
                           <SelectItem key={tech.id} value={tech.id}>
                             {tech.first_name} {tech.last_name}

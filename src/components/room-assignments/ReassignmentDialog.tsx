@@ -145,7 +145,7 @@ export function ReassignmentDialog({
                 <SelectValue placeholder="Keep current occupant" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Keep current occupant</SelectItem>
+                <SelectItem value="keep-current">Keep current occupant</SelectItem>
                 {occupants?.map((occupant) => (
                   <SelectItem key={occupant.id} value={occupant.id}>
                     {occupant.first_name} {occupant.last_name} ({occupant.email})
@@ -162,7 +162,7 @@ export function ReassignmentDialog({
                 <SelectValue placeholder="Keep current room" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Keep current room</SelectItem>
+                <SelectItem value="keep-current">Keep current room</SelectItem>
                 {rooms?.map((room) => (
                   <SelectItem key={room.id} value={room.id}>
                     {room.room_number} - {room.name} 

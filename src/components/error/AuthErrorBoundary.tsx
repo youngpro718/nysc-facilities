@@ -62,8 +62,22 @@ interface AuthErrorBoundaryProps {
 
 export function AuthErrorBoundary({ children, onError }: AuthErrorBoundaryProps) {
   const handleError = (error: Error) => {
-    console.error('AuthErrorBoundary: Authentication error caught:', error);
-    onError?.(error);
+    // Only handle actual authentication-related errors
+    const isAuthError = error.message.includes('auth') || 
+                       error.message.includes('Authentication') ||
+                       error.message.includes('session') ||
+                       error.message.includes('token') ||
+                       error.message.includes('login') ||
+                       error.message.includes('unauthorized');
+    
+    if (isAuthError) {
+      console.error('AuthErrorBoundary: Authentication error caught:', error);
+      onError?.(error);
+    } else {
+      // For non-auth errors, just log and re-throw to let other error boundaries handle them
+      console.error('AuthErrorBoundary: Non-auth error, re-throwing:', error);
+      throw error;
+    }
   };
 
   return (
