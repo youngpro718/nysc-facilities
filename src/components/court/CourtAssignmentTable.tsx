@@ -447,11 +447,20 @@ export const CourtAssignmentTable = () => {
   const handleSave = async () => {
     if (!editingCell) return;
     
-    await updateAssignmentMutation.mutateAsync({
-      roomId: editingCell.rowId,
-      field: editingCell.field,
-      value: editingValue,
-    });
+    try {
+      await updateAssignmentMutation.mutateAsync({
+        roomId: editingCell.rowId,
+        field: editingCell.field,
+        value: editingValue,
+      });
+      
+      // Clear editing state after successful save
+      setEditingCell(null);
+      setEditingValue("");
+    } catch (error) {
+      console.error('Error saving assignment:', error);
+      // Keep editing state on error so user can retry
+    }
   };
 
   const handleCancel = () => {
@@ -461,8 +470,10 @@ export const CourtAssignmentTable = () => {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
+      e.preventDefault();
       handleSave();
     } else if (e.key === "Escape") {
+      e.preventDefault();
       handleCancel();
     }
   };
