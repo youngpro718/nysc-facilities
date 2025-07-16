@@ -25,9 +25,9 @@ export interface RoomAssignmentWithDetails {
 
 export function useRoomAssignmentsList() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [departmentFilter, setDepartmentFilter] = useState<string>("");
-  const [assignmentTypeFilter, setAssignmentTypeFilter] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [departmentFilter, setDepartmentFilter] = useState<string>("all");
+  const [assignmentTypeFilter, setAssignmentTypeFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedAssignments, setSelectedAssignments] = useState<string[]>([]);
 
   // Fetch all room assignments with joined data
@@ -90,20 +90,20 @@ export function useRoomAssignmentsList() {
         });
       }
 
-      if (departmentFilter) {
+      if (departmentFilter && departmentFilter !== "all") {
         filteredData = filteredData.filter(assignment => {
           const occupant = occupantsMap.get(assignment.occupant_id);
           return occupant?.department === departmentFilter;
         });
       }
 
-      if (assignmentTypeFilter) {
+      if (assignmentTypeFilter && assignmentTypeFilter !== "all") {
         filteredData = filteredData.filter(assignment => 
           assignment.assignment_type === assignmentTypeFilter
         );
       }
 
-      if (statusFilter) {
+      if (statusFilter && statusFilter !== "all") {
         filteredData = filteredData.filter(assignment => {
           const occupant = occupantsMap.get(assignment.occupant_id);
           return occupant?.status === statusFilter;
@@ -172,7 +172,9 @@ export function useRoomAssignmentsList() {
       refetch();
     } catch (error) {
       console.error("Error updating assignment:", error);
-      toast.error("Failed to update assignment");
+      const errorMessage = error instanceof Error ? error.message : "Failed to update assignment";
+      toast.error(errorMessage);
+      throw error;
     }
   }, [refetch]);
 
@@ -192,7 +194,9 @@ export function useRoomAssignmentsList() {
       refetch();
     } catch (error) {
       console.error("Error deleting assignments:", error);
-      toast.error("Failed to delete assignments");
+      const errorMessage = error instanceof Error ? error.message : "Failed to delete assignments";
+      toast.error(errorMessage);
+      throw error;
     }
   }, [selectedAssignments, refetch]);
 

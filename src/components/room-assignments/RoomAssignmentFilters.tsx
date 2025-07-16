@@ -53,7 +53,7 @@ export function RoomAssignmentFilters({
             <SelectValue placeholder="All departments" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All departments</SelectItem>
+            <SelectItem value="all">All departments</SelectItem>
             <SelectItem value="Administration">Administration</SelectItem>
             <SelectItem value="Security">Security</SelectItem>
             <SelectItem value="Maintenance">Maintenance</SelectItem>
@@ -70,12 +70,8 @@ export function RoomAssignmentFilters({
             <SelectValue placeholder="All types" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All types</SelectItem>
-            <SelectItem value="primary_office">Primary Office</SelectItem>
-            <SelectItem value="secondary_office">Secondary Office</SelectItem>
-            <SelectItem value="storage">Storage</SelectItem>
-            <SelectItem value="shared_workspace">Shared Workspace</SelectItem>
-            <SelectItem value="temporary">Temporary</SelectItem>
+            <SelectItem value="all">All types</SelectItem>
+            <SelectItem value="work_location">Work Location</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -87,7 +83,7 @@ export function RoomAssignmentFilters({
             <SelectValue placeholder="All statuses" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All statuses</SelectItem>
+            <SelectItem value="all">All statuses</SelectItem>
             <SelectItem value="active">Active</SelectItem>
             <SelectItem value="inactive">Inactive</SelectItem>
             <SelectItem value="on_leave">On Leave</SelectItem>

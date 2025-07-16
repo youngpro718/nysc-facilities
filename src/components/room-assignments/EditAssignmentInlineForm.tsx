@@ -52,11 +52,7 @@ export function EditAssignmentInlineForm({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="primary_office">Primary Office</SelectItem>
-            <SelectItem value="secondary_office">Secondary Office</SelectItem>
-            <SelectItem value="storage">Storage</SelectItem>
-            <SelectItem value="shared_workspace">Shared Workspace</SelectItem>
-            <SelectItem value="temporary">Temporary</SelectItem>
+            <SelectItem value="work_location">Work Location</SelectItem>
           </SelectContent>
         </Select>
       </div>
