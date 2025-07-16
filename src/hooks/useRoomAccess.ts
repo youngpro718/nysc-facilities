@@ -86,26 +86,19 @@ export const useRoomAccess = (roomId?: string) => {
         .select(`
           id,
           assigned_at,
-          keys (
+          keys!inner (
             id,
             name,
-            is_passkey,
-            key_door_locations (
-              door_id,
-              doors (
-                id,
-                name
-              )
-            )
+            is_passkey
           ),
-          occupants!key_assignments_occupant_id_fkey (
+          occupants!inner (
             id,
             first_name,
             last_name,
             department
           )
         `)
-        .is('returned_at', null);
+        .is('returned_at', null) as { data: any[] | null; error: any };
 
       if (keyError) throw keyError;
 
