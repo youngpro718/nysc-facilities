@@ -5642,36 +5642,7 @@ export type Database = {
           performed_at?: string | null
           performed_by?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "room_assignment_audit_log_assignment_id_fkey"
-            columns: ["assignment_id"]
-            isOneToOne: false
-            referencedRelation: "occupant_room_assignments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "room_assignment_audit_log_assignment_id_fkey"
-            columns: ["assignment_id"]
-            isOneToOne: false
-            referencedRelation: "room_assignment_conflicts"
-            referencedColumns: ["assignment1_id"]
-          },
-          {
-            foreignKeyName: "room_assignment_audit_log_assignment_id_fkey"
-            columns: ["assignment_id"]
-            isOneToOne: false
-            referencedRelation: "room_assignment_conflicts"
-            referencedColumns: ["assignment2_id"]
-          },
-          {
-            foreignKeyName: "room_assignment_audit_log_assignment_id_fkey"
-            columns: ["assignment_id"]
-            isOneToOne: false
-            referencedRelation: "room_assignments_view"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       room_health_metrics: {
         Row: {
