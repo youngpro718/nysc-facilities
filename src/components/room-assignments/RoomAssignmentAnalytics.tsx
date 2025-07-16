@@ -48,8 +48,8 @@ export function RoomAssignmentAnalytics({ assignments }: RoomAssignmentAnalytics
 
     const departmentData = Object.entries(departmentCounts).map(([name, value]) => ({
       name,
-      value,
-      percentage: Math.round((value / totalAssignments) * 100)
+      value: Number(value),
+      percentage: Math.round((Number(value) / totalAssignments) * 100)
     }));
 
     // Assignment type distribution
@@ -61,8 +61,8 @@ export function RoomAssignmentAnalytics({ assignments }: RoomAssignmentAnalytics
 
     const assignmentTypeData = Object.entries(typeData).map(([name, value]) => ({
       name: name.replace(/_/g, ' '),
-      value,
-      percentage: Math.round((value / totalAssignments) * 100)
+      value: Number(value),
+      percentage: Math.round((Number(value) / totalAssignments) * 100)
     }));
 
     // Building distribution
@@ -74,8 +74,8 @@ export function RoomAssignmentAnalytics({ assignments }: RoomAssignmentAnalytics
 
     const buildingData = Object.entries(buildingCounts).map(([name, value]) => ({
       name,
-      assignments: value,
-      utilization: Math.round((value / totalAssignments) * 100)
+      assignments: Number(value),
+      utilization: Math.round((Number(value) / totalAssignments) * 100)
     }));
 
     // Assignment trends (last 30 days)
@@ -112,7 +112,7 @@ export function RoomAssignmentAnalytics({ assignments }: RoomAssignmentAnalytics
 
     // Room utilization metrics
     const roomUtilization = buildingData.reduce((total, building) => 
-      total + building.assignments, 0
+      total + Number(building.assignments), 0
     ) / buildingData.length;
 
     return {
