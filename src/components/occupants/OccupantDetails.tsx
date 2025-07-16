@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Card } from "@/components/ui/card";
 import { OccupantQueryResponse } from "./types/occupantTypes";
 import { EditRoomAssignmentDialog } from "./components/EditRoomAssignmentDialog";
+import { useToast } from "@/hooks/use-toast";
 
 interface OccupantDetailsProps {
   occupant: OccupantQueryResponse;
@@ -19,10 +20,12 @@ interface OccupantDetailsProps {
 export function OccupantDetails({ occupant, onClose }: OccupantDetailsProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { keyAssignments: fetchedKeyAssignments, isLoading } = useKeyAssignments(occupant.id);
+  const { keyAssignments: fetchedKeyAssignments, isLoading, handleReturnKey } = useKeyAssignments(occupant.id);
+  const { toast } = useToast();
   
   const [editingAssignment, setEditingAssignment] = useState<any>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [returningKey, setReturningKey] = useState<string | null>(null);
 
   // Group rooms by assignment type
   const groupedRooms = occupant.rooms.reduce((acc, room) => {
@@ -96,6 +99,27 @@ export function OccupantDetails({ occupant, onClose }: OccupantDetailsProps) {
   const handleEditSuccess = () => {
     // Refresh the data - in a real app you'd call a refresh function
     window.location.reload();
+  };
+
+  const handleKeyReturn = async (assignmentId: string) => {
+    try {
+      setReturningKey(assignmentId);
+      await handleReturnKey(assignmentId);
+      toast({
+        title: "Success",
+        description: "Key returned successfully",
+      });
+      // Refresh the data
+      window.location.reload();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to return key",
+        variant: "destructive",
+      });
+    } finally {
+      setReturningKey(null);
+    }
   };
 
   return (
@@ -286,9 +310,22 @@ export function OccupantDetails({ occupant, onClose }: OccupantDetailsProps) {
                 key={assignment.id}
                 className="flex items-center justify-between p-2 bg-muted rounded-lg text-sm"
               >
-                <span>{assignment.key.name}</span>
-                {assignment.key.is_passkey && (
-                  <Badge variant="secondary">Passkey</Badge>
+                <div className="flex items-center gap-2">
+                  <span>{assignment.key.name}</span>
+                  {assignment.key.is_passkey && (
+                    <Badge variant="secondary">Passkey</Badge>
+                  )}
+                </div>
+                {!assignment.returned_at && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleKeyReturn(assignment.id)}
+                    disabled={returningKey === assignment.id}
+                    className="text-xs"
+                  >
+                    {returningKey === assignment.id ? "Returning..." : "Return Key"}
+                  </Button>
                 )}
               </div>
             ))}

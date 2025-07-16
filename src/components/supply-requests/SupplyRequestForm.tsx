@@ -84,6 +84,10 @@ export function SupplyRequestForm({ onSuccess }: SupplyRequestFormProps) {
   });
 
   const filteredItems = inventoryItems.filter(item => {
+    // Only show Office Supplies and Furniture
+    const allowedCategories = ['Office Supplies', 'Furniture'];
+    const isAllowedCategory = allowedCategories.includes(item.inventory_categories?.name || '');
+    
     const matchesSearch = !searchTerm || 
       item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.description?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -91,12 +95,10 @@ export function SupplyRequestForm({ onSuccess }: SupplyRequestFormProps) {
     const matchesCategory = !selectedCategory || selectedCategory === "all" || 
       item.inventory_categories?.name === selectedCategory;
     
-    return matchesSearch && matchesCategory;
+    return isAllowedCategory && matchesSearch && matchesCategory;
   });
 
-  const categories = Array.from(
-    new Set(inventoryItems.map(item => item.inventory_categories?.name).filter(Boolean))
-  );
+  const categories = ['Office Supplies', 'Furniture']; // Only allow these two categories
 
   const addItem = (itemId: string) => {
     try {
@@ -157,6 +159,9 @@ export function SupplyRequestForm({ onSuccess }: SupplyRequestFormProps) {
           <Package className="h-5 w-5" />
           New Supply Request
         </CardTitle>
+        <p className="text-sm text-muted-foreground">
+          You can only request Office Supplies and Furniture items through this form.
+        </p>
       </CardHeader>
       <CardContent>
         <Form {...form}>

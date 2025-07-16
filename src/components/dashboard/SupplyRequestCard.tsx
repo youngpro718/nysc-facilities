@@ -47,6 +47,25 @@ export function SupplyRequestCard() {
     }
   };
 
+  const getStatusDescription = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'Awaiting review by admin';
+      case 'under_review':
+        return 'Being reviewed by supply team';
+      case 'approved':
+        return 'Approved - preparing for fulfillment';
+      case 'fulfilled':
+        return 'Request completed successfully';
+      case 'rejected':
+        return 'Request was rejected';
+      case 'cancelled':
+        return 'Request was cancelled';
+      default:
+        return 'Status unknown';
+    }
+  };
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'urgent':
@@ -109,10 +128,13 @@ export function SupplyRequestCard() {
                     {getStatusIcon(request.status)}
                     <h4 className="font-medium">{request.title}</h4>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
                     <span>{new Date(request.created_at).toLocaleDateString()}</span>
                     <span>•</span>
                     <span>{request.supply_request_items?.length || 0} items</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {getStatusDescription(request.status)}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
