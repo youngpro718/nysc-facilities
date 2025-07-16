@@ -2,7 +2,7 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Key, DoorOpen, ArrowLeftRight, Plus, Eye } from "lucide-react";
+import { Key, DoorOpen, Eye } from "lucide-react";
 import { useKeyAssignments } from "@/components/occupants/hooks/useKeyAssignments";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
@@ -19,10 +19,6 @@ export function KeyAssignmentCard({ userId }: KeyAssignmentCardProps) {
     if (assignment.keys?.is_passkey) return count + 5;
     return count + 1; // Default door access count per key
   }, 0) || 0;
-
-  const handleRequestKey = () => {
-    navigate('/my-requests');
-  };
 
   const handleViewAllKeys = () => {
     navigate('/my-requests');
@@ -88,14 +84,6 @@ export function KeyAssignmentCard({ userId }: KeyAssignmentCardProps) {
                         Passkey
                       </Badge>
                     )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => navigate('/my-requests')}
-                      className="h-6 w-6 p-0"
-                    >
-                      <ArrowLeftRight className="h-3 w-3" />
-                    </Button>
                   </div>
                 </div>
               ))}
@@ -105,23 +93,19 @@ export function KeyAssignmentCard({ userId }: KeyAssignmentCardProps) {
                 </div>
               )}
             </div>
-            
-            <div className="pt-3 border-t">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRequestKey}
-                className="w-full"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Request New Key
-              </Button>
-            </div>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2 py-8 text-muted-foreground">
             <Key className="h-8 w-8" />
             <p>No keys assigned</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleViewAllKeys}
+              className="mt-2"
+            >
+              Request New Key
+            </Button>
           </div>
         )}
       </div>
