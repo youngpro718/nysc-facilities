@@ -85,11 +85,11 @@ export function SupplyRequestForm({ onSuccess }: SupplyRequestFormProps) {
 
   const filteredItems = inventoryItems.filter(item => {
     const matchesSearch = !searchTerm || 
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.description?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesCategory = !selectedCategory || 
-      item.category_id === selectedCategory;
+      item.inventory_categories?.name === selectedCategory;
     
     return matchesSearch && matchesCategory;
   });
@@ -99,18 +99,27 @@ export function SupplyRequestForm({ onSuccess }: SupplyRequestFormProps) {
   );
 
   const addItem = (itemId: string) => {
-    const existingIndex = fields.findIndex(field => field.item_id === itemId);
-    if (existingIndex >= 0) {
-      const currentQuantity = form.getValues(`items.${existingIndex}.quantity_requested`);
-      form.setValue(`items.${existingIndex}.quantity_requested`, currentQuantity + 1);
-    } else {
-      append({
-        item_id: itemId,
-        quantity_requested: 1,
-        notes: '',
+    try {
+      const existingIndex = fields.findIndex(field => field.item_id === itemId);
+      if (existingIndex >= 0) {
+        const currentQuantity = form.getValues(`items.${existingIndex}.quantity_requested`);
+        form.setValue(`items.${existingIndex}.quantity_requested`, currentQuantity + 1);
+      } else {
+        append({
+          item_id: itemId,
+          quantity_requested: 1,
+          notes: '',
+        });
+      }
+      setIsItemDialogOpen(false);
+    } catch (error) {
+      console.error('Error adding item:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to add item. Please try again.',
+        variant: 'destructive',
       });
     }
-    setIsItemDialogOpen(false);
   };
 
   const getItemName = (itemId: string) => {
@@ -311,25 +320,25 @@ export function SupplyRequestForm({ onSuccess }: SupplyRequestFormProps) {
                               onClick={() => addItem(item.id)}
                             >
                               <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <h4 className="font-medium">{item.name}</h4>
-                                  {item.inventory_categories && (
-                                    <Badge 
-                                      variant="outline" 
-                                      className="text-xs"
-                                    >
-                                      {item.inventory_categories.name}
-                                    </Badge>
-                                  )}
-                                </div>
+                                 <div className="flex items-center gap-2">
+                                   <h4 className="font-medium">{item.name || 'Unknown Item'}</h4>
+                                   {item.inventory_categories?.name && (
+                                     <Badge 
+                                       variant="outline" 
+                                       className="text-xs"
+                                     >
+                                       {item.inventory_categories.name}
+                                     </Badge>
+                                   )}
+                                 </div>
                                 {item.description && (
                                   <p className="text-sm text-muted-foreground mt-1">
                                     {item.description}
                                   </p>
                                 )}
-                                <p className="text-sm text-muted-foreground">
-                                  Available: {item.quantity} {item.unit}
-                                </p>
+                                 <p className="text-sm text-muted-foreground">
+                                   Available: {item.quantity || 0} {item.unit || 'units'}
+                                 </p>
                               </div>
                               <Button size="sm" variant="outline">
                                 Add

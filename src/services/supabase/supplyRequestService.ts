@@ -173,5 +173,12 @@ export async function getInventoryItems() {
     .order('name');
 
   if (error) throw error;
-  return data;
+  
+  // Ensure inventory_categories is properly handled for items without categories
+  const processedData = data?.map(item => ({
+    ...item,
+    inventory_categories: item.inventory_categories || null
+  }));
+  
+  return processedData || [];
 }
