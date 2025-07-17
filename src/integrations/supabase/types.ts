@@ -6552,6 +6552,99 @@ export type Database = {
           },
         ]
       }
+      room_occupancy: {
+        Row: {
+          checked_in_at: string
+          checked_out_at: string | null
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          occupancy_type: string
+          room_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          checked_in_at?: string
+          checked_out_at?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          occupancy_type?: string
+          room_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          checked_in_at?: string
+          checked_out_at?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          occupancy_type?: string
+          room_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_occupancy_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_assignment_analytics"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "room_occupancy_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_assignment_conflicts"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "room_occupancy_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_health_overview"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "room_occupancy_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_hierarchy_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_occupancy_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_issue_analytics"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "room_occupancy_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_occupancy_stats"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "room_occupancy_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_selection_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_occupancy_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       room_properties: {
         Row: {
           current_function: string | null

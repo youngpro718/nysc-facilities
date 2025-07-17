@@ -22,7 +22,9 @@ export function OccupancyStatusBadge({ room, onClick }: OccupancyStatusBadgeProp
   const status = getOccupancyStatus();
   const Icon = status.icon;
 
-  if (room.room_type === 'courtroom' && room.current_occupants) {
+  // For courtrooms, show juror capacity if available
+  if (room.room_type === 'courtroom' && room.court_room?.juror_capacity) {
+    const currentOccupants = room.current_occupants?.length || 0;
     return (
       <Button
         variant="ghost"
@@ -36,7 +38,7 @@ export function OccupancyStatusBadge({ room, onClick }: OccupancyStatusBadgeProp
         >
           <Icon className="h-3 w-3" />
           <span className="text-xs">
-            {room.current_occupants || 0}/12 Jurors
+            {currentOccupants}/{room.court_room.juror_capacity} Jurors
           </span>
         </Badge>
       </Button>
