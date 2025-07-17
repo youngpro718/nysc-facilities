@@ -13,6 +13,7 @@ import {
   MessageSquare,
   Wrench,
   Gavel,
+  Package,
 } from 'lucide-react';
 import { NavigationTab, NavigationItem } from '../types';
 
@@ -46,6 +47,12 @@ export const navigationItems: NavigationItem[] = [
     title: 'Occupants',
     href: '/occupants',
     icon: Users,
+    adminOnly: true,
+  },
+  {
+    title: 'Supply Requests',
+    href: '/admin/supply-requests',
+    icon: Package,
     adminOnly: true,
   },
   {
@@ -95,6 +102,7 @@ export const adminNavigation: NavigationTab[] = [
   { title: 'Spaces', icon: Building2 },
   { title: 'Issues', icon: AlertTriangle },
   { title: 'Occupants', icon: Users },
+  { title: 'Supply Requests', icon: Package },
   { title: 'Keys', icon: KeyRound },
   { title: 'Lighting', icon: Zap },
   { title: 'Maintenance', icon: Wrench },
@@ -119,6 +127,7 @@ export const getNavigationRoutes = (isAdmin: boolean): string[] => {
       '/spaces',
       '/issues',
       '/occupants',
+      '/admin/supply-requests',
       '/keys',
       '/lighting',
       '/maintenance',
