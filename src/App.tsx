@@ -104,7 +104,7 @@ function AppContent() {
           </ProtectedRoute>
         } />
         <Route path="admin/supply-requests" element={
-          <ProtectedRoute requireAdmin>
+          <ProtectedRoute requireAdmin allowDepartments={['Supply', 'Administration']}>
             <AdminSupplyRequests />
           </ProtectedRoute>
         } />

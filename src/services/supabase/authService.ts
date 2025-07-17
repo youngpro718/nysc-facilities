@@ -63,15 +63,24 @@ export async function signOut() {
 export async function fetchUserProfile(userId: string) {
   const [roleResponse, profileResponse] = await Promise.all([
     supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle(),
-    supabase.from('profiles').select('*').eq('id', userId).single()
+    supabase.from('profiles').select(`
+      *,
+      departments(name)
+    `).eq('id', userId).single()
   ]);
   
   if (roleResponse.error) throw roleResponse.error;
   if (profileResponse.error) throw profileResponse.error;
   
+  const profile = profileResponse.data;
+  const departmentName = profile?.departments?.name;
+  
   return {
     isAdmin: roleResponse.data?.role === 'admin',
-    profile: profileResponse.data as UserProfile
+    profile: {
+      ...profile,
+      department: departmentName
+    } as UserProfile & { department?: string }
   };
 }
 

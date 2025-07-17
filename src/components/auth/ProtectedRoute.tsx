@@ -7,12 +7,14 @@ interface ProtectedRouteProps {
   children: ReactNode;
   requireAdmin?: boolean;
   requireVerified?: boolean;
+  allowDepartments?: string[];
 }
 
 export function ProtectedRoute({ 
   children, 
   requireAdmin = false,
-  requireVerified = true 
+  requireVerified = true,
+  allowDepartments = []
 }: ProtectedRouteProps) {
   const { isAuthenticated, isAdmin, isLoading, profile } = useAuth();
 
@@ -43,13 +45,18 @@ export function ProtectedRoute({
     );
   }
 
-  // Don't render admin routes for non-admin users
+  // Don't render admin routes for non-admin users, unless they're in allowed departments
   if (requireAdmin && !isAdmin) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+    const userDepartment = (profile as any)?.department;
+    const hasDepartmentAccess = allowDepartments.length > 0 && userDepartment && allowDepartments.includes(userDepartment);
+    
+    if (!hasDepartmentAccess) {
+      return (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      );
+    }
   }
 
   return <>{children}</>;
