@@ -1,6 +1,13 @@
-import { Badge } from "@/components/ui/badge";
-import { Lightbulb, Users, AlertTriangle, Home, Accessibility } from "lucide-react";
 import { EnhancedRoom } from "../../types/EnhancedRoomTypes";
+import { LightingStatusBadge } from "../lighting/LightingStatusBadge";
+import { OccupancyStatusBadge } from "../occupancy/OccupancyStatusBadge";
+import { Badge } from "@/components/ui/badge";
+import { 
+  AlertTriangle, 
+  Home, 
+  Accessibility,
+  Users
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SmartBadgesProps {
@@ -10,28 +17,30 @@ interface SmartBadgesProps {
 
 export function SmartBadges({ room, className }: SmartBadgesProps) {
   return (
-    <div className={cn("flex flex-wrap gap-1.5", className)}>
-      {/* Lighting Status Badge */}
-      <LightingStatusBadge room={room} />
+    <div className={cn("space-y-2", className)}>
+      {/* Smart Status Badges */}
+      <div className="flex flex-wrap gap-1.5">
+        <LightingStatusBadge roomId={room.id} roomNumber={room.room_number} />
+        <OccupancyStatusBadge room={room} />
+      </div>
       
-      {/* Vacancy Status Badge */}
-      <VacancyStatusBadge room={room} />
-      
-      {/* Room Size Badge */}
-      <RoomSizeBadge room={room} />
-      
-      {/* Persistent Issues Alert */}
-      {room.has_persistent_issues && <PersistentIssuesBadge room={room} />}
-      
-      {/* Courtroom Capacity Badge */}
-      {room.room_type === 'courtroom' && room.court_room && (
-        <CourtroomCapacityBadge courtRoom={room.court_room} />
-      )}
-      
-      {/* Accessibility Badge */}
-      {room.room_type === 'courtroom' && room.court_room?.accessibility_features.wheelchair_accessible && (
-        <AccessibilityBadge />
-      )}
+      {/* Additional Room Information Badges */}
+      <div className="flex flex-wrap gap-1.5">
+        <RoomSizeBadge room={room} />
+        
+        {/* Persistent Issues Alert */}
+        {room.has_persistent_issues && <PersistentIssuesBadge room={room} />}
+        
+        {/* Courtroom Capacity Badge */}
+        {room.room_type === 'courtroom' && room.court_room && (
+          <CourtroomCapacityBadge courtRoom={room.court_room} />
+        )}
+        
+        {/* Accessibility Badge */}
+        {room.room_type === 'courtroom' && room.court_room?.accessibility_features.wheelchair_accessible && (
+          <AccessibilityBadge />
+        )}
+      </div>
     </div>
   );
 }
