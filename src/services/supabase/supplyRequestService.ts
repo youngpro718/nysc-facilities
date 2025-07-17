@@ -88,6 +88,12 @@ export async function getSupplyRequests(userId?: string) {
     .from('supply_requests')
     .select(`
       *,
+      profiles!supply_requests_requester_id_fkey (
+        first_name,
+        last_name,
+        email,
+        department
+      ),
       supply_request_items (
         *,
         inventory_items (

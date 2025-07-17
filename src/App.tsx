@@ -21,6 +21,7 @@ import ThemeSettings from "@/pages/settings/ThemeSettings";
 import TwoFactorAuth from "@/pages/settings/TwoFactorAuth";
 import SessionSettings from "@/pages/settings/SessionSettings";
 import AdminKeyRequests from "@/pages/admin/KeyRequests";
+import AdminSupplyRequests from "@/pages/admin/SupplyRequests";
 import { MaintenanceDashboard } from "@/pages/MaintenanceDashboard";
 import { CourtOperationsDashboard } from "@/pages/CourtOperationsDashboard";
 import { ThemeProvider } from "@/providers/ThemeProvider";
@@ -100,6 +101,11 @@ function AppContent() {
         <Route path="admin/key-requests" element={
           <ProtectedRoute requireAdmin>
             <AdminKeyRequests />
+          </ProtectedRoute>
+        } />
+        <Route path="admin/supply-requests" element={
+          <ProtectedRoute requireAdmin>
+            <AdminSupplyRequests />
           </ProtectedRoute>
         } />
         <Route path="maintenance" element={
