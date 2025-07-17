@@ -27,7 +27,7 @@ import { ThemeProvider } from "@/providers/ThemeProvider";
 import { EnhancedThemeProvider } from "@/providers/EnhancedThemeProvider";
 import { DashboardCustomizationProvider } from "@/providers/DashboardCustomizationProvider";
 import { Toaster } from "@/components/ui/sonner";
-import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
+import { useConditionalNotifications } from "@/hooks/useConditionalNotifications";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import ErrorBoundary from "@/components/error/ErrorBoundary";
@@ -45,8 +45,8 @@ const queryClient = new QueryClient({
 });
 
 function AppContent() {
-  // Initialize realtime notifications
-  useRealtimeNotifications();
+  // Initialize realtime notifications (both user and admin)
+  useConditionalNotifications();
 
   return (
     <Routes>

@@ -171,11 +171,173 @@ export const useRealtimeNotifications = (): RealtimeNotificationHook => {
       )
       .subscribe();
 
+    // Subscribe to supply request updates
+    const supplyRequestsChannel = supabase
+      .channel('supply-requests-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'supply_requests',
+          filter: `requester_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Supply request updated:', payload);
+          const request = payload.new;
+          
+          let message = '';
+          let toastType: 'success' | 'error' | 'info' = 'info';
+          
+          switch (request.status) {
+            case 'approved':
+              message = `Supply request "${request.title}" has been approved!`;
+              toastType = 'success';
+              break;
+            case 'rejected':
+              message = `Supply request "${request.title}" has been rejected.`;
+              toastType = 'error';
+              break;
+            case 'fulfilled':
+              message = `Supply request "${request.title}" has been fulfilled!`;
+              toastType = 'success';
+              break;
+            case 'under_review':
+              message = `Supply request "${request.title}" is now under review.`;
+              toastType = 'info';
+              break;
+          }
+          
+          if (message) {
+            if (toastType === 'success') {
+              toast.success(message, {
+                action: {
+                  label: 'View Details',
+                  onClick: () => window.location.href = '/my-requests'
+                }
+              });
+            } else if (toastType === 'error') {
+              toast.error(message, {
+                action: {
+                  label: 'View Details',
+                  onClick: () => window.location.href = '/my-requests'
+                }
+              });
+            } else {
+              toast.info(message);
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    // Subscribe to issue updates (for issues reported by the user)
+    const issuesChannel = supabase
+      .channel('issues-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'issues',
+          filter: `reported_by=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Issue updated:', payload);
+          const issue = payload.new;
+          
+          let message = '';
+          let toastType: 'success' | 'info' = 'info';
+          
+          switch (issue.status) {
+            case 'resolved':
+              message = `Issue #${issue.issue_number} has been resolved!`;
+              toastType = 'success';
+              break;
+            case 'in_progress':
+              message = `Issue #${issue.issue_number} is now being worked on.`;
+              toastType = 'info';
+              break;
+          }
+          
+          if (message) {
+            if (toastType === 'success') {
+              toast.success(message, {
+                action: {
+                  label: 'View Issue',
+                  onClick: () => window.location.href = `/issues/${issue.id}`
+                }
+              });
+            } else {
+              toast.info(message, {
+                action: {
+                  label: 'View Issue',
+                  onClick: () => window.location.href = `/issues/${issue.id}`
+                }
+              });
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    // Subscribe to room assignment changes (for assignments involving the user)
+    const roomAssignmentsChannel = supabase
+      .channel('room-assignments-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'room_assignments',
+          filter: `occupant_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('New room assignment:', payload);
+          const assignment = payload.new;
+          
+          toast.success('🏠 New Room Assignment', {
+            description: assignment.is_primary 
+              ? 'You have been assigned a new primary office'
+              : 'You have been assigned to a new room',
+            action: {
+              label: 'View Details',
+              onClick: () => window.location.href = '/dashboard'
+            }
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'room_assignments',
+          filter: `occupant_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Room assignment updated:', payload);
+          const assignment = payload.new;
+          
+          toast.info('📋 Room Assignment Updated', {
+            description: 'Your room assignment has been modified',
+            action: {
+              label: 'View Details',
+              onClick: () => window.location.href = '/dashboard'
+            }
+          });
+        }
+      )
+      .subscribe();
+
     return () => {
       console.log('Cleaning up realtime subscriptions');
       supabase.removeChannel(notificationsChannel);
       supabase.removeChannel(keyRequestsChannel);
       supabase.removeChannel(keyOrdersChannel);
+      supabase.removeChannel(supplyRequestsChannel);
+      supabase.removeChannel(issuesChannel);
+      supabase.removeChannel(roomAssignmentsChannel);
     };
   }, [user?.id]);
 

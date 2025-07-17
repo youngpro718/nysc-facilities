@@ -1,131 +1,109 @@
 import { useState, useEffect } from "react";
-import { Bell, Key, AlertTriangle, Wrench } from "lucide-react";
+import { Bell, Key, AlertTriangle, Wrench, Package, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-
-interface Notification {
-  id: string;
-  type: 'key_request' | 'issue' | 'maintenance';
-  title: string;
-  message: string;
-  created_at: string;
-  is_read: boolean;
-  reference_id: string;
-}
+import { useAdminNotifications, useMarkNotificationRead } from "@/hooks/useAdminNotifications";
+import { useAdminRealtimeNotifications } from "@/hooks/useAdminRealtimeNotifications";
 
 const notificationIcons = {
+  new_key_request: Key,
+  new_supply_request: Package,
+  new_issue: AlertTriangle,
+  issue_status_change: AlertCircle,
+  new_key_order: Key,
   key_request: Key,
+  supply_request: Package,
   issue: AlertTriangle,
   maintenance: Wrench,
 };
 
 export const NotificationBox = () => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
-  const { user } = useAuth();
+  
+  // Use the admin notifications hooks
+  const { data: notifications, isLoading } = useAdminNotifications();
+  const markAsReadMutation = useMarkNotificationRead();
+  
+  // Use real-time notifications for immediate toast alerts
+  useAdminRealtimeNotifications();
+  
+  // Calculate unread count
+  const unreadCount = notifications?.filter(n => 
+    !n.read_by || n.read_by.length === 0
+  ).length || 0;
 
-  useEffect(() => {
-    if (!user) return;
-
-    // Fetch initial notifications
-    fetchNotifications();
-
-    // Set up real-time subscription for key requests
-    const keyRequestsChannel = supabase
-      .channel('key-request-notifications')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'key_requests'
-        },
-        (payload) => {
-          console.log('New key request:', payload);
-          const newNotification: Notification = {
-            id: payload.new.id,
-            type: 'key_request',
-            title: 'New Key Request',
-            message: `New ${payload.new.request_type} key request received`,
-            created_at: payload.new.created_at,
-            is_read: false,
-            reference_id: payload.new.id,
-          };
-          setNotifications(prev => [newNotification, ...prev]);
-          setUnreadCount(prev => prev + 1);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(keyRequestsChannel);
-    };
-  }, [user]);
-
-  const fetchNotifications = async () => {
-    // Fetch recent key requests as notifications
-    const { data: keyRequests } = await supabase
-      .from('key_requests')
-      .select('*')
-      .eq('status', 'pending')
-      .order('created_at', { ascending: false })
-      .limit(10);
-
-    if (keyRequests) {
-      const keyRequestNotifications: Notification[] = keyRequests.map(request => ({
-        id: request.id,
-        type: 'key_request',
-        title: 'Key Request',
-        message: `${request.request_type} key request pending approval`,
-        created_at: request.created_at,
-        is_read: false,
-        reference_id: request.id,
-      }));
-
-      setNotifications(keyRequestNotifications);
-      setUnreadCount(keyRequestNotifications.length);
-    }
-  };
-
-  const handleNotificationClick = (notification: Notification) => {
+  const handleNotificationClick = (notification: any) => {
     setIsOpen(false);
     
-    switch (notification.type) {
-      case 'key_request':
-        navigate(`/admin/key-requests?id=${notification.reference_id}`);
+    // Mark notification as read
+    markAsReadMutation.mutate(notification.id);
+    
+    // Navigate based on notification type
+    switch (notification.notification_type) {
+      case 'new_key_request':
+        navigate('/admin/key-requests');
         break;
-      case 'issue':
-        navigate(`/admin/issues?id=${notification.reference_id}`);
+      case 'new_supply_request':
+        navigate('/admin/supply-requests');
         break;
-      case 'maintenance':
-        navigate(`/admin/maintenance?id=${notification.reference_id}`);
+      case 'new_issue':
+      case 'issue_status_change':
+        navigate('/admin/issues');
         break;
+      case 'new_key_order':
+        navigate('/admin/key-orders');
+        break;
+      default:
+        navigate('/admin');
     }
-
-    // Mark as read
-    markAsRead(notification.id);
-  };
-
-  const markAsRead = (notificationId: string) => {
-    setNotifications(prev => 
-      prev.map(n => 
-        n.id === notificationId ? { ...n, is_read: true } : n
-      )
-    );
-    setUnreadCount(prev => Math.max(0, prev - 1));
   };
 
   const clearAllNotifications = () => {
-    setNotifications([]);
-    setUnreadCount(0);
+    // Mark all notifications as read
+    notifications?.forEach(notification => {
+      if (!notification.read_by || notification.read_by.length === 0) {
+        markAsReadMutation.mutate(notification.id);
+      }
+    });
+  };
+
+  const getNotificationIcon = (type: string) => {
+    return notificationIcons[type as keyof typeof notificationIcons] || Bell;
+  };
+
+  const getNotificationColor = (type: string, urgency: string) => {
+    if (urgency === 'high') {
+      return 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400';
+    }
+    
+    switch (type) {
+      case 'new_key_request':
+      case 'new_key_order':
+        return 'bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400';
+      case 'new_supply_request':
+        return 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400';
+      case 'new_issue':
+      case 'issue_status_change':
+        return 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400';
+      default:
+        return 'bg-gray-100 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400';
+    }
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
+    return `${Math.floor(diffInMinutes / 1440)}d ago`;
   };
 
   return (
@@ -146,17 +124,21 @@ export const NotificationBox = () => {
       <PopoverContent className="w-80 p-0" align="end">
         <div className="p-4 border-b">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold">Notifications</h3>
-            {notifications.length > 0 && (
+            <h3 className="font-semibold">Admin Notifications</h3>
+            {notifications && notifications.length > 0 && unreadCount > 0 && (
               <Button variant="ghost" size="sm" onClick={clearAllNotifications}>
-                Clear All
+                Mark All Read
               </Button>
             )}
           </div>
         </div>
         
         <ScrollArea className="h-96">
-          {notifications.length === 0 ? (
+          {isLoading ? (
+            <div className="p-4 text-center text-muted-foreground">
+              <div className="animate-pulse">Loading notifications...</div>
+            </div>
+          ) : !notifications || notifications.length === 0 ? (
             <div className="p-4 text-center text-muted-foreground">
               <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p>No new notifications</p>
@@ -164,33 +146,40 @@ export const NotificationBox = () => {
           ) : (
             <div className="p-2">
               {notifications.map((notification) => {
-                const Icon = notificationIcons[notification.type];
+                const Icon = getNotificationIcon(notification.notification_type);
+                const isRead = notification.read_by && notification.read_by.length > 0;
+                
                 return (
                   <Card 
                     key={notification.id}
                     className={`mb-2 cursor-pointer transition-colors hover:bg-muted ${
-                      !notification.is_read ? 'border-primary' : 'border-muted'
+                      !isRead ? 'border-primary bg-primary/5' : 'border-muted'
                     }`}
                     onClick={() => handleNotificationClick(notification)}
                   >
                     <CardContent className="p-3">
                       <div className="flex items-start space-x-3">
-                        <div className={`p-2 rounded-full ${
-                          notification.type === 'key_request' ? 'bg-blue-100 text-blue-600' :
-                          notification.type === 'issue' ? 'bg-red-100 text-red-600' :
-                          'bg-yellow-100 text-yellow-600'
-                        }`}>
+                        <div className={`p-2 rounded-full ${getNotificationColor(notification.notification_type, notification.urgency)}`}>
                           <Icon className="h-4 w-4" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm">{notification.title}</p>
-                          <p className="text-sm text-muted-foreground">{notification.message}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {new Date(notification.created_at).toLocaleString()}
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium text-sm">{notification.title}</p>
+                            {notification.urgency === 'high' && (
+                              <Badge variant="destructive" className="text-xs">
+                                {notification.urgency.toUpperCase()}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {notification.message}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            {formatTimeAgo(notification.created_at)}
                           </p>
                         </div>
-                        {!notification.is_read && (
-                          <div className="w-2 h-2 bg-primary rounded-full mt-2" />
+                        {!isRead && (
+                          <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
                         )}
                       </div>
                     </CardContent>
