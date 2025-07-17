@@ -90,6 +90,48 @@ export type Database = {
           },
         ]
       }
+      admin_notifications: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          message: string
+          metadata: Json | null
+          notification_type: string
+          read_by: string[] | null
+          related_id: string | null
+          related_table: string | null
+          title: string
+          urgency: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          message: string
+          metadata?: Json | null
+          notification_type: string
+          read_by?: string[] | null
+          related_id?: string | null
+          related_table?: string | null
+          title: string
+          urgency?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          message?: string
+          metadata?: Json | null
+          notification_type?: string
+          read_by?: string[] | null
+          related_id?: string | null
+          related_table?: string | null
+          title?: string
+          urgency?: string
+        }
+        Relationships: []
+      }
       agency_affiliations: {
         Row: {
           created_at: string | null
@@ -3027,46 +3069,85 @@ export type Database = {
       }
       key_orders: {
         Row: {
+          cost: number | null
           created_at: string | null
+          delivered_at: string | null
+          delivered_by: string | null
+          delivery_notes: string | null
+          estimated_delivery_date: string | null
           expected_delivery_date: string | null
           id: string
           key_id: string
+          last_status_change: string | null
           notes: string | null
           ordered_at: string | null
+          ordered_by: string | null
+          priority: string | null
           quantity: number
           received_at: string | null
+          received_by: string | null
           recipient_id: string | null
+          request_id: string | null
           requestor_id: string | null
-          status: string
+          status: Database["public"]["Enums"]["key_order_status"]
+          tracking_number: string | null
           updated_at: string | null
+          user_id: string | null
+          vendor_order_id: string | null
         }
         Insert: {
+          cost?: number | null
           created_at?: string | null
+          delivered_at?: string | null
+          delivered_by?: string | null
+          delivery_notes?: string | null
+          estimated_delivery_date?: string | null
           expected_delivery_date?: string | null
           id?: string
           key_id: string
+          last_status_change?: string | null
           notes?: string | null
           ordered_at?: string | null
+          ordered_by?: string | null
+          priority?: string | null
           quantity: number
           received_at?: string | null
+          received_by?: string | null
           recipient_id?: string | null
+          request_id?: string | null
           requestor_id?: string | null
-          status?: string
+          status?: Database["public"]["Enums"]["key_order_status"]
+          tracking_number?: string | null
           updated_at?: string | null
+          user_id?: string | null
+          vendor_order_id?: string | null
         }
         Update: {
+          cost?: number | null
           created_at?: string | null
+          delivered_at?: string | null
+          delivered_by?: string | null
+          delivery_notes?: string | null
+          estimated_delivery_date?: string | null
           expected_delivery_date?: string | null
           id?: string
           key_id?: string
+          last_status_change?: string | null
           notes?: string | null
           ordered_at?: string | null
+          ordered_by?: string | null
+          priority?: string | null
           quantity?: number
           received_at?: string | null
+          received_by?: string | null
           recipient_id?: string | null
+          request_id?: string | null
           requestor_id?: string | null
-          status?: string
+          status?: Database["public"]["Enums"]["key_order_status"]
+          tracking_number?: string | null
           updated_at?: string | null
+          user_id?: string | null
+          vendor_order_id?: string | null
         }
         Relationships: [
           {
@@ -3118,54 +3199,126 @@ export type Database = {
             referencedRelation: "occupants"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "key_orders_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "key_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      key_request_workflow: {
+        Row: {
+          change_reason: string | null
+          changed_by: string | null
+          created_at: string
+          from_status: string | null
+          id: string
+          metadata: Json | null
+          notes: string | null
+          request_id: string
+          to_status: string
+        }
+        Insert: {
+          change_reason?: string | null
+          changed_by?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          request_id: string
+          to_status: string
+        }
+        Update: {
+          change_reason?: string | null
+          changed_by?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          request_id?: string
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "key_request_workflow_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "key_requests"
+            referencedColumns: ["id"]
+          },
         ]
       }
       key_requests: {
         Row: {
           admin_notes: string | null
+          approved_at: string | null
+          approved_by: string | null
           created_at: string | null
           email_notifications_enabled: boolean | null
           emergency_contact: string | null
+          fulfillment_notes: string | null
           id: string
           key_id: string | null
+          last_status_change: string | null
           quantity: number | null
           reason: string | null
+          rejected_at: string | null
+          rejected_by: string | null
+          rejection_reason: string | null
           request_type: Database["public"]["Enums"]["request_type_enum"] | null
           room_id: string | null
           room_other: string | null
-          status: string | null
+          status: Database["public"]["Enums"]["key_request_status"]
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
           admin_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string | null
           email_notifications_enabled?: boolean | null
           emergency_contact?: string | null
+          fulfillment_notes?: string | null
           id?: string
           key_id?: string | null
+          last_status_change?: string | null
           quantity?: number | null
           reason?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
           request_type?: Database["public"]["Enums"]["request_type_enum"] | null
           room_id?: string | null
           room_other?: string | null
-          status?: string | null
+          status?: Database["public"]["Enums"]["key_request_status"]
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
           admin_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string | null
           email_notifications_enabled?: boolean | null
           emergency_contact?: string | null
+          fulfillment_notes?: string | null
           id?: string
           key_id?: string | null
+          last_status_change?: string | null
           quantity?: number | null
           reason?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
           request_type?: Database["public"]["Enums"]["request_type_enum"] | null
           room_id?: string | null
           room_other?: string | null
-          status?: string | null
+          status?: Database["public"]["Enums"]["key_request_status"]
           updated_at?: string | null
           user_id?: string | null
         }
@@ -8550,22 +8703,31 @@ export type Database = {
       }
       key_orders_view: {
         Row: {
+          cost: number | null
+          created_at: string | null
+          delivery_notes: string | null
+          email: string | null
+          estimated_delivery_date: string | null
           expected_delivery_date: string | null
+          first_name: string | null
           id: string | null
           key_id: string | null
-          key_name: string | null
-          key_type: Database["public"]["Enums"]["key_type_enum"] | null
+          last_name: string | null
           notes: string | null
           ordered_at: string | null
+          priority: string | null
           quantity: number | null
+          reason: string | null
           received_at: string | null
-          recipient_department: string | null
           recipient_id: string | null
-          recipient_name: string | null
-          requestor_email: string | null
+          request_id: string | null
+          request_type: Database["public"]["Enums"]["request_type_enum"] | null
           requestor_id: string | null
-          requestor_name: string | null
-          status: string | null
+          status: Database["public"]["Enums"]["key_order_status"] | null
+          tracking_number: string | null
+          updated_at: string | null
+          user_id: string | null
+          vendor_order_id: string | null
         }
         Relationships: [
           {
@@ -8615,6 +8777,13 @@ export type Database = {
             columns: ["recipient_id"]
             isOneToOne: false
             referencedRelation: "occupants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_orders_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "key_requests"
             referencedColumns: ["id"]
           },
         ]
@@ -9754,6 +9923,22 @@ export type Database = {
         | "deferred"
         | "other"
       issue_status_enum: "open" | "in_progress" | "resolved"
+      key_order_status:
+        | "pending_fulfillment"
+        | "ordered"
+        | "in_transit"
+        | "received"
+        | "ready_for_pickup"
+        | "delivered"
+        | "completed"
+        | "cancelled"
+      key_request_status:
+        | "pending"
+        | "under_review"
+        | "approved"
+        | "rejected"
+        | "cancelled"
+        | "fulfilled"
       key_status_enum: "available" | "assigned" | "lost" | "decommissioned"
       key_type_enum: "physical_key" | "elevator_pass" | "room_key"
       layer_type_enum: "rooms" | "doors" | "grid" | "hallways" | "annotations"
@@ -10051,6 +10236,24 @@ export const Constants = {
         "other",
       ],
       issue_status_enum: ["open", "in_progress", "resolved"],
+      key_order_status: [
+        "pending_fulfillment",
+        "ordered",
+        "in_transit",
+        "received",
+        "ready_for_pickup",
+        "delivered",
+        "completed",
+        "cancelled",
+      ],
+      key_request_status: [
+        "pending",
+        "under_review",
+        "approved",
+        "rejected",
+        "cancelled",
+        "fulfilled",
+      ],
       key_status_enum: ["available", "assigned", "lost", "decommissioned"],
       key_type_enum: ["physical_key", "elevator_pass", "room_key"],
       layer_type_enum: ["rooms", "doors", "grid", "hallways", "annotations"],
