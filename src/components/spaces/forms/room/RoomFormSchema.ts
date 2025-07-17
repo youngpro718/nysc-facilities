@@ -99,6 +99,13 @@ export const RoomFormSchema = z.object({
     judge_view: z.string().nullable().optional(),
     audience_view: z.string().nullable().optional()
   }).nullable().optional(),
+  keyDoorConnections: z.array(z.object({
+    keyId: z.string(),
+    keyName: z.string(),
+    doorId: z.string(),
+    doorName: z.string(),
+    isPasskey: z.boolean()
+  })).optional(),
 });
 
 // Export types derived from the schema

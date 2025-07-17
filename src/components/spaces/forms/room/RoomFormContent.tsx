@@ -7,6 +7,7 @@ import { BasicRoomFields } from "./BasicRoomFields";
 import { StorageFields } from "./StorageFields";
 import { ParentRoomField } from "./ParentRoomField";
 import { CapacityFields } from "./CapacityFields";
+import { KeyAccessFields } from "./KeyAccessFields";
 import { type RoomFormData } from "./RoomFormSchema";
 import { Separator } from "@/components/ui/separator";
 import { CourtroomPhotoUpload } from "./CourtroomPhotoUpload";
@@ -120,6 +121,9 @@ export function RoomFormContent({
         
         <Separator />
         <CapacityFields form={form} />
+
+        <Separator />
+        <KeyAccessFields form={form} />
 
         <Separator />
         <StorageFields form={form} />
