@@ -2,8 +2,10 @@
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Room } from "./types/RoomTypes";
+import { EnhancedRoom } from "./types/EnhancedRoomTypes";
 import { CardFront } from "./components/CardFront";
 import { CardBack } from "./components/CardBack";
+import { useEnhancedRoomData } from "@/hooks/useEnhancedRoomData";
 
 interface RoomCardProps {
   room: Room;
@@ -14,6 +16,9 @@ interface RoomCardProps {
 export function RoomCard({ room, onDelete, onRoomClick }: RoomCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  
+  // Fetch enhanced room data
+  const { data: enhancedRoom, isLoading } = useEnhancedRoomData(room.id);
 
   React.useEffect(() => {
     const checkIsMobile = () => {
@@ -39,6 +44,9 @@ export function RoomCard({ room, onDelete, onRoomClick }: RoomCardProps) {
     }
   };
 
+  // Use enhanced room data if available, fallback to basic room data
+  const displayRoom = enhancedRoom || room;
+
   return (
     <Card 
       className="relative h-[320px] group overflow-hidden cursor-pointer hover:shadow-lg transition-all"
@@ -57,7 +65,7 @@ export function RoomCard({ room, onDelete, onRoomClick }: RoomCardProps) {
             className="absolute inset-0 w-full h-full bg-card"
             style={{ backfaceVisibility: 'hidden' }}
           >
-            <CardFront room={room} onFlip={handleFlip} onDelete={onDelete} />
+            <CardFront room={displayRoom} onFlip={handleFlip} onDelete={onDelete} />
           </div>
           
           {/* Back of card - Hidden on mobile */}
@@ -69,7 +77,7 @@ export function RoomCard({ room, onDelete, onRoomClick }: RoomCardProps) {
                 transform: 'rotateY(180deg)'
               }}
             >
-              <CardBack room={room} onFlip={handleFlip} />
+              <CardBack room={displayRoom} onFlip={handleFlip} />
             </div>
           )}
         </div>
