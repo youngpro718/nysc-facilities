@@ -55,6 +55,7 @@ export function KeyAccessFields({ form }: KeyAccessFieldsProps) {
         .from('doors')
         .select('id, name')
         .eq('floor_id', floorId)
+        .neq('status', 'inactive')
         .order('name');
       
       if (error) throw error;
@@ -141,14 +142,23 @@ export function KeyAccessFields({ form }: KeyAccessFieldsProps) {
                 <SelectValue placeholder="Choose a door" />
               </SelectTrigger>
               <SelectContent>
-                {doors.map((door) => (
-                  <SelectItem key={door.id} value={door.id}>
-                    <div className="flex items-center gap-2">
+                {doors.length === 0 ? (
+                  <SelectItem value="" disabled>
+                    <div className="flex items-center gap-2 text-muted-foreground">
                       <Door className="h-4 w-4" />
-                      <span>{door.name}</span>
+                      <span>No doors found on this floor</span>
                     </div>
                   </SelectItem>
-                ))}
+                ) : (
+                  doors.map((door) => (
+                    <SelectItem key={door.id} value={door.id}>
+                      <div className="flex items-center gap-2">
+                        <Door className="h-4 w-4" />
+                        <span>{door.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </div>
