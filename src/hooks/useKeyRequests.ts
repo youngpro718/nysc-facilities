@@ -16,6 +16,13 @@ export interface KeyRequest {
   emergency_contact: string | null;
   admin_notes: string | null;
   email_notifications_enabled: boolean;
+  approved_by?: string | null;
+  approved_at?: string | null;
+  rejected_by?: string | null;
+  rejected_at?: string | null;
+  rejection_reason?: string | null;
+  fulfillment_notes?: string | null;
+  last_status_change?: string | null;
 }
 
 export const useKeyRequests = (userId?: string) => {
