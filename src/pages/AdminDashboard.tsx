@@ -1,6 +1,5 @@
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { BuildingsGrid } from "@/components/dashboard/BuildingsGrid";
-import { LightingSummaryCard } from "@/components/dashboard/LightingSummaryCard";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
@@ -48,12 +47,6 @@ const AdminDashboard = () => {
     <div className="space-y-6 sm:space-y-8">
       <DashboardHeader onRefresh={refreshData} isLoading={isLoading || buildingsLoading} />
       
-      {/* System Overview Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <LightingSummaryCard />
-        {/* TODO: Add more system summary cards (HVAC, Security, etc.) */}
-      </div>
-
       <BuildingsGrid
         buildings={buildings}
         isLoading={buildingsLoading}
