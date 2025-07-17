@@ -141,7 +141,7 @@ export function SupplyRequestForm({ onSuccess }: SupplyRequestFormProps) {
       description: data.description || '',
       justification: data.justification,
       priority: data.priority,
-      requested_delivery_date: data.requested_delivery_date || '',
+      requested_delivery_date: data.requested_delivery_date || null,
       delivery_location: data.delivery_location || '',
       items: data.items.map(item => ({
         item_id: item.item_id,
