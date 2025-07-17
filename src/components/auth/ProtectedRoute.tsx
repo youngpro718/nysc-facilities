@@ -8,13 +8,15 @@ interface ProtectedRouteProps {
   requireAdmin?: boolean;
   requireVerified?: boolean;
   allowDepartments?: string[];
+  requireRoomAssignment?: string;
 }
 
 export function ProtectedRoute({ 
   children, 
   requireAdmin = false,
   requireVerified = true,
-  allowDepartments = []
+  allowDepartments = [],
+  requireRoomAssignment
 }: ProtectedRouteProps) {
   const { isAuthenticated, isAdmin, isLoading, profile } = useAuth();
 
@@ -45,12 +47,15 @@ export function ProtectedRoute({
     );
   }
 
-  // Don't render admin routes for non-admin users, unless they're in allowed departments
+  // Don't render admin routes for non-admin users, unless they're in allowed departments or have required room assignment
   if (requireAdmin && !isAdmin) {
     const userDepartment = (profile as any)?.department;
     const hasDepartmentAccess = allowDepartments.length > 0 && userDepartment && allowDepartments.includes(userDepartment);
+    const hasRoomAccess = requireRoomAssignment && (profile as any)?.roomAssignments?.some((assignment: any) => 
+      assignment.room_number === requireRoomAssignment
+    );
     
-    if (!hasDepartmentAccess) {
+    if (!hasDepartmentAccess && !hasRoomAccess) {
       return (
         <div className="flex items-center justify-center min-h-[400px]">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

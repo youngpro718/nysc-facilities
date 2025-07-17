@@ -61,12 +61,16 @@ export async function signOut() {
  * Fetch user profile data
  */
 export async function fetchUserProfile(userId: string) {
-  const [roleResponse, profileResponse] = await Promise.all([
+  const [roleResponse, profileResponse, roomAssignmentsResponse] = await Promise.all([
     supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle(),
     supabase.from('profiles').select(`
       *,
       departments(name)
-    `).eq('id', userId).single()
+    `).eq('id', userId).single(),
+    supabase.from('occupant_room_assignments').select(`
+      room_id,
+      rooms(room_number)
+    `).eq('occupant_id', userId)
   ]);
   
   if (roleResponse.error) throw roleResponse.error;
@@ -74,13 +78,15 @@ export async function fetchUserProfile(userId: string) {
   
   const profile = profileResponse.data;
   const departmentName = profile?.departments?.name;
+  const roomAssignments = roomAssignmentsResponse.data || [];
   
   return {
     isAdmin: roleResponse.data?.role === 'admin',
     profile: {
       ...profile,
-      department: departmentName
-    } as UserProfile & { department?: string }
+      department: departmentName,
+      roomAssignments: roomAssignments
+    } as UserProfile & { department?: string; roomAssignments?: any[] }
   };
 }
 
