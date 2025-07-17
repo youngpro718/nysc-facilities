@@ -1,17 +1,20 @@
 
 import { Room } from "../types/RoomTypes";
+import { EnhancedRoom } from "../types/EnhancedRoomTypes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Trash2, ArrowRightFromLine, Users, Shield } from "lucide-react";
+import { Trash2, ArrowRightFromLine, Users, Shield, Lightbulb } from "lucide-react";
 import { EditSpaceDialog } from "../../EditSpaceDialog";
 import { CourtroomPhotos } from './CourtroomPhotos';
 import { CourtroomPhotoThumbnail } from './CourtroomPhotoThumbnail';
 import { ParentRoomHierarchy } from "../ParentRoomHierarchy";
 import { RoomAccessSummary } from "@/components/access/RoomAccessSummary";
+import { SmartBadges } from "./badges/SmartBadges";
+import { LightingReportDialog } from "./lighting/LightingReportDialog";
 
 interface CardFrontProps {
-  room: Room;
+  room: EnhancedRoom;
   onFlip: (e?: React.MouseEvent) => void;
   onDelete: (id: string) => void;
 }
@@ -54,6 +57,11 @@ export function CardFront({ room, onFlip, onDelete }: CardFrontProps) {
               Storage
             </Badge>
           )}
+        </div>
+
+        {/* Smart Badges Section */}
+        <div className="mt-3">
+          <SmartBadges room={room} />
         </div>
         
         {/* Parent-Child Hierarchy Info */}
@@ -127,15 +135,32 @@ export function CardFront({ room, onFlip, onDelete }: CardFrontProps) {
       </div>
 
       <div className="mt-4 flex justify-between">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={onFlip}
-          className="hidden md:flex"
-        >
-          <ArrowRightFromLine className="h-4 w-4 mr-1" />
-          More Details
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onFlip}
+            className="hidden md:flex"
+          >
+            <ArrowRightFromLine className="h-4 w-4 mr-1" />
+            More Details
+          </Button>
+          
+          {/* Quick Report Light Out Button */}
+          <LightingReportDialog
+            room={room}
+            trigger={
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-1"
+              >
+                <Lightbulb className="h-4 w-4" />
+                Report Light Out
+              </Button>
+            }
+          />
+        </div>
         <div className="flex gap-2">
           {/* Who Has Access Dialog */}
           <Dialog>

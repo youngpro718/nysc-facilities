@@ -611,10 +611,12 @@ export type Database = {
       }
       court_rooms: {
         Row: {
+          accessibility_features: Json | null
           courtroom_number: string | null
           created_at: string | null
           id: string
           is_active: boolean | null
+          juror_capacity: number | null
           maintenance_end_date: string | null
           maintenance_notes: string | null
           maintenance_start_date: string | null
@@ -622,14 +624,17 @@ export type Database = {
           notes: string | null
           room_id: string
           room_number: string
+          spectator_capacity: number | null
           temporary_location: string | null
           updated_at: string | null
         }
         Insert: {
+          accessibility_features?: Json | null
           courtroom_number?: string | null
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          juror_capacity?: number | null
           maintenance_end_date?: string | null
           maintenance_notes?: string | null
           maintenance_start_date?: string | null
@@ -637,14 +642,17 @@ export type Database = {
           notes?: string | null
           room_id: string
           room_number: string
+          spectator_capacity?: number | null
           temporary_location?: string | null
           updated_at?: string | null
         }
         Update: {
+          accessibility_features?: Json | null
           courtroom_number?: string | null
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          juror_capacity?: number | null
           maintenance_end_date?: string | null
           maintenance_notes?: string | null
           maintenance_start_date?: string | null
@@ -652,6 +660,7 @@ export type Database = {
           notes?: string | null
           room_id?: string
           room_number?: string
+          spectator_capacity?: number | null
           temporary_location?: string | null
           updated_at?: string | null
         }
@@ -9540,6 +9549,72 @@ export type Database = {
           },
         ]
       }
+      room_persistent_issues: {
+        Row: {
+          issue_count: number | null
+          latest_issue_date: string | null
+          open_issues: number | null
+          room_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "issues_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_assignment_analytics"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "issues_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_assignment_conflicts"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "issues_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_health_overview"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "issues_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_hierarchy_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "issues_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_issue_analytics"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "issues_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_occupancy_stats"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "issues_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_selection_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "issues_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       room_selection_details: {
         Row: {
           building_name: string | null
@@ -9788,6 +9863,10 @@ export type Database = {
           parent_room_number: string
           level: number
         }[]
+      }
+      get_room_size_category: {
+        Args: { room_width: number; room_height: number }
+        Returns: string
       }
       get_user_role: {
         Args: { user_id: string }

@@ -3,15 +3,16 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Room } from "../types/RoomTypes";
-import { X, Building, Phone, ShoppingBag, Users, CircleAlert, Clipboard } from "lucide-react";
+import { EnhancedRoom } from "../types/EnhancedRoomTypes";
+import { X, Building, Phone, ShoppingBag, Users, CircleAlert, Clipboard, Lightbulb, Clock, Accessibility } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { format } from "date-fns";
+import { format, differenceInDays } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RoomInventory } from "../../RoomInventory";
 import { ParentRoomHierarchy } from "../ParentRoomHierarchy";
 
 interface CardBackProps {
-  room: Room;
+  room: EnhancedRoom;
   onFlip: (e?: React.MouseEvent) => void;
 }
 
@@ -137,12 +138,97 @@ export function CardBack({ room, onFlip }: CardBackProps) {
             </div>
           )}
           
+          {/* Lighting Fixture Details */}
+          {room.lighting_fixtures && room.lighting_fixtures.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium flex items-center gap-1">
+                <Lightbulb className="h-3.5 w-3.5 text-muted-foreground" />
+                Lighting Status ({room.functional_fixtures_count}/{room.total_fixtures_count})
+              </h4>
+              <div className="space-y-2">
+                {room.lighting_fixtures.map((fixture, index) => (
+                  <div key={fixture.id || index} className="text-sm bg-muted/50 p-2 rounded-md">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <Badge variant={
+                          fixture.status === 'functional' ? 'default' :
+                          fixture.status === 'flickering' ? 'secondary' :
+                          'destructive'
+                        } className="text-xs">
+                          {fixture.status}
+                        </Badge>
+                        <span className="font-medium">{fixture.location}</span>
+                      </div>
+                      {fixture.outage_duration_days && fixture.outage_duration_days > 0 && (
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          {fixture.outage_duration_days}d out
+                        </div>
+                      )}
+                    </div>
+                    {fixture.ballast_issue && (
+                      <p className="text-xs text-orange-600 mt-1">⚠ Ballast issue detected</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Courtroom Capacity Details */}
+          {room.room_type === 'courtroom' && room.court_room && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium flex items-center gap-1">
+                <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                Courtroom Capacity
+              </h4>
+              <div className="space-y-2">
+                <div className="text-sm bg-muted/50 p-2 rounded-md">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="font-medium">Juror Capacity:</span>
+                      <p className="text-lg font-bold text-primary">{room.court_room.juror_capacity}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium">Spectator Capacity:</span>
+                      <p className="text-lg font-bold text-primary">{room.court_room.spectator_capacity}</p>
+                    </div>
+                  </div>
+                  
+                  {/* Accessibility Features */}
+                  <div className="mt-3 pt-2 border-t">
+                    <span className="text-xs font-medium text-muted-foreground">Accessibility:</span>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {room.court_room.accessibility_features.wheelchair_accessible && (
+                        <Badge variant="outline" className="text-xs">
+                          <Accessibility className="h-3 w-3 mr-1" />
+                          Wheelchair Access
+                        </Badge>
+                      )}
+                      {room.court_room.accessibility_features.hearing_assistance && (
+                        <Badge variant="outline" className="text-xs">Hearing Assistance</Badge>
+                      )}
+                      {room.court_room.accessibility_features.visual_aids && (
+                        <Badge variant="outline" className="text-xs">Visual Aids</Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Issue History (if any) */}
           {room.issues && room.issues.length > 0 && (
             <div className="space-y-2">
               <h4 className="text-sm font-medium flex items-center gap-1">
                 <CircleAlert className="h-3.5 w-3.5 text-muted-foreground" />
                 Recent Issues ({room.issues.length})
+                {room.has_persistent_issues && (
+                  <Badge variant="destructive" className="text-xs ml-2">
+                    Recurring
+                  </Badge>
+                )}
               </h4>
               <div className="space-y-2">
                 {room.issues.slice(0, 3).map((issue, index) => (
@@ -160,6 +246,9 @@ export function CardBack({ room, onFlip }: CardBackProps) {
                       </span>
                     </div>
                     <p className="mt-1 line-clamp-2">{issue.description}</p>
+                    {issue.location && (
+                      <p className="text-xs text-muted-foreground mt-1">Location: {issue.location}</p>
+                    )}
                   </div>
                 ))}
                 {room.issues.length > 3 && (
