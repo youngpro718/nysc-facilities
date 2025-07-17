@@ -1,4 +1,3 @@
-
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { BuildingsGrid } from "@/components/dashboard/BuildingsGrid";
 import { LightingSummaryCard } from "@/components/dashboard/LightingSummaryCard";

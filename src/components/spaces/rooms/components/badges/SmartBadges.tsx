@@ -1,12 +1,12 @@
 import { EnhancedRoom } from "../../types/EnhancedRoomTypes";
-import { LightingStatusBadge } from "../lighting/LightingStatusBadge";
 import { OccupancyStatusBadge } from "../occupancy/OccupancyStatusBadge";
 import { Badge } from "@/components/ui/badge";
 import { 
   AlertTriangle, 
   Home, 
   Accessibility,
-  Users
+  Users,
+  Lightbulb
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +20,7 @@ export function SmartBadges({ room, className }: SmartBadgesProps) {
     <div className={cn("space-y-2", className)}>
       {/* Smart Status Badges */}
       <div className="flex flex-wrap gap-1.5">
-        <LightingStatusBadge roomId={room.id} roomNumber={room.room_number} />
+      <LightingStatusBadge room={room} />
         <OccupancyStatusBadge room={room} />
       </div>
       

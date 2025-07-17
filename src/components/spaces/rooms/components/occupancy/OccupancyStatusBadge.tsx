@@ -10,10 +10,10 @@ interface OccupancyStatusBadgeProps {
 
 export function OccupancyStatusBadge({ room, onClick }: OccupancyStatusBadgeProps) {
   const getOccupancyStatus = () => {
-    if (room.occupancy_status === 'at_capacity') {
+    if (room.vacancy_status === 'at_capacity') {
       return { text: 'At Capacity', variant: 'destructive' as const, icon: UserX };
     }
-    if (room.occupancy_status === 'occupied') {
+    if (room.vacancy_status === 'occupied') {
       return { text: 'Occupied', variant: 'secondary' as const, icon: UserCheck };
     }
     return { text: 'Vacant', variant: 'default' as const, icon: Users };
@@ -22,7 +22,7 @@ export function OccupancyStatusBadge({ room, onClick }: OccupancyStatusBadgeProp
   const status = getOccupancyStatus();
   const Icon = status.icon;
 
-  if (room.room_type === 'courtroom' && room.juror_capacity) {
+  if (room.room_type === 'courtroom' && room.current_occupants) {
     return (
       <Button
         variant="ghost"
@@ -36,7 +36,7 @@ export function OccupancyStatusBadge({ room, onClick }: OccupancyStatusBadgeProp
         >
           <Icon className="h-3 w-3" />
           <span className="text-xs">
-            {room.current_occupancy || 0}/{room.juror_capacity} Jurors
+            {room.current_occupants || 0}/12 Jurors
           </span>
         </Badge>
       </Button>
