@@ -152,7 +152,7 @@ export default function RoomAccessFields({ form }: RoomAccessFieldsProps) {
                   <SelectValue placeholder="Select key or leave empty" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No key assigned</SelectItem>
+                  <SelectItem value="none">No key assigned</SelectItem>
                   {keys.map((key) => (
                     <SelectItem key={key.id} value={key.id}>
                       <div className="flex items-center gap-2">
