@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Shield, ChevronLeft, Bell, Settings, Palette, LayoutGrid } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { PersonalInfoForm } from "@/components/profile/PersonalInfoForm";
-import { NotificationPreferences } from "@/components/profile/NotificationPreferences";
+import { NotificationPreferencesCard } from "@/components/notifications/NotificationPreferencesCard";
 import { SecuritySection } from "@/components/profile/SecuritySection";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { MobileProfileHeader } from "@/components/profile/mobile/MobileProfileHeader";
@@ -210,7 +210,7 @@ export default function Profile() {
                   Choose how you want to receive notifications
                 </p>
               </div>
-              <NotificationPreferences />
+              <NotificationPreferencesCard />
             </div>
           </Card>
         </TabsContent>
