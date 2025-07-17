@@ -3077,7 +3077,7 @@ export type Database = {
           estimated_delivery_date: string | null
           expected_delivery_date: string | null
           id: string
-          key_id: string
+          key_id: string | null
           last_status_change: string | null
           notes: string | null
           ordered_at: string | null
@@ -3104,7 +3104,7 @@ export type Database = {
           estimated_delivery_date?: string | null
           expected_delivery_date?: string | null
           id?: string
-          key_id: string
+          key_id?: string | null
           last_status_change?: string | null
           notes?: string | null
           ordered_at?: string | null
@@ -3131,7 +3131,7 @@ export type Database = {
           estimated_delivery_date?: string | null
           expected_delivery_date?: string | null
           id?: string
-          key_id?: string
+          key_id?: string | null
           last_status_change?: string | null
           notes?: string | null
           ordered_at?: string | null
