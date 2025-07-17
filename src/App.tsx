@@ -46,9 +46,6 @@ const queryClient = new QueryClient({
 });
 
 function AppContent() {
-  // Initialize realtime notifications (both user and admin)
-  useConditionalNotifications();
-
   return (
     <Routes>
       <Route element={<Layout />}>
@@ -167,6 +164,12 @@ function AppContent() {
   );
 }
 
+function NotificationsWrapper({ children }: { children: React.ReactNode }) {
+  // Initialize realtime notifications (both user and admin) - now safely inside AuthProvider
+  useConditionalNotifications();
+  return <>{children}</>;
+}
+
 function App() {
   console.log('App: Starting application render');
   
@@ -179,7 +182,9 @@ function App() {
               <BrowserRouter>
                 <AuthErrorBoundary onError={(error) => console.error('App: Auth error caught:', error)}>
                   <AuthProvider>
-                    <AppContent />
+                    <NotificationsWrapper>
+                      <AppContent />
+                    </NotificationsWrapper>
                   </AuthProvider>
                 </AuthErrorBoundary>
               </BrowserRouter>
