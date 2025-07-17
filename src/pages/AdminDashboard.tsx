@@ -1,6 +1,5 @@
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { BuildingsGrid } from "@/components/dashboard/BuildingsGrid";
-import { SupplyRequestsWidget } from "@/components/dashboard/SupplyRequestsWidget";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
@@ -47,11 +46,6 @@ const AdminDashboard = () => {
   return (
     <div className="space-y-6 sm:space-y-8">
       <DashboardHeader onRefresh={refreshData} isLoading={isLoading || buildingsLoading} />
-      
-      {/* Quick Access Widgets */}
-      <div className="grid gap-6 md:grid-cols-3">
-        <SupplyRequestsWidget />
-      </div>
       
       <BuildingsGrid
         buildings={buildings}
