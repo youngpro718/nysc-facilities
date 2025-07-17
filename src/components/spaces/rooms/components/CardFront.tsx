@@ -4,7 +4,7 @@ import { EnhancedRoom } from "../types/EnhancedRoomTypes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Trash2, ArrowRightFromLine, Users, Shield, Lightbulb } from "lucide-react";
+import { Trash2, ArrowRightFromLine, Users, Shield, Lightbulb, ShoppingBag } from "lucide-react";
 import { EditSpaceDialog } from "../../EditSpaceDialog";
 import { CourtroomPhotos } from './CourtroomPhotos';
 import { CourtroomPhotoThumbnail } from './CourtroomPhotoThumbnail';
@@ -83,7 +83,7 @@ export function CardFront({ room, onFlip, onDelete }: CardFrontProps) {
             <Button 
               variant="outline" 
               size="sm" 
-              className="w-full flex items-center gap-2"
+              className="w-full flex items-center justify-center"
               onClick={(e) => {
                 e.stopPropagation();
                 const event = new CustomEvent('openInventoryDialog', { 
@@ -91,10 +91,9 @@ export function CardFront({ room, onFlip, onDelete }: CardFrontProps) {
                 });
                 window.dispatchEvent(event);
               }}
+              title="View Inventory"
             >
-              <Badge variant="secondary" className="text-xs">
-                Inventory
-              </Badge>
+              <ShoppingBag className="h-4 w-4" />
             </Button>
           </div>
         )}
@@ -141,9 +140,9 @@ export function CardFront({ room, onFlip, onDelete }: CardFrontProps) {
             size="sm" 
             onClick={onFlip}
             className="hidden md:flex"
+            title="More Details"
           >
-            <ArrowRightFromLine className="h-4 w-4 mr-1" />
-            More Details
+            <ArrowRightFromLine className="h-4 w-4" />
           </Button>
           
           {/* Quick Report Light Out Button */}
@@ -153,10 +152,10 @@ export function CardFront({ room, onFlip, onDelete }: CardFrontProps) {
               <Button
                 variant="outline"
                 size="sm"
-                className="flex items-center gap-1"
+                className="flex items-center"
+                title="Report Light Out"
               >
                 <Lightbulb className="h-4 w-4" />
-                Report Light Out
               </Button>
             }
           />

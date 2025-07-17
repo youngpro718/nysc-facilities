@@ -104,11 +104,11 @@ export function CardBack({ room, onFlip }: CardBackProps) {
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="mt-2 w-full flex items-center gap-2"
+                className="mt-2 w-full flex items-center justify-center"
                 onClick={() => setIsInventoryDialogOpen(true)}
+                title="View Inventory"
               >
                 <Clipboard className="h-4 w-4" />
-                View Inventory
               </Button>
             </div>
           )}
