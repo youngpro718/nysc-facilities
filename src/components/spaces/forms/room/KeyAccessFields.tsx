@@ -143,7 +143,7 @@ export function KeyAccessFields({ form }: KeyAccessFieldsProps) {
               </SelectTrigger>
               <SelectContent>
                 {doors.length === 0 ? (
-                  <SelectItem value="" disabled>
+                  <SelectItem value="no_doors" disabled>
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Door className="h-4 w-4" />
                       <span>No doors found on this floor</span>
