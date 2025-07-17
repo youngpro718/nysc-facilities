@@ -1,0 +1,256 @@
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search, Package, Clock, CheckCircle, Truck } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+import { AdminKeyOrderCard } from "./AdminKeyOrderCard";
+
+interface KeyOrder {
+  id: string;
+  request_id: string | null;
+  user_id: string | null;
+  key_id: string | null;
+  quantity: number;
+  status: string;
+  priority: string | null;
+  notes: string | null;
+  ordered_by: string | null;
+  ordered_at: string | null;
+  delivered_by: string | null;
+  delivered_at: string | null;
+  received_by: string | null;
+  received_at: string | null;
+  cost: number | null;
+  created_at: string | null;
+  updated_at: string | null;
+  // Related data
+  user_profiles?: {
+    first_name: string | null;
+    last_name: string | null;
+    email: string | null;
+  } | null;
+  key_requests?: {
+    request_type: string;
+    room_id: string | null;
+    room_other: string | null;
+    justification: string | null;
+    emergency_contact: string | null;
+  } | null;
+  rooms?: {
+    room_number: string;
+    name: string;
+  } | null;
+}
+
+export const AdminKeyOrdersSection = () => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  const { data: keyOrders, isLoading, refetch } = useQuery({
+    queryKey: ['keyOrders', 'admin'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('key_orders')
+        .select(`
+          *,
+          user_profiles:profiles!key_orders_user_id_fkey(
+            first_name,
+            last_name,
+            email
+          ),
+          key_requests!key_orders_request_id_fkey(
+            request_type,
+            room_id,
+            room_other,
+            justification,
+            emergency_contact
+          ),
+          rooms!key_requests_room_id_fkey(
+            room_number,
+            name
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return (data as any[]) || [];
+    },
+  });
+
+  const filteredOrders = keyOrders?.filter(order => {
+    const matchesSearch = searchQuery === "" || 
+      order.user_profiles?.first_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.user_profiles?.last_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.user_profiles?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.notes?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesStatus = statusFilter === "all" || order.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  }) || [];
+
+  const stats = {
+    total: keyOrders?.length || 0,
+    pending: keyOrders?.filter(o => o.status === 'pending_fulfillment').length || 0,
+    inProgress: keyOrders?.filter(o => o.status === 'ordered').length || 0,
+    ready: keyOrders?.filter(o => o.status === 'ready_for_pickup').length || 0,
+    completed: keyOrders?.filter(o => o.status === 'completed').length || 0,
+  };
+
+  const handleStatusUpdate = async (orderId: string, newStatus: string, notes?: string) => {
+    try {
+      const { error } = await supabase
+        .from('key_orders')
+        .update({ 
+          status: newStatus as any,
+          ...(notes && { notes: notes }),
+          ...(newStatus === 'completed' && { delivered_at: new Date().toISOString() }),
+          delivered_by: (await supabase.auth.getUser()).data.user?.id
+        })
+        .eq('id', orderId);
+
+      if (error) throw error;
+
+      toast.success(`Order status updated to ${newStatus.replace('_', ' ')}`);
+      refetch();
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      toast.error('Failed to update order status');
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
+        </div>
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.total}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending</CardTitle>
+            <Clock className="h-4 w-4 text-yellow-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
+            <Truck className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{stats.inProgress}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Ready</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{stats.ready}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Completed</CardTitle>
+            <CheckCircle className="h-4 w-4 text-gray-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gray-600">{stats.completed}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by user name, email, or notes..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-48">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="pending_fulfillment">Pending Fulfillment</SelectItem>
+            <SelectItem value="ordered">Ordered</SelectItem>
+            <SelectItem value="in_transit">In Transit</SelectItem>
+            <SelectItem value="received">Received</SelectItem>
+            <SelectItem value="ready_for_pickup">Ready for Pickup</SelectItem>
+            <SelectItem value="delivered">Delivered</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
+            <SelectItem value="cancelled">Cancelled</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Orders List */}
+      <div className="space-y-4">
+        {filteredOrders.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-10">
+              <Package className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No key orders found</h3>
+              <p className="text-muted-foreground text-center">
+                {searchQuery || statusFilter !== "all" 
+                  ? "Try adjusting your search criteria or filters."
+                  : "Key orders will appear here when requests are approved."
+                }
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          filteredOrders.map((order) => (
+            <AdminKeyOrderCard
+              key={order.id}
+              order={order}
+              onStatusUpdate={handleStatusUpdate}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
