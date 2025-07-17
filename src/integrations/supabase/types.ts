@@ -6354,6 +6354,131 @@ export type Database = {
           },
         ]
       }
+      room_key_access: {
+        Row: {
+          access_type: string
+          created_at: string | null
+          description: string | null
+          id: string
+          key_id: string | null
+          location_within_room: string | null
+          room_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          access_type: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          key_id?: string | null
+          location_within_room?: string | null
+          room_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          access_type?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          key_id?: string | null
+          location_within_room?: string | null
+          room_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_key_access_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_assignment_stats"
+            referencedColumns: ["key_id"]
+          },
+          {
+            foreignKeyName: "room_key_access_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_assignments_view"
+            referencedColumns: ["key_id"]
+          },
+          {
+            foreignKeyName: "room_key_access_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_door_locations"
+            referencedColumns: ["key_id"]
+          },
+          {
+            foreignKeyName: "room_key_access_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_inventory_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_key_access_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "keys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_key_access_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_assignment_analytics"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "room_key_access_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_assignment_conflicts"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "room_key_access_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_health_overview"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "room_key_access_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_hierarchy_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_key_access_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_issue_analytics"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "room_key_access_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_occupancy_stats"
+            referencedColumns: ["room_id"]
+          },
+          {
+            foreignKeyName: "room_key_access_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "room_selection_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_key_access_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       room_lighting_status: {
         Row: {
           created_at: string | null
@@ -7115,6 +7240,7 @@ export type Database = {
           name: string
           next_maintenance_date: string | null
           parent_room_id: string | null
+          passkey_enabled: boolean | null
           phone_number: string | null
           position: Json | null
           previous_functions: Json[] | null
@@ -7145,6 +7271,7 @@ export type Database = {
           name: string
           next_maintenance_date?: string | null
           parent_room_id?: string | null
+          passkey_enabled?: boolean | null
           phone_number?: string | null
           position?: Json | null
           previous_functions?: Json[] | null
@@ -7175,6 +7302,7 @@ export type Database = {
           name?: string
           next_maintenance_date?: string | null
           parent_room_id?: string | null
+          passkey_enabled?: boolean | null
           phone_number?: string | null
           position?: Json | null
           previous_functions?: Json[] | null

@@ -21,6 +21,16 @@ export const RoomConnectionSchema = z.object({
   id: z.string().uuid().optional(), // Add id field for existing connections
 });
 
+// Define the room access schema for internal access items
+export const RoomAccessSchema = z.object({
+  id: z.string().uuid().optional(), // For existing access items
+  accessType: z.enum(['room_entry', 'office_door', 'locker', 'cabinet', 'storage', 'key_box']),
+  keyId: z.string().optional(), // Optional - can be empty if no key assigned
+  keyName: z.string().optional(),
+  description: z.string().optional(),
+  locationWithinRoom: z.string().optional(),
+});
+
 // Get all enum values for RoomTypeEnum to use in the schema
 const roomTypeValues = [
   RoomTypeEnum.OFFICE,
@@ -99,15 +109,12 @@ export const RoomFormSchema = z.object({
     judge_view: z.string().nullable().optional(),
     audience_view: z.string().nullable().optional()
   }).nullable().optional(),
-  keyDoorConnections: z.array(z.object({
-    keyId: z.string(),
-    keyName: z.string(),
-    doorId: z.string(),
-    doorName: z.string(),
-    isPasskey: z.boolean()
-  })).optional(),
+  // Replace keyDoorConnections with new room access system
+  roomAccess: z.array(RoomAccessSchema).optional(),
+  passkeyEnabled: z.boolean().default(false),
 });
 
 // Export types derived from the schema
 export type RoomFormData = z.infer<typeof RoomFormSchema>;
 export type RoomConnectionData = z.infer<typeof RoomConnectionSchema>;
+export type RoomAccessData = z.infer<typeof RoomAccessSchema>;
