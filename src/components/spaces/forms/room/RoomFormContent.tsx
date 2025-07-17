@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react";
 import { BasicRoomFields } from "./BasicRoomFields";
 import { StorageFields } from "./StorageFields";
 import { ParentRoomField } from "./ParentRoomField";
+import { CapacityFields } from "./CapacityFields";
 import { type RoomFormData } from "./RoomFormSchema";
 import { Separator } from "@/components/ui/separator";
 import { CourtroomPhotoUpload } from "./CourtroomPhotoUpload";
@@ -118,6 +119,9 @@ export function RoomFormContent({
         )}
         
         <Separator />
+        <CapacityFields form={form} />
+
+        <Separator />
         <StorageFields form={form} />
 
         {/* Add courtroom photo upload if room type is courtroom */}
@@ -127,7 +131,6 @@ export function RoomFormContent({
             <CourtroomPhotoUpload form={form} />
           </>
         )}
-
 
         <Separator />
 

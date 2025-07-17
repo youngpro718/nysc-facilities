@@ -58,6 +58,15 @@ export const RoomFormSchema = z.object({
   description: z.string().optional(),
   phoneNumber: z.string().optional(),
   currentFunction: z.string().optional(),
+  // Capacity Management Fields
+  capacity: z.number().min(1, "Capacity must be at least 1").optional(),
+  maxOccupancy: z.number().min(1, "Max occupancy must be at least 1").optional(),
+  // Courtroom Specific Capacity Fields
+  jurorCapacity: z.number().min(1, "Juror capacity must be at least 1").optional(),
+  spectatorCapacity: z.number().min(1, "Spectator capacity must be at least 1").optional(),
+  // Accessibility Capacity
+  wheelchairAccessibleSpaces: z.number().min(0, "Cannot be negative").optional(),
+  hearingAssistedSpaces: z.number().min(0, "Cannot be negative").optional(),
   isStorage: z.boolean().default(false),
   // Make storage fields properly optional
   storageType: z.enum([

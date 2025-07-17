@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Room } from "../types/RoomTypes";
 import { EnhancedRoom } from "../types/EnhancedRoomTypes";
-import { X, Building, Phone, ShoppingBag, Users, CircleAlert, Clipboard, Lightbulb, Clock, Accessibility } from "lucide-react";
+import { X, Building, Phone, ShoppingBag, Users, CircleAlert, Clipboard, Lightbulb, Clock, Accessibility, Key, Shield, AlertTriangle } from "lucide-react";
+import { useRoomAccess } from "@/hooks/useRoomAccess";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format, differenceInDays } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -18,6 +19,7 @@ interface CardBackProps {
 
 export function CardBack({ room, onFlip }: CardBackProps) {
   const [isInventoryDialogOpen, setIsInventoryDialogOpen] = useState(false);
+  const { data: roomAccess, isLoading: isAccessLoading } = useRoomAccess(room.id);
 
   return (
     <div className="p-5 flex flex-col h-full bg-card border rounded-md shadow-sm">
@@ -113,12 +115,87 @@ export function CardBack({ room, onFlip }: CardBackProps) {
             </div>
           )}
           
+          {/* Room Access Information */}
+          {roomAccess && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium flex items-center gap-1">
+                <Key className="h-3.5 w-3.5 text-muted-foreground" />
+                Room Access
+                {roomAccess.access_conflicts && roomAccess.access_conflicts.length > 0 && (
+                  <AlertTriangle className="h-3.5 w-3.5 text-yellow-500 ml-1" />
+                )}
+              </h4>
+              
+              {/* Key Holders */}
+              {roomAccess.key_holders.length > 0 && (
+                <div className="bg-muted/50 p-2 rounded-md">
+                  <p className="text-xs font-medium mb-2">Key Holders ({roomAccess.key_holders.length})</p>
+                  <div className="space-y-1">
+                    {roomAccess.key_holders.slice(0, 3).map((holder, index) => (
+                      <div key={index} className="flex items-center justify-between text-xs">
+                        <span>{holder.first_name} {holder.last_name}</span>
+                        <div className="flex items-center gap-1">
+                          {holder.is_passkey && (
+                            <Badge variant="outline" className="text-xs px-1 py-0">
+                              <Shield className="h-2.5 w-2.5 mr-1" />
+                              Master
+                            </Badge>
+                          )}
+                          <span className="text-muted-foreground">{holder.key_name}</span>
+                        </div>
+                      </div>
+                    ))}
+                    {roomAccess.key_holders.length > 3 && (
+                      <p className="text-xs text-muted-foreground text-center">
+                        + {roomAccess.key_holders.length - 3} more key holders
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {/* Access Doors */}
+              {roomAccess.access_doors.length > 0 && (
+                <div className="bg-muted/50 p-2 rounded-md">
+                  <p className="text-xs font-medium mb-2">Access Points</p>
+                  <div className="space-y-1">
+                    {roomAccess.access_doors.map((door, index) => (
+                      <div key={index} className="flex items-center justify-between text-xs">
+                        <span>{door.name}</span>
+                        <Badge variant="secondary" className="text-xs">
+                          {door.keys_count} key{door.keys_count !== 1 ? 's' : ''}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Access Conflicts */}
+              {roomAccess.access_conflicts && roomAccess.access_conflicts.length > 0 && (
+                <div className="bg-yellow-50 border border-yellow-200 p-2 rounded-md">
+                  <p className="text-xs font-medium text-yellow-800 mb-1">Access Alerts</p>
+                  {roomAccess.access_conflicts.map((conflict, index) => (
+                    <p key={index} className="text-xs text-yellow-700">
+                      {conflict.description}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Occupants Information */}
           {room.current_occupants && room.current_occupants.length > 0 && (
             <div className="space-y-2">
               <h4 className="text-sm font-medium flex items-center gap-1">
                 <Users className="h-3.5 w-3.5 text-muted-foreground" />
                 Occupants ({room.current_occupants.length})
+                {roomAccess?.current_occupancy && roomAccess.room_capacity && (
+                  <Badge variant={roomAccess.current_occupancy > roomAccess.room_capacity ? "destructive" : "secondary"} className="text-xs ml-1">
+                    {roomAccess.current_occupancy}/{roomAccess.room_capacity}
+                  </Badge>
+                )}
               </h4>
               <div className="space-y-2">
                 {room.current_occupants.map((occupant, index) => (
