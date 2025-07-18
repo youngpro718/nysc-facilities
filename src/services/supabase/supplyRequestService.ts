@@ -88,7 +88,7 @@ export async function getSupplyRequests(userId?: string) {
     .from('supply_requests')
     .select(`
       *,
-      profiles (
+      profiles!requester_id (
         first_name,
         last_name,
         email,
