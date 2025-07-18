@@ -118,12 +118,14 @@ export function RoomAccessSummary({ roomId }: RoomAccessSummaryProps) {
         )}
 
         {/* Key Holders */}
-        {accessInfo.key_holders.length > 0 && (
-          <div>
-            <h3 className="font-medium flex items-center gap-2 mb-3">
-              <Key className="h-4 w-4" />
-              Key Holders ({accessInfo.key_holders.length})
-            </h3>
+        <div>
+          <h3 className="font-medium flex items-center gap-2 mb-3">
+            <Key className="h-4 w-4" />
+            Key Holders ({accessInfo.key_holders.length})
+          </h3>
+          {accessInfo.key_holders.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No key holders assigned to this room</p>
+          ) : (
             <div className="space-y-2">
               {accessInfo.key_holders.map((holder, index) => (
                 <div key={`${holder.id}-${index}`} className="flex items-center justify-between p-3 border rounded-lg">
@@ -147,8 +149,8 @@ export function RoomAccessSummary({ roomId }: RoomAccessSummaryProps) {
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Emergency Contact Info */}
         {accessInfo.primary_occupants.length > 0 && (
