@@ -180,10 +180,12 @@ export function UserImportExport({ users = [], onImportSuccess }: UserImportExpo
             throw new Error('Missing or invalid last_name field');
           }
 
-          // Create user profile
+          // Create user profile with generated ID
+          const profileId = crypto.randomUUID();
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .insert({
+              id: profileId,
               first_name: String(row.first_name).trim(),
               last_name: String(row.last_name).trim(),
               email: String(row.email).trim().toLowerCase(),

@@ -10,6 +10,8 @@ export interface InventoryExcelRow {
   minimum_quantity?: number;
   unit?: string;
   location_details?: string;
+  preferred_vendor?: string;
+  status?: string;
   notes?: string;
 }
 
