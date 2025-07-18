@@ -29,8 +29,7 @@ export const LowStockPanel = () => {
         .from("inventory_items")
         .select(`
           *,
-          inventory_categories(name, color),
-          rooms(name, room_number)
+          inventory_categories(name, color)
         `)
         .not("minimum_quantity", "is", null)
         .lt("quantity", "minimum_quantity")
@@ -38,20 +37,41 @@ export const LowStockPanel = () => {
 
       if (error) throw error;
 
-      return data?.map(item => ({
-        id: item.id,
-        name: item.name,
-        quantity: item.quantity,
-        minimum_quantity: item.minimum_quantity || 0,
-        unit: item.unit || '',
-        location_details: item.location_details || '',
-        preferred_vendor: item.preferred_vendor || '',
-        category_name: item.inventory_categories?.name || "General",
-        category_color: item.inventory_categories?.color || "gray",
-        room_name: item.rooms?.name || "",
-        room_number: item.rooms?.room_number || "",
-        storage_room_id: item.storage_room_id,
-      })) || [];
+      // Get room data separately for items that have storage_room_id
+      const itemsWithRooms = await Promise.all(
+        (data || []).map(async (item) => {
+          let roomData = { name: "", room_number: "" };
+          
+          if (item.storage_room_id) {
+            const { data: room } = await supabase
+              .from("rooms")
+              .select("name, room_number")
+              .eq("id", item.storage_room_id)
+              .single();
+            
+            if (room) {
+              roomData = { name: room.name || "", room_number: room.room_number || "" };
+            }
+          }
+
+          return {
+            id: item.id,
+            name: item.name,
+            quantity: item.quantity,
+            minimum_quantity: item.minimum_quantity || 0,
+            unit: item.unit || '',
+            location_details: item.location_details || '',
+            preferred_vendor: item.preferred_vendor || '',
+            category_name: item.inventory_categories?.name || "General",
+            category_color: item.inventory_categories?.color || "gray",
+            room_name: roomData.name,
+            room_number: roomData.room_number,
+            storage_room_id: item.storage_room_id,
+          };
+        })
+      );
+
+      return itemsWithRooms;
     },
   });
 
@@ -62,28 +82,48 @@ export const LowStockPanel = () => {
         .from("inventory_items")
         .select(`
           *,
-          inventory_categories(name, color),
-          rooms(name, room_number)
+          inventory_categories(name, color)
         `)
         .eq("quantity", 0)
         .order("name");
 
       if (error) throw error;
 
-      return data?.map(item => ({
-        id: item.id,
-        name: item.name,
-        quantity: item.quantity,
-        minimum_quantity: item.minimum_quantity || 0,
-        unit: item.unit || '',
-        location_details: item.location_details || '',
-        preferred_vendor: item.preferred_vendor || '',
-        category_name: item.inventory_categories?.name || "General",
-        category_color: item.inventory_categories?.color || "gray",
-        room_name: item.rooms?.name || "",
-        room_number: item.rooms?.room_number || "",
-        storage_room_id: item.storage_room_id,
-      })) || [];
+      // Get room data separately for items that have storage_room_id
+      const itemsWithRooms = await Promise.all(
+        (data || []).map(async (item) => {
+          let roomData = { name: "", room_number: "" };
+          
+          if (item.storage_room_id) {
+            const { data: room } = await supabase
+              .from("rooms")
+              .select("name, room_number")
+              .eq("id", item.storage_room_id)
+              .single();
+            
+            if (room) {
+              roomData = { name: room.name || "", room_number: room.room_number || "" };
+            }
+          }
+
+          return {
+            id: item.id,
+            name: item.name,
+            quantity: item.quantity,
+            minimum_quantity: item.minimum_quantity || 0,
+            unit: item.unit || '',
+            location_details: item.location_details || '',
+            preferred_vendor: item.preferred_vendor || '',
+            category_name: item.inventory_categories?.name || "General",
+            category_color: item.inventory_categories?.color || "gray",
+            room_name: roomData.name,
+            room_number: roomData.room_number,
+            storage_room_id: item.storage_room_id,
+          };
+        })
+      );
+
+      return itemsWithRooms;
     },
   });
 
