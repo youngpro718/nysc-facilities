@@ -7979,7 +7979,29 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_supply_requests_requester_id"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_supply_requests_requester_id"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "user_verification_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_supply_requests_requester_id"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "user_verification_view"
+            referencedColumns: ["profile_id"]
+          },
+        ]
       }
       system_config: {
         Row: {
