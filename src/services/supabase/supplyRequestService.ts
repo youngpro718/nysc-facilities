@@ -124,12 +124,21 @@ export async function updateSupplyRequestStatus(
   status: string,
   notes?: string
 ) {
+  // Handle fulfillment separately using the dedicated function
+  if (status === 'fulfilled') {
+    const { error } = await supabase.rpc('fulfill_supply_request', {
+      p_request_id: requestId,
+      p_fulfillment_notes: notes
+    });
+    if (error) throw error;
+    return;
+  }
+
+  // Handle other status updates normally
   const updates: any = { status };
   
   if (status === 'approved' || status === 'rejected') {
     updates.approval_notes = notes;
-  } else if (status === 'fulfilled') {
-    updates.fulfillment_notes = notes;
   }
 
   const { error } = await supabase

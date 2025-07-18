@@ -10064,6 +10064,10 @@ export type Database = {
           room_type: string
         }[]
       }
+      fulfill_supply_request: {
+        Args: { p_request_id: string; p_fulfillment_notes?: string }
+        Returns: undefined
+      }
       get_child_rooms: {
         Args: { parent_room_id: string }
         Returns: {
