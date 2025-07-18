@@ -8008,6 +8008,9 @@ export type Database = {
           status: string
           title: string
           updated_at: string
+          work_completed_at: string | null
+          work_duration_minutes: number | null
+          work_started_at: string | null
         }
         Insert: {
           approval_notes?: string | null
@@ -8039,6 +8042,9 @@ export type Database = {
           status?: string
           title: string
           updated_at?: string
+          work_completed_at?: string | null
+          work_duration_minutes?: number | null
+          work_started_at?: string | null
         }
         Update: {
           approval_notes?: string | null
@@ -8070,6 +8076,9 @@ export type Database = {
           status?: string
           title?: string
           updated_at?: string
+          work_completed_at?: string | null
+          work_duration_minutes?: number | null
+          work_started_at?: string | null
         }
         Relationships: [
           {
@@ -10149,6 +10158,10 @@ export type Database = {
         Args: { restoration_id: string; success: boolean; error_msg?: string }
         Returns: undefined
       }
+      complete_supply_request_work: {
+        Args: { p_request_id: string; p_notes?: string }
+        Returns: undefined
+      }
       create_assignment_batch: {
         Args: { creator_id: string; batch_metadata: Json }
         Returns: string
@@ -10293,6 +10306,10 @@ export type Database = {
           p_notes?: string
           p_status?: string
         }
+        Returns: undefined
+      }
+      start_supply_request_work: {
+        Args: { p_request_id: string }
         Returns: undefined
       }
       update_door_properties: {

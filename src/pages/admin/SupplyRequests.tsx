@@ -178,21 +178,26 @@ export default function AdminSupplyRequests() {
     return matchesStatus && matchesPriority && matchesSearch;
   });
 
-  const getAvailableActions = (status: string) => {
+  const getAvailableActions = (status: string, request: any) => {
     switch (status) {
       case 'pending':
         return ['review', 'approve', 'reject'];
       case 'under_review':
         return ['approve', 'reject'];
       case 'approved':
-        return ['fulfill']; // This will open the fulfillment workflow
+        if (request?.work_started_at && !request?.work_completed_at) {
+          return ['complete']; // Work in progress
+        } else if (!request?.work_started_at) {
+          return ['start']; // Ready to start
+        }
+        return []; // Already completed
       default:
         return [];
     }
   };
 
   const openActionDialog = (request: SupplyRequestWithUser, action: string) => {
-    if (action === 'fulfill') {
+    if (action === 'start' || action === 'complete') {
       setFulfillmentRequest(request);
       setFulfillmentWorkflowOpen(true);
       return;
@@ -283,7 +288,7 @@ export default function AdminSupplyRequests() {
             const statusStyle = statusConfig[request.status as keyof typeof statusConfig]?.color || "text-gray-600 bg-gray-50";
             const priorityStyle = priorityConfig[request.priority as keyof typeof priorityConfig]?.color || "text-gray-600 bg-gray-50";
             const isHighlighted = request.id === highlightedId;
-            const availableActions = getAvailableActions(request.status);
+            const availableActions = getAvailableActions(request.status, request);
 
             return (
               <Card 

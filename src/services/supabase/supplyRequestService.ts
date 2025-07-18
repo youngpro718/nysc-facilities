@@ -175,17 +175,17 @@ export async function updateSupplyRequestItems(
   if (error) throw error;
 }
 
-export async function advanceFulfillmentStage(
-  requestId: string,
-  stage: string,
-  notes?: string,
-  metadata?: any
-) {
-  const { error } = await supabase.rpc('advance_fulfillment_stage', {
+export async function startSupplyRequestWork(requestId: string) {
+  const { error } = await supabase.rpc('start_supply_request_work', {
+    p_request_id: requestId
+  });
+  if (error) throw error;
+}
+
+export async function completeSupplyRequestWork(requestId: string, notes?: string) {
+  const { error } = await supabase.rpc('complete_supply_request_work', {
     p_request_id: requestId,
-    p_stage: stage,
-    p_notes: notes,
-    p_metadata: metadata || {}
+    p_notes: notes
   });
   if (error) throw error;
 }
