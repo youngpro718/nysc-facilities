@@ -48,7 +48,7 @@ export function CreateKeyDialog({
             building_id: data.buildingId || null,
             floor_id: data.isPasskey ? null : data.floorId,
             door_id: data.isPasskey ? null : (data.keyScope === 'door' ? data.doorId : null),
-            room_id: data.isPasskey ? null : (data.keyScope === 'room' ? data.roomId : null)
+            room_id: data.isPasskey ? null : ((data.keyScope === 'room' || data.keyScope === 'room_door') ? data.roomId : null)
           }
         })
         .select()

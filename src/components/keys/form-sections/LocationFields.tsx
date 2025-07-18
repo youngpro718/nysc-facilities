@@ -112,7 +112,7 @@ export function LocationFields({ form }: LocationFieldsProps) {
       if (error) throw error;
       return data as Room[];
     },
-    enabled: !!form.watch("floorId") && keyScope === "room" && !isPasskey,
+    enabled: !!form.watch("floorId") && (keyScope === "room" || keyScope === "room_door") && !isPasskey,
   });
 
   const handleBuildingChange = (value: string) => {
@@ -228,13 +228,15 @@ export function LocationFields({ form }: LocationFieldsProps) {
             />
           )}
 
-          {keyScope === "room" && (
+          {(keyScope === "room" || keyScope === "room_door") && (
             <FormField
               control={form.control}
               name="roomId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Room</FormLabel>
+                  <FormLabel>
+                    {keyScope === "room_door" ? "Room (for door access)" : "Room"}
+                  </FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     value={field.value}
@@ -253,6 +255,12 @@ export function LocationFields({ form }: LocationFieldsProps) {
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormDescription>
+                    {keyScope === "room_door" 
+                      ? "This key will open the entrance door to this room specifically"
+                      : "Select the room this key provides access to"
+                    }
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

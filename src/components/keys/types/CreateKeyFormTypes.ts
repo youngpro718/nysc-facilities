@@ -11,7 +11,7 @@ export const keyFormSchema = z.object({
   floorId: z.string().optional(),
   doorId: z.string().optional(),
   roomId: z.string().optional(),
-  keyScope: z.enum(["door", "room"]).default("door"),
+  keyScope: z.enum(["door", "room", "room_door"]).default("door"),
   occupantId: z.string().optional(),
   spareKeys: z.number()
     .min(0, "Spare keys cannot be negative")
@@ -21,7 +21,7 @@ export const keyFormSchema = z.object({
   if (!data.isPasskey) {
     if (!data.floorId || data.floorId === "") return false;
     if (data.keyScope === "door" && (!data.doorId || data.doorId === "")) return false;
-    if (data.keyScope === "room" && (!data.roomId || data.roomId === "")) return false;
+    if ((data.keyScope === "room" || data.keyScope === "room_door") && (!data.roomId || data.roomId === "")) return false;
   }
   return true;
 }, {

@@ -73,10 +73,13 @@ export function BasicKeyFields({ form }: BasicKeyFieldsProps) {
               <SelectContent>
                 <SelectItem value="door">Door Access</SelectItem>
                 <SelectItem value="room">Room Access</SelectItem>
+                <SelectItem value="room_door">Room Door Access</SelectItem>
               </SelectContent>
             </Select>
             <FormDescription>
-              Choose whether this key provides access to a specific door or an entire room
+              • Door Access: Key for a specific door<br/>
+              • Room Access: Key for general room access<br/>
+              • Room Door Access: Key specifically for a room's entrance door
             </FormDescription>
             <FormMessage />
           </FormItem>
