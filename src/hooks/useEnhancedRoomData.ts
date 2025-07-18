@@ -68,10 +68,15 @@ export function useEnhancedRoomData(roomId: string) {
       const functionalFixtures = lightingFixtures?.filter(f => f.status === 'functional').length || 0;
       const lightingPercentage = totalFixtures > 0 ? Math.round((functionalFixtures / totalFixtures) * 100) : 100;
 
-      // Calculate room size category based on estimated area
+      // Calculate room size category using the database function and actual room size data
       let roomSizeCategory: 'small' | 'medium' | 'large' = 'medium';
-      if (room.room_type === 'office') roomSizeCategory = 'small';
-      else if (room.room_type === 'courtroom') roomSizeCategory = 'large';
+      if (room.size) {
+        // Use the database function to get accurate size category
+        const sizeData = typeof room.size === 'string' ? JSON.parse(room.size) : room.size;
+        const { data: sizeResult } = await supabase
+          .rpc('get_room_size_from_data', { room_size_data: sizeData });
+        roomSizeCategory = (sizeResult as 'small' | 'medium' | 'large') || 'medium';
+      }
 
       // Check for persistent issues
       const openIssues = room.issues?.filter((issue: any) => ['open', 'in_progress'].includes(issue.status)) || [];

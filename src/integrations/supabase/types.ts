@@ -10293,6 +10293,10 @@ export type Database = {
         Args: { room_width: number; room_height: number }
         Returns: string
       }
+      get_room_size_from_data: {
+        Args: { room_size_data: Json }
+        Returns: string
+      }
       get_user_role: {
         Args: { user_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
