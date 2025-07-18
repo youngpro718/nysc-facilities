@@ -96,13 +96,9 @@ export default function AdminSupplyRequests() {
 
   const fetchRequests = async () => {
     try {
-      console.log('Fetching supply requests...');
       const data = await getSupplyRequests();
-      console.log('Raw supply requests data:', data);
-      console.log('Number of requests:', data?.length || 0);
       setRequests(data as any);
     } catch (error) {
-      console.error('Error fetching supply requests:', error);
       toast({
         title: "Error",
         description: "Failed to fetch supply requests",

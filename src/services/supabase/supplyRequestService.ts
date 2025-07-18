@@ -99,6 +99,7 @@ export async function getSupplyRequests(userId?: string) {
         inventory_items (
           name,
           unit,
+          quantity,
           category_id,
           inventory_categories (
             name,
