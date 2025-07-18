@@ -403,7 +403,7 @@ export function UserImportExport({ users = [], onImportSuccess }: UserImportExpo
                       )}
                     </div>
                   )}
-                </div>
+                </CardContent>
               </Card>
             )}
 

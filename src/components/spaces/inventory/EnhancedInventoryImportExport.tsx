@@ -352,7 +352,7 @@ export function EnhancedInventoryImportExport({
                       )}
                     </div>
                   )}
-                </div>
+                </CardContent>
               </Card>
             )}
 
