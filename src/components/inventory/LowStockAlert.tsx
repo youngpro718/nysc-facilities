@@ -1,10 +1,11 @@
+
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, Package, TrendingDown, ExternalLink } from "lucide-react";
-import { InventoryItem } from "@/components/inventory/hooks/useInventory";
+import { InventoryItem } from "@/components/spaces/inventory/types/inventoryTypes";
 
 interface LowStockAlertProps {
   open: boolean;
@@ -21,22 +22,25 @@ export function LowStockAlert({
   roomName,
   onManageItem,
 }: LowStockAlertProps) {
+  // Fixed low stock logic: items with quantity < minimum_quantity
   const lowStockItems = items.filter(item => 
-    item.minimum_quantity && item.quantity <= item.minimum_quantity
+    item.minimum_quantity && item.quantity < item.minimum_quantity
   );
 
   const outOfStockItems = lowStockItems.filter(item => item.quantity === 0);
-  const criticalItems = lowStockItems.filter(item => item.quantity > 0 && item.quantity <= (item.minimum_quantity || 0));
+  const criticalItems = lowStockItems.filter(item => 
+    item.quantity > 0 && item.quantity < (item.minimum_quantity || 0)
+  );
 
   const getStockStatus = (item: InventoryItem) => {
     if (item.quantity === 0) return { label: "Out of Stock", color: "bg-red-500" };
-    if (item.quantity <= (item.minimum_quantity || 0)) return { label: "Low Stock", color: "bg-yellow-500" };
+    if (item.quantity < (item.minimum_quantity || 0)) return { label: "Low Stock", color: "bg-yellow-500" };
     return { label: "Normal", color: "bg-green-500" };
   };
 
   const getUrgencyBadge = (item: InventoryItem) => {
     if (item.quantity === 0) return { label: "Critical", variant: "destructive" as const };
-    if (item.quantity <= (item.minimum_quantity || 0) / 2) return { label: "High", variant: "destructive" as const };
+    if (item.quantity < (item.minimum_quantity || 0) / 2) return { label: "High", variant: "destructive" as const };
     return { label: "Medium", variant: "secondary" as const };
   };
 

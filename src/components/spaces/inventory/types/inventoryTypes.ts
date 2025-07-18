@@ -65,3 +65,18 @@ export interface BatchUpdateInput {
   }>;
   notes?: string;
 }
+
+// Export data interface for Excel operations
+export interface InventoryExportData {
+  name: string;
+  quantity: number;
+  minimum_quantity?: number;
+  category?: string;
+  description?: string;
+  unit?: string;
+  location_details?: string;
+  preferred_vendor?: string;
+  status?: string;
+  notes?: string;
+  last_updated?: string;
+}

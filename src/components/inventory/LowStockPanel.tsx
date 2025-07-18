@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +18,7 @@ type LowStockItem = {
   category_color: string;
   room_name: string;
   room_number: string;
+  storage_room_id: string;
 };
 
 export const LowStockPanel = () => {
@@ -25,9 +27,13 @@ export const LowStockPanel = () => {
     queryFn: async (): Promise<LowStockItem[]> => {
       const { data, error } = await supabase
         .from("inventory_items")
-        .select("*")
-        .or("quantity.lt.minimum_quantity,quantity.eq.0")
+        .select(`
+          *,
+          inventory_categories(name, color),
+          rooms(name, room_number)
+        `)
         .not("minimum_quantity", "is", null)
+        .lt("quantity", "minimum_quantity")
         .order("quantity", { ascending: true });
 
       if (error) throw error;
@@ -40,10 +46,11 @@ export const LowStockPanel = () => {
         unit: item.unit || '',
         location_details: item.location_details || '',
         preferred_vendor: item.preferred_vendor || '',
-        category_name: "General",
-        category_color: "gray",
-        room_name: "",
-        room_number: "",
+        category_name: item.inventory_categories?.name || "General",
+        category_color: item.inventory_categories?.color || "gray",
+        room_name: item.rooms?.name || "",
+        room_number: item.rooms?.room_number || "",
+        storage_room_id: item.storage_room_id,
       })) || [];
     },
   });
@@ -53,7 +60,11 @@ export const LowStockPanel = () => {
     queryFn: async (): Promise<LowStockItem[]> => {
       const { data, error } = await supabase
         .from("inventory_items")
-        .select("*")
+        .select(`
+          *,
+          inventory_categories(name, color),
+          rooms(name, room_number)
+        `)
         .eq("quantity", 0)
         .order("name");
 
@@ -67,18 +78,19 @@ export const LowStockPanel = () => {
         unit: item.unit || '',
         location_details: item.location_details || '',
         preferred_vendor: item.preferred_vendor || '',
-        category_name: "General",
-        category_color: "gray",
-        room_name: "",
-        room_number: "",
+        category_name: item.inventory_categories?.name || "General",
+        category_color: item.inventory_categories?.color || "gray",
+        room_name: item.rooms?.name || "",
+        room_number: item.rooms?.room_number || "",
+        storage_room_id: item.storage_room_id,
       })) || [];
     },
   });
 
   const getStockLevel = (quantity: number, minimum: number) => {
     if (quantity === 0) return { level: "critical", label: "Out of Stock", color: "bg-red-100 text-red-800" };
-    if (quantity <= minimum * 0.5) return { level: "critical", label: "Critical", color: "bg-red-100 text-red-800" };
-    if (quantity <= minimum) return { level: "low", label: "Low Stock", color: "bg-orange-100 text-orange-800" };
+    if (quantity < minimum * 0.5) return { level: "critical", label: "Critical", color: "bg-red-100 text-red-800" };
+    if (quantity < minimum) return { level: "low", label: "Low Stock", color: "bg-orange-100 text-orange-800" };
     return { level: "normal", label: "Normal", color: "bg-green-100 text-green-800" };
   };
 

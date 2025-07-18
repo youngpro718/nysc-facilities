@@ -17,8 +17,8 @@ import {
   AlertTriangle,
   FileDown 
 } from "lucide-react";
-import { InventoryItem } from "./types";
-import { exportToExcel, parseExcelFile } from "./excelUtils";
+import { InventoryItem } from "./types/inventoryTypes";
+import { exportToExcel, parseExcelFile, generateTemplate } from "./excelUtils";
 import { useToast } from "@/hooks/use-toast";
 
 interface EnhancedInventoryImportExportProps {
@@ -45,9 +45,9 @@ export function EnhancedInventoryImportExport({
   const [exportFields, setExportFields] = useState({
     name: true,
     quantity: true,
+    minimum_quantity: true,
     category: true,
     description: true,
-    minimum_quantity: true,
     unit: true,
     location_details: true,
     preferred_vendor: false,
@@ -87,34 +87,35 @@ export function EnhancedInventoryImportExport({
       return row;
     });
 
-    exportToExcel(exportData, `inventory_export_${new Date().toISOString().split('T')[0]}`);
-    
-    toast({
-      title: "Export successful",
-      description: `Exported ${exportData.length} items with ${selectedFields.length} fields.`,
-    });
+    try {
+      exportToExcel(exportData, `inventory_export_${new Date().toISOString().split('T')[0]}`);
+      toast({
+        title: "Export successful",
+        description: `Exported ${exportData.length} items with ${selectedFields.length} fields.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Export failed",
+        description: "Failed to export inventory data.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDownloadTemplate = () => {
-    const template = [{
-      name: "Sample Item",
-      quantity: 10,
-      category: "General",
-      description: "Sample description",
-      minimum_quantity: 5,
-      unit: "pieces",
-      location_details: "Shelf A1",
-      preferred_vendor: "Sample Vendor",
-      notes: "Sample notes",
-      status: "active"
-    }];
-
-    exportToExcel(template, "inventory_import_template");
-    
-    toast({
-      title: "Template downloaded",
-      description: "Use this template to format your import data correctly.",
-    });
+    try {
+      generateTemplate();
+      toast({
+        title: "Template downloaded",
+        description: "Use this template to format your import data correctly.",
+      });
+    } catch (error) {
+      toast({
+        title: "Template download failed",
+        description: "Failed to generate template.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleImport = async () => {
@@ -148,25 +149,16 @@ export function EnhancedInventoryImportExport({
         setImportProgress(((i + 1) / data.length) * 100);
 
         try {
-          // Validate required fields
-          if (!row.name || typeof row.name !== 'string') {
-            throw new Error('Missing or invalid name field');
-          }
-
-          if (row.quantity === undefined || row.quantity === null || isNaN(Number(row.quantity))) {
-            throw new Error('Missing or invalid quantity field');
-          }
-
-          // Process the item
+          // Process the item (validation is already done in parseExcelFile)
           const processedItem = {
-            name: String(row.name).trim(),
-            quantity: Number(row.quantity),
-            description: row.description ? String(row.description).trim() : null,
-            minimum_quantity: row.minimum_quantity ? Number(row.minimum_quantity) : null,
-            unit: row.unit ? String(row.unit).trim() : null,
-            location_details: row.location_details ? String(row.location_details).trim() : null,
-            preferred_vendor: row.preferred_vendor ? String(row.preferred_vendor).trim() : null,
-            notes: row.notes ? String(row.notes).trim() : null,
+            name: row.name,
+            quantity: row.quantity,
+            description: row.description,
+            minimum_quantity: row.minimum_quantity,
+            unit: row.unit,
+            location_details: row.location_details,
+            preferred_vendor: row.preferred_vendor,
+            notes: row.notes,
             status: row.status || 'active'
           };
 
@@ -292,7 +284,7 @@ export function EnhancedInventoryImportExport({
                 </div>
                 
                 <div>
-                  <Label htmlFor="import-file">Select Excel File</Label>
+                  <Label htmlFor="import-file">Select Excel File (.xlsx, .xls, .csv)</Label>
                   <input
                     id="import-file"
                     type="file"
@@ -312,6 +304,18 @@ export function EnhancedInventoryImportExport({
                     Selected: {importFile.name} ({Math.round(importFile.size / 1024)}KB)
                   </div>
                 )}
+
+                <div className="bg-blue-50 p-3 rounded-lg">
+                  <h4 className="font-medium text-sm mb-2">Flexible Field Mapping</h4>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    The import supports various column names. For example:
+                  </p>
+                  <ul className="text-xs text-muted-foreground space-y-1">
+                    <li>• <strong>Name:</strong> "name", "item_name", "item", "product_name"</li>
+                    <li>• <strong>Quantity:</strong> "quantity", "qty", "amount", "stock"</li>
+                    <li>• <strong>Minimum:</strong> "minimum_quantity", "min_quantity", "minimum", "reorder_level"</li>
+                  </ul>
+                </div>
               </CardContent>
             </Card>
 
