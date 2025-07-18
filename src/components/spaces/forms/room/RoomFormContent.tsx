@@ -8,6 +8,7 @@ import { StorageFields } from "./StorageFields";
 import { ParentRoomField } from "./ParentRoomField";
 import { CapacityFields } from "./CapacityFields";
 import RoomAccessFields from "./RoomAccessFields";
+import { RoomSizeFields } from "./RoomSizeFields";
 import { type RoomFormData } from "./RoomFormSchema";
 import { Separator } from "@/components/ui/separator";
 import { CourtroomPhotoUpload } from "./CourtroomPhotoUpload";
@@ -105,7 +106,6 @@ export function RoomFormContent({
     }
   };
 
-
   return (
     <Form {...form}>
       <form onSubmit={handleFormSubmit} className="space-y-6">
@@ -118,6 +118,9 @@ export function RoomFormContent({
             <ParentRoomField form={form} floorId={floorId} currentRoomId={roomId} />
           </>
         )}
+        
+        <Separator />
+        <RoomSizeFields form={form} />
         
         <Separator />
         <CapacityFields form={form} />
@@ -137,8 +140,6 @@ export function RoomFormContent({
         )}
 
         <Separator />
-
-
         
         <div className="flex justify-end gap-2 pt-4">
           <Button

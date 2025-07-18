@@ -5,11 +5,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { InventoryFormInputs, InventoryItem } from "./inventory/types/inventoryTypes";
-import { exportToExcel, parseExcelFile } from "./inventory/excelUtils";
 import { AddInventoryDialog } from "./inventory/AddInventoryDialog";
 import { EditInventoryDialog } from "./inventory/EditInventoryDialog";
 import { InventoryHeader } from "./inventory/components/InventoryHeader";
 import { InventoryTable } from "./inventory/components/InventoryTable";
+import { EnhancedInventoryImportExport } from "./inventory/EnhancedInventoryImportExport";
 
 export function RoomInventory({ roomId }: { roomId: string }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -75,57 +75,17 @@ export function RoomInventory({ roomId }: { roomId: string }) {
     }
   };
 
-  const handleExport = () => {
-    if (!inventory) return;
-    
-    const exportData = inventory.map(item => ({
-      name: item.name,
-      quantity: item.quantity,
-      category: item.category?.name || 'General',
-      description: item.description || '',
-      minimum_quantity: item.minimum_quantity || 0,
-      unit: item.unit || '',
-      location_details: item.location_details || '',
-      notes: item.notes || ''
-    }));
-
-    exportToExcel(exportData, `inventory_${new Date().toISOString().split('T')[0]}`);
-    toast({
-      title: "Success",
-      description: "Inventory exported successfully",
-    });
-  };
-
-  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
+  const handleImportSuccess = async (importedItems: any[]) => {
     try {
-      const data = await parseExcelFile(file);
-      
-      const itemsToImport = data.map(item => ({
-        name: item.name,
-        quantity: item.quantity,
-        description: item.description,
-        minimum_quantity: item.minimum_quantity,
-        unit: item.unit,
-        storage_room_id: roomId,
-        status: 'active' as const,
-        location_details: item.location_details,
-        notes: item.notes
-      }));
-
-      await addBulkItems(itemsToImport);
-
+      await addBulkItems(importedItems);
       toast({
         title: "Success",
-        description: `Imported ${data.length} items successfully.`,
+        description: `Successfully imported ${importedItems.length} items.`,
       });
-      event.target.value = '';
     } catch (error) {
       toast({
-        title: "Import failed",
-        description: error instanceof Error ? error.message : "Failed to import inventory data.",
+        title: "Import Error",
+        description: "Some items failed to import. Please try again.",
         variant: "destructive",
       });
     }
@@ -138,11 +98,17 @@ export function RoomInventory({ roomId }: { roomId: string }) {
   return (
     <Card className="h-full">
       <InventoryHeader
-        onExport={handleExport}
-        onImport={handleImport}
+        onExport={() => {}} // Legacy function - now handled by EnhancedInventoryImportExport
+        onImport={() => {}} // Legacy function - now handled by EnhancedInventoryImportExport
         onAddItem={() => setIsAddDialogOpen(true)}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        customActions={
+          <EnhancedInventoryImportExport
+            inventoryData={inventory || []}
+            onImportSuccess={handleImportSuccess}
+          />
+        }
       />
       <CardContent>
         <ScrollArea className="h-[calc(100vh-12rem)] border rounded-md">
