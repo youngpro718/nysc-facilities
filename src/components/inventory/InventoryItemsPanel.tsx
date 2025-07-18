@@ -133,7 +133,7 @@ export const InventoryItemsPanel = () => {
 
   const getStockStatus = (quantity: number, minimum: number) => {
     if (quantity === 0) return { label: "Out of Stock", color: "bg-red-100 text-red-800" };
-    if (quantity <= minimum) return { label: "Low Stock", color: "bg-orange-100 text-orange-800" };
+    if (quantity < minimum) return { label: "Low Stock", color: "bg-orange-100 text-orange-800" };
     return { label: "In Stock", color: "bg-green-100 text-green-800" };
   };
 

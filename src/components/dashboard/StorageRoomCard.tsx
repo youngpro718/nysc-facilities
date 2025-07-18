@@ -98,7 +98,7 @@ function StorageRoomItem({
   
   const totalItems = items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
   const lowStockItems = items?.filter(item => 
-    item.minimum_quantity && item.quantity <= item.minimum_quantity
+    item.minimum_quantity && item.quantity < item.minimum_quantity
   ).length || 0;
 
   return (

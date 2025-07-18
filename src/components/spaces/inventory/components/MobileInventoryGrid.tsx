@@ -121,10 +121,10 @@ export function MobileInventoryGrid({
                     </Badge>
                   )}
                   <Badge 
-                    variant={item.quantity <= (item.minimum_quantity || 0) ? "destructive" : "default"}
+                    variant={item.quantity < (item.minimum_quantity || 0) ? "destructive" : "default"}
                     className="text-xs"
                   >
-                    {item.quantity <= (item.minimum_quantity || 0) ? "Low Stock" : "In Stock"}
+                    {item.quantity < (item.minimum_quantity || 0) ? "Low Stock" : "In Stock"}
                   </Badge>
                 </div>
 

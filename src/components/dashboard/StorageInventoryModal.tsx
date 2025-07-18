@@ -190,7 +190,7 @@ export function StorageInventoryModal({
                                 Has Photo
                               </Badge>
                             )}
-                            {item.minimum_quantity && item.quantity <= item.minimum_quantity && (
+                            {item.minimum_quantity && item.quantity < item.minimum_quantity && (
                               <Badge variant="destructive" className="text-xs">
                                 Low Stock
                               </Badge>

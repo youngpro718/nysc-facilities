@@ -26,7 +26,7 @@ export function InventoryTable({
 }: InventoryTableProps) {
   const isLowStock = (item: InventoryItem) => {
     return item.minimum_quantity !== undefined && 
-           item.quantity <= (item.minimum_quantity || 0);
+           item.quantity < (item.minimum_quantity || 0);
   };
 
   const getStockStatus = (item: InventoryItem) => {
