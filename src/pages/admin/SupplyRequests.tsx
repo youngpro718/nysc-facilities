@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { FulfillmentWorkflow } from "@/components/supply/FulfillmentWorkflow";
 import { useToast } from "@/hooks/use-toast";
 import { getSupplyRequests, updateSupplyRequestStatus, updateSupplyRequestItems } from "@/services/supabase/supplyRequestService";
 
@@ -78,7 +79,9 @@ const priorityConfig = {
 export default function AdminSupplyRequests() {
   const [requests, setRequests] = useState<SupplyRequestWithUser[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<SupplyRequestWithUser | null>(null);
-  const [actionType, setActionType] = useState<'review' | 'approve' | 'reject' | 'fulfill' | null>(null);
+  const [actionType, setActionType] = useState<'review' | 'approve' | 'reject' | null>(null);
+  const [fulfillmentWorkflowOpen, setFulfillmentWorkflowOpen] = useState(false);
+  const [fulfillmentRequest, setFulfillmentRequest] = useState<SupplyRequestWithUser | null>(null);
   const [notes, setNotes] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterPriority, setFilterPriority] = useState<string>("all");
@@ -125,23 +128,15 @@ export default function AdminSupplyRequests() {
         case 'reject':
           newStatus = 'rejected';
           break;
-        case 'fulfill':
-          newStatus = 'fulfilled';
-          break;
       }
 
       await updateSupplyRequestStatus(selectedRequest.id, newStatus, notes);
 
-      // If approving or fulfilling, update item quantities
-      if ((actionType === 'approve' || actionType === 'fulfill') && Object.keys(itemQuantities).length > 0) {
+      // If approving, update item quantities
+      if (actionType === 'approve' && Object.keys(itemQuantities).length > 0) {
         const itemUpdates = selectedRequest.supply_request_items.map(item => ({
           item_id: item.item_id,
-          quantity_approved: actionType === 'approve' 
-            ? itemQuantities[item.id]?.approved ?? item.quantity_requested
-            : item.quantity_approved,
-          quantity_fulfilled: actionType === 'fulfill'
-            ? itemQuantities[item.id]?.fulfilled ?? item.quantity_approved ?? item.quantity_requested
-            : item.quantity_fulfilled,
+          quantity_approved: itemQuantities[item.id]?.approved ?? item.quantity_requested,
           notes: item.notes,
         }));
 
@@ -190,27 +185,38 @@ export default function AdminSupplyRequests() {
       case 'under_review':
         return ['approve', 'reject'];
       case 'approved':
-        return ['fulfill'];
+        return ['fulfill']; // This will open the fulfillment workflow
       default:
         return [];
     }
   };
 
   const openActionDialog = (request: SupplyRequestWithUser, action: string) => {
+    if (action === 'fulfill') {
+      setFulfillmentRequest(request);
+      setFulfillmentWorkflowOpen(true);
+      return;
+    }
+
     setSelectedRequest(request);
-    setActionType(action as any);
+    setActionType(action as 'review' | 'approve' | 'reject');
     
-    // Initialize item quantities for approval/fulfillment
-    if (action === 'approve' || action === 'fulfill') {
+    // Initialize item quantities for approval
+    if (action === 'approve') {
       const quantities: Record<string, { approved?: number; fulfilled?: number }> = {};
       request.supply_request_items.forEach(item => {
         quantities[item.id] = {
-          approved: action === 'approve' ? item.quantity_requested : item.quantity_approved,
-          fulfilled: action === 'fulfill' ? (item.quantity_approved || item.quantity_requested) : item.quantity_fulfilled,
+          approved: item.quantity_requested,
         };
       });
       setItemQuantities(quantities);
     }
+  };
+
+  const handleFulfillmentSuccess = () => {
+    fetchRequests();
+    setFulfillmentWorkflowOpen(false);
+    setFulfillmentRequest(null);
   };
 
   return (
@@ -458,11 +464,11 @@ export default function AdminSupplyRequests() {
               {selectedRequest?.profiles.first_name} {selectedRequest?.profiles.last_name}?
             </p>
 
-            {/* Item quantities for approve/fulfill actions */}
-            {(actionType === 'approve' || actionType === 'fulfill') && selectedRequest && (
+            {/* Item quantities for approve actions */}
+            {actionType === 'approve' && selectedRequest && (
               <div>
                 <Label className="text-base font-medium">
-                  {actionType === 'approve' ? 'Approve Quantities' : 'Fulfill Quantities'}
+                  Approve Quantities
                 </Label>
                 <div className="space-y-3 mt-2">
                   {selectedRequest.supply_request_items.map((item) => (
@@ -471,9 +477,6 @@ export default function AdminSupplyRequests() {
                         <p className="font-medium">{item.inventory_items.name}</p>
                         <p className="text-sm text-muted-foreground">
                           Requested: {item.quantity_requested} {item.inventory_items.unit || 'units'}
-                          {actionType === 'fulfill' && item.quantity_approved && (
-                            <span className="ml-2">| Approved: {item.quantity_approved}</span>
-                          )}
                           <span className="ml-2">| Available: {item.inventory_items.quantity}</span>
                         </p>
                       </div>
@@ -481,21 +484,15 @@ export default function AdminSupplyRequests() {
                         <Input
                           type="number"
                           min="0"
-                          max={actionType === 'approve' 
-                            ? Math.min(item.quantity_requested, item.inventory_items.quantity)
-                            : (item.quantity_approved || item.quantity_requested)
-                          }
-                          value={actionType === 'approve' 
-                            ? itemQuantities[item.id]?.approved || item.quantity_requested
-                            : itemQuantities[item.id]?.fulfilled || item.quantity_approved || item.quantity_requested
-                          }
+                          max={Math.min(item.quantity_requested, item.inventory_items.quantity)}
+                          value={itemQuantities[item.id]?.approved || item.quantity_requested}
                           onChange={(e) => {
                             const value = parseInt(e.target.value) || 0;
                             setItemQuantities(prev => ({
                               ...prev,
                               [item.id]: {
                                 ...prev[item.id],
-                                [actionType === 'approve' ? 'approved' : 'fulfilled']: value
+                                approved: value
                               }
                             }));
                           }}
@@ -516,8 +513,6 @@ export default function AdminSupplyRequests() {
                 placeholder={
                   actionType === 'reject' 
                     ? "Please provide a reason for rejection..."
-                    : actionType === 'fulfill'
-                    ? "Add any fulfillment notes..."
                     : "Add any additional notes..."
                 }
                 value={notes}
@@ -546,6 +541,17 @@ export default function AdminSupplyRequests() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Fulfillment Workflow Dialog */}
+      <FulfillmentWorkflow
+        request={fulfillmentRequest}
+        isOpen={fulfillmentWorkflowOpen}
+        onClose={() => {
+          setFulfillmentWorkflowOpen(false);
+          setFulfillmentRequest(null);
+        }}
+        onSuccess={handleFulfillmentSuccess}
+      />
     </PageContainer>
   );
 }

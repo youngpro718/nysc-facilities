@@ -7846,6 +7846,65 @@ export type Database = {
         }
         Relationships: []
       }
+      supply_request_fulfillment_log: {
+        Row: {
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          notes: string | null
+          performed_by: string | null
+          request_id: string
+          stage: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          performed_by?: string | null
+          request_id: string
+          stage: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          performed_by?: string | null
+          request_id?: string
+          stage?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supply_request_fulfillment_log_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supply_request_fulfillment_log_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "user_verification_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supply_request_fulfillment_log_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "user_verification_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "supply_request_fulfillment_log_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "supply_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       supply_request_items: {
         Row: {
           created_at: string
@@ -7923,16 +7982,27 @@ export type Database = {
           approval_notes: string | null
           approved_at: string | null
           approved_by: string | null
+          assigned_fulfiller_id: string | null
           created_at: string
           delivery_location: string | null
+          delivery_method: string | null
+          delivery_notes: string | null
           description: string | null
           fulfilled_at: string | null
           fulfilled_by: string | null
+          fulfillment_cost: number | null
           fulfillment_notes: string | null
+          fulfillment_stage: string | null
           id: string
           justification: string
           metadata: Json | null
+          packing_completed_at: string | null
+          packing_started_at: string | null
+          picking_completed_at: string | null
+          picking_started_at: string | null
           priority: string
+          ready_for_delivery_at: string | null
+          recipient_confirmation: string | null
           requested_delivery_date: string | null
           requester_id: string
           status: string
@@ -7943,16 +8013,27 @@ export type Database = {
           approval_notes?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          assigned_fulfiller_id?: string | null
           created_at?: string
           delivery_location?: string | null
+          delivery_method?: string | null
+          delivery_notes?: string | null
           description?: string | null
           fulfilled_at?: string | null
           fulfilled_by?: string | null
+          fulfillment_cost?: number | null
           fulfillment_notes?: string | null
+          fulfillment_stage?: string | null
           id?: string
           justification: string
           metadata?: Json | null
+          packing_completed_at?: string | null
+          packing_started_at?: string | null
+          picking_completed_at?: string | null
+          picking_started_at?: string | null
           priority?: string
+          ready_for_delivery_at?: string | null
+          recipient_confirmation?: string | null
           requested_delivery_date?: string | null
           requester_id: string
           status?: string
@@ -7963,16 +8044,27 @@ export type Database = {
           approval_notes?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          assigned_fulfiller_id?: string | null
           created_at?: string
           delivery_location?: string | null
+          delivery_method?: string | null
+          delivery_notes?: string | null
           description?: string | null
           fulfilled_at?: string | null
           fulfilled_by?: string | null
+          fulfillment_cost?: number | null
           fulfillment_notes?: string | null
+          fulfillment_stage?: string | null
           id?: string
           justification?: string
           metadata?: Json | null
+          packing_completed_at?: string | null
+          packing_started_at?: string | null
+          picking_completed_at?: string | null
+          picking_started_at?: string | null
           priority?: string
+          ready_for_delivery_at?: string | null
+          recipient_confirmation?: string | null
           requested_delivery_date?: string | null
           requester_id?: string
           status?: string
@@ -7997,6 +8089,27 @@ export type Database = {
           {
             foreignKeyName: "fk_supply_requests_requester_id"
             columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "user_verification_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "supply_requests_assigned_fulfiller_id_fkey"
+            columns: ["assigned_fulfiller_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supply_requests_assigned_fulfiller_id_fkey"
+            columns: ["assigned_fulfiller_id"]
+            isOneToOne: false
+            referencedRelation: "user_verification_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supply_requests_assigned_fulfiller_id_fkey"
+            columns: ["assigned_fulfiller_id"]
             isOneToOne: false
             referencedRelation: "user_verification_view"
             referencedColumns: ["profile_id"]
@@ -9982,6 +10095,15 @@ export type Database = {
     Functions: {
       add_admin_user: {
         Args: { email_to_promote: string }
+        Returns: undefined
+      }
+      advance_fulfillment_stage: {
+        Args: {
+          p_request_id: string
+          p_stage: string
+          p_notes?: string
+          p_metadata?: Json
+        }
         Returns: undefined
       }
       advance_key_order_status: {

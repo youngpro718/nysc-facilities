@@ -175,6 +175,39 @@ export async function updateSupplyRequestItems(
   if (error) throw error;
 }
 
+export async function advanceFulfillmentStage(
+  requestId: string,
+  stage: string,
+  notes?: string,
+  metadata?: any
+) {
+  const { error } = await supabase.rpc('advance_fulfillment_stage', {
+    p_request_id: requestId,
+    p_stage: stage,
+    p_notes: notes,
+    p_metadata: metadata || {}
+  });
+  if (error) throw error;
+}
+
+export async function getFulfillmentLog(requestId: string) {
+  const { data, error } = await supabase
+    .from('supply_request_fulfillment_log')
+    .select(`
+      *,
+      profiles!performed_by (
+        first_name,
+        last_name,
+        department
+      )
+    `)
+    .eq('request_id', requestId)
+    .order('created_at', { ascending: true });
+    
+  if (error) throw error;
+  return data;
+}
+
 export async function getInventoryItems() {
   const { data, error } = await supabase
     .from('inventory_items')
