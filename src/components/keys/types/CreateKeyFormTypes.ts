@@ -19,9 +19,9 @@ export const keyFormSchema = z.object({
 }).refine((data) => {
   // For non-passkeys, require floor and door/room based on keyScope
   if (!data.isPasskey) {
-    if (!data.floorId) return false;
-    if (data.keyScope === "door" && !data.doorId) return false;
-    if (data.keyScope === "room" && !data.roomId) return false;
+    if (!data.floorId || data.floorId === "") return false;
+    if (data.keyScope === "door" && (!data.doorId || data.doorId === "")) return false;
+    if (data.keyScope === "room" && (!data.roomId || data.roomId === "")) return false;
   }
   return true;
 }, {

@@ -19,11 +19,11 @@ export function CreateKeyForm({ onSubmit, isSubmitting, onCancel }: CreateKeyFor
       quantity: 1,
       spareKeys: 0,
       keyScope: "door",
-      buildingId: undefined,
-      floorId: undefined,
-      doorId: undefined,
-      roomId: undefined,
-      occupantId: undefined
+      buildingId: "",
+      floorId: "",
+      doorId: "",
+      roomId: "",
+      occupantId: ""
     },
   });
 
