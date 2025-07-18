@@ -75,31 +75,11 @@ export const useRoomAccess = (roomId?: string) => {
       if (roomError) throw roomError;
       if (!room) return null;
 
-      // Get room assignments (primary and secondary occupants)
+      // Use the new safe function to get room assignments with details
       const { data: roomAssignments, error: assignmentsError } = await supabase
-        .from('occupant_room_assignments')
-        .select(`
-          id,
-          assigned_at,
-          is_primary,
-          assignment_type,
-          occupant_id
-        `)
-        .eq('room_id', roomId)
-        .is('expiration_date', null);
+        .rpc('get_room_assignments_with_details', { p_room_id: roomId });
 
       if (assignmentsError) throw assignmentsError;
-
-      // Get occupant details separately
-      const occupantIds = (roomAssignments || []).map(a => a.occupant_id).filter(Boolean);
-      const { data: occupants, error: occupantsError } = occupantIds.length > 0 
-        ? await supabase
-            .from('occupants')
-            .select('id, first_name, last_name, department')
-            .in('id', occupantIds)
-        : { data: [], error: null };
-
-      if (occupantsError) throw occupantsError;
 
       // Get key assignments for this room specifically
       const { data: keyAssignments, error: keyError } = await supabase
@@ -149,31 +129,29 @@ export const useRoomAccess = (roomId?: string) => {
                 locationData.access_scope === 'building' && locationData.building_id === room.floors?.buildings?.id);
       });
 
-      // Create a lookup map for occupants
-      const occupantMap = new Map();
-      (occupants || []).forEach(occ => occupantMap.set(occ.id, occ));
-      
+      // Create a lookup map for key occupants
       const keyOccupantMap = new Map();
       (keyOccupantsResult.data || []).forEach(occ => keyOccupantMap.set(occ.id, occ));
 
+      // Parse occupant names from the function response
       const primary_occupants = (roomAssignments || []).filter(a => a.is_primary).map(a => {
-        const occupant = occupantMap.get(a.occupant_id);
+        const nameParts = (a.occupant_name || '').split(' ');
         return {
-          id: occupant?.id || '',
-          first_name: occupant?.first_name || '',
-          last_name: occupant?.last_name || '',
-          department: occupant?.department,
+          id: a.occupant_id || '',
+          first_name: nameParts[0] || '',
+          last_name: nameParts.slice(1).join(' ') || '',
+          department: null, // Not available from the function
           assigned_at: a.assigned_at
         };
       });
 
       const secondary_occupants = (roomAssignments || []).filter(a => !a.is_primary).map(a => {
-        const occupant = occupantMap.get(a.occupant_id);
+        const nameParts = (a.occupant_name || '').split(' ');
         return {
-          id: occupant?.id || '',
-          first_name: occupant?.first_name || '',
-          last_name: occupant?.last_name || '',
-          department: occupant?.department,
+          id: a.occupant_id || '',
+          first_name: nameParts[0] || '',
+          last_name: nameParts.slice(1).join(' ') || '',
+          department: null, // Not available from the function
           assigned_at: a.assigned_at,
           assignment_type: a.assignment_type || 'secondary'
         };

@@ -4994,6 +4994,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "occupant_room_assignments_occupant_id_fkey"
+            columns: ["occupant_id"]
+            isOneToOne: false
+            referencedRelation: "occupant_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "occupant_room_assignments_occupant_id_fkey"
+            columns: ["occupant_id"]
+            isOneToOne: false
+            referencedRelation: "occupants"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "occupant_room_assignments_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
@@ -9699,6 +9713,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "occupant_room_assignments_occupant_id_fkey"
+            columns: ["occupant_id"]
+            isOneToOne: false
+            referencedRelation: "occupant_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "occupant_room_assignments_occupant_id_fkey"
+            columns: ["occupant_id"]
+            isOneToOne: false
+            referencedRelation: "occupants"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "occupant_room_assignments_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
@@ -10244,6 +10272,21 @@ export type Database = {
           parent_name: string
           parent_room_number: string
           level: number
+        }[]
+      }
+      get_room_assignments_with_details: {
+        Args: { p_room_id?: string }
+        Returns: {
+          assignment_id: string
+          occupant_id: string
+          room_id: string
+          assignment_type: string
+          is_primary: boolean
+          assigned_at: string
+          occupant_name: string
+          room_number: string
+          floor_name: string
+          building_name: string
         }[]
       }
       get_room_size_category: {
