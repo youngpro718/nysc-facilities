@@ -80,39 +80,52 @@ export const useRoomAccess = (roomId?: string) => {
           assigned_at,
           is_primary,
           assignment_type,
-          occupant_id,
-          occupants!fk_occupant_room_assignments_occupant (
-            id,
-            first_name,
-            last_name,
-            department
-          )
+          occupant_id
         `)
-        .eq('room_id', roomId);
+        .eq('room_id', roomId)
+        .is('expiration_date', null);
 
       if (assignmentsError) throw assignmentsError;
 
-      // Simplified key assignments query for now
+      // Get occupant details separately
+      const occupantIds = (roomAssignments || []).map(a => a.occupant_id).filter(Boolean);
+      const { data: occupants, error: occupantsError } = occupantIds.length > 0 
+        ? await supabase
+            .from('occupants')
+            .select('id, first_name, last_name, department')
+            .in('id', occupantIds)
+        : { data: [], error: null };
+
+      if (occupantsError) throw occupantsError;
+
+      // Get key assignments for this room specifically
       const { data: keyAssignments, error: keyError } = await supabase
         .from('key_assignments')
         .select(`
           id,
           assigned_at,
-          keys (
-            id,
-            name,
-            is_passkey
-          ),
-          occupants (
-            id,
-            first_name,
-            last_name,
-            department
-          )
+          key_id,
+          occupant_id
         `)
         .is('returned_at', null);
 
       if (keyError) throw keyError;
+
+      // Get key details and occupant details for key assignments
+      const keyIds = (keyAssignments || []).map(a => a.key_id).filter(Boolean);
+      const keyOccupantIds = (keyAssignments || []).map(a => a.occupant_id).filter(Boolean);
+      
+      const [keysResult, keyOccupantsResult] = await Promise.all([
+        keyIds.length > 0 
+          ? supabase.from('keys').select('id, name, is_passkey, location_data').in('id', keyIds)
+          : { data: [], error: null },
+        keyOccupantIds.length > 0 
+          ? supabase.from('occupants').select('id, first_name, last_name, department').in('id', keyOccupantIds)
+          : { data: [], error: null }
+      ]);
+
+      if (keysResult.error) throw keysResult.error;
+      if (keyOccupantsResult.error) throw keyOccupantsResult.error;
 
       // Get doors on the same floor as this room
       const { data: roomDoors, error: roomDoorsError } = await supabase
@@ -122,43 +135,66 @@ export const useRoomAccess = (roomId?: string) => {
 
       if (roomDoorsError) throw roomDoorsError;
 
-      // Filter key assignments (simplified for now - just passkeys)
-      const relevantKeyAssignments = (keyAssignments || []).filter(assignment => 
-        assignment.keys?.is_passkey
-      );
+      // Filter key assignments that are relevant to this room
+      const relevantKeyAssignments = (keyAssignments || []).filter(assignment => {
+        const key = keysResult.data?.find(k => k.id === assignment.key_id);
+        const locationData = key?.location_data as any;
+        return key?.is_passkey || 
+               (locationData && typeof locationData === 'object' && locationData.room_id === roomId);
+      });
 
-      const primary_occupants = (roomAssignments || []).filter(a => a.is_primary).map(a => ({
-        id: a.occupants?.id || '',
-        first_name: a.occupants?.first_name || '',
-        last_name: a.occupants?.last_name || '',
-        department: a.occupants?.department,
-        assigned_at: a.assigned_at
-      }));
+      // Create a lookup map for occupants
+      const occupantMap = new Map();
+      (occupants || []).forEach(occ => occupantMap.set(occ.id, occ));
+      
+      const keyOccupantMap = new Map();
+      (keyOccupantsResult.data || []).forEach(occ => keyOccupantMap.set(occ.id, occ));
 
-      const secondary_occupants = (roomAssignments || []).filter(a => !a.is_primary).map(a => ({
-        id: a.occupants?.id || '',
-        first_name: a.occupants?.first_name || '',
-        last_name: a.occupants?.last_name || '',
-        department: a.occupants?.department,
-        assigned_at: a.assigned_at,
-        assignment_type: a.assignment_type || 'secondary'
-      }));
+      const primary_occupants = (roomAssignments || []).filter(a => a.is_primary).map(a => {
+        const occupant = occupantMap.get(a.occupant_id);
+        return {
+          id: occupant?.id || '',
+          first_name: occupant?.first_name || '',
+          last_name: occupant?.last_name || '',
+          department: occupant?.department,
+          assigned_at: a.assigned_at
+        };
+      });
 
-      const key_holders = relevantKeyAssignments.map(a => ({
-        id: a.occupants?.id || '',
-        first_name: a.occupants?.first_name || '',
-        last_name: a.occupants?.last_name || '',
-        department: a.occupants?.department,
-        key_name: a.keys?.name || '',
-        assigned_at: a.assigned_at,
-        is_passkey: a.keys?.is_passkey || false
-      }));
+      const secondary_occupants = (roomAssignments || []).filter(a => !a.is_primary).map(a => {
+        const occupant = occupantMap.get(a.occupant_id);
+        return {
+          id: occupant?.id || '',
+          first_name: occupant?.first_name || '',
+          last_name: occupant?.last_name || '',
+          department: occupant?.department,
+          assigned_at: a.assigned_at,
+          assignment_type: a.assignment_type || 'secondary'
+        };
+      });
+
+      const key_holders = relevantKeyAssignments.map(a => {
+        const occupant = keyOccupantMap.get(a.occupant_id);
+        const key = keysResult.data?.find(k => k.id === a.key_id);
+        return {
+          id: occupant?.id || '',
+          first_name: occupant?.first_name || '',
+          last_name: occupant?.last_name || '',
+          department: occupant?.department,
+          key_name: key?.name || '',
+          assigned_at: a.assigned_at,
+          is_passkey: key?.is_passkey || false
+        };
+      });
 
       // Access doors information
       const access_doors = (roomDoors || []).map(door => ({
         id: door.id,
         name: door.name,
-        keys_count: relevantKeyAssignments.filter(ka => ka.keys?.is_passkey).length
+        keys_count: relevantKeyAssignments.filter(ka => {
+          const key = keysResult.data?.find(k => k.id === ka.key_id);
+          return key?.is_passkey;
+        }).length
       }));
 
       const totalOccupants = primary_occupants.length + secondary_occupants.length;
