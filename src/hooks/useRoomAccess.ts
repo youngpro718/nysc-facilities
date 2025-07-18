@@ -60,8 +60,11 @@ export const useRoomAccess = (roomId?: string) => {
           room_number,
           floor_id,
           floors (
+            id,
             name,
+            building_id,
             buildings (
+              id,
               name
             )
           )
@@ -139,8 +142,11 @@ export const useRoomAccess = (roomId?: string) => {
       const relevantKeyAssignments = (keyAssignments || []).filter(assignment => {
         const key = keysResult.data?.find(k => k.id === assignment.key_id);
         const locationData = key?.location_data as any;
-        return key?.is_passkey || 
-               (locationData && typeof locationData === 'object' && locationData.room_id === roomId);
+        
+        // Only include keys that specifically grant access to this room
+        return (locationData && typeof locationData === 'object' && locationData.room_id === roomId) ||
+               (key?.is_passkey && locationData && typeof locationData === 'object' && 
+                locationData.access_scope === 'building' && locationData.building_id === room.floors?.buildings?.id);
       });
 
       // Create a lookup map for occupants
