@@ -27,6 +27,9 @@ export default function Keys() {
           key_scope,
           properties,
           location_data,
+          captain_office_copy,
+          captain_office_assigned_date,
+          captain_office_notes,
           active_assignments,
           returned_assignments,
           lost_count

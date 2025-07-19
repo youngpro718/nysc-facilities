@@ -33,6 +33,9 @@ export function KeyInventorySection() {
             key_scope,
             properties,
             location_data,
+            captain_office_copy,
+            captain_office_assigned_date,
+            captain_office_notes,
             active_assignments,
             returned_assignments,
             lost_count,
@@ -43,6 +46,10 @@ export function KeyInventorySection() {
         // Apply filters
         if (filters.type && filters.type !== 'all_types') {
           query = query.eq('type', filters.type);
+        }
+        
+        if (filters.captainOfficeCopy && filters.captainOfficeCopy !== 'all') {
+          query = query.eq('captain_office_copy', filters.captainOfficeCopy === 'has_copy');
         }
         
         // Apply sorting
@@ -93,6 +100,33 @@ export function KeyInventorySection() {
     }
   };
 
+  const handleToggleCaptainOfficeCopy = async (keyId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('keys')
+        .update({
+          captain_office_copy: !currentStatus,
+          captain_office_assigned_date: !currentStatus ? new Date().toISOString() : null,
+          captain_office_notes: !currentStatus ? 'Assigned to Captain\'s Office' : null
+        })
+        .eq('id', keyId);
+
+      if (error) {
+        toast.error("Error updating captain's office status: " + error.message);
+        return;
+      }
+
+      toast.success(!currentStatus ? 
+        "Key marked as given to Captain's Office" : 
+        "Key removed from Captain's Office"
+      );
+      refetch();
+    } catch (error: any) {
+      console.error("Error updating captain's office status:", error);
+      toast.error("Error updating captain's office status");
+    }
+  };
+
   return (
     <div className="space-y-4">
       <KeyInventoryHeader onAddKey={() => setCreateDialogOpen(true)} />
@@ -105,6 +139,7 @@ export function KeyInventorySection() {
       <KeyInventoryTable 
         keys={keys || []} 
         onDeleteKey={setKeyToDelete}
+        onToggleCaptainOfficeCopy={handleToggleCaptainOfficeCopy}
       />
 
       <CreateKeyDialog 

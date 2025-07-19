@@ -1,5 +1,5 @@
 
-import { Package, AlertCircle, Trash2 } from "lucide-react";
+import { Package, AlertCircle, Trash2, Shield, ShieldOff } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -16,9 +16,10 @@ import { KeyStockAdjustment } from "../../inventory/KeyStockAdjustment";
 interface KeyInventoryTableProps {
   keys: KeyData[];
   onDeleteKey: (key: KeyData) => void;
+  onToggleCaptainOfficeCopy: (keyId: string, currentStatus: boolean) => void;
 }
 
-export function KeyInventoryTable({ keys, onDeleteKey }: KeyInventoryTableProps) {
+export function KeyInventoryTable({ keys, onDeleteKey, onToggleCaptainOfficeCopy }: KeyInventoryTableProps) {
   return (
     <div className="rounded-md border">
       <Table>
@@ -28,6 +29,7 @@ export function KeyInventoryTable({ keys, onDeleteKey }: KeyInventoryTableProps)
             <TableHead>Type</TableHead>
             <TableHead>Total Stock</TableHead>
             <TableHead>Available</TableHead>
+            <TableHead>Captain's Office</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
@@ -58,6 +60,33 @@ export function KeyInventoryTable({ keys, onDeleteKey }: KeyInventoryTableProps)
                 <span className={key.available_quantity === 0 ? "text-destructive font-medium" : ""}>
                   {key.available_quantity}
                 </span>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onToggleCaptainOfficeCopy(key.id, key.captain_office_copy)}
+                    className={key.captain_office_copy ? "text-success" : "text-muted-foreground"}
+                  >
+                    {key.captain_office_copy ? (
+                      <>
+                        <Shield className="h-4 w-4 mr-1" />
+                        Has Copy
+                      </>
+                    ) : (
+                      <>
+                        <ShieldOff className="h-4 w-4 mr-1" />
+                        Missing
+                      </>
+                    )}
+                  </Button>
+                  {key.captain_office_copy && key.captain_office_assigned_date && (
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(key.captain_office_assigned_date).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
               </TableCell>
               <TableCell>
                 <Badge 

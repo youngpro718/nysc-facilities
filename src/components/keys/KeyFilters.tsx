@@ -1,5 +1,5 @@
 
-import { Package2, SortDesc } from "lucide-react";
+import { Package2, SortDesc, Shield } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useState } from "react";
 import type { KeyFilterOptions, KeyType, SortOption } from "./types/KeyTypes";
 
 interface KeyFiltersProps {
@@ -15,10 +16,24 @@ interface KeyFiltersProps {
 }
 
 export function KeyFilters({ onFilterChange, onSortChange }: KeyFiltersProps) {
+  const [currentFilters, setCurrentFilters] = useState<KeyFilterOptions>({});
+
   const handleTypeChange = (value: string) => {
-    onFilterChange({
+    const newFilters = {
+      ...currentFilters,
       type: value as KeyType | "all_types",
-    });
+    };
+    setCurrentFilters(newFilters);
+    onFilterChange(newFilters);
+  };
+
+  const handleCaptainOfficeChange = (value: string) => {
+    const newFilters = {
+      ...currentFilters,
+      captainOfficeCopy: value as "all" | "has_copy" | "missing_copy",
+    };
+    setCurrentFilters(newFilters);
+    onFilterChange(newFilters);
   };
 
   const handleSortChange = (value: string) => {
@@ -42,6 +57,20 @@ export function KeyFilters({ onFilterChange, onSortChange }: KeyFiltersProps) {
             <SelectItem value="physical_key">Physical Keys</SelectItem>
             <SelectItem value="elevator_pass">Elevator Passes</SelectItem>
             <SelectItem value="room_key">Room Keys</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex-1">
+        <Select onValueChange={handleCaptainOfficeChange} defaultValue="all">
+          <SelectTrigger>
+            <Shield className="w-4 h-4 mr-2" />
+            <SelectValue placeholder="Captain's Office" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Keys</SelectItem>
+            <SelectItem value="has_copy">Has Copy</SelectItem>
+            <SelectItem value="missing_copy">Missing Copy</SelectItem>
           </SelectContent>
         </Select>
       </div>

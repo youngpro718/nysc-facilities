@@ -5,6 +5,7 @@ export type ReturnReason = "normal_return" | "lost" | "damaged" | "other";
 
 export interface KeyFilterOptions {
   type?: KeyType | "all_types";
+  captainOfficeCopy?: "all" | "has_copy" | "missing_copy";
 }
 
 export interface SortOption {
@@ -39,6 +40,9 @@ export interface KeyData {
   key_scope: 'door' | 'room' | 'room_door';
   properties: KeyProperties;
   location_data: LocationData;
+  captain_office_copy: boolean;
+  captain_office_assigned_date?: string;
+  captain_office_notes?: string;
   active_assignments: number;
   returned_assignments: number;
   lost_count: number;

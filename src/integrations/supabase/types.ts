@@ -3535,6 +3535,9 @@ export type Database = {
       keys: {
         Row: {
           available_quantity: number
+          captain_office_assigned_date: string | null
+          captain_office_copy: boolean | null
+          captain_office_notes: string | null
           created_at: string | null
           id: string
           is_passkey: boolean | null
@@ -3549,6 +3552,9 @@ export type Database = {
         }
         Insert: {
           available_quantity?: number
+          captain_office_assigned_date?: string | null
+          captain_office_copy?: boolean | null
+          captain_office_notes?: string | null
           created_at?: string | null
           id?: string
           is_passkey?: boolean | null
@@ -3563,6 +3569,9 @@ export type Database = {
         }
         Update: {
           available_quantity?: number
+          captain_office_assigned_date?: string | null
+          captain_office_copy?: boolean | null
+          captain_office_notes?: string | null
           created_at?: string | null
           id?: string
           is_passkey?: boolean | null
@@ -9094,6 +9103,9 @@ export type Database = {
         Row: {
           active_assignments: number | null
           available_quantity: number | null
+          captain_office_assigned_date: string | null
+          captain_office_copy: boolean | null
+          captain_office_notes: string | null
           created_at: string | null
           id: string | null
           is_passkey: boolean | null
