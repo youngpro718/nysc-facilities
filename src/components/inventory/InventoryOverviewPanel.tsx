@@ -46,8 +46,9 @@ export const InventoryOverviewPanel = () => {
       const lowStockResult = await supabase
         .from("inventory_items")
         .select("*")
-        .or("quantity.lt.minimum_quantity,quantity.eq.0")
-        .not("minimum_quantity", "is", null);
+        .not("minimum_quantity", "is", null)
+        .gt("minimum_quantity", 0)
+        .or("quantity.lt.minimum_quantity,quantity.eq.0");
 
       return {
         total_items: itemsResult.count || 0,
@@ -99,8 +100,9 @@ export const InventoryOverviewPanel = () => {
           minimum_quantity,
           inventory_categories!inner(name)
         `)
-        .or("quantity.lt.minimum_quantity,quantity.eq.0")
         .not("minimum_quantity", "is", null)
+        .gt("minimum_quantity", 0)
+        .or("quantity.lt.minimum_quantity,quantity.eq.0")
         .order("quantity", { ascending: true })
         .limit(5);
 
