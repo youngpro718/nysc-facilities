@@ -37,20 +37,26 @@ const parseRoomsData = (roomsData: any): RoomDetails[] => {
 };
 
 // Transform occupant data
-const transformOccupantData = (occupant: any): OccupantQueryResponse => ({
-  id: occupant.id,
-  first_name: occupant.first_name || '',
-  last_name: occupant.last_name || '',
-  email: occupant.email,
-  phone: occupant.phone,
-  department: occupant.department,
-  title: occupant.title,
-  role: occupant.role,
-  status: occupant.status || 'inactive',
-  key_count: Array.isArray(occupant.key_assignments) && occupant.key_assignments.length > 0 && occupant.key_assignments[0]?.count !== undefined ? occupant.key_assignments[0].count : 0,
-  room_count: Array.isArray(occupant.room_assignments) && occupant.room_assignments.length > 0 && occupant.room_assignments[0]?.count !== undefined ? occupant.room_assignments[0].count : 0,
-  rooms: parseRoomsData(occupant.rooms)
-});
+const transformOccupantData = (occupant: any): OccupantQueryResponse => {
+  // Extract rooms from the nested structure
+  const roomAssignments = occupant.occupant_room_assignments || [];
+  const rooms = roomAssignments.map((assignment: any) => assignment.rooms).filter(Boolean);
+  
+  return {
+    id: occupant.id,
+    first_name: occupant.first_name || '',
+    last_name: occupant.last_name || '',
+    email: occupant.email,
+    phone: occupant.phone,
+    department: occupant.department,
+    title: occupant.title,
+    role: occupant.role,
+    status: occupant.status || 'inactive',
+    key_count: Array.isArray(occupant.key_assignments) && occupant.key_assignments.length > 0 && occupant.key_assignments[0]?.count !== undefined ? occupant.key_assignments[0].count : 0,
+    room_count: Array.isArray(occupant.room_assignments) && occupant.room_assignments.length > 0 && occupant.room_assignments[0]?.count !== undefined ? occupant.room_assignments[0].count : 0,
+    rooms: rooms.map(parseRoomData)
+  };
+};
 
 export function useOccupantList() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -70,7 +76,17 @@ export function useOccupantList() {
           *,
           key_assignments:key_assignments(count),
           room_assignments:occupant_room_assignments!fk_occupant(count),
-          rooms
+          occupant_room_assignments!fk_occupant(
+            rooms!occupant_room_assignments_room_id_fkey(
+              id,
+              name,
+              room_number,
+              floors(
+                name,
+                buildings(name)
+              )
+            )
+          )
         `);
 
       if (searchQuery) {
