@@ -45,6 +45,7 @@ const transformOccupantData = (occupant: any): OccupantQueryResponse => {
   console.log('Processing occupant:', occupant.first_name, occupant.last_name);
   console.log('Room assignments:', roomAssignments);
   console.log('Extracted rooms:', rooms);
+  console.log('Key assignments:', occupant.key_assignments);
   
   return {
     id: occupant.id,
@@ -56,8 +57,8 @@ const transformOccupantData = (occupant: any): OccupantQueryResponse => {
     title: occupant.title,
     role: occupant.role,
     status: occupant.status || 'inactive',
-    key_count: Array.isArray(occupant.key_assignments) && occupant.key_assignments.length > 0 && occupant.key_assignments[0]?.count !== undefined ? occupant.key_assignments[0].count : 0,
-    room_count: Array.isArray(occupant.room_assignments) && occupant.room_assignments.length > 0 && occupant.room_assignments[0]?.count !== undefined ? occupant.room_assignments[0].count : 0,
+    key_count: Array.isArray(occupant.key_assignments) ? occupant.key_assignments.length : 0,
+    room_count: Array.isArray(roomAssignments) ? roomAssignments.length : 0,
     rooms: rooms.map(parseRoomData)
   };
 };
@@ -78,9 +79,9 @@ export function useOccupantList() {
         .from('occupants')
         .select(`
           *,
-          key_assignments:key_assignments(count),
-          room_assignments:occupant_room_assignments!fk_occupant(count),
+          key_assignments!inner(id),
           occupant_room_assignments!fk_occupant(
+            id,
             rooms!occupant_room_assignments_room_id_fkey(
               id,
               name,
