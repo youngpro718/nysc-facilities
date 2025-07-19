@@ -10405,6 +10405,10 @@ export type Database = {
         Args: { source_id: string; target_id: string }
         Returns: boolean
       }
+      validate_nycourt_email: {
+        Args: { email_address: string }
+        Returns: boolean
+      }
     }
     Enums: {
       access_level_enum: "none" | "read" | "write" | "admin"

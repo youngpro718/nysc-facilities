@@ -124,6 +124,8 @@ export function OccupantListView() {
           onAssignKeys={() => setIsAssignKeysDialogOpen(true)}
           onAssignRooms={() => setIsAssignRoomsDialogOpen(true)}
           onCreateOccupant={() => setIsCreateDialogOpen(true)}
+          occupants={occupants}
+          onImportSuccess={refetch}
         />
         <OccupantViewToggle view={view} onViewChange={setView} />
       </div>

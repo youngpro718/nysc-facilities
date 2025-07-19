@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Plus, MapPin } from "lucide-react";
 import { OccupantBulkActions } from "./OccupantBulkActions";
+import { OccupantImportExport } from "./OccupantImportExport";
 import { useNavigate } from "react-router-dom";
 interface OccupantHeaderProps {
   selectedOccupants: string[];
@@ -8,13 +9,17 @@ interface OccupantHeaderProps {
   onAssignKeys: () => void;
   onAssignRooms: () => void;
   onCreateOccupant: () => void;
+  occupants?: any[];
+  onImportSuccess?: () => void;
 }
 export function OccupantHeader({
   selectedOccupants,
   onBulkStatusUpdate,
   onAssignKeys,
   onAssignRooms,
-  onCreateOccupant
+  onCreateOccupant,
+  occupants = [],
+  onImportSuccess
 }: OccupantHeaderProps) {
   const navigate = useNavigate();
 
@@ -25,6 +30,10 @@ export function OccupantHeader({
         <p className="text-muted-foreground">Manage occupant profiles and room assignments</p>
       </div>
       <div className="flex items-center gap-3">
+        <OccupantImportExport 
+          occupants={occupants} 
+          onImportSuccess={onImportSuccess} 
+        />
         <Button 
           variant="outline" 
           onClick={() => navigate('/occupants/room-assignments')}
