@@ -32,7 +32,8 @@ export const LowStockPanel = () => {
           inventory_categories(name, color)
         `)
         .not("minimum_quantity", "is", null)
-        .lt("quantity", "minimum_quantity")
+        .gt("minimum_quantity", 0)
+        .filter('quantity', 'lt', 'minimum_quantity')
         .order("quantity", { ascending: true });
 
       if (error) throw error;
