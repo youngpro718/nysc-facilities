@@ -45,6 +45,7 @@ const transformOccupantData = (occupant: any): OccupantQueryResponse => ({
   phone: occupant.phone,
   department: occupant.department,
   title: occupant.title,
+  role: occupant.role,
   status: occupant.status || 'inactive',
   key_count: Array.isArray(occupant.key_assignments) && occupant.key_assignments.length > 0 && occupant.key_assignments[0]?.count !== undefined ? occupant.key_assignments[0].count : 0,
   room_count: Array.isArray(occupant.room_assignments) && occupant.room_assignments.length > 0 && occupant.room_assignments[0]?.count !== undefined ? occupant.room_assignments[0].count : 0,
@@ -64,10 +65,12 @@ export function useOccupantList() {
       console.log('Starting occupants query...');
 
       let query = supabase
-        .from('occupant_details')
-        .select(`*,
+        .from('occupants')
+        .select(`
+          *,
           key_assignments:key_assignments(count),
-          room_assignments:occupant_room_assignments!fk_occupant(count)
+          room_assignments:occupant_room_assignments!fk_occupant(count),
+          rooms
         `);
 
       if (searchQuery) {

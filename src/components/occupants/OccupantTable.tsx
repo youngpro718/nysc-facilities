@@ -54,6 +54,7 @@ export function OccupantTable({
                 <TableHead className="min-w-[180px]">Name</TableHead>
                 <TableHead className="hidden sm:table-cell">Department</TableHead>
                 <TableHead className="hidden md:table-cell">Title</TableHead>
+                <TableHead className="hidden lg:table-cell">Role</TableHead>
                 <TableHead className="min-w-[250px]">Room Assignments</TableHead>
                 <TableHead className="min-w-[120px]">Status</TableHead>
                 <TableHead className="text-center hidden sm:table-cell">Keys</TableHead>
@@ -95,6 +96,13 @@ export function OccupantTable({
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">{occupant.department || "—"}</TableCell>
                   <TableCell className="hidden md:table-cell">{occupant.title || "—"}</TableCell>
+                  <TableCell className="hidden lg:table-cell">
+                    {occupant.role ? (
+                      <Badge variant="outline" className="capitalize">
+                        {occupant.role.replace(/_/g, ' ')}
+                      </Badge>
+                    ) : "—"}
+                  </TableCell>
                   <TableCell className="min-w-[250px]">
                     {occupant.rooms && occupant.rooms.length > 0 ? (
                       <div className="space-y-1">
@@ -156,7 +164,7 @@ export function OccupantTable({
                 </TableRow>,
                 expandedRows.has(occupant.id) && (
                 <TableRow key={`${occupant.id}-details`}>
-                    <TableCell colSpan={9} className="p-0">
+                    <TableCell colSpan={10} className="p-0">
                       <div className="p-4 bg-muted/30">
                         <OccupantDetails occupant={occupant} />
                       </div>
@@ -166,7 +174,7 @@ export function OccupantTable({
               ].filter(Boolean))}
               {(!occupants || occupants.length === 0) && (
                 <TableRow>
-                  <TableCell colSpan={9} className="h-24 text-center">
+                  <TableCell colSpan={10} className="h-24 text-center">
                     No occupants found
                   </TableCell>
                 </TableRow>

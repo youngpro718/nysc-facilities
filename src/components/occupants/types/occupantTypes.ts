@@ -8,6 +8,7 @@ export type Occupant = {
   phone: string | null;
   department: string | null;
   title: string | null;
+  role: string | null;
   status: string;
   employment_type?: string | null;
   supervisor_id?: string | null;
