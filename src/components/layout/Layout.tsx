@@ -3,7 +3,8 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-import { adminNavigation, userNavigation, getNavigationRoutes } from "./config/navigation";
+import { getAdminNavigation, userNavigation, getNavigationRoutes } from "./config/navigation";
+import { useEnabledModules } from "@/hooks/useEnabledModules";
 import { MobileMenu } from "./components/MobileMenu";
 import { DesktopNavigationImproved } from "./components/DesktopNavigationImproved";
 import { Button } from "@/components/ui/button";
@@ -18,10 +19,14 @@ const Layout = () => {
   const isLoginPage = location.pathname === '/login';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isAuthenticated, isAdmin, isLoading, profile, signOut } = useAuth();
+  const { enabledModules } = useEnabledModules();
+
+  // Get filtered navigation based on enabled modules
+  const navigation = isAdmin ? getAdminNavigation(enabledModules) : userNavigation;
 
   const handleNavigationChange = (index: number | null) => {
     if (index === null) return;
-    const routes = getNavigationRoutes(isAdmin);
+    const routes = getNavigationRoutes(isAdmin, enabledModules);
     const route = routes[index];
     if (route) {
       navigate(route);
@@ -92,7 +97,7 @@ const Layout = () => {
                   <MobileMenu
                     isOpen={isMobileMenuOpen}
                     onOpenChange={setIsMobileMenuOpen}
-                    navigation={isAdmin ? adminNavigation : userNavigation}
+                    navigation={navigation}
                     onNavigationChange={handleNavigationChange}
                     onSignOut={signOut}
                   />
@@ -101,7 +106,7 @@ const Layout = () => {
                 {/* Desktop Navigation */}
                 <div className="hidden md:flex items-center gap-4">
                   <DesktopNavigationImproved
-                    navigation={isAdmin ? adminNavigation : userNavigation}
+                    navigation={navigation}
                     onSignOut={signOut}
                   />
                 </div>

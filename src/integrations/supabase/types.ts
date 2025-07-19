@@ -5321,6 +5321,7 @@ export type Database = {
           department_id: string | null
           email: string | null
           emergency_contact: Json | null
+          enabled_modules: Json | null
           feature_flags: Json | null
           first_name: string | null
           id: string
@@ -5355,6 +5356,7 @@ export type Database = {
           department_id?: string | null
           email?: string | null
           emergency_contact?: Json | null
+          enabled_modules?: Json | null
           feature_flags?: Json | null
           first_name?: string | null
           id: string
@@ -5389,6 +5391,7 @@ export type Database = {
           department_id?: string | null
           email?: string | null
           emergency_contact?: Json | null
+          enabled_modules?: Json | null
           feature_flags?: Json | null
           first_name?: string | null
           id?: string

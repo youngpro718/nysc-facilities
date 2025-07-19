@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
+import { ModuleManagement } from "./ModuleManagement";
 
 export function AdminSystemSettings() {
   const [systemSettings, setSystemSettings] = useState({
@@ -52,6 +53,9 @@ export function AdminSystemSettings() {
 
   return (
     <div className="space-y-6">
+      {/* Module Management */}
+      <ModuleManagement />
+
       {/* System Status */}
       <Card>
         <CardHeader>

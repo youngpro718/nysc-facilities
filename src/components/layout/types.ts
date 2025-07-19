@@ -34,4 +34,5 @@ export interface NavigationItem {
   href: string;
   icon: React.ComponentType;
   adminOnly: boolean;
+  moduleKey?: 'spaces' | 'issues' | 'occupants' | 'inventory' | 'supply_requests' | 'keys' | 'lighting' | 'maintenance' | 'court_operations';
 }

@@ -24,6 +24,7 @@ import AdminKeyRequests from "@/pages/admin/KeyRequests";
 import AdminSupplyRequests from "@/pages/admin/SupplyRequests";
 import { MaintenanceDashboard } from "@/pages/MaintenanceDashboard";
 import { CourtOperationsDashboard } from "@/pages/CourtOperationsDashboard";
+import { InventoryDashboard } from "@/pages/InventoryDashboard";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { EnhancedThemeProvider } from "@/providers/EnhancedThemeProvider";
 import { DashboardCustomizationProvider } from "@/providers/DashboardCustomizationProvider";
@@ -31,6 +32,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { useConditionalNotifications } from "@/hooks/useConditionalNotifications";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { ModuleProtectedRoute } from "@/components/ModuleProtectedRoute";
 import ErrorBoundary from "@/components/error/ErrorBoundary";
 import AuthErrorBoundary from "@/components/error/AuthErrorBoundary";
 
@@ -57,32 +59,51 @@ function AppContent() {
         } />
         <Route path="spaces" element={
           <ProtectedRoute requireAdmin>
-            <Spaces />
+            <ModuleProtectedRoute moduleKey="spaces" moduleName="Spaces Management">
+              <Spaces />
+            </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
         <Route path="issues" element={
           <ProtectedRoute requireAdmin>
-            <Issues />
+            <ModuleProtectedRoute moduleKey="issues" moduleName="Issues Management">
+              <Issues />
+            </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
         <Route path="occupants" element={
           <ProtectedRoute requireAdmin>
-            <Occupants />
+            <ModuleProtectedRoute moduleKey="occupants" moduleName="Occupants Management">
+              <Occupants />
+            </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
         <Route path="occupants/room-assignments" element={
           <ProtectedRoute requireAdmin>
-            <RoomAssignments />
+            <ModuleProtectedRoute moduleKey="occupants" moduleName="Occupants Management">
+              <RoomAssignments />
+            </ModuleProtectedRoute>
+          </ProtectedRoute>
+        } />
+        <Route path="inventory" element={
+          <ProtectedRoute requireAdmin>
+            <ModuleProtectedRoute moduleKey="inventory" moduleName="Inventory Management">
+              <InventoryDashboard />
+            </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
         <Route path="keys" element={
           <ProtectedRoute requireAdmin>
-            <Keys />
+            <ModuleProtectedRoute moduleKey="keys" moduleName="Keys Management">
+              <Keys />
+            </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
         <Route path="lighting" element={
           <ProtectedRoute requireAdmin>
-            <Lighting />
+            <ModuleProtectedRoute moduleKey="lighting" moduleName="Lighting Management">
+              <Lighting />
+            </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
         <Route path="admin-profile" element={
@@ -102,17 +123,23 @@ function AppContent() {
         } />
         <Route path="admin/supply-requests" element={
           <ProtectedRoute requireAdmin>
-            <AdminSupplyRequests />
+            <ModuleProtectedRoute moduleKey="supply_requests" moduleName="Supply Requests">
+              <AdminSupplyRequests />
+            </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
         <Route path="maintenance" element={
           <ProtectedRoute requireAdmin>
-            <MaintenanceDashboard />
+            <ModuleProtectedRoute moduleKey="maintenance" moduleName="Maintenance Management">
+              <MaintenanceDashboard />
+            </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
         <Route path="court-operations" element={
           <ProtectedRoute requireAdmin>
-            <CourtOperationsDashboard />
+            <ModuleProtectedRoute moduleKey="court_operations" moduleName="Court Operations">
+              <CourtOperationsDashboard />
+            </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
 
