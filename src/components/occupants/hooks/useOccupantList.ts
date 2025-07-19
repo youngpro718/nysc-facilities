@@ -42,6 +42,10 @@ const transformOccupantData = (occupant: any): OccupantQueryResponse => {
   const roomAssignments = occupant.occupant_room_assignments || [];
   const rooms = roomAssignments.map((assignment: any) => assignment.rooms).filter(Boolean);
   
+  console.log('Processing occupant:', occupant.first_name, occupant.last_name);
+  console.log('Room assignments:', roomAssignments);
+  console.log('Extracted rooms:', rooms);
+  
   return {
     id: occupant.id,
     first_name: occupant.first_name || '',
