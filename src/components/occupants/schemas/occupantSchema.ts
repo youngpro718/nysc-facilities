@@ -19,12 +19,27 @@ export const OccupantStatusChangeReasonEnum = z.enum([
   "other"
 ]);
 
+export const CourtRoleEnum = z.enum([
+  "judge",
+  "court_aide", 
+  "clerk",
+  "sergeant",
+  "court_officer",
+  "bailiff",
+  "court_reporter",
+  "administrative_assistant",
+  "facilities_manager",
+  "admin"
+]);
+
 export const occupantSchema = z.object({
   first_name: z.string().min(1, "First name is required"),
   last_name: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email").nullable(),
   phone: z.string().nullable(),
   department: z.string().nullable(),
+  role: CourtRoleEnum.nullable(),
+  court_position: z.string().nullable(),
   title: z.string().nullable(),
   status: OccupantStatusEnum.default("active"),
   employment_type: z.string().nullable(),
@@ -47,3 +62,4 @@ export const occupantSchema = z.object({
 export type OccupantFormData = z.infer<typeof occupantSchema>;
 export type OccupantStatus = z.infer<typeof OccupantStatusEnum>;
 export type OccupantStatusChangeReason = z.infer<typeof OccupantStatusChangeReasonEnum>;
+export type CourtRole = z.infer<typeof CourtRoleEnum>;

@@ -124,6 +124,8 @@ export function OccupantImportExport({ occupants = [], onImportSuccess }: Occupa
       last_name: "Doe",
       email: "john.doe@nycourt.gov",
       department: "Court Operations",
+      role: "judge",
+      court_position: "Supreme Court Justice",
       title: "Judge",
       employment_type: "full_time",
       access_level: "standard",
@@ -198,19 +200,29 @@ export function OccupantImportExport({ occupants = [], onImportSuccess }: Occupa
           }
 
           // Create occupant record
+          const occupantData: any = {
+            first_name: String(row.first_name).trim(),
+            last_name: String(row.last_name).trim(),
+            email: String(row.email).trim().toLowerCase(),
+            department: row.department ? String(row.department).trim() : null,
+            title: row.title ? String(row.title).trim() : null,
+            employment_type: row.employment_type || 'full_time',
+            access_level: row.access_level || 'standard',
+            phone: row.phone ? String(row.phone).trim() : null,
+            status: row.status || 'active'
+          };
+
+          // Add role and court position if provided
+          if (row.role) {
+            occupantData.role = String(row.role).trim().toLowerCase();
+          }
+          if (row.court_position) {
+            occupantData.court_position = String(row.court_position).trim();
+          }
+
           const { error: occupantError } = await supabase
             .from('occupants')
-            .insert({
-              first_name: String(row.first_name).trim(),
-              last_name: String(row.last_name).trim(),
-              email: String(row.email).trim().toLowerCase(),
-              department: row.department ? String(row.department).trim() : null,
-              title: row.title ? String(row.title).trim() : null,
-              employment_type: row.employment_type || 'full_time',
-              access_level: row.access_level || 'standard',
-              phone: row.phone ? String(row.phone).trim() : null,
-              status: row.status || 'active'
-            });
+            .insert(occupantData);
 
           if (occupantError) throw occupantError;
 

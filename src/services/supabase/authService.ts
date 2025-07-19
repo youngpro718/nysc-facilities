@@ -79,14 +79,16 @@ export async function fetchUserProfile(userId: string) {
   const profile = profileResponse.data;
   const departmentName = profile?.departments?.name;
   const roomAssignments = roomAssignmentsResponse.data || [];
+  const userRole = roleResponse.data?.role;
   
   return {
-    isAdmin: roleResponse.data?.role === 'admin',
+    isAdmin: userRole === 'admin',
+    role: userRole,
     profile: {
       ...profile,
       department: departmentName,
       roomAssignments: roomAssignments
-    } as UserProfile & { department?: string; roomAssignments?: any[] }
+    } as UserProfile & { department?: string; roomAssignments?: any[]; role?: string }
   };
 }
 

@@ -3,8 +3,8 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-import { getAdminNavigation, userNavigation, getNavigationRoutes } from "./config/navigation";
-import { useEnabledModules } from "@/hooks/useEnabledModules";
+import { getRoleBasedNavigation, userNavigation, getNavigationRoutes } from "./config/navigation";
+import { useRolePermissions } from "@/hooks/useRolePermissions";
 import { MobileMenu } from "./components/MobileMenu";
 import { DesktopNavigationImproved } from "./components/DesktopNavigationImproved";
 import { Button } from "@/components/ui/button";
@@ -19,14 +19,16 @@ const Layout = () => {
   const isLoginPage = location.pathname === '/login';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isAuthenticated, isAdmin, isLoading, profile, signOut } = useAuth();
-  const { enabledModules } = useEnabledModules();
+  const { permissions, userRole, loading: permissionsLoading } = useRolePermissions();
 
-  // Get filtered navigation based on enabled modules
-  const navigation = isAdmin ? getAdminNavigation(enabledModules) : userNavigation;
+  // Get filtered navigation based on role permissions
+  const navigation = (userRole && !permissionsLoading) 
+    ? getRoleBasedNavigation(permissions, userRole) 
+    : userNavigation;
 
   const handleNavigationChange = (index: number | null) => {
-    if (index === null) return;
-    const routes = getNavigationRoutes(isAdmin, enabledModules);
+    if (index === null || !userRole) return;
+    const routes = getNavigationRoutes(permissions, userRole);
     const route = routes[index];
     if (route) {
       navigate(route);

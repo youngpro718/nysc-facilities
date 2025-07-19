@@ -17,7 +17,7 @@ import {
   Boxes,
 } from 'lucide-react';
 import { NavigationTab, NavigationItem } from '../types';
-import { EnabledModules } from '@/hooks/useEnabledModules';
+import { RolePermissions, CourtRole } from '@/hooks/useRolePermissions';
 
 // Define the navigation items for admin and user interfaces
 export const navigationItems: NavigationItem[] = [
@@ -115,32 +115,52 @@ export const userNavigationItems: NavigationItem[] = [
   },
 ];
 
-// Create filtered navigation based on enabled modules
-export function getAdminNavigation(enabledModules?: EnabledModules): NavigationTab[] {
+// Create filtered navigation based on role permissions
+export function getRoleBasedNavigation(permissions: RolePermissions, userRole: CourtRole): NavigationTab[] {
   const baseNavigation: NavigationTab[] = [
     { title: 'Dashboard', icon: LayoutDashboard }, // Always visible
   ];
 
-  const moduleNavigation: Array<NavigationTab & { moduleKey?: keyof EnabledModules }> = [
-    { title: 'Spaces', icon: Building2, moduleKey: 'spaces' },
-    { title: 'Issues', icon: AlertTriangle, moduleKey: 'issues' },
-    { title: 'Occupants', icon: Users, moduleKey: 'occupants' },
-    { title: 'Inventory', icon: Boxes, moduleKey: 'inventory' },
-    { title: 'Supply Requests', icon: Package, moduleKey: 'supply_requests' },
-    { title: 'Keys', icon: KeyRound, moduleKey: 'keys' },
-    { title: 'Lighting', icon: Zap, moduleKey: 'lighting' },
-    { title: 'Maintenance', icon: Wrench, moduleKey: 'maintenance' },
-    { title: 'Court Operations', icon: Gavel, moduleKey: 'court_operations' },
+  const featureNavigation: Array<NavigationTab & { feature: keyof RolePermissions }> = [
+    { title: 'Spaces', icon: Building2, feature: 'spaces' },
+    { title: 'Issues', icon: AlertTriangle, feature: 'issues' },
+    { title: 'Occupants', icon: Users, feature: 'occupants' },
+    { title: 'Inventory', icon: Boxes, feature: 'inventory' },
+    { title: 'Supply Requests', icon: Package, feature: 'supply_requests' },
+    { title: 'Keys', icon: KeyRound, feature: 'keys' },
+    { title: 'Lighting', icon: Zap, feature: 'lighting' },
+    { title: 'Maintenance', icon: Wrench, feature: 'maintenance' },
+    { title: 'Court Operations', icon: Gavel, feature: 'court_operations' },
   ];
 
-  // Filter based on enabled modules
-  const filteredModules = moduleNavigation.filter(nav => 
-    !enabledModules || !nav.moduleKey || enabledModules[nav.moduleKey]
+  // Filter based on role permissions (show if user has at least read access)
+  const filteredFeatures = featureNavigation.filter(nav => 
+    permissions[nav.feature] !== null
   );
+
+  const profileTitle = userRole === 'admin' ? 'Admin Profile' : 'Profile';
 
   return [
     ...baseNavigation,
-    ...filteredModules,
+    ...filteredFeatures,
+    { type: "separator" },
+    { title: profileTitle, icon: userRole === 'admin' ? UserCog : User },
+  ];
+}
+
+// Legacy function for backwards compatibility
+export function getAdminNavigation(): NavigationTab[] {
+  return [
+    { title: 'Dashboard', icon: LayoutDashboard },
+    { title: 'Spaces', icon: Building2 },
+    { title: 'Issues', icon: AlertTriangle },
+    { title: 'Occupants', icon: Users },
+    { title: 'Inventory', icon: Boxes },
+    { title: 'Supply Requests', icon: Package },
+    { title: 'Keys', icon: KeyRound },
+    { title: 'Lighting', icon: Zap },
+    { title: 'Maintenance', icon: Wrench },
+    { title: 'Court Operations', icon: Gavel },
     { type: "separator" },
     { title: 'Admin Profile', icon: UserCog },
   ];
@@ -157,55 +177,50 @@ export const userNavigation: NavigationTab[] = [
   { title: 'Profile', icon: User },
 ];
 
-// Helper function to get navigation routes based on admin status and enabled modules
-export const getNavigationRoutes = (isAdmin: boolean, enabledModules?: EnabledModules): string[] => {
-  if (isAdmin) {
-    const baseRoutes = ['/']; // Dashboard always available
-    const moduleRoutes: Array<{ route: string; moduleKey?: keyof EnabledModules }> = [
-      { route: '/spaces', moduleKey: 'spaces' },
-      { route: '/issues', moduleKey: 'issues' },
-      { route: '/occupants', moduleKey: 'occupants' },
-      { route: '/inventory', moduleKey: 'inventory' },
-      { route: '/admin/supply-requests', moduleKey: 'supply_requests' },
-      { route: '/keys', moduleKey: 'keys' },
-      { route: '/lighting', moduleKey: 'lighting' },
-      { route: '/maintenance', moduleKey: 'maintenance' },
-      { route: '/court-operations', moduleKey: 'court_operations' },
-    ];
-
-    // Filter routes based on enabled modules
-    const filteredRoutes = moduleRoutes
-      .filter(route => !enabledModules || !route.moduleKey || enabledModules[route.moduleKey])
-      .map(route => route.route);
-
-    return [
-      ...baseRoutes,
-      ...filteredRoutes,
-      '', // Separator doesn't have a route
-      '/admin-profile',
-    ];
-  }
+// Helper function to get navigation routes based on role permissions
+export const getNavigationRoutes = (permissions: RolePermissions, userRole: CourtRole): string[] => {
+  const baseRoutes = ['/']; // Dashboard always available
   
+  const featureRoutes: Array<{ route: string; feature: keyof RolePermissions }> = [
+    { route: '/spaces', feature: 'spaces' },
+    { route: '/issues', feature: 'issues' },
+    { route: '/occupants', feature: 'occupants' },
+    { route: '/inventory', feature: 'inventory' },
+    { route: '/admin/supply-requests', feature: 'supply_requests' },
+    { route: '/keys', feature: 'keys' },
+    { route: '/lighting', feature: 'lighting' },
+    { route: '/maintenance', feature: 'maintenance' },
+    { route: '/court-operations', feature: 'court_operations' },
+  ];
+
+  // Filter routes based on role permissions (show if user has at least read access)
+  const filteredRoutes = featureRoutes
+    .filter(route => permissions[route.feature] !== null)
+    .map(route => route.route);
+
+  const profileRoute = userRole === 'admin' ? '/admin-profile' : '/profile';
+
   return [
-    '/dashboard', // User dashboard
-    '/my-requests', // My Requests
-    '/my-issues', // My Issues
-    '', // Separator
-    '/profile',
+    ...baseRoutes,
+    ...filteredRoutes,
+    '', // Separator doesn't have a route
+    profileRoute,
   ];
 };
 
-// Function to get filtered navigation items
-export function getFilteredNavigationItems(isAdmin: boolean, enabledModules?: EnabledModules): NavigationItem[] {
+// Function to get filtered navigation items based on role permissions
+export function getFilteredNavigationItems(permissions: RolePermissions, userRole: CourtRole): NavigationItem[] {
   return navigationItems.filter(item => {
-    // Include items that match admin status
-    if (item.adminOnly && !isAdmin) return false;
-    if (!item.adminOnly && isAdmin) return false;
+    // Always show dashboard
+    if (item.href === '/' || item.href === '/dashboard') return true;
     
-    // For admin items, check module preferences
-    if (isAdmin && item.moduleKey && enabledModules) {
-      return enabledModules[item.moduleKey];
+    // Check role permissions for feature-based items
+    if (item.moduleKey && item.moduleKey in permissions) {
+      return permissions[item.moduleKey as keyof RolePermissions] !== null;
     }
+    
+    // For non-module items, use existing admin logic
+    if (item.adminOnly && userRole !== 'admin') return false;
     
     return true;
   });
