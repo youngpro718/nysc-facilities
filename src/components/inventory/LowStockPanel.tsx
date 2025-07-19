@@ -36,13 +36,7 @@ export const LowStockPanel = () => {
         .gt("minimum_quantity", 0)
         .order("quantity", { ascending: true });
 
-      if (error) {
-        console.error("Error fetching low stock items:", error);
-        throw error;
-      }
-
-      console.log("Raw data from database:", data?.length, "items");
-      console.log("Sample items:", data?.slice(0, 3));
+      if (error) throw error;
 
       // Get room data separately for items that have storage_room_id
       const itemsWithRooms = await Promise.all(
@@ -79,10 +73,7 @@ export const LowStockPanel = () => {
       );
 
       // Filter to only include items that are actually below minimum quantity
-      const lowStockFiltered = itemsWithRooms.filter(item => item.quantity < item.minimum_quantity);
-      console.log("Low stock items after filtering:", lowStockFiltered.length);
-      console.log("Low stock items:", lowStockFiltered);
-      return lowStockFiltered;
+      return itemsWithRooms.filter(item => item.quantity < item.minimum_quantity);
     },
   });
 
