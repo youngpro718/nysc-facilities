@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -75,32 +74,53 @@ export function useInventory(roomId: string) {
   });
 
   const bulkCreateMutation = useMutation({
-    mutationFn: async (items: Array<Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>>) => {
+    mutationFn: async (items: Array<any>) => {
       try {
-        const { error } = await supabase
-          .from("inventory_items")
-          .insert(
-            items.map(item => ({
-              ...item,
-              storage_room_id: roomId,
-              status: 'active'
-            }))
-          );
+        console.log('Bulk creating items:', items);
 
-        if (error) throw error;
+        // Transform items to ensure proper field mapping
+        const transformedItems = items.map(item => ({
+          name: item.name,
+          quantity: item.quantity,
+          description: item.description || null,
+          minimum_quantity: item.minimum_quantity || null,
+          unit: item.unit || null,
+          location_details: item.location_details || null,
+          preferred_vendor: item.preferred_vendor || null,
+          notes: item.notes || null,
+          status: item.status || 'active',
+          storage_room_id: roomId,
+          category_id: item.category_id || null, // This is the key fix - use category_id not category
+        }));
+
+        console.log('Transformed items for database:', transformedItems);
+
+        const { data, error } = await supabase
+          .from("inventory_items")
+          .insert(transformedItems)
+          .select();
+
+        if (error) {
+          console.error('Database error during bulk insert:', error);
+          throw error;
+        }
+
+        console.log('Successfully inserted items:', data);
+        return data;
       } catch (error: any) {
         console.error("Error creating items:", error);
         throw new Error(error.message || "Failed to create inventory items");
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["inventory", roomId] });
       toast({
         title: "Success",
-        description: "Items imported successfully",
+        description: `Successfully imported ${data?.length || 0} items`,
       });
     },
     onError: (error: Error) => {
+      console.error('Bulk create mutation error:', error);
       toast({
         title: "Error",
         description: error.message,

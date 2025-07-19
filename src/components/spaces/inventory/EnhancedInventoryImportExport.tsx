@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -8,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
   FileSpreadsheet, 
   Import, 
@@ -15,10 +15,12 @@ import {
   Upload, 
   CheckCircle2, 
   AlertTriangle,
-  FileDown 
+  FileDown,
+  Info
 } from "lucide-react";
 import { InventoryItem } from "./types/inventoryTypes";
 import { exportToExcel, parseExcelFile, generateTemplate } from "./excelUtils";
+import { fetchAllCategories, validateCategoryData, type Category } from "./utils/categoryUtils";
 import { useToast } from "@/hooks/use-toast";
 
 interface EnhancedInventoryImportExportProps {
@@ -38,8 +40,11 @@ export function EnhancedInventoryImportExport({
     successful: number;
     failed: number;
     errors: string[];
-  }>({ successful: 0, failed: 0, errors: [] });
+    categoryIssues: string[];
+  }>({ successful: 0, failed: 0, errors: [], categoryIssues: [] });
   const [isProcessing, setIsProcessing] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
   
   // Export field selection
   const [exportFields, setExportFields] = useState({
@@ -55,6 +60,27 @@ export function EnhancedInventoryImportExport({
     status: true,
     last_updated: true
   });
+
+  // Load categories when dialog opens
+  const handleDialogOpen = async (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (isOpen && categories.length === 0) {
+      setLoadingCategories(true);
+      try {
+        const fetchedCategories = await fetchAllCategories();
+        setCategories(fetchedCategories);
+      } catch (error) {
+        console.error('Error loading categories:', error);
+        toast({
+          title: "Warning",
+          description: "Could not load categories for validation. Import will still work but categories won't be mapped.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoadingCategories(false);
+      }
+    }
+  };
 
   const handleExport = () => {
     if (!inventoryData?.length) {
@@ -130,36 +156,58 @@ export function EnhancedInventoryImportExport({
 
     setIsProcessing(true);
     setImportProgress(0);
-    setImportResults({ successful: 0, failed: 0, errors: [] });
+    setImportResults({ successful: 0, failed: 0, errors: [], categoryIssues: [] });
 
     try {
-      const data = await parseExcelFile(importFile);
+      // Parse Excel file
+      const rawData = await parseExcelFile(importFile);
       
-      if (!Array.isArray(data) || data.length === 0) {
+      if (!Array.isArray(rawData) || rawData.length === 0) {
         throw new Error('No valid data found in file');
       }
+
+      setImportProgress(25);
+
+      // Validate category data
+      const { validItems, invalidItems, missingCategories } = validateCategoryData(rawData, categories);
+      
+      setImportProgress(50);
 
       let successful = 0;
       let failed = 0;
       const errors: string[] = [];
+      const categoryIssues: string[] = [];
       const importedItems: any[] = [];
 
-      for (let i = 0; i < data.length; i++) {
-        const row = data[i];
-        setImportProgress(((i + 1) / data.length) * 100);
+      // Process invalid items first (add to errors)
+      invalidItems.forEach(item => {
+        failed++;
+        errors.push(`Row ${item.rowIndex}: ${item.error}`);
+      });
+
+      // Add category issues summary
+      if (missingCategories.length > 0) {
+        categoryIssues.push(`Missing categories: ${missingCategories.join(', ')}`);
+        categoryIssues.push(`Items with missing categories will not be imported.`);
+      }
+
+      // Process valid items
+      for (let i = 0; i < validItems.length; i++) {
+        const item = validItems[i];
+        setImportProgress(50 + ((i + 1) / validItems.length) * 40);
 
         try {
-          // Process the item (validation is already done in parseExcelFile)
           const processedItem = {
-            name: row.name,
-            quantity: row.quantity,
-            description: row.description,
-            minimum_quantity: row.minimum_quantity,
-            unit: row.unit,
-            location_details: row.location_details,
-            preferred_vendor: row.preferred_vendor,
-            notes: row.notes,
-            status: row.status || 'active'
+            name: item.name,
+            quantity: item.quantity,
+            description: item.description,
+            minimum_quantity: item.minimum_quantity,
+            unit: item.unit,
+            location_details: item.location_details,
+            preferred_vendor: item.preferred_vendor,
+            notes: item.notes,
+            status: item.status || 'active',
+            category_id: item.category_id
           };
 
           importedItems.push(processedItem);
@@ -167,11 +215,11 @@ export function EnhancedInventoryImportExport({
         } catch (error) {
           failed++;
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          errors.push(`Row ${i + 1}: ${errorMessage}`);
+          errors.push(`Row ${item.rowIndex}: ${errorMessage}`);
         }
       }
 
-      setImportResults({ successful, failed, errors });
+      setImportResults({ successful, failed, errors, categoryIssues });
 
       if (successful > 0) {
         onImportSuccess?.(importedItems);
@@ -210,7 +258,7 @@ export function EnhancedInventoryImportExport({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleDialogOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <FileSpreadsheet className="h-4 w-4 mr-2" />
@@ -305,6 +353,34 @@ export function EnhancedInventoryImportExport({
                   </div>
                 )}
 
+                {/* Category Information */}
+                {categories.length > 0 && (
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      <div className="space-y-2">
+                        <p className="font-medium">Available Categories:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {categories.map(category => (
+                            <Badge key={category.id} variant="outline" className="text-xs">
+                              {category.name}
+                            </Badge>
+                          ))}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Use these exact category names in your Excel file, or leave empty for 'General'
+                        </p>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {loadingCategories && (
+                  <div className="text-sm text-muted-foreground">
+                    Loading categories for validation...
+                  </div>
+                )}
+
                 <div className="bg-blue-50 p-3 rounded-lg">
                   <h4 className="font-medium text-sm mb-2">Flexible Field Mapping</h4>
                   <p className="text-xs text-muted-foreground mb-2">
@@ -314,6 +390,7 @@ export function EnhancedInventoryImportExport({
                     <li>• <strong>Name:</strong> "name", "item_name", "item", "product_name"</li>
                     <li>• <strong>Quantity:</strong> "quantity", "qty", "amount", "stock"</li>
                     <li>• <strong>Minimum:</strong> "minimum_quantity", "min_quantity", "minimum", "reorder_level"</li>
+                    <li>• <strong>Category:</strong> "category", "category_name", "type"</li>
                   </ul>
                 </div>
               </CardContent>
@@ -344,6 +421,19 @@ export function EnhancedInventoryImportExport({
                         <AlertTriangle className="h-4 w-4" />
                         {importResults.failed} items failed to import
                       </div>
+                      {importResults.categoryIssues.length > 0 && (
+                        <Alert>
+                          <AlertTriangle className="h-4 w-4" />
+                          <AlertDescription>
+                            <div className="space-y-1">
+                              <p className="font-medium">Category Issues:</p>
+                              {importResults.categoryIssues.map((issue, index) => (
+                                <p key={index} className="text-sm">{issue}</p>
+                              ))}
+                            </div>
+                          </AlertDescription>
+                        </Alert>
+                      )}
                       {importResults.errors.length > 0 && (
                         <div className="text-xs text-muted-foreground max-h-32 overflow-y-auto bg-muted p-2 rounded">
                           {importResults.errors.slice(0, 10).map((error, index) => (

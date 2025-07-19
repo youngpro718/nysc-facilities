@@ -56,18 +56,44 @@ export const exportToExcel = (data: InventoryExcelRow[], fileName: string) => {
 };
 
 export const generateTemplate = () => {
-  const template = [{
-    name: "Sample Item",
-    quantity: 10,
-    minimum_quantity: 5,
-    category: "General",
-    description: "Sample description",
-    unit: "pieces",
-    location_details: "Shelf A1",
-    preferred_vendor: "Sample Vendor",
-    status: "active",
-    notes: "Sample notes"
-  }];
+  const template = [
+    {
+      name: "Sample Office Supplies",
+      quantity: 50,
+      minimum_quantity: 10,
+      category: "Office Supplies",
+      description: "Pens, pencils, and paper supplies",
+      unit: "pieces",
+      location_details: "Supply Room A, Shelf 1",
+      preferred_vendor: "Office Depot",
+      status: "active",
+      notes: "Bulk purchase recommended"
+    },
+    {
+      name: "Computer Monitor",
+      quantity: 5,
+      minimum_quantity: 2,
+      category: "Electronics", 
+      description: "24-inch LED monitors",
+      unit: "units",
+      location_details: "IT Storage Room",
+      preferred_vendor: "Best Buy Business",
+      status: "active",
+      notes: "Dell brand preferred"
+    },
+    {
+      name: "Cleaning Supplies",
+      quantity: 25,
+      minimum_quantity: 5,
+      category: "Maintenance",
+      description: "All-purpose cleaner and disinfectant",
+      unit: "bottles",
+      location_details: "Janitor Closet B",
+      preferred_vendor: "Facility Solutions",
+      status: "active",
+      notes: "Eco-friendly products only"
+    }
+  ];
   
   exportToExcel(template, "inventory_import_template");
 };
@@ -125,7 +151,7 @@ export const parseExcelFile = async (file: File): Promise<InventoryExcelRow[]> =
             name: normalizedRow.name.trim(),
             quantity: quantity,
             minimum_quantity: minimumQuantity,
-            category: normalizedRow.category ? normalizedRow.category.trim() : 'General',
+            category: normalizedRow.category ? normalizedRow.category.trim() : null,
             description: normalizedRow.description ? normalizedRow.description.trim() : null,
             unit: normalizedRow.unit ? normalizedRow.unit.trim() : null,
             location_details: normalizedRow.location_details ? normalizedRow.location_details.trim() : null,
