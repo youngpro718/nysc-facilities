@@ -110,6 +110,7 @@ export function useEnhancedRoomData(roomId: string) {
         room_type: room.room_type as any,
         status: room.status as any,
         storage_type: room.storage_type as any,
+        simplified_storage_type: room.simplified_storage_type as any,
         position: room.position ? (typeof room.position === 'string' ? JSON.parse(room.position) : room.position) : undefined,
         size: room.size ? (typeof room.size === 'string' ? JSON.parse(room.size) : room.size) : undefined,
         courtroom_photos: room.courtroom_photos ? (typeof room.courtroom_photos === 'string' ? JSON.parse(room.courtroom_photos) : room.courtroom_photos) : undefined,

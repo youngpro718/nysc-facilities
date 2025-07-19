@@ -17,7 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { StorageTypeEnum } from "../../rooms/types/roomEnums";
+import { 
+  StorageTypeEnum, 
+  SimplifiedStorageTypeEnum,
+  CapacitySizeCategoryEnum,
+  getSimplifiedStorageTypeDescription,
+  getCapacitySizeDescription,
+  capacitySizeToCubicFeet
+} from "../../rooms/types/roomEnums";
 import { RoomFormData } from "./RoomFormSchema";
 import { useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,14 +36,33 @@ interface StorageFieldsProps {
 
 export function StorageFields({ form }: StorageFieldsProps) {
   const isStorage = form.watch("isStorage");
-  const storageType = form.watch("storageType");
+  const roomType = form.watch("roomType");
+  const capacitySizeCategory = form.watch("capacitySizeCategory");
+
+  // Set original room type when enabling storage for the first time
+  useEffect(() => {
+    if (isStorage && !form.getValues("originalRoomType")) {
+      form.setValue("originalRoomType", roomType, { shouldValidate: false });
+      form.setValue("temporaryStorageUse", true, { shouldValidate: false });
+    }
+  }, [isStorage, roomType, form]);
+
+  // Update storage capacity when size category changes
+  useEffect(() => {
+    if (capacitySizeCategory) {
+      const cubicFeet = capacitySizeToCubicFeet(capacitySizeCategory);
+      form.setValue("storageCapacity", cubicFeet, { shouldValidate: false });
+    }
+  }, [capacitySizeCategory, form]);
 
   // Reset storage fields when isStorage is toggled off
   useEffect(() => {
     if (!isStorage) {
-      form.setValue("storageType", null, { shouldValidate: false });
+      form.setValue("simplifiedStorageType", null, { shouldValidate: false });
+      form.setValue("capacitySizeCategory", null, { shouldValidate: false });
       form.setValue("storageCapacity", null, { shouldValidate: false });
       form.setValue("storageNotes", null, { shouldValidate: false });
+      form.setValue("temporaryStorageUse", false, { shouldValidate: false });
     }
   }, [isStorage, form]);
 
@@ -69,30 +95,47 @@ export function StorageFields({ form }: StorageFieldsProps) {
 
         {isStorage && (
           <>
+            {form.getValues("originalRoomType") && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-800">
+                  <strong>Original Room Type:</strong> {form.getValues("originalRoomType")?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                  <br />
+                  <span className="text-blue-600">This room is temporarily being used as storage.</span>
+                </p>
+              </div>
+            )}
+
             <FormField
               control={form.control}
-              name="storageType"
+              name="simplifiedStorageType"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Storage Type</FormLabel>
+                  <FormLabel>What are you storing?</FormLabel>
                   <Select
                     onValueChange={(value) => field.onChange(value)}
                     value={field.value || ""}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select storage type" />
+                        <SelectValue placeholder="Select what you're storing" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {Object.values(StorageTypeEnum).map((type) => (
+                      {Object.values(SimplifiedStorageTypeEnum).map((type) => (
                         <SelectItem key={type} value={type}>
-                          {type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                          <div>
+                            <div className="font-medium">
+                              {type.charAt(0).toUpperCase() + type.slice(1)}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {getSimplifiedStorageTypeDescription(type)}
+                            </div>
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <FormDescription>Type of storage for inventory management</FormDescription>
+                  <FormDescription>Select the primary type of items stored in this room</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -100,25 +143,47 @@ export function StorageFields({ form }: StorageFieldsProps) {
 
             <FormField
               control={form.control}
-              name="storageCapacity"
+              name="capacitySizeCategory"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Storage Capacity (Optional)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      {...field}
-                      onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
-                      value={field.value ?? ''}
-                      placeholder="Enter capacity value"
-                      min={0}
-                    />
-                  </FormControl>
-                  <FormDescription>Capacity in cubic feet</FormDescription>
+                  <FormLabel>Storage Capacity Size</FormLabel>
+                  <Select
+                    onValueChange={(value) => field.onChange(value)}
+                    value={field.value || ""}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select storage capacity size" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Object.values(CapacitySizeCategoryEnum).map((category) => (
+                        <SelectItem key={category} value={category}>
+                          <div>
+                            <div className="font-medium">
+                              {category.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {getCapacitySizeDescription(category)}
+                            </div>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Choose a size category - this will automatically set the cubic feet capacity
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            {form.getValues("storageCapacity") && (
+              <div className="text-sm text-muted-foreground bg-gray-50 p-3 rounded">
+                <strong>Calculated Capacity:</strong> {form.getValues("storageCapacity")} cubic feet
+              </div>
+            )}
             
             <FormField
               control={form.control}
@@ -130,7 +195,7 @@ export function StorageFields({ form }: StorageFieldsProps) {
                     <Textarea
                       {...field}
                       value={field.value || ''}
-                      placeholder="Add notes about storage requirements or contents"
+                      placeholder="Add notes about storage requirements, contents, or special instructions"
                       className="resize-vertical"
                     />
                   </FormControl>

@@ -1,6 +1,12 @@
 
 import { z } from "zod";
-import { RoomTypeEnum, StatusEnum, StorageTypeEnum } from "../../rooms/types/roomEnums";
+import { 
+  RoomTypeEnum, 
+  StatusEnum, 
+  StorageTypeEnum, 
+  SimplifiedStorageTypeEnum,
+  CapacitySizeCategoryEnum 
+} from "../../rooms/types/roomEnums";
 
 export const ConnectionDirections = [
   "north",
@@ -79,6 +85,7 @@ export const RoomFormSchema = z.object({
   hearingAssistedSpaces: z.number().min(0, "Cannot be negative").optional(),
   isStorage: z.boolean().default(false),
   // Make storage fields properly optional
+  // Legacy storage type (keeping for backward compatibility)
   storageType: z.enum([
     StorageTypeEnum.GENERAL,
     StorageTypeEnum.SECURE,
@@ -86,8 +93,26 @@ export const RoomFormSchema = z.object({
     StorageTypeEnum.HAZARDOUS,
     StorageTypeEnum.ARCHIVE,
   ]).nullable().optional(),
+  // New simplified storage type
+  simplifiedStorageType: z.enum([
+    SimplifiedStorageTypeEnum.FILES,
+    SimplifiedStorageTypeEnum.SUPPLIES,
+    SimplifiedStorageTypeEnum.FURNITURE,
+    SimplifiedStorageTypeEnum.EQUIPMENT,
+    SimplifiedStorageTypeEnum.GENERAL,
+  ]).nullable().optional(),
+  // User-friendly capacity size category
+  capacitySizeCategory: z.enum([
+    CapacitySizeCategoryEnum.SMALL,
+    CapacitySizeCategoryEnum.MEDIUM,
+    CapacitySizeCategoryEnum.LARGE,
+    CapacitySizeCategoryEnum.EXTRA_LARGE,
+  ]).nullable().optional(),
   storageCapacity: z.number().nullable().optional(),
   storageNotes: z.string().nullable().optional(),
+  // Original room type tracking for temporary storage
+  originalRoomType: z.string().nullable().optional(),
+  temporaryStorageUse: z.boolean().default(false),
   // Make parentRoomId properly optional
   parentRoomId: z.string().nullable().optional(),
   connections: z.array(RoomConnectionSchema).optional(),

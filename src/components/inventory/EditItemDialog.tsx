@@ -107,8 +107,8 @@ export const EditItemDialog = ({ open, onOpenChange, item }: EditItemDialogProps
     queryFn: async () => {
       const { data, error } = await supabase
         .from("rooms")
-        .select("id, name, room_number")
-        .or("name.ilike.%storage%,room_number.ilike.%storage%")
+        .select("id, name, room_number, original_room_type, temporary_storage_use")
+        .eq("is_storage", true)
         .order("room_number");
       if (error) throw error;
       return data as StorageRoom[];

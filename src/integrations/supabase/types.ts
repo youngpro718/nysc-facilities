@@ -7239,6 +7239,7 @@ export type Database = {
       rooms: {
         Row: {
           capacity: number | null
+          capacity_size_category: string | null
           courtroom_photos: Json | null
           created_at: string | null
           current_function: string | null
@@ -7253,6 +7254,7 @@ export type Database = {
           maintenance_history: Json[] | null
           name: string
           next_maintenance_date: string | null
+          original_room_type: string | null
           parent_room_id: string | null
           passkey_enabled: boolean | null
           phone_number: string | null
@@ -7261,15 +7263,20 @@ export type Database = {
           room_number: string | null
           room_type: Database["public"]["Enums"]["room_type_enum"]
           rotation: number | null
+          simplified_storage_type:
+            | Database["public"]["Enums"]["simplified_storage_type_enum"]
+            | null
           size: Json | null
           status: Database["public"]["Enums"]["status_enum"] | null
           storage_capacity: number | null
           storage_notes: string | null
           storage_type: string | null
+          temporary_storage_use: boolean | null
           updated_at: string | null
         }
         Insert: {
           capacity?: number | null
+          capacity_size_category?: string | null
           courtroom_photos?: Json | null
           created_at?: string | null
           current_function?: string | null
@@ -7284,6 +7291,7 @@ export type Database = {
           maintenance_history?: Json[] | null
           name: string
           next_maintenance_date?: string | null
+          original_room_type?: string | null
           parent_room_id?: string | null
           passkey_enabled?: boolean | null
           phone_number?: string | null
@@ -7292,15 +7300,20 @@ export type Database = {
           room_number?: string | null
           room_type?: Database["public"]["Enums"]["room_type_enum"]
           rotation?: number | null
+          simplified_storage_type?:
+            | Database["public"]["Enums"]["simplified_storage_type_enum"]
+            | null
           size?: Json | null
           status?: Database["public"]["Enums"]["status_enum"] | null
           storage_capacity?: number | null
           storage_notes?: string | null
           storage_type?: string | null
+          temporary_storage_use?: boolean | null
           updated_at?: string | null
         }
         Update: {
           capacity?: number | null
+          capacity_size_category?: string | null
           courtroom_photos?: Json | null
           created_at?: string | null
           current_function?: string | null
@@ -7315,6 +7328,7 @@ export type Database = {
           maintenance_history?: Json[] | null
           name?: string
           next_maintenance_date?: string | null
+          original_room_type?: string | null
           parent_room_id?: string | null
           passkey_enabled?: boolean | null
           phone_number?: string | null
@@ -7323,11 +7337,15 @@ export type Database = {
           room_number?: string | null
           room_type?: Database["public"]["Enums"]["room_type_enum"]
           rotation?: number | null
+          simplified_storage_type?:
+            | Database["public"]["Enums"]["simplified_storage_type_enum"]
+            | null
           size?: Json | null
           status?: Database["public"]["Enums"]["status_enum"] | null
           storage_capacity?: number | null
           storage_notes?: string | null
           storage_type?: string | null
+          temporary_storage_use?: boolean | null
           updated_at?: string | null
         }
         Relationships: [
@@ -10528,6 +10546,12 @@ export type Database = {
         | "conference"
         | "chamber"
       security_level_enum: "standard" | "restricted" | "high_security"
+      simplified_storage_type_enum:
+        | "files"
+        | "supplies"
+        | "furniture"
+        | "equipment"
+        | "general"
       standardized_issue_type:
         | "ACCESS_REQUEST"
         | "BUILDING_SYSTEMS"
@@ -10851,6 +10875,13 @@ export const Constants = {
         "chamber",
       ],
       security_level_enum: ["standard", "restricted", "high_security"],
+      simplified_storage_type_enum: [
+        "files",
+        "supplies",
+        "furniture",
+        "equipment",
+        "general",
+      ],
       standardized_issue_type: [
         "ACCESS_REQUEST",
         "BUILDING_SYSTEMS",

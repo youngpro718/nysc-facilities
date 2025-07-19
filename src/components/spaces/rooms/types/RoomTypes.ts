@@ -1,8 +1,17 @@
 
-import { StatusEnum, RoomTypeEnum, StorageTypeEnum, roomTypeToString, storageTypeToString } from "./roomEnums";
+import { 
+  StatusEnum, 
+  RoomTypeEnum, 
+  StorageTypeEnum, 
+  SimplifiedStorageTypeEnum,
+  roomTypeToString, 
+  storageTypeToString,
+  simplifiedStorageTypeToString 
+} from "./roomEnums";
 
 export type RoomType = RoomTypeEnum;
 export type StorageType = StorageTypeEnum;
+export type SimplifiedStorageType = SimplifiedStorageTypeEnum;
 
 // Helper functions to convert between enum and string types
 export const getRoomTypeString = (type: RoomTypeEnum): string => roomTypeToString(type);
@@ -41,8 +50,12 @@ export interface Room {
   phone_number?: string | null;
   is_storage: boolean;
   storage_type?: StorageType | null;
+  simplified_storage_type?: SimplifiedStorageType | null;
+  capacity_size_category?: string | null;
   storage_capacity?: number | null;
   storage_notes?: string | null;
+  original_room_type?: string | null;
+  temporary_storage_use?: boolean;
   parent_room_id?: string | null;
   current_function?: string | null;
   floor_id: string;
