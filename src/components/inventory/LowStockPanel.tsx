@@ -25,6 +25,7 @@ export const LowStockPanel = () => {
   const { data: lowStockItems, isLoading } = useQuery({
     queryKey: ["low-stock-items"],
     queryFn: async (): Promise<LowStockItem[]> => {
+      // Get all items with minimum quantity set and filter in memory
       const { data, error } = await supabase
         .from("inventory_items")
         .select(`
@@ -33,7 +34,6 @@ export const LowStockPanel = () => {
         `)
         .not("minimum_quantity", "is", null)
         .gt("minimum_quantity", 0)
-        .filter('quantity', 'lt', 'minimum_quantity')
         .order("quantity", { ascending: true });
 
       if (error) throw error;
@@ -72,7 +72,8 @@ export const LowStockPanel = () => {
         })
       );
 
-      return itemsWithRooms;
+      // Filter to only include items that are actually below minimum quantity
+      return itemsWithRooms.filter(item => item.quantity < item.minimum_quantity);
     },
   });
 
