@@ -150,7 +150,7 @@ export function FloorPlanView() {
   };
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col">
+    <div className="h-full flex flex-col">
       {/* Top Bar with Controls */}
       <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
         <div className="flex items-center justify-between px-4 h-14">

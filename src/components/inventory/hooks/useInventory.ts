@@ -70,6 +70,11 @@ export function useInventory({ roomId, enabled = true }: UseInventoryOptions = {
       }
     },
     enabled,
+    staleTime: 4 * 60 * 1000, // 4 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    retry: 2,
   });
 
   const createMutation = useMutation({

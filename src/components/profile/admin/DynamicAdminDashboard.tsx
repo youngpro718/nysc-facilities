@@ -23,7 +23,7 @@ interface SystemStats {
 }
 
 export function DynamicAdminDashboard() {
-  const { getActiveLayout } = useDashboardCustomization();
+  const { getActiveLayout, activeLayoutId } = useDashboardCustomization();
   const [stats, setStats] = useState<SystemStats>({
     totalUsers: 0,
     pendingVerifications: 0,
@@ -40,6 +40,11 @@ export function DynamicAdminDashboard() {
   useEffect(() => {
     loadStats();
   }, []);
+
+  // Force re-render when layout changes
+  useEffect(() => {
+    // This effect will run whenever activeLayoutId changes, causing a re-render
+  }, [activeLayoutId]);
 
   const loadStats = async () => {
     try {

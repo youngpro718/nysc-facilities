@@ -5,6 +5,7 @@ import { InventoryItemsPanel } from "@/components/inventory/InventoryItemsPanel"
 import { InventoryCategoriesPanel } from "@/components/inventory/InventoryCategoriesPanel";
 import { InventoryTransactionsPanel } from "@/components/inventory/InventoryTransactionsPanel";
 import { LowStockPanel } from "@/components/inventory/LowStockPanel";
+import { InventoryAuditsPanel } from "@/components/inventory/InventoryAuditsPanel";
 import { Button } from "@/components/ui/button";
 import { Package, Plus, TrendingDown, History, Folder, BarChart3 } from "lucide-react";
 
@@ -77,10 +78,7 @@ export const InventoryDashboard = () => {
         </TabsContent>
 
         <TabsContent value="audits" className="space-y-4">
-          <div className="text-center py-8 text-muted-foreground">
-            <History className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>Audit functionality coming soon</p>
-          </div>
+          <InventoryAuditsPanel />
         </TabsContent>
       </Tabs>
     </div>

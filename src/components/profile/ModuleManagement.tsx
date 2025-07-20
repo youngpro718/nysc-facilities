@@ -15,7 +15,7 @@ import {
   Boxes,
   Settings2
 } from "lucide-react";
-import { useEnabledModules } from "@/hooks/useEnabledModules";
+import { useSystemSettings } from "@/hooks/admin/useSystemSettings";
 
 const MODULE_CONFIG = [
   {
@@ -75,17 +75,17 @@ const MODULE_CONFIG = [
 ];
 
 export function ModuleManagement() {
-  const { enabledModules, loading, updateEnabledModules, resetToDefaults } = useEnabledModules();
+  const { modules, toggleModule, isTogglingModule, modulesLoading } = useSystemSettings();
 
-  const handleModuleToggle = (moduleKey: keyof typeof enabledModules, enabled: boolean) => {
-    updateEnabledModules({ [moduleKey]: enabled });
+  const handleModuleToggle = (moduleId: string, enabled: boolean) => {
+    toggleModule({ moduleId, enabled });
   };
 
   const getActiveModulesCount = () => {
-    return Object.values(enabledModules).filter(Boolean).length;
+    return modules.filter(module => module.enabled).length;
   };
 
-  if (loading) {
+  if (modulesLoading) {
     return (
       <Card>
         <CardHeader>
@@ -113,27 +113,28 @@ export function ModuleManagement() {
         </CardDescription>
         <div className="flex items-center gap-2 mt-2">
           <Badge variant="outline">
-            {getActiveModulesCount()}/{MODULE_CONFIG.length} modules enabled
+            {getActiveModulesCount()}/{modules.length} modules enabled
           </Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid gap-4">
-          {MODULE_CONFIG.map((module) => {
-            const Icon = module.icon;
-            const isEnabled = enabledModules[module.key];
+          {modules.map((module) => {
+            // Find matching config for icon
+            const config = MODULE_CONFIG.find(c => c.key === module.id);
+            const Icon = config?.icon || Settings2;
             
             return (
-              <div key={module.key} className="flex items-center justify-between p-4 border rounded-lg">
+              <div key={module.id} className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-md ${isEnabled ? 'bg-primary/10' : 'bg-muted'}`}>
-                    <Icon className={`h-4 w-4 ${isEnabled ? 'text-primary' : 'text-muted-foreground'}`} />
+                  <div className={`p-2 rounded-md ${module.enabled ? 'bg-primary/10' : 'bg-muted'}`}>
+                    <Icon className={`h-4 w-4 ${module.enabled ? 'text-primary' : 'text-muted-foreground'}`} />
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <Label className="text-sm font-medium">{module.title}</Label>
-                      <Badge variant={isEnabled ? "default" : "secondary"} className="text-xs">
-                        {isEnabled ? "Enabled" : "Disabled"}
+                      <Label className="text-sm font-medium">{module.name}</Label>
+                      <Badge variant={module.enabled ? "default" : "secondary"} className="text-xs">
+                        {module.enabled ? "Enabled" : "Disabled"}
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
@@ -142,24 +143,22 @@ export function ModuleManagement() {
                   </div>
                 </div>
                 <Switch
-                  checked={isEnabled}
-                  onCheckedChange={(checked) => handleModuleToggle(module.key, checked)}
+                  checked={module.enabled}
+                  onCheckedChange={(checked) => handleModuleToggle(module.id, checked)}
+                  disabled={isTogglingModule}
                 />
               </div>
             );
           })}
         </div>
 
-        <div className="flex items-center justify-between pt-4 border-t">
+        <div className="pt-4 border-t">
           <div className="space-y-0.5">
             <p className="font-medium">Module Preferences</p>
             <p className="text-sm text-muted-foreground">
               Changes are saved automatically and take effect immediately
             </p>
           </div>
-          <Button variant="outline" onClick={resetToDefaults}>
-            Reset to Defaults
-          </Button>
         </div>
       </CardContent>
     </Card>

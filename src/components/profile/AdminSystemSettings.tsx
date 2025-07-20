@@ -23,10 +23,19 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
 import { ModuleManagement } from "./ModuleManagement";
+import { useSystemSettings } from "@/hooks/admin/useSystemSettings";
 
 export function AdminSystemSettings() {
+  const { 
+    systemStats,
+    systemStatus,
+    modules,
+    toggleModule,
+    isTogglingModule 
+  } = useSystemSettings();
+
   const [systemSettings, setSystemSettings] = useState({
-    maintenanceMode: false,
+    maintenanceMode: systemStatus?.maintenance === 'active',
     autoBackups: true,
     userRegistration: true,
     emailNotifications: true,
@@ -35,9 +44,9 @@ export function AdminSystemSettings() {
     maxFileSize: "10",
     backupRetention: "30",
     logLevel: "info",
-    systemName: "Facility Management System",
-    adminEmail: "admin@facility.com",
-    welcomeMessage: "Welcome to the Facility Management System"
+    systemName: "NYSC Facilities Management System",
+    adminEmail: "admin@nycourts.gov",
+    welcomeMessage: "Welcome to the NYSC Facilities Management System"
   });
 
   const updateSetting = (key: string, value: any) => {

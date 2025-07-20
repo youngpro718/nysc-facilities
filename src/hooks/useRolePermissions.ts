@@ -26,6 +26,7 @@ export interface RolePermissions {
   lighting: PermissionLevel | null;
   maintenance: PermissionLevel | null;
   court_operations: PermissionLevel | null;
+  operations: PermissionLevel | null;
   dashboard: PermissionLevel | null;
 }
 
@@ -41,6 +42,7 @@ export function useRolePermissions() {
     lighting: null,
     maintenance: null,
     court_operations: null,
+    operations: null,
     dashboard: null,
   });
   const [loading, setLoading] = useState(true);
@@ -78,6 +80,7 @@ export function useRolePermissions() {
           lighting: null,
           maintenance: null,
           court_operations: null,
+          operations: 'write',
           dashboard: 'read',
         },
         court_aide: {
@@ -90,6 +93,7 @@ export function useRolePermissions() {
           lighting: null,
           maintenance: null,
           court_operations: null,
+          operations: 'write',
           dashboard: 'read',
         },
         clerk: {
@@ -102,6 +106,7 @@ export function useRolePermissions() {
           lighting: null,
           maintenance: null,
           court_operations: null,
+          operations: 'write',
           dashboard: 'read',
         },
         sergeant: {
@@ -114,6 +119,7 @@ export function useRolePermissions() {
           lighting: null,
           maintenance: null,
           court_operations: null,
+          operations: 'admin',
           dashboard: 'read',
         },
         court_officer: {
@@ -126,6 +132,7 @@ export function useRolePermissions() {
           lighting: null,
           maintenance: null,
           court_operations: null,
+          operations: 'write',
           dashboard: 'read',
         },
         bailiff: {
@@ -138,6 +145,7 @@ export function useRolePermissions() {
           lighting: null,
           maintenance: null,
           court_operations: null,
+          operations: 'write',
           dashboard: 'read',
         },
         court_reporter: {
@@ -150,6 +158,7 @@ export function useRolePermissions() {
           lighting: null,
           maintenance: null,
           court_operations: null,
+          operations: 'write',
           dashboard: 'read',
         },
         administrative_assistant: {
@@ -162,6 +171,7 @@ export function useRolePermissions() {
           lighting: null,
           maintenance: null,
           court_operations: null,
+          operations: 'write',
           dashboard: 'read',
         },
         facilities_manager: {
@@ -174,6 +184,7 @@ export function useRolePermissions() {
           lighting: 'admin',
           maintenance: 'admin',
           court_operations: null,
+          operations: 'admin',
           dashboard: 'admin',
         },
         admin: {
@@ -186,6 +197,7 @@ export function useRolePermissions() {
           lighting: 'admin',
           maintenance: 'admin',
           court_operations: 'admin',
+          operations: 'admin',
           dashboard: 'admin',
         },
       };
@@ -200,6 +212,7 @@ export function useRolePermissions() {
         lighting: null,
         maintenance: null,
         court_operations: null,
+        operations: null,
         dashboard: null,
       });
     } catch (error) {

@@ -212,13 +212,22 @@ export async function getInventoryItems() {
   const { data, error } = await supabase
     .from('inventory_items')
     .select(`
-      *,
+      id,
+      name,
+      description,
+      quantity,
+      minimum_quantity,
+      unit,
+      location_details,
+      status,
+      category_id,
+      created_at,
+      updated_at,
       inventory_categories (
         name,
         color
       )
     `)
-    .gt('quantity', 0)
     .order('name');
 
   if (error) throw error;

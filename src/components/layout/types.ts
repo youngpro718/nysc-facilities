@@ -32,7 +32,8 @@ export type NavigationTab = Tab | Separator;
 export interface NavigationItem {
   title: string;
   href: string;
-  icon: React.ComponentType;
+  icon: LucideIcon;
   adminOnly: boolean;
-  moduleKey?: 'spaces' | 'issues' | 'occupants' | 'inventory' | 'supply_requests' | 'keys' | 'lighting' | 'maintenance' | 'court_operations';
+  moduleKey?: 'spaces' | 'issues' | 'occupants' | 'inventory' | 'supply_requests' | 'keys' | 'lighting' | 'maintenance' | 'court_operations' | 'analytics' | 'operations';
+  children?: NavigationItem[];
 }

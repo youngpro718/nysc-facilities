@@ -6,6 +6,7 @@ import LoginPage from "@/pages/LoginPage";
 import NotFound from "@/pages/NotFound";
 import Spaces from "@/pages/Spaces";
 import Issues from "@/pages/Issues";
+import Operations from "@/pages/Operations";
 import Occupants from "@/pages/Occupants";
 import RoomAssignments from "@/pages/RoomAssignments";
 import Keys from "@/pages/Keys";
@@ -15,6 +16,7 @@ import UserDashboard from "@/pages/UserDashboard";
 import MyRequests from "@/pages/MyRequests";
 import MyIssues from "@/pages/MyIssues";
 import AdminProfile from "@/pages/AdminProfile";
+import SystemSettings from "@/pages/SystemSettings";
 import VerificationPending from "@/pages/VerificationPending";
 import AccessManagement from "@/pages/AccessManagement";
 import ThemeSettings from "@/pages/settings/ThemeSettings";
@@ -27,7 +29,7 @@ import { CourtOperationsDashboard } from "@/pages/CourtOperationsDashboard";
 import { InventoryDashboard } from "@/pages/InventoryDashboard";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { EnhancedThemeProvider } from "@/providers/EnhancedThemeProvider";
-import { DashboardCustomizationProvider } from "@/providers/DashboardCustomizationProvider";
+import SimpleDashboardProvider from "@/providers/SimpleDashboardProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { useConditionalNotifications } from "@/hooks/useConditionalNotifications";
 import { AuthProvider } from "@/hooks/useAuth";
@@ -57,17 +59,24 @@ function AppContent() {
             <AdminDashboard />
           </ProtectedRoute>
         } />
-        <Route path="spaces" element={
+        <Route path="/spaces" element={
           <ProtectedRoute requireAdmin>
             <ModuleProtectedRoute moduleKey="spaces" moduleName="Spaces Management">
               <Spaces />
             </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
-        <Route path="issues" element={
+        <Route path="/issues" element={
           <ProtectedRoute requireAdmin>
             <ModuleProtectedRoute moduleKey="issues" moduleName="Issues Management">
               <Issues />
+            </ModuleProtectedRoute>
+          </ProtectedRoute>
+        } />
+        <Route path="/operations" element={
+          <ProtectedRoute requireAdmin>
+            <ModuleProtectedRoute moduleKey="operations" moduleName="Operations Management">
+              <Operations />
             </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
@@ -111,6 +120,11 @@ function AppContent() {
             <AdminProfile />
           </ProtectedRoute>
         } />
+        <Route path="system-settings" element={
+          <ProtectedRoute requireAdmin>
+            <SystemSettings />
+          </ProtectedRoute>
+        } />
         <Route path="access-management" element={
           <ProtectedRoute requireAdmin>
             <AccessManagement />
@@ -142,6 +156,7 @@ function AppContent() {
             </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
+
 
         {/* Settings Routes */}
         <Route path="settings/theme" element={
@@ -205,7 +220,7 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <EnhancedThemeProvider>
-            <DashboardCustomizationProvider>
+            <SimpleDashboardProvider>
               <BrowserRouter>
                 <AuthErrorBoundary onError={(error) => console.error('App: Auth error caught:', error)}>
                   <AuthProvider>
@@ -216,7 +231,7 @@ function App() {
                 </AuthErrorBoundary>
               </BrowserRouter>
               <Toaster />
-            </DashboardCustomizationProvider>
+            </SimpleDashboardProvider>
           </EnhancedThemeProvider>
         </ThemeProvider>
       </QueryClientProvider>

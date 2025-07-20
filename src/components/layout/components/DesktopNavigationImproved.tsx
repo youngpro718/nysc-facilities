@@ -23,6 +23,7 @@ export const DesktopNavigationImproved = ({
     const pathMap: Record<string, string> = {
       'Dashboard': isAdmin ? '/' : '/dashboard',
       'Spaces': '/spaces',
+      'Operations': '/operations',
       'Issues': '/issues',
       'Occupants': '/occupants',
       'Inventory': '/inventory',
@@ -111,6 +112,7 @@ function getNavigationPath(title: string, isAdmin?: boolean): string {
   const pathMap: Record<string, string> = {
     'Dashboard': isAdmin ? '/' : '/dashboard',
     'Spaces': '/spaces',
+    'Operations': '/operations',
     'Issues': '/issues',
     'Occupants': '/occupants',
     'Inventory': '/inventory',

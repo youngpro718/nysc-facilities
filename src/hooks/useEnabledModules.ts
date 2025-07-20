@@ -12,6 +12,7 @@ export interface EnabledModules {
   lighting: boolean;
   maintenance: boolean;
   court_operations: boolean;
+  operations: boolean;
 }
 
 const DEFAULT_MODULES: EnabledModules = {
@@ -24,6 +25,7 @@ const DEFAULT_MODULES: EnabledModules = {
   lighting: true,
   maintenance: true,
   court_operations: true,
+  operations: true,
 };
 
 export function useEnabledModules() {

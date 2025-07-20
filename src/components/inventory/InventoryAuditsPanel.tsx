@@ -1,0 +1,385 @@
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Search,
+  Calendar,
+  User,
+  Package,
+  TrendingUp,
+  TrendingDown,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Filter,
+  Download,
+  Eye
+} from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
+
+interface InventoryTransaction {
+  id: string;
+  transaction_type: 'addition' | 'removal' | 'adjustment' | 'audit';
+  quantity: number;
+  previous_quantity: number;
+  new_quantity: number;
+  reason: string;
+  performed_by: string;
+  performed_by_name?: string;
+  created_at: string;
+  item_id: string;
+  item_name: string;
+  category_name?: string;
+}
+
+interface AuditSummary {
+  total_transactions: number;
+  additions: number;
+  removals: number;
+  adjustments: number;
+  audits: number;
+  total_value_change: number;
+  recent_activity: number;
+}
+
+export function InventoryAuditsPanel() {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState('all');
+  const [activeTab, setActiveTab] = useState('transactions');
+
+  // Fetch inventory transactions
+  const { data: transactions = [], isLoading: transactionsLoading } = useQuery({
+    queryKey: ['inventory-transactions'],
+    queryFn: async (): Promise<InventoryTransaction[]> => {
+      const { data, error } = await supabase
+        .from('inventory_item_transactions')
+        .select(`
+          id,
+          transaction_type,
+          quantity,
+          previous_quantity,
+          new_quantity,
+          reason,
+          performed_by,
+          created_at,
+          inventory_items!inner (
+            id,
+            name,
+            inventory_categories (
+              name
+            )
+          ),
+          profiles!performed_by (
+            first_name,
+            last_name
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+
+      return data.map((transaction: any) => ({
+        id: transaction.id,
+        transaction_type: transaction.transaction_type,
+        quantity: transaction.quantity,
+        previous_quantity: transaction.previous_quantity,
+        new_quantity: transaction.new_quantity,
+        reason: transaction.reason,
+        performed_by: transaction.performed_by,
+        performed_by_name: transaction.profiles 
+          ? `${transaction.profiles.first_name} ${transaction.profiles.last_name}`
+          : 'Unknown User',
+        created_at: transaction.created_at,
+        item_id: transaction.inventory_items.id,
+        item_name: transaction.inventory_items.name,
+        category_name: transaction.inventory_items.inventory_categories?.name,
+      }));
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+    retry: 2,
+  });
+
+  // Calculate audit summary
+  const auditSummary: AuditSummary = React.useMemo(() => {
+    const now = new Date();
+    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+    const additions = transactions.filter(t => t.transaction_type === 'addition').length;
+    const removals = transactions.filter(t => t.transaction_type === 'removal').length;
+    const adjustments = transactions.filter(t => t.transaction_type === 'adjustment').length;
+    const audits = transactions.filter(t => t.transaction_type === 'audit').length;
+    
+    const totalValueChange = transactions.reduce((sum, t) => {
+      if (t.transaction_type === 'addition') return sum + t.quantity;
+      if (t.transaction_type === 'removal') return sum - t.quantity;
+      return sum + (t.new_quantity - t.previous_quantity);
+    }, 0);
+
+    const recentActivity = transactions.filter(t => 
+      new Date(t.created_at) > oneDayAgo
+    ).length;
+
+    return {
+      total_transactions: transactions.length,
+      additions,
+      removals,
+      adjustments,
+      audits,
+      total_value_change: totalValueChange,
+      recent_activity: recentActivity,
+    };
+  }, [transactions]);
+
+  // Filter transactions
+  const filteredTransactions = React.useMemo(() => {
+    return transactions.filter(transaction => {
+      const matchesSearch = searchTerm === '' || 
+        transaction.item_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        transaction.performed_by_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        transaction.reason.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesType = filterType === 'all' || transaction.transaction_type === filterType;
+      
+      return matchesSearch && matchesType;
+    });
+  }, [transactions, searchTerm, filterType]);
+
+  const getTransactionIcon = (type: string) => {
+    switch (type) {
+      case 'addition':
+        return <TrendingUp className="h-4 w-4 text-green-500" />;
+      case 'removal':
+        return <TrendingDown className="h-4 w-4 text-red-500" />;
+      case 'adjustment':
+        return <AlertTriangle className="h-4 w-4 text-orange-500" />;
+      case 'audit':
+        return <CheckCircle className="h-4 w-4 text-blue-500" />;
+      default:
+        return <Package className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
+  const getTransactionBadge = (type: string) => {
+    switch (type) {
+      case 'addition':
+        return <Badge variant="default" className="bg-green-100 text-green-800">Addition</Badge>;
+      case 'removal':
+        return <Badge variant="default" className="bg-red-100 text-red-800">Removal</Badge>;
+      case 'adjustment':
+        return <Badge variant="default" className="bg-orange-100 text-orange-800">Adjustment</Badge>;
+      case 'audit':
+        return <Badge variant="default" className="bg-blue-100 text-blue-800">Audit</Badge>;
+      default:
+        return <Badge variant="outline">{type}</Badge>;
+    }
+  };
+
+  if (transactionsLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
+              <CardHeader className="pb-2">
+                <Skeleton className="h-4 w-24" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-16 mb-2" />
+                <Skeleton className="h-3 w-32" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-3">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Skeleton key={i} className="h-16 w-full" />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">Inventory Audits</h3>
+          <p className="text-sm text-muted-foreground">
+            Track all inventory changes and transactions
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+        </div>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{auditSummary.total_transactions}</div>
+            <p className="text-xs text-muted-foreground">
+              {auditSummary.recent_activity} in last 24h
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Additions</CardTitle>
+            <TrendingUp className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{auditSummary.additions}</div>
+            <p className="text-xs text-muted-foreground">
+              Stock increases
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Removals</CardTitle>
+            <TrendingDown className="h-4 w-4 text-red-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">{auditSummary.removals}</div>
+            <p className="text-xs text-muted-foreground">
+              Stock decreases
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Net Change</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-orange-500" />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${auditSummary.total_value_change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {auditSummary.total_value_change >= 0 ? '+' : ''}{auditSummary.total_value_change}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Total quantity change
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search and Filters */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search transactions..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="flex gap-2">
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="px-3 py-2 border rounded-md text-sm"
+              >
+                <option value="all">All Types</option>
+                <option value="addition">Additions</option>
+                <option value="removal">Removals</option>
+                <option value="adjustment">Adjustments</option>
+                <option value="audit">Audits</option>
+              </select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Transactions List */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Transaction History</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {filteredTransactions.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No transactions found matching your criteria.</p>
+              </div>
+            ) : (
+              filteredTransactions.map((transaction) => (
+                <div
+                  key={transaction.id}
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50"
+                >
+                  <div className="flex items-center gap-3">
+                    {getTransactionIcon(transaction.transaction_type)}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-medium">{transaction.item_name}</h4>
+                        {getTransactionBadge(transaction.transaction_type)}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {transaction.reason || 'No reason provided'}
+                      </p>
+                      <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <User className="h-3 w-3" />
+                          {transaction.performed_by_name}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {format(new Date(transaction.created_at), 'MMM d, yyyy HH:mm')}
+                        </span>
+                        {transaction.category_name && (
+                          <span>Category: {transaction.category_name}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-medium">
+                      {transaction.previous_quantity} → {transaction.new_quantity}
+                    </div>
+                    <div className={`text-xs ${
+                      transaction.transaction_type === 'addition' ? 'text-green-600' :
+                      transaction.transaction_type === 'removal' ? 'text-red-600' :
+                      'text-orange-600'
+                    }`}>
+                      {transaction.transaction_type === 'addition' ? '+' : 
+                       transaction.transaction_type === 'removal' ? '-' : '±'}
+                      {Math.abs(transaction.quantity)}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

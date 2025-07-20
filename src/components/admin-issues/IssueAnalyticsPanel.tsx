@@ -64,32 +64,32 @@ export function IssueAnalyticsPanel({
               Status Breakdown
             </h4>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Badge variant="destructive" className="w-12 text-xs">Open</Badge>
-                  <span className="text-sm">{stats.open} issues</span>
+              <div className="flex items-center justify-between py-2">
+                <div className="flex items-center gap-3">
+                  <Badge variant="destructive" className="min-w-fit px-2 py-1 text-xs font-medium">Open</Badge>
+                  <span className="text-sm font-medium">{stats.open} issues</span>
                 </div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-sm text-muted-foreground font-medium">
                   {stats.total > 0 ? (stats.open / stats.total * 100).toFixed(0) : 0}%
                 </div>
               </div>
               
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Badge className="w-12 text-xs bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200">Progress</Badge>
-                  <span className="text-sm">{stats.in_progress} issues</span>
+              <div className="flex items-center justify-between py-2">
+                <div className="flex items-center gap-3">
+                  <Badge className="min-w-fit px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200">In Progress</Badge>
+                  <span className="text-sm font-medium">{stats.in_progress} issues</span>
                 </div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-sm text-muted-foreground font-medium">
                   {stats.total > 0 ? (stats.in_progress / stats.total * 100).toFixed(0) : 0}%
                 </div>
               </div>
               
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Badge className="w-12 text-xs bg-green-100 text-green-800 border-green-200 hover:bg-green-200">Resolved</Badge>
-                  <span className="text-sm">{stats.resolved} issues</span>
+              <div className="flex items-center justify-between py-2">
+                <div className="flex items-center gap-3">
+                  <Badge className="min-w-fit px-2 py-1 text-xs font-medium bg-green-100 text-green-800 border-green-200 hover:bg-green-200">Resolved</Badge>
+                  <span className="text-sm font-medium">{stats.resolved} issues</span>
                 </div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-sm text-muted-foreground font-medium">
                   {stats.total > 0 ? (stats.resolved / stats.total * 100).toFixed(0) : 0}%
                 </div>
               </div>
@@ -103,32 +103,32 @@ export function IssueAnalyticsPanel({
               Priority Breakdown
             </h4>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Badge variant="destructive" className="w-12 text-xs">High</Badge>
-                  <span className="text-sm">{stats.high} issues</span>
+              <div className="flex items-center justify-between py-2">
+                <div className="flex items-center gap-3">
+                  <Badge variant="destructive" className="min-w-fit px-2 py-1 text-xs font-medium">High</Badge>
+                  <span className="text-sm font-medium">{stats.high} issues</span>
                 </div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-sm text-muted-foreground font-medium">
                   {stats.total > 0 ? (stats.high / stats.total * 100).toFixed(0) : 0}%
                 </div>
               </div>
               
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Badge className="w-12 text-xs bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200">Medium</Badge>
-                  <span className="text-sm">{stats.medium} issues</span>
+              <div className="flex items-center justify-between py-2">
+                <div className="flex items-center gap-3">
+                  <Badge className="min-w-fit px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200">Medium</Badge>
+                  <span className="text-sm font-medium">{stats.medium} issues</span>
                 </div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-sm text-muted-foreground font-medium">
                   {stats.total > 0 ? (stats.medium / stats.total * 100).toFixed(0) : 0}%
                 </div>
               </div>
               
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="w-12 text-xs">Low</Badge>
-                  <span className="text-sm">{stats.low} issues</span>
+              <div className="flex items-center justify-between py-2">
+                <div className="flex items-center gap-3">
+                  <Badge variant="outline" className="min-w-fit px-2 py-1 text-xs font-medium">Low</Badge>
+                  <span className="text-sm font-medium">{stats.low} issues</span>
                 </div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-sm text-muted-foreground font-medium">
                   {stats.total > 0 ? (stats.low / stats.total * 100).toFixed(0) : 0}%
                 </div>
               </div>

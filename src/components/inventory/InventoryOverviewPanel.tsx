@@ -57,6 +57,10 @@ export const InventoryOverviewPanel = () => {
         recent_transactions: transactionsResult.count || 0,
       } as InventoryStats;
     },
+    staleTime: 3 * 60 * 1000, // 3 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+    retry: 2,
   });
 
   const { data: recentTransactions } = useQuery({
@@ -86,6 +90,10 @@ export const InventoryOverviewPanel = () => {
         performed_by: t.performed_by,
       })) as RecentTransaction[];
     },
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+    retry: 2,
   });
 
   const { data: lowStockItems } = useQuery({
@@ -116,6 +124,10 @@ export const InventoryOverviewPanel = () => {
         category_name: (item.inventory_categories as any)?.name || "Uncategorized",
       })) as LowStockItem[];
     },
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+    retry: 2,
   });
 
   const getTransactionIcon = (type: string) => {

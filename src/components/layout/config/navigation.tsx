@@ -1,20 +1,23 @@
-
 import {
   Settings,
   LayoutDashboard,
-  Zap,
+  Building2,
   AlertTriangle,
   Users,
-  Building2,
+  Boxes,
   KeyRound,
-  User,
-  UserCog,
-  FileText,
-  MessageSquare,
+  Zap,
   Wrench,
   Gavel,
+  UserCog,
+  GitFork,
+  DoorClosed,
   Package,
-  Boxes,
+  BarChart3,
+  UserCheck,
+  User,
+  FileText,
+  MessageSquare,
 } from 'lucide-react';
 import { NavigationTab, NavigationItem } from '../types';
 import { RolePermissions, CourtRole } from '@/hooks/useRolePermissions';
@@ -43,53 +46,68 @@ export const navigationItems: NavigationItem[] = [
     moduleKey: 'spaces',
   },
   {
-    title: 'Issues',
-    href: '/issues',
+    title: 'Operations',
+    href: '/operations',
     icon: AlertTriangle,
     adminOnly: true,
-    moduleKey: 'issues',
+    moduleKey: 'operations',
   },
+];
+
+// Secondary navigation items (for submenu/more section)
+export const secondaryNavigationItems: NavigationItem[] = [
   {
-    title: 'Occupants',
-    href: '/occupants',
+    title: 'People',
+    href: '/people',
     icon: Users,
     adminOnly: true,
     moduleKey: 'occupants',
+    children: [
+      {
+        title: 'Occupants',
+        href: '/occupants',
+        icon: Users,
+        adminOnly: true,
+        moduleKey: 'occupants',
+      },
+      {
+        title: 'Room Assignments',
+        href: '/room-assignments',
+        icon: UserCheck,
+        adminOnly: true,
+        moduleKey: 'occupants',
+      },
+    ],
   },
   {
-    title: 'Inventory',
-    href: '/inventory',
-    icon: Boxes,
-    adminOnly: true,
-    moduleKey: 'inventory',
-  },
-  {
-    title: 'Supply Requests',
-    href: '/admin/supply-requests',
+    title: 'Assets',
+    href: '/assets',
     icon: Package,
     adminOnly: true,
-    moduleKey: 'supply_requests',
-  },
-  {
-    title: 'Keys',
-    href: '/keys',
-    icon: KeyRound,
-    adminOnly: true,
-    moduleKey: 'keys',
-  },
-  {
-    title: 'Lighting',
-    href: '/lighting',
-    icon: Zap,
-    adminOnly: true,
-    moduleKey: 'lighting',
-  },
-  {
-    title: 'Maintenance',
-    href: '/maintenance',
-    icon: Wrench,
-    adminOnly: true,
-    moduleKey: 'maintenance',
+    moduleKey: 'inventory',
+    children: [
+      {
+        title: 'Inventory',
+        href: '/inventory',
+        icon: Boxes,
+        adminOnly: true,
+        moduleKey: 'inventory',
+      },
+      {
+        title: 'Supply Requests',
+        href: '/admin/supply-requests',
+        icon: Package,
+        adminOnly: true,
+        moduleKey: 'supply_requests',
+      },
+      {
+        title: 'Lighting',
+        href: '/lighting',
+        icon: Zap,
+        adminOnly: true,
+        moduleKey: 'lighting',
+      },
+    ],
   },
   {
     title: 'Court Operations',
@@ -113,6 +131,12 @@ export const userNavigationItems: NavigationItem[] = [
     icon: UserCog,
     adminOnly: true,
   },
+  {
+    title: 'System Settings',
+    href: '/system-settings',
+    icon: Settings,
+    adminOnly: true,
+  },
 ];
 
 // Create filtered navigation based on role permissions
@@ -123,14 +147,7 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
 
   const featureNavigation: Array<NavigationTab & { feature: keyof RolePermissions }> = [
     { title: 'Spaces', icon: Building2, feature: 'spaces' },
-    { title: 'Issues', icon: AlertTriangle, feature: 'issues' },
-    { title: 'Occupants', icon: Users, feature: 'occupants' },
-    { title: 'Inventory', icon: Boxes, feature: 'inventory' },
-    { title: 'Supply Requests', icon: Package, feature: 'supply_requests' },
-    { title: 'Keys', icon: KeyRound, feature: 'keys' },
-    { title: 'Lighting', icon: Zap, feature: 'lighting' },
-    { title: 'Maintenance', icon: Wrench, feature: 'maintenance' },
-    { title: 'Court Operations', icon: Gavel, feature: 'court_operations' },
+    { title: 'Operations', icon: AlertTriangle, feature: 'operations' },
   ];
 
   // Filter based on role permissions (show if user has at least read access)
@@ -153,14 +170,7 @@ export function getAdminNavigation(): NavigationTab[] {
   return [
     { title: 'Dashboard', icon: LayoutDashboard },
     { title: 'Spaces', icon: Building2 },
-    { title: 'Issues', icon: AlertTriangle },
-    { title: 'Occupants', icon: Users },
-    { title: 'Inventory', icon: Boxes },
-    { title: 'Supply Requests', icon: Package },
-    { title: 'Keys', icon: KeyRound },
-    { title: 'Lighting', icon: Zap },
-    { title: 'Maintenance', icon: Wrench },
-    { title: 'Court Operations', icon: Gavel },
+    { title: 'Operations', icon: AlertTriangle },
     { type: "separator" },
     { title: 'Admin Profile', icon: UserCog },
   ];
@@ -183,14 +193,7 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
   
   const featureRoutes: Array<{ route: string; feature: keyof RolePermissions }> = [
     { route: '/spaces', feature: 'spaces' },
-    { route: '/issues', feature: 'issues' },
-    { route: '/occupants', feature: 'occupants' },
-    { route: '/inventory', feature: 'inventory' },
-    { route: '/admin/supply-requests', feature: 'supply_requests' },
-    { route: '/keys', feature: 'keys' },
-    { route: '/lighting', feature: 'lighting' },
-    { route: '/maintenance', feature: 'maintenance' },
-    { route: '/court-operations', feature: 'court_operations' },
+    { route: '/operations', feature: 'operations' },
   ];
 
   // Filter routes based on role permissions (show if user has at least read access)

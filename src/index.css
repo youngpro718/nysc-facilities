@@ -1,10 +1,9 @@
 
 @import "./styles/mobile-safe-area.css";
+@import './styles/design-tokens.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import './styles/design-tokens.css';
  
 @layer base {
   :root {

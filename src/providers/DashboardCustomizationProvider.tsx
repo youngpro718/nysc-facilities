@@ -201,7 +201,22 @@ export function DashboardCustomizationProvider({ children }: { children: React.R
   const [layouts, setLayouts] = useState<DashboardLayout[]>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem("dashboard-layouts");
-      return saved ? JSON.parse(saved) : defaultLayouts;
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          // Ensure all layouts have widgets array
+          return parsed.map((layout: any) => ({
+            ...layout,
+            widgets: Array.isArray(layout.widgets) ? layout.widgets : []
+          }));
+        } catch (e) {
+          console.warn('Failed to parse saved layouts, clearing localStorage and using defaults:', e);
+          localStorage.removeItem("dashboard-layouts");
+          localStorage.removeItem("active-dashboard-layout");
+          return defaultLayouts;
+        }
+      }
+      return defaultLayouts;
     }
     return defaultLayouts;
   });
@@ -237,7 +252,7 @@ export function DashboardCustomizationProvider({ children }: { children: React.R
 
   const toggleWidget = (widgetId: string) => {
     const activeLayout = getActiveLayout();
-    if (!activeLayout) return;
+    if (!activeLayout || !activeLayout.widgets) return;
 
     const updatedWidgets = activeLayout.widgets.map(widget =>
       widget.id === widgetId ? { ...widget, enabled: !widget.enabled } : widget

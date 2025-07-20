@@ -1,19 +1,16 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Database, FileText, ChevronLeft, Settings, Activity, UserCheck, LayoutGrid, Palette, Cog, Eye } from "lucide-react";
+import { ChevronLeft, LayoutGrid, User, Users, BarChart3, Settings } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { DatabaseSection } from "@/components/profile/DatabaseSection";
-import { ReportsSection } from "@/components/profile/reports/ReportsSection";
-import { SecuritySection } from "@/components/profile/SecuritySection";
-import { AppearanceSettings } from "@/components/profile/AppearanceSettings";
-import { AdminDashboardCustomization } from "@/components/profile/AdminDashboardCustomization";
-import { AdminSystemSettings } from "@/components/profile/AdminSystemSettings";
 import { DynamicAdminDashboard } from "@/components/profile/admin/DynamicAdminDashboard";
 import { MobileProfileHeader } from "@/components/profile/mobile/MobileProfileHeader";
-import { MobileSettingsCard } from "@/components/profile/mobile/MobileSettingsCard";
-import { MonitoringDashboard } from "@/components/monitoring/MonitoringDashboard";
 import { useState, useEffect } from "react";
+
+// New reorganized components
+import { AdminProfileSettings } from "@/components/profile/reorganized/AdminProfileSettings";
+import { AdminManagementTab } from "@/components/profile/reorganized/AdminManagementTab";
+import { AdminAnalyticsTab } from "@/components/profile/reorganized/AdminAnalyticsTab";
 
 export default function AdminProfile() {
   const navigate = useNavigate();
@@ -81,82 +78,87 @@ export default function AdminProfile() {
 
       <MobileProfileHeader />
 
-       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
         <div className="overflow-x-auto scrollbar-hide relative">
           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-full bg-gradient-to-r from-muted to-transparent pointer-events-none z-10 rounded-l-lg" />
           <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-full bg-gradient-to-l from-muted to-transparent pointer-events-none z-10 rounded-r-lg" />
           <TabsList className="w-full min-w-max flex h-auto p-1 bg-muted rounded-lg">
-            <TabsTrigger value="overview" className="flex-1 min-w-fit flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap">
-              <LayoutGrid className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <TabsTrigger value="overview" className="flex-1 min-w-fit flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 text-sm whitespace-nowrap">
+              <LayoutGrid className="h-4 w-4" />
               Overview
             </TabsTrigger>
-            <TabsTrigger value="appearance" className="flex-1 min-w-fit flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap">
-              <Palette className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              Appearance
+            <TabsTrigger value="profile" className="flex-1 min-w-fit flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 text-sm whitespace-nowrap">
+              <User className="h-4 w-4" />
+              Profile
             </TabsTrigger>
-            <TabsTrigger value="dashboard" className="flex-1 min-w-fit flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap">
-              <Settings className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              Dashboard
+            <TabsTrigger value="management" className="flex-1 min-w-fit flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 text-sm whitespace-nowrap">
+              <Users className="h-4 w-4" />
+              Management
             </TabsTrigger>
-            <TabsTrigger value="system" className="flex-1 min-w-fit flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap">
-              <Cog className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              System
-            </TabsTrigger>
-            <TabsTrigger value="security" className="flex-1 min-w-fit flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap">
-              <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              Security
-            </TabsTrigger>
-            <TabsTrigger value="database" className="flex-1 min-w-fit flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap">
-              <Database className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              Database
-            </TabsTrigger>
-            <TabsTrigger value="reports" className="flex-1 min-w-fit flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap">
-              <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              Reports
-            </TabsTrigger>
-            <TabsTrigger value="monitoring" className="flex-1 min-w-fit flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap">
-              <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              Monitoring
+            <TabsTrigger value="analytics" className="flex-1 min-w-fit flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 text-sm whitespace-nowrap">
+              <BarChart3 className="h-4 w-4" />
+              Analytics
             </TabsTrigger>
           </TabsList>
         </div>
 
         <TabsContent value="overview" className="space-y-4 sm:space-y-6 mt-4">
-          <DynamicAdminDashboard />
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold">Admin Overview</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Your personal admin dashboard and quick actions
+                </p>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => window.dispatchEvent(new CustomEvent('openSystemSettings'))}
+                className="gap-2"
+              >
+                <Settings className="h-4 w-4" />
+                System Settings
+              </Button>
+            </div>
+            <DynamicAdminDashboard />
+          </div>
         </TabsContent>
 
-        <TabsContent value="appearance" className="space-y-4 sm:space-y-6 mt-4">
-          <AppearanceSettings />
+        <TabsContent value="profile" className="space-y-4 sm:space-y-6 mt-4">
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-xl font-semibold">Profile Settings</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Customize your personal preferences and appearance
+              </p>
+            </div>
+            <AdminProfileSettings />
+          </div>
         </TabsContent>
 
-        <TabsContent value="dashboard" className="space-y-4 sm:space-y-6 mt-4">
-          <AdminDashboardCustomization />
+        <TabsContent value="management" className="space-y-4 sm:space-y-6 mt-4">
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-xl font-semibold">User Management</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Manage users, roles, permissions, and security settings
+              </p>
+            </div>
+            <AdminManagementTab />
+          </div>
         </TabsContent>
 
-        <TabsContent value="system" className="space-y-4 sm:space-y-6 mt-4">
-          <AdminSystemSettings />
-        </TabsContent>
-
-        <TabsContent value="security" className="space-y-4 sm:space-y-6 mt-4">
-          <Card className="p-4 sm:p-6">
-            <SecuritySection />
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="database" className="space-y-4 sm:space-y-6 mt-4">
-          <Card className="p-4 sm:p-6">
-            <DatabaseSection />
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="reports" className="space-y-4 sm:space-y-6 mt-4">
-          <Card className="p-4 sm:p-6">
-            <ReportsSection />
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="monitoring" className="space-y-4 sm:space-y-6 mt-4">
-          <MonitoringDashboard />
+        <TabsContent value="analytics" className="space-y-4 sm:space-y-6 mt-4">
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-xl font-semibold">Analytics & Reports</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                System monitoring, reports, and performance analytics
+              </p>
+            </div>
+            <AdminAnalyticsTab />
+          </div>
         </TabsContent>
       </Tabs>
     </div>
