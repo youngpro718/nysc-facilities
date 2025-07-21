@@ -5,27 +5,43 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Mail, Smartphone, Volume2, VolumeX } from "lucide-react";
+import { Bell, Mail, Smartphone, Volume2, VolumeX, Clock, Monitor, Phone } from "lucide-react";
 import { toast } from "sonner";
 
 interface NotificationPreferences {
   email_notifications: boolean;
   push_notifications: boolean;
+  sms_notifications: boolean;
+  desktop_notifications: boolean;
+  notification_sound: boolean;
   key_request_updates: boolean;
   order_status_updates: boolean;
   maintenance_alerts: boolean;
   system_announcements: boolean;
+  security_alerts: boolean;
   urgency_threshold: 'low' | 'medium' | 'high';
+  quiet_hours_enabled: boolean;
+  quiet_hours_start: string;
+  quiet_hours_end: string;
+  notification_frequency: 'immediate' | 'hourly' | 'daily';
 }
 
 const defaultPreferences: NotificationPreferences = {
   email_notifications: true,
   push_notifications: true,
+  sms_notifications: false,
+  desktop_notifications: true,
+  notification_sound: true,
   key_request_updates: true,
   order_status_updates: true,
   maintenance_alerts: true,
   system_announcements: false,
-  urgency_threshold: 'medium'
+  security_alerts: true,
+  urgency_threshold: 'medium',
+  quiet_hours_enabled: false,
+  quiet_hours_start: '22:00',
+  quiet_hours_end: '08:00',
+  notification_frequency: 'immediate'
 };
 
 export function NotificationPreferencesCard() {
@@ -126,7 +142,10 @@ export function NotificationPreferencesCard() {
             <div className="flex items-center justify-between space-x-2">
               <div className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">Email Notifications</span>
+                <div>
+                  <span className="text-sm font-medium">Email Notifications</span>
+                  <p className="text-xs text-muted-foreground">Receive updates via email</p>
+                </div>
               </div>
               <Switch
                 checked={preferences.email_notifications}
@@ -136,11 +155,40 @@ export function NotificationPreferencesCard() {
             <div className="flex items-center justify-between space-x-2">
               <div className="flex items-center gap-2">
                 <Smartphone className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">Push Notifications</span>
+                <div>
+                  <span className="text-sm font-medium">Push Notifications</span>
+                  <p className="text-xs text-muted-foreground">Mobile and browser alerts</p>
+                </div>
               </div>
               <Switch
                 checked={preferences.push_notifications}
                 onCheckedChange={(checked) => updatePreference('push_notifications', checked)}
+              />
+            </div>
+            <div className="flex items-center justify-between space-x-2">
+              <div className="flex items-center gap-2">
+                <Phone className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <span className="text-sm font-medium">SMS Notifications</span>
+                  <p className="text-xs text-muted-foreground">Text messages for urgent alerts</p>
+                </div>
+              </div>
+              <Switch
+                checked={preferences.sms_notifications}
+                onCheckedChange={(checked) => updatePreference('sms_notifications', checked)}
+              />
+            </div>
+            <div className="flex items-center justify-between space-x-2">
+              <div className="flex items-center gap-2">
+                <Monitor className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <span className="text-sm font-medium">Desktop Notifications</span>
+                  <p className="text-xs text-muted-foreground">Browser notifications</p>
+                </div>
+              </div>
+              <Switch
+                checked={preferences.desktop_notifications}
+                onCheckedChange={(checked) => updatePreference('desktop_notifications', checked)}
               />
             </div>
           </div>
@@ -190,6 +238,16 @@ export function NotificationPreferencesCard() {
                 onCheckedChange={(checked) => updatePreference('system_announcements', checked)}
               />
             </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-sm font-medium">Security Alerts</span>
+                <p className="text-xs text-muted-foreground">Important security notifications and login alerts</p>
+              </div>
+              <Switch
+                checked={preferences.security_alerts}
+                onCheckedChange={(checked) => updatePreference('security_alerts', checked)}
+              />
+            </div>
           </div>
         </div>
 
@@ -210,6 +268,79 @@ export function NotificationPreferencesCard() {
                 </Badge>
               ))}
             </div>
+          </div>
+        </div>
+
+        {/* Sound and Timing Settings */}
+        <div className="space-y-4">
+          <h4 className="font-medium flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            Sound & Timing
+          </h4>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {preferences.notification_sound ? <Volume2 className="h-4 w-4 text-muted-foreground" /> : <VolumeX className="h-4 w-4 text-muted-foreground" />}
+                <div>
+                  <span className="text-sm font-medium">Notification Sound</span>
+                  <p className="text-xs text-muted-foreground">Play sound for notifications</p>
+                </div>
+              </div>
+              <Switch
+                checked={preferences.notification_sound}
+                onCheckedChange={(checked) => updatePreference('notification_sound', checked)}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Notification Frequency</label>
+              <div className="flex gap-2">
+                {(['immediate', 'hourly', 'daily'] as const).map((freq) => (
+                  <Badge
+                    key={freq}
+                    variant={preferences.notification_frequency === freq ? "default" : "outline"}
+                    className="cursor-pointer"
+                    onClick={() => updatePreference('notification_frequency', freq)}
+                  >
+                    {freq.charAt(0).toUpperCase() + freq.slice(1)}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-sm font-medium">Quiet Hours</span>
+                <p className="text-xs text-muted-foreground">Disable notifications during specified hours</p>
+              </div>
+              <Switch
+                checked={preferences.quiet_hours_enabled}
+                onCheckedChange={(checked) => updatePreference('quiet_hours_enabled', checked)}
+              />
+            </div>
+            
+            {preferences.quiet_hours_enabled && (
+              <div className="grid grid-cols-2 gap-4 ml-6">
+                <div>
+                  <label className="text-xs text-muted-foreground">Start Time</label>
+                  <input
+                    type="time"
+                    value={preferences.quiet_hours_start}
+                    onChange={(e) => updatePreference('quiet_hours_start', e.target.value)}
+                    className="w-full mt-1 px-3 py-1 text-sm border rounded-md"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">End Time</label>
+                  <input
+                    type="time"
+                    value={preferences.quiet_hours_end}
+                    onChange={(e) => updatePreference('quiet_hours_end', e.target.value)}
+                    className="w-full mt-1 px-3 py-1 text-sm border rounded-md"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

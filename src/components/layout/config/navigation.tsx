@@ -13,6 +13,7 @@ import {
   GitFork,
   DoorClosed,
   Package,
+  Package2,
   BarChart3,
   UserCheck,
   User,
@@ -145,23 +146,46 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
     { title: 'Dashboard', icon: LayoutDashboard }, // Always visible
   ];
 
-  const featureNavigation: Array<NavigationTab & { feature: keyof RolePermissions }> = [
-    { title: 'Spaces', icon: Building2, feature: 'spaces' },
-    { title: 'Operations', icon: AlertTriangle, feature: 'operations' },
-  ];
+  // Admin-specific navigation
+  if (userRole === 'admin') {
+    const featureNavigation: Array<NavigationTab & { feature: keyof RolePermissions }> = [
+      { title: 'Spaces', icon: Building2, feature: 'spaces' },
+      { title: 'Operations', icon: AlertTriangle, feature: 'operations' },
+      { title: 'Occupants', icon: Users, feature: 'occupants' },
+      { title: 'Court Operations', icon: Gavel, feature: 'court_operations' },
+    ];
 
-  // Filter based on role permissions (show if user has at least read access)
-  const filteredFeatures = featureNavigation.filter(nav => 
-    permissions[nav.feature] !== null
-  );
+    // Filter based on role permissions (show if user has at least read access)
+    const filteredFeatures = featureNavigation.filter(nav => 
+      permissions[nav.feature] !== null
+    );
 
-  const profileTitle = userRole === 'admin' ? 'Admin Profile' : 'Profile';
-
+    return [
+      ...baseNavigation,
+      ...filteredFeatures,
+      { type: "separator" },
+      { title: 'Admin Profile', icon: UserCog },
+    ];
+  }
+  
+  // Supply room staff navigation
+  if (userRole === 'supply_room_staff') {
+    return [
+      ...baseNavigation,
+      { title: 'Supply Room', icon: Package },
+      { title: 'Inventory', icon: Package2 },
+      { type: "separator" },
+      { title: 'Profile', icon: User },
+    ];
+  }
+  
+  // User-specific navigation
   return [
     ...baseNavigation,
-    ...filteredFeatures,
+    { title: 'My Requests', icon: FileText },
+    { title: 'My Issues', icon: MessageSquare },
     { type: "separator" },
-    { title: profileTitle, icon: userRole === 'admin' ? UserCog : User },
+    { title: 'Profile', icon: User },
   ];
 }
 
@@ -189,25 +213,48 @@ export const userNavigation: NavigationTab[] = [
 
 // Helper function to get navigation routes based on role permissions
 export const getNavigationRoutes = (permissions: RolePermissions, userRole: CourtRole): string[] => {
-  const baseRoutes = ['/']; // Dashboard always available
+  const baseRoutes = [userRole === 'admin' ? '/' : '/dashboard']; // Dashboard route based on role
   
-  const featureRoutes: Array<{ route: string; feature: keyof RolePermissions }> = [
-    { route: '/spaces', feature: 'spaces' },
-    { route: '/operations', feature: 'operations' },
-  ];
+  // Admin routes
+  if (userRole === 'admin') {
+    const featureRoutes: Array<{ route: string; feature: keyof RolePermissions }> = [
+      { route: '/spaces', feature: 'spaces' },
+      { route: '/operations', feature: 'operations' },
+      { route: '/occupants', feature: 'occupants' },
+      { route: '/court-operations', feature: 'court_operations' },
+    ];
 
-  // Filter routes based on role permissions (show if user has at least read access)
-  const filteredRoutes = featureRoutes
-    .filter(route => permissions[route.feature] !== null)
-    .map(route => route.route);
+    // Filter routes based on role permissions (show if user has at least read access)
+    const filteredRoutes = featureRoutes
+      .filter(route => permissions[route.feature] !== null)
+      .map(route => route.route);
 
-  const profileRoute = userRole === 'admin' ? '/admin-profile' : '/profile';
-
+    return [
+      ...baseRoutes,
+      ...filteredRoutes,
+      '', // Separator doesn't have a route
+      '/admin-profile',
+    ];
+  }
+  
+  // Supply room staff routes
+  if (userRole === 'supply_room_staff') {
+    return [
+      ...baseRoutes,
+      '/supply-room',
+      '/inventory',
+      '', // Separator doesn't have a route
+      '/profile',
+    ];
+  }
+  
+  // User routes
   return [
     ...baseRoutes,
-    ...filteredRoutes,
+    '/my-requests',
+    '/my-issues',
     '', // Separator doesn't have a route
-    profileRoute,
+    '/profile',
   ];
 };
 

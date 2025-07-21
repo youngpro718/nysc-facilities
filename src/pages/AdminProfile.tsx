@@ -1,10 +1,12 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronLeft, LayoutGrid, User, Users, BarChart3, Settings } from "lucide-react";
+import { ChevronLeft, LayoutGrid, User, Users, BarChart3, Settings, Shield, Monitor } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { DynamicAdminDashboard } from "@/components/profile/admin/DynamicAdminDashboard";
 import { MobileProfileHeader } from "@/components/profile/mobile/MobileProfileHeader";
+import { RoleManagement } from "@/components/profile/RoleManagement";
+import { DashboardCustomization } from "@/components/profile/DashboardCustomization";
 import { useState, useEffect } from "react";
 
 // New reorganized components
@@ -99,6 +101,14 @@ export default function AdminProfile() {
               <BarChart3 className="h-4 w-4" />
               Analytics
             </TabsTrigger>
+            <TabsTrigger value="roles" className="flex-1 min-w-fit flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 text-sm whitespace-nowrap">
+              <Shield className="h-4 w-4" />
+              Roles
+            </TabsTrigger>
+            <TabsTrigger value="dashboard" className="flex-1 min-w-fit flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 text-sm whitespace-nowrap">
+              <Monitor className="h-4 w-4" />
+              Dashboard
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -158,6 +168,30 @@ export default function AdminProfile() {
               </p>
             </div>
             <AdminAnalyticsTab />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="roles" className="space-y-4 sm:space-y-6 mt-4">
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-xl font-semibold">Role Management</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Manage user roles, permissions, and access levels
+              </p>
+            </div>
+            <RoleManagement />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="dashboard" className="space-y-4 sm:space-y-6 mt-4">
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-xl font-semibold">Dashboard Customization</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Customize your dashboard layout, widgets, and appearance
+              </p>
+            </div>
+            <DashboardCustomization />
           </div>
         </TabsContent>
       </Tabs>

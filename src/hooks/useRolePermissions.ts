@@ -12,6 +12,7 @@ export type CourtRole =
   | 'court_reporter'
   | 'administrative_assistant'
   | 'facilities_manager'
+  | 'supply_room_staff'
   | 'admin';
 
 export type PermissionLevel = 'read' | 'write' | 'admin';
@@ -186,6 +187,19 @@ export function useRolePermissions() {
           court_operations: null,
           operations: 'admin',
           dashboard: 'admin',
+        },
+        supply_room_staff: {
+          spaces: null,
+          issues: 'write',
+          occupants: 'read',
+          inventory: 'admin',
+          supply_requests: 'admin',
+          keys: null,
+          lighting: null,
+          maintenance: null,
+          court_operations: null,
+          operations: 'read',
+          dashboard: 'read',
         },
         admin: {
           spaces: 'admin',

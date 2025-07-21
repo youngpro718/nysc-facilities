@@ -2,14 +2,40 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import { Camera, User, Phone, Building2, CheckCircle } from 'lucide-react';
+import { Camera, User, Phone, Building2, CheckCircle, Shield, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { AvatarUploadModal } from './modals/AvatarUploadModal';
+import { Badge } from '@/components/ui/badge';
 
 export function ProfileCompletionCard() {
   const { profile, refreshSession } = useAuth();
+  const navigate = useNavigate();
   const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchUserRole();
+  }, []);
+
+  const fetchUserRole = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      setUserRole(roleData?.role || null);
+    } catch (error) {
+      console.error('Error fetching user role:', error);
+    }
+  };
 
   if (!profile) return null;
 
@@ -26,21 +52,28 @@ export function ProfileCompletionCard() {
       label: 'Full Name',
       icon: User,
       completed: !!(profile.first_name && profile.last_name),
-      onClick: () => {} // Navigate to profile edit
+      onClick: () => navigate('/profile?tab=profile')
     },
     {
       id: 'phone',
       label: 'Phone Number',
       icon: Phone,
       completed: !!profile.phone,
-      onClick: () => {} // Navigate to profile edit
+      onClick: () => navigate('/profile?tab=profile')
     },
     {
       id: 'department',
       label: 'Department',
       icon: Building2,
-      completed: !!profile.department_id,
-      onClick: () => {} // Navigate to profile edit
+      completed: !!(profile as any).department || !!profile.department_id,
+      onClick: () => navigate('/profile?tab=profile')
+    },
+    {
+      id: 'role',
+      label: 'Role Assignment',
+      icon: Shield,
+      completed: !!userRole,
+      onClick: () => navigate('/profile')
     }
   ];
 
@@ -62,7 +95,22 @@ export function ProfileCompletionCard() {
               size="lg"
             />
             <div className="flex-1">
-              <CardTitle className="text-lg">Complete Your Profile</CardTitle>
+              <div className="flex items-center gap-2 mb-1">
+                <CardTitle className="text-lg">Complete Your Profile</CardTitle>
+                {userRole ? (
+                  <Badge variant="secondary" className="text-xs">
+                    <Shield className="h-3 w-3 mr-1" />
+                    {userRole === 'admin' ? 'Administrator' : 
+                     userRole === 'supply_room_staff' ? 'Supply Staff' : 
+                     userRole.charAt(0).toUpperCase() + userRole.slice(1)}
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-xs">
+                    <AlertCircle className="h-3 w-3 mr-1" />
+                    No Role Assigned
+                  </Badge>
+                )}
+              </div>
               <CardDescription>
                 {completedCount} of {completionItems.length} items completed
               </CardDescription>

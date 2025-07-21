@@ -10,6 +10,7 @@ import { MobileProfileHeader } from "@/components/profile/mobile/MobileProfileHe
 import { MobileSettingsCard } from "@/components/profile/mobile/MobileSettingsCard";
 import { AppearanceSettings } from "@/components/profile/AppearanceSettings";
 import { DashboardCustomization } from "@/components/profile/DashboardCustomization";
+import { SettingsVerification } from "@/components/profile/SettingsVerification";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -211,6 +212,12 @@ export default function Profile() {
                 </p>
               </div>
               <NotificationPreferencesCard />
+            </div>
+          </Card>
+
+          <Card className="border-0 sm:border sm:shadow-sm">
+            <div className="p-4 sm:p-6">
+              <SettingsVerification />
             </div>
           </Card>
         </TabsContent>

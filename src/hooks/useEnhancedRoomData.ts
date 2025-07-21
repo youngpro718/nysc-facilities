@@ -28,7 +28,7 @@ export function useEnhancedRoomData(roomId: string) {
             created_at
           ),
           current_occupants:occupant_room_assignments!occupant_room_assignments_room_id_fkey(
-            occupant:occupants(
+            occupant:occupants!occupant_room_assignments_occupant_id_fkey(
               id,
               first_name,
               last_name

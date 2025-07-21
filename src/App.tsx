@@ -24,6 +24,7 @@ import TwoFactorAuth from "@/pages/settings/TwoFactorAuth";
 import SessionSettings from "@/pages/settings/SessionSettings";
 import AdminKeyRequests from "@/pages/admin/KeyRequests";
 import AdminSupplyRequests from "@/pages/admin/SupplyRequests";
+import SupplyRoom from "@/pages/SupplyRoom";
 import { MaintenanceDashboard } from "@/pages/MaintenanceDashboard";
 import { CourtOperationsDashboard } from "@/pages/CourtOperationsDashboard";
 import { InventoryDashboard } from "@/pages/InventoryDashboard";
@@ -139,6 +140,13 @@ function AppContent() {
           <ProtectedRoute requireAdmin>
             <ModuleProtectedRoute moduleKey="supply_requests" moduleName="Supply Requests">
               <AdminSupplyRequests />
+            </ModuleProtectedRoute>
+          </ProtectedRoute>
+        } />
+        <Route path="supply-room" element={
+          <ProtectedRoute>
+            <ModuleProtectedRoute moduleKey="supply_requests" moduleName="Supply Room">
+              <SupplyRoom />
             </ModuleProtectedRoute>
           </ProtectedRoute>
         } />

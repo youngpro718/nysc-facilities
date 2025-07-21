@@ -13,6 +13,8 @@ import { AssignRoomsDialog } from "../AssignRoomsDialog";
 import { MobileOccupantsList } from "../MobileOccupantsList";
 import { useOccupantList } from "../hooks/useOccupantList";
 import { useOccupantDialogs } from "../hooks/useOccupantDialogs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PersonnelProfilesTab } from "../PersonnelProfilesTab";
 
 export function OccupantListView() {
   const [view, setView] = useState<"grid" | "list">("list");
@@ -117,45 +119,59 @@ export function OccupantListView() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <OccupantHeader
-          selectedOccupants={selectedOccupants}
-          onBulkStatusUpdate={handleBulkStatusUpdate}
-          onAssignKeys={() => setIsAssignKeysDialogOpen(true)}
-          onAssignRooms={() => setIsAssignRoomsDialogOpen(true)}
-          onCreateOccupant={() => setIsCreateDialogOpen(true)}
-          occupants={occupants}
-          onImportSuccess={refetch}
-        />
-        <OccupantViewToggle view={view} onViewChange={setView} />
-      </div>
-
-      <OccupantFilters
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        departmentFilter={departmentFilter}
-        onDepartmentChange={setDepartmentFilter}
-        statusFilter={statusFilter}
-        onStatusChange={setStatusFilter}
+      <OccupantHeader
+        selectedOccupants={selectedOccupants}
+        onBulkStatusUpdate={handleBulkStatusUpdate}
+        onAssignKeys={() => setIsAssignKeysDialogOpen(true)}
+        onAssignRooms={() => setIsAssignRoomsDialogOpen(true)}
+        onCreateOccupant={() => setIsCreateDialogOpen(true)}
+        occupants={occupants}
+        onImportSuccess={refetch}
       />
 
-      {isLoading ? (
-        <LoadingState />
-      ) : isError ? (
-        <ErrorState error={error as Error} onRetry={refetch} />
-      ) : (
-        <OccupantContent
-          view={view}
-          occupants={occupants}
-          expandedRows={expandedRows}
-          selectedOccupants={selectedOccupants}
-          onToggleRow={toggleRow}
-          onToggleSelect={toggleSelectOccupant}
-          onSelectAll={handleSelectAll}
-          onEdit={startEdit}
-          onDelete={handleDeleteOccupant}
-        />
-      )}
+      <Tabs defaultValue="occupants" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="occupants">Occupants</TabsTrigger>
+          <TabsTrigger value="personnel">Court Personnel</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="occupants" className="space-y-6">
+          <div className="flex items-center justify-end">
+            <OccupantViewToggle view={view} onViewChange={setView} />
+          </div>
+
+          <OccupantFilters
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            departmentFilter={departmentFilter}
+            onDepartmentChange={setDepartmentFilter}
+            statusFilter={statusFilter}
+            onStatusChange={setStatusFilter}
+          />
+
+          {isLoading ? (
+            <LoadingState />
+          ) : isError ? (
+            <ErrorState error={error as Error} onRetry={refetch} />
+          ) : (
+            <OccupantContent
+              view={view}
+              occupants={occupants}
+              expandedRows={expandedRows}
+              selectedOccupants={selectedOccupants}
+              onToggleRow={toggleRow}
+              onToggleSelect={toggleSelectOccupant}
+              onSelectAll={handleSelectAll}
+              onEdit={startEdit}
+              onDelete={handleDeleteOccupant}
+            />
+          )}
+        </TabsContent>
+        
+        <TabsContent value="personnel">
+          <PersonnelProfilesTab />
+        </TabsContent>
+      </Tabs>
 
       <CreateOccupantDialog
         open={isCreateDialogOpen}

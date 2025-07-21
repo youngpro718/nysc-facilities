@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { RoleManagement } from "./RoleManagement";
 
 interface SecuritySectionProps {
   isAdmin?: boolean;
@@ -117,9 +118,10 @@ export function SecuritySection({ isAdmin = false }: SecuritySectionProps) {
   };
 
   return (
+    <>
     <Card>
-      <CardContent className="pt-6">
-        <div className="space-y-6">
+      <CardContent className="p-6">
+        <div className="space-y-8">
           {/* Password Update Section for all users */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
@@ -256,5 +258,9 @@ export function SecuritySection({ isAdmin = false }: SecuritySectionProps) {
         </div>
       </CardContent>
     </Card>
+    
+    {/* Role Management Section */}
+    <RoleManagement />
+    </>
   );
 }
