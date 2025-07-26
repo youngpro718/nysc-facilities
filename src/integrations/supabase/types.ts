@@ -3598,6 +3598,7 @@ export type Database = {
       }
       keys: {
         Row: {
+          active_assignments: number | null
           available_quantity: number
           captain_office_assigned_date: string | null
           captain_office_copy: boolean | null
@@ -3607,6 +3608,7 @@ export type Database = {
           is_passkey: boolean | null
           key_scope: string | null
           location_data: Json | null
+          lost_count: number | null
           name: string
           properties: Json | null
           status: Database["public"]["Enums"]["key_status_enum"] | null
@@ -3615,6 +3617,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          active_assignments?: number | null
           available_quantity?: number
           captain_office_assigned_date?: string | null
           captain_office_copy?: boolean | null
@@ -3624,6 +3627,7 @@ export type Database = {
           is_passkey?: boolean | null
           key_scope?: string | null
           location_data?: Json | null
+          lost_count?: number | null
           name: string
           properties?: Json | null
           status?: Database["public"]["Enums"]["key_status_enum"] | null
@@ -3632,6 +3636,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          active_assignments?: number | null
           available_quantity?: number
           captain_office_assigned_date?: string | null
           captain_office_copy?: boolean | null
@@ -3641,6 +3646,7 @@ export type Database = {
           is_passkey?: boolean | null
           key_scope?: string | null
           location_data?: Json | null
+          lost_count?: number | null
           name?: string
           properties?: Json | null
           status?: Database["public"]["Enums"]["key_status_enum"] | null
@@ -4588,6 +4594,7 @@ export type Database = {
           id: string
           priority: string | null
           requested_by: string | null
+          scheduled_date: string | null
           space_id: string | null
           status: string | null
           title: string
@@ -4601,6 +4608,7 @@ export type Database = {
           id?: string
           priority?: string | null
           requested_by?: string | null
+          scheduled_date?: string | null
           space_id?: string | null
           status?: string | null
           title: string
@@ -4614,6 +4622,7 @@ export type Database = {
           id?: string
           priority?: string | null
           requested_by?: string | null
+          scheduled_date?: string | null
           space_id?: string | null
           status?: string | null
           title?: string
@@ -10968,6 +10977,7 @@ export type Database = {
         | "delivered"
         | "completed"
         | "cancelled"
+        | "partially_received"
       key_request_status:
         | "pending"
         | "under_review"
@@ -11287,6 +11297,7 @@ export const Constants = {
         "delivered",
         "completed",
         "cancelled",
+        "partially_received",
       ],
       key_request_status: [
         "pending",
