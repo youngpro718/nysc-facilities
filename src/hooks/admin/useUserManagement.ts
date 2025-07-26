@@ -71,33 +71,47 @@ export function useUserManagement() {
   // Get admin users specifically
   const adminUsers = users.filter(u => u.access_level === 'admin');
 
-  // Promote user to admin
+  // Promote user to admin using secure function
   const promoteToAdmin = useMutation({
     mutationFn: async (userId: string) => {
-      const { error } = await supabase
+      const { error } = await supabase.rpc('assign_user_role', {
+        target_user_id: userId,
+        new_role: 'admin',
+        reason: 'Promoted to admin via user management interface'
+      });
+
+      if (error) throw error;
+
+      // Also update profile for backwards compatibility
+      await supabase
         .from('profiles')
         .update({ 
           access_level: 'admin',
           is_approved: true 
         })
         .eq('id', userId);
-
-      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
     },
   });
 
-  // Demote user from admin
+  // Demote user from admin using secure function
   const demoteFromAdmin = useMutation({
     mutationFn: async (userId: string) => {
-      const { error } = await supabase
+      const { error } = await supabase.rpc('assign_user_role', {
+        target_user_id: userId,
+        new_role: 'user',
+        reason: 'Demoted from admin via user management interface'
+      });
+
+      if (error) throw error;
+
+      // Also update profile for backwards compatibility
+      await supabase
         .from('profiles')
         .update({ access_level: 'write' })
         .eq('id', userId);
-
-      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });

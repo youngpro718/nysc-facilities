@@ -5739,6 +5739,30 @@ export type Database = {
           },
         ]
       }
+      rate_limit_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          ip_address: unknown | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       rate_limit_tracking: {
         Row: {
           action_type: string
@@ -7835,6 +7859,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      security_audit_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          ip_address: unknown | null
+          resource_id: string | null
+          resource_type: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          resource_id?: string | null
+          resource_type?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          resource_id?: string | null
+          resource_type?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       security_logs: {
         Row: {
@@ -10559,6 +10619,14 @@ export type Database = {
           | { key_id: string; occupant_id: string; is_spare?: boolean }
         Returns: Json
       }
+      assign_user_role: {
+        Args: {
+          target_user_id: string
+          new_role: Database["public"]["Enums"]["user_role"]
+          reason?: string
+        }
+        Returns: undefined
+      }
       begin_transaction: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -10572,11 +10640,17 @@ export type Database = {
         Returns: boolean
       }
       check_rate_limit: {
-        Args: {
-          action_type: string
-          max_attempts?: number
-          time_window?: unknown
-        }
+        Args:
+          | {
+              action_name: string
+              max_attempts?: number
+              window_minutes?: number
+            }
+          | {
+              action_type: string
+              max_attempts?: number
+              time_window?: unknown
+            }
         Returns: boolean
       }
       check_relocation_conflicts: {
@@ -10827,6 +10901,15 @@ export type Database = {
         Args: { room_type: string }
         Returns: boolean
       }
+      log_security_event: {
+        Args: {
+          action_type: string
+          resource_type?: string
+          resource_id?: string
+          details?: Json
+        }
+        Returns: undefined
+      }
       migrate_spaces_data: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -10845,6 +10928,10 @@ export type Database = {
       }
       refresh_materialized_view: {
         Args: { view_name: string }
+        Returns: undefined
+      }
+      remove_user_role: {
+        Args: { target_user_id: string; reason?: string }
         Returns: undefined
       }
       rollback_transaction: {
@@ -10904,6 +10991,10 @@ export type Database = {
       }
       validate_nycourt_email: {
         Args: { email: string }
+        Returns: boolean
+      }
+      validate_text_input: {
+        Args: { input_text: string; max_length?: number; required?: boolean }
         Returns: boolean
       }
     }
