@@ -267,7 +267,7 @@ export function UserManagementSection() {
                 onDemoteFromAdmin={demoteFromAdmin}
                 onApproveUser={approveUser}
                 onRejectUser={rejectUser}
-                onUpdateAccessLevel={updateAccessLevel}
+                onUpdateAccessLevel={(userId, level) => updateAccessLevel({ userId, accessLevel: level })}
                 isUpdating={isUpdating}
               />
             ))}
@@ -290,7 +290,7 @@ export function UserManagementSection() {
                   onDemoteFromAdmin={demoteFromAdmin}
                   onApproveUser={approveUser}
                   onRejectUser={rejectUser}
-                  onUpdateAccessLevel={updateAccessLevel}
+                  onUpdateAccessLevel={(userId, level) => updateAccessLevel({ userId, accessLevel: level })}
                   isUpdating={isUpdating}
                 />
               ))}
@@ -309,7 +309,7 @@ export function UserManagementSection() {
                 onDemoteFromAdmin={demoteFromAdmin}
                 onApproveUser={approveUser}
                 onRejectUser={rejectUser}
-                onUpdateAccessLevel={updateAccessLevel}
+                onUpdateAccessLevel={(userId, level) => updateAccessLevel({ userId, accessLevel: level })}
                 isUpdating={isUpdating}
               />
             ))}

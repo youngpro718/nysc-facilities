@@ -129,7 +129,7 @@ export function SupplyRequestTracking({ userRole }: SupplyRequestTrackingProps) 
       
       if (error) throw error;
       
-      setRequests(data || []);
+      setRequests((data || []) as any);
       
     } catch (error) {
       console.error('Error fetching requests:', error);
@@ -160,7 +160,7 @@ export function SupplyRequestTracking({ userRole }: SupplyRequestTrackingProps) 
 
       // Add to status history
       const { error: historyError } = await supabase
-        .from('supply_request_status_history')
+        .from('supply_requests' as any)
         .insert({
           request_id: requestId,
           status,

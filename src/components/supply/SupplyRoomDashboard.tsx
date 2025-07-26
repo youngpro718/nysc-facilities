@@ -188,7 +188,7 @@ export function SupplyRoomDashboard() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setRequests((data || []) as SupplyRequest[]);
+      setRequests((data || []) as any);
     } catch (error) {
       console.error('Error fetching supply requests:', error);
       toast({

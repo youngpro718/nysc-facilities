@@ -133,8 +133,8 @@ export function SupplyAnalytics({ userRole, showMinimalView = false }: SupplyAna
       let totalRequests = requestsData?.length || 0;
 
       requestsData?.forEach(request => {
-        const department = request.profiles?.department || 'Unknown';
-        const officeKey = `${department}-${request.profiles?.office_location || 'Unknown'}`;
+        const department = (request.profiles as any)?.department || 'Unknown';
+        const officeKey = `${department}-${(request.profiles as any)?.office_location || 'Unknown'}`;
         
         // Calculate request cost
         const requestCost = request.supply_request_items.reduce((sum: number, item: any) => 
@@ -145,7 +145,7 @@ export function SupplyAnalytics({ userRole, showMinimalView = false }: SupplyAna
         if (!officeUsageMap.has(officeKey)) {
           officeUsageMap.set(officeKey, {
             department,
-            office_name: request.profiles?.office_location || 'Unknown',
+            office_name: (request.profiles as any)?.office_location || 'Unknown',
             total_requests: 0,
             total_items: 0,
             total_cost: 0,
@@ -179,7 +179,7 @@ export function SupplyAnalytics({ userRole, showMinimalView = false }: SupplyAna
           const itemUsage = itemUsageMap.get(item.item_name)!;
           itemUsage.total_requested += item.quantity_requested;
           itemUsage.total_cost += item.quantity_requested * (item.unit_cost || 0);
-          (itemUsage.unique_requesters as Set<string>).add(request.requester_id);
+          (itemUsage.unique_requesters as any).add(request.requester_id);
         });
       });
 
@@ -192,7 +192,7 @@ export function SupplyAnalytics({ userRole, showMinimalView = false }: SupplyAna
 
       const itemUsageArray = Array.from(itemUsageMap.values()).map(item => ({
         ...item,
-        unique_requesters: (item.unique_requesters as Set<string>).size,
+        unique_requesters: (item.unique_requesters as any).size,
         avg_monthly_usage: item.total_requested / (timeRange === '30days' ? 1 : 3),
         trend: Math.random() > 0.5 ? 'up' : 'down' as 'up' | 'down',
         percentage_change: Math.floor(Math.random() * 30) + 5

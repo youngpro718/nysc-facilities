@@ -101,7 +101,7 @@ export function useUserManagement() {
     mutationFn: async (userId: string) => {
       const { error } = await supabase.rpc('assign_user_role', {
         target_user_id: userId,
-        new_role: 'user',
+        new_role: 'standard' as any,
         reason: 'Demoted from admin via user management interface'
       });
 
