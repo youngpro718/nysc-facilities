@@ -5,7 +5,6 @@ import AdminDashboard from "@/pages/AdminDashboard";
 import LoginPage from "@/pages/LoginPage";
 import NotFound from "@/pages/NotFound";
 import Spaces from "@/pages/Spaces";
-import Issues from "@/pages/Issues";
 import Operations from "@/pages/Operations";
 import Occupants from "@/pages/Occupants";
 import RoomAssignments from "@/pages/RoomAssignments";
@@ -23,9 +22,7 @@ import ThemeSettings from "@/pages/settings/ThemeSettings";
 import TwoFactorAuth from "@/pages/settings/TwoFactorAuth";
 import SessionSettings from "@/pages/settings/SessionSettings";
 import AdminKeyRequests from "@/pages/admin/KeyRequests";
-import AdminSupplyRequests from "@/pages/admin/SupplyRequests";
 import SupplyRoom from "@/pages/SupplyRoom";
-import { MaintenanceDashboard } from "@/pages/MaintenanceDashboard";
 import { CourtOperationsDashboard } from "@/pages/CourtOperationsDashboard";
 import { InventoryDashboard } from "@/pages/InventoryDashboard";
 import { ThemeProvider } from "@/providers/ThemeProvider";
@@ -67,13 +64,7 @@ function AppContent() {
             </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
-        <Route path="/issues" element={
-          <ProtectedRoute requireAdmin>
-            <ModuleProtectedRoute moduleKey="issues" moduleName="Issues Management">
-              <Issues />
-            </ModuleProtectedRoute>
-          </ProtectedRoute>
-        } />
+        {/* Issues now handled by Operations page */}
         <Route path="/operations" element={
           <ProtectedRoute requireAdmin>
             <ModuleProtectedRoute moduleKey="operations" moduleName="Operations Management">
@@ -102,7 +93,7 @@ function AppContent() {
             </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
-        <Route path="keys" element={
+        <Route path="/keys" element={
           <ProtectedRoute requireAdmin>
             <ModuleProtectedRoute moduleKey="keys" moduleName="Keys Management">
               <Keys />
@@ -136,13 +127,7 @@ function AppContent() {
             <AdminKeyRequests />
           </ProtectedRoute>
         } />
-        <Route path="admin/supply-requests" element={
-          <ProtectedRoute requireAdmin>
-            <ModuleProtectedRoute moduleKey="supply_requests" moduleName="Supply Requests">
-              <AdminSupplyRequests />
-            </ModuleProtectedRoute>
-          </ProtectedRoute>
-        } />
+        {/* Supply Requests now handled by Operations page */}
         <Route path="supply-room" element={
           <ProtectedRoute>
             <ModuleProtectedRoute moduleKey="supply_requests" moduleName="Supply Room">
@@ -150,13 +135,7 @@ function AppContent() {
             </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
-        <Route path="maintenance" element={
-          <ProtectedRoute requireAdmin>
-            <ModuleProtectedRoute moduleKey="maintenance" moduleName="Maintenance Management">
-              <MaintenanceDashboard />
-            </ModuleProtectedRoute>
-          </ProtectedRoute>
-        } />
+        {/* Maintenance now handled by Operations page */}
         <Route path="court-operations" element={
           <ProtectedRoute requireAdmin>
             <ModuleProtectedRoute moduleKey="court_operations" moduleName="Court Operations">

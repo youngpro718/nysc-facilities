@@ -29,33 +29,22 @@ import {
   Filter
 } from "lucide-react";
 
-export type CourtRole = 
-  | 'admin'
-  | 'judge'
-  | 'court_aide' 
-  | 'clerk'
-  | 'sergeant'
-  | 'court_officer'
-  | 'bailiff'
-  | 'court_reporter'
-  | 'administrative_assistant'
-  | 'facilities_manager'
-  | 'supply_room_staff';
+export type UserRole = 'admin' | 'standard';
 
-interface UserRole {
+interface UserRoleData {
   id: string;
   user_id: string;
-  role: CourtRole;
-  assigned_by: string;
-  assigned_at: string;
-  profiles: {
-    full_name: string;
+  role: UserRole;
+  created_at: string;
+  profiles?: {
+    first_name: string;
+    last_name: string;
     email: string;
     department: string;
   };
 }
 
-const roleDefinitions: Record<CourtRole, { 
+const roleDefinitions: Record<UserRole, { 
   label: string; 
   description: string; 
   icon: any; 
@@ -63,95 +52,43 @@ const roleDefinitions: Record<CourtRole, {
   permissions: string[];
 }> = {
   admin: {
-    label: 'System Administrator',
-    description: 'Full system access and user management',
+    label: 'Administrator',
+    description: 'Full system access and management capabilities',
     icon: Crown,
     color: 'bg-red-100 text-red-800 border-red-200',
-    permissions: ['All system permissions', 'User management', 'System configuration']
+    permissions: [
+      'Manage all users and roles',
+      'Access all system settings',
+      'View all reports and analytics',
+      'Manage facilities and resources',
+      'Override security restrictions'
+    ]
   },
-  judge: {
-    label: 'Judge',
-    description: 'Court proceedings and case management',
-    icon: Gavel,
-    color: 'bg-purple-100 text-purple-800 border-purple-200',
-    permissions: ['Court operations', 'Case management', 'Courtroom access']
-  },
-  court_aide: {
-    label: 'Court Aide',
-    description: 'Assists judges and court operations',
+  standard: {
+    label: 'Standard User',
+    description: 'Basic system access with limited permissions',
     icon: Users,
     color: 'bg-blue-100 text-blue-800 border-blue-200',
-    permissions: ['Court support', 'Document management', 'Schedule coordination']
-  },
-  clerk: {
-    label: 'Court Clerk',
-    description: 'Administrative and record keeping duties',
-    icon: ClipboardList,
-    color: 'bg-green-100 text-green-800 border-green-200',
-    permissions: ['Record management', 'Administrative tasks', 'Document filing']
-  },
-  sergeant: {
-    label: 'Court Sergeant',
-    description: 'Security and order maintenance',
-    icon: Shield,
-    color: 'bg-orange-100 text-orange-800 border-orange-200',
-    permissions: ['Security management', 'Order maintenance', 'Safety protocols']
-  },
-  court_officer: {
-    label: 'Court Officer',
-    description: 'Law enforcement and security',
-    icon: Shield,
-    color: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-    permissions: ['Security enforcement', 'Crowd control', 'Safety oversight']
-  },
-  bailiff: {
-    label: 'Bailiff',
-    description: 'Court security and prisoner transport',
-    icon: Shield,
-    color: 'bg-gray-100 text-gray-800 border-gray-200',
-    permissions: ['Prisoner transport', 'Court security', 'Evidence handling']
-  },
-  court_reporter: {
-    label: 'Court Reporter',
-    description: 'Transcription and record keeping',
-    icon: ClipboardList,
-    color: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-    permissions: ['Transcription services', 'Record keeping', 'Audio management']
-  },
-  administrative_assistant: {
-    label: 'Administrative Assistant',
-    description: 'General administrative support',
-    icon: Users,
-    color: 'bg-pink-100 text-pink-800 border-pink-200',
-    permissions: ['Administrative support', 'Scheduling', 'Communication']
-  },
-  facilities_manager: {
-    label: 'Facilities Manager',
-    description: 'Building and facility management',
-    icon: Building,
-    color: 'bg-teal-100 text-teal-800 border-teal-200',
-    permissions: ['Facility management', 'Maintenance oversight', 'Space allocation']
-  },
-  supply_room_staff: {
-    label: 'Supply Room Staff',
-    description: 'Inventory and supply management',
-    icon: Package,
-    color: 'bg-cyan-100 text-cyan-800 border-cyan-200',
-    permissions: ['Inventory management', 'Supply distribution', 'Stock monitoring']
+    permissions: [
+      'View assigned resources',
+      'Access basic features',
+      'Update personal profile',
+      'View public information'
+    ]
   }
 };
 
 export function RoleManagement() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [userRoles, setUserRoles] = useState<UserRole[]>([]);
-  const [currentUserRole, setCurrentUserRole] = useState<CourtRole | null>(null);
+  const [userRoles, setUserRoles] = useState<UserRoleData[]>([]);
+  const [currentUserRole, setCurrentUserRole] = useState<UserRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState<CourtRole | 'all'>('all');
+  const [roleFilter, setRoleFilter] = useState<UserRole | 'all'>('all');
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState('');
-  const [selectedRole, setSelectedRole] = useState<CourtRole>('court_aide');
+  const [selectedRole, setSelectedRole] = useState<UserRole>('standard');
   const [availableUsers, setAvailableUsers] = useState<any[]>([]);
 
   useEffect(() => {
@@ -180,24 +117,66 @@ export function RoleManagement() {
   const loadUserRoles = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
+      
+      // Load user roles first
+      const { data: userRoles, error: userRolesError } = await supabase
         .from('user_roles')
-        .select(`
-          id,
-          user_id,
-          role,
-          assigned_by,
-          assigned_at,
-          profiles!user_roles_user_id_fkey (
-            full_name,
-            email,
-            department
-          )
-        `)
-        .order('assigned_at', { ascending: false });
+        .select('id, user_id, role, created_at')
+        .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setUserRoles(data || []);
+      if (userRolesError) throw userRolesError;
+
+      // Load profiles separately
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, email, department')
+        .eq('is_approved', true);
+
+      if (profilesError) throw profilesError;
+
+      // Load court personnel from term_personnel table (they don't have assignable roles)
+      const { data: courtPersonnel, error: courtError } = await supabase
+        .from('term_personnel')
+        .select('*')
+        .order('name');
+
+      if (courtError) throw courtError;
+
+      // Map court personnel to display format (but they can't be assigned roles)
+      const courtPersonnelDisplay = (courtPersonnel || []).map(person => {
+        const nameParts = person.name.split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+        
+        return {
+          id: `court_${person.id}`,
+          user_id: person.id,
+          role: 'standard' as UserRole, // Court personnel are shown as standard for display
+          created_at: person.created_at || new Date().toISOString(),
+          profiles: {
+            first_name: firstName,
+            last_name: lastName,
+            email: `${person.name.toLowerCase().replace(/\s+/g, '.')}@court.nysc.gov`,
+            department: 'Court Administration'
+          }
+        };
+      });
+
+      // Join user roles with profiles manually
+      const joinedUserRoles = (userRoles || []).map(userRole => {
+        const profile = profiles?.find(p => p.id === userRole.user_id);
+        return {
+          ...userRole,
+          profiles: profile ? {
+            first_name: profile.first_name,
+            last_name: profile.last_name,
+            email: profile.email,
+            department: profile.department
+          } : undefined
+        };
+      }).filter(userRole => userRole.profiles); // Only include roles with valid profiles
+
+      setUserRoles(joinedUserRoles);
     } catch (error) {
       console.error('Error loading user roles:', error);
       toast({
@@ -212,15 +191,74 @@ export function RoleManagement() {
 
   const loadAvailableUsers = async () => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, full_name, email, department')
-        .order('full_name');
-
-      if (error) throw error;
-      setAvailableUsers(data || []);
+      // Load from individual tables since unified view doesn't exist
+      let availablePersonnel = [];
+      
+      console.log('Loading personnel from individual tables');
+        
+        // Fallback: Load from individual tables
+        const [profilesResult, personnelResult] = await Promise.allSettled([
+          supabase
+            .from('profiles')
+            .select('id, first_name, last_name, email, phone, department, title')
+            .eq('is_approved', true)
+            .order('first_name'),
+          supabase
+            .from('term_personnel')
+            .select('id, name, phone, role')
+            .order('name')
+        ]);
+        
+        const profiles = profilesResult.status === 'fulfilled' ? profilesResult.value.data || [] : [];
+        const personnel = personnelResult.status === 'fulfilled' ? personnelResult.value.data || [] : [];
+        
+        // Transform to unified format
+        const transformedProfiles = profiles.map(p => ({
+          personnel_type: 'registered_user',
+          unified_id: `user_${p.id}`,
+          source_id: p.id,
+          first_name: p.first_name,
+          last_name: p.last_name,
+          full_name: `${p.first_name || ''} ${p.last_name || ''}`.trim(),
+          email: p.email,
+          phone: p.phone,
+          department: p.department,
+          role: p.title,
+          title: p.title,
+          status: 'active'
+        }));
+        
+        const transformedPersonnel = personnel.map(p => {
+          const nameParts = p.name.split(' ');
+          const firstName = nameParts[0] || '';
+          const lastName = nameParts.slice(1).join(' ') || '';
+          
+          return {
+            personnel_type: 'court_personnel',
+            unified_id: `court_${p.id}`,
+            source_id: p.id,
+            first_name: firstName,
+            last_name: lastName,
+            full_name: p.name,
+            email: `${p.name.toLowerCase().replace(/\s+/g, '.')}@court.nysc.gov`,
+            phone: p.phone,
+            department: 'Court Administration',
+            role: p.role,
+            title: p.role,
+            status: 'active'
+          };
+        });
+        
+        availablePersonnel = [...transformedProfiles, ...transformedPersonnel];
+      
+      setAvailableUsers(availablePersonnel);
     } catch (error) {
       console.error('Error loading available users:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load available users",
+        variant: "destructive",
+      });
     }
   };
 
@@ -228,11 +266,32 @@ export function RoleManagement() {
     if (!selectedUserId || !selectedRole || !user?.id) return;
 
     try {
+      // Extract the actual user ID from the unified ID format
+      let actualUserId = selectedUserId;
+      let isCourtPersonnel = false;
+      
+      if (selectedUserId.startsWith('user_')) {
+        actualUserId = selectedUserId.replace('user_', '');
+      } else if (selectedUserId.startsWith('court_')) {
+        actualUserId = selectedUserId.replace('court_', '');
+        isCourtPersonnel = true;
+      }
+      
+      // Only allow role assignment to registered users (not court personnel)
+      if (isCourtPersonnel) {
+        toast({
+          title: "Cannot Assign Role",
+          description: "Court personnel roles are managed through the personnel system. Only registered users can be assigned roles here.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Check if user already has a role
       const { data: existingRole } = await supabase
         .from('user_roles')
         .select('id')
-        .eq('user_id', selectedUserId)
+        .eq('user_id', actualUserId)
         .maybeSingle();
 
       if (existingRole) {
@@ -240,41 +299,42 @@ export function RoleManagement() {
         const { error } = await supabase
           .from('user_roles')
           .update({
-            role: selectedRole,
-            assigned_by: user.id,
-            assigned_at: new Date().toISOString()
+            role: selectedRole
           })
-          .eq('user_id', selectedUserId);
+          .eq('user_id', actualUserId);
 
         if (error) throw error;
+        
+        toast({
+          title: "Success",
+          description: "Role updated successfully",
+        });
       } else {
         // Insert new role
         const { error } = await supabase
           .from('user_roles')
           .insert({
-            user_id: selectedUserId,
-            role: selectedRole,
-            assigned_by: user.id,
-            assigned_at: new Date().toISOString()
+            user_id: actualUserId,
+            role: selectedRole
           });
 
         if (error) throw error;
+        
+        toast({
+          title: "Success",
+          description: "Role assigned successfully",
+        });
       }
-
-      toast({
-        title: "Success",
-        description: "Role assigned successfully",
-      });
 
       setIsAssignDialogOpen(false);
       setSelectedUserId('');
-      setSelectedRole('court_aide');
+      setSelectedRole('standard');
       loadUserRoles();
     } catch (error) {
       console.error('Error assigning role:', error);
       toast({
         title: "Error",
-        description: "Failed to assign role",
+        description: "Failed to assign role. Please try again.",
         variant: "destructive",
       });
     }
@@ -306,7 +366,8 @@ export function RoleManagement() {
   };
 
   const filteredRoles = userRoles.filter(userRole => {
-    const matchesSearch = userRole.profiles.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const fullName = `${userRole.profiles.first_name || ''} ${userRole.profiles.last_name || ''}`.trim();
+    const matchesSearch = fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          userRole.profiles.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          roleDefinitions[userRole.role].label.toLowerCase().includes(searchTerm.toLowerCase());
     
@@ -431,10 +492,11 @@ export function RoleManagement() {
                           </SelectTrigger>
                           <SelectContent>
                             {availableUsers.map((user) => (
-                              <SelectItem key={user.id} value={user.id}>
+                              <SelectItem key={user.unified_id || user.source_id} value={user.unified_id || user.source_id}>
                                 <div>
                                   <div className="font-medium">{user.full_name}</div>
-                                  <div className="text-sm text-muted-foreground">{user.email}</div>
+                                  <div className="text-sm text-muted-foreground">{user.email || 'No email'}</div>
+                                  <div className="text-xs text-blue-600">{user.personnel_type === 'court_personnel' ? 'Court Personnel' : 'Registered User'}</div>
                                 </div>
                               </SelectItem>
                             ))}
@@ -443,7 +505,7 @@ export function RoleManagement() {
                       </div>
                       <div>
                         <Label>Role</Label>
-                        <Select value={selectedRole} onValueChange={(value: CourtRole) => setSelectedRole(value)}>
+                        <Select value={selectedRole} onValueChange={(value: UserRole) => setSelectedRole(value)}>
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
@@ -489,7 +551,7 @@ export function RoleManagement() {
                     />
                   </div>
                 </div>
-                <Select value={roleFilter} onValueChange={(value: CourtRole | 'all') => setRoleFilter(value)}>
+                <Select value={roleFilter} onValueChange={(value: UserRole | 'all') => setRoleFilter(value)}>
                   <SelectTrigger className="w-48">
                     <Filter className="h-4 w-4 mr-2" />
                     <SelectValue />
@@ -540,7 +602,7 @@ export function RoleManagement() {
                           <TableRow key={userRole.id}>
                             <TableCell>
                               <div>
-                                <div className="font-medium">{userRole.profiles.full_name}</div>
+                                <div className="font-medium">{`${userRole.profiles.first_name || ''} ${userRole.profiles.last_name || ''}`.trim()}</div>
                                 <div className="text-sm text-muted-foreground">{userRole.profiles.email}</div>
                               </div>
                             </TableCell>
@@ -557,7 +619,7 @@ export function RoleManagement() {
                             </TableCell>
                             <TableCell>
                               <div className="text-sm">
-                                {new Date(userRole.assigned_at).toLocaleDateString()}
+                                {new Date(userRole.created_at).toLocaleDateString()}
                               </div>
                             </TableCell>
                             <TableCell className="text-right">
@@ -575,7 +637,7 @@ export function RoleManagement() {
                                     <AlertDialogHeader>
                                       <AlertDialogTitle>Remove Role</AlertDialogTitle>
                                       <AlertDialogDescription>
-                                        Are you sure you want to remove the role from {userRole.profiles.full_name}? 
+                                        Are you sure you want to remove the role from {`${userRole.profiles.first_name || ''} ${userRole.profiles.last_name || ''}`.trim()}? 
                                         This action cannot be undone.
                                       </AlertDialogDescription>
                                     </AlertDialogHeader>

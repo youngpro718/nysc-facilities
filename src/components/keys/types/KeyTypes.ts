@@ -48,6 +48,9 @@ export interface KeyData {
   lost_count: number;
   created_at?: string;
   updated_at?: string;
+  // Backward compatibility fields
+  assigned_count?: number;
+  stock_status?: string;
 }
 
 export interface KeyFormData {

@@ -18,20 +18,21 @@ export const DesktopNavigationImproved = ({
   const navigate = useNavigate();
   const location = useLocation();
   const { isAdmin } = useAuth();
+  
+  console.log('DesktopNavigationImproved - navigation items:', navigation);
+  console.log('DesktopNavigationImproved - isAdmin:', isAdmin);
 
   const handleNavigation = (title: string) => {
     const pathMap: Record<string, string> = {
       'Dashboard': isAdmin ? '/' : '/dashboard',
       'Spaces': '/spaces',
-      'Operations': '/operations',
-      'Issues': '/issues',
+      'Operations': '/operations', // Contains Issues, Maintenance, Supply Requests
       'Occupants': '/occupants',
-      'Inventory': '/inventory',
-      'Supply Requests': '/admin/supply-requests',
       'Keys': '/keys',
+      'Inventory': '/inventory',
       'Lighting': '/lighting',
-      'Maintenance': '/maintenance',
       'Court Operations': '/court-operations',
+      'Supply Room': '/supply-room',
       'My Requests': '/my-requests',
       'My Issues': '/my-issues',
       'Admin Profile': '/admin-profile',

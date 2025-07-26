@@ -1,19 +1,31 @@
 import React from 'react';
-import { SupplyRoomDashboard } from '@/components/supply/SupplyRoomDashboard';
+import { EnhancedSupplyRoomDashboard } from '@/components/supply/EnhancedSupplyRoomDashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle } from 'lucide-react';
 
 export default function SupplyRoom() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { hasPermission } = useRolePermissions();
 
   // Check if user has supply room permissions
   const canManageSupplyRequests = hasPermission('supply_requests', 'admin') || hasPermission('supply_requests', 'write');
   const canManageInventory = hasPermission('inventory', 'admin') || hasPermission('inventory', 'write');
+  
+  // Also allow access for users assigned to Supply Department
+  const isSupplyDepartmentUser = (profile as any)?.department === 'Supply Department';
+  
+  // Debug logging
+  console.log('SupplyRoom Debug:', {
+    canManageSupplyRequests,
+    canManageInventory,
+    isSupplyDepartmentUser,
+    department: (profile as any)?.department,
+    profile
+  });
 
-  if (!canManageSupplyRequests && !canManageInventory) {
+  if (!canManageSupplyRequests && !canManageInventory && !isSupplyDepartmentUser) {
     return (
       <div className="container mx-auto px-4 py-8">
         <Card>
@@ -36,7 +48,7 @@ export default function SupplyRoom() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <SupplyRoomDashboard />
+      <EnhancedSupplyRoomDashboard />
     </div>
   );
 }

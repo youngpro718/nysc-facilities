@@ -19,16 +19,12 @@ export function useKeyOrders() {
     queryKey: ["key-orders"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("key_orders")
-        .select(`
-          *,
-          profiles:user_id(first_name, last_name, email),
-          key_requests:request_id(reason, request_type)
-        `)
-        .order("created_at", { ascending: false });
+        .from("key_orders_view")
+        .select('*')
+        .order("ordered_at", { ascending: false });
 
       if (error) throw error;
-      return data as any[] || [];
+      return data as KeyOrder[] || [];
     },
   });
 

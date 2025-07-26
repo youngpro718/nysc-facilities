@@ -1,25 +1,50 @@
 
 import { KeyType } from './KeyTypes';
 
-export type KeyOrderStatus = 'ordered' | 'partially_received' | 'received' | 'canceled';
+// Match actual database enum values
+export type KeyOrderStatus = 
+  | 'pending_fulfillment' 
+  | 'in_progress' 
+  | 'ready_for_pickup' 
+  | 'completed' 
+  | 'received' 
+  | 'cancelled';
 
+export type KeyOrderPriority = 'low' | 'medium' | 'high' | 'urgent';
+
+// Match actual database schema
 export interface KeyOrder {
   id: string;
-  key_id: string;
-  key_name: string;
-  key_type: KeyType;
-  quantity: number;
-  ordered_at: string;
-  expected_delivery_date: string | null;
-  received_at: string | null;
-  status: KeyOrderStatus;
-  notes: string | null;
+  key_id: string | null;
+  request_id: string | null;
+  user_id: string | null;
   requestor_id: string | null;
-  requestor_email: string | null;
-  requestor_name: string | null;
   recipient_id: string | null;
-  recipient_name: string | null;
-  recipient_department: string | null;
+  quantity: number;
+  status: KeyOrderStatus;
+  priority: KeyOrderPriority | null;
+  notes: string | null;
+  ordered_by: string | null;
+  ordered_at: string | null;
+  expected_delivery_date: string | null;
+  estimated_delivery_date: string | null;
+  received_at: string | null;
+  received_by: string | null;
+  delivered_at: string | null;
+  delivered_by: string | null;
+  tracking_number: string | null;
+  vendor_order_id: string | null;
+  cost: number | null;
+  delivery_notes: string | null;
+  last_status_change: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  // Joined data from views
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+  reason?: string | null;
+  request_type?: string | null;
 }
 
 export interface CreateKeyOrderData {

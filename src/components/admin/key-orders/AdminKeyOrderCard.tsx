@@ -18,9 +18,10 @@ import {
   AlertTriangle
 } from "lucide-react";
 import { format } from "date-fns";
+import { KeyOrder } from "@/components/keys/types/OrderTypes";
 
 interface KeyOrderCardProps {
-  order: any;
+  order: KeyOrder;
   onStatusUpdate: (orderId: string, newStatus: string, notes?: string) => void;
 }
 
@@ -77,9 +78,9 @@ export const AdminKeyOrderCard = ({ order, onStatusUpdate }: KeyOrderCardProps) 
   const priorityInfo = priorityConfig[order.priority as keyof typeof priorityConfig] || priorityConfig.medium;
   const StatusIcon = statusInfo.icon;
   
-  const userName = order.user_profiles 
-    ? `${order.user_profiles.first_name || ''} ${order.user_profiles.last_name || ''}`.trim()
-    : 'Unknown User';
+  const userName = order.first_name && order.last_name
+    ? `${order.first_name} ${order.last_name}`.trim()
+    : order.email || 'Unknown User';
 
   const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
 
@@ -148,42 +149,19 @@ export const AdminKeyOrderCard = ({ order, onStatusUpdate }: KeyOrderCardProps) 
             <Calendar className="h-4 w-4 text-muted-foreground" />
             <span>Ordered: {format(new Date(order.created_at), 'MMM dd, yyyy')}</span>
           </div>
-          {order.key_requests && (
+          {order.request_type && (
             <div className="flex items-center gap-2">
               <FileText className="h-4 w-4 text-muted-foreground" />
-              <span>{getRequestTypeLabel(order.key_requests.request_type)}</span>
+              <span>{getRequestTypeLabel(order.request_type)}</span>
             </div>
           )}
         </div>
 
-        {/* Location Info */}
-        {(order.rooms || order.key_requests?.room_other) && (
-          <div className="flex items-center gap-2 text-sm">
-            <MapPin className="h-4 w-4 text-muted-foreground" />
-            <span>
-              {order.rooms 
-                ? `${order.rooms.room_number} - ${order.rooms.name}`
-                : order.key_requests?.room_other || 'Unknown location'
-              }
-            </span>
-          </div>
-        )}
-
-        {/* Emergency Contact */}
-        {order.key_requests?.emergency_contact && (
-          <div className="flex items-center gap-2 text-sm">
-            <Phone className="h-4 w-4 text-red-500" />
-            <span className="text-red-600 font-medium">
-              Emergency: {order.key_requests.emergency_contact}
-            </span>
-          </div>
-        )}
-
-        {/* Justification */}
-        {order.key_requests?.justification && (
+        {/* Request Reason */}
+        {order.reason && (
           <div className="text-sm">
-            <p className="font-medium text-muted-foreground mb-1">Justification:</p>
-            <p className="text-sm">{order.key_requests.justification}</p>
+            <p className="font-medium text-muted-foreground mb-1">Reason:</p>
+            <p className="text-sm">{order.reason}</p>
           </div>
         )}
 

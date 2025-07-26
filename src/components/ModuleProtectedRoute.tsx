@@ -23,6 +23,13 @@ export function ModuleProtectedRoute({ children, moduleKey, moduleName }: Module
   }
 
   const isModuleEnabled = enabledModules[moduleKey];
+  
+  // Debug logging
+  console.log(`ModuleProtectedRoute Debug for ${moduleKey}:`, {
+    isModuleEnabled,
+    enabledModules,
+    loading
+  });
 
   if (!isModuleEnabled) {
     return (

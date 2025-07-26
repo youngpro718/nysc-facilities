@@ -11,42 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { AdminKeyOrderCard } from "./AdminKeyOrderCard";
 
-interface KeyOrder {
-  id: string;
-  request_id: string | null;
-  user_id: string | null;
-  key_id: string | null;
-  quantity: number;
-  status: string;
-  priority: string | null;
-  notes: string | null;
-  ordered_by: string | null;
-  ordered_at: string | null;
-  delivered_by: string | null;
-  delivered_at: string | null;
-  received_by: string | null;
-  received_at: string | null;
-  cost: number | null;
-  created_at: string | null;
-  updated_at: string | null;
-  // Related data
-  user_profiles?: {
-    first_name: string | null;
-    last_name: string | null;
-    email: string | null;
-  } | null;
-  key_requests?: {
-    request_type: string;
-    room_id: string | null;
-    room_other: string | null;
-    justification: string | null;
-    emergency_contact: string | null;
-  } | null;
-  rooms?: {
-    room_number: string;
-    name: string;
-  } | null;
-}
+import { KeyOrder } from "@/components/keys/types/OrderTypes";
 
 export const AdminKeyOrdersSection = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -56,27 +21,9 @@ export const AdminKeyOrdersSection = () => {
     queryKey: ['keyOrders', 'admin'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('key_orders')
-        .select(`
-          *,
-          user_profiles:profiles!key_orders_user_id_fkey(
-            first_name,
-            last_name,
-            email
-          ),
-          key_requests!key_orders_request_id_fkey(
-            request_type,
-            room_id,
-            room_other,
-            justification,
-            emergency_contact
-          ),
-          rooms!key_requests_room_id_fkey(
-            room_number,
-            name
-          )
-        `)
-        .order('created_at', { ascending: false });
+        .from('key_orders_view')
+        .select('*')
+        .order('ordered_at', { ascending: false });
 
       if (error) throw error;
       return (data as any[]) || [];

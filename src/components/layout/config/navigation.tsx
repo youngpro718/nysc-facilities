@@ -141,37 +141,32 @@ export const userNavigationItems: NavigationItem[] = [
 ];
 
 // Create filtered navigation based on role permissions
-export function getRoleBasedNavigation(permissions: RolePermissions, userRole: CourtRole): NavigationTab[] {
-  const baseNavigation: NavigationTab[] = [
-    { title: 'Dashboard', icon: LayoutDashboard }, // Always visible
-  ];
-
+export function getRoleBasedNavigation(permissions: RolePermissions, userRole: CourtRole, profile?: any): NavigationTab[] {
+  console.log('Navigation - userRole:', userRole, 'profile department:', profile?.departments?.name || profile?.department);
+  console.log('Navigation - profile title:', profile?.title);
+  
   // Admin-specific navigation
   if (userRole === 'admin') {
-    const featureNavigation: Array<NavigationTab & { feature: keyof RolePermissions }> = [
-      { title: 'Spaces', icon: Building2, feature: 'spaces' },
-      { title: 'Operations', icon: AlertTriangle, feature: 'operations' },
-      { title: 'Occupants', icon: Users, feature: 'occupants' },
-      { title: 'Court Operations', icon: Gavel, feature: 'court_operations' },
-    ];
-
-    // Filter based on role permissions (show if user has at least read access)
-    const filteredFeatures = featureNavigation.filter(nav => 
-      permissions[nav.feature] !== null
-    );
-
     return [
-      ...baseNavigation,
-      ...filteredFeatures,
+      { title: 'Dashboard', icon: LayoutDashboard },
+      { title: 'Spaces', icon: Building2 },
+      { title: 'Operations', icon: AlertTriangle },
+      { title: 'Occupants', icon: Users },
+      { title: 'Keys', icon: KeyRound },
+      { title: 'Inventory', icon: Package2 },
+      { title: 'Court Operations', icon: Gavel },
       { type: "separator" },
       { title: 'Admin Profile', icon: UserCog },
     ];
   }
   
-  // Supply room staff navigation
-  if (userRole === 'supply_room_staff') {
+  // Supply room staff navigation (role-based OR department-based)
+  const isSupplyDepartment = profile?.departments?.name === 'Supply Department' || 
+                             profile?.department === 'Supply Department';
+  
+  if (userRole === 'supply_room_staff' || isSupplyDepartment) {
     return [
-      ...baseNavigation,
+      { title: 'Dashboard', icon: LayoutDashboard },
       { title: 'Supply Room', icon: Package },
       { title: 'Inventory', icon: Package2 },
       { type: "separator" },
@@ -179,11 +174,11 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
     ];
   }
   
-  // User-specific navigation
+  // Standard user navigation
   return [
-    ...baseNavigation,
-    { title: 'My Requests', icon: FileText },
-    { title: 'My Issues', icon: MessageSquare },
+    { title: 'Dashboard', icon: LayoutDashboard },
+    { title: 'Supply Requests', icon: FileText },
+    { title: 'Issues', icon: MessageSquare },
     { type: "separator" },
     { title: 'Profile', icon: User },
   ];
@@ -212,35 +207,32 @@ export const userNavigation: NavigationTab[] = [
 ];
 
 // Helper function to get navigation routes based on role permissions
-export const getNavigationRoutes = (permissions: RolePermissions, userRole: CourtRole): string[] => {
-  const baseRoutes = [userRole === 'admin' ? '/' : '/dashboard']; // Dashboard route based on role
+export const getNavigationRoutes = (permissions: RolePermissions, userRole: CourtRole, profile?: any): string[] => {
+  console.log('Routes - userRole:', userRole, 'profile department:', profile?.departments?.name || profile?.department);
+  console.log('Routes - profile title:', profile?.title);
   
   // Admin routes
   if (userRole === 'admin') {
-    const featureRoutes: Array<{ route: string; feature: keyof RolePermissions }> = [
-      { route: '/spaces', feature: 'spaces' },
-      { route: '/operations', feature: 'operations' },
-      { route: '/occupants', feature: 'occupants' },
-      { route: '/court-operations', feature: 'court_operations' },
-    ];
-
-    // Filter routes based on role permissions (show if user has at least read access)
-    const filteredRoutes = featureRoutes
-      .filter(route => permissions[route.feature] !== null)
-      .map(route => route.route);
-
     return [
-      ...baseRoutes,
-      ...filteredRoutes,
-      '', // Separator doesn't have a route
+      '/', // Admin Dashboard
+      '/spaces',
+      '/operations', // Contains Issues, Maintenance, Supply Requests
+      '/occupants',
+      '/keys', // Restored as standalone page with better tabbed interface
+      '/inventory',
+      '/lighting',
+      '/court-operations',
       '/admin-profile',
     ];
   }
   
-  // Supply room staff routes
-  if (userRole === 'supply_room_staff') {
+  // Supply room staff routes (role-based OR department-based)
+  const isSupplyDepartment = profile?.departments?.name === 'Supply Department' || 
+                             profile?.department === 'Supply Department';
+  
+  if (userRole === 'supply_room_staff' || isSupplyDepartment) {
     return [
-      ...baseRoutes,
+      '/dashboard', // User Dashboard for supply staff
       '/supply-room',
       '/inventory',
       '', // Separator doesn't have a route
@@ -248,11 +240,11 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
     ];
   }
   
-  // User routes
+  // Standard user routes
   return [
-    ...baseRoutes,
-    '/my-requests',
-    '/my-issues',
+    '/dashboard', // User Dashboard
+    '/supply-requests', // User supply requests page
+    '/issues', // User issues page
     '', // Separator doesn't have a route
     '/profile',
   ];

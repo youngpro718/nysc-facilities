@@ -18,7 +18,8 @@ interface PersonnelProfile {
   id: string;
   first_name: string;
   last_name: string;
-  full_name: string;
+  first_name: string | null;
+  last_name: string | null;
   display_name: string;
   primary_role: 'judge' | 'clerk' | 'sergeant' | 'officer' | 'administrator';
   title: string;
@@ -64,7 +65,7 @@ export const PersonnelProfileManager: React.FC = () => {
     const matchesRole = selectedRole === 'all' || profile.primary_role === selectedRole;
     const matchesSearch = searchTerm === '' || 
       profile.display_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      profile.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      `${profile.first_name || ''} ${profile.last_name || ''}`.trim().toLowerCase().includes(searchTerm.toLowerCase()) ||
       profile.department?.toLowerCase().includes(searchTerm.toLowerCase());
     
     return matchesRole && matchesSearch;
@@ -292,7 +293,7 @@ export const PersonnelProfileManager: React.FC = () => {
               <div className="flex items-start justify-between">
                 <div>
                   <CardTitle className="text-lg">{profile.display_name}</CardTitle>
-                  <CardDescription>{profile.full_name}</CardDescription>
+                  <CardDescription>{`${profile.first_name || ''} ${profile.last_name || ''}`.trim()}</CardDescription>
                 </div>
                 <Badge className={getRoleBadgeColor(profile.primary_role)}>
                   {profile.primary_role}

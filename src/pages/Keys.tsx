@@ -14,8 +14,9 @@ export default function Keys() {
   const { data: keyStats, isLoading } = useQuery({
     queryKey: ["keys-stats"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("key_inventory_view")
+      // Get key data from base table
+      const { data: keysData, error: keysError } = await supabase
+        .from("keys")
         .select(`
           id,
           name,
@@ -30,14 +31,38 @@ export default function Keys() {
           captain_office_copy,
           captain_office_assigned_date,
           captain_office_notes,
+          created_at,
+          updated_at
+        `);
+
+      if (keysError) throw keysError;
+
+      // Get assignment statistics
+      const { data: assignmentData, error: assignmentError } = await supabase
+        .from("key_assignments_view")
+        .select(`
+          key_id,
           active_assignments,
           returned_assignments,
           lost_count
         `);
 
-      if (error) throw error;
+      if (assignmentError) throw assignmentError;
+
+      // Merge the data
+      const mergedData = keysData?.map(key => {
+        const assignments = assignmentData?.find(a => a.key_id === key.id);
+        return {
+          ...key,
+          active_assignments: assignments?.active_assignments || 0,
+          returned_assignments: assignments?.returned_assignments || 0,
+          lost_count: assignments?.lost_count || 0,
+          assigned_count: assignments?.active_assignments || 0, // For backward compatibility
+          stock_status: key.status // For backward compatibility
+        };
+      }) || [];
       
-      return data as KeyData[];
+      return mergedData as KeyData[];
     },
   });
 

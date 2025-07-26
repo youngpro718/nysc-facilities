@@ -1,8 +1,8 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronLeft, LayoutGrid, User, Users, BarChart3, Settings, Shield, Monitor } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
 import { DynamicAdminDashboard } from "@/components/profile/admin/DynamicAdminDashboard";
 import { MobileProfileHeader } from "@/components/profile/mobile/MobileProfileHeader";
 import { RoleManagement } from "@/components/profile/RoleManagement";
@@ -28,12 +28,31 @@ export default function AdminProfile() {
       setActiveTab(event.detail);
     };
     
+    // Handle URL hash routing
+    const handleHashChange = () => {
+      const hash = window.location.hash.substring(1); // Remove the #
+      if (hash === 'management') {
+        setActiveTab('users');
+      } else if (hash === 'settings') {
+        setActiveTab('personal');
+      } else if (hash === 'analytics') {
+        setActiveTab('analytics');
+      } else if (hash === 'overview' || hash === '') {
+        setActiveTab('overview');
+      }
+    };
+    
+    // Set initial tab based on hash
+    handleHashChange();
+    
     checkMobile();
     window.addEventListener('resize', checkMobile);
+    window.addEventListener('hashchange', handleHashChange);
     window.addEventListener('switchToTab', handleTabSwitch as EventListener);
     
     return () => {
       window.removeEventListener('resize', checkMobile);
+      window.removeEventListener('hashchange', handleHashChange);
       window.removeEventListener('switchToTab', handleTabSwitch as EventListener);
     };
   }, []);
@@ -80,7 +99,19 @@ export default function AdminProfile() {
 
       <MobileProfileHeader />
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+        <Tabs value={activeTab} onValueChange={(value) => {
+          setActiveTab(value);
+          // Update URL hash when tab changes
+          if (value === 'users') {
+            window.history.replaceState(null, '', '#management');
+          } else if (value === 'personal') {
+            window.history.replaceState(null, '', '#settings');
+          } else if (value === 'analytics') {
+            window.history.replaceState(null, '', '#analytics');
+          } else {
+            window.history.replaceState(null, '', '#overview');
+          }
+        }} className="space-y-4 sm:space-y-6">
         <div className="overflow-x-auto scrollbar-hide relative">
           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-full bg-gradient-to-r from-muted to-transparent pointer-events-none z-10 rounded-l-lg" />
           <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-full bg-gradient-to-l from-muted to-transparent pointer-events-none z-10 rounded-r-lg" />
@@ -89,25 +120,17 @@ export default function AdminProfile() {
               <LayoutGrid className="h-4 w-4" />
               Overview
             </TabsTrigger>
-            <TabsTrigger value="profile" className="flex-1 min-w-fit flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 text-sm whitespace-nowrap">
+            <TabsTrigger value="personal" className="flex-1 min-w-fit flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 text-sm whitespace-nowrap">
               <User className="h-4 w-4" />
-              Profile
+              Personal Settings
             </TabsTrigger>
-            <TabsTrigger value="management" className="flex-1 min-w-fit flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 text-sm whitespace-nowrap">
+            <TabsTrigger value="users" className="flex-1 min-w-fit flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 text-sm whitespace-nowrap">
               <Users className="h-4 w-4" />
-              Management
+              User Management
             </TabsTrigger>
             <TabsTrigger value="analytics" className="flex-1 min-w-fit flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 text-sm whitespace-nowrap">
               <BarChart3 className="h-4 w-4" />
               Analytics
-            </TabsTrigger>
-            <TabsTrigger value="roles" className="flex-1 min-w-fit flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 text-sm whitespace-nowrap">
-              <Shield className="h-4 w-4" />
-              Roles
-            </TabsTrigger>
-            <TabsTrigger value="dashboard" className="flex-1 min-w-fit flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 text-sm whitespace-nowrap">
-              <Monitor className="h-4 w-4" />
-              Dashboard
             </TabsTrigger>
           </TabsList>
         </div>
@@ -124,7 +147,7 @@ export default function AdminProfile() {
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => window.dispatchEvent(new CustomEvent('openSystemSettings'))}
+                onClick={() => navigate('/system-settings')}
                 className="gap-2"
               >
                 <Settings className="h-4 w-4" />
@@ -135,19 +158,28 @@ export default function AdminProfile() {
           </div>
         </TabsContent>
 
-        <TabsContent value="profile" className="space-y-4 sm:space-y-6 mt-4">
+        <TabsContent value="personal" className="space-y-4 sm:space-y-6 mt-4">
           <div className="space-y-4">
             <div>
-              <h2 className="text-xl font-semibold">Profile Settings</h2>
+              <h2 className="text-xl font-semibold">Personal Settings</h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Customize your personal preferences and appearance
+                Customize your personal preferences, appearance, and dashboard
               </p>
             </div>
             <AdminProfileSettings />
+            <div className="mt-8">
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold">Dashboard Customization</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Customize your dashboard layout, widgets, and appearance
+                </p>
+              </div>
+              <DashboardCustomization />
+            </div>
           </div>
         </TabsContent>
 
-        <TabsContent value="management" className="space-y-4 sm:space-y-6 mt-4">
+        <TabsContent value="users" className="space-y-4 sm:space-y-6 mt-4">
           <div className="space-y-4">
             <div>
               <h2 className="text-xl font-semibold">User Management</h2>
@@ -171,29 +203,7 @@ export default function AdminProfile() {
           </div>
         </TabsContent>
 
-        <TabsContent value="roles" className="space-y-4 sm:space-y-6 mt-4">
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-xl font-semibold">Role Management</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Manage user roles, permissions, and access levels
-              </p>
-            </div>
-            <RoleManagement />
-          </div>
-        </TabsContent>
 
-        <TabsContent value="dashboard" className="space-y-4 sm:space-y-6 mt-4">
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-xl font-semibold">Dashboard Customization</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Customize your dashboard layout, widgets, and appearance
-              </p>
-            </div>
-            <DashboardCustomization />
-          </div>
-        </TabsContent>
       </Tabs>
     </div>
   );

@@ -20,8 +20,9 @@ export function KeyInventorySection() {
     queryKey: ["keys-inventory", filters, sort],
     queryFn: async () => {
       try {
-        let query = supabase
-          .from("key_inventory_view")
+        // Get key data from base table
+        let keysQuery = supabase
+          .from("keys")
           .select(`
             id,
             name,
@@ -36,33 +37,58 @@ export function KeyInventorySection() {
             captain_office_copy,
             captain_office_assigned_date,
             captain_office_notes,
-            active_assignments,
-            returned_assignments,
-            lost_count,
             created_at,
             updated_at
           `);
 
         // Apply filters
         if (filters.type && filters.type !== 'all_types') {
-          query = query.eq('type', filters.type);
+          keysQuery = keysQuery.eq('type', filters.type);
         }
         
         if (filters.captainOfficeCopy && filters.captainOfficeCopy !== 'all') {
-          query = query.eq('captain_office_copy', filters.captainOfficeCopy === 'has_copy');
+          keysQuery = keysQuery.eq('captain_office_copy', filters.captainOfficeCopy === 'has_copy');
         }
         
         // Apply sorting
-        query = query.order(sort.field, { ascending: sort.direction === 'asc' });
+        keysQuery = keysQuery.order(sort.field, { ascending: sort.direction === 'asc' });
 
-        const { data, error } = await query;
+        const { data: keysData, error: keysError } = await keysQuery;
 
-        if (error) {
-          console.error("Error fetching keys:", error);
-          throw error;
+        if (keysError) {
+          console.error("Error fetching keys:", keysError);
+          throw keysError;
         }
 
-        return data as KeyData[];
+        // Get assignment statistics
+        const { data: assignmentData, error: assignmentError } = await supabase
+          .from("key_assignments_view")
+          .select(`
+            key_id,
+            active_assignments,
+            returned_assignments,
+            lost_count
+          `);
+
+        if (assignmentError) {
+          console.error("Error fetching assignments:", assignmentError);
+          // Don't throw, just continue without assignment data
+        }
+
+        // Merge the data
+        const mergedData = keysData?.map(key => {
+          const assignments = assignmentData?.find(a => a.key_id === key.id);
+          return {
+            ...key,
+            active_assignments: assignments?.active_assignments || 0,
+            returned_assignments: assignments?.returned_assignments || 0,
+            lost_count: assignments?.lost_count || 0,
+            assigned_count: assignments?.active_assignments || 0,
+            stock_status: key.status
+          };
+        }) || [];
+
+        return mergedData as KeyData[];
       } catch (error: any) {
         console.error("Error in query:", error);
         toast.error("Failed to fetch keys inventory");

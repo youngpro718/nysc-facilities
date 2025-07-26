@@ -13,7 +13,8 @@ export type CourtRole =
   | 'administrative_assistant'
   | 'facilities_manager'
   | 'supply_room_staff'
-  | 'admin';
+  | 'admin'
+  | 'standard';
 
 export type PermissionLevel = 'read' | 'write' | 'admin';
 
@@ -33,6 +34,7 @@ export interface RolePermissions {
 
 export function useRolePermissions() {
   const [userRole, setUserRole] = useState<CourtRole | null>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [permissions, setPermissions] = useState<RolePermissions>({
     spaces: null,
     issues: null,
@@ -66,8 +68,33 @@ export function useRolePermissions() {
         return;
       }
 
-      const role = roleData?.role as CourtRole;
+      let role = roleData?.role as CourtRole;
+      console.log('useRolePermissions - Initial role from user_roles:', role);
+      
+      // Check if user is assigned to Supply Department and override role if needed
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select(`
+          *,
+          departments(name)
+        `)
+        .eq('id', user.id)
+        .single();
+      
+      console.log('useRolePermissions - Profile data:', profileData);
+      console.log('useRolePermissions - Department name:', profileData?.departments?.name);
+      
+      // If user is in Supply Department and NOT admin, treat them as supply_room_staff
+      if (profileData?.departments?.name === 'Supply Department' && role !== 'admin') {
+        console.log('useRolePermissions - Overriding role to supply_room_staff');
+        role = 'supply_room_staff';
+      } else if (role === 'admin') {
+        console.log('useRolePermissions - Keeping admin role, not overriding for department');
+      }
+      
+      console.log('useRolePermissions - Final role:', role);
       setUserRole(role);
+      setProfile(profileData);
 
       // Define role permissions mapping based on court roles
       const rolePermissionsMap: Record<CourtRole, RolePermissions> = {
@@ -214,9 +241,22 @@ export function useRolePermissions() {
           operations: 'admin',
           dashboard: 'admin',
         },
+        standard: {
+          spaces: null,
+          issues: 'write',
+          occupants: null,
+          inventory: null,
+          supply_requests: 'write',
+          keys: null,
+          lighting: null,
+          maintenance: null,
+          court_operations: null,
+          operations: null,
+          dashboard: 'read',
+        },
       };
 
-      setPermissions(rolePermissionsMap[role] || {
+      let finalPermissions = rolePermissionsMap[role] || {
         spaces: null,
         issues: null,
         occupants: null,
@@ -228,7 +268,22 @@ export function useRolePermissions() {
         court_operations: null,
         operations: null,
         dashboard: null,
-      });
+      };
+      
+      // Check if user is in Supply Department for permission enhancement
+      const isSupplyDepartmentUser = (profileData as any)?.departments?.name === 'Supply Department';
+      
+      // Enhance permissions for Supply Department users
+      if (isSupplyDepartmentUser) {
+        finalPermissions = {
+          ...finalPermissions,
+          inventory: 'admin',
+          supply_requests: 'admin',
+        };
+        console.log('Enhanced permissions for Supply Department user:', finalPermissions);
+      }
+      
+      setPermissions(finalPermissions);
     } catch (error) {
       console.error('Error in fetchUserRoleAndPermissions:', error);
       toast({
@@ -270,6 +325,7 @@ export function useRolePermissions() {
 
   return {
     userRole,
+    profile,
     permissions,
     loading,
     hasPermission,

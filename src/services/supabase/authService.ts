@@ -81,6 +81,13 @@ export async function fetchUserProfile(userId: string) {
   const roomAssignments = roomAssignmentsResponse.data || [];
   const userRole = roleResponse.data?.role;
   
+  console.log('fetchUserProfile - userId:', userId);
+  console.log('fetchUserProfile - roleResponse:', roleResponse.data);
+  console.log('fetchUserProfile - userRole:', userRole);
+  console.log('fetchUserProfile - isAdmin:', userRole === 'admin');
+  console.log('fetchUserProfile - profile:', profile);
+  console.log('fetchUserProfile - departmentName:', departmentName);
+  
   return {
     isAdmin: userRole === 'admin',
     role: userRole,

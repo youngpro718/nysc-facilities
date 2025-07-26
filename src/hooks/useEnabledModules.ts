@@ -40,7 +40,10 @@ export function useEnabledModules() {
 
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('enabled_modules')
+        .select(`
+          enabled_modules,
+          departments(name)
+        `)
         .eq('id', user.id)
         .single();
 
@@ -49,6 +52,8 @@ export function useEnabledModules() {
         return;
       }
 
+      let finalModules = { ...DEFAULT_MODULES };
+      
       if (profile?.enabled_modules && typeof profile.enabled_modules === 'object') {
         const modules = profile.enabled_modules as Record<string, boolean>;
         const validModules: Partial<EnabledModules> = {};
@@ -60,8 +65,16 @@ export function useEnabledModules() {
           }
         });
         
-        setEnabledModules({ ...DEFAULT_MODULES, ...validModules });
+        finalModules = { ...DEFAULT_MODULES, ...validModules };
       }
+      
+      // Auto-enable supply_requests and inventory for Supply Department users
+      if ((profile as any)?.departments?.name === 'Supply Department') {
+        finalModules.supply_requests = true;
+        finalModules.inventory = true;
+      }
+      
+      setEnabledModules(finalModules);
     } catch (error) {
       console.error('Error in fetchEnabledModules:', error);
     } finally {
