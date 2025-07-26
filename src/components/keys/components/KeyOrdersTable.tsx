@@ -114,9 +114,11 @@ export function KeyOrdersTable({ orders }: KeyOrdersTableProps) {
 
       {selectedOrder && (
         <ReceiveKeysDialog
-          order={selectedOrder}
+          order={selectedOrder as any}
           open={showReceiveDialog}
           onOpenChange={setShowReceiveDialog}
+          onSubmit={async () => {}}
+          isSubmitting={false}
         />
       )}
     </>
