@@ -10650,6 +10650,10 @@ export type Database = {
         Args: { target_user_id?: string }
         Returns: undefined
       }
+      is_account_locked: {
+        Args: { user_email: string }
+        Returns: boolean
+      }
       is_admin: {
         Args: { user_id: string }
         Returns: boolean

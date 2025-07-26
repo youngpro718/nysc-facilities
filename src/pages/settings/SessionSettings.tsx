@@ -1,14 +1,35 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ChevronLeft, Clock, Shield } from "lucide-react";
+import { ChevronLeft, Clock, Shield, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function SessionSettings() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedTimeout, setSelectedTimeout] = useState("30 minutes");
+  const [activeSessions, setActiveSessions] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  useEffect(() => {
+    fetchActiveSessions();
+  }, []);
+  
+  const fetchActiveSessions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_sessions')
+        .select('*')
+        .order('last_active_at', { ascending: false });
+      
+      if (error) throw error;
+      setActiveSessions(data || []);
+    } catch (error) {
+      console.error('Error fetching sessions:', error);
+    }
+  };
 
   const timeoutOptions = [
     { value: "15 minutes", label: "15 minutes", description: "High security" },
@@ -19,12 +40,68 @@ export default function SessionSettings() {
     { value: "Never", label: "Never timeout", description: "Not recommended" }
   ];
 
-  const handleSave = () => {
-    toast({
-      title: "Session Settings Updated",
-      description: `Session timeout set to ${selectedTimeout}`
-    });
-    navigate(-1);
+  const handleSave = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Call rate limiting function to track session updates
+      const { error: rateLimitError } = await supabase.rpc('check_rate_limit', {
+        action_type: 'session_update',
+        max_attempts: 3,
+        time_window: '5 minutes'
+      });
+      
+      if (rateLimitError) {
+        toast({
+          title: "Rate Limited",
+          description: "Too many session updates. Please wait before trying again.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // In a real implementation, this would update user preferences
+      // For now, we'll just show the success message
+      toast({
+        title: "Session Settings Updated",
+        description: `Session timeout set to ${selectedTimeout}`
+      });
+      
+      navigate(-1);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update session settings",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const invalidateAllSessions = async () => {
+    try {
+      setIsLoading(true);
+      
+      const { error } = await supabase.rpc('invalidate_user_sessions');
+      
+      if (error) throw error;
+      
+      await fetchActiveSessions();
+      
+      toast({
+        title: "Sessions Invalidated",
+        description: "All sessions have been ended. You will need to log in again on other devices."
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to invalidate sessions",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -114,11 +191,31 @@ export default function SessionSettings() {
           </p>
         </div>
 
+        <div className="pt-4 border-t">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <LogOut className="h-4 w-4 text-red-500" />
+              <span className="text-sm font-medium">Session Management</span>
+            </div>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={invalidateAllSessions}
+              disabled={isLoading}
+            >
+              End All Sessions
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">
+            Active sessions: {activeSessions.length}. Ending all sessions will log you out of all devices.
+          </p>
+        </div>
+
         <div className="flex gap-2 mt-6">
-          <Button onClick={handleSave}>
-            Save Changes
+          <Button onClick={handleSave} disabled={isLoading}>
+            {isLoading ? "Saving..." : "Save Changes"}
           </Button>
-          <Button variant="outline" onClick={() => navigate(-1)}>
+          <Button variant="outline" onClick={() => navigate(-1)} disabled={isLoading}>
             Cancel
           </Button>
         </div>
