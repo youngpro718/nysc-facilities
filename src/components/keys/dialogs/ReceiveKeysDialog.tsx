@@ -37,7 +37,7 @@ export function ReceiveKeysDialog({
 
   useEffect(() => {
     // Calculate remaining quantity to be received
-    if (order.status === 'partially_received') {
+    if ((order.status as any) === 'partially_received') {
       // This is a rough estimate as we don't have the exact received quantity
       // For a more accurate calculation, we'd need to fetch the sum of received quantities
       setMaxQuantity(Math.max(1, Math.floor(order.quantity / 2)));

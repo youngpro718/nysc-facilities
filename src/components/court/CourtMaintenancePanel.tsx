@@ -37,7 +37,7 @@ export const CourtMaintenancePanel = () => {
         .not("maintenance_schedule_id", "is", null)
         .order("scheduled_start_date", { ascending: true });
       if (error) throw error;
-      return data as CourtMaintenance[];
+      return data as any;
     },
   });
 

@@ -111,7 +111,7 @@ export function OperationsAnalyticsDashboard() {
       const issues = issuesData.data || [];
       const openIssues = issues.filter(i => i.status !== 'resolved');
       const resolvedIssues = issues.filter(i => i.status === 'resolved');
-      const criticalIssues = issues.filter(i => i.priority === 'critical' || i.priority === 'high');
+      const criticalIssues = issues.filter(i => (i.priority as any) === 'critical' || i.priority === 'high');
       
       const avgResolutionTime = resolvedIssues.length > 0 
         ? resolvedIssues.reduce((acc, issue) => {

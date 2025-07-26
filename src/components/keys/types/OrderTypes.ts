@@ -8,7 +8,11 @@ export type KeyOrderStatus =
   | 'ready_for_pickup' 
   | 'completed' 
   | 'received' 
-  | 'cancelled';
+  | 'cancelled'
+  | 'ordered'
+  | 'in_transit'
+  | 'delivered'
+  | 'partially_received';
 
 export type KeyOrderPriority = 'low' | 'medium' | 'high' | 'urgent';
 
@@ -16,10 +20,13 @@ export type KeyOrderPriority = 'low' | 'medium' | 'high' | 'urgent';
 export interface KeyOrder {
   id: string;
   key_id: string | null;
+  key_name?: string | null;
   request_id: string | null;
   user_id: string | null;
   requestor_id: string | null;
   recipient_id: string | null;
+  recipient_name?: string | null;
+  recipient_department?: string | null;
   quantity: number;
   status: KeyOrderStatus;
   priority: KeyOrderPriority | null;

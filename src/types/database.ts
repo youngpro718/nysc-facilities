@@ -2,8 +2,12 @@
 import { Database } from "@/integrations/supabase/types";
 
 // Export commonly used types
-export type KeyOrder = Database['public']['Tables']['key_orders']['Row'];
-export type KeyOrderStatus = 'pending_fulfillment' | 'ordered' | 'in_transit' | 'received' | 'ready_for_pickup' | 'delivered' | 'completed' | 'cancelled' | 'partially_received';
+export type KeyOrder = Database['public']['Tables']['key_orders']['Row'] & {
+  key_name?: string;
+  recipient_name?: string;
+  recipient_department?: string;
+};
+export type KeyOrderStatus = 'in_progress' | 'pending_fulfillment' | 'ordered' | 'in_transit' | 'received' | 'ready_for_pickup' | 'delivered' | 'completed' | 'cancelled' | 'partially_received';
 export type User = Database['public']['Tables']['profiles']['Row'];
 export type InventoryItem = Database['public']['Tables']['inventory_items']['Row'];
 
@@ -55,21 +59,21 @@ export interface CourtMaintenance {
 // Personnel types
 export interface UnifiedPersonnel {
   id: string;
-  user_id?: string;
-  name?: string;
+  user_id: string;
+  name: string;
   first_name?: string;
   last_name?: string;
   email: string;
   department?: string;
-  is_registered?: boolean;
+  is_registered: boolean;
   access_level?: string;
   verification_status?: string;
 }
 
 export interface PersonnelStats {
-  totalPersonnel?: number;
-  registeredUsers?: number;
-  unassignedRoles?: number;
+  totalPersonnel: number;
+  registeredUsers: number;
+  unassignedRoles: number;
   activeUsers: number;
   pendingApprovals: number;
   adminUsers: number;
@@ -82,4 +86,18 @@ export interface ExtendedInventoryItem extends InventoryItem {
   current_stock?: number;
   minimum_threshold?: number;
   maximum_stock?: number;
+}
+
+// Additional types for operations
+export type IssuePriority = 'low' | 'medium' | 'high' | 'critical';
+
+// Supply request types
+export interface SupplyRequestProfile {
+  department: string;
+  office_location: string;
+}
+
+export interface SupplyRequest {
+  id: string;
+  profiles: SupplyRequestProfile;
 }
