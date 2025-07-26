@@ -36,8 +36,11 @@ export default function UserDashboard() {
     if (!isLoading && !isAuthenticated) {
       console.log("UserDashboard: Not authenticated, redirecting to login");
       navigate("/login");
+    } else if (!isLoading && isAuthenticated && isAdmin) {
+      console.log("UserDashboard: Admin user detected, redirecting to admin dashboard");
+      navigate("/", { replace: true });
     }
-  }, [isLoading, isAuthenticated, navigate]);
+  }, [isLoading, isAuthenticated, isAdmin, navigate]);
 
   // Show avatar prompt for users without profile pictures
   useEffect(() => {
