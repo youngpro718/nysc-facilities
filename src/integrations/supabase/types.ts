@@ -10677,6 +10677,10 @@ export type Database = {
           connection_type: string
         }[]
       }
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
       get_door_room_details: {
         Args: { door_id: string }
         Returns: {
@@ -10787,6 +10791,10 @@ export type Database = {
         Args: { user_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      has_role: {
+        Args: { check_role: Database["public"]["Enums"]["user_role"] }
+        Returns: boolean
+      }
       increment_key_quantity: {
         Args: { key_id: string }
         Returns: number
@@ -10808,7 +10816,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: {
-        Args: { user_id: string }
+        Args: { user_id?: string }
         Returns: boolean
       }
       is_admin_or_authorized: {
@@ -10896,13 +10904,6 @@ export type Database = {
       }
       validate_nycourt_email: {
         Args: { email: string }
-        Returns: boolean
-      }
-      validate_role_assignment: {
-        Args: {
-          target_user_id: string
-          new_role: Database["public"]["Enums"]["user_role"]
-        }
         Returns: boolean
       }
     }
