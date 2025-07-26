@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,8 +16,6 @@ import { toast } from 'sonner';
 
 interface PersonnelProfile {
   id: string;
-  first_name: string;
-  last_name: string;
   first_name: string | null;
   last_name: string | null;
   display_name: string;
@@ -328,7 +326,6 @@ export const PersonnelProfileManager: React.FC = () => {
                           value: checked
                         })
                       }
-                      size="sm"
                     />
                     <span className="text-xs text-gray-600">Active</span>
                   </div>
@@ -342,7 +339,6 @@ export const PersonnelProfileManager: React.FC = () => {
                           value: checked
                         })
                       }
-                      size="sm"
                     />
                     <span className="text-xs text-gray-600">Available</span>
                   </div>

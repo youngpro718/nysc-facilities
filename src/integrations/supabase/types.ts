@@ -2550,6 +2550,7 @@ export type Database = {
           resolution_type:
             | Database["public"]["Enums"]["issue_resolution_type"]
             | null
+          resolved_at: string | null
           resolved_by: string | null
           room_id: string | null
           seen: boolean | null
@@ -2584,6 +2585,7 @@ export type Database = {
           resolution_type?:
             | Database["public"]["Enums"]["issue_resolution_type"]
             | null
+          resolved_at?: string | null
           resolved_by?: string | null
           room_id?: string | null
           seen?: boolean | null
@@ -2618,6 +2620,7 @@ export type Database = {
           resolution_type?:
             | Database["public"]["Enums"]["issue_resolution_type"]
             | null
+          resolved_at?: string | null
           resolved_by?: string | null
           room_id?: string | null
           seen?: boolean | null
@@ -3136,6 +3139,8 @@ export type Database = {
           expected_delivery_date: string | null
           id: string
           key_id: string | null
+          key_name: string | null
+          key_type: string | null
           last_status_change: string | null
           notes: string | null
           ordered_at: string | null
@@ -3144,7 +3149,9 @@ export type Database = {
           quantity: number
           received_at: string | null
           received_by: string | null
+          recipient_department: string | null
           recipient_id: string | null
+          recipient_name: string | null
           request_id: string | null
           requestor_id: string | null
           status: Database["public"]["Enums"]["key_order_status"]
@@ -3163,6 +3170,8 @@ export type Database = {
           expected_delivery_date?: string | null
           id?: string
           key_id?: string | null
+          key_name?: string | null
+          key_type?: string | null
           last_status_change?: string | null
           notes?: string | null
           ordered_at?: string | null
@@ -3171,7 +3180,9 @@ export type Database = {
           quantity: number
           received_at?: string | null
           received_by?: string | null
+          recipient_department?: string | null
           recipient_id?: string | null
+          recipient_name?: string | null
           request_id?: string | null
           requestor_id?: string | null
           status?: Database["public"]["Enums"]["key_order_status"]
@@ -3190,6 +3201,8 @@ export type Database = {
           expected_delivery_date?: string | null
           id?: string
           key_id?: string | null
+          key_name?: string | null
+          key_type?: string | null
           last_status_change?: string | null
           notes?: string | null
           ordered_at?: string | null
@@ -3198,7 +3211,9 @@ export type Database = {
           quantity?: number
           received_at?: string | null
           received_by?: string | null
+          recipient_department?: string | null
           recipient_id?: string | null
+          recipient_name?: string | null
           request_id?: string | null
           requestor_id?: string | null
           status?: Database["public"]["Enums"]["key_order_status"]
@@ -4392,6 +4407,13 @@ export type Database = {
             foreignKeyName: "maintenance_issues_maintenance_schedule_id_fkey"
             columns: ["maintenance_schedule_id"]
             isOneToOne: false
+            referencedRelation: "court_maintenance_view"
+            referencedColumns: ["schedule_id"]
+          },
+          {
+            foreignKeyName: "maintenance_issues_maintenance_schedule_id_fkey"
+            columns: ["maintenance_schedule_id"]
+            isOneToOne: false
             referencedRelation: "maintenance_schedules"
             referencedColumns: ["id"]
           },
@@ -4432,6 +4454,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "maintenance_notifications_maintenance_schedule_id_fkey"
+            columns: ["maintenance_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "court_maintenance_view"
+            referencedColumns: ["schedule_id"]
+          },
           {
             foreignKeyName: "maintenance_notifications_maintenance_schedule_id_fkey"
             columns: ["maintenance_schedule_id"]
@@ -4549,6 +4578,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      maintenance_requests: {
+        Row: {
+          assigned_to: string | null
+          completed_at: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          priority: string | null
+          requested_by: string | null
+          space_id: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          priority?: string | null
+          requested_by?: string | null
+          space_id?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          priority?: string | null
+          requested_by?: string | null
+          space_id?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       maintenance_schedules: {
         Row: {
@@ -7404,7 +7475,21 @@ export type Database = {
             foreignKeyName: "room_shutdowns_court_room_id_fkey"
             columns: ["court_room_id"]
             isOneToOne: false
+            referencedRelation: "court_maintenance_view"
+            referencedColumns: ["court_id"]
+          },
+          {
+            foreignKeyName: "room_shutdowns_court_room_id_fkey"
+            columns: ["court_room_id"]
+            isOneToOne: false
             referencedRelation: "court_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_shutdowns_court_room_id_fkey"
+            columns: ["court_room_id"]
+            isOneToOne: false
+            referencedRelation: "courtroom_availability"
             referencedColumns: ["id"]
           },
           {
@@ -8981,6 +9066,61 @@ export type Database = {
       }
     }
     Views: {
+      court_maintenance_view: {
+        Row: {
+          court_id: string | null
+          maintenance_end_date: string | null
+          maintenance_notes: string | null
+          maintenance_start_date: string | null
+          maintenance_status: string | null
+          maintenance_title: string | null
+          room_number: string | null
+          schedule_id: string | null
+          schedule_status: string | null
+          scheduled_end_date: string | null
+          scheduled_start_date: string | null
+        }
+        Relationships: []
+      }
+      courtroom_availability: {
+        Row: {
+          accessibility_features: Json | null
+          availability_status: string | null
+          courtroom_number: string | null
+          id: string | null
+          is_active: boolean | null
+          juror_capacity: number | null
+          maintenance_status: string | null
+          notes: string | null
+          room_number: string | null
+          spectator_capacity: number | null
+        }
+        Insert: {
+          accessibility_features?: Json | null
+          availability_status?: never
+          courtroom_number?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          juror_capacity?: number | null
+          maintenance_status?: string | null
+          notes?: string | null
+          room_number?: string | null
+          spectator_capacity?: number | null
+        }
+        Update: {
+          accessibility_features?: Json | null
+          availability_status?: never
+          courtroom_number?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          juror_capacity?: number | null
+          maintenance_status?: string | null
+          notes?: string | null
+          room_number?: string | null
+          spectator_capacity?: number | null
+        }
+        Relationships: []
+      }
       inventory_items_view: {
         Row: {
           category_color:
@@ -10458,6 +10598,10 @@ export type Database = {
       create_assignment_batch: {
         Args: { creator_id: string; batch_metadata: Json }
         Returns: string
+      }
+      create_emergency_admin: {
+        Args: { user_email: string }
+        Returns: undefined
       }
       create_key_order: {
         Args: {
