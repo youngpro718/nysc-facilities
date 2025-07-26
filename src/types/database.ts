@@ -1,85 +1,85 @@
+// Database type exports and extensions
+import { Database } from "@/integrations/supabase/types";
 
-export interface Profile {
-  id: string;
-  username: string | null;
-  avatar_url: string | null;
-  theme: 'light' | 'dark';
-  department: string | null;
-  last_login_at: string | null;
-  notification_preferences: {
-    email: {
-      issues: boolean;
-      maintenance: boolean;
-      system_updates: boolean;
-    };
-    push: {
-      issues: boolean;
-      maintenance: boolean;
-      system_updates: boolean;
-    };
-    alert_preferences: {
-      priority_threshold: string;
-      maintenance_reminders: boolean;
-      system_updates: boolean;
-    };
-  } | null;
-  updated_at: string;
-  created_at: string;
-  phone: string | null;
-  department_id: string | null;
-  access_level: 'none' | 'read' | 'write' | 'admin' | null;
-  verification_status: 'pending' | 'approved' | 'rejected' | null;
-  is_approved: boolean;
-  feature_flags: Record<string, any> | null;
-  interface_preferences: {
-    theme: string;
-    notifications: boolean;
-  } | null;
-  system_preferences: Record<string, any> | null;
-  security_settings: Record<string, any> | null;
-  accessibility_preferences: Record<string, any> | null;
-  first_name: string | null;
-  last_name: string | null;
-  bio: string | null;
-  email: string | null;
-  time_zone: string | null;
-  language: string | null;
-  title: string | null;
-  emergency_contact: {
-    name: string | null;
-    phone: string | null;
-    relationship: string | null;
-  } | null;
+// Export commonly used types
+export type KeyOrder = Database['public']['Tables']['key_orders']['Row'];
+export type KeyOrderStatus = 'pending_fulfillment' | 'ordered' | 'in_transit' | 'received' | 'ready_for_pickup' | 'delivered' | 'completed' | 'cancelled' | 'partially_received';
+export type User = Database['public']['Tables']['profiles']['Row'];
+export type InventoryItem = Database['public']['Tables']['inventory_items']['Row'];
+
+// Extend KeyOrder with joined data for components that expect it
+export interface KeyOrderWithProfile extends KeyOrder {
+  user_profiles?: {
+    email: string;
+    first_name?: string;
+    last_name?: string;
+  };
 }
 
-export interface Database {
-  public: {
-    Tables: {
-      profiles: {
-        Row: Profile;
-        Insert: Partial<Profile>;
-        Update: Partial<Profile>;
-      };
-      verification_requests: {
-        Row: {
-          id: string;
-          user_id: string | null;
-          status: 'pending' | 'approved' | 'rejected';
-          department: string | null;
-          submitted_at: string;
-          reviewed_by: string | null;
-          reviewed_at: string | null;
-          rejection_reason: string | null;
-          department_id: string | null;
-          agency_id: string | null;
-          supporting_documents: string[] | null;
-          employee_id: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: Partial<Omit<Database['public']['Tables']['verification_requests']['Row'], 'id' | 'created_at' | 'updated_at'>>;
-        Update: Partial<Omit<Database['public']['Tables']['verification_requests']['Row'], 'id'>>;
-      };
-    };
-  };
+// Courtroom types
+export interface CourtroomAvailability {
+  id: string;
+  room_number: string;
+  courtroom_number: string;
+  accessibility_features: any;
+  availability_status: string;
+  is_active: boolean;
+  juror_capacity: number;
+  maintenance_status: string;
+  spectator_capacity: number;
+  notes: string;
+  temporary_location?: string;
+  maintenance_start_date?: string;
+  maintenance_end_date?: string;
+  room_name?: string;
+}
+
+export interface CourtMaintenance {
+  court_id: string;
+  court_room_id: string;
+  courtroom_number: string;
+  maintenance_end_date: string;
+  maintenance_notes: string;
+  maintenance_start_date: string;
+  maintenance_status: string;
+  maintenance_title: string;
+  room_number: string;
+  schedule_id: string;
+  schedule_status: string;
+  scheduled_end_date: string;
+  scheduled_start_date: string;
+  temporary_location?: string;
+  maintenance_schedule_id?: string;
+}
+
+// Personnel types
+export interface UnifiedPersonnel {
+  id: string;
+  user_id?: string;
+  name?: string;
+  first_name?: string;
+  last_name?: string;
+  email: string;
+  department?: string;
+  is_registered?: boolean;
+  access_level?: string;
+  verification_status?: string;
+}
+
+export interface PersonnelStats {
+  totalPersonnel?: number;
+  registeredUsers?: number;
+  unassignedRoles?: number;
+  activeUsers: number;
+  pendingApprovals: number;
+  adminUsers: number;
+  securityAlerts: number;
+}
+
+// Extended inventory item type
+export interface ExtendedInventoryItem extends InventoryItem {
+  category?: string;
+  current_stock?: number;
+  minimum_threshold?: number;
+  maximum_stock?: number;
 }
