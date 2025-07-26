@@ -24,7 +24,9 @@ import {
   ChevronRight,
   Boxes,
   Users,
-  Activity
+  Activity,
+  BarChart3,
+  MapPin
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -106,6 +108,7 @@ export function EnhancedSupplyManagement() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [expandedRequests, setExpandedRequests] = useState<Set<string>>(new Set());
+  const [dateRange, setDateRange] = useState('30'); // days
 
   // Fetch supply requests with full details
   const { data: requests = [], isLoading, refetch } = useQuery({
@@ -203,6 +206,94 @@ export function EnhancedSupplyManagement() {
         categories: [...new Set(data.map(item => item.inventory_categories?.name).filter(Boolean))].length
       };
     },
+  });
+
+  // Fetch analytics data for admin dashboard
+  const { data: analyticsData } = useQuery({
+    queryKey: ['supply-analytics', dateRange],
+    queryFn: async () => {
+      const daysAgo = new Date();
+      daysAgo.setDate(daysAgo.getDate() - parseInt(dateRange));
+      
+      // Departmental usage trends
+      const { data: departmentUsage } = await supabase
+        .from('supply_requests')
+        .select(`
+          delivery_location,
+          status,
+          created_at,
+          supply_request_items!request_id(
+            quantity_requested,
+            quantity_fulfilled
+          )
+        `)
+        .gte('created_at', daysAgo.toISOString());
+
+      // Fulfillment speed tracking
+      const { data: fulfillmentSpeed } = await supabase
+        .from('supply_requests')
+        .select(`
+          created_at,
+          approved_at,
+          fulfilled_at,
+          work_started_at,
+          work_completed_at,
+          work_duration_minutes,
+          fulfillment_stage
+        `)
+        .not('fulfilled_at', 'is', null)
+        .gte('created_at', daysAgo.toISOString());
+
+      // Staff fulfillment tracking
+      const { data: staffPerformance } = await supabase
+        .from('supply_requests')
+        .select(`
+          fulfilled_by,
+          assigned_fulfiller_id,
+          work_duration_minutes,
+          fulfillment_cost,
+          created_at,
+          fulfilled_at,
+          profiles!fulfilled_by(
+            first_name,
+            last_name
+          ),
+          assigned_profiles:profiles!assigned_fulfiller_id(
+            first_name,
+            last_name
+          )
+        `)
+        .not('fulfilled_by', 'is', null)
+        .gte('created_at', daysAgo.toISOString());
+
+      return {
+        departmentUsage: departmentUsage || [],
+        fulfillmentSpeed: fulfillmentSpeed || [],
+        staffPerformance: staffPerformance || []
+      };
+    },
+    enabled: isAdmin
+  });
+
+  // Fetch low stock and stock-out items
+  const { data: stockAlerts } = useQuery({
+    queryKey: ['stock-alerts'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('inventory_items')
+        .select(`
+          id,
+          name,
+          quantity,
+          minimum_quantity,
+          unit,
+          inventory_categories(name)
+        `)
+        .or('quantity.lte.minimum_quantity,quantity.eq.0');
+      
+      return data || [];
+    },
+    enabled: isAdmin
   });
 
   // Filter requests
@@ -542,16 +633,36 @@ export function EnhancedSupplyManagement() {
         </CardContent>
       </Card>
 
-      {/* Requests List */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">
-            Supply Requests ({filteredRequests.length})
-          </h3>
-          <div className="text-sm text-gray-600">
-            {filteredRequests.length !== requests.length && `Filtered from ${requests.length} total`}
+      {/* Admin Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="requests" className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            Requests
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Analytics
+          </TabsTrigger>
+          <TabsTrigger value="fulfillment" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Staff Performance
+          </TabsTrigger>
+          <TabsTrigger value="stock" className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4" />
+            Stock Alerts
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="requests" className="space-y-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">
+              Supply Requests ({filteredRequests.length})
+            </h3>
+            <div className="text-sm text-gray-600">
+              {filteredRequests.length !== requests.length && `Filtered from ${requests.length} total`}
+            </div>
           </div>
-        </div>
         
         {isLoading ? (
           <div className="space-y-4">
@@ -583,7 +694,189 @@ export function EnhancedSupplyManagement() {
             ))}
           </div>
         )}
-      </div>
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Department Usage Chart */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Usage by Department/Office
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {analyticsData?.departmentUsage ? (
+                  <div className="space-y-3">
+                    {Object.entries(
+                      analyticsData.departmentUsage.reduce((acc: any, req: any) => {
+                        const dept = req.delivery_location || 'Unknown';
+                        const items = req.supply_request_items?.length || 0;
+                        acc[dept] = (acc[dept] || 0) + items;
+                        return acc;
+                      }, {})
+                    ).map(([dept, count]) => (
+                      <div key={dept} className="flex items-center justify-between">
+                        <span className="text-sm font-medium">{dept}</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-24 bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-blue-600 h-2 rounded-full" 
+                              style={{ width: `${Math.min((count as number) * 10, 100)}%` }}
+                            />
+                          </div>
+                          <span className="text-sm text-gray-600">{count as number}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-center py-4">No usage data available</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Fulfillment Speed Metrics */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Fulfillment Speed
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {analyticsData?.fulfillmentSpeed ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="text-center p-3 bg-green-50 rounded-lg">
+                        <p className="text-2xl font-bold text-green-600">
+                          {Math.round(
+                            analyticsData.fulfillmentSpeed.reduce((acc: number, req: any) => 
+                              acc + (req.work_duration_minutes || 0), 0
+                            ) / analyticsData.fulfillmentSpeed.length || 0
+                          )}
+                        </p>
+                        <p className="text-sm text-gray-600">Avg Minutes</p>
+                      </div>
+                      <div className="text-center p-3 bg-blue-50 rounded-lg">
+                        <p className="text-2xl font-bold text-blue-600">
+                          {analyticsData.fulfillmentSpeed.length}
+                        </p>
+                        <p className="text-sm text-gray-600">Completed</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-center py-4">No fulfillment data available</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="fulfillment" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Staff Performance Tracking
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {analyticsData?.staffPerformance ? (
+                <div className="space-y-4">
+                  {Object.entries(
+                    analyticsData.staffPerformance.reduce((acc: any, req: any) => {
+                      const staff = req.profiles ? 
+                        `${req.profiles.first_name} ${req.profiles.last_name}` : 
+                        req.assigned_profiles ? 
+                        `${req.assigned_profiles.first_name} ${req.assigned_profiles.last_name}` : 
+                        'Unknown Staff';
+                      
+                      if (!acc[staff]) {
+                        acc[staff] = { count: 0, totalTime: 0, totalCost: 0 };
+                      }
+                      acc[staff].count += 1;
+                      acc[staff].totalTime += req.work_duration_minutes || 0;
+                      acc[staff].totalCost += req.fulfillment_cost || 0;
+                      return acc;
+                    }, {})
+                  ).map(([staff, metrics]: [string, any]) => (
+                    <div key={staff} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium">{staff}</h4>
+                        <Badge variant="outline">{metrics.count} requests</Badge>
+                      </div>
+                      <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <p className="text-gray-600">Avg Time</p>
+                          <p className="font-medium">{Math.round(metrics.totalTime / metrics.count || 0)} min</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Total Cost</p>
+                          <p className="font-medium">${metrics.totalCost.toFixed(2)}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Efficiency</p>
+                          <p className="font-medium text-green-600">Good</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-center py-4">No staff performance data available</p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="stock" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-red-500" />
+                Stock Alerts & Inventory Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {stockAlerts && stockAlerts.length > 0 ? (
+                <div className="space-y-3">
+                  {stockAlerts.map((item: any) => (
+                    <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <h4 className="font-medium">{item.name}</h4>
+                        <p className="text-sm text-gray-600">
+                          {item.inventory_categories?.name || 'Uncategorized'}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="flex items-center gap-2">
+                          {item.quantity === 0 ? (
+                            <Badge variant="destructive">Out of Stock</Badge>
+                          ) : (
+                            <Badge variant="secondary">Low Stock</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {item.quantity} {item.unit} (Min: {item.minimum_quantity})
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">All Stock Levels Good</h3>
+                  <p className="text-gray-600">No items are currently low on stock or out of stock.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

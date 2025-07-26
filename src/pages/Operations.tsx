@@ -8,7 +8,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
   AlertTriangle, 
   Wrench, 
-  KeyRound, 
   Plus, 
   Calendar,
   Clock,
@@ -20,7 +19,6 @@ import {
   BarChart3,
   RefreshCw,
   Zap,
-  Package,
   Boxes
 } from "lucide-react";
 
@@ -29,25 +27,17 @@ import { EnhancedIssuesList } from "@/components/admin-issues/EnhancedIssuesList
 import { IssueAnalyticsPanel } from "@/components/admin-issues/IssueAnalyticsPanel";
 import { MaintenanceScheduleList } from "@/components/maintenance/MaintenanceScheduleList";
 import { MaintenanceIssuesList } from "@/components/maintenance/MaintenanceIssuesList";
-import { KeyStatisticsCards } from "@/components/keys/KeyStatisticsCards";
-import { KeyInventorySection } from "@/components/keys/sections/KeyInventorySection";
-import { KeyAssignmentSection } from "@/components/keys/sections/KeyAssignmentSection";
-import { KeyHistorySection } from "@/components/keys/sections/KeyHistorySection";
-import { KeyOrderSection } from "@/components/keys/sections/KeyOrderSection";
+
 
 // Import dialogs
 import { IssueDialog } from "@/components/issues/IssueDialog";
 import { ScheduleMaintenanceDialog } from "@/components/maintenance/ScheduleMaintenanceDialog";
 import { ReportIssueDialog } from "@/components/maintenance/ReportIssueDialog";
 
-// Import Supply Requests component
-import { EnhancedSupplyManagement } from "@/components/supply/EnhancedSupplyManagement";
-import { InventoryDashboard } from "@/pages/InventoryDashboard";
-import AdvancedAnalyticsDashboard from "@/components/analytics/AdvancedAnalyticsDashboard";
+
 
 // Import hooks
 import { useAdminIssuesData } from "@/hooks/dashboard/useAdminIssuesData";
-import { useKeyRequests } from "@/hooks/useKeyRequests";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -72,32 +62,6 @@ export default function Operations() {
     refreshData: refreshIssues
   } = useAdminIssuesData();
 
-  // Fetch key requests data
-  const { data: keyRequests = [], isLoading: keyRequestsLoading } = useKeyRequests(user?.id);
-
-  // Fetch key statistics
-  const { data: keyStats = [], isLoading: keyStatsLoading } = useQuery({
-    queryKey: ['keyStatistics'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('keys')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      // Transform data to match KeyData interface
-      return (data || []).map(key => ({
-        ...key,
-        active_assignments: 0, // Default value, would need actual assignment count
-        returned_assignments: 0, // Default value
-        lost_count: 0, // Default value
-        status: 'available' as const, // Default status
-      }));
-    },
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-  });
-
   // Fetch maintenance data
   const { data: maintenanceData = [], isLoading: maintenanceLoading } = useQuery({
     queryKey: ['maintenanceOverview'],
@@ -116,12 +80,6 @@ export default function Operations() {
 
   // Calculate enhanced metrics
   const enhancedMetrics = useMemo(() => {
-    const pendingKeyRequests = keyRequests.filter(req => req.status === 'pending').length;
-    const approvedKeyRequests = keyRequests.filter(req => req.status === 'approved').length;
-    const totalKeys = keyStats.length;
-    const assignedKeys = keyStats.filter(key => key.active_assignments > 0).length;
-    const availableKeys = totalKeys - assignedKeys;
-    
     const maintenanceInProgress = maintenanceData.filter(item => item.status === 'in_progress').length;
     const maintenanceScheduled = maintenanceData.filter(item => item.status === 'open').length;
     
@@ -137,19 +95,14 @@ export default function Operations() {
       criticalCount: criticalIssues?.length || 0,
       inProgress: issueStats?.in_progress || 0,
       resolvedToday,
-      pendingKeyRequests,
-      approvedKeyRequests,
-      totalKeys,
-      assignedKeys,
-      availableKeys,
       maintenanceInProgress,
       maintenanceScheduled,
       totalMaintenanceItems: maintenanceData.length
     };
-  }, [allIssues, criticalIssues, issueStats, keyRequests, keyStats, maintenanceData]);
+  }, [allIssues, criticalIssues, issueStats, maintenanceData]);
 
   // Loading state
-  const isLoading = issuesLoading || keyRequestsLoading || keyStatsLoading || maintenanceLoading;
+  const isLoading = issuesLoading || maintenanceLoading;
 
   // Refresh all data
   const refreshAllData = async () => {
@@ -192,10 +145,7 @@ export default function Operations() {
               <Wrench className="h-3 w-3" />
               {enhancedMetrics.maintenanceInProgress} In Progress
             </span>
-            <span className="flex items-center gap-1">
-              <KeyRound className="h-3 w-3" />
-              {enhancedMetrics.pendingKeyRequests} Key Requests
-            </span>
+
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -298,42 +248,14 @@ export default function Operations() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Key Requests</CardTitle>
-              <KeyRound className="h-4 w-4 text-blue-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{enhancedMetrics.pendingKeyRequests}</div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span>Pending approval</span>
-                <div className="flex items-center gap-1">
-                  <Users className="h-3 w-3" />
-                  <span>{enhancedMetrics.approvedKeyRequests} approved</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+
         </div>
       )}
 
       {/* Additional Metrics Row */}
       {!isLoading && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Key Inventory</p>
-                  <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{enhancedMetrics.totalKeys}</p>
-                  <p className="text-xs text-blue-600 dark:text-blue-400">
-                    {enhancedMetrics.availableKeys} available • {enhancedMetrics.assignedKeys} assigned
-                  </p>
-                </div>
-                <KeyRound className="h-8 w-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
+
 
           <Card className="bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 border-orange-200 dark:border-orange-800">
             <CardContent className="p-4">
@@ -369,7 +291,7 @@ export default function Operations() {
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4" />
             Overview
@@ -382,22 +304,7 @@ export default function Operations() {
             <Wrench className="h-4 w-4" />
             Maintenance
           </TabsTrigger>
-          <TabsTrigger value="keys" className="flex items-center gap-2">
-            <KeyRound className="h-4 w-4" />
-            Keys
-          </TabsTrigger>
-          <TabsTrigger value="supplies" className="flex items-center gap-2">
-            <Package className="h-4 w-4" />
-            Supplies
-          </TabsTrigger>
-          <TabsTrigger value="inventory" className="flex items-center gap-2">
-            <Boxes className="h-4 w-4" />
-            Inventory
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Analytics
-          </TabsTrigger>
+
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -436,17 +343,7 @@ export default function Operations() {
                     <div className="text-xs text-muted-foreground">Plan maintenance tasks</div>
                   </div>
                 </Button>
-                <Button 
-                  onClick={() => setActiveTab('keys')} 
-                  variant="outline" 
-                  className="h-24 p-4 flex flex-col items-center gap-2 hover:bg-green-50 hover:border-green-200 transition-colors group"
-                >
-                  <KeyRound className="h-8 w-8 text-green-500 group-hover:scale-110 transition-transform" />
-                  <div className="text-center">
-                    <div className="font-semibold text-sm">Manage Keys</div>
-                    <div className="text-xs text-muted-foreground">Key assignments & requests</div>
-                  </div>
-                </Button>
+
               </div>
             </CardContent>
           </Card>
@@ -554,39 +451,7 @@ export default function Operations() {
                 </CardContent>
               </Card>
 
-              {/* Key Requests Summary */}
-              <Card className="border-l-4 border-l-blue-500">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <KeyRound className="h-5 w-5 text-blue-500" />
-                    Key Management
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-yellow-50 to-yellow-100 dark:from-yellow-950 dark:to-yellow-900 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                    <div>
-                      <p className="font-semibold text-yellow-900 dark:text-yellow-100">Pending</p>
-                      <p className="text-3xl font-bold text-yellow-600">{enhancedMetrics.pendingKeyRequests}</p>
-                    </div>
-                    <Clock className="h-10 w-10 text-yellow-500" />
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 rounded-lg border border-green-200 dark:border-green-800">
-                    <div>
-                      <p className="font-semibold text-green-900 dark:text-green-100">Approved</p>
-                      <p className="text-3xl font-bold text-green-600">{enhancedMetrics.approvedKeyRequests}</p>
-                    </div>
-                    <CheckCircle className="h-10 w-10 text-green-500" />
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full hover:bg-blue-50 hover:border-blue-200 transition-colors"
-                    onClick={() => setActiveTab('keys')}
-                  >
-                    View Key Management
-                  </Button>
-                </CardContent>
-              </Card>
+
             </div>
           </div>
         </TabsContent>
@@ -795,188 +660,7 @@ export default function Operations() {
           </div>
         </TabsContent>
 
-        <TabsContent value="keys" className="space-y-4">
-          {/* Key Management Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <KeyRound className="h-5 w-5" />
-                Key Management
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Manage key inventory, assignments, and access requests
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button onClick={refreshAllData} variant="outline" size="sm" disabled={isLoading}>
-                <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
-              <Button onClick={() => setActiveTab('keys')} size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Manage Keys
-              </Button>
-            </div>
-          </div>
 
-          {/* Key Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Total Keys</p>
-                    <p className="text-2xl font-bold text-blue-600">{keyStats?.length || 0}</p>
-                  </div>
-                  <KeyRound className="h-8 w-8 text-blue-500" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-green-200 bg-green-50 dark:bg-green-950 dark:border-green-800">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-green-800 dark:text-green-200">Available</p>
-                    <p className="text-2xl font-bold text-green-600">{keyStats?.filter(key => key.status === 'available').length || 0}</p>
-                  </div>
-                  <CheckCircle className="h-8 w-8 text-green-500" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950 dark:border-orange-800">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-orange-800 dark:text-orange-200">Assigned</p>
-                    <p className="text-2xl font-bold text-orange-600">{keyStats?.filter(key => key.status === 'assigned').length || 0}</p>
-                  </div>
-                  <Users className="h-8 w-8 text-orange-500" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-yellow-200 bg-yellow-50 dark:bg-yellow-950 dark:border-yellow-800">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Pending Requests</p>
-                    <p className="text-2xl font-bold text-yellow-600">{enhancedMetrics.pendingKeyRequests}</p>
-                  </div>
-                  <Clock className="h-8 w-8 text-yellow-500" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="space-y-6">
-            {/* Detailed Key Statistics */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5" />
-                  Key Statistics Overview
-                </CardTitle>
-                <CardDescription>
-                  Comprehensive key inventory and assignment statistics
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <KeyStatisticsCards keyStats={keyStats} isLoading={keyStatsLoading} />
-              </CardContent>
-            </Card>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        <KeyRound className="h-5 w-5" />
-                        Key Inventory
-                      </CardTitle>
-                      <CardDescription>
-                        Current key inventory and stock levels
-                      </CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <KeyInventorySection />
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        <Users className="h-5 w-5" />
-                        Key Assignments
-                      </CardTitle>
-                      <CardDescription>
-                        Current key assignments and management
-                      </CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <KeyAssignmentSection />
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        <Activity className="h-5 w-5" />
-                        Key History
-                      </CardTitle>
-                      <CardDescription>
-                        Complete history of key transactions and changes
-                      </CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <KeyHistorySection />
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        <Plus className="h-5 w-5" />
-                        Key Orders
-                      </CardTitle>
-                      <CardDescription>
-                        Order new keys and manage procurement
-                      </CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <KeyOrderSection />
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="supplies" className="space-y-4">
-          <EnhancedSupplyManagement />
-        </TabsContent>
-
-        <TabsContent value="inventory" className="space-y-4">
-          <InventoryDashboard />
-        </TabsContent>
-
-        <TabsContent value="analytics" className="space-y-4">
-          <AdvancedAnalyticsDashboard />
-        </TabsContent>
       </Tabs>
 
       {/* Dialogs */}

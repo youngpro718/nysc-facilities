@@ -2,12 +2,12 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InventoryOverviewPanel } from "@/components/inventory/InventoryOverviewPanel";
 import { InventoryItemsPanel } from "@/components/inventory/InventoryItemsPanel";
-import { InventoryCategoriesPanel } from "@/components/inventory/InventoryCategoriesPanel";
+import { EnhancedSupplyManagement } from "@/components/supply/EnhancedSupplyManagement";
 import { InventoryTransactionsPanel } from "@/components/inventory/InventoryTransactionsPanel";
 import { LowStockPanel } from "@/components/inventory/LowStockPanel";
 import { InventoryAuditsPanel } from "@/components/inventory/InventoryAuditsPanel";
 import { Button } from "@/components/ui/button";
-import { Package, Plus, TrendingDown, History, Folder, BarChart3 } from "lucide-react";
+import { Package, Plus, TrendingDown, History, Boxes, BarChart3 } from "lucide-react";
 
 export const InventoryDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -39,9 +39,9 @@ export const InventoryDashboard = () => {
             <Package className="h-4 w-4" />
             Items
           </TabsTrigger>
-          <TabsTrigger value="categories" className="flex items-center gap-2">
-            <Folder className="h-4 w-4" />
-            Categories
+          <TabsTrigger value="supplies" className="flex items-center gap-2">
+            <Boxes className="h-4 w-4" />
+            Supplies
           </TabsTrigger>
           <TabsTrigger value="low-stock" className="flex items-center gap-2">
             <TrendingDown className="h-4 w-4" />
@@ -65,8 +65,8 @@ export const InventoryDashboard = () => {
           <InventoryItemsPanel />
         </TabsContent>
 
-        <TabsContent value="categories" className="space-y-4">
-          <InventoryCategoriesPanel />
+        <TabsContent value="supplies" className="space-y-4">
+          <EnhancedSupplyManagement />
         </TabsContent>
 
         <TabsContent value="low-stock" className="space-y-4">
