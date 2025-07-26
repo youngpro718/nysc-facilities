@@ -84,7 +84,7 @@ export default function TwoFactorAuth() {
 
       const { error } = await supabase.auth.mfa.verify({
         factorId: factor.id,
-        challengeId: factor.challenge?.id,
+        challengeId: (factor as any).challenge?.id,
         code: verificationCode
       });
 

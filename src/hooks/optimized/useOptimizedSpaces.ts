@@ -47,8 +47,8 @@ export function useSpacesDashboard(filters?: {
   spaceType?: 'room' | 'hallway' | 'door';
 }) {
   return useQuery({
-    queryKey: OPTIMIZED_QUERY_KEYS.spaces.dashboard(filters),
-    queryFn: () => OptimizedSpacesService.getDashboardData(filters),
+    queryKey: OPTIMIZED_QUERY_KEYS.spaces.dashboard(filters as any),
+    queryFn: () => OptimizedSpacesService.getDashboardData(filters as any),
     ...CACHE_CONFIG.dashboard,
     refetchOnWindowFocus: false,
     retry: 2,
@@ -122,8 +122,8 @@ export function useOptimizedRooms(filters?: {
   status?: string;
 }) {
   return useQuery({
-    queryKey: OPTIMIZED_QUERY_KEYS.spaces.rooms(filters),
-    queryFn: () => OptimizedSpacesService.getRooms(filters),
+    queryKey: OPTIMIZED_QUERY_KEYS.spaces.rooms(filters as any),
+    queryFn: () => OptimizedSpacesService.getRooms(filters as any),
     ...CACHE_CONFIG.dashboard,
     refetchOnWindowFocus: false,
     retry: 2,

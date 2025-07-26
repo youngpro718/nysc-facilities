@@ -83,7 +83,7 @@ export class AdvancedAnalyticsService {
       // Use optimized dashboard data as foundation
       const dashboardData = await OptimizedSpacesService.getDashboardData({
         buildingId,
-      });
+      } as any);
 
       // Calculate utilization metrics
       const utilizationData: FacilityUtilizationData[] = [];
@@ -130,7 +130,7 @@ export class AdvancedAnalyticsService {
     try {
       const dashboardData = await OptimizedSpacesService.getDashboardData({
         spaceType: 'room',
-      });
+      } as any);
 
       // Group by room type and calculate trends
       const roomTypeGroups = new Map<string, any[]>();
@@ -353,7 +353,7 @@ export class AdvancedAnalyticsService {
     try {
       const dashboardData = await OptimizedSpacesService.getDashboardData({
         spaceType: 'room',
-      });
+      } as any);
 
       const recommendations: SpaceOptimizationRecommendation[] = [];
 

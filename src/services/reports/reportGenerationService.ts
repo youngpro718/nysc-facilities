@@ -58,7 +58,7 @@ export class ReportGenerationService {
         optimizationData,
       ] = await Promise.all([
         AdvancedAnalyticsService.generateFacilityReport(config.buildingId),
-        OptimizedSpacesService.getDashboardData({ buildingId: config.buildingId }),
+        OptimizedSpacesService.getDashboardData(config.buildingId as any),
         OptimizedSpacesService.getBuildingHierarchy(),
         AdvancedAnalyticsService.getSpaceOptimizationRecommendations(),
       ]);
@@ -181,7 +181,7 @@ export class ReportGenerationService {
    */
   static async exportDashboardCSV(buildingId?: string): Promise<GeneratedReport> {
     try {
-      const dashboardData = await OptimizedSpacesService.getDashboardData({ buildingId });
+      const dashboardData = await OptimizedSpacesService.getDashboardData(buildingId as any);
       
       // Convert to CSV format
       const csvHeaders = [

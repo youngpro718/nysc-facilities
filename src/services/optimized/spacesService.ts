@@ -93,7 +93,7 @@ export class OptimizedSpacesService {
       });
       
       if (error) throw error;
-      return data || [];
+      return (data || []) as any;
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       throw error;
@@ -109,7 +109,7 @@ export class OptimizedSpacesService {
       const { data, error } = await supabase.rpc('get_building_hierarchy');
       
       if (error) throw error;
-      return data || [];
+      return (data || []) as any;
     } catch (error) {
       console.error('Error fetching building hierarchy:', error);
       throw error;
@@ -135,7 +135,7 @@ export class OptimizedSpacesService {
       });
       
       if (error) throw error;
-      return data || [];
+      return (data || []) as any;
     } catch (error) {
       console.error('Error searching spaces:', error);
       throw error;
@@ -153,12 +153,12 @@ export class OptimizedSpacesService {
       });
       
       if (error) throw error;
-      return data && data.length > 0 ? data[0] : null;
+      return data && data.length > 0 ? (data[0] as any) : null;
     } catch (error) {
       console.error('Error fetching space details:', error);
       // Fallback to unified_spaces query
       try {
-        const { data, error: fallbackError } = await supabase
+        const { data, error: fallbackError } = await (supabase as any)
           .from('unified_spaces')
           .select(`
             *,
@@ -169,7 +169,7 @@ export class OptimizedSpacesService {
           .single();
         
         if (fallbackError) throw fallbackError;
-        return data;
+        return data as any;
       } catch (fallbackError) {
         console.error('Fallback query also failed:', fallbackError);
         return null;
@@ -216,7 +216,7 @@ export class OptimizedSpacesService {
         rooms = rooms.filter(room => room.floor_id === floorId);
       }
       
-      return rooms;
+      return rooms as any;
     } catch (error) {
       console.error('Error fetching rooms:', error);
       throw error;

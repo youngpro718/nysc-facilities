@@ -44,7 +44,7 @@ export const useUnifiedPersonnelView = () => {
           .order('full_name');
 
         if (error) throw error;
-        return data || [];
+        return (data || []) as any;
       } catch (error) {
         console.error('Error fetching unified personnel:', error);
         throw error;
