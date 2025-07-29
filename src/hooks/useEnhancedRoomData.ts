@@ -19,14 +19,6 @@ export function useEnhancedRoomData(roomId: string) {
               name
             )
           ),
-          issues(
-            id,
-            title,
-            description,
-            status,
-            priority,
-            created_at
-          ),
           current_occupants:occupant_room_assignments!occupant_room_assignments_room_id_fkey(
             occupant:occupants!occupant_room_assignments_occupant_id_fkey(
               id,
@@ -44,6 +36,19 @@ export function useEnhancedRoomData(roomId: string) {
         console.error('Error fetching room:', roomError);
         return null;
       }
+
+      // Get issues data separately
+      const { data: issues } = await supabase
+        .from('issues')
+        .select(`
+          id,
+          title,
+          description,
+          status,
+          priority,
+          created_at
+        `)
+        .eq('room_id', roomId);
 
       // Get courtroom data if applicable
       let courtRoomData = null;
@@ -79,7 +84,7 @@ export function useEnhancedRoomData(roomId: string) {
       }
 
       // Check for persistent issues
-      const openIssues = room.issues?.filter((issue: any) => ['open', 'in_progress'].includes(issue.status)) || [];
+      const openIssues = issues?.filter((issue: any) => ['open', 'in_progress'].includes(issue.status)) || [];
       const hasPersistentIssues = openIssues.length >= 3;
 
       // Calculate vacancy status
@@ -125,7 +130,7 @@ export function useEnhancedRoomData(roomId: string) {
         vacancy_status: vacancyStatus,
         persistent_issues: hasPersistentIssues ? {
           room_id: roomId,
-          issue_count: room.issues?.length || 0,
+          issue_count: issues?.length || 0,
           open_issues: openIssues.length,
           latest_issue_date: openIssues[0]?.created_at || new Date().toISOString()
         } : undefined

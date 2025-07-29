@@ -10,7 +10,8 @@ import { DashboardCustomization } from "@/components/profile/DashboardCustomizat
 import { useState, useEffect } from "react";
 
 // New reorganized components
-import { AdminProfileSettings } from "@/components/profile/reorganized/AdminProfileSettings";
+import { AdminProfileSettings } from '@/components/profile/reorganized/AdminProfileSettings';
+import { EnhancedUserSettings } from '@/components/profile/EnhancedUserSettings';
 import { AdminManagementTab } from "@/components/profile/reorganized/AdminManagementTab";
 import { AdminAnalyticsTab } from "@/components/profile/reorganized/AdminAnalyticsTab";
 
@@ -108,6 +109,8 @@ export default function AdminProfile() {
             window.history.replaceState(null, '', '#settings');
           } else if (value === 'analytics') {
             window.history.replaceState(null, '', '#analytics');
+          } else if (value === 'settings') {
+            window.history.replaceState(null, '', '#settings');
           } else {
             window.history.replaceState(null, '', '#overview');
           }
@@ -131,6 +134,10 @@ export default function AdminProfile() {
             <TabsTrigger value="analytics" className="flex-1 min-w-fit flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 text-sm whitespace-nowrap">
               <BarChart3 className="h-4 w-4" />
               Analytics
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex-1 min-w-fit flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 text-sm whitespace-nowrap">
+              <Settings className="h-4 w-4" />
+              All Settings
             </TabsTrigger>
           </TabsList>
         </div>
@@ -166,16 +173,7 @@ export default function AdminProfile() {
                 Customize your personal preferences, appearance, and dashboard
               </p>
             </div>
-            <AdminProfileSettings />
-            <div className="mt-8">
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold">Dashboard Customization</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Customize your dashboard layout, widgets, and appearance
-                </p>
-              </div>
-              <DashboardCustomization />
-            </div>
+            <EnhancedUserSettings />
           </div>
         </TabsContent>
 
@@ -200,6 +198,18 @@ export default function AdminProfile() {
               </p>
             </div>
             <AdminAnalyticsTab />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="settings" className="space-y-4 sm:space-y-6 mt-4">
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-xl font-semibold">All Settings</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Complete settings management for notifications, privacy, appearance, language, security, and accessibility
+              </p>
+            </div>
+            <EnhancedUserSettings />
           </div>
         </TabsContent>
 

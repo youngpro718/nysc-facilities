@@ -34,8 +34,9 @@ export const MaintenanceIssuesList = () => {
     queryKey: ["maintenance-issues", statusFilter, severityFilter],
     queryFn: async () => {
       let query = supabase
-        .from("maintenance_issues")
+        .from("issues")
         .select("*")
+        .eq("issue_type", "maintenance")
         .order("created_at", { ascending: false });
 
       if (statusFilter !== "all") {
@@ -76,11 +77,11 @@ export const MaintenanceIssuesList = () => {
     if (!fixDescription) return;
 
     const { error } = await supabase
-      .from("maintenance_issues")
+      .from("issues")
       .update({
-        status: "temporary_fix",
-        temporary_fix_description: fixDescription,
-        temporary_fix_date: new Date().toISOString(),
+        status: "in_progress", // Map temporary_fix to in_progress
+        notes: `Temporary fix: ${fixDescription}`,
+        updated_at: new Date().toISOString(),
       })
       .eq("id", issueId);
 
@@ -92,10 +93,10 @@ export const MaintenanceIssuesList = () => {
 
   const markResolved = async (issueId: string) => {
     const { error } = await supabase
-      .from("maintenance_issues")
+      .from("issues")
       .update({
         status: "resolved",
-        resolved_date: new Date().toISOString(),
+        resolved_at: new Date().toISOString(),
       })
       .eq("id", issueId);
 

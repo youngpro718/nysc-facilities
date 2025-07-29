@@ -17,7 +17,7 @@ export function useOccupantAssignments(occupantId: string | undefined) {
             assignment_type,
             is_primary,
             schedule,
-            rooms (
+            unified_spaces (
               id,
               name,
               room_number,

@@ -91,9 +91,8 @@ export const PersonnelSelector = ({
             {selectedPersonnel.map(person => (
               <Badge key={person.id} variant="secondary" className="text-xs flex items-center gap-1 pr-1">
                 <span>{person.name}</span>
-                <button
-                  type="button"
-                  className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5 transition-colors"
+                <div
+                  className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5 transition-colors cursor-pointer"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -103,11 +102,23 @@ export const PersonnelSelector = ({
                     }
                   }}
                   aria-label={`Remove ${person.name}`}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (Array.isArray(value)) {
+                        const newValue = value.filter(name => name !== person.name);
+                        onValueChange(newValue);
+                      }
+                    }
+                  }}
                 >
                   <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M18 6L6 18M6 6l12 12" />
                   </svg>
-                </button>
+                </div>
               </Badge>
             ))}
           </div>

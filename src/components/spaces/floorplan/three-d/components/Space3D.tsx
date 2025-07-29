@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 
 interface Space3DProps {
@@ -17,8 +17,8 @@ interface Space3DProps {
   isConnecting?: boolean;
 }
 
-// Material pools to prevent recreation
-const materialPool = {
+// Material creation functions to prevent module-level object creation
+const createMaterialPool = () => ({
   room: new THREE.MeshStandardMaterial({
     color: '#e2e8f0',
     roughness: 0.7,
@@ -45,7 +45,7 @@ const materialPool = {
     roughness: 0.8,
     metalness: 0.0,
   }),
-};
+});
 
 export function Space3D({
   id,
@@ -64,6 +64,9 @@ export function Space3D({
 }: Space3DProps) {
   const groupRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
+  
+  // Memoize material pool to prevent recreation
+  const materialPool = useMemo(() => createMaterialPool(), []);
   
   // Get dimensions based on type
   const getDimensions = () => {
@@ -90,15 +93,15 @@ export function Space3D({
     if (groupRef.current && material) {
       if (isSelected) {
         groupRef.current.scale.set(1.05, 1.05, 1.05);
-        material.emissive = new THREE.Color(0x3b82f6);
+        material.emissive.setHex(0x3b82f6);
         material.emissiveIntensity = 0.2;
       } else if (hovered) {
         groupRef.current.scale.set(1.02, 1.02, 1.02);
-        material.emissive = new THREE.Color(0x60a5fa);
+        material.emissive.setHex(0x60a5fa);
         material.emissiveIntensity = 0.1;
       } else {
         groupRef.current.scale.set(1, 1, 1);
-        material.emissive = new THREE.Color(0x000000);
+        material.emissive.setHex(0x000000);
         material.emissiveIntensity = 0;
       }
     }

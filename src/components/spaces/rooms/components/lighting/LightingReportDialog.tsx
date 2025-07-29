@@ -22,6 +22,9 @@ export function LightingReportDialog({ room, trigger }: LightingReportDialogProp
     
     try {
       // Create issue in the issues table
+      const user = await supabase.auth.getUser();
+      const userId = user.data.user?.id;
+      
       const { error } = await supabase
         .from('issues')
         .insert({
@@ -30,15 +33,12 @@ export function LightingReportDialog({ room, trigger }: LightingReportDialogProp
           priority: issueType === 'light_out' ? 'high' : 'medium',
           status: 'open',
           issue_type: 'lighting',
+          building_id: room.building_id,
+          floor_id: room.floor_id,
           room_id: room.id,
-          reported_by: (await supabase.auth.getUser()).data.user?.id,
-          location: location,
-          metadata: {
-            fixture_location: location,
-            issue_type: issueType,
-            room_number: room.room_number,
-            auto_reported: true
-          }
+          location_description: location,
+          reported_by: userId,
+          created_by: userId
         });
 
       if (error) throw error;

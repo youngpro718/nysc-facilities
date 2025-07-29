@@ -97,7 +97,7 @@ export const useAdminDashboardData = () => {
           seen,
           photos,
           space_id,
-          rooms (
+          unified_spaces (
             id,
             name,
             room_number
@@ -121,10 +121,10 @@ export const useAdminDashboardData = () => {
         console.log('Issues data:', issuesData);
         const transformedIssues = (issuesData || []).map(issue => ({
           ...issue,
-          rooms: issue.rooms ? {
-            id: issue.rooms.id,
-            name: issue.rooms.name,
-            room_number: issue.rooms.room_number
+          rooms: issue.unified_spaces ? {
+            id: issue.unified_spaces.id,
+            name: issue.unified_spaces.name,
+            room_number: issue.unified_spaces.room_number
           } : null,
           buildings: issue.buildings || null,
           floors: issue.floors || null

@@ -84,12 +84,11 @@ export class OptimizedSpacesService {
    * Get comprehensive dashboard data for all spaces
    * Uses the spaces_dashboard_mv materialized view for 20x faster queries
    */
-  static async getDashboardData(buildingId?: string, floorId?: string, spaceType?: string): Promise<SpaceDashboardData[]> {
+  static async getDashboardData(filters?: { buildingId?: string; floorId?: string; spaceType?: string }): Promise<SpaceDashboardData[]> {
     try {
       const { data, error } = await supabase.rpc('get_spaces_dashboard_data', {
-        p_building_id: buildingId || null,
-        p_floor_id: floorId || null,
-        p_space_type: spaceType || null
+        building_filter: filters?.buildingId || null,
+        space_type_filter: filters?.spaceType || null
       });
       
       if (error) throw error;
@@ -165,7 +164,7 @@ export class OptimizedSpacesService {
             buildings(name),
             floors(name)
           `)
-          .eq('space_id', spaceId)
+          .eq('id', spaceId)
           .single();
         
         if (fallbackError) throw fallbackError;

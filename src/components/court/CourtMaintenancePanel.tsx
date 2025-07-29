@@ -5,39 +5,31 @@ import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Calendar, Clock, Wrench } from "lucide-react";
 import { format } from "date-fns";
 
-type CourtMaintenance = {
-  court_room_id: string;
+interface CourtMaintenance {
+  court_id: string;
   room_number: string;
-  courtroom_number: string;
   maintenance_status: string;
-  temporary_location: string;
-  maintenance_start_date: string;
-  maintenance_end_date: string;
-  maintenance_notes: string;
-  maintenance_schedule_id: string;
-  maintenance_title: string;
-  maintenance_type: string;
-  maintenance_status_detail: string;
-  scheduled_start_date: string;
-  scheduled_end_date: string;
-  priority: string;
-  impact_level: string;
-  room_name: string;
-  floor_name: string;
-  building_name: string;
+  maintenance_start_date: string | null;
+  maintenance_end_date: string | null;
+  maintenance_notes: string | null;
+  schedule_id: string | null;
+  maintenance_title: string | null;
+  scheduled_start_date: string | null;
+  scheduled_end_date: string | null;
+  schedule_status: string | null;
 };
 
 export const CourtMaintenancePanel = () => {
   const { data: maintenanceData, isLoading } = useQuery({
-    queryKey: ["court-maintenance"],
+    queryKey: ["court-maintenance-v2"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("court_maintenance_view")
         .select("*")
-        .not("maintenance_schedule_id", "is", null)
+        .not("schedule_id", "is", null)
         .order("scheduled_start_date", { ascending: true });
       if (error) throw error;
-      return data as CourtMaintenance[];
+      return data as any[];
     },
   });
 
@@ -110,7 +102,7 @@ export const CourtMaintenancePanel = () => {
       {/* Maintenance List */}
       <div className="grid gap-4">
         {maintenanceData?.map((maintenance) => (
-          <Card key={`${maintenance.court_room_id}-${maintenance.maintenance_schedule_id}`}>
+          <Card key={`${maintenance.court_id}-${maintenance.schedule_id}`}>
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div>

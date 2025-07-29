@@ -228,7 +228,7 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms, userId }: Issu
         .insert({
           title: data.title || `${data.issue_type} Issue ${data.problem_type ? `- ${data.problem_type}` : ''} - ${data.priority.toUpperCase()} Priority`,
           description: data.description,
-          type: data.issue_type as StandardizedIssueType,
+          issue_type: data.issue_type,
           priority: data.priority,
           status: 'open',
           building_id: data.building_id,

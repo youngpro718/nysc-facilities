@@ -100,15 +100,36 @@ export function CardFront({ room, onFlip, onDelete }: CardFrontProps) {
       </div>
 
       <div className="flex-1">
-        {room.description ? (
-          <p className="text-sm text-muted-foreground line-clamp-5">
+        {/* Practical Room Information */}
+        <div className="space-y-2 mb-3">
+          {/* Room Function & Usage */}
+          {room.current_function ? (
+            <div className="text-sm">
+              <span className="font-medium text-foreground">Current Use:</span>
+              <span className="text-muted-foreground ml-1">{room.current_function}</span>
+            </div>
+          ) : room.room_type === 'courtroom' ? (
+            <div className="text-sm">
+              <span className="font-medium text-foreground">Function:</span>
+              <span className="text-muted-foreground ml-1">Active Courtroom</span>
+            </div>
+          ) : null}
+          
+          {/* Floor & Building Info */}
+          <div className="text-sm">
+            <span className="font-medium text-foreground">Location:</span>
+            <span className="text-muted-foreground ml-1">
+              {room.floor?.building?.name}, Floor {room.floor?.name}
+            </span>
+          </div>
+        </div>
+        
+        {/* Description - only if meaningful */}
+        {room.description && room.description.trim() !== "" && !room.description.toLowerCase().includes("no description") ? (
+          <p className="text-sm text-muted-foreground line-clamp-3 mb-3">
             {room.description}
           </p>
-        ) : (
-          <p className="text-sm text-muted-foreground italic">
-            No description available
-          </p>
-        )}
+        ) : null}
 
         {/* Occupants Preview */}
         {room.current_occupants && room.current_occupants.length > 0 && (

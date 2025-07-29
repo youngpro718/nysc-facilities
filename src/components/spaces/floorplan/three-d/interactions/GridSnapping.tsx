@@ -19,11 +19,15 @@ export class GridSnapping {
   snapToGrid(position: THREE.Vector3): THREE.Vector3 {
     if (!this.enabled) return position;
 
-    return new THREE.Vector3(
-      Math.round(position.x / this.gridSize) * this.gridSize,
-      position.y,
-      Math.round(position.z / this.gridSize) * this.gridSize
-    );
+    // Create snapped position without inline Vector3 creation
+    const snappedX = Math.round(position.x / this.gridSize) * this.gridSize;
+    const snappedZ = Math.round(position.z / this.gridSize) * this.gridSize;
+    
+    // Use setXYZ to avoid inline object creation
+    const result = position.clone();
+    result.setX(snappedX);
+    result.setZ(snappedZ);
+    return result;
   }
 
   snapPosition(position: { x: number; y: number }): { x: number; y: number } {

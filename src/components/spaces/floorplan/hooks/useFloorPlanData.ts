@@ -202,6 +202,24 @@ export function useFloorPlanData(floorId: string | null) {
   
   console.log('Transformed objects:', objects);
   console.log('Created edges:', edges);
+  
+  // Detailed object analysis for 3D rendering
+  if (objects.length > 0) {
+    console.log('=== DETAILED OBJECT ANALYSIS ===');
+    objects.forEach((obj, index) => {
+      console.log(`Object ${index + 1}:`, {
+        id: obj.id,
+        type: obj.type,
+        position: obj.position,
+        data: obj.data,
+        hasSize: !!obj.data?.size,
+        size: obj.data?.size,
+        hasProperties: !!obj.data?.properties,
+        properties: obj.data?.properties
+      });
+    });
+    console.log('=== END OBJECT ANALYSIS ===');
+  }
 
   // Process parent/child relationships and establish connections
   const processedObjects = objects.map(obj => {
@@ -331,11 +349,22 @@ export function useFloorPlanData(floorId: string | null) {
     return obj;
   });
 
+  // Don't block loading on lighting data since it's optional
+  const finalIsLoading = isLoadingLayers || isLoadingObjects;
+  
+  console.log('useFloorPlanData - Loading states:', {
+    isLoadingLayers,
+    isLoadingObjects, 
+    isLoadingLighting,
+    finalIsLoading,
+    objectsCount: processedObjects.length
+  });
+
   return {
     layers: layers || [],
     objects: processedObjects,
     edges,
-    isLoading: isLoadingLayers || isLoadingObjects || isLoadingLighting,
+    isLoading: finalIsLoading,
     error // Include error in the return value
   };
 }

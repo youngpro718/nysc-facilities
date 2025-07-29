@@ -543,7 +543,330 @@ export function EnhancedUserSettings() {
           </Card>
         </TabsContent>
 
-        {/* Other tabs would continue here but truncated for space */}
+        {/* Appearance Tab */}
+        <TabsContent value="appearance" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Palette className="h-5 w-5" />
+                Appearance Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <Label>Theme</Label>
+                  <Select
+                    value={settings.theme}
+                    onValueChange={(value: any) => updateSetting('theme', value)}
+                  >
+                    <SelectTrigger className="mt-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="light">
+                        <div className="flex items-center gap-2">
+                          <Sun className="h-4 w-4" />
+                          Light
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="dark">
+                        <div className="flex items-center gap-2">
+                          <Moon className="h-4 w-4" />
+                          Dark
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="system">
+                        <div className="flex items-center gap-2">
+                          <Monitor className="h-4 w-4" />
+                          System
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>Color Scheme</Label>
+                  <Select
+                    value={settings.color_scheme}
+                    onValueChange={(value: any) => updateSetting('color_scheme', value)}
+                  >
+                    <SelectTrigger className="mt-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="blue">Blue</SelectItem>
+                      <SelectItem value="green">Green</SelectItem>
+                      <SelectItem value="purple">Purple</SelectItem>
+                      <SelectItem value="orange">Orange</SelectItem>
+                      <SelectItem value="red">Red</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>Font Size</Label>
+                  <Select
+                    value={settings.font_size}
+                    onValueChange={(value: any) => updateSetting('font_size', value)}
+                  >
+                    <SelectTrigger className="mt-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="small">Small</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="large">Large</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <h3 className="font-medium">Display Options</h3>
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Compact Mode</Label>
+                    <p className="text-sm text-muted-foreground">Reduce spacing and show more content</p>
+                  </div>
+                  <Switch
+                    checked={settings.compact_mode}
+                    onCheckedChange={(value) => updateSetting('compact_mode', value)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>High Contrast</Label>
+                    <p className="text-sm text-muted-foreground">Increase contrast for better visibility</p>
+                  </div>
+                  <Switch
+                    checked={settings.high_contrast}
+                    onCheckedChange={(value) => updateSetting('high_contrast', value)}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Language & Region Tab */}
+        <TabsContent value="language" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5" />
+                Language & Region
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <Label>Language</Label>
+                  <Select
+                    value={settings.language}
+                    onValueChange={(value: any) => updateSetting('language', value)}
+                  >
+                    <SelectTrigger className="mt-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="es">Español</SelectItem>
+                      <SelectItem value="fr">Français</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>Timezone</Label>
+                  <Input
+                    type="text"
+                    value={settings.timezone}
+                    onChange={(e) => updateSetting('timezone', e.target.value)}
+                    placeholder="e.g., America/New_York"
+                    className="mt-2"
+                  />
+                </div>
+
+                <div>
+                  <Label>Date Format</Label>
+                  <Select
+                    value={settings.date_format}
+                    onValueChange={(value: any) => updateSetting('date_format', value)}
+                  >
+                    <SelectTrigger className="mt-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
+                      <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
+                      <SelectItem value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>Time Format</Label>
+                  <Select
+                    value={settings.time_format}
+                    onValueChange={(value: any) => updateSetting('time_format', value)}
+                  >
+                    <SelectTrigger className="mt-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="12h">12-hour (AM/PM)</SelectItem>
+                      <SelectItem value="24h">24-hour</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Security Tab */}
+        <TabsContent value="security" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5" />
+                Security Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="flex items-center gap-2">
+                      <Key className="h-4 w-4" />
+                      Two-Factor Authentication
+                    </Label>
+                    <p className="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
+                  </div>
+                  <Switch
+                    checked={settings.two_factor_enabled}
+                    onCheckedChange={(value) => updateSetting('two_factor_enabled', value)}
+                  />
+                </div>
+
+                <div>
+                  <Label>Session Timeout (minutes)</Label>
+                  <Select
+                    value={settings.session_timeout.toString()}
+                    onValueChange={(value) => updateSetting('session_timeout', parseInt(value))}
+                  >
+                    <SelectTrigger className="mt-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="15">15 minutes</SelectItem>
+                      <SelectItem value="30">30 minutes</SelectItem>
+                      <SelectItem value="60">1 hour</SelectItem>
+                      <SelectItem value="120">2 hours</SelectItem>
+                      <SelectItem value="240">4 hours</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <h3 className="font-medium">Login & Device Security</h3>
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Login Notifications</Label>
+                    <p className="text-sm text-muted-foreground">Get notified about new logins</p>
+                  </div>
+                  <Switch
+                    checked={settings.login_notifications}
+                    onCheckedChange={(value) => updateSetting('login_notifications', value)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Device Tracking</Label>
+                    <p className="text-sm text-muted-foreground">Track and manage your devices</p>
+                  </div>
+                  <Switch
+                    checked={settings.device_tracking}
+                    onCheckedChange={(value) => updateSetting('device_tracking', value)}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Accessibility Tab */}
+        <TabsContent value="accessibility" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Accessibility className="h-5 w-5" />
+                Accessibility Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="flex items-center gap-2">
+                      <Accessibility className="h-4 w-4" />
+                      Screen Reader Support
+                    </Label>
+                    <p className="text-sm text-muted-foreground">Optimize interface for screen readers</p>
+                  </div>
+                  <Switch
+                    checked={settings.screen_reader_support}
+                    onCheckedChange={(value) => updateSetting('screen_reader_support', value)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Keyboard Navigation</Label>
+                    <p className="text-sm text-muted-foreground">Enhanced keyboard navigation support</p>
+                  </div>
+                  <Switch
+                    checked={settings.keyboard_navigation}
+                    onCheckedChange={(value) => updateSetting('keyboard_navigation', value)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Reduce Motion</Label>
+                    <p className="text-sm text-muted-foreground">Minimize animations and transitions</p>
+                  </div>
+                  <Switch
+                    checked={settings.motion_reduced}
+                    onCheckedChange={(value) => updateSetting('motion_reduced', value)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Text-to-Speech</Label>
+                    <p className="text-sm text-muted-foreground">Enable text-to-speech for content</p>
+                  </div>
+                  <Switch
+                    checked={settings.text_to_speech}
+                    onCheckedChange={(value) => updateSetting('text_to_speech', value)}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
         
       </Tabs>
     </div>

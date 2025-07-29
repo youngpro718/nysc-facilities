@@ -94,7 +94,7 @@ export function Hallway3D({
         receiveShadow
       >
         <boxGeometry args={[hallwayWidth, hallwayHeight, hallwayDepth]} />
-        <meshStandardMaterial {...hallwayMaterial} attach="material" transparent opacity={0} />
+        <primitive object={hallwayMaterial} attach="material" />
       </mesh>
       
       {/* Floor */}

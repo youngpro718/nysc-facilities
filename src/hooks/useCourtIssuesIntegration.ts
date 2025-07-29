@@ -41,13 +41,12 @@ export const useCourtIssuesIntegration = () => {
   const { data: courtIssues, isLoading: issuesLoading } = useQuery({
     queryKey: ["court-issues"],
     queryFn: async (): Promise<CourtIssue[]> => {
+      // First get the basic issues data
       const { data, error } = await supabase
         .from("issues")
         .select(`
           *,
-          rooms:room_id(room_number),
-          court_rooms:room_id(courtroom_number),
-          court_assignments:room_id(justice, clerks, sergeant)
+          rooms(room_number)
         `)
         .in("status", ["open", "in_progress"])
         .not("room_id", "is", null)
@@ -56,7 +55,38 @@ export const useCourtIssuesIntegration = () => {
 
       if (error) throw error;
 
-      return (data || []).map(issue => ({
+      // Then get court room and assignment data separately to avoid complex joins
+      const issuesWithCourtData = await Promise.all(
+        (data || []).map(async (issue) => {
+          // Get court room data
+          const { data: courtRoom } = await supabase
+            .from("court_rooms")
+            .select("courtroom_number")
+            .eq("room_id", issue.room_id)
+            .maybeSingle();
+
+          // Get court assignment data
+          const { data: courtAssignment } = await supabase
+            .from("court_assignments")
+            .select("justice, clerks, sergeant")
+            .eq("room_id", issue.room_id)
+            .maybeSingle();
+
+          return {
+            ...issue,
+            courtroom_number: courtRoom?.courtroom_number,
+            assignments: courtAssignment ? {
+              justice: courtAssignment.justice,
+              clerks: courtAssignment.clerks || [],
+              sergeant: courtAssignment.sergeant
+            } : undefined
+          };
+        })
+      );
+
+      if (error) throw error;
+
+      return issuesWithCourtData.map(issue => ({
         id: issue.id,
         title: issue.title,
         description: issue.description,
@@ -64,16 +94,15 @@ export const useCourtIssuesIntegration = () => {
         priority: issue.priority,
         room_id: issue.room_id,
         space_id: issue.space_id,
-        impact_level: issue.impact_level || 'medium',
+        impact_level: issue.impact_level,
         created_at: issue.created_at,
         updated_at: issue.updated_at,
-        room_number: (issue.rooms as any)?.room_number,
-        courtroom_number: (issue.court_rooms as any)?.courtroom_number,
-        assignments: (issue.court_assignments as any) ? {
-          justice: (issue.court_assignments as any).justice,
-          clerks: (issue.court_assignments as any).clerks || [],
-          sergeant: (issue.court_assignments as any).sergeant,
-        } : undefined,
+        room_number: issue.rooms?.room_number,
+        courtroom_number: issue.courtroom_number,
+        assignments: issue.assignments,
+        justice: issue.assignments?.justice || '',
+        clerks: issue.assignments?.clerks || [],
+        sergeant: issue.assignments?.sergeant || ''
       }));
     },
     refetchInterval: 30000, // Refresh every 30 seconds

@@ -55,15 +55,15 @@ export function Room3D({
     if (roomRef.current) {
       if (isSelected) {
         roomRef.current.scale.set(1.05, 1.05, 1.05);
-        wallMaterial.emissive = new THREE.Color(0x3b82f6);
+        wallMaterial.emissive.setHex(0x3b82f6);
         wallMaterial.emissiveIntensity = 0.2;
       } else if (hovered) {
         roomRef.current.scale.set(1.02, 1.02, 1.02);
-        wallMaterial.emissive = new THREE.Color(0x60a5fa);
+        wallMaterial.emissive.setHex(0x60a5fa);
         wallMaterial.emissiveIntensity = 0.1;
       } else {
         roomRef.current.scale.set(1, 1, 1);
-        wallMaterial.emissive = new THREE.Color(0x000000);
+        wallMaterial.emissive.setHex(0x000000);
         wallMaterial.emissiveIntensity = 0;
       }
     }
@@ -93,7 +93,7 @@ export function Room3D({
         receiveShadow
       >
         <boxGeometry args={[roomWidth, roomHeight, roomLength]} />
-        <meshStandardMaterial {...wallMaterial} attach="material" transparent opacity={0} />
+        <primitive object={wallMaterial} attach="material" />
       </mesh>
       
       {/* Floor */}

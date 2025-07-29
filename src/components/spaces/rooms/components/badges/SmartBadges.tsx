@@ -1,12 +1,15 @@
 import { EnhancedRoom } from "../../types/EnhancedRoomTypes";
 import { LightingStatusBadge } from "../lighting/LightingStatusBadge";
 import { OccupancyStatusBadge } from "../occupancy/OccupancyStatusBadge";
+import { EnhancedCapacityBadge } from "./EnhancedCapacityBadge";
 import { Badge } from "@/components/ui/badge";
 import { 
   AlertTriangle, 
   Home, 
   Accessibility,
-  Users
+  Users,
+  Package,
+  Phone
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -18,28 +21,30 @@ interface SmartBadgesProps {
 export function SmartBadges({ room, className }: SmartBadgesProps) {
   return (
     <div className={cn("space-y-2", className)}>
-      {/* Smart Status Badges */}
+      {/* Primary Status Badges */}
       <div className="flex flex-wrap gap-1.5">
+        <EnhancedCapacityBadge room={room} showDetails={true} />
         <LightingStatusBadge roomId={room.id} roomNumber={room.room_number} />
         <OccupancyStatusBadge room={room} />
       </div>
       
-      {/* Additional Room Information Badges */}
+      {/* Secondary Information Badges */}
       <div className="flex flex-wrap gap-1.5">
         <RoomSizeBadge room={room} />
+        
+        {/* Storage Badge */}
+        {room.is_storage && <StorageBadge room={room} />}
         
         {/* Persistent Issues Alert */}
         {room.has_persistent_issues && <PersistentIssuesBadge room={room} />}
         
-        {/* Courtroom Capacity Badge */}
-        {room.room_type === 'courtroom' && room.court_room && (
-          <CourtroomCapacityBadge courtRoom={room.court_room} />
-        )}
-        
         {/* Accessibility Badge */}
-        {room.room_type === 'courtroom' && room.court_room?.accessibility_features.wheelchair_accessible && (
+        {room.court_room?.accessibility_features?.wheelchair_accessible && (
           <AccessibilityBadge />
         )}
+        
+        {/* Phone Available Badge */}
+        {room.phone_number && <PhoneBadge />}
       </div>
     </div>
   );
@@ -86,6 +91,33 @@ function CourtroomCapacityBadge({ courtRoom }: { courtRoom: { juror_capacity: nu
     >
       <Users className="h-3 w-3" />
       Seats {courtRoom.juror_capacity} Jurors
+    </Badge>
+  );
+}
+
+function StorageBadge({ room }: { room: EnhancedRoom }) {
+  const storageType = room.simplified_storage_type || room.storage_type || 'general';
+  const capacity = room.storage_capacity;
+  
+  return (
+    <Badge 
+      variant="secondary" 
+      className="text-xs flex items-center gap-1 bg-amber-500/20 text-amber-700 ring-1 ring-amber-500/30"
+    >
+      <Package className="h-3 w-3" />
+      {storageType.replace('_', ' ')} {capacity && `(${capacity})`}
+    </Badge>
+  );
+}
+
+function PhoneBadge() {
+  return (
+    <Badge 
+      variant="outline" 
+      className="text-xs flex items-center gap-1 bg-green-500/20 text-green-700 ring-1 ring-green-500/30"
+    >
+      <Phone className="h-3 w-3" />
+      Phone
     </Badge>
   );
 }

@@ -1,7 +1,9 @@
 import { useState, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Building2, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -27,6 +29,7 @@ import { EnhancedIssuesList } from "@/components/admin-issues/EnhancedIssuesList
 import { IssueAnalyticsPanel } from "@/components/admin-issues/IssueAnalyticsPanel";
 import { MaintenanceScheduleList } from "@/components/maintenance/MaintenanceScheduleList";
 import { MaintenanceIssuesList } from "@/components/maintenance/MaintenanceIssuesList";
+import AdvancedAnalyticsDashboard from "@/components/analytics/AdvancedAnalyticsDashboard";
 
 
 // Import dialogs
@@ -44,7 +47,25 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export default function Operations() {
-  const [activeTab, setActiveTab] = useState("overview");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const buildingId = searchParams.get('building');
+  const filter = searchParams.get('filter');
+  
+  const [activeTab, setActiveTab] = useState(buildingId ? "issues" : "overview");
+
+  // Clear building filter
+  const clearBuildingFilter = () => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('building');
+    setSearchParams(newParams);
+  };
+
+  // Set building filter
+  const setBuildingFilter = (buildingId: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('building', buildingId);
+    setSearchParams(newParams);
+  };
   const [showCreateIssue, setShowCreateIssue] = useState(false);
   const [showScheduleMaintenance, setShowScheduleMaintenance] = useState(false);
   const [showReportIssue, setShowReportIssue] = useState(false);
@@ -122,7 +143,80 @@ export default function Operations() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <h2 className="text-3xl font-bold tracking-tight">Operations Management</h2>
+            {buildingId && (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                <Building2 className="w-3 h-3 mr-1" />
+                {buildingId === '7a9d7532-ebe7-496f-b5f1-10887f91edd5' ? '100 Centre Street' : 
+                 buildingId === 'c735c6a8-7c61-4417-b2e3-3ebbb3045db7' ? '111 Centre Street' : 
+                 'Building Filtered'}
+              </span>
+            )}
+          </div>
+          <p className="text-muted-foreground">
+            {buildingId 
+              ? `Showing issues for ${buildingId === '7a9d7532-ebe7-496f-b5f1-10887f91edd5' ? '100 Centre Street' : '111 Centre Street'}`
+              : 'Monitor and manage facility operations across all buildings'
+            }
+          </p>
+        </div>
+        <div className="flex gap-2">
+          {buildingId && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={clearBuildingFilter}
+              className="text-sm"
+            >
+              <X className="w-4 h-4 mr-1" />
+              Clear Filter
+            </Button>
+          )}
+          <Button onClick={() => setShowCreateIssue(true)} variant="outline" size="sm">
+            <AlertTriangle className="h-4 w-4 mr-2" />
+            Report Issue
+          </Button>
+          <Button onClick={() => setShowScheduleMaintenance(true)} variant="outline" size="sm">
+            <Calendar className="h-4 w-4 mr-2" />
+            Schedule Maintenance
+          </Button>
+          <Button onClick={() => setShowReportIssue(true)} size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Quick Action
+          </Button>
+        </div>
+      </div>
+
+      {/* Building Filter Toggles */}
+      <div className="flex items-center gap-2 p-4 border rounded-lg bg-muted/50">
+        <span className="text-sm font-medium text-muted-foreground">Filter by building:</span>
+        <Button
+          variant={!buildingId ? "default" : "outline"}
+          size="sm"
+          onClick={clearBuildingFilter}
+        >
+          All Buildings
+        </Button>
+        <Button
+          variant={buildingId === '7a9d7532-ebe7-496f-b5f1-10887f91edd5' ? "default" : "outline"}
+          size="sm"
+          onClick={() => setBuildingFilter('7a9d7532-ebe7-496f-b5f1-10887f91edd5')}
+        >
+          100 Centre Street
+        </Button>
+        <Button
+          variant={buildingId === 'c735c6a8-7c61-4417-b2e3-3ebbb3045db7' ? "default" : "outline"}
+          size="sm"
+          onClick={() => setBuildingFilter('c735c6a8-7c61-4417-b2e3-3ebbb3045db7')}
+        >
+          111 Centre Street
+        </Button>
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="space-y-1">
@@ -291,7 +385,7 @@ export default function Operations() {
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4" />
             Overview
@@ -304,7 +398,10 @@ export default function Operations() {
             <Wrench className="h-4 w-4" />
             Maintenance
           </TabsTrigger>
-
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Analytics
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -553,6 +650,7 @@ export default function Operations() {
                 onSelectionChange={() => {}}
                 onIssueUpdate={refreshAllData}
                 isLoading={isLoading}
+                buildingId={buildingId}
               />
             </CardContent>
           </Card>
@@ -660,6 +758,22 @@ export default function Operations() {
           </div>
         </TabsContent>
 
+        <TabsContent value="analytics" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Advanced Analytics Dashboard
+              </CardTitle>
+              <CardDescription>
+                Comprehensive facility analytics with AI-powered insights and predictive maintenance
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AdvancedAnalyticsDashboard />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
       </Tabs>
 

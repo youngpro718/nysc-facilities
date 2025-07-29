@@ -89,7 +89,16 @@ export const BuildingCard = ({
                 )}
                 {buildingIssues.length > 0 && (
                   <div className="absolute right-2 top-2">
-                    <Badge variant="destructive" className="animate-pulse text-xs">
+                    <Badge 
+                      variant="destructive" 
+                      className="animate-pulse text-xs cursor-pointer hover:scale-105 transition-transform"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (building?.id) {
+                          navigate(`/operations?building=${building.id}&filter=active`);
+                        }
+                      }}
+                    >
                       {buildingIssues.length} Active Issues
                     </Badge>
                   </div>
@@ -106,22 +115,22 @@ export const BuildingCard = ({
       </AspectRatio>
       <CardHeader className="space-y-1.5 p-4">
         <Badge
-          variant={building.status === "active" ? "default" : "destructive"}
+          variant={building?.status === "active" ? "default" : "destructive"}
           className="w-fit animate-in fade-in-50 text-xs cursor-pointer hover:scale-105 transition-transform"
-          onClick={() => navigate(`/spaces?building=${building.id}`)}
+          onClick={() => building?.id && navigate(`/spaces?building=${building.id}`)}
         >
-          {building.status === "active" ? "Operational" : "Under Maintenance"}
+          {building?.status === "active" ? "Operational" : "Under Maintenance"}
         </Badge>
         <div className="flex items-center gap-1.5">
           <Building2 className="h-4 w-4 text-muted-foreground" />
           <h3 
             className="text-lg font-semibold leading-none cursor-pointer hover:text-primary transition-colors"
-            onClick={() => navigate(`/spaces?building=${building.id}`)}
+            onClick={() => building?.id && navigate(`/spaces?building=${building.id}`)}
           >
-            {building.name}
+            {building?.name}
           </h3>
         </div>
-        <p className="text-xs text-muted-foreground">{building.address}</p>
+        <p className="text-xs text-muted-foreground">{building?.address}</p>
       </CardHeader>
       <CardContent className="space-y-4 p-4 pt-0">
         <BuildingStats

@@ -35,7 +35,7 @@ export const InventoryOverviewPanel = () => {
     queryKey: ["inventory-stats"],
     queryFn: async () => {
       const [itemsResult, categoriesResult, transactionsResult] = await Promise.all([
-        supabase.from("inventory_items").select("*", { count: "exact" }),
+        supabase.from("inventory_items").select("id", { count: "exact" }),
         supabase.from("inventory_categories").select("*", { count: "exact" }),
         supabase
           .from("inventory_item_transactions")
@@ -43,17 +43,38 @@ export const InventoryOverviewPanel = () => {
           .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
       ]);
 
-      const lowStockResult = await supabase
+      // Get items with minimum quantity set, then filter in JavaScript
+      const { data: allItems, error: itemsError } = await supabase
         .from("inventory_items")
         .select("*")
         .not("minimum_quantity", "is", null)
-        .gt("minimum_quantity", 0)
-        .or("quantity.lt.minimum_quantity,quantity.eq.0");
+        .gt("minimum_quantity", 0);
+      
+      console.log('Inventory query error:', itemsError);
+      console.log('Inventory items found:', allItems);
+      
+      if (itemsError) {
+        console.error('Error fetching inventory items:', itemsError);
+        // Return empty data if table doesn't exist
+        return {
+          total_items: 0,
+          total_categories: 0,
+          low_stock_count: 0,
+          recent_transactions: 0,
+        } as InventoryStats;
+      }
+      
+      // Filter for items that are below minimum quantity
+      const lowStockItems = (allItems || []).filter(item => 
+        item.minimum_quantity > 0 && item.quantity <= item.minimum_quantity
+      );
+      
+      console.log('Low stock items found:', lowStockItems);
 
       return {
         total_items: itemsResult.count || 0,
         total_categories: categoriesResult.count || 0,
-        low_stock_count: lowStockResult.data?.length || 0,
+        low_stock_count: lowStockItems.length || 0,
         recent_transactions: transactionsResult.count || 0,
       } as InventoryStats;
     },
@@ -74,21 +95,41 @@ export const InventoryOverviewPanel = () => {
           quantity,
           created_at,
           performed_by,
-          inventory_items!inner(name)
+          item_id
         `)
         .order("created_at", { ascending: false })
         .limit(5);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching transactions:', error);
+        return [];
+      }
 
-      return data?.map(t => ({
-        id: t.id,
-        item_name: (t.inventory_items as any)?.name || "Unknown Item",
-        transaction_type: t.transaction_type,
-        quantity: t.quantity,
-        created_at: t.created_at,
-        performed_by: t.performed_by,
-      })) as RecentTransaction[];
+      // Get item names separately
+      const transactionsWithNames = await Promise.all(
+        (data || []).map(async (t) => {
+          let itemName = "Unknown Item";
+          if (t.item_id) {
+            const { data: item } = await supabase
+              .from("inventory_items")
+              .select("name")
+              .eq("id", t.item_id)
+              .single();
+            itemName = item?.name || "Unknown Item";
+          }
+          
+          return {
+            id: t.id,
+            item_name: itemName,
+            transaction_type: t.transaction_type,
+            quantity: t.quantity,
+            created_at: t.created_at,
+            performed_by: t.performed_by,
+          };
+        })
+      );
+
+      return transactionsWithNames as RecentTransaction[];
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes
@@ -105,23 +146,25 @@ export const InventoryOverviewPanel = () => {
           id,
           name,
           quantity,
-          minimum_quantity,
-          inventory_categories!inner(name)
+          minimum_quantity
         `)
         .not("minimum_quantity", "is", null)
         .gt("minimum_quantity", 0)
-        .or("quantity.lt.minimum_quantity,quantity.eq.0")
-        .order("quantity", { ascending: true })
-        .limit(5);
+        .order("quantity", { ascending: true });
 
       if (error) throw error;
 
-      return data?.map(item => ({
+      // Filter items that are below minimum quantity
+      const filteredItems = (data || []).filter(item => 
+        item.quantity <= item.minimum_quantity
+      ).slice(0, 5); // Limit to 5 items
+
+      return filteredItems.map(item => ({
         id: item.id,
         name: item.name,
         quantity: item.quantity,
         minimum_quantity: item.minimum_quantity,
-        category_name: (item.inventory_categories as any)?.name || "Uncategorized",
+        category_name: "Uncategorized", // Will need to get category separately if needed
       })) as LowStockItem[];
     },
     staleTime: 2 * 60 * 1000, // 2 minutes

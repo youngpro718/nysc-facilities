@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ interface ReportIssueDialogProps {
 
 export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps) => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -45,26 +46,30 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
     console.log('Issue form submitted with data:', formData);
     
     try {
-      console.log('Inserting into maintenance_issues...');
+      console.log('Inserting into unified issues table...');
       const { error } = await supabase
-        .from("maintenance_issues")
+        .from("issues")
         .insert({
           title: formData.title,
           description: formData.description,
-          space_name: formData.space_name,
+          location_description: formData.space_name,
           space_type: formData.space_type,
           issue_type: formData.issue_type,
-          severity: formData.severity,
-          status: 'reported',
-          recurring_issue: formData.recurring_issue,
-          permanent_solution_needed: false
+          priority: formData.severity === 'critical' ? 'high' : formData.severity,
+          status: 'open'
         });
 
       if (error) {
         console.error('Database error:', error);
         throw error;
       }
-      console.log('Successfully inserted maintenance issue');
+      console.log('Successfully inserted issue into unified table');
+
+      // Invalidate all issue-related queries to ensure immediate UI updates
+      await queryClient.invalidateQueries({ queryKey: ['issues'] });
+      await queryClient.invalidateQueries({ queryKey: ['userIssues'] });
+      await queryClient.invalidateQueries({ queryKey: ['roomIssues'] });
+      await queryClient.invalidateQueries({ queryKey: ['maintenanceIssues'] });
 
       toast({
         title: "Issue Reported",

@@ -69,9 +69,10 @@ export const SpaceIntegrationPanel = ({ spaceId, spaceType, spaceName }: SpaceIn
       if (spaceType !== 'door') return [];
       
       const { data, error } = await supabase
-        .from('door_issues')
-        .select('id, issue_type, status, reported_at')
-        .eq('door_id', spaceId)
+        .from('issues')
+        .select('id, issue_type, status, created_at')
+        .eq('space_id', spaceId)
+        .eq('space_type', 'door')
         .neq('status', 'resolved');
       
       if (error) throw error;

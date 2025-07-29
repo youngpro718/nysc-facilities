@@ -4,16 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Checkbox } from "@/components/ui/checkbox";
-import { AlertTriangle, MapPin, CalendarIcon, Clock, CheckCircle2, Users, Bell, Plus } from "lucide-react";
+import { Plus, Clock, MapPin, AlertTriangle, Calendar as CalendarIcon, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CreateShutdownDialog } from "./CreateShutdownDialog";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useRealtime } from "@/hooks/useRealtime";
-import { CreateShutdownDialog } from "./CreateShutdownDialog";
 
 type ShutdownReason = "Project" | "Maintenance" | "Cleaning" | "Emergency";
 
@@ -357,27 +356,7 @@ export const RoomShutdownTracker = ({ onSetTemporaryLocation }: RoomShutdownTrac
                   </div>
                 )}
 
-                {/* Notification Checklist */}
-                <div className="bg-accent/10 p-3 rounded-lg border border-accent/20">
-                  <div className="flex items-center gap-2 text-accent-foreground font-medium mb-2">
-                    <Bell className="h-4 w-4" />
-                    Notification Checklist
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    {Object.entries(shutdown.notifications_sent).map(([key, sent]) => (
-                      <div key={key} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`${shutdown.id}-${key}`}
-                          checked={sent}
-                          onCheckedChange={() => handleNotificationUpdate(shutdown.id, key as keyof RoomShutdown['notifications_sent'])}
-                        />
-                        <label htmlFor={`${shutdown.id}-${key}`} className="capitalize">
-                          {key.replace("_", " ")} notified
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+
 
                 <div className="flex gap-2 pt-2">
                   {!shutdown.temporary_location && (
@@ -390,10 +369,6 @@ export const RoomShutdownTracker = ({ onSetTemporaryLocation }: RoomShutdownTrac
                       Set Temporary Location
                     </Button>
                   )}
-                  <Button size="sm" variant="outline">
-                    <Users className="h-4 w-4 mr-1" />
-                    View Affected Sessions
-                  </Button>
                 </div>
               </div>
             </CardContent>

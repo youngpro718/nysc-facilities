@@ -77,7 +77,7 @@ export default function AdminKeyRequests() {
             email,
             phone
           ),
-          rooms (
+          unified_spaces (
             name,
             room_number
           )

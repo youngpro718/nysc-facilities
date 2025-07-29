@@ -60,7 +60,7 @@ export function LightingIssuesList() {
   
   const fetchIssues = () => {
     setLoading(true);
-    let query = (supabase as any).from('lighting_issues').select('*').order('reported_at', { ascending: false });
+    let query = supabase.from('issues').select('*').eq('issue_type', 'lighting').order('created_at', { ascending: false });
     
     // Apply filters
     if (statusFilter !== 'all') {
@@ -117,8 +117,8 @@ export function LightingIssuesList() {
       updates.resolved_at = null;
     }
     
-    const { error } = await (supabase as any)
-      .from('lighting_issues')
+    const { error } = await supabase
+      .from('issues')
       .update(updates)
       .eq('id', issueId);
       

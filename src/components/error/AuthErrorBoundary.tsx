@@ -62,13 +62,16 @@ interface AuthErrorBoundaryProps {
 
 export function AuthErrorBoundary({ children, onError }: AuthErrorBoundaryProps) {
   const handleError = (error: Error) => {
+    // Handle cases where error might not be a proper Error object
+    const errorMessage = error?.message || String(error) || 'Unknown error';
+    
     // Only handle actual authentication-related errors
-    const isAuthError = error.message.includes('auth') || 
-                       error.message.includes('Authentication') ||
-                       error.message.includes('session') ||
-                       error.message.includes('token') ||
-                       error.message.includes('login') ||
-                       error.message.includes('unauthorized');
+    const isAuthError = errorMessage.includes('auth') || 
+                       errorMessage.includes('Authentication') ||
+                       errorMessage.includes('session') ||
+                       errorMessage.includes('token') ||
+                       errorMessage.includes('login') ||
+                       errorMessage.includes('unauthorized');
     
     if (isAuthError) {
       console.error('AuthErrorBoundary: Authentication error caught:', error);
@@ -76,6 +79,12 @@ export function AuthErrorBoundary({ children, onError }: AuthErrorBoundaryProps)
     } else {
       // For non-auth errors, just log and re-throw to let other error boundaries handle them
       console.error('AuthErrorBoundary: Non-auth error, re-throwing:', error);
+      
+      // If error is not a proper Error object, create a proper one
+      if (!(error instanceof Error)) {
+        throw new Error(`Non-Error object thrown: ${JSON.stringify(error)}`);
+      }
+      
       throw error;
     }
   };

@@ -183,7 +183,7 @@ export class AdvancedAnalyticsService {
         .from('issues')
         .select(`
           *,
-          unified_spaces!issues_room_id_fkey (
+          unified_spaces (
             name,
             space_type
           )

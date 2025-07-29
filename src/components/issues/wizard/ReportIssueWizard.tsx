@@ -95,7 +95,7 @@ export function ReportIssueWizard({ onSuccess, onCancel, assignedRooms }: Report
         .insert({
           title: data.title || `${data.issue_type} Issue ${data.problem_type ? `- ${data.problem_type}` : ''} - ${isEmergency ? 'HIGH' : data.priority?.toUpperCase()} Priority`,
           description: data.description,
-          type: data.issue_type as StandardizedIssueType,
+          issue_type: data.issue_type,
           priority: isEmergency ? 'high' : (data.priority || 'medium'),
           status: 'open',
           building_id: data.building_id || null,
@@ -105,8 +105,7 @@ export function ReportIssueWizard({ onSuccess, onCancel, assignedRooms }: Report
           seen: false,
           due_date: data.due_date ? new Date(data.due_date).toISOString() : null,
           date_info: data.date_info || null,
-          created_by: user.id,
-          problem_type: data.problem_type || null
+          created_by: user.id
         });
       
       if (error) {

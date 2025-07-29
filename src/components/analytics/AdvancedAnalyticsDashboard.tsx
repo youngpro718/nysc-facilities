@@ -162,7 +162,7 @@ export default function AdvancedAnalyticsDashboard({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {summary.facility_overview.average_utilization}%
+                {isNaN(summary.facility_overview.average_utilization) ? '0' : summary.facility_overview.average_utilization}%
               </div>
               <div className="flex items-center gap-2 mt-2">
                 <Badge variant={
@@ -176,7 +176,7 @@ export default function AdvancedAnalyticsDashboard({
                 </span>
               </div>
               <Progress 
-                value={summary.facility_overview.average_utilization} 
+                value={isNaN(summary.facility_overview.average_utilization) ? 0 : summary.facility_overview.average_utilization} 
                 className="mt-3" 
               />
             </CardContent>
@@ -190,7 +190,7 @@ export default function AdvancedAnalyticsDashboard({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {summary.issues_summary.resolution_rate}%
+                {isNaN(summary.issues_summary.resolution_rate) ? '0' : summary.issues_summary.resolution_rate}%
               </div>
               <div className="flex items-center gap-2 mt-2">
                 <Badge variant={
@@ -204,7 +204,7 @@ export default function AdvancedAnalyticsDashboard({
                 </span>
               </div>
               <Progress 
-                value={summary.issues_summary.resolution_rate} 
+                value={isNaN(summary.issues_summary.resolution_rate) ? 0 : summary.issues_summary.resolution_rate} 
                 className="mt-3" 
               />
             </CardContent>
@@ -218,7 +218,7 @@ export default function AdvancedAnalyticsDashboard({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {summary.maintenance_summary.average_score}
+                {isNaN(summary.maintenance_summary.average_score) ? '0' : summary.maintenance_summary.average_score}
               </div>
               <div className="flex items-center gap-2 mt-2">
                 <Badge variant={
@@ -234,7 +234,7 @@ export default function AdvancedAnalyticsDashboard({
                 )}
               </div>
               <Progress 
-                value={summary.maintenance_summary.average_score} 
+                value={isNaN(summary.maintenance_summary.average_score) ? 0 : summary.maintenance_summary.average_score} 
                 className="mt-3" 
               />
             </CardContent>
@@ -248,7 +248,7 @@ export default function AdvancedAnalyticsDashboard({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {summary.energy_summary.average_efficiency}%
+                {isNaN(summary.energy_summary.average_efficiency) ? '0' : summary.energy_summary.average_efficiency}%
               </div>
               <div className="flex items-center gap-2 mt-2">
                 <Badge variant={
@@ -258,11 +258,11 @@ export default function AdvancedAnalyticsDashboard({
                   {summary.energy_summary.efficiency_status.replace('_', ' ')}
                 </Badge>
                 <span className="text-xs text-green-600">
-                  ${summary.energy_summary.potential_savings.toLocaleString()} savings
+                  ${isNaN(summary.energy_summary.potential_savings) ? '0' : summary.energy_summary.potential_savings.toLocaleString()} savings
                 </span>
               </div>
               <Progress 
-                value={summary.energy_summary.average_efficiency} 
+                value={isNaN(summary.energy_summary.average_efficiency) ? 0 : summary.energy_summary.average_efficiency} 
                 className="mt-3" 
               />
             </CardContent>

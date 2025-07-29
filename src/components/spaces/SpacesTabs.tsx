@@ -17,7 +17,7 @@ import {
 import RoomsPage from './views/RoomsPage';
 import HallwaysList from './HallwaysList';
 import DoorsList from './DoorsList';
-import { FloorPlanView } from './floorplan/FloorPlanView';
+import { ModernFloorPlanView } from './floorplan/ModernFloorPlanView';
 import { RoomAccessManager } from './RoomAccessManager';
 
 interface SpaceViewProps {
@@ -264,7 +264,7 @@ const SpacesTabs = ({ selectedBuilding, selectedFloor }: SpaceViewProps) => {
                   </div>
                 }>
                   <div className="w-full h-full">
-                    <FloorPlanView />
+                    <ModernFloorPlanView />
                   </div>
                 </Suspense>
               </div>

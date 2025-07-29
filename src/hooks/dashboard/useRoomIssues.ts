@@ -32,7 +32,7 @@ export const useRoomIssues = ({ roomIds, userId, enabled = true }: UseRoomIssues
             description,
             status,
             priority,
-            type,
+            issue_type,
             created_at,
             updated_at,
             building_id,

@@ -1,5 +1,5 @@
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import { Line, Html } from '@react-three/drei';
 import * as THREE from 'three';
 
@@ -58,17 +58,19 @@ export function SpaceConnection({
   const startHeight = from.type === 'hallway' ? 30 : from.type === 'door' ? 40 : 60;
   const endHeight = to.type === 'hallway' ? 30 : to.type === 'door' ? 40 : 60;
   
-  // Create points with safety checks
-  let points;
-  try {
-    points = [
-      new THREE.Vector3(from.position.x, startHeight/2, from.position.y),
-      new THREE.Vector3(to.position.x, endHeight/2, to.position.y)
-    ];
-  } catch (err) {
-    console.error('Error creating connection points:', err, { from, to });
-    return null;
-  }
+  // Memoize points creation to prevent inline Three.js object creation
+  const points = useMemo(() => {
+    try {
+      const startPoint = new THREE.Vector3();
+      startPoint.set(from.position.x, startHeight/2, from.position.y);
+      const endPoint = new THREE.Vector3();
+      endPoint.set(to.position.x, endHeight/2, to.position.y);
+      return [startPoint, endPoint];
+    } catch (err) {
+      console.error('Error creating connection points:', err, { from, to });
+      return null;
+    }
+  }, [from.position.x, from.position.y, to.position.x, to.position.y, startHeight, endHeight]);
   
   // Safety check for points array after creation
   if (!points || points.length !== 2) {
@@ -119,17 +121,28 @@ export function SpaceConnection({
   };
   
   const style = getConnectionStyle();
-  const connectionDistance = new THREE.Vector3().subVectors(
-    new THREE.Vector3(to.position.x, 0, to.position.y),
-    new THREE.Vector3(from.position.x, 0, from.position.y)
-  ).length();
   
-  // Calculate the midpoint for label placement
-  const midPoint = new THREE.Vector3(
-    (from.position.x + to.position.x) / 2,
-    Math.max(startHeight, endHeight) / 2 + 10,
-    (from.position.y + to.position.y) / 2
-  );
+  // Memoize distance calculation to prevent inline Vector3 creation
+  const connectionDistance = useMemo(() => {
+    const toVec = new THREE.Vector3();
+    toVec.set(to.position.x, 0, to.position.y);
+    const fromVec = new THREE.Vector3();
+    fromVec.set(from.position.x, 0, from.position.y);
+    const result = new THREE.Vector3();
+    result.subVectors(toVec, fromVec);
+    return result.length();
+  }, [from.position.x, from.position.y, to.position.x, to.position.y]);
+  
+  // Memoize midpoint calculation to prevent inline Vector3 creation
+  const midPoint = useMemo(() => {
+    const result = new THREE.Vector3();
+    result.set(
+      (from.position.x + to.position.x) / 2,
+      Math.max(startHeight, endHeight) / 2 + 10,
+      (from.position.y + to.position.y) / 2
+    );
+    return result;
+  }, [from.position.x, from.position.y, to.position.x, to.position.y, startHeight, endHeight]);
   
   return (
     <group>

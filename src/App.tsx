@@ -19,6 +19,7 @@ import SystemSettings from "@/pages/SystemSettings";
 import VerificationPending from "@/pages/VerificationPending";
 import AccessManagement from "@/pages/AccessManagement";
 import ThemeSettings from "@/pages/settings/ThemeSettings";
+import SettingsPage from '@/pages/SettingsPage';
 import TwoFactorAuth from "@/pages/settings/TwoFactorAuth";
 import SessionSettings from "@/pages/settings/SessionSettings";
 import AdminKeyRequests from "@/pages/admin/KeyRequests";
@@ -159,6 +160,11 @@ function AppContent() {
         <Route path="settings/security/session" element={
           <ProtectedRoute requireAdmin>
             <SessionSettings />
+          </ProtectedRoute>
+        } />
+        <Route path="profile/settings" element={
+          <ProtectedRoute>
+            <SettingsPage />
           </ProtectedRoute>
         } />
 

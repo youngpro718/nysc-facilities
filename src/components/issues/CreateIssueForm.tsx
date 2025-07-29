@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 interface FormData {
   title: string;
   description: string;
+  issue_type: string;
   priority: 'low' | 'medium' | 'high';
   building_id?: string;
   floor_id?: string;
@@ -89,6 +90,7 @@ export function CreateIssueForm({ onSuccess }: CreateIssueFormProps) {
         .insert([{
           title: data.title,
           description: data.description,
+          issue_type: data.issue_type,
           priority: data.priority,
           building_id: data.building_id,
           floor_id: data.floor_id,
@@ -137,6 +139,34 @@ export function CreateIssueForm({ onSuccess }: CreateIssueFormProps) {
                 <FormControl>
                   <Textarea {...field} placeholder="Describe the issue" />
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="issue_type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Issue Type</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select issue type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="maintenance">Maintenance</SelectItem>
+                    <SelectItem value="electrical">Electrical</SelectItem>
+                    <SelectItem value="plumbing">Plumbing</SelectItem>
+                    <SelectItem value="hvac">HVAC</SelectItem>
+                    <SelectItem value="lighting">Lighting</SelectItem>
+                    <SelectItem value="security">Security</SelectItem>
+                    <SelectItem value="cleaning">Cleaning</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}

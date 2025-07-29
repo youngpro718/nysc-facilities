@@ -12,9 +12,9 @@ export const issueReportService = {
   async submitIssueReport(data: IssueReportData) {
     try {
       const issueData = {
-        type: data.type as any, // This will need proper type casting
+        issue_type: data.type,
         title: `Issue Report: ${data.type}`,
-        location: data.location,
+        location_description: data.location,
         description: data.description,
         created_by: data.user_id,
         status: 'open' as const,

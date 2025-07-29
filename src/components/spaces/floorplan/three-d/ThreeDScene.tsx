@@ -111,7 +111,10 @@ export const ThreeDScene = forwardRef<any, ThreeDSceneProps>(function ThreeDScen
     if (camera && visibleObjects.length > 0 && !hasInitialized) {
       const centerX = visibleObjects.reduce((sum, obj) => sum + obj.position.x, 0) / visibleObjects.length;
       const centerY = visibleObjects.reduce((sum, obj) => sum + obj.position.y, 0) / visibleObjects.length;
-      const maxDim = Math.max(600, Math.max(...visibleObjects.map(obj => Math.max(obj.data.size.width, obj.data.size.height))));
+      const maxDim = Math.max(600, Math.max(...visibleObjects.map(obj => {
+        const size = obj?.data?.size || { width: 150, height: 100 };
+        return Math.max(size.width || 150, size.height || 100);
+      })));
       
       camera.position.set(centerX, maxDim, centerY + maxDim);
       camera.lookAt(centerX, 0, centerY);

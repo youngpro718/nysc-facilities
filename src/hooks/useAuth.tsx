@@ -221,43 +221,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       const currentPath = window.location.pathname;
       
+      console.log('handleRedirect: Current path:', currentPath, 'isAdmin:', userData.isAdmin);
+      
       // Handle verification pending
       if (userData.profile?.verification_status === 'pending') {
         if (currentPath !== '/verification-pending') {
+          console.log('handleRedirect: Redirecting to verification pending');
           navigate('/verification-pending', { replace: true });
         }
         return;
       }
       
-      // Skip redirects if already on correct page
       if (userData.isAdmin) {
+        // Admin user redirect logic
         const isAdminPage = currentPath === '/' || 
                            currentPath.startsWith('/spaces') ||
                            currentPath.startsWith('/occupants') ||
                            currentPath.startsWith('/keys') ||
                            currentPath.startsWith('/lighting') ||
-                           currentPath.startsWith('/issues') ||
+                           currentPath.startsWith('/operations') ||
                            currentPath.startsWith('/access-management') ||
                            currentPath.startsWith('/admin') ||
                            currentPath.startsWith('/maintenance') ||
                            currentPath.startsWith('/court-operations') ||
-                           currentPath.startsWith('/settings');
+                           currentPath.startsWith('/inventory') ||
+                           currentPath.startsWith('/system-settings');
         
+        // Redirect admin users away from user-only pages or login page to admin dashboard
         if (currentPath === '/login' || 
             currentPath.startsWith('/dashboard') || 
             currentPath === '/my-requests' || 
             currentPath === '/my-issues' ||
             currentPath === '/profile') {
+          console.log('handleRedirect: Admin user, redirecting to admin dashboard');
+          navigate('/', { replace: true });
+        } else if (!isAdminPage) {
+          // If admin is on an unknown/invalid page, redirect to admin dashboard
+          console.log('handleRedirect: Admin user on unknown page, redirecting to admin dashboard');
           navigate('/', { replace: true });
         }
       } else {
-        // Regular user redirects
+        // Regular user redirect logic
         const isUserPage = currentPath.startsWith('/dashboard') || 
                           currentPath === '/my-requests' || 
                           currentPath === '/my-issues' ||
                           currentPath === '/profile';
         
+        // Redirect regular users away from admin pages or login page to user dashboard
         if (currentPath === '/login' || !isUserPage) {
+          console.log('handleRedirect: Regular user, redirecting to user dashboard');
           navigate('/dashboard', { replace: true });
         }
       }

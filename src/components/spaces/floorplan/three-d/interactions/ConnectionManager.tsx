@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useMemo } from 'react';
 import { useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 
@@ -35,9 +35,11 @@ export function ConnectionManager({
   const getObjectAtPosition = useCallback((position: THREE.Vector3) => {
     // Find object at the given position
     return objects.find(obj => {
-      const objPos = new THREE.Vector3(obj.position.x, 0, obj.position.y);
+      // Calculate distance without creating new Vector3
+      const dx = position.x - obj.position.x;
+      const dz = position.z - obj.position.y;
+      const distance = Math.sqrt(dx * dx + dz * dz);
       const size = obj.data?.size || { width: 150, height: 100 };
-      const distance = position.distanceTo(objPos);
       return distance < Math.max(size.width, size.height) / 2;
     });
   }, [objects]);
@@ -62,9 +64,11 @@ export function ConnectionManager({
     
     if (intersects.length > 0) {
       const intersectPoint = intersects[0].point;
-      const fromPos = new THREE.Vector3(
-        dragState.fromObject.position.x, 
-        30, 
+      // Create fromPos as Vector3 without inline creation
+      const fromPos = new THREE.Vector3();
+      fromPos.set(
+        dragState.fromObject.position.x,
+        30,
         dragState.fromObject.position.y
       );
       
@@ -116,15 +120,27 @@ export function ConnectionManager({
     });
   }, []);
 
+  // Memoize the position array to avoid inline creation during render
+  const positionArray = useMemo(() => {
+    if (!dragState.previewLine) return null;
+    
+    // Create array without inline flatMap to avoid "lov" error
+    const positions: number[] = [];
+    for (const point of dragState.previewLine) {
+      positions.push(point.x, point.y, point.z);
+    }
+    return new Float32Array(positions);
+  }, [dragState.previewLine]);
+
   return (
     <group>
       {/* Connection preview line */}
-      {dragState.previewLine && (
+      {dragState.previewLine && positionArray && (
         <line>
           <bufferGeometry>
             <bufferAttribute
               attach="attributes-position"
-              array={new Float32Array(dragState.previewLine.flatMap(p => [p.x, p.y, p.z]))}
+              array={positionArray}
               count={dragState.previewLine.length}
               itemSize={3}
             />

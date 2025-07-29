@@ -20,54 +20,55 @@ export interface CourtPersonnelData {
 
 export const useCourtPersonnel = () => {
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["court-personnel"],
+    queryKey: ["court-personnel-v2"],
     queryFn: async (): Promise<CourtPersonnelData> => {
-      // Fetch personnel from the profiles table
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
+      // Fetch court personnel directly from personnel_profiles table with type assertion
+      const { data: personnelData, error: personnelError } = await (supabase as any)
+        .from('personnel_profiles')
         .select(`
           id,
-          first_name,
-          last_name,
-          email,
+          full_name,
+          display_name,
+          primary_role,
+          title,
           phone,
+          extension,
+          room_number,
+          floor,
           department,
-          title
+          is_active
         `)
-        .order('last_name');
+        .eq('is_active', true)
+        .order('full_name');
       
-      if (profilesError) throw profilesError;
+      if (personnelError) throw personnelError;
 
-      // Convert profiles to PersonnelOption format
-      const allProfiles = (profilesData || []).map((profile: any) => ({
-        id: profile.id,
-        name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim(),
-        role: profile.title || 'Staff',
-        phone: profile.phone || '',
-        extension: '',
-        room: '',
-        floor: '',
-        department: profile.department || '',
-        email: profile.email || '',
-        fax: ''
+      // Convert personnel_profiles to PersonnelOption format
+      const allPersonnel = (personnelData || []).map((person: any) => ({
+        id: person.id,
+        name: person.display_name || person.full_name || '',
+        role: person.title || person.primary_role || 'Staff',
+        phone: person.phone || '',
+        extension: person.extension || '',
+        room: person.room_number || '',
+        floor: person.floor || '',
+        department: person.department || ''
       }));
 
       // Categorize by role
-      const judges: PersonnelOption[] = allProfiles.filter(person => 
+      const judges: PersonnelOption[] = allPersonnel.filter(person => 
         person.role.toLowerCase().includes('judge') || 
         person.role.toLowerCase().includes('justice')
       );
 
-      const clerks: PersonnelOption[] = allProfiles.filter(person => 
+      const clerks: PersonnelOption[] = allPersonnel.filter(person => 
         person.role.toLowerCase().includes('clerk')
       );
 
-      const sergeants: PersonnelOption[] = allProfiles.filter(person => 
+      const sergeants: PersonnelOption[] = allPersonnel.filter(person => 
         person.role.toLowerCase().includes('sergeant') ||
         person.role.toLowerCase().includes('officer')
       );
-
-      const allPersonnel = allProfiles;
 
       return {
         judges,

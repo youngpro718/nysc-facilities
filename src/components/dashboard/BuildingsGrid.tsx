@@ -57,14 +57,13 @@ export function BuildingsGrid({
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
-      {buildings?.filter(building => building != null)?.map((building, index) => {
+      {buildings?.filter(building => building != null && building.id)?.map((building, index) => {
         const { floorCount, roomCount, workingFixtures, totalFixtures } = calculateBuildingStats(building);
 
         const buildingIssues =
           issues?.filter(
             (issue) =>
               issue.building_id === building.id && 
-              issue.photos?.length > 0 &&
               issue.status !== 'resolved'
           ) || [];
 

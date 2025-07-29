@@ -25,18 +25,25 @@ export const BuildingStats = ({
   totalFixtures,
   buildingId,
 }: BuildingStatsProps) => {
+  const safeBuildingId = buildingId || '';
   const navigate = useNavigate();
 
   const handleBuildingOverviewClick = () => {
-    navigate(`/spaces?building=${buildingId}`);
+    if (safeBuildingId) {
+      navigate(`/spaces?building=${safeBuildingId}`);
+    }
   };
 
   const handleIssuesClick = () => {
-    navigate(`/issues?building=${buildingId}`);
+    if (safeBuildingId) {
+      navigate(`/operations?building=${safeBuildingId}&filter=active`);
+    }
   };
 
   const handleLightingClick = () => {
-    navigate(`/lighting?building=${buildingId}`);
+    if (safeBuildingId) {
+      navigate(`/lighting?building=${safeBuildingId}`);
+    }
   };
 
   return (

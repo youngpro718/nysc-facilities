@@ -2,28 +2,33 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Server, 
   Shield, 
-  Bell, 
   Database, 
-  Users, 
-  Settings, 
-  AlertTriangle, 
-  Clock, 
-  Mail,
+  Settings,
+  Download,
   FileText,
   Trash2,
-  Download
+  Users,
+  Clock,
+  Bell
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
 import { ModuleManagement } from "./ModuleManagement";
 import { useSystemSettings } from "@/hooks/admin/useSystemSettings";
+
+const logLevels = [
+  { value: 'error', label: 'Error' },
+  { value: 'warn', label: 'Warning' },
+  { value: 'info', label: 'Info' },
+  { value: 'debug', label: 'Debug' }
+];
 
 export function AdminSystemSettings() {
   const { 
@@ -40,25 +45,16 @@ export function AdminSystemSettings() {
     userRegistration: true,
     emailNotifications: true,
     auditLogging: true,
-    sessionTimeout: "8",
-    maxFileSize: "10",
-    backupRetention: "30",
-    logLevel: "info",
-    systemName: "NYSC Facilities Management System",
-    adminEmail: "admin@nycourts.gov",
-    welcomeMessage: "Welcome to the NYSC Facilities Management System"
+    systemName: 'NYSC Facilities Hub',
+    adminEmail: 'admin@nysc.gov',
+    welcomeMessage: 'Welcome to the NYSC Facilities Management System',
+    backupRetention: '30',
+    logLevel: 'info'
   });
 
   const updateSetting = (key: string, value: any) => {
     setSystemSettings(prev => ({ ...prev, [key]: value }));
   };
-
-  const logLevels = [
-    { value: "error", label: "Error Only" },
-    { value: "warn", label: "Warning & Error" },
-    { value: "info", label: "Info, Warning & Error" },
-    { value: "debug", label: "All Messages (Debug)" }
-  ];
 
   return (
     <div className="space-y-6">
@@ -154,44 +150,13 @@ export function AdminSystemSettings() {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Session Timeout (hours)</Label>
-              <Select
-                value={systemSettings.sessionTimeout}
-                onValueChange={(value) => updateSetting("sessionTimeout", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">1 hour</SelectItem>
-                  <SelectItem value="2">2 hours</SelectItem>
-                  <SelectItem value="4">4 hours</SelectItem>
-                  <SelectItem value="8">8 hours</SelectItem>
-                  <SelectItem value="24">24 hours</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Max File Upload (MB)</Label>
-              <Select
-                value={systemSettings.maxFileSize}
-                onValueChange={(value) => updateSetting("maxFileSize", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="5">5 MB</SelectItem>
-                  <SelectItem value="10">10 MB</SelectItem>
-                  <SelectItem value="25">25 MB</SelectItem>
-                  <SelectItem value="50">50 MB</SelectItem>
-                  <SelectItem value="100">100 MB</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm">
+              View System Logs
+            </Button>
+            <Button variant="outline" size="sm">
+              Export Settings
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -253,7 +218,6 @@ export function AdminSystemSettings() {
         </CardContent>
       </Card>
 
-      {/* Notifications & Logging */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

@@ -1,21 +1,14 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CourtAvailabilityPanel } from "@/components/court/CourtAvailabilityPanel";
-import { CourtTermsPanel } from "@/components/court/CourtTermsPanel";
-import { CourtMaintenancePanel } from "@/components/court/CourtMaintenancePanel";
-import { TermUploadDialog } from "@/components/court/TermUploadDialog";
-import { TermScheduleView } from "@/components/court/TermScheduleView";
-import { SetTemporaryLocationDialog } from "@/components/court/SetTemporaryLocationDialog";
+import { InteractiveOperationsDashboard } from "@/components/court/InteractiveOperationsDashboard";
 import { AssignmentManagementPanel } from "@/components/court/AssignmentManagementPanel";
-import { RoomShutdownTracker } from "@/components/court/RoomShutdownTracker";
-import { Button } from "@/components/ui/button";
-import { Upload, MapPin, Calendar, Wrench, Users, AlertTriangle } from "lucide-react";
+import { SetTemporaryLocationDialog } from "@/components/court/SetTemporaryLocationDialog";
+import { MapPin, Users } from "lucide-react";
 
 export const CourtOperationsDashboard = () => {
-  const [termUploadOpen, setTermUploadOpen] = useState(false);
+
   const [tempLocationOpen, setTempLocationOpen] = useState(false);
   const [selectedCourtRoom, setSelectedCourtRoom] = useState<string | null>(null);
-  const [selectedTermId, setSelectedTermId] = useState<string | null>(null);
 
   const handleSetTemporaryLocation = (courtroomId: string) => {
     setSelectedCourtRoom(courtroomId);
@@ -31,64 +24,31 @@ export const CourtOperationsDashboard = () => {
             Manage courtrooms, terms, and maintenance schedules
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={() => setTermUploadOpen(true)} variant="outline">
-            <Upload className="h-4 w-4 mr-2" />
-            Upload Term
-          </Button>
-        </div>
+
       </div>
 
-      <Tabs defaultValue="availability" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="availability" className="flex items-center gap-2">
+      <Tabs defaultValue="operations" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="operations" className="flex items-center gap-2">
             <MapPin className="h-4 w-4" />
-            Courtroom Status
-          </TabsTrigger>
-          <TabsTrigger value="shutdowns" className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4" />
-            Room Shutdowns
+            Operations Overview
           </TabsTrigger>
           <TabsTrigger value="assignments" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
-            Assignments
-          </TabsTrigger>
-          <TabsTrigger value="terms" className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Current Terms
-          </TabsTrigger>
-          <TabsTrigger value="maintenance" className="flex items-center gap-2">
-            <Wrench className="h-4 w-4" />
-            Maintenance Impact
+            Manage Assignments
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="availability" className="space-y-4">
-          <CourtAvailabilityPanel onSetTemporaryLocation={handleSetTemporaryLocation} />
+        <TabsContent value="operations">
+          <InteractiveOperationsDashboard />
         </TabsContent>
 
-        <TabsContent value="shutdowns" className="space-y-4">
-          <RoomShutdownTracker onSetTemporaryLocation={handleSetTemporaryLocation} />
-        </TabsContent>
-
-        <TabsContent value="assignments" className="space-y-4">
+        <TabsContent value="assignments">
           <AssignmentManagementPanel />
         </TabsContent>
-
-        <TabsContent value="terms" className="space-y-4">
-          <CourtTermsPanel onTermSelected={setSelectedTermId} />
-        </TabsContent>
-
-        <TabsContent value="maintenance" className="space-y-4">
-          <CourtMaintenancePanel />
-        </TabsContent>
-
       </Tabs>
 
-      <TermUploadDialog 
-        open={termUploadOpen} 
-        onOpenChange={setTermUploadOpen}
-      />
+
       
       <SetTemporaryLocationDialog 
         open={tempLocationOpen} 

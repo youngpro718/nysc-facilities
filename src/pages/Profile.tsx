@@ -1,6 +1,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Shield, ChevronLeft, Bell, Settings, Palette, LayoutGrid } from "lucide-react";
+import { User, Shield, ChevronLeft, Bell, Settings, Palette, LayoutGrid, Settings2 } from "lucide-react";
+import { EnhancedUserSettings } from '@/components/profile/EnhancedUserSettings';
 import { Card } from "@/components/ui/card";
 import { PersonalInfoForm } from "@/components/profile/PersonalInfoForm";
 import { NotificationPreferencesCard } from "@/components/notifications/NotificationPreferencesCard";
@@ -92,6 +93,14 @@ export default function Profile() {
       icon: Shield,
       type: 'navigation' as const,
       action: () => navigate('/profile/privacy')
+    },
+    {
+      id: 'all-settings',
+      title: 'All Settings',
+      description: 'Complete settings for notifications, privacy, appearance, and more',
+      icon: Settings2,
+      type: 'navigation' as const,
+      action: () => navigate('/profile/settings')
     }
   ];
 
@@ -181,6 +190,13 @@ export default function Profile() {
               <Shield className="h-4 w-4" />
               Security
             </TabsTrigger>
+            <TabsTrigger 
+              value="all-settings" 
+              className="flex items-center gap-2 px-4 py-3 text-sm data-[state=active]:bg-background data-[state=active]:text-foreground transition-colors whitespace-nowrap"
+            >
+              <Settings2 className="h-4 w-4" />
+              All Settings
+            </TabsTrigger>
           </TabsList>
         </div>
         
@@ -232,6 +248,18 @@ export default function Profile() {
 
         <TabsContent value="security" className="mt-6">
           <SecuritySection />
+        </TabsContent>
+
+        <TabsContent value="all-settings" className="mt-6">
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-semibold">All Settings</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Complete settings management for notifications, privacy, appearance, language, security, and accessibility
+              </p>
+            </div>
+            <EnhancedUserSettings />
+          </div>
         </TabsContent>
       </Tabs>
     </div>

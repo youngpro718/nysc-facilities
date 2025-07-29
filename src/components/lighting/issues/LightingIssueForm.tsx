@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { LightingIssue, LightingIssueStatus } from '@/types/lightingIssue';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -27,6 +28,7 @@ interface LightingIssueFormProps {
 
 export function LightingIssueForm({ onSubmitted, prefillData, onSuccess }: LightingIssueFormProps) {
   // Responsive form layout and modern styling
+  const queryClient = useQueryClient();
 
   const [location, setLocation] = useState(prefillData?.location || '');
   const [bulbType, setBulbType] = useState(prefillData?.bulb_type || 'LED');
@@ -63,25 +65,29 @@ export function LightingIssueForm({ onSubmitted, prefillData, onSuccess }: Light
     setLoading(true);
     setError(null);
     
-    // Use type assertion to work around TypeScript error
-    // This is needed because the Supabase types may not be up-to-date with the database schema
+    // Insert into unified issues table
     const { error } = await supabase
-      .from('lighting_issues' as any)
+      .from('issues')
       .insert({
-        location,
-        bulb_type: bulbType,
-        form_factor: formFactor,
-        issue_type: issueType,
-        status,
-        notes,
-        reported_at: new Date().toISOString(),
-      });
+        title: `Lighting Issue - ${issueType}`,
+        description: notes || `${issueType} issue with ${bulbType} bulb`,
+        issue_type: 'lighting',
+        priority: 'medium',
+        status: 'open',
+        location_description: location
+      } as any);
 
     setLoading(false);
     
     if (error) {
       setError(error.message);
     } else {
+      // Invalidate all issue-related queries for immediate UI updates
+      queryClient.invalidateQueries({ queryKey: ['issues'] });
+      queryClient.invalidateQueries({ queryKey: ['userIssues'] });
+      queryClient.invalidateQueries({ queryKey: ['roomIssues'] });
+      queryClient.invalidateQueries({ queryKey: ['lightingIssues'] });
+      
       // Clear form
       setLocation('');
       setBulbType('LED');

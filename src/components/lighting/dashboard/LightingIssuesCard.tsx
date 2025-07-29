@@ -17,10 +17,11 @@ export function LightingIssuesCard() {
     queryFn: async () => {
       try {
         // Direct query approach with type assertions to avoid TypeScript errors
-        // Get all issues and count them client-side
-        const { data: issues, error } = await (supabase as any)
-          .from('lighting_issues')
-          .select('status');
+        // Get all lighting issues and count them client-side
+        const { data: issues, error } = await supabase
+          .from('issues')
+          .select('status')
+          .eq('issue_type', 'lighting');
         
         if (error) {
           console.error('Error fetching lighting issues:', error);
@@ -41,16 +42,16 @@ export function LightingIssuesCard() {
           };
         }
         
-        // Count issues by status
+        // Count issues by status (unified issues table uses different status values)
         const openCount = issues.filter(issue => issue.status === 'open').length;
         const resolvedCount = issues.filter(issue => issue.status === 'resolved').length;
-        const deferredCount = issues.filter(issue => issue.status === 'deferred').length;
+        const inProgressCount = issues.filter(issue => issue.status === 'in_progress').length;
         
         return {
           openCount,
           resolvedCount,
-          deferredCount,
-          totalCount: openCount + resolvedCount + deferredCount
+          deferredCount: inProgressCount, // Map in_progress to deferred for compatibility
+          totalCount: openCount + resolvedCount + inProgressCount
         };
       } catch (error) {
         console.error('Error in lighting issues stats query:', error);

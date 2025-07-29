@@ -26,7 +26,7 @@ export const useUserIssues = (userId?: string) => {
             building_id,
             seen,
             photos,
-            rooms (
+            unified_spaces (
               id,
               name,
               room_number

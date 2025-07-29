@@ -107,18 +107,11 @@ export function ThreeDViewer({
     return (
       <ErrorBoundary>
         <Canvas
+          camera={{
+            position: [0, 600, 600] as [number, number, number],
+            fov: 45
+          }}
           shadows
-          gl={{ 
-            antialias: true,
-            alpha: false,
-            preserveDrawingBuffer: true
-          }}
-          camera={{ 
-            position: [0, 600, 600] as [number, number, number], 
-            fov: 45,
-            near: 0.1,
-            far: 2000
-          }}
           style={{ width: '100%', height: '100%' }}
         >
           <ThreeDScene 

@@ -15,6 +15,8 @@ interface EnhancedIssuesListProps {
   onSelectionChange: (issueIds: string[]) => void;
   onIssueUpdate: () => void;
   isLoading: boolean;
+  buildingId?: string | null;
+  filter?: string | null;
 }
 
 export function EnhancedIssuesList({
@@ -25,21 +27,38 @@ export function EnhancedIssuesList({
   selectedIssues,
   onSelectionChange,
   onIssueUpdate,
-  isLoading
+  isLoading,
+  buildingId,
+  filter
 }: EnhancedIssuesListProps) {
-  // Filter issues based on search query
+  // Filter issues based on search query, building, and filter
   const filteredIssues = useMemo(() => {
-    if (!searchQuery) return issues;
+    let result = issues;
     
-    const query = searchQuery.toLowerCase();
-    return issues.filter(issue => 
-      issue.title.toLowerCase().includes(query) ||
-      issue.description.toLowerCase().includes(query) ||
-      issue.rooms?.name?.toLowerCase().includes(query) ||
-      issue.rooms?.room_number?.toLowerCase().includes(query) ||
-      `${issue.reporter?.first_name} ${issue.reporter?.last_name}`.toLowerCase().includes(query)
-    );
-  }, [issues, searchQuery]);
+    // Filter by building if provided
+    if (buildingId) {
+      result = result.filter(issue => issue.building_id === buildingId);
+    }
+    
+    // Filter by status if provided
+    if (filter === 'active') {
+      result = result.filter(issue => issue.status !== 'resolved');
+    }
+    
+    // Filter by search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(issue => 
+        issue.title.toLowerCase().includes(query) ||
+        issue.description.toLowerCase().includes(query) ||
+        issue.rooms?.name?.toLowerCase().includes(query) ||
+        issue.rooms?.room_number?.toLowerCase().includes(query) ||
+        `${issue.reporter?.first_name} ${issue.reporter?.last_name}`.toLowerCase().includes(query)
+      );
+    }
+    
+    return result;
+  }, [issues, searchQuery, buildingId, filter]);
 
   // Group issues based on grouping mode
   const groupedIssues = useMemo(() => {

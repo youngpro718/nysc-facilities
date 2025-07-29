@@ -35,9 +35,11 @@ export function ConnectionManager({
   const getObjectAtPosition = useCallback((position: THREE.Vector3) => {
     // Find object at the given position using simple distance check
     return objects.find(obj => {
-      const objPos = new THREE.Vector3(obj.position.x, 0, obj.position.y);
+      // Use direct distance calculation to avoid inline Vector3 creation
+      const dx = obj.position.x - position.x;
+      const dy = obj.position.y - position.z; // position.z maps to obj.position.y
+      const distance = Math.sqrt(dx * dx + dy * dy);
       const size = obj.data?.size || { width: 150, height: 100 };
-      const distance = position.distanceTo(objPos);
       return distance < Math.max(size.width, size.height) / 2;
     });
   }, [objects]);
