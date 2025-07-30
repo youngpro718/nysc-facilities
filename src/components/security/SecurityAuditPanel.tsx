@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Shield, Activity, Users, AlertTriangle, Refresh } from 'lucide-react';
+import { Shield, Activity, Users, AlertTriangle, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface SecurityEvent {
@@ -111,7 +111,7 @@ export function SecurityAuditPanel() {
           <p className="text-muted-foreground">Monitor security events and authentication attempts</p>
         </div>
         <Button onClick={fetchSecurityData} disabled={isLoading}>
-          <Refresh className="h-4 w-4 mr-2" />
+          <RotateCcw className="h-4 w-4 mr-2" />
           Refresh
         </Button>
       </div>
