@@ -8848,13 +8848,6 @@ export type Database = {
         Args: { email: string }
         Returns: boolean
       }
-      validate_role_assignment: {
-        Args: {
-          target_user_id: string
-          target_role: Database["public"]["Enums"]["user_role"]
-        }
-        Returns: boolean
-      }
       validate_text_input: {
         Args: { input_text: string; max_length?: number; required?: boolean }
         Returns: boolean
