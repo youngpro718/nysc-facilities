@@ -30,8 +30,11 @@ export const CourtAvailabilityPanel = ({ onSetTemporaryLocation }: CourtAvailabi
     queryKey: ["courtroom-availability"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("courtroom_availability")
-        .select("*")
+        .from("court_rooms")
+        .select(`
+          *,
+          rooms(room_number, name)
+        `)
         .order("room_number");
       if (error) throw error;
       return data as unknown as CourtroomAvailability[];

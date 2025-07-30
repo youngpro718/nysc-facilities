@@ -10,11 +10,11 @@ export function KeyInventory() {
     queryKey: ["keys-inventory"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("key_inventory_view")
+        .from("keys")
         .select("*");
 
       if (error) throw error;
-      return data as KeyData[];
+      return data as any[];
     },
   });
 

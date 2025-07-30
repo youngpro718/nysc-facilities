@@ -27,8 +27,8 @@ export const AssignmentManagementPanel = () => {
         .not("part", "eq", "");
 
       const { data: availability } = await supabase
-        .from("courtroom_availability")
-        .select("id, availability_status, temporary_location");
+        .from("court_rooms")
+        .select("id, maintenance_status, temporary_location");
 
       const { data: shutdowns } = await supabase
         .from("room_shutdowns")

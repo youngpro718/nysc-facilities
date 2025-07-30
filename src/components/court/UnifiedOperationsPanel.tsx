@@ -39,13 +39,14 @@ export const UnifiedOperationsPanel = () => {
 
       // Get court availability data
       const { data: availability } = await supabase
-        .from("courtroom_availability")
+        .from("court_rooms")
         .select("*");
 
-      // Get maintenance data
+      // Get maintenance data  
       const { data: maintenance } = await supabase
-        .from("court_maintenance_view")
-        .select("*");
+        .from("maintenance_schedules")
+        .select("*")
+        .eq("space_type", "courtroom");
 
       // Get shutdown data
       const { data: shutdowns } = await supabase

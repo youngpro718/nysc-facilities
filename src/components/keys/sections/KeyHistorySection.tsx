@@ -19,16 +19,14 @@ export function KeyHistorySection() {
     queryKey: ["key-audit-history"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("key_audit_logs_view")
+        .from("key_audit_logs")
         .select(`
           id,
           action_type,
           created_at,
           changes,
           key_id,
-          performed_by,
-          username,
-          email
+          performed_by
         `)
         .order('created_at', { ascending: false })
         .limit(50);

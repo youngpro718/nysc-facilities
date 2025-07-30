@@ -94,16 +94,18 @@ export default function EditKeyDialog({ keyData, open, onOpenChange }: EditKeyDi
   useEffect(() => {
     const fetchDoorLocations = async () => {
       const { data, error } = await supabase
-        .from("key_door_locations")
+        .from("room_key_access")
         .select("door_id")
         .eq("key_id", keyData.id);
 
       if (error) {
-        toast.error("Error fetching door locations: " + error.message);
+        console.error("Error fetching door locations:", error.message);
+        // Set empty array if no relations exist
+        form.setValue("door_locations", []);
         return;
       }
 
-      const locations = data.map(d => d.door_id);
+      const locations = data?.map(d => d.door_id) || [];
       form.setValue("door_locations", locations);
     };
 
