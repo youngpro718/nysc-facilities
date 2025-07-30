@@ -18,58 +18,38 @@ export async function generateKeyInventoryReport(progressCallback: ReportCallbac
       message: 'Fetching key inventory data...'
     });
 
-    // Try the view first, fall back to keys table if view doesn't exist
+    // Query keys table directly since views don't exist
     let { data: stats, error } = await supabase
-      .from("key_inventory_view")
+      .from("keys")
       .select(`
         type,
         total_quantity,
-        available_quantity,
-        active_assignments,
-        returned_assignments,
-        lost_count
+        available_quantity
       `);
 
-    // If view doesn't exist, query keys table directly
-    if (error && error.message.includes('does not exist')) {
-      progressCallback({
-        status: 'generating',
-        progress: 20,
-        message: 'Querying keys table directly...'
-      });
-
-      const { data: keysData, error: keysError } = await supabase
-        .from("keys")
-        .select(`
-          type,
-          total_quantity,
-          available_quantity,
-          status
-        `);
-
-      if (keysError) throw keysError;
-
-      // Transform keys data to match expected format
-      const typeGroups = (keysData || []).reduce((acc, key) => {
-        if (!acc[key.type]) {
-          acc[key.type] = {
-            type: key.type,
-            total_quantity: 0,
-            available_quantity: 0,
-            active_assignments: 0,
-            returned_assignments: 0,
-            lost_count: 0
-          };
-        }
-        acc[key.type].total_quantity += key.total_quantity || 0;
-        acc[key.type].available_quantity += key.available_quantity || 0;
-        return acc;
-      }, {} as Record<string, any>);
-
-      stats = Object.values(typeGroups);
-    } else if (error) {
+    // If error, handle it
+    if (error) {
       throw error;
     }
+
+    // Transform keys data to match expected format
+    const typeGroups = (stats || []).reduce((acc, key) => {
+      if (!acc[key.type]) {
+        acc[key.type] = {
+          type: key.type,
+          total_quantity: 0,
+          available_quantity: 0,
+          active_assignments: 0,
+          returned_assignments: 0,
+          lost_count: 0
+        };
+      }
+      acc[key.type].total_quantity += key.total_quantity || 0;
+      acc[key.type].available_quantity += key.available_quantity || 0;
+      return acc;
+    }, {} as Record<string, any>);
+
+    stats = Object.values(typeGroups);
 
     progressCallback({
       status: 'generating',

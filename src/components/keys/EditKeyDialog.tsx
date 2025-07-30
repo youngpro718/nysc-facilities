@@ -95,7 +95,7 @@ export default function EditKeyDialog({ keyData, open, onOpenChange }: EditKeyDi
     const fetchDoorLocations = async () => {
       const { data, error } = await supabase
         .from("room_key_access")
-        .select("door_id")
+        .select("room_id")
         .eq("key_id", keyData.id);
 
       if (error) {
@@ -105,7 +105,7 @@ export default function EditKeyDialog({ keyData, open, onOpenChange }: EditKeyDi
         return;
       }
 
-      const locations = data?.map(d => d.door_id) || [];
+      const locations = data?.map(d => d.room_id) || [];
       form.setValue("door_locations", locations);
     };
 
@@ -129,24 +129,24 @@ export default function EditKeyDialog({ keyData, open, onOpenChange }: EditKeyDi
 
       if (keyError) throw keyError;
 
-      // Handle door locations if not a passkey
+      // Handle room locations if not a passkey
       if (!data.is_passkey && data.door_locations && data.door_locations.length > 0) {
         // Delete existing locations
         const { error: deleteError } = await supabase
-          .from("key_door_locations_table")
+          .from("room_key_access")
           .delete()
           .eq("key_id", keyData.id);
 
         if (deleteError) throw deleteError;
 
         // Insert new locations
-        const locationsToInsert = data.door_locations.map(doorId => ({
+        const locationsToInsert = data.door_locations.map(roomId => ({
           key_id: keyData.id,
-          door_id: doorId
+          room_id: roomId
         }));
 
         const { error: locationError } = await supabase
-          .from("key_door_locations_table")
+          .from("room_key_access")
           .insert(locationsToInsert);
 
         if (locationError) throw locationError;

@@ -37,7 +37,7 @@ export function AssignKeysDialog({
   const hasAvailableKeys = !!availableKeys && availableKeys.length > 0;
   
   // Find the name of the selected key for display in the order prompt
-  const selectedKeyName = availableKeys?.find(k => k.id === selectedKey)?.name;
+  const selectedKeyName = availableKeys?.find(k => k.id === selectedKey)?.name || '';
 
   return (
     <>
@@ -64,7 +64,8 @@ export function AssignKeysDialog({
             </Button>
             <Button
               onClick={() => {
-                if (availableKeys?.find(k => k.id === selectedKey)?.is_passkey) {
+                const key = availableKeys?.find(k => k.id === selectedKey);
+                if (key && 'is_passkey' in key && key.is_passkey) {
                   setShowSpareKeyPrompt(true);
                 } else {
                   handleAssign();

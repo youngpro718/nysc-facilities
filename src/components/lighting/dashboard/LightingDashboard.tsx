@@ -30,13 +30,18 @@ export function LightingDashboard() {
     queryKey: ['lighting-maintenance-summary'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('lighting_maintenance_view')
-        .select('scheduled_date, status, priority_level')
-        .order('scheduled_date', { ascending: true })
+        .from('maintenance_schedules')
+        .select('scheduled_start_date, status, priority')
+        .eq('space_type', 'lighting')
+        .order('scheduled_start_date', { ascending: true })
         .limit(5);
       
       if (error) throw error;
-      return data || [];
+      return data?.map(item => ({
+        scheduled_date: item.scheduled_start_date,
+        status: item.status,
+        priority_level: item.priority
+      })) || [];
     }
   });
 
