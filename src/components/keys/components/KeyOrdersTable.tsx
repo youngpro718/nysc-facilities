@@ -56,14 +56,16 @@ export function KeyOrdersTable({ orders, isLoading, onReceiveKeys, onCancelOrder
 
   const getStatusBadge = (status: KeyOrder['status']) => {
     switch (status) {
-      case 'ordered':
-        return <Badge variant="outline" className="flex items-center gap-1"><Clock className="h-3 w-3" /> Ordered</Badge>;
-      case 'partially_received':
-        return <Badge variant="secondary" className="flex items-center gap-1"><Clock className="h-3 w-3" /> Partial</Badge>;
-      case 'received':
-        return <Badge variant="default" className="flex items-center gap-1 bg-green-500"><CheckCircle className="h-3 w-3" /> Received</Badge>;
-      case 'canceled':
-        return <Badge variant="destructive" className="flex items-center gap-1"><X className="h-3 w-3" /> Canceled</Badge>;
+      case 'pending_fulfillment':
+        return <Badge variant="outline" className="flex items-center gap-1"><Clock className="h-3 w-3" /> Pending</Badge>;
+      case 'in_progress':
+        return <Badge variant="secondary" className="flex items-center gap-1"><Clock className="h-3 w-3" /> In Progress</Badge>;
+      case 'ready_for_pickup':
+        return <Badge variant="default" className="flex items-center gap-1 bg-green-500"><CheckCircle className="h-3 w-3" /> Ready</Badge>;
+      case 'completed':
+        return <Badge variant="default" className="flex items-center gap-1 bg-green-500"><CheckCircle className="h-3 w-3" /> Completed</Badge>;
+      case 'cancelled':
+        return <Badge variant="destructive" className="flex items-center gap-1"><X className="h-3 w-3" /> Cancelled</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -87,8 +89,8 @@ export function KeyOrdersTable({ orders, isLoading, onReceiveKeys, onCancelOrder
           {orders.map((order) => (
             <TableRow key={order.id}>
               <TableCell>
-                <div className="font-medium">{order.key_name}</div>
-                <div className="text-xs text-muted-foreground">{order.key_type}</div>
+                <div className="font-medium">{(order as any).key_name || 'Unknown Key'}</div>
+                <div className="text-xs text-muted-foreground">{(order as any).key_type || 'Standard'}</div>
               </TableCell>
               <TableCell>{order.quantity}</TableCell>
               <TableCell>{format(new Date(order.ordered_at), "MMM d, yyyy")}</TableCell>
@@ -99,12 +101,12 @@ export function KeyOrdersTable({ orders, isLoading, onReceiveKeys, onCancelOrder
               </TableCell>
               <TableCell>{getStatusBadge(order.status)}</TableCell>
               <TableCell>
-                {order.recipient_name 
-                  ? <div>{order.recipient_name}<div className="text-xs text-muted-foreground">{order.recipient_department}</div></div> 
+                {(order as any).recipient_name 
+                  ? <div>{(order as any).recipient_name}<div className="text-xs text-muted-foreground">{(order as any).recipient_department}</div></div>
                   : "General inventory"}
               </TableCell>
               <TableCell>
-                {(order.status === 'ordered' || order.status === 'partially_received') && (
+                {(order.status === 'pending_fulfillment' || order.status === 'in_progress') && (
                   <div className="flex space-x-2">
                     <Button 
                       size="sm" 
@@ -127,7 +129,7 @@ export function KeyOrdersTable({ orders, isLoading, onReceiveKeys, onCancelOrder
                   </div>
                 )}
                 
-                {(order.status === 'received' || order.status === 'canceled') && (
+                {(order.status === 'completed' || order.status === 'cancelled') && (
                   <span className="text-sm text-muted-foreground">
                     {order.status === 'received' && order.received_at 
                       ? `Completed on ${format(new Date(order.received_at), "MMM d, yyyy")}` 

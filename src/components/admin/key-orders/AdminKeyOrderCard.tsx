@@ -122,7 +122,7 @@ export const AdminKeyOrderCard = ({ order, onStatusUpdate }: KeyOrderCardProps) 
             <div>
               <CardTitle className="text-lg">{userName}</CardTitle>
               <p className="text-sm text-muted-foreground">
-                {order.user_profiles?.email || 'No email'}
+                {(order as any).user_profiles?.email || 'No email'}
               </p>
             </div>
           </div>

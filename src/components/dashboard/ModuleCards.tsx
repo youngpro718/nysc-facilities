@@ -222,18 +222,18 @@ export const MaintenanceDashboardCard = () => {
     queryKey: ['dashboard-maintenance'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('maintenance_requests')
+        .from('issues')
         .select('id, status, priority')
-        .neq('status', 'completed');
+        .neq('status', 'resolved');
       
       if (error) throw error;
       return data;
     }
   });
 
-  const scheduled = maintenance?.filter(m => m.status === 'scheduled')?.length || 0;
-  const inProgress = maintenance?.filter(m => m.status === 'in_progress')?.length || 0;
-  const urgent = maintenance?.filter(m => m.priority === 'urgent')?.length || 0;
+  const scheduled = maintenance?.filter(m => (m as any).status === 'pending')?.length || 0;
+  const inProgress = maintenance?.filter(m => (m as any).status === 'in_progress')?.length || 0;
+  const urgent = maintenance?.filter(m => (m as any).priority === 'high')?.length || 0;
 
   return (
     <ModuleCard

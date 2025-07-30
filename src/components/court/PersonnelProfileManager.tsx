@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,8 +18,6 @@ interface PersonnelProfile {
   id: string;
   first_name: string;
   last_name: string;
-  first_name: string | null;
-  last_name: string | null;
   display_name: string;
   primary_role: 'judge' | 'clerk' | 'sergeant' | 'officer' | 'administrator';
   title: string;
@@ -49,7 +47,7 @@ export const PersonnelProfileManager: React.FC = () => {
   const { data: profiles, isLoading } = useQuery({
     queryKey: ['personnel-profiles'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = (supabase as any)
         .from('personnel_profiles')
         .select('*')
         .order('primary_role')
@@ -83,7 +81,7 @@ export const PersonnelProfileManager: React.FC = () => {
   // Toggle profile status
   const toggleStatusMutation = useMutation({
     mutationFn: async ({ id, field, value }: { id: string; field: string; value: boolean }) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('personnel_profiles')
         .update({ [field]: value })
         .eq('id', id);
@@ -328,7 +326,6 @@ export const PersonnelProfileManager: React.FC = () => {
                           value: checked
                         })
                       }
-                      size="sm"
                     />
                     <span className="text-xs text-gray-600">Active</span>
                   </div>
@@ -342,7 +339,6 @@ export const PersonnelProfileManager: React.FC = () => {
                           value: checked
                         })
                       }
-                      size="sm"
                     />
                     <span className="text-xs text-gray-600">Available</span>
                   </div>
