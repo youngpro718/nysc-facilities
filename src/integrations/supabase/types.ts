@@ -6115,21 +6115,7 @@ export type Database = {
             foreignKeyName: "room_shutdowns_court_room_id_fkey"
             columns: ["court_room_id"]
             isOneToOne: false
-            referencedRelation: "court_maintenance_view"
-            referencedColumns: ["court_id"]
-          },
-          {
-            foreignKeyName: "room_shutdowns_court_room_id_fkey"
-            columns: ["court_room_id"]
-            isOneToOne: false
             referencedRelation: "court_rooms"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "room_shutdowns_court_room_id_fkey"
-            columns: ["court_room_id"]
-            isOneToOne: false
-            referencedRelation: "courtroom_availability"
             referencedColumns: ["id"]
           },
         ]
@@ -7581,87 +7567,6 @@ export type Database = {
       }
     }
     Views: {
-      court_maintenance_view: {
-        Row: {
-          court_id: string | null
-          maintenance_end_date: string | null
-          maintenance_notes: string | null
-          maintenance_start_date: string | null
-          maintenance_status: string | null
-          maintenance_title: string | null
-          room_number: string | null
-          schedule_id: string | null
-          schedule_status: string | null
-          scheduled_end_date: string | null
-          scheduled_start_date: string | null
-        }
-        Insert: {
-          court_id?: string | null
-          maintenance_end_date?: string | null
-          maintenance_notes?: string | null
-          maintenance_start_date?: string | null
-          maintenance_status?: string | null
-          maintenance_title?: never
-          room_number?: string | null
-          schedule_id?: never
-          schedule_status?: never
-          scheduled_end_date?: never
-          scheduled_start_date?: never
-        }
-        Update: {
-          court_id?: string | null
-          maintenance_end_date?: string | null
-          maintenance_notes?: string | null
-          maintenance_start_date?: string | null
-          maintenance_status?: string | null
-          maintenance_title?: never
-          room_number?: string | null
-          schedule_id?: never
-          schedule_status?: never
-          scheduled_end_date?: never
-          scheduled_start_date?: never
-        }
-        Relationships: []
-      }
-      courtroom_availability: {
-        Row: {
-          accessibility_features: Json | null
-          availability_status: string | null
-          courtroom_number: string | null
-          id: string | null
-          is_active: boolean | null
-          juror_capacity: number | null
-          maintenance_status: string | null
-          notes: string | null
-          room_number: string | null
-          spectator_capacity: number | null
-        }
-        Insert: {
-          accessibility_features?: Json | null
-          availability_status?: never
-          courtroom_number?: string | null
-          id?: string | null
-          is_active?: boolean | null
-          juror_capacity?: number | null
-          maintenance_status?: string | null
-          notes?: string | null
-          room_number?: string | null
-          spectator_capacity?: number | null
-        }
-        Update: {
-          accessibility_features?: Json | null
-          availability_status?: never
-          courtroom_number?: string | null
-          id?: string | null
-          is_active?: boolean | null
-          juror_capacity?: number | null
-          maintenance_status?: string | null
-          notes?: string | null
-          room_number?: string | null
-          spectator_capacity?: number | null
-        }
-        Relationships: []
-      }
       inventory_items_view: {
         Row: {
           category_color:
@@ -8608,6 +8513,22 @@ export type Database = {
           connection_type: string
         }[]
       }
+      get_court_maintenance_info: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          court_id: string
+          room_number: string
+          maintenance_status: string
+          maintenance_start_date: string
+          maintenance_end_date: string
+          maintenance_notes: string
+          schedule_id: string
+          maintenance_title: string
+          scheduled_start_date: string
+          scheduled_end_date: string
+          schedule_status: string
+        }[]
+      }
       get_court_personnel: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -8620,6 +8541,21 @@ export type Database = {
           access_level: string
           created_at: string
           updated_at: string
+        }[]
+      }
+      get_courtroom_availability: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          room_number: string
+          courtroom_number: string
+          maintenance_status: string
+          availability_status: string
+          spectator_capacity: number
+          juror_capacity: number
+          accessibility_features: Json
+          is_active: boolean
+          notes: string
         }[]
       }
       get_current_user_role: {
@@ -8875,6 +8811,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      sanitize_input: {
+        Args: { input_text: string }
+        Returns: string
+      }
       search_spaces: {
         Args: {
           p_search_term: string
@@ -8904,6 +8844,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      validate_email_format: {
+        Args: { email: string }
+        Returns: boolean
+      }
       validate_floor_plan_connection: {
         Args: { source_id: string; target_id: string }
         Returns: boolean
@@ -8911,6 +8855,10 @@ export type Database = {
       validate_nycourt_email: {
         Args: { email: string }
         Returns: boolean
+      }
+      validate_password_strength: {
+        Args: { password: string }
+        Returns: Json
       }
       validate_text_input: {
         Args: { input_text: string; max_length?: number; required?: boolean }

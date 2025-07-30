@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdminSystemSettings } from "@/components/profile/AdminSystemSettings";
 import { DatabaseSection } from "@/components/profile/DatabaseSection";
+import { SecurityAuditPanel } from "@/components/security/SecurityAuditPanel";
 import { Badge } from "@/components/ui/badge";
 import { useSystemSettings } from "@/hooks/admin/useSystemSettings";
 
@@ -128,8 +129,25 @@ export default function SystemSettings() {
         </Card>
       </div>
 
-      <AdminSystemSettings />
-      <DatabaseSection />
+      <Tabs defaultValue="system" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="system">System Settings</TabsTrigger>
+          <TabsTrigger value="database">Database</TabsTrigger>
+          <TabsTrigger value="security">Security Audit</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="system" className="space-y-6">
+          <AdminSystemSettings />
+        </TabsContent>
+        
+        <TabsContent value="database" className="space-y-6">
+          <DatabaseSection />
+        </TabsContent>
+        
+        <TabsContent value="security" className="space-y-6">
+          <SecurityAuditPanel />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
