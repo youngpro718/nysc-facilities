@@ -156,6 +156,39 @@ export type Database = {
         }
         Relationships: []
       }
+      auth_rate_limits: {
+        Row: {
+          attempt_type: string
+          attempts: number | null
+          blocked_until: string | null
+          created_at: string | null
+          first_attempt: string | null
+          id: string
+          identifier: string
+          last_attempt: string | null
+        }
+        Insert: {
+          attempt_type: string
+          attempts?: number | null
+          blocked_until?: string | null
+          created_at?: string | null
+          first_attempt?: string | null
+          id?: string
+          identifier: string
+          last_attempt?: string | null
+        }
+        Update: {
+          attempt_type?: string
+          attempts?: number | null
+          blocked_until?: string | null
+          created_at?: string | null
+          first_attempt?: string | null
+          id?: string
+          identifier?: string
+          last_attempt?: string | null
+        }
+        Relationships: []
+      }
       backup_history: {
         Row: {
           completed_at: string | null
@@ -8418,12 +8451,16 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      can_user_manage_roles: {
+        Args: { target_user_id: string }
+        Returns: boolean
+      }
       check_admin_privileges: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
       check_admin_status: {
-        Args: { user_id: string }
+        Args: { user_email?: string } | { user_id: string }
         Returns: boolean
       }
       check_rate_limit: {
@@ -8437,6 +8474,12 @@ export type Database = {
               action_type: string
               max_attempts?: number
               time_window?: unknown
+            }
+          | {
+              p_identifier: string
+              p_attempt_type: string
+              p_max_attempts?: number
+              p_window_minutes?: number
             }
         Returns: boolean
       }
@@ -8503,6 +8546,14 @@ export type Database = {
           new_role?: Database["public"]["Enums"]["user_role"]
         }
         Returns: undefined
+      }
+      ensure_admin_user: {
+        Args: { user_email: string }
+        Returns: {
+          success: boolean
+          message: string
+          user_id: string
+        }[]
       }
       find_doors_by_room_number: {
         Args: { p_room_number: string }
@@ -8748,13 +8799,26 @@ export type Database = {
         Args: { room_type: string }
         Returns: boolean
       }
+      is_current_user_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       log_security_event: {
-        Args: {
-          action_type: string
-          resource_type?: string
-          resource_id?: string
-          details?: Json
-        }
+        Args:
+          | {
+              action_type: string
+              resource_type?: string
+              resource_id?: string
+              details?: Json
+            }
+          | {
+              p_action: string
+              p_resource_type: string
+              p_resource_id?: string
+              p_details?: Json
+              p_ip_address?: unknown
+              p_user_agent?: string
+            }
         Returns: undefined
       }
       migrate_spaces_data: {
@@ -8850,6 +8914,10 @@ export type Database = {
       }
       validate_text_input: {
         Args: { input_text: string; max_length?: number; required?: boolean }
+        Returns: boolean
+      }
+      validate_user_session: {
+        Args: Record<PropertyKey, never>
         Returns: boolean
       }
     }
