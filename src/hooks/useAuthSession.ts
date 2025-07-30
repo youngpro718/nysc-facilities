@@ -65,6 +65,13 @@ export function useAuthSession(): AuthSessionHook {
       ]);
 
       const isUserAdmin = roleResponse.data?.role === 'admin';
+      
+      console.log('useAuthSession - fetchUserData:', {
+        userId,
+        roleData: roleResponse.data,
+        isUserAdmin,
+        profileData: profileResponse.data
+      });
 
       updateAuthState({
         isAdmin: isUserAdmin,

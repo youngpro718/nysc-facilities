@@ -88,6 +88,10 @@ export async function fetchUserProfile(userId: string) {
   console.log('fetchUserProfile - profile:', profile);
   console.log('fetchUserProfile - departmentName:', departmentName);
   
+  // Add additional debugging for admin check
+  console.log('fetchUserProfile - Expected admin user_id: 272dfe36-032a-4eef-84b0-06fcec59de4e');
+  console.log('fetchUserProfile - Current user_id matches admin:', userId === '272dfe36-032a-4eef-84b0-06fcec59de4e');
+  
   return {
     isAdmin: userRole === 'admin',
     role: userRole,

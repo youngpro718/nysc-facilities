@@ -18,7 +18,7 @@ const Layout = () => {
   const navigate = useNavigate();
   const isLoginPage = location.pathname === '/login';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { isAuthenticated, isAdmin, isLoading, signOut } = useAuth();
+  const { isAuthenticated, isAdmin, isLoading, signOut, user } = useAuth();
   const { permissions, userRole, profile, loading: permissionsLoading } = useRolePermissions();
 
   // Get filtered navigation based on role permissions
@@ -28,6 +28,8 @@ const Layout = () => {
     
   console.log('Layout - userRole:', userRole, 'permissionsLoading:', permissionsLoading);
   console.log('Layout - isAdmin:', isAdmin);
+  console.log('Layout - user:', user?.id);
+  console.log('Layout - profile:', profile);
   console.log('Layout - navigation:', navigation);
 
   const handleNavigationChange = (index: number | null) => {

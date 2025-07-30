@@ -32,7 +32,7 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
   const { data: rooms } = useQuery({
     queryKey: ["rooms-for-issues"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("rooms")
         .select("id, name, room_number")
         .order("room_number");
