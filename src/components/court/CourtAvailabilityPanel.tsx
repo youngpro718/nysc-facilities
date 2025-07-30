@@ -34,7 +34,7 @@ export const CourtAvailabilityPanel = ({ onSetTemporaryLocation }: CourtAvailabi
         .select("*")
         .order("room_number");
       if (error) throw error;
-      return data as CourtroomAvailability[];
+      return data as unknown as CourtroomAvailability[];
     },
   });
 

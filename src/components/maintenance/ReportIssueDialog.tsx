@@ -32,7 +32,7 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
   const { data: rooms } = useQuery({
     queryKey: ["rooms-for-issues"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("rooms")
         .select("id, name, room_number")
         .order("room_number");
@@ -50,14 +50,11 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
       const { error } = await supabase
         .from("issues")
         .insert({
-          title: formData.title,
           description: formData.description,
-          location_description: formData.space_name,
-          space_type: formData.space_type,
-          issue_type: formData.issue_type,
-          priority: formData.severity === 'critical' ? 'high' : formData.severity,
+          type: formData.issue_type,
+          priority: (formData.severity === 'critical' ? 'high' : formData.severity) as "high" | "medium" | "low",
           status: 'open'
-        });
+        } as any);
 
       if (error) {
         console.error('Database error:', error);

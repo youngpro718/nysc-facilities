@@ -34,10 +34,14 @@ export const useIssueData = (issueId: string | null) => {
         return typeof json === 'object' && json !== null ? json : {};
       };
 
-      // Transform the data to match our Issue type
-      const transformedData: Issue = {
+      // Transform the data with type assertion
+      const transformedData = {
         ...data,
-        lighting_fixtures: Array.isArray(data.lighting_fixtures) ? data.lighting_fixtures.map(fixture => ({
+        assigned_to: (data as any).assigned_to as "DCAS" | "OCA" | "Self" | "Outside_Vendor",
+        buildings: (data as any).buildings,
+        floors: (data as any).floors,
+        rooms: (data as any).rooms ? { name: (data as any).rooms.name } : undefined,
+        lighting_fixtures: Array.isArray((data as any).lighting_fixtures) ? (data as any).lighting_fixtures.map((fixture: any) => ({
           name: fixture.name,
           type: fixture.type,
           status: fixture.status,
@@ -45,25 +49,25 @@ export const useIssueData = (issueId: string | null) => {
           electrical_issues: fixture.electrical_issues || {}
         })) : [],
         recurring_pattern: {
-          is_recurring: Boolean(getJsonObject(data.recurring_pattern).is_recurring),
-          frequency: getJsonObject(data.recurring_pattern).frequency,
-          pattern_confidence: getJsonObject(data.recurring_pattern).pattern_confidence
+          is_recurring: Boolean(getJsonObject((data as any).recurring_pattern || {}).is_recurring),
+          frequency: getJsonObject((data as any).recurring_pattern || {}).frequency,
+          pattern_confidence: getJsonObject((data as any).recurring_pattern || {}).pattern_confidence
         },
         maintenance_requirements: {
-          scheduled: Boolean(getJsonObject(data.maintenance_requirements).scheduled),
-          frequency: getJsonObject(data.maintenance_requirements).frequency,
-          next_due: getJsonObject(data.maintenance_requirements).next_due
+          scheduled: Boolean(getJsonObject((data as any).maintenance_requirements || {}).scheduled),
+          frequency: getJsonObject((data as any).maintenance_requirements || {}).frequency,
+          next_due: getJsonObject((data as any).maintenance_requirements || {}).next_due
         },
         lighting_details: {
-          fixture_status: getJsonObject(data.lighting_details).fixture_status,
-          detected_issues: Array.isArray(getJsonObject(data.lighting_details).detected_issues) 
-            ? getJsonObject(data.lighting_details).detected_issues 
+          fixture_status: getJsonObject((data as any).lighting_details || {}).fixture_status,
+          detected_issues: Array.isArray(getJsonObject((data as any).lighting_details || {}).detected_issues) 
+            ? getJsonObject((data as any).lighting_details || {}).detected_issues 
             : [],
-          maintenance_history: Array.isArray(getJsonObject(data.lighting_details).maintenance_history) 
-            ? getJsonObject(data.lighting_details).maintenance_history 
+          maintenance_history: Array.isArray(getJsonObject((data as any).lighting_details || {}).maintenance_history) 
+            ? getJsonObject((data as any).lighting_details || {}).maintenance_history 
             : []
         }
-      };
+      } as unknown as Issue;
 
       return transformedData;
     },

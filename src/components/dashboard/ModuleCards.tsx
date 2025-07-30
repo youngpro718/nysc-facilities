@@ -192,7 +192,7 @@ export const KeysDashboardCard = () => {
       const { data: assignedKeys, error: assignedError } = await supabase
         .from('key_assignments')
         .select('id')
-        .eq('status', 'active');
+        .eq('status', 'active') as any;
 
       if (totalError || assignedError) throw totalError || assignedError;
       

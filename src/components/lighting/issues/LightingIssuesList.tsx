@@ -62,9 +62,10 @@ export function LightingIssuesList() {
     setLoading(true);
     let query = supabase.from('issues').select('*').eq('issue_type', 'lighting').order('created_at', { ascending: false });
     
-    // Apply filters
+    // Apply filters  
     if (statusFilter !== 'all') {
-      query = query.eq('status', statusFilter);
+      const validStatus = statusFilter === 'deferred' ? 'in_progress' : statusFilter;
+      query = query.eq('status', validStatus);
     }
     
     // Apply location filters if selected
@@ -81,21 +82,18 @@ export function LightingIssuesList() {
           const buildingName = buildings.find(b => b.id === selectedBuilding)?.name;
           if (buildingName) {
             filteredData = filteredData.filter(issue => 
-              issue.location.includes(buildingName)
+              (issue as any).building_id === selectedBuilding
             );
           }
         }
         
         if (selectedFloor !== 'all') {
-          const floorName = floors.find(f => f.id === selectedFloor)?.name;
-          if (floorName) {
-            filteredData = filteredData.filter(issue => 
-              issue.location.includes(`Floor ${floorName}`)
-            );
-          }
+          filteredData = filteredData.filter(issue => 
+            (issue as any).floor_id === selectedFloor
+          );
         }
         
-        setIssues(filteredData);
+        setIssues(filteredData as unknown as LightingIssue[]);
       }
     });
   };
@@ -214,10 +212,10 @@ export function LightingIssuesList() {
                     ' hover:bg-blue-50 dark:hover:bg-zinc-800 transition'
                   }
                 >
-                  <td className="px-3 py-2 whitespace-nowrap">{issue.location}</td>
-                  <td className="px-3 py-2 whitespace-nowrap">{issue.bulb_type}</td>
-                  <td className="px-3 py-2 whitespace-nowrap">{issue.form_factor}</td>
-                  <td className="px-3 py-2 whitespace-nowrap capitalize">{issue.issue_type.replace('_', ' ')}</td>
+                   <td className="px-3 py-2 whitespace-nowrap">{(issue as any).description || 'No location'}</td>
+                   <td className="px-3 py-2 whitespace-nowrap">{(issue as any).type || 'Unknown'}</td>
+                   <td className="px-3 py-2 whitespace-nowrap">{(issue as any).priority || 'Medium'}</td>
+                   <td className="px-3 py-2 whitespace-nowrap capitalize">{(issue as any).type || 'general'}</td>
                   <td className="px-3 py-2 whitespace-nowrap">
                     <span className={
                       'inline-block px-2 py-1 rounded font-semibold ' +
@@ -230,8 +228,8 @@ export function LightingIssuesList() {
                       {issue.status}
                     </span>
                   </td>
-                  <td className="px-3 py-2 whitespace-pre-line max-w-xs truncate">{issue.notes}</td>
-                  <td className="px-3 py-2 whitespace-nowrap">{new Date(issue.reported_at).toLocaleDateString()}</td>
+                   <td className="px-3 py-2 whitespace-pre-line max-w-xs truncate">{(issue as any).description || 'No notes'}</td>
+                   <td className="px-3 py-2 whitespace-nowrap">{new Date((issue as any).created_at).toLocaleDateString()}</td>
                   <td className="px-3 py-2 whitespace-nowrap">
                     <TooltipProvider>
                       <div className="flex gap-1">

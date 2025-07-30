@@ -131,8 +131,8 @@ export function KeyOrdersTable({ orders, isLoading, onReceiveKeys, onCancelOrder
                 
                 {(order.status === 'completed' || order.status === 'cancelled') && (
                   <span className="text-sm text-muted-foreground">
-                    {order.status === 'received' && order.received_at 
-                      ? `Completed on ${format(new Date(order.received_at), "MMM d, yyyy")}` 
+                    {order.status === 'completed' && (order as any).received_at 
+                      ? `Completed on ${format(new Date((order as any).received_at), "MMM d, yyyy")}` 
                       : "No actions available"}
                   </span>
                 )}

@@ -40,15 +40,16 @@ export const MaintenanceIssuesList = () => {
         .order("created_at", { ascending: false });
 
       if (statusFilter !== "all") {
-        query = query.eq("status", statusFilter);
+        const validStatus = statusFilter as any;
+        query = query.eq("status", validStatus);
       }
       if (severityFilter !== "all") {
-        query = query.eq("severity", severityFilter);
+        query = query.eq("priority", severityFilter as any);
       }
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as MaintenanceIssue[];
+      return data as unknown as MaintenanceIssue[];
     },
   });
 
