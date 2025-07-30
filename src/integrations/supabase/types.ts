@@ -9959,13 +9959,17 @@ export type Database = {
         Returns: {
           building_id: string
           building_name: string
+          building_address: string
           floor_id: string
           floor_name: string
-          space_id: string
-          space_name: string
-          space_type: string
-          capacity: number
-          current_occupancy: number
+          floor_number: number
+          total_spaces: number
+          room_count: number
+          hallway_count: number
+          door_count: number
+          active_spaces: number
+          total_occupants: number
+          total_issues: number
         }[]
       }
       get_child_rooms: {
@@ -9990,16 +9994,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: {
           id: string
-          full_name: string
-          name: string
-          primary_role: string
-          title: string
-          phone: string
-          extension: string
-          room_number: string
-          floor: string
+          first_name: string
+          last_name: string
+          email: string
           department: string
-          is_active: boolean
+          role: string
+          access_level: string
+          created_at: string
+          updated_at: string
         }[]
       }
       get_current_user_role: {
@@ -10019,15 +10021,17 @@ export type Database = {
         Returns: string
       }
       get_energy_analytics: {
-        Args: { building_filter?: string }
+        Args: Record<PropertyKey, never> | { building_filter?: string }
         Returns: Json
       }
       get_facility_analytics: {
-        Args: {
-          building_filter?: string
-          date_range_start?: string
-          date_range_end?: string
-        }
+        Args:
+          | Record<PropertyKey, never>
+          | {
+              building_filter?: string
+              date_range_start?: string
+              date_range_end?: string
+            }
         Returns: Json
       }
       get_next_lighting_sequence: {
@@ -10110,17 +10114,17 @@ export type Database = {
           id: string
           name: string
           space_type: string
-          building_id: string
-          building_name: string
+          room_number: string
+          status: string
           floor_name: string
-          capacity: number
-          current_occupancy: number
-          occupancy_rate: number
-          total_issues: number
-          open_issues: number
-          critical_issues: number
-          maintenance_score: number
-          last_maintenance: string
+          floor_number: number
+          building_name: string
+          room_type: string
+          is_storage: boolean
+          occupant_count: number
+          issue_count: number
+          open_issue_count: number
+          fixture_count: number
         }[]
       }
       get_user_role: {
