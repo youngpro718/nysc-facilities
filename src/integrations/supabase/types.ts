@@ -2261,6 +2261,7 @@ export type Database = {
           return_reason: string | null
           returned_at: string | null
           spare_key_reason: string | null
+          status: string | null
           updated_at: string | null
         }
         Insert: {
@@ -2274,6 +2275,7 @@ export type Database = {
           return_reason?: string | null
           returned_at?: string | null
           spare_key_reason?: string | null
+          status?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -2287,6 +2289,7 @@ export type Database = {
           return_reason?: string | null
           returned_at?: string | null
           spare_key_reason?: string | null
+          status?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -2296,6 +2299,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "key_assignment_stats"
             referencedColumns: ["key_id"]
+          },
+          {
+            foreignKeyName: "key_assignments_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_inventory_view"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "key_assignments_key_id_fkey"
@@ -2363,6 +2373,13 @@ export type Database = {
             foreignKeyName: "key_audit_logs_key_id_fkey"
             columns: ["key_id"]
             isOneToOne: false
+            referencedRelation: "key_inventory_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_audit_logs_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
             referencedRelation: "keys"
             referencedColumns: ["id"]
           },
@@ -2401,6 +2418,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "key_assignment_stats"
             referencedColumns: ["key_id"]
+          },
+          {
+            foreignKeyName: "key_door_locations_table_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_inventory_view"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "key_door_locations_table_key_id_fkey"
@@ -2590,6 +2614,13 @@ export type Database = {
             foreignKeyName: "key_orders_key_id_fkey"
             columns: ["key_id"]
             isOneToOne: false
+            referencedRelation: "key_inventory_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_orders_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
             referencedRelation: "keys"
             referencedColumns: ["id"]
           },
@@ -2742,6 +2773,13 @@ export type Database = {
             foreignKeyName: "key_requests_key_id_fkey"
             columns: ["key_id"]
             isOneToOne: false
+            referencedRelation: "key_inventory_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_requests_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
             referencedRelation: "keys"
             referencedColumns: ["id"]
           },
@@ -2816,6 +2854,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "key_assignment_stats"
             referencedColumns: ["key_id"]
+          },
+          {
+            foreignKeyName: "key_stock_transactions_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_inventory_view"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "key_stock_transactions_key_id_fkey"
@@ -5307,6 +5352,13 @@ export type Database = {
             foreignKeyName: "room_key_access_key_id_fkey"
             columns: ["key_id"]
             isOneToOne: false
+            referencedRelation: "key_inventory_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_key_access_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
             referencedRelation: "keys"
             referencedColumns: ["id"]
           },
@@ -7203,6 +7255,63 @@ export type Database = {
       }
     }
     Views: {
+      elevator_pass_assignments: {
+        Row: {
+          assigned_at: string | null
+          assignment_id: string | null
+          days_since_assigned: number | null
+          department: string | null
+          email: string | null
+          first_name: string | null
+          is_overdue: boolean | null
+          is_spare: boolean | null
+          key_id: string | null
+          key_name: string | null
+          last_name: string | null
+          occupant_id: string | null
+          return_reason: string | null
+          returned_at: string | null
+          spare_key_reason: string | null
+          status: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "key_assignments_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_assignment_stats"
+            referencedColumns: ["key_id"]
+          },
+          {
+            foreignKeyName: "key_assignments_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_inventory_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_assignments_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "keys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_assignments_occupant_id_fkey"
+            columns: ["occupant_id"]
+            isOneToOne: false
+            referencedRelation: "occupant_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_assignments_occupant_id_fkey"
+            columns: ["occupant_id"]
+            isOneToOne: false
+            referencedRelation: "occupants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       key_assignment_stats: {
         Row: {
           current_assignments: number | null
@@ -7212,6 +7321,60 @@ export type Database = {
           key_name: string | null
           status: Database["public"]["Enums"]["key_status_enum"] | null
           type: Database["public"]["Enums"]["key_type_enum"] | null
+        }
+        Relationships: []
+      }
+      key_assignments_view: {
+        Row: {
+          active_assignments: number | null
+          key_id: string | null
+          lost_count: number | null
+          returned_assignments: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "key_assignments_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_assignment_stats"
+            referencedColumns: ["key_id"]
+          },
+          {
+            foreignKeyName: "key_assignments_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_inventory_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_assignments_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      key_inventory_view: {
+        Row: {
+          active_assignments: number | null
+          available_quantity: number | null
+          captain_office_assigned_date: string | null
+          captain_office_copy: boolean | null
+          captain_office_notes: string | null
+          created_at: string | null
+          id: string | null
+          is_passkey: boolean | null
+          key_scope: string | null
+          location_data: Json | null
+          lost_count: number | null
+          name: string | null
+          properties: Json | null
+          returned_assignments: number | null
+          status: Database["public"]["Enums"]["key_status_enum"] | null
+          total_quantity: number | null
+          type: Database["public"]["Enums"]["key_type_enum"] | null
+          updated_at: string | null
         }
         Relationships: []
       }
@@ -7509,6 +7672,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      bulk_update_assignment_status: {
+        Args: {
+          assignment_ids: string[]
+          new_status: string
+          return_reason?: string
+        }
+        Returns: number
+      }
       can_user_manage_roles: {
         Args: { target_user_id: string }
         Returns: boolean
@@ -7604,6 +7775,15 @@ export type Database = {
           new_role?: Database["public"]["Enums"]["user_role"]
         }
         Returns: undefined
+      }
+      detect_overdue_assignments: {
+        Args: { days_threshold?: number }
+        Returns: {
+          assignment_id: string
+          key_id: string
+          occupant_id: string
+          days_overdue: number
+        }[]
       }
       ensure_admin_user: {
         Args: { user_email: string }
