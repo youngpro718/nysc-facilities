@@ -34,9 +34,21 @@ export function useSecurityValidation() {
       
       if (error) throw error;
       
+      // Type guard for the returned data structure
+      const isValidResponse = (obj: any): obj is { is_valid: boolean; errors: string[] } => {
+        return obj && typeof obj === 'object' && 'is_valid' in obj && 'errors' in obj;
+      };
+
+      if (isValidResponse(data)) {
+        return {
+          isValid: Boolean(data.is_valid),
+          errors: Array.isArray(data.errors) ? data.errors : []
+        };
+      }
+      
       return {
-        isValid: typeof data === 'object' && data !== null && 'is_valid' in data ? Boolean(data.is_valid) : false,
-        errors: typeof data === 'object' && data !== null && 'errors' in data ? (data.errors as string[]) || [] : []
+        isValid: false,
+        errors: ['Invalid response from password validation']
       };
     } catch (error) {
       console.error('Password validation error:', error);

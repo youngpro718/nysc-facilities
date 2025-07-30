@@ -15,7 +15,7 @@ interface SecurityEvent {
   resource_type: string;
   resource_id?: string;
   details: any;
-  ip_address?: string;
+  ip_address?: string | null;
   user_agent?: string;
   created_at: string;
 }

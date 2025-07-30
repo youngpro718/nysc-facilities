@@ -6290,6 +6290,7 @@ export type Database = {
           ip_address: unknown | null
           resource_id: string | null
           resource_type: string | null
+          timestamp: string | null
           user_agent: string | null
           user_id: string | null
         }
@@ -6301,6 +6302,7 @@ export type Database = {
           ip_address?: unknown | null
           resource_id?: string | null
           resource_type?: string | null
+          timestamp?: string | null
           user_agent?: string | null
           user_id?: string | null
         }
@@ -6312,6 +6314,7 @@ export type Database = {
           ip_address?: unknown | null
           resource_id?: string | null
           resource_type?: string | null
+          timestamp?: string | null
           user_agent?: string | null
           user_id?: string | null
         }
@@ -7807,6 +7810,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      audit_user_action: {
+        Args: { action_type: string; target_resource: string; details?: Json }
+        Returns: undefined
+      }
       begin_transaction: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -8033,6 +8040,15 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["user_role"]
+      }
+      get_dashboard_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          total_rooms: number
+          occupied_rooms: number
+          available_rooms: number
+          maintenance_rooms: number
+        }[]
       }
       get_door_room_details: {
         Args: { door_id: string }
@@ -8348,6 +8364,10 @@ export type Database = {
           floor_name: string
           relevance_score: number
         }[]
+      }
+      secure_role_assignment: {
+        Args: { target_user_id: string; new_role: string }
+        Returns: boolean
       }
       start_supply_request_work: {
         Args: { p_request_id: string }
