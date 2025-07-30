@@ -7932,6 +7932,14 @@ export type Database = {
               p_ip_address?: unknown
               p_user_agent?: string
             }
+          | {
+              p_action: string
+              p_resource_type: string
+              p_resource_id?: string
+              p_details?: string
+              p_ip_address?: string
+              p_user_agent?: string
+            }
         Returns: undefined
       }
       migrate_spaces_data: {
