@@ -63,8 +63,32 @@ export async function signOut() {
 export async function fetchUserProfile(userId: string) {
   console.log('fetchUserProfile - Starting for userId:', userId);
   
-  const [roleResponse, profileResponse, roomAssignmentsResponse] = await Promise.all([
-    supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle(),
+  // First try to get the role directly to check if RLS is blocking it
+  const roleResponse = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', userId)
+    .maybeSingle();
+    
+  console.log('fetchUserProfile - Role response:', roleResponse);
+  
+  if (roleResponse.error) {
+    console.error('fetchUserProfile - Role query error:', roleResponse.error);
+    // If RLS is blocking, try using the secure function
+    console.log('fetchUserProfile - Trying secure function for role check...');
+    try {
+      const { data: secureRoleData, error: secureError } = await supabase.rpc('get_current_user_role');
+      console.log('fetchUserProfile - Secure role response:', { data: secureRoleData, error: secureError });
+      if (!secureError && secureRoleData) {
+        roleResponse.data = { role: secureRoleData };
+        roleResponse.error = null;
+      }
+    } catch (secureRoleError) {
+      console.error('fetchUserProfile - Secure role function error:', secureRoleError);
+    }
+  }
+  
+  const [profileResponse, roomAssignmentsResponse] = await Promise.all([
     supabase.from('profiles').select(`
       *,
       departments(name)
@@ -75,13 +99,8 @@ export async function fetchUserProfile(userId: string) {
     `).eq('occupant_id', userId)
   ]);
   
-  console.log('fetchUserProfile - Raw roleResponse:', roleResponse);
   console.log('fetchUserProfile - Raw profileResponse:', profileResponse);
   
-  if (roleResponse.error) {
-    console.error('fetchUserProfile - Role query error:', roleResponse.error);
-    throw roleResponse.error;
-  }
   if (profileResponse.error) {
     console.error('fetchUserProfile - Profile query error:', profileResponse.error);
     throw profileResponse.error;
@@ -98,10 +117,6 @@ export async function fetchUserProfile(userId: string) {
   console.log('fetchUserProfile - isAdmin will be:', userRole === 'admin');
   console.log('fetchUserProfile - profile:', profile);
   console.log('fetchUserProfile - departmentName:', departmentName);
-  
-  // Add additional debugging for admin check
-  console.log('fetchUserProfile - Expected admin user_id: 272dfe36-032a-4eef-84b0-06fcec59de4e');
-  console.log('fetchUserProfile - Current user_id matches admin:', userId === '272dfe36-032a-4eef-84b0-06fcec59de4e');
   
   const result = {
     isAdmin: userRole === 'admin',
