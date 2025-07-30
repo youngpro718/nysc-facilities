@@ -61,13 +61,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "access_delegation_delegate_id_fkey"
-            columns: ["delegate_id"]
-            isOneToOne: false
-            referencedRelation: "user_verification_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
             foreignKeyName: "access_delegation_delegator_id_fkey"
             columns: ["delegator_id"]
             isOneToOne: false
@@ -80,13 +73,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_verification_view"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "access_delegation_delegator_id_fkey"
-            columns: ["delegator_id"]
-            isOneToOne: false
-            referencedRelation: "user_verification_view"
-            referencedColumns: ["profile_id"]
           },
         ]
       }
@@ -804,13 +790,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_verification_view"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "department_access_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "user_verification_view"
-            referencedColumns: ["profile_id"]
           },
         ]
       }
@@ -1940,13 +1919,6 @@ export type Database = {
             referencedRelation: "user_verification_view"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "hallways_inspected_by_fkey"
-            columns: ["inspected_by"]
-            isOneToOne: false
-            referencedRelation: "user_verification_view"
-            referencedColumns: ["profile_id"]
-          },
         ]
       }
       import_history: {
@@ -2869,13 +2841,6 @@ export type Database = {
             referencedRelation: "user_verification_view"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "key_management_roles_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: true
-            referencedRelation: "user_verification_view"
-            referencedColumns: ["profile_id"]
-          },
         ]
       }
       key_order_items: {
@@ -3279,13 +3244,6 @@ export type Database = {
             referencedRelation: "user_verification_view"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "key_requests_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_verification_view"
-            referencedColumns: ["profile_id"]
-          },
         ]
       }
       key_stock_transactions: {
@@ -3596,13 +3554,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "lighting_fixtures_last_scheduled_by_fkey"
-            columns: ["last_scheduled_by"]
-            isOneToOne: false
-            referencedRelation: "user_verification_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
             foreignKeyName: "lighting_fixtures_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
@@ -3745,13 +3696,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "lighting_maintenance_assigned_technician_fkey"
-            columns: ["assigned_technician"]
-            isOneToOne: false
-            referencedRelation: "user_verification_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
             foreignKeyName: "lighting_maintenance_fixture_id_fkey"
             columns: ["fixture_id"]
             isOneToOne: false
@@ -3838,13 +3782,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "lighting_maintenance_schedules_assigned_technician_fkey"
-            columns: ["assigned_technician"]
-            isOneToOne: false
-            referencedRelation: "user_verification_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
             foreignKeyName: "lighting_maintenance_schedules_completed_by_fkey"
             columns: ["completed_by"]
             isOneToOne: false
@@ -3857,13 +3794,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_verification_view"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "lighting_maintenance_schedules_completed_by_fkey"
-            columns: ["completed_by"]
-            isOneToOne: false
-            referencedRelation: "user_verification_view"
-            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "lighting_maintenance_schedules_fixture_id_fkey"
@@ -4083,13 +4013,6 @@ export type Database = {
             referencedRelation: "user_verification_view"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "location_access_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "user_verification_view"
-            referencedColumns: ["profile_id"]
-          },
         ]
       }
       maintenance_issues: {
@@ -4290,13 +4213,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_verification_view"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "maintenance_projects_project_manager_fkey"
-            columns: ["project_manager"]
-            isOneToOne: false
-            referencedRelation: "user_verification_view"
-            referencedColumns: ["profile_id"]
           },
         ]
       }
@@ -5888,13 +5804,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_verification_view"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "role_assignments_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "user_verification_view"
-            referencedColumns: ["profile_id"]
           },
         ]
       }
@@ -7719,13 +7628,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "supply_request_fulfillment_log_performed_by_fkey"
-            columns: ["performed_by"]
-            isOneToOne: false
-            referencedRelation: "user_verification_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
             foreignKeyName: "supply_request_fulfillment_log_request_id_fkey"
             columns: ["request_id"]
             isOneToOne: false
@@ -7925,13 +7827,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_supply_requests_requester_id"
-            columns: ["requester_id"]
-            isOneToOne: false
-            referencedRelation: "user_verification_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
             foreignKeyName: "supply_requests_assigned_fulfiller_id_fkey"
             columns: ["assigned_fulfiller_id"]
             isOneToOne: false
@@ -7944,13 +7839,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_verification_view"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "supply_requests_assigned_fulfiller_id_fkey"
-            columns: ["assigned_fulfiller_id"]
-            isOneToOne: false
-            referencedRelation: "user_verification_view"
-            referencedColumns: ["profile_id"]
           },
         ]
       }
@@ -8393,13 +8281,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_verification_view"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "unified_spaces_inspected_by_fkey"
-            columns: ["inspected_by"]
-            isOneToOne: false
-            referencedRelation: "user_verification_view"
-            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "unified_spaces_parent_room_fkey"
@@ -8966,13 +8847,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "lighting_maintenance_schedules_assigned_technician_fkey"
-            columns: ["assigned_technician"]
-            isOneToOne: false
-            referencedRelation: "user_verification_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
             foreignKeyName: "lighting_maintenance_schedules_completed_by_fkey"
             columns: ["completed_by"]
             isOneToOne: false
@@ -8985,13 +8859,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_verification_view"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "lighting_maintenance_schedules_completed_by_fkey"
-            columns: ["completed_by"]
-            isOneToOne: false
-            referencedRelation: "user_verification_view"
-            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "lighting_maintenance_schedules_fixture_id_fkey"
@@ -9791,28 +9658,16 @@ export type Database = {
       user_verification_view: {
         Row: {
           created_at: string | null
-          department_id: string | null
-          department_name: string | null
+          department: string | null
           email: string | null
           first_name: string | null
           id: string | null
+          is_approved: boolean | null
           last_name: string | null
-          profile_id: string | null
           updated_at: string | null
           user_role: Database["public"]["Enums"]["user_role"] | null
-          verification_status:
-            | Database["public"]["Enums"]["verification_status_enum"]
-            | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_department_id_fkey"
-            columns: ["department_id"]
-            isOneToOne: false
-            referencedRelation: "departments"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Functions: {
@@ -10131,6 +9986,20 @@ export type Database = {
         Args: { user_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      get_user_verification_data: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          first_name: string
+          last_name: string
+          email: string
+          department: string
+          is_approved: boolean
+          created_at: string
+          updated_at: string
+          user_role: Database["public"]["Enums"]["user_role"]
+        }[]
+      }
       has_role: {
         Args: { check_role: Database["public"]["Enums"]["user_role"] }
         Returns: boolean
@@ -10156,7 +10025,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: {
-        Args: { user_id?: string }
+        Args: { user_id: string }
         Returns: boolean
       }
       is_admin_or_authorized: {
@@ -10265,6 +10134,13 @@ export type Database = {
       }
       validate_nycourt_email: {
         Args: { email: string }
+        Returns: boolean
+      }
+      validate_role_assignment: {
+        Args: {
+          target_user_id: string
+          target_role: Database["public"]["Enums"]["user_role"]
+        }
         Returns: boolean
       }
       validate_text_input: {
