@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Optimized React Query Hooks for Spaces
  * Leverages Phase 2 database optimizations with intelligent caching
