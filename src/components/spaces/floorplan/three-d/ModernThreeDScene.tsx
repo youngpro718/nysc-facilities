@@ -11,7 +11,7 @@ import { ModernSceneLighting } from './ModernSceneLighting';
 interface ModernThreeDSceneProps {
   objects: any[];
   connections: any[];
-  onObjectSelect: (object: any) => void;
+  onObjectSelect?: (objectId: string) => void;
   selectedObjectId?: string | null;
   previewData?: any | null;
   showLabels?: boolean;
@@ -282,7 +282,7 @@ export const ModernThreeDScene = forwardRef<any, ModernThreeDSceneProps>(functio
           isSelected={selectedObjectId === object.id}
           isHovered={hoveredObject === object.id}
           showLabels={showLabels}
-          onClick={() => onObjectSelect(object)}
+          onClick={() => onObjectSelect?.(object.id)}
           onHover={() => setHoveredObject(object.id)}
           onUnhover={() => setHoveredObject(null)}
         />

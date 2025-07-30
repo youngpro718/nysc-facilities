@@ -1,29 +1,63 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
-import { FloorPlanNode } from '../types/floorPlanTypes';
 import { Space3D } from './components/Space3D';
 import { SimpleConnection } from './components/SimpleConnection';
 import { GridSystem } from './systems/GridSystem';
 import { SceneLighting } from './SceneLighting';
 import { PositionUtils } from './utils/PositionUtils';
 import * as THREE from 'three';
+import { 
+  FloorPlanObject, 
+  Connection, 
+  SceneProps, 
+  SceneRef, 
+  SceneState,
+  SceneConfiguration,
+  HallwayLayoutConfig
+} from './types/SceneTypes';
+
+// Default configurations to make parameters configurable
+const DEFAULT_SCENE_CONFIG: SceneConfiguration = {
+  gridSize: 50,
+  lightIntensity: 0.8,
+  cameraDistance: 1000,
+  enableDamping: true,
+  dampingFactor: 0.1,
+  rotateSpeed: 0.5,
+  maxPolarAngle: Math.PI / 2 - 0.1,
+  minDistance: 100,
+  maxDistance: 3000,
+};
+
+const DEFAULT_HALLWAY_CONFIG: HallwayLayoutConfig = {
+  width: 120,
+  segmentLength: 200,
+  cornerRadius: 50,
+  wallThickness: 10,
+  floorOffset: -5,
+};
 
 interface ThreeDSceneProps {
-  objects: FloorPlanNode[];
-  connections: any[];
-  onObjectSelect: (object: any) => void;
+  objects: FloorPlanObject[];
+  connections: Connection[];
+  onObjectSelect?: (objectId: string) => void;
   selectedObjectId?: string | null;
-  previewData?: any | null;
+  previewData?: FloorPlanObject | null;
   showLabels?: boolean;
   showConnections?: boolean;
   lightIntensity?: number;
   viewMode?: 'default' | 'rooms' | 'hallways' | 'doors';
+  configuration?: Partial<SceneConfiguration>;
+  hallwayConfig?: Partial<HallwayLayoutConfig>;
+  enableDebugLogs?: boolean;
 }
 
-import { forwardRef, useImperativeHandle } from 'react';
+// Generate stable IDs instead of using Math.random()
+let idCounter = 0;
+const generateStableId = (prefix: string = 'id') => `${prefix}_${++idCounter}_${Date.now()}`;
 
-export const ThreeDScene = forwardRef<any, ThreeDSceneProps>(function ThreeDScene({ 
+export const ThreeDScene = forwardRef<SceneRef, ThreeDSceneProps>(function ThreeDScene({ 
   objects = [], 
   connections = [],
   onObjectSelect, 
@@ -31,61 +65,145 @@ export const ThreeDScene = forwardRef<any, ThreeDSceneProps>(function ThreeDScen
   previewData = null,
   showLabels = true,
   showConnections = true,
-  lightIntensity = 0.8,
-  viewMode = 'default'
+  lightIntensity,
+  viewMode = 'default',
+  configuration = {},
+  hallwayConfig = {},
+  enableDebugLogs = false
 }, ref) {
-  // Simplified object validation
-  const safeObjects = (objects || []).filter(obj => 
-    obj && obj.position && obj.data && obj.data.size &&
-    typeof obj.position.x === 'number' && typeof obj.position.y === 'number'
-  );
+  // Merge configurations with defaults
+  const config = useMemo(() => ({ ...DEFAULT_SCENE_CONFIG, ...configuration }), [configuration]);
+  const hallwayLayoutConfig = useMemo(() => ({ ...DEFAULT_HALLWAY_CONFIG, ...hallwayConfig }), [hallwayConfig]);
+  const effectiveLightIntensity = lightIntensity ?? config.lightIntensity;
+
+  // Memoized object validation to prevent re-initialization on every data change
+  const validatedObjects = useMemo(() => {
+    if (!Array.isArray(objects)) {
+      if (enableDebugLogs) console.warn('Objects is not an array:', typeof objects);
+      return [];
+    }
+
+    return objects.filter(obj => {
+      if (!obj || typeof obj !== 'object') {
+        if (enableDebugLogs) console.warn('Invalid object:', obj);
+        return false;
+      }
+      
+      if (!obj.position || typeof obj.position.x !== 'number' || typeof obj.position.y !== 'number') {
+        if (enableDebugLogs) console.warn('Invalid position:', obj.position);
+        return false;
+      }
+      
+      if (!obj.size || typeof obj.size.width !== 'number' || typeof obj.size.height !== 'number') {
+        if (enableDebugLogs) console.warn('Invalid size:', obj.size);
+        return false;
+      }
+      
+      return true;
+    });
+  }, [objects, enableDebugLogs]); // Remove rooms and connections from dependency array
 
   const { camera } = useThree();
   const controlsRef = useRef<any>(null);
-  const [hasInitialized, setHasInitialized] = useState(false);
-  const [connectingFromId, setConnectingFromId] = useState<string | null>(null);
-  const positionUtils = new PositionUtils(50);
-
-  // Simplified fit to floor method
-  useImperativeHandle(ref, () => ({
-    fitToFloor: () => {
-      if (!safeObjects.length) return;
-      
-      const bounds = safeObjects.reduce((acc, obj) => {
-        const { x, y } = obj.position;
-        const { width, height } = obj.data.size;
-        return {
-          minX: Math.min(acc.minX, x - width / 2),
-          maxX: Math.max(acc.maxX, x + width / 2),
-          minY: Math.min(acc.minY, y - height / 2),
-          maxY: Math.max(acc.maxY, y + height / 2),
-        };
-      }, { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity });
-      
-      const centerX = (bounds.minX + bounds.maxX) / 2;
-      const centerY = (bounds.minY + bounds.maxY) / 2;
-      const maxDim = Math.max(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY, 600);
-      const distance = maxDim * 1.5;
-      
-      camera.position.set(centerX, distance * 0.7, centerY + distance * 0.7);
-      camera.lookAt(centerX, 0, centerY);
-      
-      if (controlsRef.current) {
-        controlsRef.current.target.set(centerX, 0, centerY);
-        controlsRef.current.update();
-      }
-    }
-  }), [safeObjects, camera]);
   
-  // Filter objects by view mode
-  const visibleObjects = safeObjects.filter(obj => {
-    switch (viewMode) {
-      case 'rooms': return obj.type === 'room';
-      case 'hallways': return obj.type === 'hallway';
-      case 'doors': return obj.type === 'door';
-      default: return true;
-    }
+  // Initialize loading state based on rendering mode
+  const [sceneState, setSceneState] = useState<SceneState>({
+    hasInitialized: false,
+    selectedObjectId: selectedObjectId || null,
+    hoveredObjectId: null,
+    connectingFromId: null,
+    isLoading: validatedObjects.length === 0,
+    renderMode: viewMode
   });
+  
+  const positionUtils = useMemo(() => new PositionUtils(config.gridSize), [config.gridSize]);
+
+  // Memoized bounds calculation
+  const sceneBounds = useMemo(() => {
+    if (!validatedObjects.length) {
+      return { minX: -300, maxX: 300, minY: -300, maxY: 300, centerX: 0, centerY: 0 };
+    }
+    
+    const bounds = validatedObjects.reduce((acc, obj) => {
+      const { x, y } = obj.position;
+      const { width, height } = obj.size;
+      return {
+        minX: Math.min(acc.minX, x - width / 2),
+        maxX: Math.max(acc.maxX, x + width / 2),
+        minY: Math.min(acc.minY, y - height / 2),
+        maxY: Math.max(acc.maxY, y + height / 2),
+      };
+    }, { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity });
+    
+    return {
+      ...bounds,
+      centerX: (bounds.minX + bounds.maxX) / 2,
+      centerY: (bounds.minY + bounds.maxY) / 2
+    };
+  }, [validatedObjects]);
+
+  // Camera control methods
+  const fitToFloor = useCallback(() => {
+    if (!validatedObjects.length) return;
+    
+    const maxDim = Math.max(
+      sceneBounds.maxX - sceneBounds.minX, 
+      sceneBounds.maxY - sceneBounds.minY, 
+      600
+    );
+    const distance = maxDim * 1.5;
+    
+    camera.position.set(
+      sceneBounds.centerX, 
+      distance * 0.7, 
+      sceneBounds.centerY + distance * 0.7
+    );
+    camera.lookAt(sceneBounds.centerX, 0, sceneBounds.centerY);
+    
+    if (controlsRef.current) {
+      controlsRef.current.target.set(sceneBounds.centerX, 0, sceneBounds.centerY);
+      controlsRef.current.update();
+    }
+  }, [validatedObjects.length, sceneBounds, camera]);
+
+  const focusObject = useCallback((objectId: string) => {
+    const object = validatedObjects.find(obj => obj.id === objectId);
+    if (object && controlsRef.current) {
+      controlsRef.current.target.set(object.position.x, 0, object.position.y);
+      controlsRef.current.update();
+    }
+  }, [validatedObjects]);
+
+  const resetCamera = useCallback(() => {
+    camera.position.set(0, config.cameraDistance, config.cameraDistance);
+    camera.lookAt(0, 0, 0);
+    if (controlsRef.current) {
+      controlsRef.current.target.set(0, 0, 0);
+      controlsRef.current.update();
+    }
+  }, [camera, config.cameraDistance]);
+
+  const getSceneState = useCallback(() => sceneState, [sceneState]);
+
+  // Implement SceneRef interface
+  useImperativeHandle(ref, () => ({
+    fitToFloor,
+    focusObject,
+    resetCamera,
+    getSceneState
+  }), [fitToFloor, focusObject, resetCamera, getSceneState]);
+  
+  // Memoized filtered objects by view mode
+  const visibleObjects = useMemo(() => {
+    return validatedObjects.filter(obj => {
+      switch (viewMode) {
+        case 'rooms': return obj.type === 'room';
+        case 'hallways': return obj.type === 'hallway';
+        case 'doors': return obj.type === 'door';
+        default: return true;
+      }
+    });
+  }, [validatedObjects, viewMode]);
   
   // Filter valid connections
   const validConnections = showConnections ? (connections || []).filter(conn => {
@@ -106,14 +224,13 @@ export const ThreeDScene = forwardRef<any, ThreeDSceneProps>(function ThreeDScen
     connectionMap.get(conn.target)?.push(conn.source);
   });
   
-  // Simplified camera initialization
+  // Fix cleanup function in initialization effect
   useEffect(() => {
-    if (camera && visibleObjects.length > 0 && !hasInitialized) {
+    if (camera && visibleObjects.length > 0 && !sceneState.hasInitialized) {
       const centerX = visibleObjects.reduce((sum, obj) => sum + obj.position.x, 0) / visibleObjects.length;
       const centerY = visibleObjects.reduce((sum, obj) => sum + obj.position.y, 0) / visibleObjects.length;
       const maxDim = Math.max(600, Math.max(...visibleObjects.map(obj => {
-        const size = obj?.data?.size || { width: 150, height: 100 };
-        return Math.max(size.width || 150, size.height || 100);
+        return Math.max(obj.size.width || 150, obj.size.height || 100);
       })));
       
       camera.position.set(centerX, maxDim, centerY + maxDim);
@@ -124,9 +241,16 @@ export const ThreeDScene = forwardRef<any, ThreeDSceneProps>(function ThreeDScen
         controlsRef.current.update();
       }
       
-      setHasInitialized(true);
+      setSceneState(prev => ({ ...prev, hasInitialized: true, isLoading: false }));
     }
-  }, [camera, visibleObjects, hasInitialized]);
+    
+    // Cleanup function
+    return () => {
+      if (enableDebugLogs) {
+        console.log('ThreeDScene effect cleanup');
+      }
+    };
+  }, [camera, visibleObjects.length, sceneState.hasInitialized, enableDebugLogs]); // Remove visibleObjects from dependency
 
   // Simplified camera focus
   useEffect(() => {
@@ -142,32 +266,47 @@ export const ThreeDScene = forwardRef<any, ThreeDSceneProps>(function ThreeDScen
     }
   }, [selectedObjectId, visibleObjects]);
 
-  // Simplified connection type detection
-  const getConnectionType = (conn: any) => {
+  // Improved connection type detection
+  const getConnectionType = useCallback((conn: any): 'hallway' | 'emergency' | 'direct' => {
     if (conn.data?.type === 'emergency' || conn.is_emergency_exit) return 'emergency';
     const sourceObj = visibleObjects.find(obj => obj.id === conn.source);
     const targetObj = visibleObjects.find(obj => obj.id === conn.target);
     
     if (sourceObj?.type === 'hallway' || targetObj?.type === 'hallway') return 'hallway';
     return 'direct';
-  };
+  }, [visibleObjects]);
 
-  // Connection handlers
-  const handleStartConnection = (fromId: string) => {
-    setConnectingFromId(fromId);
-  };
-
-  const handleFinishConnection = (toId: string) => {
-    if (connectingFromId && connectingFromId !== toId) {
-      // Create connection logic would go here
-      console.log('Creating connection from', connectingFromId, 'to', toId);
-    }
-    setConnectingFromId(null);
-  };
+  // Improved object click handler with consistent error handling
+  const handleObjectClick = useCallback((objectId: string) => {
+    setSceneState(prev => {
+      const newConnectingFromId = prev.connectingFromId === null ? objectId : null;
+      
+      if (prev.connectingFromId !== null && prev.connectingFromId !== objectId) {
+        // Create connection
+        const connection = { 
+          id: generateStableId('conn'), 
+          source: prev.connectingFromId, 
+          target: objectId 
+        };
+        if (enableDebugLogs) {
+          console.log('Creating connection:', connection);
+        }
+        // onConnectionCreate?.(connection);
+      }
+      
+      return {
+        ...prev,
+        connectingFromId: newConnectingFromId,
+        selectedObjectId: objectId
+      };
+    });
+    
+    onObjectSelect?.(objectId);
+  }, [onObjectSelect, enableDebugLogs]);
 
   return (
     <>
-      <SceneLighting intensity={lightIntensity} />
+      <SceneLighting intensity={effectiveLightIntensity} />
       <OrbitControls 
         ref={controlsRef} 
         enableDamping
@@ -178,7 +317,7 @@ export const ThreeDScene = forwardRef<any, ThreeDSceneProps>(function ThreeDScen
         maxDistance={3000}
       />
       
-      <GridSystem enabled={true} gridSize={50} />
+      <GridSystem enabled={true} gridSize={config.gridSize} />
       
       <group>
         {/* Render connections */}
@@ -211,11 +350,14 @@ export const ThreeDScene = forwardRef<any, ThreeDSceneProps>(function ThreeDScen
               ...obj,
               position: previewData.position || obj.position,
               rotation: previewData.rotation ?? obj.rotation,
-              data: {
-                ...obj.data,
-                size: previewData.data?.size || obj.data.size,
-                properties: previewData.data?.properties || obj.data.properties,
-              }
+              size: previewData.size || obj.size,
+              // Handle data properties safely
+              ...(previewData.data && {
+                data: {
+                  ...obj.data,
+                  ...previewData.data
+                }
+              })
             };
           }
           
@@ -228,16 +370,16 @@ export const ThreeDScene = forwardRef<any, ThreeDSceneProps>(function ThreeDScen
               id={obj.id}
               type={obj.type as 'room' | 'hallway' | 'door'}
               position={objectData.position}
-              size={objectData.data.size}
+              size={objectData.size}
               rotation={rotation}
-              label={obj.data?.label}
+              label={obj.label || obj.data?.name || (obj.data as any)?.room_number || `${obj.type}-${obj.id}`}
               properties={objectData.data?.properties}
               isSelected={isSelected}
               showLabels={showLabels}
-              onClick={onObjectSelect}
-              onStartConnection={handleStartConnection}
-              onFinishConnection={handleFinishConnection}
-              isConnecting={connectingFromId === obj.id}
+              onClick={handleObjectClick}
+              onStartConnection={() => handleObjectClick(obj.id)}
+              onFinishConnection={() => handleObjectClick(obj.id)}
+              isConnecting={sceneState.connectingFromId === obj.id}
             />
           );
         })}

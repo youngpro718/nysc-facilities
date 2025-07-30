@@ -11,7 +11,7 @@ interface Space3DProps {
   properties?: any;
   isSelected?: boolean;
   showLabels?: boolean;
-  onClick: (data: any) => void;
+  onClick?: (id: string) => void;
   onStartConnection?: (id: string) => void;
   onFinishConnection?: (id: string) => void;
   isConnecting?: boolean;
@@ -116,7 +116,7 @@ export function Space3D({
       return;
     }
     
-    onClick({ id, type, position, size, rotation, properties, label });
+    onClick?.(id);
   };
 
   const handleDoubleClick = (e: any) => {
