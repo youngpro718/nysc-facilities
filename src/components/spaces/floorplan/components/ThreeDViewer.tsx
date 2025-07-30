@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useState, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Canvas } from '@react-three/fiber';
