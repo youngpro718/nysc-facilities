@@ -37,7 +37,7 @@ export function ReceiveKeysDialog({
 
   useEffect(() => {
     // Calculate remaining quantity to be received
-    if (order.status === 'partially_received') {
+    if (order.status === 'ready_for_pickup') {
       // This is a rough estimate as we don't have the exact received quantity
       // For a more accurate calculation, we'd need to fetch the sum of received quantities
       setMaxQuantity(Math.max(1, Math.floor(order.quantity / 2)));
@@ -76,8 +76,8 @@ export function ReceiveKeysDialog({
         </DialogHeader>
         <div>
           <p className="mb-4">
-            <span className="font-medium">Order:</span> {order.quantity} keys of type "{order.key_name}"
-            {order.recipient_name && ` for ${order.recipient_name}`}
+            <span className="font-medium">Order:</span> {order.quantity} keys of type "{(order as any).key_name || 'Standard Key'}"
+            {(order as any).recipient_name && ` for ${(order as any).recipient_name}`}
           </p>
         </div>
         <Form {...form}>
