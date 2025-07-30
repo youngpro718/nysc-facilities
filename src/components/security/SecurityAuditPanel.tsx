@@ -60,7 +60,10 @@ export function SecurityAuditPanel() {
 
       if (limitsError) throw limitsError;
 
-      setSecurityEvents(events || []);
+      setSecurityEvents((events || []).map(event => ({
+        ...event,
+        ip_address: String(event.ip_address || 'unknown')
+      })));
       setRateLimits(limits || []);
     } catch (error) {
       console.error('Failed to fetch security data:', error);

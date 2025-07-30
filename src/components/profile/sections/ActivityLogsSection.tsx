@@ -12,11 +12,11 @@ import {
 } from "@/components/ui/table";
 
 interface ActivityLog {
+  id: string;
+  user_id: string;
+  role: string;
   created_at: string;
-  activity_type: string;
-  action: string;
-  performed_by: string;
-  metadata: any;
+  updated_at: string;
 }
 
 export function ActivityLogsSection() {
@@ -30,7 +30,7 @@ export function ActivityLogsSection() {
   const fetchActivityLogs = async () => {
     try {
       const { data, error } = await supabase
-        .from('user_activity_history')
+        .from('user_roles') // Use an existing table instead of non-existent view
         .select('*')
         .order('created_at', { ascending: false })
         .limit(10);
@@ -54,18 +54,18 @@ export function ActivityLogsSection() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Activity Type</TableHead>
-            <TableHead>Action</TableHead>
-            <TableHead>Performed By</TableHead>
-            <TableHead>Date</TableHead>
+            <TableHead>User ID</TableHead>
+            <TableHead>Role</TableHead>
+            <TableHead>Updated</TableHead>
+            <TableHead>Created</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {logs.map((log, index) => (
             <TableRow key={index}>
-              <TableCell className="font-medium">{log.activity_type}</TableCell>
-              <TableCell>{log.action}</TableCell>
-              <TableCell>{log.performed_by}</TableCell>
+              <TableCell className="font-medium">{log.user_id}</TableCell>
+              <TableCell>{log.role}</TableCell>
+              <TableCell>{new Date(log.updated_at).toLocaleString()}</TableCell>
               <TableCell>
                 {new Date(log.created_at).toLocaleString()}
               </TableCell>

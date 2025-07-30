@@ -142,7 +142,8 @@ export default function EditKeyDialog({ keyData, open, onOpenChange }: EditKeyDi
         // Insert new locations
         const locationsToInsert = data.door_locations.map(roomId => ({
           key_id: keyData.id,
-          room_id: roomId
+          room_id: roomId,
+          access_type: 'standard' // Add required access_type field
         }));
 
         const { error: locationError } = await supabase

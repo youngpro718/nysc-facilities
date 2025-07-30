@@ -35,8 +35,8 @@ export function useSecurityValidation() {
       if (error) throw error;
       
       return {
-        isValid: data.is_valid,
-        errors: data.errors || []
+        isValid: typeof data === 'object' && data !== null && 'is_valid' in data ? Boolean(data.is_valid) : false,
+        errors: typeof data === 'object' && data !== null && 'errors' in data ? (data.errors as string[]) || [] : []
       };
     } catch (error) {
       console.error('Password validation error:', error);

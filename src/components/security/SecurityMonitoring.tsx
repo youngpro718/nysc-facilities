@@ -59,7 +59,11 @@ export function SecurityMonitoring() {
 
         if (limitsError) throw limitsError;
 
-        setSecurityEvents(events || []);
+        setSecurityEvents((events || []).map(event => ({
+          ...event,
+          timestamp: event.created_at,
+          ip_address: String(event.ip_address || 'unknown')
+        })));
         setRateLimits(limits || []);
 
         // Check for security alerts
@@ -68,7 +72,7 @@ export function SecurityMonitoring() {
         // Check for suspicious activity
         const recentFailedLogins = events?.filter(e => 
           e.action === 'failed_login' && 
-          new Date(e.timestamp) > new Date(Date.now() - 30 * 60 * 1000) // Last 30 minutes
+          new Date(e.created_at) > new Date(Date.now() - 30 * 60 * 1000) // Last 30 minutes
         ) || [];
 
         if (recentFailedLogins.length > 10) {

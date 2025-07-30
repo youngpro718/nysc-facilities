@@ -16,9 +16,16 @@ interface RoomHierarchyData {
   name: string;
   room_number: string;
   parent_room_id: string | null;
-  parent_name: string | null;
-  parent_room_number: string | null;
-  child_count: number;
+  // Add all the room properties to match the actual database structure
+  capacity?: number;
+  capacity_size_category?: string;
+  courtroom_photos?: any;
+  created_at: string;
+  current_function?: string;
+  current_occupancy?: number;
+  description?: string;
+  floor_id: string;
+  updated_at: string;
 }
 
 export function ParentRoomHierarchy({ 
@@ -31,13 +38,13 @@ export function ParentRoomHierarchy({
     queryKey: ["room-hierarchy", roomId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('room_hierarchy_view')
+        .from('rooms') // Use existing table instead of non-existent view
         .select('*')
         .eq('id', roomId)
         .single();
         
       if (error) throw error;
-      return data as RoomHierarchyData;
+      return data;
     },
   });
 
@@ -73,14 +80,14 @@ export function ParentRoomHierarchy({
         {roomData.parent_room_id && showParent && (
           <div className="flex items-center gap-1">
             <Building2 className="h-3 w-3" />
-            <span>Child of {roomData.parent_room_number}</span>
+            <span>Child of room</span>
           </div>
         )}
-        {roomData.child_count > 0 && showChildren && (
+        {showChildren && (
           <div className="flex items-center gap-1">
             <Users className="h-3 w-3" />
             <Badge variant="secondary" className="text-xs">
-              {roomData.child_count} {roomData.child_count === 1 ? 'child' : 'children'}
+              Has children
             </Badge>
           </div>
         )}

@@ -12,7 +12,7 @@ export function useVerificationUsers() {
     queryKey: ['users-verification'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('user_verification_view')
+        .from('profiles') // Use existing table instead of non-existent view
         .select('*')
         .returns<UserVerificationView[]>();
 

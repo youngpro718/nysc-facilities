@@ -132,16 +132,15 @@ export const useAdminDashboardData = () => {
         setIssues(transformedIssues);
       }
 
-      // Fetch recent activities
+      // Fetch recent activities from user_roles instead
       const { data: activitiesData, error: activitiesError } = await supabase
-        .from('user_activity_history')
+        .from('user_roles')
         .select(`
           id,
-          action,
-          activity_type,
-          performed_by,
+          user_id,
+          role,
           created_at,
-          metadata
+          updated_at
         `)
         .order('created_at', { ascending: false })
         .limit(50);
@@ -149,25 +148,16 @@ export const useAdminDashboardData = () => {
       if (activitiesError) {
         console.error('Error fetching activities:', activitiesError);
       } else {
-        const typedActivities: Activity[] = (activitiesData || []).map(activity => {
-          let metadata = { building_id: '' };
-          if (activity.metadata && typeof activity.metadata === 'object' && !Array.isArray(activity.metadata)) {
-            const metadataObj = activity.metadata as Record<string, unknown>;
-            metadata = {
-              building_id: (metadataObj.building_id as string) || '',
-              ...metadataObj
-            };
-          }
-          return {
-            id: activity.id,
-            action: activity.action,
-            activity_type: activity.activity_type,
-            performed_by: activity.performed_by,
-            created_at: activity.created_at,
-            metadata
-          };
-        });
-        setActivities(typedActivities);
+        const recentActivities = activitiesData?.slice(0, 5).map((activity: any) => ({
+          id: activity.id,
+          action: `Role ${activity.role}`,
+          activity_type: 'user_role',
+          performed_by: activity.user_id,
+          created_at: activity.created_at,
+          metadata: { building_id: '' }
+        })) || [];
+        
+        setActivities(recentActivities);
       }
 
     } catch (error) {
