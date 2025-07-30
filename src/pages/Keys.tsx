@@ -3,9 +3,10 @@ import { KeyInventorySection } from "@/components/keys/sections/KeyInventorySect
 import { KeyAssignmentSection } from "@/components/keys/sections/KeyAssignmentSection";
 import { KeyHistorySection } from "@/components/keys/sections/KeyHistorySection";
 import { KeyOrderSection } from "@/components/keys/sections/KeyOrderSection";
+import { ElevatorPassSection } from "@/components/keys/sections/ElevatorPassSection";
 import { KeyStatisticsCards } from "@/components/keys/KeyStatisticsCards";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Users, History, ShoppingCart } from "lucide-react";
+import { Package, Users, History, ShoppingCart, KeyRound } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { KeyData } from "@/components/keys/types/KeyTypes";
@@ -108,6 +109,13 @@ export default function Keys() {
               <History className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               History
             </TabsTrigger>
+            <TabsTrigger 
+              value="elevator-passes" 
+              className="flex-1 min-w-fit flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm whitespace-nowrap"
+            >
+              <KeyRound className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              Elevator Passes
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -125,6 +133,10 @@ export default function Keys() {
 
         <TabsContent value="history" className="space-y-4 mt-4">
           <KeyHistorySection />
+        </TabsContent>
+
+        <TabsContent value="elevator-passes" className="space-y-4 mt-4">
+          <ElevatorPassSection />
         </TabsContent>
       </Tabs>
     </div>
