@@ -127,6 +127,7 @@ export function useSecurityValidation() {
       if (error) throw error;
     } catch (error) {
       console.error('Security event logging error:', error);
+      // Fallback logging - continue operation even if audit logging fails
     }
   }, []);
 
