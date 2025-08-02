@@ -72,7 +72,7 @@ export async function fetchUserProfile(userId: string) {
     .from('user_roles')
     .select('role')
     .eq('user_id', userId)
-    .maybeSingle();
+    .maybeSingle() as any;
     
   console.log('🔍 fetchUserProfile - Role response:', {
     data: roleResponse.data,
@@ -89,8 +89,8 @@ export async function fetchUserProfile(userId: string) {
       const { data: secureRoleData, error: secureError } = await supabase.rpc('get_current_user_role');
       console.log('🔍 fetchUserProfile - Secure role response:', { data: secureRoleData, error: secureError });
       if (!secureError && secureRoleData) {
-        roleResponse.data = { role: secureRoleData };
-        roleResponse.error = null;
+        (roleResponse as any).data = { role: secureRoleData };
+        (roleResponse as any).error = null;
       }
     } catch (secureRoleError) {
       console.error('❌ fetchUserProfile - Secure role function error:', secureRoleError);

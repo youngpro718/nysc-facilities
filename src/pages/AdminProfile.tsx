@@ -1,6 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronLeft, LayoutGrid, User, Users, BarChart3, Settings, Shield, Monitor } from "lucide-react";
 import { RateLimitManager } from "@/components/admin/RateLimitManager";
+import { MaintenanceModeToggle } from "@/components/maintenance/MaintenanceModeToggle";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -215,6 +216,7 @@ export default function AdminProfile() {
               </p>
             </div>
             <div className="grid gap-6">
+              <MaintenanceModeToggle />
               <RateLimitManager />
             </div>
           </div>
