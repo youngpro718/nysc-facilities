@@ -8,6 +8,8 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+node_modules/.cache
+node_modules/.bin
 dist
 dist-ssr
 *.local
@@ -22,3 +24,60 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Development and build files
+*.tsbuildinfo
+.eslintcache
+.turbo
+
+# Testing
+coverage/
+.nyc_output/
+
+# Documentation and scripts (exclude from deployment)
+docs/
+scripts/
+*.md
+!README.md
+
+# Database migrations (handled separately)
+supabase/migrations/
+supabase/seed.sql
+
+# Lock files (keep only one)
+yarn.lock
+pnpm-lock.yaml
+
+# Environment files
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Additional exclusions for deployment
+*.map
+*.tgz
+*.tar.gz
+.cache/
+temp/
+tmp/
+
+# IDE and editor files
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+*.swp
+*.swo
+*~
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+
+# Package manager files
+.pnpm-store/
+.yarn/
+.npm/
+
+# Local Netlify folder
+.netlify
