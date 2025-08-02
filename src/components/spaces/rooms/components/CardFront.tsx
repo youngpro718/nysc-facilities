@@ -17,11 +17,106 @@ interface CardFrontProps {
   room: EnhancedRoom;
   onFlip: (e?: React.MouseEvent) => void;
   onDelete: (id: string) => void;
+  isHovered?: boolean;
 }
 
-export function CardFront({ room, onFlip, onDelete }: CardFrontProps) {
+export function CardFront({ room, onFlip, onDelete, isHovered = false }: CardFrontProps) {
   return (
-    <div className="p-5 flex flex-col h-full">
+    <div className="relative p-5 flex flex-col h-full overflow-y-auto">
+      {/* Hover Action Buttons - Top Right Corner */}
+      <div className={`absolute top-2 right-2 flex flex-col gap-1 transition-all duration-300 z-10 ${
+        isHovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+      }`}>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            onFlip(e);
+          }}
+          className="hidden md:flex bg-black/80 hover:bg-black text-white border-0 shadow-lg transition-all duration-200 h-8 w-8 p-0"
+          title="More Details"
+        >
+          <ArrowRightFromLine className="h-3 w-3" />
+        </Button>
+        
+        <LightingReportDialog
+          room={room}
+          trigger={
+            <Button
+              variant="secondary"
+              size="sm"
+              className="bg-black/80 hover:bg-black text-white border-0 shadow-lg transition-all duration-200 h-8 w-8 p-0"
+              title="Report Light Out"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Lightbulb className="h-3 w-3" />
+            </Button>
+          }
+        />
+        
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="bg-black/80 hover:bg-black text-white border-0 shadow-lg transition-all duration-200 h-8 w-8 p-0"
+              title="Who Has Access"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Shield className="h-3 w-3" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Room Access - {room.name}</DialogTitle>
+            </DialogHeader>
+            <RoomAccessSummary roomId={room.id} />
+          </DialogContent>
+        </Dialog>
+
+        <EditSpaceDialog
+          id={room.id}
+          type="room"
+          initialData={{
+            id: room.id,
+            name: room.name,
+            room_number: room.room_number || '',
+            room_type: room.room_type,
+            description: room.description || '',
+            status: room.status,
+            floor_id: room.floor_id,
+            is_storage: room.is_storage || false,
+            storage_type: room.storage_type || null,
+            storage_capacity: room.storage_capacity || null,
+            storage_notes: room.storage_notes || null,
+            parent_room_id: room.parent_room_id || null,
+            current_function: room.current_function || null,
+            phone_number: room.phone_number || null,
+            courtroom_photos: room.courtroom_photos || null,
+            connections: room.space_connections?.map(conn => ({
+              id: conn.id,
+              connectionType: conn.connection_type,
+              toSpaceId: conn.to_space_id,
+              direction: conn.direction || null
+            })) || [],
+            type: "room"
+          }}
+        />
+        
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(room.id);
+          }}
+          className="bg-red-600/90 hover:bg-red-600 text-white border-0 shadow-lg transition-all duration-200 h-8 w-8 p-0"
+          title="Delete Room"
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
+      </div>
       <div className="mb-3">
         <div className="flex justify-between items-start">
           <div>
@@ -154,91 +249,7 @@ export function CardFront({ room, onFlip, onDelete }: CardFrontProps) {
         )}
       </div>
 
-      <div className="mt-4 flex justify-between">
-        <div className="flex gap-2">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={onFlip}
-            className="hidden md:flex"
-            title="More Details"
-          >
-            <ArrowRightFromLine className="h-4 w-4" />
-          </Button>
-          
-          {/* Quick Report Light Out Button */}
-          <LightingReportDialog
-            room={room}
-            trigger={
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex items-center"
-                title="Report Light Out"
-              >
-                <Lightbulb className="h-4 w-4" />
-              </Button>
-            }
-          />
-        </div>
-        <div className="flex gap-2">
-          {/* Who Has Access Dialog */}
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                title="Who Has Access"
-              >
-                <Shield className="h-4 w-4" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Room Access - {room.name}</DialogTitle>
-              </DialogHeader>
-              <RoomAccessSummary roomId={room.id} />
-            </DialogContent>
-          </Dialog>
-
-          <EditSpaceDialog
-            id={room.id}
-            type="room"
-            initialData={{
-              id: room.id,
-              name: room.name,
-              room_number: room.room_number || '',
-              room_type: room.room_type,
-              description: room.description || '',
-              status: room.status,
-              floor_id: room.floor_id,
-              is_storage: room.is_storage || false,
-              storage_type: room.storage_type || null,
-              storage_capacity: room.storage_capacity || null,
-              storage_notes: room.storage_notes || null,
-              parent_room_id: room.parent_room_id || null,
-              current_function: room.current_function || null,
-              phone_number: room.phone_number || null,
-              courtroom_photos: room.courtroom_photos || null,
-              connections: room.space_connections?.map(conn => ({
-                id: conn.id,
-                connectionType: conn.connection_type,
-                toSpaceId: conn.to_space_id,
-                direction: conn.direction || null
-              })) || [],
-              type: "room"
-            }}
-          />
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => onDelete(room.id)}
-            title="Delete Room"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+      {/* Old action buttons removed - now using hover overlay */}
     </div>
   );
 }

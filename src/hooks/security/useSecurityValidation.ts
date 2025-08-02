@@ -78,6 +78,12 @@ export function useSecurityValidation() {
     maxAttempts: number = 5,
     windowMinutes: number = 15
   ): Promise<boolean> => {
+    // Bypass rate limiting in development if DISABLE_RATE_LIMIT is set
+    if (import.meta.env.VITE_DISABLE_RATE_LIMIT === 'true') {
+      console.log('Rate limiting disabled for development');
+      return true; // Allow the attempt
+    }
+    
     try {
       const { data, error } = await supabase.rpc('check_rate_limit', {
         p_identifier: identifier,

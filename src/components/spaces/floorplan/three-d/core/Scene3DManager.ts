@@ -111,36 +111,48 @@ export class Scene3DManager {
       // Set background to a more professional color
       this.scene.background = new THREE.Color(0xf8fafc);
 
-      // Enhanced lighting setup
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+      // Enhanced lighting setup with dynamic lighting
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
       this.scene.add(ambientLight);
 
-      // Main directional light (sun-like)
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-      directionalLight.position.set(200, 300, 200);
+      // Main directional light with enhanced shadows
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+      directionalLight.position.set(400, 500, 400);
+      directionalLight.castShadow = this.options.enableShadows;
       if (this.options.enableShadows) {
-        directionalLight.castShadow = true;
         directionalLight.shadow.mapSize.width = 4096;
         directionalLight.shadow.mapSize.height = 4096;
         directionalLight.shadow.camera.near = 0.1;
-        directionalLight.shadow.camera.far = 1000;
-        directionalLight.shadow.camera.left = -500;
-        directionalLight.shadow.camera.right = 500;
-        directionalLight.shadow.camera.top = 500;
-        directionalLight.shadow.camera.bottom = -500;
+        directionalLight.shadow.camera.far = 1500;
+        directionalLight.shadow.camera.left = -800;
+        directionalLight.shadow.camera.right = 800;
+        directionalLight.shadow.camera.top = 800;
+        directionalLight.shadow.camera.bottom = -800;
         directionalLight.shadow.bias = -0.0001;
+        directionalLight.shadow.normalBias = 0.02;
       }
       this.scene.add(directionalLight);
 
-      // Secondary fill light
-      const fillLight = new THREE.DirectionalLight(0x87ceeb, 0.3);
-      fillLight.position.set(-100, 150, -100);
+      // Secondary fill light for better illumination
+      const fillLight = new THREE.DirectionalLight(0xe2e8f0, 0.4);
+      fillLight.position.set(-400, 300, -400);
       this.scene.add(fillLight);
 
-      // Add a subtle rim light
-      const rimLight = new THREE.DirectionalLight(0xffffff, 0.2);
-      rimLight.position.set(0, 100, -200);
+      // Hemisphere light for natural lighting
+      const hemisphereLight = new THREE.HemisphereLight(0x87ceeb, 0xf4f1de, 0.6);
+      this.scene.add(hemisphereLight);
+
+      // Warm accent light for depth
+      const accentLight = new THREE.PointLight(0xfbbf24, 0.3, 600);
+      accentLight.position.set(0, 250, 0);
+      this.scene.add(accentLight);
+
+      // Rim lighting for better object definition
+      const rimLight = new THREE.SpotLight(0x60a5fa, 0.5, 800, Math.PI / 6, 0.5, 2);
+      rimLight.position.set(200, 400, -200);
+      rimLight.target.position.set(0, 0, 0);
       this.scene.add(rimLight);
+      this.scene.add(rimLight.target);
 
       // Enhanced grid with better styling
       const gridHelper = new THREE.GridHelper(
@@ -564,16 +576,36 @@ export class Scene3DManager {
     const wallHeight = 40;
     const wallThickness = 2;
     const floorHeight = 1;
+    const gridSize = 20; // Grid snap size
 
-    // Create floor
-    const floorGeometry = new THREE.BoxGeometry(room.size.width, floorHeight, room.size.height);
-    const floorMaterial = new THREE.MeshPhongMaterial({ 
-      color: 0xf1f5f9,
-      specular: 0x222222,
-      shininess: 50
+    // Snap positions to grid for better alignment
+    const snappedX = Math.round(room.position.x / gridSize) * gridSize;
+    const snappedY = Math.round(room.position.y / gridSize) * gridSize;
+    const snappedWidth = Math.max(gridSize, Math.round(room.size.width / gridSize) * gridSize);
+    const snappedHeight = Math.max(gridSize, Math.round(room.size.height / gridSize) * gridSize);
+
+    // Create floor with enhanced PBR material based on room type
+    const floorGeometry = new THREE.BoxGeometry(snappedWidth, floorHeight, snappedHeight);
+    const roomTypeColors = {
+      'office': 0xf1f5f9,
+      'courtroom': 0xdbeafe,
+      'conference': 0xfef3c7,
+      'storage': 0xe5e7eb,
+      'hallway': 0xe2e8f0,
+      'default': 0xf8fafc
+    };
+    
+    const floorColor = roomTypeColors[room.type as keyof typeof roomTypeColors] || roomTypeColors.default;
+    const floorMaterial = new THREE.MeshStandardMaterial({ 
+      color: floorColor,
+      metalness: 0.1,
+      roughness: 0.8,
+      transparent: true,
+      opacity: 0.95,
+      envMapIntensity: 0.5
     });
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-    floor.position.set(room.position.x, floorHeight / 2, room.position.y);
+    floor.position.set(snappedX, floorHeight / 2, snappedY);
     
     if (this.options.enableShadows) {
       floor.castShadow = true;
@@ -581,41 +613,48 @@ export class Scene3DManager {
     }
     group.add(floor);
 
-    // Create walls
-    const wallMaterial = this.roomMaterial.clone();
+    // Create walls with enhanced PBR materials and grid-aligned positioning
+    const wallMaterial = new THREE.MeshStandardMaterial({
+      color: 0xe2e8f0,
+      metalness: 0.05,
+      roughness: 0.9,
+      transparent: true,
+      opacity: 0.9,
+      envMapIntensity: 0.3
+    });
     
-    // Front and back walls
-    const frontBackWallGeometry = new THREE.BoxGeometry(room.size.width, wallHeight, wallThickness);
+    // Front and back walls (using snapped dimensions)
+    const frontBackWallGeometry = new THREE.BoxGeometry(snappedWidth, wallHeight, wallThickness);
     
     const frontWall = new THREE.Mesh(frontBackWallGeometry, wallMaterial.clone());
     frontWall.position.set(
-      room.position.x, 
+      snappedX, 
       wallHeight / 2 + floorHeight, 
-      room.position.y + room.size.height / 2 - wallThickness / 2
+      snappedY + snappedHeight / 2 - wallThickness / 2
     );
     
     const backWall = new THREE.Mesh(frontBackWallGeometry, wallMaterial.clone());
     backWall.position.set(
-      room.position.x, 
+      snappedX, 
       wallHeight / 2 + floorHeight, 
-      room.position.y - room.size.height / 2 + wallThickness / 2
+      snappedY - snappedHeight / 2 + wallThickness / 2
     );
 
-    // Left and right walls
-    const leftRightWallGeometry = new THREE.BoxGeometry(wallThickness, wallHeight, room.size.height);
+    // Left and right walls (using snapped dimensions)
+    const leftRightWallGeometry = new THREE.BoxGeometry(wallThickness, wallHeight, snappedHeight);
     
     const leftWall = new THREE.Mesh(leftRightWallGeometry, wallMaterial.clone());
     leftWall.position.set(
-      room.position.x - room.size.width / 2 + wallThickness / 2, 
+      snappedX - snappedWidth / 2 + wallThickness / 2, 
       wallHeight / 2 + floorHeight, 
-      room.position.y
+      snappedY
     );
     
     const rightWall = new THREE.Mesh(leftRightWallGeometry, wallMaterial.clone());
     rightWall.position.set(
-      room.position.x + room.size.width / 2 - wallThickness / 2, 
+      snappedX + snappedWidth / 2 - wallThickness / 2, 
       wallHeight / 2 + floorHeight, 
-      room.position.y
+      snappedY
     );
 
     // Apply rotation to entire group if specified
@@ -633,10 +672,59 @@ export class Scene3DManager {
 
     group.add(frontWall, backWall, leftWall, rightWall);
 
-    // Add room label (optional)
+    // Add room label with better positioning
     if (room.name) {
-      this.addRoomLabel(group, room.name, room.position.x, wallHeight + 5, room.position.y);
+      this.addRoomLabel(group, room.name, snappedX, wallHeight + 8, snappedY);
     }
+
+    // Add room status indicator
+    const statusColors = {
+      'active': 0x10b981,
+      'maintenance': 0xf59e0b,
+      'inactive': 0xef4444,
+      'default': 0x6b7280
+    };
+    
+    // Add status indicator sphere
+    const statusGeometry = new THREE.SphereGeometry(8, 16, 16);
+    const statusColor = statusColors['active'] || statusColors.default; // Default to active
+    const statusMaterial = new THREE.MeshStandardMaterial({
+      color: statusColor,
+      emissive: statusColor,
+      emissiveIntensity: 0.3,
+      metalness: 0.2,
+      roughness: 0.3
+    });
+    const statusIndicator = new THREE.Mesh(statusGeometry, statusMaterial);
+    statusIndicator.position.set(snappedX + snappedWidth/2 - 15, wallHeight + 15, snappedY - snappedHeight/2 + 15);
+    
+    if (this.options.enableShadows) {
+      statusIndicator.castShadow = true;
+    }
+    group.add(statusIndicator);
+    
+    // Add room type badge
+    if (room.type && room.type !== 'room') {
+      const badgeGeometry = new THREE.BoxGeometry(40, 8, 20);
+      const badgeMaterial = new THREE.MeshStandardMaterial({
+        color: 0x3b82f6,
+        metalness: 0.1,
+        roughness: 0.7
+      });
+      const badge = new THREE.Mesh(badgeGeometry, badgeMaterial);
+      badge.position.set(snappedX, wallHeight + 25, snappedY + snappedHeight/2 - 10);
+      
+      if (this.options.enableShadows) {
+        badge.castShadow = true;
+      }
+      group.add(badge);
+    }
+
+    // Store snapped position for better interaction
+    group.userData.snappedPosition = { x: snappedX, y: snappedY };
+    group.userData.snappedSize = { width: snappedWidth, height: snappedHeight };
+    group.userData.roomType = room.type;
+    group.userData.statusColor = statusColor;
 
     return group;
   }

@@ -86,12 +86,12 @@ export function QuickActionsPanel() {
     }
   };
 
-  const getUrgencyColor = (urgency: string) => {
+  const getUrgencyVariant = (urgency: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (urgency) {
-      case 'high': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'high': return 'destructive';
+      case 'medium': return 'secondary';
+      case 'low': return 'outline';
+      default: return 'default';
     }
   };
 
@@ -119,19 +119,21 @@ export function QuickActionsPanel() {
               </p>
             ) : (
               filteredItems.map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                <div key={index} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors duration-200">
                   <div className="flex items-center gap-3">
-                    <div className="text-blue-600">
+                    <div className="flex-shrink-0 p-2 rounded-full bg-primary/10 text-primary">
                       {getActionIcon(item.type)}
                     </div>
-                    <div>
-                      <div className="font-medium">Room {item.room_number}</div>
-                      <div className="text-sm text-muted-foreground">{item.message}</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold text-foreground">Room {item.room_number}</div>
+                      <div className="text-sm text-muted-foreground truncate">{item.message}</div>
                     </div>
                   </div>
-                  <Badge className={getUrgencyColor(item.urgency)}>
-                    {item.urgency}
-                  </Badge>
+                  <div className="flex-shrink-0 ml-3">
+                    <Badge variant={getUrgencyVariant(item.urgency)} className="capitalize">
+                      {item.urgency}
+                    </Badge>
+                  </div>
                 </div>
               ))
             )}

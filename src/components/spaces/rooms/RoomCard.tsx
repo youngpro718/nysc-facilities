@@ -16,6 +16,7 @@ interface RoomCardProps {
 export function RoomCard({ room, onDelete, onRoomClick }: RoomCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   
   // Fetch enhanced room data
   const { data: enhancedRoom, isLoading } = useEnhancedRoomData(room.id);
@@ -49,14 +50,19 @@ export function RoomCard({ room, onDelete, onRoomClick }: RoomCardProps) {
 
   return (
     <Card 
-      className="relative h-[320px] group overflow-hidden cursor-pointer hover:shadow-lg transition-all"
+      className={`relative h-[320px] group overflow-hidden cursor-pointer transition-all duration-200 ease-out ${
+        isHovered 
+          ? 'shadow-2xl shadow-black/20 dark:shadow-black/40' 
+          : 'shadow-md hover:shadow-lg'
+      }`}
       onClick={handleCardClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <CardContent className="p-0 h-full">
         <div 
-          className="relative w-full h-full transition-all duration-500 preserve-3d"
+          className="relative w-full h-full transition-all duration-500"
           style={{ 
-            transformStyle: 'preserve-3d',
             transform: !isMobile && isFlipped ? 'rotateY(180deg)' : 'rotateY(0)',
           }}
         >
@@ -65,7 +71,7 @@ export function RoomCard({ room, onDelete, onRoomClick }: RoomCardProps) {
             className="absolute inset-0 w-full h-full bg-card"
             style={{ backfaceVisibility: 'hidden' }}
           >
-            <CardFront room={displayRoom} onFlip={handleFlip} onDelete={onDelete} />
+            <CardFront room={displayRoom} onFlip={handleFlip} onDelete={onDelete} isHovered={isHovered} />
           </div>
           
           {/* Back of card - Hidden on mobile */}

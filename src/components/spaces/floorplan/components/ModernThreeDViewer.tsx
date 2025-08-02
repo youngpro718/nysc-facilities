@@ -133,72 +133,93 @@ export function ModernThreeDViewer({
 
   return (
     <div className="h-full relative">
-      {/* Floating Controls */}
-      <div className="absolute top-4 right-4 z-10 flex flex-col space-y-2">
-        <TooltipProvider>
-          <div className="flex flex-col space-y-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm"
-                  onClick={handleResetCamera}
-                >
-                  <Home className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Reset Camera</TooltipContent>
-            </Tooltip>
+      {/* Enhanced Floating Controls */}
+      <div className="absolute top-6 right-6 z-10">
+        <div className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-md rounded-2xl p-3 shadow-xl border border-white/20 dark:border-slate-700/50">
+          <TooltipProvider>
+            <div className="flex flex-col gap-2">
+              {/* Camera Controls Group */}
+              <div className="space-y-1">
+                <div className="text-xs font-medium text-slate-600 dark:text-slate-400 px-2 mb-2">Camera</div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-9 w-9 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200"
+                      onClick={handleResetCamera}
+                    >
+                      <Home className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="bg-slate-900 text-white text-xs rounded-lg">
+                    Reset Camera
+                  </TooltipContent>
+                </Tooltip>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm"
-                  onClick={handleZoomIn}
-                >
-                  <ZoomIn className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Zoom In</TooltipContent>
-            </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-9 w-9 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-600 dark:hover:text-green-400 transition-all duration-200"
+                      onClick={handleZoomIn}
+                    >
+                      <ZoomIn className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="bg-slate-900 text-white text-xs rounded-lg">
+                    Zoom In
+                  </TooltipContent>
+                </Tooltip>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm"
-                  onClick={handleZoomOut}
-                >
-                  <ZoomOut className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Zoom Out</TooltipContent>
-            </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-9 w-9 rounded-xl hover:bg-orange-50 dark:hover:bg-orange-900/20 hover:text-orange-600 dark:hover:text-orange-400 transition-all duration-200"
+                      onClick={handleZoomOut}
+                    >
+                      <ZoomOut className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="bg-slate-900 text-white text-xs rounded-lg">
+                    Zoom Out
+                  </TooltipContent>
+                </Tooltip>
+              </div>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    "h-8 w-8 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm",
-                    showConnections && "bg-primary/20"
-                  )}
-                  onClick={() => setShowConnections(!showConnections)}
-                >
-                  <Layers className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{showConnections ? 'Hide' : 'Show'} Connections</TooltipContent>
-            </Tooltip>
+              {/* Separator */}
+              <div className="h-px bg-slate-200 dark:bg-slate-600 mx-2"></div>
 
-
-          </div>
-        </TooltipProvider>
+              {/* Display Controls Group */}
+              <div className="space-y-1">
+                <div className="text-xs font-medium text-slate-600 dark:text-slate-400 px-2 mb-2">Display</div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={cn(
+                        "h-9 w-9 rounded-xl transition-all duration-200",
+                        showConnections 
+                          ? "bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 shadow-sm" 
+                          : "hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:text-purple-600 dark:hover:text-purple-400"
+                      )}
+                      onClick={() => setShowConnections(!showConnections)}
+                    >
+                      <Layers className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="bg-slate-900 text-white text-xs rounded-lg">
+                    {showConnections ? 'Hide' : 'Show'} Connections
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
+          </TooltipProvider>
+        </div>
       </div>
 
       {/* 3D Scene */}
@@ -215,14 +236,28 @@ export function ModernThreeDViewer({
         />
       </div>
 
-      {/* Info Overlay */}
+      {/* Enhanced Info Overlay */}
       {safeObjects.length > 0 && (
-        <div className="absolute bottom-4 left-4 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-lg p-3 shadow-lg">
-          <div className="text-xs">
-            <p className="font-medium">{safeObjects.length} objects</p>
-            <p className="text-slate-600 dark:text-slate-300">
-              {safeObjects.filter(obj => obj.type === 'room').length} rooms
-            </p>
+        <div className="absolute bottom-6 left-6 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-white/20 dark:border-slate-700/50">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg">
+              <Layers className="h-4 w-4 text-slate-600 dark:text-slate-300" />
+            </div>
+            <div>
+              <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                {safeObjects.length} Objects
+              </div>
+              <div className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-2 mt-0.5">
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  {safeObjects.filter(obj => obj.type === 'room').length} Rooms
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  {safeObjects.filter(obj => obj.type === 'hallway').length} Hallways
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

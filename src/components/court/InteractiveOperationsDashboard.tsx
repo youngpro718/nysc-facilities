@@ -167,55 +167,55 @@ export function InteractiveOperationsDashboard() {
 
           {/* Quick Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card className="bg-gradient-to-r from-green-50 to-green-100">
+            <Card className="border-green-200 bg-green-50 dark:bg-green-950 dark:border-green-800">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2 text-green-800 dark:text-green-200">
                   <Building2 className="h-4 w-4" />
                   Available
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-700">{statusCounts.available}</div>
-                <p className="text-xs text-green-600">Ready for assignment</p>
+                <div className="text-2xl font-bold text-green-600">{statusCounts.available}</div>
+                <p className="text-xs text-green-700 dark:text-green-300">Ready for assignment</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-r from-blue-50 to-blue-100">
+            <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2 text-blue-800 dark:text-blue-200">
                   <Users className="h-4 w-4" />
                   Occupied
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-blue-700">{statusCounts.occupied}</div>
-                <p className="text-xs text-blue-600">Currently assigned</p>
+                <div className="text-2xl font-bold text-blue-600">{statusCounts.occupied}</div>
+                <p className="text-xs text-blue-700 dark:text-blue-300">Currently assigned</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-r from-red-50 to-red-100">
+            <Card className="border-red-200 bg-red-50 dark:bg-red-950 dark:border-red-800">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2 text-red-800 dark:text-red-200">
                   <AlertTriangle className="h-4 w-4" />
                   Shutdown
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-red-700">{statusCounts.shutdown}</div>
-                <p className="text-xs text-red-600">Temporarily closed</p>
+                <div className="text-2xl font-bold text-red-600">{statusCounts.shutdown}</div>
+                <p className="text-xs text-red-700 dark:text-red-300">Temporarily closed</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-r from-gray-50 to-gray-100">
+            <Card className="border-slate-200 bg-slate-50 dark:bg-slate-950 dark:border-slate-800">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2 text-slate-800 dark:text-slate-200">
                   <Wrench className="h-4 w-4" />
                   Inactive
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-gray-700">{statusCounts.inactive}</div>
-                <p className="text-xs text-gray-600">Not in use</p>
+                <div className="text-2xl font-bold text-slate-600">{statusCounts.inactive}</div>
+                <p className="text-xs text-slate-700 dark:text-slate-300">Not in use</p>
               </CardContent>
             </Card>
           </div>
@@ -246,40 +246,40 @@ export function InteractiveOperationsDashboard() {
         {filteredRooms.map((room) => (
           <div
             key={room.room.id}
-            className="group relative bg-white border rounded-lg p-2 cursor-pointer hover:shadow-md transition-all duration-200 hover:border-blue-400"
+            className="group relative bg-card border rounded-lg p-3 cursor-pointer hover:shadow-md transition-all duration-200 hover:border-primary/50 hover:bg-accent/50"
             onClick={() => setSelectedRoom(room)}
           >
             {/* Compact Header */}
-            <div className="flex items-center justify-between mb-1">
-              <span className="font-bold text-sm">{room.room.room_number}</span>
-              <div className={`w-2 h-2 rounded-full ${getStatusDotColor(room.status)}`} />
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-semibold text-sm text-foreground">{room.room.room_number}</span>
+              <div className={`w-2.5 h-2.5 rounded-full ${getStatusDotColor(room.status)}`} />
             </div>
             
             {/* Status Badge - Minimal */}
-            <div className="text-xs font-medium text-gray-600 capitalize mb-1">
-              {room.status}
+            <div className="text-xs font-medium text-muted-foreground capitalize mb-1">
+              {room.status.replace('_', ' ')}
             </div>
             
             {/* Court Number - If exists */}
             {room.room.courtroom_number && (
-              <div className="text-xs text-gray-500 mb-1">
-                C{room.room.courtroom_number}
+              <div className="text-xs text-muted-foreground/80 mb-1">
+                Court {room.room.courtroom_number}
               </div>
             )}
             
             {/* Quick Actions - Hover Reveal */}
-            <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg flex items-center justify-center">
-              <div className="flex gap-1">
+            <div className="absolute inset-0 bg-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg flex items-center justify-center">
+              <div className="flex gap-1.5">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     toggleRoomStatus(room.room.id, room.room.is_active);
                   }}
-                  className="p-1 bg-white rounded shadow-sm hover:shadow-md transition-shadow"
+                  className="p-1.5 bg-background border rounded-md shadow-sm hover:shadow-md transition-all hover:scale-105"
                   title={room.room.is_active ? 'Mark inactive' : 'Mark active'}
                 >
                   {room.room.is_active ? 
-                    <PowerOff className="h-3 w-3 text-red-600" /> : 
+                    <PowerOff className="h-3 w-3 text-destructive" /> : 
                     <Power className="h-3 w-3 text-green-600" />
                   }
                 </button>
@@ -291,10 +291,10 @@ export function InteractiveOperationsDashboard() {
                       // Quick view assignment details
                       setSelectedRoom(room);
                     }}
-                    className="p-1 bg-white rounded shadow-sm hover:shadow-md transition-shadow"
+                    className="p-1.5 bg-background border rounded-md shadow-sm hover:shadow-md transition-all hover:scale-105"
                     title="View assignment"
                   >
-                    <Users className="h-3 w-3 text-blue-600" />
+                    <Users className="h-3 w-3 text-primary" />
                   </button>
                 )}
                 
@@ -305,7 +305,7 @@ export function InteractiveOperationsDashboard() {
                       // Quick view shutdown details
                       setSelectedRoom(room);
                     }}
-                    className="p-1 bg-white rounded shadow-sm hover:shadow-md transition-shadow"
+                    className="p-1.5 bg-background border rounded-md shadow-sm hover:shadow-md transition-all hover:scale-105"
                     title="View shutdown"
                   >
                     <Wrench className="h-3 w-3 text-orange-600" />
@@ -315,7 +315,7 @@ export function InteractiveOperationsDashboard() {
             </div>
             
             {/* Quick Info Tooltip - Hover */}
-            <div className="absolute z-10 top-full left-0 mt-1 bg-gray-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
+            <div className="absolute z-10 top-full left-0 mt-2 bg-popover border text-popover-foreground text-xs rounded-md px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap shadow-md">
               {room.assignment?.part ? `Part: ${room.assignment.part}` : 'Available'}
               {room.shutdown?.reason && ` • ${room.shutdown.reason}`}
             </div>
@@ -356,11 +356,11 @@ export function InteractiveOperationsDashboard() {
 
               {/* Status with Toggle */}
               <div>
-                <h4 className="font-medium mb-2 text-sm">Status</h4>
+                <h4 className="font-medium mb-2 text-sm text-foreground">Status</h4>
                 <div className="flex items-center">
-                  <Badge className={getStatusColor(selectedRoom?.status || 'available')}>
+                  <Badge variant="outline" className="flex items-center gap-1">
                     {getStatusIcon(selectedRoom?.status || 'available')}
-                    <span className="ml-1 capitalize">{selectedRoom?.status}</span>
+                    <span className="capitalize">{selectedRoom?.status?.replace('_', ' ')}</span>
                   </Badge>
                 </div>
               </div>

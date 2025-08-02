@@ -23,10 +23,12 @@ import {
 import { useDialogManager } from '@/hooks/useDialogManager';
 import { FloorPlanCanvas } from './FloorPlanCanvas';
 import { PropertiesPanel } from './components/PropertiesPanel';
+import { EnhancedPropertiesPanel } from './components/EnhancedPropertiesPanel';
 import { EditPropertiesPanel } from './components/EditPropertiesPanel';
 import { ModernThreeDViewer } from './components/ModernThreeDViewer';
 import { FloorSelector } from './components/FloorSelector';
 import { SearchPanel } from './components/SearchPanel';
+import { AdvancedSearchPanel } from './components/AdvancedSearchPanel';
 import { ViewControls } from './components/ViewControls';
 import { cn } from '@/lib/utils';
 
@@ -65,6 +67,8 @@ export function ModernFloorPlanView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'room' | 'hallway' | 'door'>('all');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
+  const [highlightedObjects, setHighlightedObjects] = useState<string[]>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const { dialogState, openDialog, closeDialog } = useDialogManager();
@@ -208,15 +212,24 @@ export function ModernFloorPlanView() {
             isFullscreen={isFullscreen}
             onToggleFullscreen={() => setIsFullscreen(!isFullscreen)}
             onSearch={() => setIsSearchOpen(true)}
+            onAdvancedSearch={() => setIsAdvancedSearchOpen(true)}
           />
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex min-h-0 px-4 pb-4">
+      <div className="flex-1 flex gap-6 min-h-0 px-6 pb-6">
         {/* Floor Plan Canvas */}
-        <div className="flex-1 relative bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+        <div className="flex-1 relative bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 rounded-2xl shadow-xl overflow-hidden border border-slate-200 dark:border-slate-700">
           <div className="absolute inset-0">
+            {/* Grid Pattern Overlay */}
+            <div className="absolute inset-0 opacity-30 dark:opacity-20" style={{
+              backgroundImage: `
+                linear-gradient(rgba(148, 163, 184, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(148, 163, 184, 0.1) 1px, transparent 1px)
+              `,
+              backgroundSize: '20px 20px'
+            }}></div>
             {viewMode === '2d' ? (
               <FloorPlanCanvas
                 key={`2d-${refreshKey}`}
@@ -239,29 +252,34 @@ export function ModernFloorPlanView() {
 
           {/* Floating Info Card */}
           {currentFloor && (
-            <div className="absolute top-4 left-4 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-lg p-3 shadow-lg">
-              <h3 className="font-semibold text-sm">{currentFloor.buildings.name}</h3>
-              <p className="text-xs text-slate-600 dark:text-slate-300">{currentFloor.name}</p>
+            <div className="absolute top-6 left-6 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md rounded-xl p-4 shadow-lg border border-white/20 dark:border-slate-700/50">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                <div>
+                  <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">{currentFloor.buildings.name}</h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">{currentFloor.name}</p>
+                </div>
+              </div>
             </div>
           )}
         </div>
 
-        {/* Properties Panel */}
+        {/* Enhanced Properties Panel */}
         <div 
           id="properties-panel"
-          className="w-80 ml-4 bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden"
+          className="w-96"
         >
-          <div className="h-full overflow-auto">
-            <PropertiesPanel
-              selectedObject={selectedObject}
-              onUpdate={() => {
-                if (selectedObject) {
-                  openDialog('propertyEdit', selectedObject);
-                }
-              }}
-              onPreviewChange={handlePropertyUpdate}
-            />
-          </div>
+          <EnhancedPropertiesPanel
+            selectedObject={selectedObject}
+            allObjects={filteredObjects}
+            onUpdate={() => {
+              if (selectedObject) {
+                openDialog('propertyEdit', selectedObject);
+              }
+            }}
+            onPreviewChange={handlePropertyUpdate}
+            selectedFloorName={currentFloor?.name}
+          />
         </div>
       </div>
 
@@ -275,6 +293,15 @@ export function ModernFloorPlanView() {
         onFilterTypeChange={setFilterType}
         objects={filteredObjects}
         onObjectSelect={handleObjectSelect}
+      />
+
+      {/* Advanced Search Panel */}
+      <AdvancedSearchPanel
+        isOpen={isAdvancedSearchOpen}
+        onClose={() => setIsAdvancedSearchOpen(false)}
+        objects={filteredObjects}
+        onObjectSelect={handleObjectSelect}
+        onHighlightObjects={setHighlightedObjects}
       />
 
       {/* Edit Dialog */}

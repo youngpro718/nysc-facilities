@@ -115,12 +115,15 @@ export function PropertiesPanel({
 
   if (!selectedObject) {
     return (
-      <Card className="h-[600px]">
-        <CardHeader>
-          <CardTitle className="text-md">Properties</CardTitle>
+      <Card className="h-full flex flex-col">
+        <CardHeader className="flex-shrink-0 pb-3">
+          <CardTitle className="text-lg font-semibold flex items-center gap-2">
+            <div className="w-2 h-2 bg-slate-400 rounded-full"></div>
+            Properties
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center justify-center h-[500px] text-center">
+        <CardContent className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col items-center justify-center text-center py-8">
             <div className="text-gray-400 mb-2">
               <Edit2 className="h-12 w-12 mx-auto mb-4 opacity-20" />
               <p>Select an object to view or edit its properties</p>
@@ -132,31 +135,45 @@ export function PropertiesPanel({
   }
 
   return (
-    <Card className="h-[600px] overflow-y-auto">
-      <CardHeader className="flex flex-row items-start justify-between">
-        <div>
-          <CardTitle className="text-md flex items-center gap-2">
-            {selectedObject.label || 'Properties'}
-            {getObjectTypeLabel(selectedObject.type)}
-          </CardTitle>
-          {selectedObject.label && (
-            <span className="text-xs text-gray-500 mt-1">Type: {selectedObject.type}</span>
-          )}
+    <Card className="h-full flex flex-col">
+      <CardHeader className="flex-shrink-0 pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+            <div>
+              <CardTitle className="text-lg font-semibold">Properties</CardTitle>
+              <div className="flex items-center gap-2 mt-1">
+                {getObjectTypeLabel(selectedObject.type)}
+                {selectedObject.properties?.room_number && (
+                  <Badge variant="secondary" className="text-xs font-medium">
+                    #{selectedObject.properties.room_number}
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setLocalValues({})}
+            className="h-8 w-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </div>
-        <Button variant="ghost" size="icon" onClick={() => setLocalValues({})}>
-          <X className="h-4 w-4" />
-        </Button>
       </CardHeader>
-      
-      <CardContent className="space-y-4">
+      <CardContent className="flex-1 overflow-y-auto space-y-6 px-4">
         {/* Basic Properties */}
-        <div>
-          <h3 className="text-sm font-medium mb-2">Basic Information</h3>
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-700">
+            <div className="w-1 h-4 bg-blue-500 rounded-full"></div>
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Basic Information</h3>
+          </div>
           
           {selectedObject.type === 'room' && selectedObject.properties?.room_number && (
-            <div className="mb-3">
-              <Label className="text-xs text-gray-500">Room Number</Label>
-              <div className="font-medium">{selectedObject.properties.room_number}</div>
+            <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
+              <Label className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">Room Number</Label>
+              <div className="font-semibold text-lg text-slate-900 dark:text-slate-100 mt-1">{selectedObject.properties.room_number}</div>
             </div>
           )}
           
@@ -178,59 +195,82 @@ export function PropertiesPanel({
         <Separator />
         
         {/* Physical Properties */}
-        <div>
-          <h3 className="text-sm font-medium mb-2">Physical Properties</h3>
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-700">
+            <div className="w-1 h-4 bg-green-500 rounded-full"></div>
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Physical Properties</h3>
+          </div>
           
-          <div className="grid grid-cols-2 gap-3 mb-3">
-            <div>
-              <Label className="text-xs text-gray-500">Position X</Label>
-              <Input 
-                name="positionX"
-                value={localValues.positionX || ''}
-                onChange={handleInputChange}
-                className="mt-1"
-              />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">Position X</Label>
+              <div className="relative">
+                <Input 
+                  name="positionX"
+                  value={localValues.positionX || ''}
+                  onChange={handleInputChange}
+                  className="pr-8 font-mono text-sm"
+                  placeholder="0"
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400">px</span>
+              </div>
             </div>
-            <div>
-              <Label className="text-xs text-gray-500">Position Y</Label>
-              <Input 
-                name="positionY"
-                value={localValues.positionY || ''}
-                onChange={handleInputChange}
-                className="mt-1"
-              />
+            <div className="space-y-2">
+              <Label className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">Position Y</Label>
+              <div className="relative">
+                <Input 
+                  name="positionY"
+                  value={localValues.positionY || ''}
+                  onChange={handleInputChange}
+                  className="pr-8 font-mono text-sm"
+                  placeholder="0"
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400">px</span>
+              </div>
             </div>
           </div>
           
-          <div className="grid grid-cols-2 gap-3 mb-3">
-            <div>
-              <Label className="text-xs text-gray-500">Width</Label>
-              <Input 
-                name="width"
-                value={localValues.width || ''}
-                onChange={handleInputChange}
-                className="mt-1"
-              />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">Width</Label>
+              <div className="relative">
+                <Input 
+                  name="width"
+                  value={localValues.width || ''}
+                  onChange={handleInputChange}
+                  className="pr-8 font-mono text-sm"
+                  placeholder="100"
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400">px</span>
+              </div>
             </div>
-            <div>
-              <Label className="text-xs text-gray-500">Height</Label>
-              <Input 
-                name="height"
-                value={localValues.height || ''}
-                onChange={handleInputChange}
-                className="mt-1"
-              />
+            <div className="space-y-2">
+              <Label className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">Height</Label>
+              <div className="relative">
+                <Input 
+                  name="height"
+                  value={localValues.height || ''}
+                  onChange={handleInputChange}
+                  className="pr-8 font-mono text-sm"
+                  placeholder="100"
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400">px</span>
+              </div>
             </div>
           </div>
           
-          <div className="mb-3">
-            <Label className="text-xs text-gray-500">Rotation (degrees)</Label>
-            <Input 
-              name="rotation"
-              value={localValues.rotation || ''}
-              onChange={handleInputChange}
-              className="mt-1"
-            />
+          <div className="space-y-2">
+            <Label className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">Rotation</Label>
+            <div className="relative">
+              <Input 
+                name="rotation"
+                value={localValues.rotation || ''}
+                onChange={handleInputChange}
+                className="pr-8 font-mono text-sm"
+                placeholder="0"
+              />
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400">°</span>
+            </div>
           </div>
         </div>
         
@@ -253,8 +293,11 @@ export function PropertiesPanel({
           </>
         )}
         
-        <div className="pt-4">
-          <Button onClick={onUpdate} className="w-full">
+        <div className="pt-6 border-t border-slate-200 dark:border-slate-700">
+          <Button 
+            onClick={onUpdate} 
+            className="w-full h-11 font-medium bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-200"
+          >
             <Edit2 className="mr-2 h-4 w-4" />
             Edit Properties
           </Button>

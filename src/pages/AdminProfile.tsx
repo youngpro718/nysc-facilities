@@ -1,5 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronLeft, LayoutGrid, User, Users, BarChart3, Settings, Shield, Monitor } from "lucide-react";
+import { RateLimitManager } from "@/components/admin/RateLimitManager";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -135,6 +136,10 @@ export default function AdminProfile() {
               <BarChart3 className="h-4 w-4" />
               Analytics
             </TabsTrigger>
+            <TabsTrigger value="security" className="flex-1 min-w-fit flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 text-sm whitespace-nowrap">
+              <Shield className="h-4 w-4" />
+              Security
+            </TabsTrigger>
             <TabsTrigger value="settings" className="flex-1 min-w-fit flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 text-sm whitespace-nowrap">
               <Settings className="h-4 w-4" />
               All Settings
@@ -198,6 +203,20 @@ export default function AdminProfile() {
               </p>
             </div>
             <AdminAnalyticsTab />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="security" className="space-y-4 sm:space-y-6 mt-4">
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-xl font-semibold">Security Management</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Manage security settings, rate limits, and user access controls
+              </p>
+            </div>
+            <div className="grid gap-6">
+              <RateLimitManager />
+            </div>
           </div>
         </TabsContent>
 

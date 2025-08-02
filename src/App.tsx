@@ -26,6 +26,7 @@ import AdminKeyRequests from "@/pages/admin/KeyRequests";
 import SupplyRoom from "@/pages/SupplyRoom";
 import { CourtOperationsDashboard } from "@/pages/CourtOperationsDashboard";
 import { InventoryDashboard } from "@/pages/InventoryDashboard";
+import { CardShowcase } from "@/components/spaces/rooms/CardShowcase";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { EnhancedThemeProvider } from "@/providers/EnhancedThemeProvider";
 import SimpleDashboardProvider from "@/providers/SimpleDashboardProvider";
@@ -63,6 +64,11 @@ function AppContent() {
             <ModuleProtectedRoute moduleKey="spaces" moduleName="Spaces Management">
               <Spaces />
             </ModuleProtectedRoute>
+          </ProtectedRoute>
+        } />
+        <Route path="/card-showcase" element={
+          <ProtectedRoute requireAdmin>
+            <CardShowcase />
           </ProtectedRoute>
         } />
         {/* Issues now handled by Operations page */}

@@ -8,6 +8,7 @@ import {
   RefreshCw, 
   Settings, 
   Search,
+  Filter,
   Eye,
   EyeOff,
   Expand,
@@ -33,6 +34,7 @@ interface ViewControlsProps {
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
   onSearch: () => void;
+  onAdvancedSearch?: () => void;
 }
 
 export function ViewControls({
@@ -47,7 +49,8 @@ export function ViewControls({
   onToggleGrid,
   isFullscreen,
   onToggleFullscreen,
-  onSearch
+  onSearch,
+  onAdvancedSearch
 }: ViewControlsProps) {
   return (
     <TooltipProvider>
@@ -63,8 +66,24 @@ export function ViewControls({
               <Search className="h-3.5 w-3.5" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Search</TooltipContent>
+          <TooltipContent>Quick Search</TooltipContent>
         </Tooltip>
+
+        {onAdvancedSearch && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onAdvancedSearch}
+                className="h-7 w-7 px-0"
+              >
+                <Filter className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Advanced Search</TooltipContent>
+          </Tooltip>
+        )}
 
         <div className="h-4 w-px bg-border" />
 
