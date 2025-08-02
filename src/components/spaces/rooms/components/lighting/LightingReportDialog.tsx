@@ -34,7 +34,7 @@ export function LightingReportDialog({ room, trigger }: LightingReportDialogProp
           priority: issueType === 'light_out' ? 'high' : 'medium',
           status: 'open',
           issue_type: 'lighting',
-          building_id: room.building_id,
+          building_id: room.floor?.building?.id,
           floor_id: room.floor_id,
           room_id: room.id,
           location_description: location,

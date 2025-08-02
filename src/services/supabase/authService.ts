@@ -61,7 +61,11 @@ export async function signOut() {
  * Fetch user profile data
  */
 export async function fetchUserProfile(userId: string) {
-  console.log('fetchUserProfile - Starting for userId:', userId);
+  console.log('🔍 fetchUserProfile - Starting for userId:', userId);
+  
+  // Get current session to debug auth context
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  console.log('🔍 fetchUserProfile - Current session:', session?.user?.id, 'Error:', sessionError);
   
   // First try to get the role directly to check if RLS is blocking it
   const roleResponse = await supabase
@@ -70,21 +74,26 @@ export async function fetchUserProfile(userId: string) {
     .eq('user_id', userId)
     .maybeSingle();
     
-  console.log('fetchUserProfile - Role response:', roleResponse);
+  console.log('🔍 fetchUserProfile - Role response:', {
+    data: roleResponse.data,
+    error: roleResponse.error,
+    status: roleResponse.status,
+    statusText: roleResponse.statusText
+  });
   
   if (roleResponse.error) {
-    console.error('fetchUserProfile - Role query error:', roleResponse.error);
+    console.error('❌ fetchUserProfile - Role query error:', roleResponse.error);
     // If RLS is blocking, try using the secure function
-    console.log('fetchUserProfile - Trying secure function for role check...');
+    console.log('🔍 fetchUserProfile - Trying secure function for role check...');
     try {
       const { data: secureRoleData, error: secureError } = await supabase.rpc('get_current_user_role');
-      console.log('fetchUserProfile - Secure role response:', { data: secureRoleData, error: secureError });
+      console.log('🔍 fetchUserProfile - Secure role response:', { data: secureRoleData, error: secureError });
       if (!secureError && secureRoleData) {
         roleResponse.data = { role: secureRoleData };
         roleResponse.error = null;
       }
     } catch (secureRoleError) {
-      console.error('fetchUserProfile - Secure role function error:', secureRoleError);
+      console.error('❌ fetchUserProfile - Secure role function error:', secureRoleError);
     }
   }
   
@@ -99,10 +108,14 @@ export async function fetchUserProfile(userId: string) {
     `).eq('occupant_id', userId)
   ]);
   
-  console.log('fetchUserProfile - Raw profileResponse:', profileResponse);
+  console.log('🔍 fetchUserProfile - Profile response:', {
+    data: profileResponse.data ? 'Profile exists' : 'No profile',
+    error: profileResponse.error,
+    status: profileResponse.status
+  });
   
   if (profileResponse.error) {
-    console.error('fetchUserProfile - Profile query error:', profileResponse.error);
+    console.error('❌ fetchUserProfile - Profile query error:', profileResponse.error);
     throw profileResponse.error;
   }
   
@@ -111,12 +124,24 @@ export async function fetchUserProfile(userId: string) {
   const roomAssignments = roomAssignmentsResponse.data || [];
   const userRole = roleResponse.data?.role;
   
-  console.log('fetchUserProfile - userId:', userId);
-  console.log('fetchUserProfile - roleResponse.data:', roleResponse.data);
-  console.log('fetchUserProfile - userRole:', userRole);
-  console.log('fetchUserProfile - isAdmin will be:', userRole === 'admin');
-  console.log('fetchUserProfile - profile:', profile);
-  console.log('fetchUserProfile - departmentName:', departmentName);
+  console.log('🔍 fetchUserProfile - Final results:');
+  console.log('  - userId:', userId);
+  console.log('  - userRole:', userRole);
+  console.log('  - isAdmin:', userRole === 'admin');
+  console.log('  - profile exists:', !!profile);
+  console.log('  - profile.access_level:', profile?.access_level);
+  console.log('  - departmentName:', departmentName);
+  
+  // Additional debugging: Test direct role query
+  try {
+    const directRoleTest = await supabase
+      .from('user_roles')
+      .select('*')
+      .eq('user_id', userId);
+    console.log('🔍 fetchUserProfile - Direct role test:', directRoleTest);
+  } catch (error) {
+    console.error('❌ fetchUserProfile - Direct role test failed:', error);
+  }
   
   const result = {
     isAdmin: userRole === 'admin',
@@ -128,7 +153,11 @@ export async function fetchUserProfile(userId: string) {
     } as UserProfile & { department?: string; roomAssignments?: any[]; role?: string }
   };
   
-  console.log('fetchUserProfile - Final result:', result);
+  console.log('🎯 fetchUserProfile - Returning:', {
+    isAdmin: result.isAdmin,
+    role: result.role,
+    profileId: result.profile?.id
+  });
   
   return result;
 }
