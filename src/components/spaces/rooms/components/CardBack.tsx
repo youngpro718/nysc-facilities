@@ -65,7 +65,7 @@ export function CardBack({ room, onFlip }: CardBackProps) {
               <Badge variant="outline" className="text-xs capitalize">
                 {typeof room.room_type === 'string' ? room.room_type.replace(/_/g, ' ') : ''}
               </Badge>
-              {room.current_function && (
+              {room.current_function && room.current_function !== room.room_type && (
                 <Badge variant="outline" className="text-xs capitalize">
                   {room.current_function.replace(/_/g, ' ')}
                 </Badge>

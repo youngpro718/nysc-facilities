@@ -64,6 +64,7 @@ export function RoomCard({ room, onDelete, onRoomClick }: RoomCardProps) {
           className="relative w-full h-full transition-all duration-500"
           style={{ 
             transform: !isMobile && isFlipped ? 'rotateY(180deg)' : 'rotateY(0)',
+            transformStyle: 'preserve-3d'
           }}
         >
           {/* Front of card */}

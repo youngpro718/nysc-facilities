@@ -198,12 +198,12 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false }: CardFro
         {/* Practical Room Information */}
         <div className="space-y-2 mb-3">
           {/* Room Function & Usage */}
-          {room.current_function ? (
+          {room.current_function && room.current_function !== room.room_type ? (
             <div className="text-sm">
               <span className="font-medium text-foreground">Current Use:</span>
               <span className="text-muted-foreground ml-1">{room.current_function}</span>
             </div>
-          ) : room.room_type === 'courtroom' ? (
+          ) : room.room_type === 'courtroom' && !room.current_function ? (
             <div className="text-sm">
               <span className="font-medium text-foreground">Function:</span>
               <span className="text-muted-foreground ml-1">Active Courtroom</span>
