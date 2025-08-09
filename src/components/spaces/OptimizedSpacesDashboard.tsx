@@ -4,7 +4,8 @@
  * Uses materialized views and intelligent caching
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -32,12 +33,14 @@ import {
   useDebouncedSpaceSearch,
   type SpaceDashboardData
 } from '@/hooks/optimized/useOptimizedSpaces';
+import { SpaceCard as GridSpaceCard } from './views/grid/SpaceCard';
 
 interface OptimizedSpacesDashboardProps {
   className?: string;
 }
 
 export function OptimizedSpacesDashboard({ className }: OptimizedSpacesDashboardProps) {
+  const [searchParams] = useSearchParams();
   const [selectedBuilding, setSelectedBuilding] = useState<string>('');
   const [selectedFloor, setSelectedFloor] = useState<string>('');
   const [spaceTypeFilter, setSpaceTypeFilter] = useState<'room' | 'hallway' | 'door' | ''>('');
@@ -110,6 +113,22 @@ export function OptimizedSpacesDashboard({ className }: OptimizedSpacesDashboard
   const handleRefreshCache = async () => {
     await refreshCache();
   };
+
+  // Auto-scroll to a specific room card when navigated with ?roomId=...
+  useEffect(() => {
+    const roomId = searchParams.get('roomId');
+    if (!roomId) return;
+    // Wait a tick for cards to render
+    const timer = window.setTimeout(() => {
+      const el = document.getElementById(`space-card-${roomId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('ring-2', 'ring-primary');
+        window.setTimeout(() => el.classList.remove('ring-2', 'ring-primary'), 2000);
+      }
+    }, 50);
+    return () => window.clearTimeout(timer);
+  }, [searchParams, filteredSpaces]);
 
   if (hierarchyLoading || dashboardLoading) {
     return <DashboardSkeleton />;
@@ -260,7 +279,12 @@ export function OptimizedSpacesDashboard({ className }: OptimizedSpacesDashboard
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredSpaces.map(space => (
-              <SpaceCard key={space.id} space={space} />
+              <GridSpaceCard 
+                key={space.id} 
+                item={space as any} 
+                type={space.space_type as any} 
+                onDelete={() => {}} 
+              />
             ))}
           </div>
           {filteredSpaces.length === 0 && (
@@ -273,6 +297,7 @@ export function OptimizedSpacesDashboard({ className }: OptimizedSpacesDashboard
     </div>
   );
 }
+
 
 // Analytics Card Component
 interface AnalyticsCardProps {
@@ -308,66 +333,6 @@ function AnalyticsCard({ title, value, icon, subtitle, variant = 'default' }: An
   );
 }
 
-// Space Card Component
-interface SpaceCardProps {
-  space: SpaceDashboardData;
-}
-
-function SpaceCard({ space }: SpaceCardProps) {
-  const statusColors = {
-    active: 'bg-green-100 text-green-800',
-    inactive: 'bg-gray-100 text-gray-800',
-    under_maintenance: 'bg-yellow-100 text-yellow-800',
-  };
-
-  const typeIcons = {
-    room: <Building2 className="h-4 w-4" />,
-    hallway: <MapPin className="h-4 w-4" />,
-    door: <MapPin className="h-4 w-4" />,
-  };
-
-  return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex items-center gap-2">
-            {typeIcons[space.space_type]}
-            <h3 className="font-semibold text-sm">{space.name}</h3>
-          </div>
-          <Badge className={statusColors[space.status as keyof typeof statusColors] || statusColors.active}>
-            {space.status}
-          </Badge>
-        </div>
-        
-        {space.room_number && (
-          <p className="text-xs text-muted-foreground mb-2">Room {space.room_number}</p>
-        )}
-        
-        <p className="text-xs text-muted-foreground mb-3">
-          {space.building_name} • {space.floor_name}
-        </p>
-        
-        <div className="grid grid-cols-3 gap-2 text-xs">
-          <div className="text-center">
-            <Users className="h-3 w-3 mx-auto mb-1" />
-            <p className="font-medium">{space.occupant_count}</p>
-            <p className="text-muted-foreground">Occupants</p>
-          </div>
-          <div className="text-center">
-            <AlertTriangle className="h-3 w-3 mx-auto mb-1" />
-            <p className="font-medium">{space.open_issue_count}</p>
-            <p className="text-muted-foreground">Issues</p>
-          </div>
-          <div className="text-center">
-            <Lightbulb className="h-3 w-3 mx-auto mb-1" />
-            <p className="font-medium">{space.fixture_count}</p>
-            <p className="text-muted-foreground">Fixtures</p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 
 // Loading Skeleton
 function DashboardSkeleton() {
