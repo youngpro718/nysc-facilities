@@ -89,24 +89,27 @@ export function createRetryableQuery<T>(
   maxRetries: number = 3,
   delay: number = 1000
 ): Promise<T> {
-  return new Promise(async (resolve, reject) => {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        const result = await queryFn();
-        resolve(result);
-        return;
-      } catch (error) {
-        console.log(`Query attempt ${attempt} failed:`, error);
-        
-        if (attempt === maxRetries) {
-          reject(error);
+  return new Promise((resolve, reject) => {
+    const run = async () => {
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          const result = await queryFn();
+          resolve(result);
           return;
+        } catch (error) {
+          console.log(`Query attempt ${attempt} failed:`, error);
+
+          if (attempt === maxRetries) {
+            reject(error);
+            return;
+          }
+
+          // Exponential backoff
+          const waitTime = delay * Math.pow(2, attempt - 1);
+          await new Promise((r) => setTimeout(r, waitTime));
         }
-        
-        // Exponential backoff
-        const waitTime = delay * Math.pow(2, attempt - 1);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
       }
-    }
+    };
+    void run();
   });
 }

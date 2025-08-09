@@ -87,26 +87,27 @@ export function ExportImportDialog({
       let filename: string;
 
       switch (exportFormat) {
-        case 'csv':
+        case 'csv': {
           const csvContent = convertToCSV(exportData);
           blob = new Blob([csvContent], { type: 'text/csv' });
           filename = `room-assignments-${new Date().toISOString().split('T')[0]}.csv`;
           break;
-        
-        case 'json':
+        }
+        case 'json': {
           blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
           filename = `room-assignments-${new Date().toISOString().split('T')[0]}.json`;
           break;
-        
-        case 'excel':
+        }
+        case 'excel': {
           // For Excel, we'll export as CSV for now (would need additional library for true Excel format)
           const excelContent = convertToCSV(exportData);
           blob = new Blob([excelContent], { type: 'application/vnd.ms-excel' });
           filename = `room-assignments-${new Date().toISOString().split('T')[0]}.csv`;
           break;
-        
-        default:
+        }
+        default: {
           throw new Error('Unsupported export format');
+        }
       }
 
       const url = URL.createObjectURL(blob);

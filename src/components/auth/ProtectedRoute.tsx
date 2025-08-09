@@ -18,6 +18,9 @@ export function ProtectedRoute({
   allowDepartments = [],
   requireRoomAssignment
 }: ProtectedRouteProps) {
+  // Hooks must be called unconditionally at the top level
+  const { isAuthenticated, isAdmin, isLoading, profile } = useAuth();
+
   // Dev-only bypass: allow rendering without auth when explicitly enabled
   const disableAuthGuard =
     (import.meta as any)?.env?.VITE_DISABLE_AUTH_GUARD === 'true' ||
@@ -26,8 +29,6 @@ export function ProtectedRoute({
   if (disableAuthGuard) {
     return <>{children}</>;
   }
-
-  const { isAuthenticated, isAdmin, isLoading, profile } = useAuth();
 
   // Show loading while auth state is being determined
   if (isLoading) {
