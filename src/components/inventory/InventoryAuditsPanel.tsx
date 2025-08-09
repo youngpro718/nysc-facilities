@@ -53,54 +53,68 @@ export function InventoryAuditsPanel() {
   const [filterType, setFilterType] = useState('all');
   const [activeTab, setActiveTab] = useState('transactions');
 
-  // Fetch inventory transactions
-  const { data: transactions = [], isLoading: transactionsLoading } = useQuery({
+  // Fetch inventory transactions (flat), then hydrate item/user/category via batched lookups
+  const { data: transactions = [], isLoading: transactionsLoading, isError: txErrorFlag, error: txError } = useQuery({
     queryKey: ['inventory-transactions'],
     queryFn: async (): Promise<InventoryTransaction[]> => {
-      const { data, error } = await supabase
+      // 1) Base transactions (use * to avoid column mismatch across environments)
+      const { data: txData, error: baseErr } = await supabase
         .from('inventory_item_transactions')
-        .select(`
-          id,
-          transaction_type,
-          quantity,
-          previous_quantity,
-          new_quantity,
-          reason,
-          performed_by,
-          created_at,
-          inventory_items!inner (
-            id,
-            name,
-            inventory_categories (
-              name
-            )
-          ),
-          profiles!performed_by (
-            first_name,
-            last_name
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(100);
+      if (baseErr) throw baseErr;
 
-      if (error) throw error;
+      const itemIds = Array.from(new Set((txData || []).map(t => t.item_id).filter(Boolean)));
+      const userIds = Array.from(new Set((txData || []).map(t => t.performed_by).filter(Boolean)));
 
-      return data.map((transaction: any) => ({
-        id: transaction.id,
-        transaction_type: transaction.transaction_type,
-        quantity: transaction.quantity,
-        previous_quantity: transaction.previous_quantity,
-        new_quantity: transaction.new_quantity,
-        reason: transaction.reason,
-        performed_by: transaction.performed_by,
-        performed_by_name: transaction.profiles 
-          ? `${transaction.profiles.first_name} ${transaction.profiles.last_name}`
-          : 'Unknown User',
-        created_at: transaction.created_at,
-        item_id: transaction.inventory_items.id,
-        item_name: transaction.inventory_items.name,
-        category_name: transaction.inventory_items.inventory_categories?.name,
-      }));
+      // 2) Items (name, category)
+      const { data: items, error: itemsErr } = await supabase
+        .from('inventory_items')
+        .select('id, name, category_id')
+        .in('id', itemIds.length ? itemIds : ['00000000-0000-0000-0000-000000000000']);
+      if (itemsErr) throw itemsErr;
+
+      const categoryIds = Array.from(new Set((items || []).map(i => i.category_id).filter(Boolean)));
+      const { data: categories, error: catsErr } = await supabase
+        .from('inventory_categories')
+        .select('id, name')
+        .in('id', categoryIds.length ? categoryIds : ['00000000-0000-0000-0000-000000000000']);
+      if (catsErr) throw catsErr;
+
+      // 3) Users
+      const { data: users, error: usersErr } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', userIds.length ? userIds : ['00000000-0000-0000-0000-000000000000']);
+      if (usersErr) throw usersErr;
+
+      const itemsById = new Map((items || []).map((i: any) => [i.id, i]));
+      const catsById = new Map((categories || []).map((c: any) => [c.id, c]));
+      const usersById = new Map((users || []).map((u: any) => [u.id, u]));
+
+      const hydrated = (txData || []).map((t: any) => {
+        const item = itemsById.get(t.item_id);
+        const cat = item ? catsById.get(item.category_id) : undefined;
+        const user = usersById.get(t.performed_by);
+        return {
+          id: t.id,
+          transaction_type: t.transaction_type,
+          quantity: t.quantity,
+          previous_quantity: t.previous_quantity ?? t.quantity,
+          new_quantity: t.new_quantity ?? t.quantity,
+          reason: t.reason ?? '',
+          performed_by: t.performed_by,
+          performed_by_name: user ? `${user.first_name} ${user.last_name}` : 'Unknown User',
+          created_at: t.created_at,
+          item_id: t.item_id,
+          item_name: item?.name ?? 'Unknown Item',
+          category_name: cat?.name,
+        } as InventoryTransaction;
+      });
+
+      console.debug('[InventoryAuditsPanel] hydrated', { count: hydrated.length });
+      return hydrated;
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes

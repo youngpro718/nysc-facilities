@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +40,8 @@ type InventoryItem = {
 
 export const InventoryItemsPanel = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [stockDialogOpen, setStockDialogOpen] = useState(false);
@@ -47,49 +49,46 @@ export const InventoryItemsPanel = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: items, isLoading } = useQuery({
-    queryKey: ["inventory-items", searchQuery],
+  const { data, isLoading, isError, error } = useQuery<{ items: InventoryItem[]; total: number }>({
+    queryKey: ["inventory-items", searchQuery, page, pageSize],
     queryFn: async () => {
+      // Single round trip with relational selects + count + pagination
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+
       let query = supabase
         .from("inventory_items")
-        .select(`
-          *,
-          inventory_categories(name, color, icon)
-        `)
-        .order("name");
+        .select("*", { count: "exact" })
+        .order("name")
+        .range(from, to);
 
       if (searchQuery) {
         query = query.or(`name.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
       }
 
-      const { data: inventoryData, error } = await query;
+      const { data, error, count } = await query;
       if (error) throw error;
 
-      // Fetch room data separately for items that have storage_room_id
-      const itemsWithRooms = await Promise.all(
-        (inventoryData || []).map(async (item) => {
-          if (item.storage_room_id) {
-            const { data: roomData } = await supabase
-              .from("rooms")
-              .select("name, room_number")
-              .eq("id", item.storage_room_id)
-              .single();
-            
-            return {
-              ...item,
-              rooms: roomData || null
-            };
-          }
-          return {
-            ...item,
-            rooms: null
-          };
-        })
-      );
+      const normalized = (data || []) as InventoryItem[];
 
-      return itemsWithRooms as InventoryItem[];
+      // Debug: log count and returned items length to spot RLS or filter issues
+      console.debug('[InventoryItemsPanel] fetched', { totalCount: count, page, pageSize, itemsLength: normalized.length, searchQuery });
+      return { items: normalized, total: count ?? 0 };
     },
+    refetchOnWindowFocus: false,
+    retry: 2,
+    staleTime: 3 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
+
+  const items = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  // Reset to first page when search changes
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery]);
 
   const deleteItemMutation = useMutation({
     mutationFn: async (itemId: string) => {
@@ -144,15 +143,67 @@ export const InventoryItemsPanel = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Inventory Items</h2>
-          <p className="text-muted-foreground">Manage your supplies and equipment</p>
-        </div>
+      <div className="flex items-center gap-2 mb-4">
+        <Input
+          placeholder="Search items..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="max-w-sm"
+        />
         <Button onClick={() => setCreateDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="mr-2 h-4 w-4" />
           Add Item
         </Button>
+      </div>
+
+      {/* Pagination Controls */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div className="text-sm text-muted-foreground">
+          {total > 0 ? (
+            <span>
+              Showing {Math.min((page - 1) * pageSize + 1, total)}–
+              {Math.min(page * pageSize, total)} of {total}
+            </span>
+          ) : (
+            <span>No results</span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-muted-foreground">Rows:</label>
+          <select
+            className="h-9 rounded-md border bg-background px-2 text-sm"
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setPage(1);
+            }}
+          >
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+          </select>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1 || isLoading}
+            >
+              Prev
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Page {page} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages || isLoading}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Search */}
@@ -276,6 +327,22 @@ export const InventoryItemsPanel = () => {
               </Card>
             );
           })
+        )}
+      </div>
+
+      {/* Error State */}
+      {isError && (
+        <div className="mt-4 rounded border border-destructive/30 bg-destructive/10 text-destructive p-3 text-sm">
+          Failed to load items: {String((error as any)?.message || error)}
+        </div>
+      )}
+
+      {/* Totals Summary */}
+      <div className="mt-4 text-xs text-muted-foreground">
+        {total > 0 ? (
+          <span>Showing {Math.min((page - 1) * pageSize + 1, total)}–{Math.min(page * pageSize, total)} of {total}</span>
+        ) : (
+          <span>No items available.</span>
         )}
       </div>
 

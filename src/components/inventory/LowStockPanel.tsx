@@ -22,118 +22,160 @@ type LowStockItem = {
 };
 
 export const LowStockPanel = () => {
-  const { data: lowStockItems, isLoading } = useQuery({
+  const { data: lowStockItems, isLoading, isError: lowErr, error: lowError } = useQuery({
     queryKey: ["low-stock-items"],
     queryFn: async (): Promise<LowStockItem[]> => {
-      // Get all items with minimum quantity set and filter in memory
+      // Safer: simple select to avoid PostgREST 400s with nested relations
       const { data, error } = await supabase
         .from("inventory_items")
-        .select(`
-          *,
-          inventory_categories(name, color)
-        `)
+        .select("*")
         .not("minimum_quantity", "is", null)
         .gt("minimum_quantity", 0)
         .order("quantity", { ascending: true });
 
       if (error) throw error;
+      // Base mapping
+      const base = (data || []).map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        minimum_quantity: item.minimum_quantity || 0,
+        unit: item.unit || '',
+        location_details: item.location_details || '',
+        preferred_vendor: item.preferred_vendor || '',
+        category_name: "Uncategorized",
+        category_color: "#6b7280", // default gray-500
+        room_name: "",
+        room_number: "",
+        storage_room_id: item.storage_room_id,
+      }));
 
-      // Get room data separately for items that have storage_room_id
-      const itemsWithRooms = await Promise.all(
-        (data || []).map(async (item) => {
-          let roomData = { name: "", room_number: "" };
-          
-          if (item.storage_room_id) {
-            const { data: room } = await supabase
-              .from("rooms")
-              .select("name, room_number")
-              .eq("id", item.storage_room_id)
-              .single();
-            
-            if (room) {
-              roomData = { name: room.name || "", room_number: room.room_number || "" };
-            }
-          }
+      // Optional enrichment: categories and rooms
+      try {
+        const categoryIds = Array.from(new Set((data || []).map((i: any) => i.category_id).filter(Boolean)));
+        const roomIds = Array.from(new Set((data || []).map((i: any) => i.storage_room_id).filter(Boolean)));
 
+        const [catsRes, roomsRes] = await Promise.all([
+          categoryIds.length
+            ? supabase.from('inventory_categories').select('id, name, color').in('id', categoryIds)
+            : Promise.resolve({ data: [], error: null } as any),
+          roomIds.length
+            ? supabase.from('rooms').select('id, name, room_number').in('id', roomIds)
+            : Promise.resolve({ data: [], error: null } as any),
+        ]);
+
+        const catsById = new Map(((catsRes.data as any[]) || []).map((c: any) => [c.id, c]));
+        const roomsById = new Map(((roomsRes.data as any[]) || []).map((r: any) => [r.id, r]));
+
+        const enriched = base.map((it: any) => {
+          const cat = catsById.get((data as any[]).find(d => d.id === it.id)?.category_id);
+          const room = roomsById.get(it.storage_room_id);
           return {
-            id: item.id,
-            name: item.name,
-            quantity: item.quantity,
-            minimum_quantity: item.minimum_quantity || 0,
-            unit: item.unit || '',
-            location_details: item.location_details || '',
-            preferred_vendor: item.preferred_vendor || '',
-            category_name: item.inventory_categories?.name || "Uncategorized",
-            category_color: item.inventory_categories?.color || "gray",
-            room_name: roomData.name,
-            room_number: roomData.room_number,
-            storage_room_id: item.storage_room_id,
-          };
-        })
-      );
+            ...it,
+            category_name: cat?.name ?? it.category_name,
+            category_color: cat?.color ?? it.category_color,
+            room_name: room?.name ?? it.room_name,
+            room_number: room?.room_number ?? it.room_number,
+          } as LowStockItem;
+        });
 
-      // Filter to only include items that are actually below minimum quantity
-      return itemsWithRooms.filter(item => item.quantity < item.minimum_quantity);
+        return enriched.filter(item => item.quantity < item.minimum_quantity);
+      } catch (e) {
+        console.warn('[LowStockPanel] enrichment failed, using base data:', e);
+        return base.filter(item => item.quantity < item.minimum_quantity);
+      }
     },
   });
 
-  const { data: outOfStockItems } = useQuery({
+  const { data: outOfStockItems, isError: outErr, error: outError } = useQuery({
     queryKey: ["out-of-stock-items"],
     queryFn: async (): Promise<LowStockItem[]> => {
       const { data, error } = await supabase
         .from("inventory_items")
-        .select(`
-          *,
-          inventory_categories(name, color)
-        `)
+        .select("*")
         .eq("quantity", 0)
         .order("name");
 
       if (error) throw error;
-
-      // Get room data separately for items that have storage_room_id
-      const itemsWithRooms = await Promise.all(
-        (data || []).map(async (item) => {
-          let roomData = { name: "", room_number: "" };
-          
-          if (item.storage_room_id) {
-            const { data: room } = await supabase
-              .from("rooms")
-              .select("name, room_number")
-              .eq("id", item.storage_room_id)
-              .single();
-            
-            if (room) {
-              roomData = { name: room.name || "", room_number: room.room_number || "" };
-            }
-          }
-
+      const base = (data || []).map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        minimum_quantity: item.minimum_quantity || 0,
+        unit: item.unit || '',
+        location_details: item.location_details || '',
+        preferred_vendor: item.preferred_vendor || '',
+        category_name: "Uncategorized",
+        category_color: "#6b7280",
+        room_name: "",
+        room_number: "",
+        storage_room_id: item.storage_room_id,
+      }));
+      try {
+        const categoryIds = Array.from(new Set((data || []).map((i: any) => i.category_id).filter(Boolean)));
+        const roomIds = Array.from(new Set((data || []).map((i: any) => i.storage_room_id).filter(Boolean)));
+        const [catsRes, roomsRes] = await Promise.all([
+          categoryIds.length
+            ? supabase.from('inventory_categories').select('id, name, color').in('id', categoryIds)
+            : Promise.resolve({ data: [], error: null } as any),
+          roomIds.length
+            ? supabase.from('rooms').select('id, name, room_number').in('id', roomIds)
+            : Promise.resolve({ data: [], error: null } as any),
+        ]);
+        const catsById = new Map(((catsRes.data as any[]) || []).map((c: any) => [c.id, c]));
+        const roomsById = new Map(((roomsRes.data as any[]) || []).map((r: any) => [r.id, r]));
+        return base.map((it: any) => {
+          const cat = catsById.get((data as any[]).find(d => d.id === it.id)?.category_id);
+          const room = roomsById.get(it.storage_room_id);
           return {
-            id: item.id,
-            name: item.name,
-            quantity: item.quantity,
-            minimum_quantity: item.minimum_quantity || 0,
-            unit: item.unit || '',
-            location_details: item.location_details || '',
-            preferred_vendor: item.preferred_vendor || '',
-            category_name: item.inventory_categories?.name || "Uncategorized",
-            category_color: item.inventory_categories?.color || "gray",
-            room_name: roomData.name,
-            room_number: roomData.room_number,
-            storage_room_id: item.storage_room_id,
-          };
-        })
-      );
-
-      return itemsWithRooms;
+            ...it,
+            category_name: cat?.name ?? it.category_name,
+            category_color: cat?.color ?? it.category_color,
+            room_name: room?.name ?? it.room_name,
+            room_number: room?.room_number ?? it.room_number,
+          } as LowStockItem;
+        });
+      } catch (e) {
+        console.warn('[LowStockPanel] enrichment (OOS) failed, using base data:', e);
+        return base;
+      }
     },
   });
 
   const getStockLevel = (quantity: number, minimum: number) => {
-    if (quantity === 0) return { level: "critical", label: "Out of Stock", color: "bg-red-100 text-red-800" };
-    if (quantity < minimum * 0.5) return { level: "critical", label: "Critical", color: "bg-red-100 text-red-800" };
-    if (quantity < minimum) return { level: "low", label: "Low Stock", color: "bg-orange-100 text-orange-800" };
-    return { level: "normal", label: "Normal", color: "bg-green-100 text-green-800" };
+    if (quantity === 0) {
+      return {
+        level: "critical",
+        label: "Out of Stock",
+        badgeVariant: "destructive" as const,
+        badgeClass: "",
+      };
+    }
+    if (quantity < minimum) {
+      return {
+        level: "warning",
+        label: "Low Stock",
+        // Amber scheme with good contrast
+        badgeVariant: undefined,
+        badgeClass: "bg-amber-100 text-amber-900 dark:bg-amber-200/20 dark:text-amber-300",
+      } as const;
+    }
+    return {
+      level: "ok",
+      label: "OK",
+      badgeVariant: undefined,
+      badgeClass: "bg-muted text-foreground",
+    } as const;
+  };
+
+  const CategoryChip = ({ name, color }: { name: string; color: string }) => {
+    // Render neutral badge with small color dot to avoid unreadable text-on-color
+    return (
+      <Badge variant="outline">
+        <span className="inline-block h-2 w-2 rounded-full mr-2" style={{ backgroundColor: color }} />
+        {name}
+      </Badge>
+    );
   };
 
   const getCategoryColor = (color: string) => {
@@ -155,7 +197,7 @@ export const LowStockPanel = () => {
   }
 
   const criticalItems = lowStockItems?.filter(item => getStockLevel(item.quantity, item.minimum_quantity).level === "critical") || [];
-  const lowItems = lowStockItems?.filter(item => getStockLevel(item.quantity, item.minimum_quantity).level === "low") || [];
+  const lowItems = lowStockItems?.filter(item => getStockLevel(item.quantity, item.minimum_quantity).level === "warning") || [];
 
   return (
     <div className="space-y-6">
@@ -212,16 +254,14 @@ export const LowStockPanel = () => {
           </h3>
           <div className="grid gap-4">
             {outOfStockItems.map((item) => (
-              <Card key={item.id} className="border-red-200">
+              <Card key={item.id} className="border-destructive/20">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-2">
                       <div className="flex items-center gap-3">
                         <h4 className="font-medium">{item.name}</h4>
-                        <Badge className="bg-red-100 text-red-800">Out of Stock</Badge>
-                        <Badge className={getCategoryColor(item.category_color)}>
-                          {item.category_name}
-                        </Badge>
+                        <Badge variant="destructive">Out of Stock</Badge>
+                        <CategoryChip name={item.category_name} color={item.category_color} />
                       </div>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <span>Current: {item.quantity} {item.unit}</span>
@@ -236,7 +276,7 @@ export const LowStockPanel = () => {
                         </p>
                       )}
                     </div>
-                    <Button size="sm" className="bg-red-600 hover:bg-red-700">
+                    <Button size="sm" variant="destructive">
                       <Plus className="h-4 w-4 mr-2" />
                       Restock
                     </Button>
@@ -245,6 +285,12 @@ export const LowStockPanel = () => {
               </Card>
             ))}
           </div>
+        </div>
+      )}
+
+      {(lowErr || outErr) && (
+        <div className="mb-4 rounded border border-destructive/30 bg-destructive/10 text-destructive p-3 text-sm">
+          Failed to load some stock data: {String((lowError as any)?.message || lowError || (outError as any)?.message || outError)}
         </div>
       )}
 
@@ -259,18 +305,18 @@ export const LowStockPanel = () => {
             {lowStockItems.map((item) => {
               const stockLevel = getStockLevel(item.quantity, item.minimum_quantity);
               return (
-                <Card key={item.id} className={stockLevel.level === "critical" ? "border-red-200" : "border-orange-200"}>
+                <Card key={item.id} className={stockLevel.level === "critical" ? "border-destructive/20" : "border-orange-200"}>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="space-y-2">
                         <div className="flex items-center gap-3">
                           <h4 className="font-medium">{item.name}</h4>
-                          <Badge className={stockLevel.color}>
-                            {stockLevel.label}
-                          </Badge>
-                          <Badge className={getCategoryColor(item.category_color)}>
-                            {item.category_name}
-                          </Badge>
+                          {stockLevel.badgeVariant ? (
+                            <Badge variant={stockLevel.badgeVariant}>{stockLevel.label}</Badge>
+                          ) : (
+                            <Badge className={stockLevel.badgeClass}>{stockLevel.label}</Badge>
+                          )}
+                          <CategoryChip name={item.category_name} color={item.category_color} />
                         </div>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span>Current: {item.quantity} {item.unit}</span>
