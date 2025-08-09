@@ -52,6 +52,8 @@ export function InventoryAuditsPanel() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [activeTab, setActiveTab] = useState('transactions');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   // Fetch inventory transactions (flat), then hydrate item/user/category via batched lookups
   const { data: transactions = [], isLoading: transactionsLoading, isError: txErrorFlag, error: txError } = useQuery({
@@ -166,6 +168,52 @@ export function InventoryAuditsPanel() {
       return matchesSearch && matchesType;
     });
   }, [transactions, searchTerm, filterType]);
+
+  // Reset to first page when filters change
+  React.useEffect(() => {
+    setPage(1);
+  }, [searchTerm, filterType]);
+
+  const total = filteredTransactions.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const pageItems = React.useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredTransactions.slice(start, start + pageSize);
+  }, [filteredTransactions, page, pageSize]);
+
+  const exportCSV = () => {
+    const rows = filteredTransactions.map(t => ({
+      id: t.id,
+      date: new Date(t.created_at).toISOString(),
+      item_name: t.item_name,
+      transaction_type: t.transaction_type,
+      quantity: t.quantity,
+      previous_quantity: t.previous_quantity,
+      new_quantity: t.new_quantity,
+      reason: t.reason,
+      performed_by: t.performed_by_name ?? '',
+      category_name: t.category_name ?? '',
+    }));
+    const header = Object.keys(rows[0] || {
+      id: '', date: '', item_name: '', transaction_type: '', quantity: 0,
+      previous_quantity: 0, new_quantity: 0, reason: '', performed_by: '', category_name: ''
+    });
+    const escape = (v: any) => {
+      const s = String(v ?? '');
+      if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+        return '"' + s.replace(/"/g, '""') + '"';
+      }
+      return s;
+    };
+    const lines = [header.join(',')].concat(rows.map(r => header.map(k => escape((r as any)[k])).join(',')));
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `inventory_audits_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const getTransactionIcon = (type: string) => {
     switch (type) {
@@ -303,8 +351,11 @@ export function InventoryAuditsPanel() {
 
       {/* Search and Filters */}
       <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-4">
+        <CardHeader>
+          <CardTitle>Filters & Tools</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-3 md:items-center">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -314,7 +365,7 @@ export function InventoryAuditsPanel() {
                 className="pl-10"
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
               <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
@@ -326,8 +377,28 @@ export function InventoryAuditsPanel() {
                 <option value="adjustment">Adjustments</option>
                 <option value="audit">Audits</option>
               </select>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Rows:</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => setPageSize(Number(e.target.value))}
+                  className="px-2 py-2 border rounded-md text-sm"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+              <Button variant="outline" onClick={exportCSV}>
+                <Download className="h-4 w-4 mr-2" /> Export CSV
+              </Button>
             </div>
           </div>
+          {txErrorFlag && (
+            <div className="mt-3 rounded border border-destructive/30 bg-destructive/10 text-destructive p-2 text-sm">
+              Failed to load transactions: {String((txError as any)?.message || txError)}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -344,7 +415,7 @@ export function InventoryAuditsPanel() {
                 <p>No transactions found matching your criteria.</p>
               </div>
             ) : (
-              filteredTransactions.map((transaction) => (
+              pageItems.map((transaction) => (
                 <div
                   key={transaction.id}
                   className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50"
@@ -390,6 +461,19 @@ export function InventoryAuditsPanel() {
                   </div>
                 </div>
               ))
+            )}
+            {/* Pagination Controls */}
+            {filteredTransactions.length > 0 && (
+              <div className="flex items-center justify-between pt-3 text-sm text-muted-foreground">
+                <div>
+                  Showing {Math.min((page - 1) * pageSize + 1, total)}–{Math.min(page * pageSize, total)} of {total}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button disabled={page <= 1} variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))}>Prev</Button>
+                  <span>Page {page} of {totalPages}</span>
+                  <Button disabled={page >= totalPages} variant="outline" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))}>Next</Button>
+                </div>
+              </div>
             )}
           </div>
         </CardContent>
