@@ -154,6 +154,7 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
       { title: 'Occupants', icon: Users },
       { title: 'Keys', icon: KeyRound },
       { title: 'Inventory', icon: Package2 },
+      { title: 'Lighting', icon: Zap },
       { title: 'Court Operations', icon: Gavel },
       { type: "separator" },
       { title: 'Admin Profile', icon: UserCog },

@@ -8,7 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ClipboardCheck } from "lucide-react";
-import { LightingFixture } from "../types";
+import { LightingFixture } from "@/types/lighting";
 
 interface InspectionDialogProps {
   fixture: LightingFixture;

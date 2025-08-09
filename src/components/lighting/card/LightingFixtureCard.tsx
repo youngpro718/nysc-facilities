@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { LightingFixture } from "@/components/lighting/types";
+import { LightingFixture } from "@/types/lighting";
 import { CardFront } from "./CardFront";
 import { CardBack } from "./CardBack";
 import { cn } from "@/lib/utils";
@@ -24,8 +24,8 @@ export const LightingFixtureCard = ({
 
   return (
     <div 
-      className="relative w-full h-[320px]"
-      style={{ perspective: '1000px' }}
+      className="relative w-full h-[260px]"
+      style={{ perspective: '1000px', WebkitPerspective: '1000px' as any }}
     >
       <div 
         className={cn(
@@ -33,7 +33,11 @@ export const LightingFixtureCard = ({
           "preserve-3d transition-transform",
           isFlipped ? "[transform:rotateY(180deg)]" : ""
         )}
-        style={{ transformStyle: 'preserve-3d' }}
+        style={{ 
+          transformStyle: 'preserve-3d',
+          WebkitTransformStyle: 'preserve-3d' as any,
+          willChange: 'transform'
+        }}
       >
         {/* Front of card */}
         <div 

@@ -21,10 +21,11 @@ const Layout = () => {
   const { isAuthenticated, isAdmin, isLoading, signOut, user } = useAuth();
   const { permissions, userRole, profile, loading: permissionsLoading } = useRolePermissions();
 
-  // Get filtered navigation based on role permissions
-  const navigation = (userRole && !permissionsLoading) 
+  // Only build navigation once permissions are ready to avoid flashing the wrong menu after login
+  const navReady = !!userRole && !permissionsLoading;
+  const navigation = navReady 
     ? getRoleBasedNavigation(permissions, userRole, profile) 
-    : userNavigation;
+    : [];
     
   console.log('Layout - userRole:', userRole, 'permissionsLoading:', permissionsLoading);
   console.log('Layout - isAdmin:', isAdmin);
@@ -102,21 +103,29 @@ const Layout = () => {
                 
                 {/* Mobile Menu */}
                 <div className="md:hidden">
-                  <MobileMenu
-                    isOpen={isMobileMenuOpen}
-                    onOpenChange={setIsMobileMenuOpen}
-                    navigation={navigation}
-                    onNavigationChange={handleNavigationChange}
-                    onSignOut={signOut}
-                  />
+                  {navReady ? (
+                    <MobileMenu
+                      isOpen={isMobileMenuOpen}
+                      onOpenChange={setIsMobileMenuOpen}
+                      navigation={navigation}
+                      onNavigationChange={handleNavigationChange}
+                      onSignOut={signOut}
+                    />
+                  ) : (
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  )}
                 </div>
 
                 {/* Desktop Navigation */}
                 <div className="hidden md:flex items-center gap-4">
-                  <DesktopNavigationImproved
-                    navigation={navigation}
-                    onSignOut={signOut}
-                  />
+                  {navReady ? (
+                    <DesktopNavigationImproved
+                      navigation={navigation}
+                      onSignOut={signOut}
+                    />
+                  ) : (
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  )}
                 </div>
               </div>
             </div>

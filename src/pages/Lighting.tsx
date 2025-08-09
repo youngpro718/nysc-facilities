@@ -3,9 +3,12 @@ import { LightingFixturesList } from "@/components/lighting/LightingFixturesList
 import { CreateLightingDialog } from "@/components/lighting/CreateLightingDialog";
 import { useLightingFixtures } from "@/hooks/useLightingFixtures";
 import { Lightbulb } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 
 export default function Lighting() {
   const { fixtures, isLoading, refetch } = useLightingFixtures();
+  const [searchParams] = useSearchParams();
+  const statusFilter = searchParams.get('status') || undefined;
   
   return (
     <div className="container mx-auto p-4 sm:p-6 space-y-6">
@@ -30,7 +33,12 @@ export default function Lighting() {
           <div className="text-muted-foreground">Loading lights...</div>
         </div>
       ) : (
-        <LightingFixturesList />
+        <LightingFixturesList 
+          statusFilter={statusFilter}
+          fixtures={fixtures || []}
+          isLoading={isLoading}
+          refetch={refetch}
+        />
       )}
     </div>
   );

@@ -5,13 +5,10 @@ import { Card } from "@/components/ui/card";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { MaintenanceLogin } from "@/components/maintenance/MaintenanceLogin";
-import { useMaintenanceMode } from "@/hooks/useMaintenanceMode";
 
 const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const { isLoading, isAuthenticated, maintenanceLogin } = useAuth();
-  const { isMaintenanceMode } = useMaintenanceMode();
+  const { isLoading, isAuthenticated } = useAuth();
 
   // Show loading while auth state is being determined
   if (isLoading) {
@@ -29,11 +26,6 @@ const LoginPage = () => {
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
-  }
-
-  // Show maintenance mode login if enabled
-  if (isMaintenanceMode) {
-    return <MaintenanceLogin onMaintenanceLogin={maintenanceLogin} />;
   }
 
   return (

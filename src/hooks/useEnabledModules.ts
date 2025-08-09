@@ -32,8 +32,18 @@ export function useEnabledModules() {
   const [enabledModules, setEnabledModules] = useState<EnabledModules>(DEFAULT_MODULES);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  
+  // Dev-only bypass to quickly explore the app without toggling modules in DB
+  // Set VITE_DISABLE_MODULE_GATES=true in .env.local and restart Vite
+  const DISABLE_GATES = import.meta.env.VITE_DISABLE_MODULE_GATES === 'true';
 
   const fetchEnabledModules = async () => {
+    if (DISABLE_GATES) {
+      // Immediately use defaults and skip network
+      setEnabledModules(DEFAULT_MODULES);
+      setLoading(false);
+      return;
+    }
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -84,10 +94,15 @@ export function useEnabledModules() {
 
   const updateEnabledModules = async (modules: Partial<EnabledModules>) => {
     try {
+      const updatedModules = { ...enabledModules, ...modules };
+      if (DISABLE_GATES) {
+        // Local-only update in dev bypass mode
+        setEnabledModules(updatedModules);
+        return;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-
-      const updatedModules = { ...enabledModules, ...modules };
 
       const { error } = await supabase
         .from('profiles')
@@ -124,7 +139,8 @@ export function useEnabledModules() {
 
   useEffect(() => {
     fetchEnabledModules();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [DISABLE_GATES]);
 
   return {
     enabledModules,

@@ -92,8 +92,7 @@ export function useRolePermissions() {
         console.log('useRolePermissions - Keeping admin role, not overriding for department');
       }
       
-      console.log('useRolePermissions - Final role:', role);
-      setUserRole(role);
+      console.log('useRolePermissions - Final role before preview:', role);
       setProfile(profileData);
 
       // Define role permissions mapping based on court roles
@@ -256,7 +255,20 @@ export function useRolePermissions() {
         },
       };
 
-      let finalPermissions = rolePermissionsMap[role] || {
+      let effectiveRole: CourtRole = role;
+      // Admin-only preview role override using localStorage
+      try {
+        const preview = typeof window !== 'undefined' ? (localStorage.getItem('preview_role') as CourtRole | null) : null;
+        const validRoles: CourtRole[] = ['judge','court_aide','clerk','sergeant','court_officer','bailiff','court_reporter','administrative_assistant','facilities_manager','supply_room_staff','admin','standard'];
+        if (role === 'admin' && preview && validRoles.includes(preview)) {
+          console.log('useRolePermissions - Applying preview role override:', preview);
+          effectiveRole = preview;
+        }
+      } catch (e) {
+        // ignore preview errors
+      }
+
+      let finalPermissions = rolePermissionsMap[effectiveRole] || {
         spaces: null,
         issues: null,
         occupants: null,
@@ -283,6 +295,7 @@ export function useRolePermissions() {
         console.log('Enhanced permissions for Supply Department user:', finalPermissions);
       }
       
+      setUserRole(effectiveRole);
       setPermissions(finalPermissions);
     } catch (error) {
       console.error('Error in fetchUserRoleAndPermissions:', error);

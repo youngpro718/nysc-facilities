@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import { RefreshCw, CheckSquare, XSquare, Download, Layers } from "lucide-react";
-import { LightingFixture } from "../types";
+import { LightingFixture } from "@/types/lighting";
 import { AssignZoneDialog } from "./AssignZoneDialog";
 
 export interface LightingHeaderProps {

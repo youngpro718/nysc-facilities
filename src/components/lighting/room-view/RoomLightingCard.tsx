@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, ChevronRight, MapPin, Lightbulb, AlertTriangle, CheckCircle, Settings } from "lucide-react";
-import { LightingFixture } from "@/components/lighting/types";
+import { LightingFixture } from "@/types/lighting";
 import { LightingFixtureCard } from "@/components/lighting/card/LightingFixtureCard";
 import { cn } from "@/lib/utils";
 

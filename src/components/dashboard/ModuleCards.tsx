@@ -29,9 +29,11 @@ interface ModuleCardProps {
   route: string;
   color?: string;
   loading?: boolean;
+  secondaryLabel?: string;
+  secondaryRoute?: string;
 }
 
-const ModuleCard = ({ title, icon, count, status, description, route, color = "primary", loading }: ModuleCardProps) => {
+const ModuleCard = ({ title, icon, count, status, description, route, color = "primary", loading, secondaryLabel, secondaryRoute }: ModuleCardProps) => {
   const navigate = useNavigate();
   
   const getColorClasses = (color: string) => {
@@ -83,6 +85,20 @@ const ModuleCard = ({ title, icon, count, status, description, route, color = "p
               }}
             >
               View Details
+            </Button>
+          </div>
+        )}
+        {!status && secondaryLabel && secondaryRoute && (
+          <div className="flex items-center justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(secondaryRoute);
+              }}
+            >
+              {secondaryLabel}
             </Button>
           </div>
         )}
@@ -149,6 +165,8 @@ export const LightingDashboardCard = () => {
       route="/lighting"
       color="yellow"
       loading={isLoading}
+      secondaryLabel="See problems"
+      secondaryRoute="/lighting?status=needs_maintenance"
     />
   );
 };

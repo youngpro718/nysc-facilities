@@ -6,10 +6,13 @@ import { IssueGroupingControls } from "@/components/admin-issues/IssueGroupingCo
 import { EnhancedIssuesList } from "@/components/admin-issues/EnhancedIssuesList";
 import { IssueAnalyticsPanel } from "@/components/admin-issues/IssueAnalyticsPanel";
 import { BulkIssueManager } from "@/components/admin-issues/BulkIssueManager";
+import { LightingIssuesManager } from "@/components/lighting/LightingIssuesManager";
+import { IntegratedLightingIssueCreator } from "@/components/lighting/IntegratedLightingIssueCreator";
 import { useAdminIssuesData } from "@/hooks/dashboard/useAdminIssuesData";
 import { useBulkUpdateIssueMutation } from "@/components/issues/hooks/mutations/useBulkUpdateIssueMutation";
 import { Button } from "@/components/ui/button";
-import { Plus, BarChart3, RefreshCw } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, BarChart3, RefreshCw, Lightbulb } from "lucide-react";
 import { IssueDialog } from "@/components/issues/IssueDialog";
 
 export type GroupingMode = 'priority' | 'room' | 'date' | 'reporter' | 'status';
@@ -17,6 +20,7 @@ export type ViewMode = 'cards' | 'table' | 'timeline';
 
 const AdminIssuesHub = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showLightingIssueDialog, setShowLightingIssueDialog] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [groupingMode, setGroupingMode] = useState<GroupingMode>('priority');
   const [viewMode, setViewMode] = useState<ViewMode>('cards');
@@ -113,6 +117,14 @@ const AdminIssuesHub = () => {
             <BarChart3 className="h-4 w-4 mr-2" />
             {showAnalytics ? 'Hide' : 'Show'} Analytics
           </Button>
+          <Button
+            variant="outline"
+            onClick={() => setShowLightingIssueDialog(true)}
+            className="bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200"
+          >
+            <Lightbulb className="h-4 w-4 mr-2" />
+            Lighting Issue
+          </Button>
           <Button onClick={() => setShowCreateDialog(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Create Issue
@@ -120,54 +132,73 @@ const AdminIssuesHub = () => {
         </div>
       </PageHeader>
 
+      <Tabs defaultValue="all-issues" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="all-issues">All Issues</TabsTrigger>
+          <TabsTrigger value="lighting-issues">Lighting Issues</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="all-issues">
+          {/* Analytics Panel */}
+          {showAnalytics && (
+            <IssueAnalyticsPanel 
+              stats={issueStats}
+              onClose={() => setShowAnalytics(false)}
+            />
+          )}
 
-      {/* Analytics Panel */}
-      {showAnalytics && (
-        <IssueAnalyticsPanel 
-          stats={issueStats}
-          onClose={() => setShowAnalytics(false)}
-        />
-      )}
+          {/* Grouping and View Controls */}
+          <IssueGroupingControls
+            groupingMode={groupingMode}
+            viewMode={viewMode}
+            onGroupingChange={setGroupingMode}
+            onViewModeChange={setViewMode}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            totalIssues={allIssues.length}
+            selectedCount={selectedIssues.length}
+          />
 
-      {/* Grouping and View Controls */}
-      <IssueGroupingControls
-        groupingMode={groupingMode}
-        viewMode={viewMode}
-        onGroupingChange={setGroupingMode}
-        onViewModeChange={setViewMode}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        totalIssues={allIssues.length}
-        selectedCount={selectedIssues.length}
-      />
+          {/* Bulk Management Tools */}
+          {selectedIssues.length > 0 && (
+            <BulkIssueManager
+              selectedIssues={selectedIssues}
+              onBulkAction={handleBulkAction}
+              onClearSelection={() => setSelectedIssues([])}
+            />
+          )}
 
-      {/* Bulk Management Tools */}
-      {selectedIssues.length > 0 && (
-        <BulkIssueManager
-          selectedIssues={selectedIssues}
-          onBulkAction={handleBulkAction}
-          onClearSelection={() => setSelectedIssues([])}
-        />
-      )}
+          {/* Enhanced Issues List */}
+          <EnhancedIssuesList
+            issues={allIssues}
+            groupingMode={groupingMode}
+            viewMode={viewMode}
+            searchQuery={searchQuery}
+            selectedIssues={selectedIssues}
+            onSelectionChange={setSelectedIssues}
+            onIssueUpdate={handleIssueUpdate}
+            isLoading={isLoading}
+          />
 
-      {/* Enhanced Issues List */}
-      <EnhancedIssuesList
-        issues={allIssues}
-        groupingMode={groupingMode}
-        viewMode={viewMode}
-        searchQuery={searchQuery}
-        selectedIssues={selectedIssues}
-        onSelectionChange={setSelectedIssues}
-        onIssueUpdate={handleIssueUpdate}
-        isLoading={isLoading}
-      />
-
-      {/* Create Issue Dialog */}
-      <IssueDialog 
-        open={showCreateDialog}
-        onOpenChange={setShowCreateDialog}
-        onSuccess={handleIssueUpdate}
-      />
+          {/* Create Issue Dialog */}
+          <IssueDialog 
+            open={showCreateDialog}
+            onOpenChange={setShowCreateDialog}
+            onSuccess={handleIssueUpdate}
+          />
+          
+          {/* Integrated Lighting Issue Creator */}
+          <IntegratedLightingIssueCreator
+            isOpen={showLightingIssueDialog}
+            onClose={() => setShowLightingIssueDialog(false)}
+            onSuccess={handleIssueUpdate}
+          />
+        </TabsContent>
+        
+        <TabsContent value="lighting-issues">
+          <LightingIssuesManager />
+        </TabsContent>
+      </Tabs>
     </PageContainer>
   );
 };

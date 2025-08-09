@@ -14,7 +14,6 @@ import {
 } from '@/services/supabase/authService';
 import { UserProfile, UserSignupData } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
-import { useMaintenanceMode } from '@/hooks/useMaintenanceMode';
 
 // Define the shape of our auth context
 export interface AuthContextType {
@@ -24,12 +23,10 @@ export interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   isAdmin: boolean;
-  isMaintenanceMode: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, userData: UserSignupData) => Promise<void>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
-  maintenanceLogin: () => void;
 }
 
 // Create the context with a default undefined value
@@ -42,9 +39,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
-  
-  // Maintenance mode integration
-  const { isMaintenanceMode, getMaintenanceUser } = useMaintenanceMode();
+
+  // Dev-only bypass for auth redirects
+  const devBypass =
+    (import.meta as any)?.env?.VITE_DISABLE_AUTH_GUARD === 'true' ||
+    (import.meta as any)?.env?.VITE_DISABLE_MODULE_GATES === 'true';
 
   // Function to fetch user profile data
   const getUserProfile = useCallback(async (userId: string) => {
@@ -216,63 +215,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Maintenance mode login function
-  const maintenanceLogin = useCallback(() => {
-    if (!isMaintenanceMode) {
-      console.warn('Maintenance login attempted but maintenance mode is not enabled');
-      return;
-    }
-
-    const maintenanceUser = getMaintenanceUser();
-    if (!maintenanceUser) {
-      console.error('No maintenance user found');
-      return;
-    }
-
-    // Set up maintenance session
-    const mockSession = {
-      access_token: 'maintenance-token',
-      refresh_token: 'maintenance-refresh',
-      expires_in: 86400,
-      token_type: 'bearer',
-      user: {
-        id: maintenanceUser.id,
-        email: maintenanceUser.email,
-        created_at: maintenanceUser.created_at,
-        app_metadata: {},
-        user_metadata: {},
-        aud: 'authenticated'
-      }
-    } as any;
-
-    const mockProfile: UserProfile = {
-      id: maintenanceUser.id,
-      email: maintenanceUser.email,
-      first_name: 'Maintenance',
-      last_name: 'Administrator',
-      verification_status: 'verified',
-      title: 'System Administrator',
-      metadata: {
-        role: maintenanceUser.role,
-        access_level: maintenanceUser.access_level,
-        departments: maintenanceUser.departments,
-        isMaintenanceMode: true
-      }
-    };
-
-    // Set auth state
-    setSession(mockSession);
-    setUser(mockSession.user);
-    setProfile(mockProfile);
-    setIsAdmin(true);
-    setIsLoading(false);
-
-    console.log('🔧 Maintenance mode login successful');
-    toast.success('Maintenance mode access granted', {
-      description: 'You now have full administrative privileges'
-    });
-  }, [isMaintenanceMode, getMaintenanceUser]);
-
   // Setup auth state listener and initialization
   useEffect(() => {
     let mounted = true;
@@ -280,6 +222,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Centralized redirect logic
     const handleRedirect = (userData: { isAdmin: boolean; profile: UserProfile | null }) => {
+      if (devBypass) return; // skip redirects in dev bypass
       if (!mounted) return;
       
       const currentPath = window.location.pathname;
@@ -376,8 +319,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           console.log('useAuth: No session found');
           const currentPath = window.location.pathname;
-          if (currentPath !== '/login' && currentPath !== '/verification-pending') {
-            navigate('/login', { replace: true });
+          if (!devBypass) {
+            if (currentPath !== '/login' && currentPath !== '/verification-pending') {
+              navigate('/login', { replace: true });
+            }
           }
         }
       } catch (error: any) {
@@ -443,7 +388,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsAdmin(false);
           
           // Only redirect if not already on login page
-          if (window.location.pathname !== '/login') {
+          if (!devBypass && window.location.pathname !== '/login') {
             navigate('/login', { replace: true });
           }
         }
@@ -472,12 +417,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         isAuthenticated,
         isAdmin,
-        isMaintenanceMode,
         signIn,
         signUp,
         signOut,
-        refreshSession,
-        maintenanceLogin
+        refreshSession
       }}
     >
       {children}

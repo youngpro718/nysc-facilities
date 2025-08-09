@@ -5,7 +5,7 @@ import {
   LightingTechnology,
   LightingType,
   LightStatus
-} from "@/components/lighting/types";
+} from "@/types/lighting";
 
 export type DatabaseLightingFixture = {
   id: string;

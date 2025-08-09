@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertTriangle } from 'lucide-react';
-import { LightingFixture } from '@/components/lighting/types';
+import { LightingFixture } from '@/types/lighting';
+import * as locationUtil from '@/components/lighting/utils/location';
 import { LightingIssueForm } from './LightingIssueForm';
 
 interface ReportIssueDialogProps {
@@ -12,16 +13,8 @@ interface ReportIssueDialogProps {
 export function ReportIssueDialog({ fixture }: ReportIssueDialogProps) {
   const [open, setOpen] = useState(false);
   
-  // Generate location string from fixture details
-  const getLocationFromFixture = () => {
-    let locationParts = [];
-    if (fixture.building_name) locationParts.push(fixture.building_name);
-    if (fixture.floor_name) locationParts.push(`Floor ${fixture.floor_name}`);
-    if (fixture.space_name) locationParts.push(fixture.space_name);
-    if (fixture.room_number) locationParts.push(`#${fixture.room_number}`);
-    
-    return locationParts.join(' • ') || 'Unknown location';
-  };
+  // Generate location string from fixture details via shared util
+  const getLocationFromFixture = () => locationUtil.getFixtureFullLocationText(fixture);
   
   // Determine bulb type from fixture technology
   const getBulbTypeFromFixture = () => {
@@ -47,7 +40,7 @@ export function ReportIssueDialog({ fixture }: ReportIssueDialogProps) {
           Report Issue
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[520px] p-4">
         <DialogHeader>
           <DialogTitle>Report Lighting Issue for {fixture.name}</DialogTitle>
         </DialogHeader>

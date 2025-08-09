@@ -1,35 +1,75 @@
 
-import { useState, useEffect } from "react";
-import { useLightingFixtures } from "@/components/lighting/hooks/useLightingFixtures";
+import { useState, useEffect, useMemo } from "react";
+import { useLightingFixtures } from "@/hooks/useLightingFixtures";
 import { LightingFixtureCard } from "@/components/lighting/card/LightingFixtureCard";
 import { LightingHeader } from "@/components/lighting/components/LightingHeader";
-import { LightingFixture } from "@/components/lighting/types";
+import { LightingFixture } from "@/types/lighting";
 import { MobileLightingList } from "@/components/lighting/mobile/MobileLightingList";
 import { RoomLightingView } from "@/components/lighting/room-view/RoomLightingView";
 import { Button } from "@/components/ui/button";
 import { LayoutGrid, List } from "lucide-react";
 import { toast } from "sonner";
+import * as locationUtil from "@/components/lighting/utils/location";
+import { FixtureSkeleton } from "@/components/lighting/components/FixtureSkeleton";
+import { EmptyState } from "@/components/lighting/components/EmptyState";
+import { LightingFiltersToolbar, type LightingFilterState } from "@/components/lighting/components/LightingFiltersToolbar";
 
 interface LightingFixturesListProps {
   selectedBuilding?: string;
   selectedFloor?: string;
+  statusFilter?: string;
+  fixtures?: LightingFixture[];
+  isLoading?: boolean;
+  refetch?: () => void;
 }
 
 type ViewMode = 'all' | 'by-room';
 
-export const LightingFixturesList = ({ selectedBuilding, selectedFloor }: LightingFixturesListProps) => {
+export const LightingFixturesList = ({ selectedBuilding, selectedFloor, statusFilter, fixtures: fixturesProp, isLoading: isLoadingProp, refetch: refetchProp }: LightingFixturesListProps) => {
   const [selectedFixtures, setSelectedFixtures] = useState<string[]>([]);
   const [isMobile, setIsMobile] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('by-room');
+  const [filters, setFilters] = useState<LightingFilterState>({});
+  const [page, setPage] = useState(1);
+  const pageSize = 12;
   
-  const { 
-    fixtures, 
-    isLoading,
-    handleDelete,
-    handleBulkDelete,
-    handleBulkStatusUpdate,
-    refetch
-  } = useLightingFixtures();
+  // Use parent-provided data if available; fallback to internal hook to stay backward compatible
+  const hook = useLightingFixtures();
+  const fixtures = fixturesProp ?? hook.fixtures;
+  const isLoading = isLoadingProp ?? hook.isLoading;
+  const refetch = refetchProp ?? hook.refetch;
+  const handleDelete = hook.handleDelete;
+  const handleBulkDelete = hook.handleBulkDelete;
+  const handleBulkStatusUpdate = hook.handleBulkStatusUpdate;
+
+  // Apply combined filters: external props + toolbar
+  const filteredFixtures = useMemo(() => {
+    const list = fixtures || [];
+    const search = (filters.search || '').toLowerCase();
+    return list.filter((f) => {
+      if (statusFilter && f.status !== statusFilter) return false;
+      if (filters.status && f.status !== filters.status) return false;
+      if (filters.building && f.building_name !== filters.building) return false;
+      if (filters.floor && f.floor_name !== filters.floor) return false;
+      if (search) {
+        const locationText = locationUtil.getFixtureFullLocationText(f).toLowerCase();
+        const hay = `${f.name || ''} ${locationText}`.toLowerCase();
+        if (!hay.includes(search)) return false;
+      }
+      return true;
+    });
+  }, [fixtures, statusFilter, filters]);
+
+  // Reset pagination when filters change
+  useEffect(() => { setPage(1); }, [filters, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil((filteredFixtures.length || 0) / pageSize));
+  const pagedFixtures = useMemo(() => {
+    if (viewMode !== 'all') return filteredFixtures;
+    const start = (page - 1) * pageSize;
+    const end = start + pageSize;
+    return filteredFixtures.slice(start, end);
+  }, [filteredFixtures, page, viewMode]);
 
   // Check if device is mobile
   useEffect(() => {
@@ -43,10 +83,10 @@ export const LightingFixturesList = ({ selectedBuilding, selectedFloor }: Lighti
   }, []);
   
   const handleSelectAll = () => {
-    if (selectedFixtures.length === fixtures?.length) {
+    if (selectedFixtures.length === filteredFixtures.length) {
       setSelectedFixtures([]);
     } else {
-      setSelectedFixtures(fixtures?.map(f => f.id) || []);
+      setSelectedFixtures(filteredFixtures.map(f => f.id));
     }
   };
 
@@ -66,18 +106,18 @@ export const LightingFixturesList = ({ selectedBuilding, selectedFloor }: Lighti
   };
 
   // Convert fixtures to mobile format
-  const mobileFixtures = fixtures?.map(fixture => ({
+  const mobileFixtures = filteredFixtures.map(fixture => ({
     id: fixture.id,
     name: fixture.name || `Fixture ${fixture.id.slice(0, 8)}`,
     type: fixture.type || 'LED',
     status: fixture.status || 'functional',
-    location: fixture.space_name || fixture.room_number || 'Unknown',
+    location: locationUtil.getFixtureLocationText(fixture),
     wattage: undefined, // Not available in current type
-    lastMaintenance: fixture.last_maintenance_date,
-    nextMaintenance: fixture.next_maintenance_date,
+    lastMaintenance: undefined,
+    nextMaintenance: undefined,
     energyConsumption: undefined, // Not available in current type
     issues: 0 // Will be calculated from issues data
-  })) || [];
+  }));
 
   if (isMobile) {
     return (
@@ -110,10 +150,17 @@ export const LightingFixturesList = ({ selectedBuilding, selectedFloor }: Lighti
     <div className="container mx-auto p-6">
       <LightingHeader 
         selectedFixtures={selectedFixtures}
-        fixtures={fixtures}
+        fixtures={filteredFixtures}
         onSelectAll={handleSelectAll}
         onBulkDelete={handleBulkDeleteAction}
         onFixtureCreated={refetch}
+      />
+
+      {/* Filters toolbar */}
+      <LightingFiltersToolbar
+        fixtures={fixtures || []}
+        value={filters}
+        onChange={setFilters}
       />
 
       {/* View mode toggle */}
@@ -140,8 +187,30 @@ export const LightingFixturesList = ({ selectedBuilding, selectedFloor }: Lighti
         </div>
       </div>
 
-      {/* Render based on view mode */}
-      {viewMode === 'by-room' ? (
+      {/* Loading state */}
+      {isLoading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <FixtureSkeleton key={i} />
+          ))}
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!isLoading && filteredFixtures.length === 0 && (
+        <EmptyState
+          title="No lighting fixtures found"
+          description="Try adjusting filters or add a new lighting fixture to get started."
+          actionLabel="Add Fixture"
+          onAction={() => {
+            const createButton = document.querySelector('[data-testid="create-lighting-button"]');
+            if (createButton) (createButton as HTMLElement).click();
+          }}
+        />
+      )}
+
+      {/* Render based on view mode when data exists */}
+      {!isLoading && filteredFixtures.length > 0 && (viewMode === 'by-room' ? (
         <RoomLightingView
           fixtures={fixtures || []}
           selectedFixtures={selectedFixtures}
@@ -154,7 +223,7 @@ export const LightingFixturesList = ({ selectedBuilding, selectedFloor }: Lighti
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {fixtures?.map((fixture) => (
+            {pagedFixtures.map((fixture) => (
               <LightingFixtureCard
                 key={fixture.id}
                 fixture={fixture}
@@ -166,15 +235,23 @@ export const LightingFixturesList = ({ selectedBuilding, selectedFloor }: Lighti
             ))}
           </div>
 
-          {(!fixtures || fixtures.length === 0) && (
-            <div className="text-center py-8 text-gray-500">
-              No lighting fixtures found
+          {/* Pagination controls */}
+          {filteredFixtures.length > pageSize && (
+            <div className="flex items-center justify-between mt-4">
+              <div className="text-sm text-muted-foreground">
+                Showing {(page - 1) * pageSize + 1}-{Math.min(page * pageSize, filteredFixtures.length)} of {filteredFixtures.length}
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>Prev</Button>
+                <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>Next</Button>
+              </div>
             </div>
           )}
         </>
-      )}
+      ))}
     </div>
   );
-};
+}
+;
 
 export default LightingFixturesList;

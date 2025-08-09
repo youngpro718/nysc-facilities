@@ -2,6 +2,7 @@ import { AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useNavigate } from "react-router-dom";
 
 interface Issue {
   id: string;
@@ -18,6 +19,7 @@ interface BuildingIssuesProps {
 }
 
 export const BuildingIssues = ({ issues, onMarkAsSeen }: BuildingIssuesProps) => {
+  const navigate = useNavigate();
   if (issues.length === 0) return null;
 
   return (
@@ -36,8 +38,11 @@ export const BuildingIssues = ({ issues, onMarkAsSeen }: BuildingIssuesProps) =>
           {issues.map((issue) => (
             <div
               key={issue.id}
-              className="group relative rounded-lg border bg-card p-3 transition-colors hover:bg-accent"
-              onClick={() => !issue.seen && onMarkAsSeen(issue.id)}
+              className="group relative rounded-lg border bg-card p-3 transition-colors hover:bg-accent cursor-pointer"
+              onClick={() => {
+                if (!issue.seen) onMarkAsSeen(issue.id);
+                navigate(`/operations?issue_id=${issue.id}`);
+              }}
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-1">

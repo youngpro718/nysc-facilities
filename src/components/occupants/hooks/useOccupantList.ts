@@ -50,8 +50,6 @@ const transformOccupantData = (occupant: any): OccupantQueryResponse => {
   console.log('Processing occupant:', occupant.first_name, occupant.last_name);
   console.log('Room assignments:', roomAssignments);
   console.log('Extracted rooms:', rooms);
-  console.log('Key assignments:', occupant.key_assignments);
-  console.log('Active key assignments:', activeKeyAssignments);
   
   return {
     id: occupant.id,

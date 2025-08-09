@@ -81,6 +81,14 @@ export default function UserDashboard() {
   const firstName = profile?.first_name || user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'User';
   const lastName = profile?.last_name || user?.user_metadata?.last_name || '';
 
+  const hasAssignments = Boolean(
+    (occupantData?.roomAssignments?.length || 0) > 0 ||
+    (occupantData?.keyAssignments?.length || 0) > 0 ||
+    (occupantData?.storageAssignments?.length || 0) > 0 ||
+    occupantData?.primaryRoom
+  );
+  const hasContent = hasAssignments || (notifications?.length || 0) > 0;
+
   return (
     <div className="space-y-6 sm:space-y-8 pb-20">
       <div className="space-y-1">
@@ -92,14 +100,52 @@ export default function UserDashboard() {
         </p>
       </div>
       
+      {!hasContent && (
+        <div className="rounded-lg border bg-card text-card-foreground p-6 sm:p-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-semibold">Let’s get you set up</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                You don’t have any notifications or assignments yet. Try creating your first issue or requesting a key.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                className="inline-flex items-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                onClick={() => setShowIssueReport(true)}
+              >
+                Report an Issue
+              </button>
+              <button
+                className="inline-flex items-center rounded-md border px-3 py-2 text-sm hover:bg-accent"
+                onClick={() => setShowKeyRequest(true)}
+              >
+                Request a Key
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
-        <NotificationCard 
-          notifications={notifications} 
-          onMarkAsRead={markAsRead} 
-          onMarkAllAsRead={markAllAsRead}
-          onClearNotification={clearNotification}
-          onClearAllNotifications={clearAllNotifications}
-        />
+        {notificationsLoading ? (
+          <div className="rounded-lg border p-4">
+            <div className="h-4 w-40 bg-muted animate-pulse rounded mb-3" />
+            <div className="space-y-2">
+              <div className="h-3 w-full bg-muted animate-pulse rounded" />
+              <div className="h-3 w-5/6 bg-muted animate-pulse rounded" />
+              <div className="h-3 w-2/3 bg-muted animate-pulse rounded" />
+            </div>
+          </div>
+        ) : (
+          <NotificationCard 
+            notifications={notifications} 
+            onMarkAsRead={markAsRead} 
+            onMarkAllAsRead={markAllAsRead}
+            onClearNotification={clearNotification}
+            onClearAllNotifications={clearAllNotifications}
+          />
+        )}
         <ProfileCompletionCard />
         <RoomAssignmentCard 
           roomAssignments={occupantData?.roomAssignments || []} 

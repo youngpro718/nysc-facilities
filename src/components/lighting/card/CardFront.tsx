@@ -4,11 +4,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { LightingFixture } from "@/components/lighting/types";
+import { LightingFixture } from "@/types/lighting";
 import { EditLightingDialog } from "../EditLightingDialog";
 import { ReportIssueDialog } from "../issues/ReportIssueDialog";
 import { cn } from "@/lib/utils";
 import { Lightbulb, RotateCw, Trash2, Calendar, Clock } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { getLightingIssuesForFixture } from "@/services/supabase/lightingIssuesService";
+import { useNavigate } from "react-router-dom";
+import * as locationUtil from "@/components/lighting/utils/location";
+import { StatusBadge } from "@/components/lighting/components/StatusBadge";
 
 interface CardFrontProps {
   fixture: LightingFixture;
@@ -28,23 +33,17 @@ export function CardFront({
   onFlip
 }: CardFrontProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const navigate = useNavigate();
 
-  const getStatusColor = (status: string) => {
-    switch(status) {
-      case 'functional':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'maintenance_needed':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'non_functional':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'pending_maintenance':
-        return 'bg-amber-100 text-amber-800 border-amber-200';
-      case 'scheduled_replacement':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
+  // Fetch any issues related to this fixture
+  const { data: fixtureIssues } = useQuery({
+    queryKey: ["lighting-fixture-issues", fixture.id],
+    queryFn: () => getLightingIssuesForFixture(fixture.id),
+  });
+
+  const openIssue = (fixtureIssues || []).find((i: any) => i.status !== "resolved" && (i.issue_id || i.id));
+
+  // Status colors centralized in StatusBadge
 
   const getTypeIcon = (type: string) => {
     switch(type) {
@@ -71,15 +70,8 @@ export function CardFront({
     return daysUntilMaintenance <= 7 && daysUntilMaintenance >= 0;
   };
 
-  const getLocationText = () => {
-    let locationParts = [];
-    if (fixture.building_name) locationParts.push(fixture.building_name);
-    if (fixture.floor_name) locationParts.push(`Floor ${fixture.floor_name}`);
-    if (fixture.space_name) locationParts.push(fixture.space_name);
-    if (fixture.room_number) locationParts.push(`#${fixture.room_number}`);
-    
-    return locationParts.join(' • ') || 'Location not assigned';
-  };
+  // Use shared location formatter for consistency across the module
+  const getLocationText = () => locationUtil.getFixtureFullLocationText(fixture);
 
   return (
     <Card className={cn(
@@ -103,19 +95,17 @@ export function CardFront({
         </Button>
       </div>
 
-      <CardHeader className="pt-10 pb-2">
+      <CardHeader className="pt-6 pb-1">
         <div className="flex flex-col gap-2">
           <div className="flex gap-2 items-center">
             {getTypeIcon(fixture.type)}
-            <Badge className={cn("text-xs", getStatusColor(fixture.status))}>
-              {fixture.status.replace('_', ' ')}
-            </Badge>
+            <StatusBadge status={fixture.status} />
           </div>
-          <h3 className="font-medium truncate">{fixture.name}</h3>
+          <h3 className="font-medium text-sm truncate">{fixture.name}</h3>
         </div>
       </CardHeader>
 
-      <CardContent className="pb-4 space-y-4">
+      <CardContent className="pb-3 space-y-3">
         <div className="grid grid-cols-2 gap-y-2 text-sm">
           <div className="text-muted-foreground">Technology</div>
           <div className="font-medium">{fixture.technology || 'N/A'}</div>
@@ -134,12 +124,14 @@ export function CardFront({
         </div>
 
         <div className="text-xs text-muted-foreground truncate">
-          {getLocationText()}
+          <span className="inline-flex max-w-full items-center gap-1 rounded-full bg-muted px-2 py-1">
+            {getLocationText()}
+          </span>
         </div>
 
         {fixture.next_maintenance_date && (
           <div className={cn(
-            "flex items-center gap-1 text-xs px-2 py-1 rounded-full",
+            "flex items-center gap-1 text-xs px-2 py-0.5 rounded-full",
             isMaintenanceSoon() ? "bg-yellow-50 text-yellow-800" : "bg-blue-50 text-blue-800"
           )}>
             <Calendar className="h-3 w-3" />
@@ -168,7 +160,20 @@ export function CardFront({
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <ReportIssueDialog fixture={fixture} />
+              {openIssue ? (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    const issueId = (openIssue as any).issue_id ?? (openIssue as any).id;
+                    navigate(`/operations?issue_id=${issueId}`);
+                  }}
+                >
+                  View Issue
+                </Button>
+              ) : (
+                <ReportIssueDialog fixture={fixture} />
+              )}
               <EditLightingDialog
                 fixture={fixture}
                 onFixtureUpdated={onFixtureUpdated}

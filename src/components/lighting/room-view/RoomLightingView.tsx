@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Filter, MapPin, Lightbulb, AlertTriangle } from "lucide-react";
-import { LightingFixture } from "@/components/lighting/types";
+import { LightingFixture } from "@/types/lighting";
 import { RoomLightingCard } from "./RoomLightingCard";
 import { cn } from "@/lib/utils";
 

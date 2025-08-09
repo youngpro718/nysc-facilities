@@ -18,6 +18,15 @@ export function ProtectedRoute({
   allowDepartments = [],
   requireRoomAssignment
 }: ProtectedRouteProps) {
+  // Dev-only bypass: allow rendering without auth when explicitly enabled
+  const disableAuthGuard =
+    (import.meta as any)?.env?.VITE_DISABLE_AUTH_GUARD === 'true' ||
+    (import.meta as any)?.env?.VITE_DISABLE_MODULE_GATES === 'true';
+
+  if (disableAuthGuard) {
+    return <>{children}</>;
+  }
+
   const { isAuthenticated, isAdmin, isLoading, profile } = useAuth();
 
   // Show loading while auth state is being determined

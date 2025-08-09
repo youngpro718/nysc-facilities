@@ -60,33 +60,43 @@ export function RoomCard({ room, onDelete, onRoomClick }: RoomCardProps) {
       onMouseLeave={() => setIsHovered(false)}
     >
       <CardContent className="p-0 h-full">
-        <div 
-          className="relative w-full h-full transition-all duration-500"
-          style={{ 
-            transform: !isMobile && isFlipped ? 'rotateY(180deg)' : 'rotateY(0)',
-            transformStyle: 'preserve-3d'
-          }}
+        {/* Perspective wrapper ensures proper 3D rendering of front/back faces */}
+        <div
+          className="w-full h-full"
+          style={{ perspective: '1000px', WebkitPerspective: '1000px' as any }}
         >
-          {/* Front of card */}
           <div 
-            className="absolute inset-0 w-full h-full bg-card"
-            style={{ backfaceVisibility: 'hidden' }}
+            className="relative w-full h-full transition-all duration-500"
+            style={{ 
+              transform: !isMobile && isFlipped ? 'rotateY(180deg)' : 'rotateY(0)',
+              transformStyle: 'preserve-3d',
+              // Cross-browser hints to avoid flattening/tearing
+              willChange: 'transform',
+              WebkitTransformStyle: 'preserve-3d' as any
+            }}
           >
-            <CardFront room={displayRoom} onFlip={handleFlip} onDelete={onDelete} isHovered={isHovered} />
-          </div>
-          
-          {/* Back of card - Hidden on mobile */}
-          {!isMobile && (
+            {/* Front of card */}
             <div 
               className="absolute inset-0 w-full h-full bg-card"
-              style={{ 
-                backfaceVisibility: 'hidden',
-                transform: 'rotateY(180deg)'
-              }}
+              style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' as any }}
             >
-              <CardBack room={displayRoom} onFlip={handleFlip} />
+              <CardFront room={displayRoom} onFlip={handleFlip} onDelete={onDelete} isHovered={isHovered} />
             </div>
-          )}
+            
+            {/* Back of card - Hidden on mobile */}
+            {!isMobile && (
+              <div 
+                className="absolute inset-0 w-full h-full bg-card"
+                style={{ 
+                  backfaceVisibility: 'hidden',
+                  WebkitBackfaceVisibility: 'hidden' as any,
+                  transform: 'rotateY(180deg)'
+                }}
+              >
+                <CardBack room={displayRoom} onFlip={handleFlip} />
+              </div>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

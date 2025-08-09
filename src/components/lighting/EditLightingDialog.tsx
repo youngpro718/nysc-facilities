@@ -12,7 +12,7 @@ import { Form } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { LightingFixture } from "./types";
+import { LightingFixture } from "@/types/lighting";
 import { CreateFixtureFields } from "./form-sections/CreateFixtureFields";
 import { lightingFixtureSchema, type LightingFixtureFormData } from "./schemas/lightingSchema";
 import { updateLightingFixturesStatus } from "@/services/supabase/lightingService";

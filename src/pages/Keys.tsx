@@ -38,15 +38,21 @@ export default function Keys() {
 
       if (keysError) throw keysError;
 
-      // Get assignment statistics
+      // Get assignment statistics (aggregated per key)
       const { data: assignmentData, error: assignmentError } = await supabase
-        .from("key_assignments_view")
+        .from("key_assignment_stats")
         .select(`
           key_id,
           active_assignments,
           returned_assignments,
           lost_count
-        `);
+        `)
+        .returns<{
+          key_id: string;
+          active_assignments: number | null;
+          returned_assignments: number | null;
+          lost_count: number | null;
+        }[]>();
 
       if (assignmentError) throw assignmentError;
 

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MapPin, Building2, Home } from "lucide-react";
-import { LightingFixture } from "../types";
+import { LightingFixture } from "@/types/lighting";
 
 interface SpatialAssignmentCardProps {
   fixture: LightingFixture;

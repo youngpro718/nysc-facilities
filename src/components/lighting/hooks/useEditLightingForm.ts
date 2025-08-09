@@ -2,7 +2,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { editLightingFormSchema, type EditLightingFormData } from "../schemas/editLightingSchema";
-import { type LightingFixture, type Space, LightingTechnology } from "../types";
+import { type LightingFixture, type Space, LightingTechnology } from "@/types/lighting";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { generateFixtureName } from "../schemas/lightingSchema";

@@ -1,13 +1,74 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { LightingFixture, LightStatus, LightingFixtureFormData, LightingZoneFormData } from '@/types/lighting';
+import { LightingFixture, LightStatus, LightingFixtureFormData, LightingZoneFormData, RoomLightingStats } from '@/types/lighting';
 
 /**
  * Fetch all lighting fixtures with a simplified approach
  */
 export async function fetchLightingFixtures(): Promise<LightingFixture[]> {
   try {
-    // Get basic fixture data
+    // 1) Try enriched view first (if created). This reduces client joins and improves perf.
+    //    If the view doesn't exist, we'll catch and fall back to stitching below.
+    try {
+      // Cast to any because the generated Database types may not include this view yet
+      const { data: enriched, error: enrichedError } = await (supabase as any)
+        .from('lighting_fixtures_enriched')
+        .select(`
+          id,
+          name,
+          type,
+          status,
+          space_id,
+          space_type,
+          position,
+          technology,
+          created_at,
+          updated_at,
+          bulb_count,
+          ballast_issue,
+          requires_electrician,
+          reported_out_date,
+          replaced_date,
+          notes,
+          room_number,
+          space_name,
+          building_name,
+          floor_name,
+          building_id,
+          floor_id
+        `);
+
+      if (!enrichedError && enriched && enriched.length > 0) {
+        return enriched.map((fixture: any): LightingFixture => ({
+          id: fixture.id,
+          name: fixture.name || '',
+          type: mapFixtureType(fixture.type),
+          status: (fixture.status as LightStatus) || 'functional',
+          room_number: fixture.room_number || null,
+          space_name: fixture.space_name || null,
+          space_id: fixture.space_id || null,
+          space_type: (fixture.space_type as 'room' | 'hallway') || 'room',
+          position: (fixture.position as 'ceiling' | 'wall' | 'floor' | 'desk') || 'ceiling',
+          technology: fixture.technology || null,
+          bulb_count: fixture.bulb_count || 1,
+          ballast_issue: fixture.ballast_issue || false,
+          requires_electrician: fixture.requires_electrician || false,
+          reported_out_date: fixture.reported_out_date || null,
+          replaced_date: fixture.replaced_date || null,
+          notes: fixture.notes || null,
+          created_at: fixture.created_at || null,
+          updated_at: fixture.updated_at || null,
+          building_name: fixture.building_name || null,
+          floor_name: fixture.floor_name || null,
+          building_id: fixture.building_id || undefined,
+          floor_id: fixture.floor_id || null
+        }));
+      }
+    } catch (e) {
+      // View might not exist yet; ignore and fall back
+    }
+
+    // 2) Fallback: fetch base fixtures and stitch space data client-side
     const { data: fixtures, error } = await supabase
       .from('lighting_fixtures')
       .select(`
@@ -35,18 +96,50 @@ export async function fetchLightingFixtures(): Promise<LightingFixture[]> {
       throw error;
     }
 
-    if (!fixtures) {
-      return [];
+    if (!fixtures) return [];
+
+    const spaceIds = Array.from(new Set((fixtures || [])
+      .map((f: any) => f.space_id)
+      .filter((id: string | null | undefined): id is string => !!id)));
+
+    let spacesMap: Record<string, { id: string; name: string | null; room_number: string | null }> = {};
+    let roomsMap: Record<string, { id: string; name: string | null; room_number: string | null }> = {};
+    if (spaceIds.length > 0) {
+      const { data: spaces, error: spacesError } = await supabase
+        .from('spaces')
+        .select('id, name, room_number')
+        .in('id', spaceIds);
+
+      if (!spacesError && spaces) {
+        spacesMap = spaces.reduce((acc: Record<string, { id: string; name: string | null; room_number: string | null }>, s: any) => {
+          acc[s.id] = { id: s.id, name: s.name || null, room_number: s.room_number || null };
+          return acc;
+        }, {});
+      }
+
+      const missingIds = spaceIds.filter(id => !spacesMap[id]);
+      if (missingIds.length > 0) {
+        const { data: rooms, error: roomsError } = await supabase
+          .from('rooms')
+          .select('id, name, room_number')
+          .in('id', missingIds);
+
+        if (!roomsError && rooms) {
+          roomsMap = rooms.reduce((acc: Record<string, { id: string; name: string | null; room_number: string | null }>, r: any) => {
+            acc[r.id] = { id: r.id, name: r.name || null, room_number: r.room_number || null };
+            return acc;
+          }, {});
+        }
+      }
     }
 
-    // Transform to expected format
     return fixtures.map((fixture): LightingFixture => ({
       id: fixture.id,
       name: fixture.name || '',
       type: mapFixtureType(fixture.type),
       status: (fixture.status as LightStatus) || 'functional',
-      room_number: fixture.room_number || null,
-      space_name: null,
+      room_number: (spacesMap[fixture.space_id]?.room_number ?? roomsMap[fixture.space_id]?.room_number ?? fixture.room_number) || null,
+      space_name: (spacesMap[fixture.space_id]?.name ?? roomsMap[fixture.space_id]?.name) ?? null,
       space_id: fixture.space_id || null,
       space_type: (fixture.space_type as 'room' | 'hallway') || 'room',
       position: (fixture.position as 'ceiling' | 'wall' | 'floor' | 'desk') || 'ceiling',
@@ -172,6 +265,74 @@ export async function updateLightingFixturesStatus(fixtureIds: string[], status:
 
   if (error) throw error;
   return true;
+}
+
+/**
+ * Report an outage for a fixture (sets reported_out_date and requires_electrician)
+ */
+export async function reportFixtureOutage(
+  fixtureId: string,
+  params: { requires_electrician: boolean; notes?: string }
+) {
+  const update: Record<string, any> = {
+    reported_out_date: new Date().toISOString(),
+    requires_electrician: params.requires_electrician,
+  };
+  if (params.notes) update.notes = params.notes;
+
+  const { error } = await supabase
+    .from('lighting_fixtures')
+    .update(update)
+    .eq('id', fixtureId);
+
+  if (error) throw error;
+  return true;
+}
+
+/**
+ * Resolve an outage for a fixture (sets replaced_date and can clear ballast flag)
+ */
+export async function resolveFixtureOutage(
+  fixtureId: string,
+  params?: { clear_ballast_issue?: boolean; notes?: string }
+) {
+  const update: Record<string, any> = {
+    replaced_date: new Date().toISOString(),
+  };
+  if (params?.clear_ballast_issue) update.ballast_issue = false;
+  if (params?.notes) update.notes = params.notes;
+
+  const { error } = await supabase
+    .from('lighting_fixtures')
+    .update(update)
+    .eq('id', fixtureId);
+
+  if (error) throw error;
+  return true;
+}
+
+/**
+ * Fetch per-room lighting stats from a SQL view
+ */
+export async function fetchRoomLightingStats(): Promise<RoomLightingStats[]> {
+  // Using any for view since generated Database types may not include it
+  const { data, error } = await (supabase as any)
+    .from('room_lighting_stats_v')
+    .select('*');
+
+  if (error) throw error;
+  return (data || []).map((r: any): RoomLightingStats => ({
+    room_id: r.room_id ?? null,
+    room_name: r.room_name ?? null,
+    room_number: r.room_number ?? null,
+    fixture_count: Number(r.fixture_count ?? 0),
+    open_issues_total: Number(r.open_issues_total ?? 0),
+    open_replaceable: Number(r.open_replaceable ?? 0),
+    open_electrician: Number(r.open_electrician ?? 0),
+    mttr_minutes: r.mttr_minutes !== null && r.mttr_minutes !== undefined ? Number(r.mttr_minutes) : null,
+    longest_open_minutes: r.longest_open_minutes !== null && r.longest_open_minutes !== undefined ? Number(r.longest_open_minutes) : null,
+    has_sla_breach: Boolean(r.has_sla_breach),
+  }));
 }
 
 /**

@@ -108,13 +108,13 @@ export function LightingIssueForm({ onSubmitted, prefillData, onSuccess }: Light
   };
 
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-lg p-6 max-w-2xl mx-auto mb-8">
-      <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-zinc-100">Report a Lighting Issue</h3>
-      <form className="grid grid-cols-1 md:grid-cols-2 gap-6" onSubmit={handleSubmit}>
+    <div className="space-y-4">
+      <h3 className="text-base font-semibold text-foreground">Report a Lighting Issue</h3>
+      <form className="grid grid-cols-1 md:grid-cols-2 gap-4" onSubmit={handleSubmit}>
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Location</label>
+          <label className="text-xs font-medium text-muted-foreground">Location</label>
           <input
-            className="border border-zinc-300 dark:border-zinc-700 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
+            className="border border-input rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
             value={location}
             onChange={e => setLocation(e.target.value)}
             placeholder="e.g. Room 101, Hallway B"
@@ -122,9 +122,9 @@ export function LightingIssueForm({ onSubmitted, prefillData, onSuccess }: Light
           />
         </div>
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Bulb Type</label>
+          <label className="text-xs font-medium text-muted-foreground">Bulb Type</label>
           <select
-            className="border border-zinc-300 dark:border-zinc-700 rounded-md px-3 py-2 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
+            className="border border-input rounded-md px-3 py-1.5 text-sm bg-background text-foreground"
             value={bulbType}
             onChange={e => setBulbType(e.target.value)}
           >
@@ -132,9 +132,9 @@ export function LightingIssueForm({ onSubmitted, prefillData, onSuccess }: Light
           </select>
         </div>
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Form Factor</label>
+          <label className="text-xs font-medium text-muted-foreground">Form Factor</label>
           <select
-            className="border border-zinc-300 dark:border-zinc-700 rounded-md px-3 py-2 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
+            className="border border-input rounded-md px-3 py-1.5 text-sm bg-background text-foreground"
             value={formFactor}
             onChange={e => setFormFactor(e.target.value)}
           >
@@ -142,9 +142,9 @@ export function LightingIssueForm({ onSubmitted, prefillData, onSuccess }: Light
           </select>
         </div>
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Issue Type</label>
+          <label className="text-xs font-medium text-muted-foreground">Issue Type</label>
           <select
-            className="border border-zinc-300 dark:border-zinc-700 rounded-md px-3 py-2 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
+            className="border border-input rounded-md px-3 py-1.5 text-sm bg-background text-foreground"
             value={issueType}
             onChange={e => setIssueType(e.target.value as any)}
           >
@@ -152,9 +152,9 @@ export function LightingIssueForm({ onSubmitted, prefillData, onSuccess }: Light
           </select>
         </div>
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Status</label>
+          <label className="text-xs font-medium text-muted-foreground">Status</label>
           <select
-            className="border border-zinc-300 dark:border-zinc-700 rounded-md px-3 py-2 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
+            className="border border-input rounded-md px-3 py-1.5 text-sm bg-background text-foreground"
             value={status}
             onChange={e => setStatus(e.target.value as LightingIssueStatus)}
           >
@@ -162,9 +162,9 @@ export function LightingIssueForm({ onSubmitted, prefillData, onSuccess }: Light
           </select>
         </div>
         <div className="flex flex-col gap-2 md:col-span-2">
-          <label className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Notes</label>
+          <label className="text-xs font-medium text-muted-foreground">Notes</label>
           <textarea
-            className="border border-zinc-300 dark:border-zinc-700 rounded-md px-3 py-2 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 min-h-[48px]"
+            className="border border-input rounded-md px-3 py-1.5 text-sm bg-background text-foreground min-h-[44px]"
             value={notes}
             onChange={e => setNotes(e.target.value)}
             placeholder="Any additional details..."
@@ -173,7 +173,7 @@ export function LightingIssueForm({ onSubmitted, prefillData, onSuccess }: Light
         <div className="md:col-span-2 flex flex-col gap-2">
           {error && <div className="text-red-500 text-sm font-medium">{error}</div>}
           <button
-            className="w-full md:w-auto px-6 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow transition disabled:opacity-60"
+            className="w-full md:w-auto h-9 px-4 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition disabled:opacity-60"
             type="submit"
             disabled={loading}
           >

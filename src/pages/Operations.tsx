@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,8 @@ import AdvancedAnalyticsDashboard from "@/components/analytics/AdvancedAnalytics
 
 // Import dialogs
 import { IssueDialog } from "@/components/issues/IssueDialog";
+import { IssueDialogManager } from "@/components/issues/components/IssueDialogManager";
+import { useDialogManager } from "@/hooks/useDialogManager";
 import { ScheduleMaintenanceDialog } from "@/components/maintenance/ScheduleMaintenanceDialog";
 import { ReportIssueDialog } from "@/components/maintenance/ReportIssueDialog";
 
@@ -50,6 +52,7 @@ export default function Operations() {
   const [searchParams, setSearchParams] = useSearchParams();
   const buildingId = searchParams.get('building');
   const filter = searchParams.get('filter');
+  const issueIdParam = searchParams.get('issue_id');
   
   const [activeTab, setActiveTab] = useState(buildingId ? "issues" : "overview");
 
@@ -70,6 +73,28 @@ export default function Operations() {
   const [showScheduleMaintenance, setShowScheduleMaintenance] = useState(false);
   const [showReportIssue, setShowReportIssue] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Dialog manager for issue details opened via URL param
+  const { dialogState, openDialog, closeDialog } = useDialogManager();
+
+  useEffect(() => {
+    if (issueIdParam) {
+      openDialog('issueDetails', { issueId: issueIdParam });
+      setActiveTab('issues');
+    } else {
+      if (dialogState.isOpen && dialogState.type === 'issueDetails') {
+        closeDialog();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [issueIdParam]);
+
+  const handleCloseIssueDialog = () => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('issue_id');
+    setSearchParams(newParams);
+    closeDialog();
+  };
 
   // Get current user
   const { user } = useAuth();
@@ -776,6 +801,12 @@ export default function Operations() {
         </TabsContent>
 
       </Tabs>
+
+      {/* Issue Details Dialog driven by URL param */}
+      <IssueDialogManager 
+        dialogState={dialogState} 
+        onClose={handleCloseIssueDialog} 
+      />
 
       {/* Dialogs */}
       <IssueDialog 

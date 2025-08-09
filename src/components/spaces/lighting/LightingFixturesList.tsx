@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useLightingFixtures } from "@/components/lighting/hooks/useLightingFixtures";
 import { LightingFixtureCard } from "@/components/lighting/card/LightingFixtureCard";
 import { LightingHeader } from "@/components/lighting/components/LightingHeader";
-import { LightingFixture } from "@/components/lighting/types";
+import { LightingFixture } from "@/types/lighting";
 
 interface LightingFixturesListProps {
   selectedBuilding?: string;

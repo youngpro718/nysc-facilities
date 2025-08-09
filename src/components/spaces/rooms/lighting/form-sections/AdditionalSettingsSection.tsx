@@ -2,7 +2,7 @@
 import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
 import { UseFormReturn } from "react-hook-form";
-import { RoomLightingConfig } from "@/components/lighting/types";
+import { RoomLightingConfig } from "@/types/lighting";
 
 interface AdditionalSettingsSectionProps {
   form: UseFormReturn<RoomLightingConfig>;

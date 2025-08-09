@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Settings2 } from "lucide-react";
-import { LightingFixture, LightingTechnology } from "@/components/lighting/types";
+import { LightingFixture, LightingTechnology } from "@/types/lighting";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";

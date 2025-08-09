@@ -47,7 +47,7 @@ export const BuildingCard = ({
   const handleImageClick = () => {
     if (mostRecentIssue) {
       onMarkAsSeen(mostRecentIssue.id);
-      navigate(`/issues?selected=${mostRecentIssue.id}`);
+      navigate(`/operations?issue_id=${mostRecentIssue.id}`);
     }
   };
 

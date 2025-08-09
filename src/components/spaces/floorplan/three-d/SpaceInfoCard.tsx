@@ -83,7 +83,9 @@ export function SpaceInfoCard({
       <div className={cn("fixed transform -translate-x-1/2 -translate-y-full", "p-3 rounded-lg shadow-lg", "bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85", "border border-gray-200/50", "max-w-[240px] min-w-[180px]", "transition-all duration-150 ease-out", isExpanded ? "scale-100" : "scale-95 hover:scale-100")} style={{
       marginTop: '-10px',
       perspective: '1000px',
-      transformStyle: 'preserve-3d'
+      WebkitPerspective: '1000px' as any,
+      transformStyle: 'preserve-3d',
+      WebkitTransformStyle: 'preserve-3d' as any
     }} onClick={() => setIsExpanded(!isExpanded)}>
         <div className="flex items-start gap-2">
           <div className="text-xl select-none">{getTypeIcon()}</div>

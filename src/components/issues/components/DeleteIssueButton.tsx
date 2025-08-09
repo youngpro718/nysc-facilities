@@ -16,6 +16,8 @@ import { Trash, AlertCircle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useDeleteIssueMutation } from "../hooks/mutations/useDeleteIssueMutation";
+import { normalizeSupabaseError } from "@/lib/supabaseErrors";
+import { useRolePermissions } from "@/hooks/useRolePermissions";
 
 interface DeleteIssueButtonProps {
   issueId: string;
@@ -40,6 +42,8 @@ export function DeleteIssueButton({
   const [forceDelete, setForceDelete] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { deleteIssueMutation, isDeleteInProgress } = useDeleteIssueMutation();
+  const { canAdmin } = useRolePermissions();
+  const canDelete = canAdmin("issues");
   
   // Reset state when dialog closes
   const handleOpenChange = (open: boolean) => {
@@ -68,16 +72,8 @@ export function DeleteIssueButton({
       }
     } catch (error: any) {
       console.error("[DeleteIssueButton] Error deleting issue:", error);
-      setErrorMessage(error.message || "An unknown error occurred");
-      
-      // If the error message suggests constraints, recommend force delete
-      if (error.message?.includes('violates foreign key constraint') || 
-          error.message?.includes('constraint') || 
-          error.message?.includes('Failed to delete')) {
-        setErrorMessage(
-          "Unable to delete due to database constraints. You can try force deletion, which will attempt to remove all references to this issue."
-        );
-      }
+      const normalized = normalizeSupabaseError(error);
+      setErrorMessage(normalized.userMessage);
     }
   };
 
@@ -158,7 +154,8 @@ export function DeleteIssueButton({
           variant="ghost"
           size="sm"
           className={`text-destructive hover:text-destructive hover:bg-destructive/10 ${className}`}
-          disabled={isDeleteInProgress}
+          disabled={isDeleteInProgress || !canDelete}
+          title={!canDelete ? "You do not have permission to delete issues. Contact an admin." : undefined}
           onClick={(e) => e.stopPropagation()} // Stop event propagation
         >
           <Trash className="h-4 w-4 mr-2" />
