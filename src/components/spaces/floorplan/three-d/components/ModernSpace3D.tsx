@@ -129,25 +129,14 @@ export function ModernSpace3D({
   onHover,
   onUnhover
 }: ModernSpace3DProps) {
-  // Early return if essential props are missing
-  if (!id || !type || !position || !size) {
-    console.warn('ModernSpace3D: Missing essential props', { id, type, position, size });
-    return null;
-  }
-
-  // Validate position object
-  if (typeof position.x !== 'number' || typeof position.y !== 'number') {
-    console.warn('ModernSpace3D: Invalid position', position);
-    return null;
-  }
-
-  // Validate size object
-  if (!size.width || !size.height || typeof size.width !== 'number' || typeof size.height !== 'number') {
-    console.warn('ModernSpace3D: Invalid size', size);
-    return null;
-  }
+  // Hoist hooks before any early returns
   const groupRef = useRef<THREE.Group>(null);
   const meshRef = useRef<THREE.Mesh>(null);
+
+  // Prepare validity flags (checked after hooks)
+  const hasEssentials = !!id && !!type && !!position && !!size;
+  const positionValid = hasEssentials && typeof position.x === 'number' && typeof position.y === 'number';
+  const sizeValid = hasEssentials && !!size.width && !!size.height && typeof size.width === 'number' && typeof size.height === 'number';
 
   // Safe dimension calculation
   const dimensions = useMemo(() => {
@@ -177,17 +166,28 @@ export function ModernSpace3D({
     [dimensions, type]
   );
 
+  // Post-hook validity checks and early exits
+  if (!hasEssentials) {
+    console.warn('ModernSpace3D: Missing essential props', { id, type, position, size });
+    return null;
+  }
+  if (!positionValid) {
+    console.warn('ModernSpace3D: Invalid position', position);
+    return null;
+  }
+  if (!sizeValid) {
+    console.warn('ModernSpace3D: Invalid size', size);
+    return null;
+  }
+
   // Return null if material or geometry creation failed
   if (!material || !geometry) {
     console.warn('ModernSpace3D: Failed to create material or geometry', { id, type, material: !!material, geometry: !!geometry });
     return null;
   }
 
-  // Safe label text
-  const displayLabel = useMemo(() => {
-    if (!label) return id || 'Unnamed';
-    return label.length > 20 ? label.substring(0, 20) + '...' : label;
-  }, [label, id]);
+  // Safe label text (no hook needed)
+  const displayLabel = !label ? (id || 'Unnamed') : (label.length > 20 ? label.substring(0, 20) + '...' : label);
 
   // Handle click safely
   const handleClick = (event: any) => {

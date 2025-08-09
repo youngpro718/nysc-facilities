@@ -4,9 +4,9 @@ import { useNodeHandles } from '../hooks/useNodeHandles';
 import { getNodeBaseStyle, getResizerConfig } from '../utils/nodeStyles';
 
 export function DoorNode({ data, selected }: NodeProps<FloorPlanObjectData>) {
-  if (!data) return null;
-
+  // Hooks must be called unconditionally at the top level
   const { handleStyle, doorHandles } = useNodeHandles(selected);
+  if (!data) return null;
   const style = getNodeBaseStyle('door', data, selected);
   const resizerConfig = getResizerConfig('door');
 

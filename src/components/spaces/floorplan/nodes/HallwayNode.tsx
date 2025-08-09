@@ -6,9 +6,9 @@ import { getNodeBaseStyle, getResizerConfig } from '../utils/nodeStyles';
 import { Lightbulb, ShieldAlert, Accessibility, ArrowRight } from 'lucide-react';
 
 export function HallwayNode({ data, selected }: NodeProps<FloorPlanObjectData>) {
-  if (!data) return null;
-
+  // Hooks must be called unconditionally at the top level
   const { handleStyle, standardHandles } = useNodeHandles(selected);
+  if (!data) return null;
   const style = {
     ...getNodeBaseStyle('hallway', data, selected),
     display: 'flex',

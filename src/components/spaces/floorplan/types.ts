@@ -1,4 +1,4 @@
-
+/* eslint-disable @typescript-eslint/no-namespace */
 import { Canvas } from 'fabric';
 
 declare global {
@@ -61,18 +61,18 @@ declare global {
     }
 
     interface ObjectEvents {
-      added?: Function;
-      removed?: Function;
-      selected?: Function;
-      deselected?: Function;
-      modified?: Function;
-      rotated?: Function;
-      scaled?: Function;
-      moved?: Function;
-      mousedown?: Function;
-      mouseup?: Function;
-      mouseover?: Function;
-      mouseout?: Function;
+      added?: () => void;
+      removed?: () => void;
+      selected?: () => void;
+      deselected?: () => void;
+      modified?: () => void;
+      rotated?: () => void;
+      scaled?: () => void;
+      moved?: () => void;
+      mousedown?: (event?: unknown) => void;
+      mouseup?: (event?: unknown) => void;
+      mouseover?: (event?: unknown) => void;
+      mouseout?: (event?: unknown) => void;
     }
 
     interface Object extends FabricObjectProps {

@@ -14,12 +14,17 @@ export function SimpleConnection({
   type = 'direct', 
   isHighlighted = false 
 }: SimpleConnectionProps) {
-  // Defensive validation
-  if (!from || !to || typeof from.x !== 'number' || typeof from.y !== 'number' || 
-      typeof to.x !== 'number' || typeof to.y !== 'number') {
-    console.warn('SimpleConnection: Invalid from/to coordinates', { from, to });
-    return null;
-  }
+  // Prepare safe coordinates and validation flags (checked after hooks)
+  const hasEndpoints = !!from && !!to;
+  const fromX = hasEndpoints ? (from as any)?.x : NaN;
+  const fromY = hasEndpoints ? (from as any)?.y : NaN;
+  const toX = hasEndpoints ? (to as any)?.x : NaN;
+  const toY = hasEndpoints ? (to as any)?.y : NaN;
+  const coordsValid =
+    typeof fromX === 'number' && typeof fromY === 'number' &&
+    typeof toX === 'number' && typeof toY === 'number' &&
+    !Number.isNaN(fromX) && !Number.isNaN(fromY) &&
+    !Number.isNaN(toX) && !Number.isNaN(toY);
 
   const getConnectionColor = () => {
     switch (type) {
@@ -37,9 +42,9 @@ export function SimpleConnection({
     try {
       // Create Vector3 objects separately to avoid inline creation
       const startPoint = new THREE.Vector3();
-      startPoint.set(from.x, 25, from.y);
+      startPoint.set(fromX as number, 25, fromY as number);
       const endPoint = new THREE.Vector3();
-      endPoint.set(to.x, 25, to.y);
+      endPoint.set(toX as number, 25, toY as number);
       const points = [startPoint, endPoint];
 
       const geometry = new THREE.BufferGeometry().setFromPoints(points);
@@ -55,8 +60,13 @@ export function SimpleConnection({
       console.error('SimpleConnection: Error creating line object', error, { from, to, type, isHighlighted });
       return null;
     }
-  }, [from.x, from.y, to.x, to.y, type, isHighlighted]);
+  }, [fromX, fromY, toX, toY, type, isHighlighted]);
 
+  // Post-hook validation
+  if (!coordsValid) {
+    console.warn('SimpleConnection: Invalid from/to coordinates', { from, to });
+    return null;
+  }
   if (!line) {
     return null;
   }
