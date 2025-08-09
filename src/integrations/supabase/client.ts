@@ -2,23 +2,13 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-// Read from Vite environment variables
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
-
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  // Non-fatal warning to assist local/dev setups
-  console.warn(
-    '[Supabase] Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY.\n' +
-      'Create a .env.local with:\n' +
-      'VITE_SUPABASE_URL=your-project-url\n' +
-      'VITE_SUPABASE_ANON_KEY=your-anon-key'
-  );
-}
+// Static Supabase credentials (Lovable env has no VITE_* support)
+const SUPABASE_URL = 'https://fmymhtuiqzhupjyopfvi.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZteW1odHVpcXpodXBqeW9wZnZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgyNDc4OTYsImV4cCI6MjA1MzgyMzg5Nn0.1OvOXiLEj3QKGjAEZCSWqw8zzewsYgfTlVDcDEdfCjE';
 
 export const supabase = createClient<Database>(
-  SUPABASE_URL || '',
-  SUPABASE_ANON_KEY || '',
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY,
   {
     auth: {
       persistSession: true,

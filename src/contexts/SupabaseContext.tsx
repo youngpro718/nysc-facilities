@@ -1,6 +1,7 @@
 import { createContext, useContext, useMemo } from 'react';
-import { SupabaseClient, createClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
+import { supabase as supabaseClient } from '@/integrations/supabase/client';
 
 const SupabaseContext = createContext<SupabaseClient<Database> | null>(null);
 
@@ -13,19 +14,10 @@ export const useSupabaseClient = () => {
 };
 
 export const SupabaseProvider = ({ children }: { children: React.ReactNode }) => {
-  const supabase = useMemo(() => {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    
-    if (!supabaseUrl || !supabaseAnonKey) {
-      throw new Error('Supabase URL and anon key must be provided in environment variables');
-    }
-    
-    return createClient<Database>(supabaseUrl, supabaseAnonKey);
-  }, []);
+  const client = useMemo(() => supabaseClient as unknown as SupabaseClient<Database>, []);
   
   return (
-    <SupabaseContext.Provider value={supabase}>
+    <SupabaseContext.Provider value={client}>
       {children}
     </SupabaseContext.Provider>
   );
