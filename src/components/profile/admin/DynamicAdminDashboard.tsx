@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useDashboardCustomization } from "@/providers/DashboardCustomizationProvider";
+import { useDashboardCustomization } from "@/providers/SimpleDashboardProvider";
 import { SystemOverviewWidget } from "./widgets/SystemOverviewWidget";
 import { UserManagementWidget } from "./widgets/UserManagementWidget";
 import { BuildingStatusWidget } from "./widgets/BuildingStatusWidget";
@@ -36,9 +36,12 @@ export function DynamicAdminDashboard() {
   const [userManagementOpen, setUserManagementOpen] = useState(false);
   const [systemSecurityOpen, setSystemSecurityOpen] = useState(false);
   const { toast } = useToast();
+  const [widgetAvailability, setWidgetAvailability] = useState<Record<string, boolean>>({});
+  const [activities, setActivities] = useState<Array<{ id: string; type: 'user_login' | 'system_update' | 'issue_created' | 'maintenance'; description: string; timestamp: string; user?: string }>>([]);
 
   useEffect(() => {
     loadStats();
+    checkAvailabilityAndData();
   }, []);
 
   // Force re-render when layout changes
@@ -87,10 +90,62 @@ export function DynamicAdminDashboard() {
     }
   };
 
+  const checkAvailabilityAndData = async () => {
+    const availability: Record<string, boolean> = {};
+
+    // Try to load recent activities from audit_logs, else fallback to issues
+    let recentActivities: Array<{ id: string; type: 'user_login' | 'system_update' | 'issue_created' | 'maintenance'; description: string; timestamp: string; user?: string }> = [];
+    try {
+      const { data: auditLogs, error: auditErr } = await supabase
+        .from('audit_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (!auditErr && auditLogs && auditLogs.length > 0) {
+        availability['recent-activity'] = true;
+        recentActivities = auditLogs.map((row: any) => ({
+          id: String(row.id ?? row.event_id ?? Math.random()),
+          type: 'system_update',
+          description: row.description || row.action || 'System event',
+          timestamp: new Date(row.created_at || Date.now()).toLocaleString(),
+          user: row.actor_name || row.user || undefined,
+        }));
+      } else {
+        // Fallback to issues
+        const { data: issues, error: issuesErr } = await supabase
+          .from('issues')
+          .select('id, title, updated_at, created_at, created_by')
+          .order('updated_at', { ascending: false })
+          .limit(10);
+
+        if (!issuesErr && issues) {
+          availability['recent-activity'] = (issues.length > 0);
+          recentActivities = (issues || []).map((i: any) => ({
+            id: String(i.id),
+            type: 'issue_created',
+            description: i.title ? `Issue updated: ${i.title}` : 'Issue activity',
+            timestamp: new Date(i.updated_at || i.created_at || Date.now()).toLocaleString(),
+            user: i.created_by || undefined,
+          }));
+        } else {
+          availability['recent-activity'] = false;
+        }
+      }
+    } catch (e) {
+      availability['recent-activity'] = false;
+    }
+
+    setActivities(recentActivities);
+    setWidgetAvailability(availability);
+  };
+
   const activeLayout = getActiveLayout();
   if (!activeLayout) return null;
 
-  const enabledWidgets = activeLayout.widgets.filter(widget => widget.enabled);
+  const enabledWidgets = activeLayout.widgets
+    .filter(widget => widget.enabled)
+    .filter(widget => widgetAvailability[widget.id] !== false);
 
   const renderWidget = (widgetId: string) => {
     switch (widgetId) {
@@ -125,7 +180,7 @@ export function DynamicAdminDashboard() {
           />
         );
       case "recent-activity":
-        return <RecentActivityWidget />;
+        return <RecentActivityWidget activities={activities} />;
       default:
         return null;
     }

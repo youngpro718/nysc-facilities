@@ -17,11 +17,11 @@ BEGIN
     -- Reset rate limits
     IF p_attempt_type IS NULL THEN
         -- Reset all attempt types for the identifier
-        DELETE FROM auth_rate_limits 
+        DELETE FROM security_rate_limits 
         WHERE identifier = p_identifier;
     ELSE
         -- Reset specific attempt type for the identifier
-        DELETE FROM auth_rate_limits 
+        DELETE FROM security_rate_limits 
         WHERE identifier = p_identifier 
         AND attempt_type = p_attempt_type;
     END IF;
@@ -76,7 +76,7 @@ BEGIN
         arl.last_attempt,
         arl.blocked_until,
         (arl.blocked_until IS NOT NULL AND arl.blocked_until > now()) as is_blocked
-    FROM auth_rate_limits arl
+    FROM security_rate_limits arl
     WHERE arl.identifier = p_identifier
     AND (p_attempt_type IS NULL OR arl.attempt_type = p_attempt_type)
     ORDER BY arl.last_attempt DESC;

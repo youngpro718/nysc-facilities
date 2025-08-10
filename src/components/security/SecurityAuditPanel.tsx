@@ -51,9 +51,9 @@ export function SecurityAuditPanel() {
 
       if (eventsError) throw eventsError;
 
-      // Fetch rate limit data
+      // Fetch rate limit data (prefer canonical table)
       const { data: limits, error: limitsError } = await supabase
-        .from('auth_rate_limits')
+        .from('security_rate_limits')
         .select('*')
         .order('last_attempt', { ascending: false })
         .limit(20);

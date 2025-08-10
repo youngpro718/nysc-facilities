@@ -18,6 +18,32 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
 
     console.log('Setting up admin realtime notifications for user:', user.id);
 
+    // Small helper to (re)subscribe with retry in case the Realtime service is still warming up
+    const subscribeWithRetry = async (channel: ReturnType<typeof supabase.channel>, name: string) => {
+      let attempt = 0;
+      const max = 3;
+      return new Promise<void>((resolve) => {
+        const doSub = () => {
+          attempt += 1;
+          channel.subscribe((status) => {
+            console.log(`${name} channel status:`, status);
+            if (status === 'SUBSCRIBED') {
+              setIsConnected(true);
+              resolve();
+              return;
+            }
+            if (status === 'CHANNEL_ERROR' || status === 'CLOSED') {
+              if (attempt < max) {
+                const backoff = 500 * attempt; // 0.5s, 1s
+                setTimeout(doSub, backoff);
+              }
+            }
+          });
+        };
+        doSub();
+      });
+    };
+
     // Subscribe to admin notifications
     const adminNotificationsChannel = supabase
       .channel('admin-notifications-realtime')
@@ -93,11 +119,10 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
             ...toastOptions
           });
         }
-      )
-      .subscribe((status) => {
-        console.log('Admin notifications channel status:', status);
-        setIsConnected(status === 'SUBSCRIBED');
-      });
+      );
+
+    // Kick off subscription with retry
+    subscribeWithRetry(adminNotificationsChannel, 'Admin notifications');
 
     // Subscribe to new key requests for immediate admin notification
     const keyRequestsChannel = supabase

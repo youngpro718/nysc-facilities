@@ -1,7 +1,4 @@
-
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Shield, ChevronLeft, Bell, Settings, Palette, LayoutGrid, Settings2 } from "lucide-react";
-import { EnhancedUserSettings } from '@/components/profile/EnhancedUserSettings';
+import { User, Shield, ChevronLeft, Bell, Settings2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { PersonalInfoForm } from "@/components/profile/PersonalInfoForm";
 import { NotificationPreferencesCard } from "@/components/notifications/NotificationPreferencesCard";
@@ -9,8 +6,6 @@ import { SecuritySection } from "@/components/profile/SecuritySection";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { MobileProfileHeader } from "@/components/profile/mobile/MobileProfileHeader";
 import { MobileSettingsCard } from "@/components/profile/mobile/MobileSettingsCard";
-import { AppearanceSettings } from "@/components/profile/AppearanceSettings";
-import { DashboardCustomization } from "@/components/profile/DashboardCustomization";
 import { SettingsVerification } from "@/components/profile/SettingsVerification";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -28,6 +23,8 @@ export default function Profile() {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // No tab state; page is sectioned
 
   const checkMobile = () => {
     setIsMobile(window.innerWidth < 768);
@@ -84,7 +81,7 @@ export default function Profile() {
       description: 'Update your name, email, and contact details',
       icon: User,
       type: 'navigation' as const,
-      action: () => navigate('/profile/edit')
+      action: () => navigate('/profile#personal-info')
     },
     {
       id: 'privacy',
@@ -92,7 +89,7 @@ export default function Profile() {
       description: 'Control your privacy and data sharing',
       icon: Shield,
       type: 'navigation' as const,
-      action: () => navigate('/profile/privacy')
+      action: () => navigate('/settings?tab=security')
     },
     {
       id: 'all-settings',
@@ -100,7 +97,7 @@ export default function Profile() {
       description: 'Complete settings for notifications, privacy, appearance, and more',
       icon: Settings2,
       type: 'navigation' as const,
-      action: () => navigate('/profile/settings')
+      action: () => navigate('/settings')
     }
   ];
 
@@ -156,112 +153,54 @@ export default function Profile() {
           Manage your account settings and preferences
         </p>
       </div>
-      
-      <Tabs defaultValue="profile" className="w-full space-y-6 sm:space-y-8">
-        <div className="overflow-x-auto scrollbar-hide">
-          <TabsList className="grid w-full min-w-max grid-cols-4 gap-1 bg-muted p-1 h-auto">
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-6 h-full bg-gradient-to-r from-muted to-transparent pointer-events-none z-10 rounded-l-md" />
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-6 h-full bg-gradient-to-l from-muted to-transparent pointer-events-none z-10 rounded-r-md" />
-            <TabsTrigger 
-              value="profile" 
-              className="flex items-center gap-2 px-4 py-3 text-sm data-[state=active]:bg-background data-[state=active]:text-foreground transition-colors whitespace-nowrap"
-            >
-              <User className="h-4 w-4" />
-              Profile
-            </TabsTrigger>
-            <TabsTrigger 
-              value="appearance" 
-              className="flex items-center gap-2 px-4 py-3 text-sm data-[state=active]:bg-background data-[state=active]:text-foreground transition-colors whitespace-nowrap"
-            >
-              <Palette className="h-4 w-4" />
-              Appearance
-            </TabsTrigger>
-            <TabsTrigger 
-              value="dashboard" 
-              className="flex items-center gap-2 px-4 py-3 text-sm data-[state=active]:bg-background data-[state=active]:text-foreground transition-colors whitespace-nowrap"
-            >
-              <LayoutGrid className="h-4 w-4" />
-              Dashboard
-            </TabsTrigger>
-            <TabsTrigger 
-              value="security" 
-              className="flex items-center gap-2 px-4 py-3 text-sm data-[state=active]:bg-background data-[state=active]:text-foreground transition-colors whitespace-nowrap"
-            >
-              <Shield className="h-4 w-4" />
-              Security
-            </TabsTrigger>
-            <TabsTrigger 
-              value="all-settings" 
-              className="flex items-center gap-2 px-4 py-3 text-sm data-[state=active]:bg-background data-[state=active]:text-foreground transition-colors whitespace-nowrap"
-            >
-              <Settings2 className="h-4 w-4" />
-              All Settings
-            </TabsTrigger>
-          </TabsList>
+
+      <Card className="border-0 sm:border sm:shadow-sm">
+        <div className="p-4 sm:p-6">
+          <ProfileHeader />
         </div>
-        
-        <TabsContent value="profile" className="space-y-4 sm:space-y-6 mt-6">
-          <Card className="border-0 sm:border sm:shadow-sm">
-            <div className="p-4 sm:p-6">
-              <ProfileHeader />
-            </div>
-          </Card>
-          
-          <Card className="border-0 sm:border sm:shadow-sm">
-            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-              <div className="space-y-2">
-                <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">Personal Information</h2>
-                <p className="text-sm sm:text-base text-muted-foreground">
-                  Update your personal details and contact information
-                </p>
-              </div>
-              <PersonalInfoForm />
-            </div>
-          </Card>
+      </Card>
 
-          <Card className="border-0 sm:border sm:shadow-sm">
-            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-              <div className="space-y-2">
-                <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">Notification Settings</h2>
-                <p className="text-sm sm:text-base text-muted-foreground">
-                  Choose how you want to receive notifications
-                </p>
-              </div>
-              <NotificationPreferencesCard />
-            </div>
-          </Card>
-
-          <Card className="border-0 sm:border sm:shadow-sm">
-            <div className="p-4 sm:p-6">
-              <SettingsVerification />
-            </div>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="appearance" className="mt-6">
-          <AppearanceSettings />
-        </TabsContent>
-
-        <TabsContent value="dashboard" className="mt-6">
-          <DashboardCustomization />
-        </TabsContent>
-
-        <TabsContent value="security" className="mt-6">
-          <SecuritySection />
-        </TabsContent>
-
-        <TabsContent value="all-settings" className="mt-6">
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-semibold">All Settings</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Complete settings management for notifications, privacy, appearance, language, security, and accessibility
-              </p>
-            </div>
-            <EnhancedUserSettings />
+      <Card className="border-0 sm:border sm:shadow-sm">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+          <div className="space-y-2" id="personal-info">
+            <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">Personal Information</h2>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              Update your personal details and contact information
+            </p>
           </div>
-        </TabsContent>
-      </Tabs>
+          <PersonalInfoForm />
+        </div>
+      </Card>
+
+      <Card className="border-0 sm:border sm:shadow-sm">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+          <div className="space-y-2">
+            <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">Notification Settings</h2>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              Choose how you want to receive notifications
+            </p>
+          </div>
+          <NotificationPreferencesCard />
+        </div>
+      </Card>
+
+      <Card className="border-0 sm:border sm:shadow-sm">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+          <div className="space-y-2">
+            <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">Security</h2>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              Two-factor authentication, login alerts, and device tracking
+            </p>
+          </div>
+          <SecuritySection isAdmin={isAdmin} />
+        </div>
+      </Card>
+
+      <Card className="border-0 sm:border sm:shadow-sm">
+        <div className="p-4 sm:p-6">
+          <SettingsVerification />
+        </div>
+      </Card>
     </div>
   );
 }

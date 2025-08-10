@@ -82,18 +82,9 @@ export function useSystemSettings() {
   } = useQuery({
     queryKey: ['system-status'],
     queryFn: async () => {
-      // In a real app, this would check actual system health
-      // For now, we'll simulate based on database connectivity
-      try {
-        const { error } = await supabase.from('profiles').select('id').limit(1);
-        
-        return {
-          system: 'online',
-          database: error ? 'error' : 'connected',
-          security: 'secure',
-          maintenance: 'none',
-        } as SystemStatus;
-      } catch (error) {
+      // Use backend RPC for real health status
+      const { data, error } = await supabase.rpc('get_system_health');
+      if (error || !data) {
         return {
           system: 'offline',
           database: 'disconnected',
@@ -101,6 +92,12 @@ export function useSystemSettings() {
           maintenance: 'none',
         } as SystemStatus;
       }
+      return {
+        system: (data.system as SystemStatus['system']) ?? 'online',
+        database: (data.database as SystemStatus['database']) ?? 'connected',
+        security: (data.security as SystemStatus['security']) ?? 'secure',
+        maintenance: 'none',
+      } as SystemStatus;
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
@@ -113,29 +110,97 @@ export function useSystemSettings() {
   } = useQuery({
     queryKey: ['system-modules'],
     queryFn: async () => {
-      // In a real app, this would come from a modules configuration table
-      // For now, we'll return the standard modules
-      return [
-        { id: 'spaces', name: 'Spaces Management', enabled: true, description: 'Manage buildings, floors, rooms, and space layouts' },
-        { id: 'issues', name: 'Issue Tracking', enabled: true, description: 'Track and resolve facility issues and maintenance requests' },
-        { id: 'inventory', name: 'Inventory Management', enabled: true, description: 'Manage supplies, equipment, and inventory tracking' },
-        { id: 'keys', name: 'Key Management', enabled: true, description: 'Manage key assignments and access control' },
-        { id: 'occupants', name: 'Occupant Management', enabled: true, description: 'Manage room assignments and occupant information' },
-        { id: 'court-operations', name: 'Court Operations', enabled: true, description: 'Specialized court scheduling and operations' },
-        { id: 'lighting', name: 'Lighting Management', enabled: true, description: 'Manage lighting fixtures and maintenance' },
-        { id: 'analytics', name: 'Advanced Analytics', enabled: true, description: 'AI-powered insights and predictive analytics' },
-        { id: 'reports', name: 'Reporting System', enabled: false, description: 'Generate and schedule facility reports' },
-      ] as ModuleStatus[];
+      // 1) Identify current user
+      const { data: userRes } = await supabase.auth.getUser();
+      const userId = userRes?.user?.id;
+
+      // 2) Load module catalog (system-level list only)
+      let catalog: { id: string; name: string; description: string; enabled?: boolean }[] = [];
+      try {
+        const { data: sysMods } = await supabase
+          .from('system_modules')
+          .select('id, name, description, enabled')
+          .order('name', { ascending: true });
+        catalog = (sysMods ?? []) as any[];
+      } catch (_) {
+        catalog = [];
+      }
+
+      // Fallback catalog if table is empty or missing
+      if (!catalog.length) {
+        catalog = [
+          { id: 'spaces', name: 'Spaces Management', description: 'Manage buildings, floors, rooms, and space layouts' },
+          { id: 'issues', name: 'Issue Tracking', description: 'Track and resolve facility issues and maintenance requests' },
+          { id: 'inventory', name: 'Inventory Management', description: 'Manage supplies, equipment, and inventory tracking' },
+          { id: 'keys', name: 'Key Management', description: 'Manage key assignments and access control' },
+          { id: 'occupants', name: 'Occupant Management', description: 'Manage room assignments and occupant information' },
+          { id: 'court-operations', name: 'Court Operations', description: 'Specialized court scheduling and operations' },
+          { id: 'lighting', name: 'Lighting Management', description: 'Manage lighting fixtures and maintenance' },
+          { id: 'analytics', name: 'Advanced Analytics', description: 'AI-powered insights and predictive analytics' },
+          { id: 'reports', name: 'Reporting System', description: 'Generate and schedule facility reports' },
+        ];
+      }
+
+      // 3) Load profile-specific enabled_modules
+      let profileEnabled: Record<string, boolean> = {};
+      if (userId) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('enabled_modules, departments(name)')
+          .eq('id', userId)
+          .single();
+        if ((profile as any)?.enabled_modules) {
+          profileEnabled = profile.enabled_modules as Record<string, boolean>;
+        }
+        // Optional auto-enable for Supply Department (kept consistent with useEnabledModules)
+        if ((profile as any)?.departments?.name === 'Supply Department') {
+          profileEnabled.supply_requests = true;
+          profileEnabled.inventory = true;
+        }
+      }
+
+      // 4) Merge catalog with profile flags
+      const merged: ModuleStatus[] = catalog.map((m) => {
+        const hasProfile = Object.prototype.hasOwnProperty.call(profileEnabled, m.id);
+        const resolvedEnabled = hasProfile ? !!profileEnabled[m.id] : !!m.enabled;
+        return {
+          id: m.id,
+          name: m.name,
+          description: m.description,
+          enabled: resolvedEnabled,
+        };
+      });
+
+      return merged;
     },
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 5 * 60 * 1000,
   });
 
   // Toggle module status
   const toggleModule = useMutation({
     mutationFn: async ({ moduleId, enabled }: { moduleId: string; enabled: boolean }) => {
-      // In a real app, this would update the database
-      // For now, we'll just simulate the action
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Persist to current user's profiles.enabled_modules (profile-specific)
+      const { data: userRes, error: authErr } = await supabase.auth.getUser();
+      if (authErr || !userRes?.user?.id) throw authErr || new Error('No user');
+      const userId = userRes.user.id;
+
+      // Fetch current JSON
+      const { data: profile, error: pErr } = await supabase
+        .from('profiles')
+        .select('enabled_modules')
+        .eq('id', userId)
+        .single();
+      if (pErr) throw pErr;
+
+      const current: Record<string, boolean> = (profile?.enabled_modules ?? {}) as Record<string, boolean>;
+      const next = { ...current, [moduleId]: enabled };
+
+      const { error: uErr } = await supabase
+        .from('profiles')
+        .update({ enabled_modules: next })
+        .eq('id', userId);
+      if (uErr) throw uErr;
+
       return { moduleId, enabled };
     },
     onSuccess: (data) => {
@@ -147,16 +212,15 @@ export function useSystemSettings() {
             : module
         )
       );
+      // Also nudge any hooks relying on enabled modules
+      queryClient.invalidateQueries({ queryKey: ['enabled-modules'] });
     },
   });
 
   // Run system health check
   const runHealthCheck = useMutation({
     mutationFn: async () => {
-      // Simulate health check
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Refresh system status
+      // Trigger a fresh health read
       queryClient.invalidateQueries({ queryKey: ['system-status'] });
       queryClient.invalidateQueries({ queryKey: ['system-stats'] });
       
@@ -178,13 +242,14 @@ export function useSystemSettings() {
   // Clear cache
   const clearCache = useMutation({
     mutationFn: async () => {
-      // Clear all React Query caches
+      // Call server-side maintenance RPC
+      const { data, error } = await supabase.rpc('clear_app_cache');
+      // Regardless of server response, refresh client caches to reflect any changes
       queryClient.clear();
-      
-      // Simulate cache clearing
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      return { success: true, message: 'Cache cleared successfully' };
+      if (error) {
+        return { success: false, message: 'Server cache clear failed' };
+      }
+      return { success: true, message: (data?.message as string) || 'Cache cleared successfully' };
     },
   });
 

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Layout from "@/components/layout/Layout";
 import AdminDashboard from "@/pages/AdminDashboard";
@@ -20,8 +20,7 @@ import VerificationPending from "@/pages/VerificationPending";
 import AccessManagement from "@/pages/AccessManagement";
 import ThemeSettings from "@/pages/settings/ThemeSettings";
 import SettingsPage from '@/pages/SettingsPage';
-import TwoFactorAuth from "@/pages/settings/TwoFactorAuth";
-import SessionSettings from "@/pages/settings/SessionSettings";
+// Legacy settings pages (2FA, Session) are consolidated under Security tab
 import AdminKeyRequests from "@/pages/admin/KeyRequests";
 import SupplyRoom from "@/pages/SupplyRoom";
 import { CourtOperationsDashboard } from "@/pages/CourtOperationsDashboard";
@@ -158,21 +157,15 @@ function AppContent() {
             <ThemeSettings />
           </ProtectedRoute>
         } />
-        <Route path="settings/security/2fa" element={
-          <ProtectedRoute requireAdmin>
-            <TwoFactorAuth />
-          </ProtectedRoute>
-        } />
-        <Route path="settings/security/session" element={
-          <ProtectedRoute requireAdmin>
-            <SessionSettings />
-          </ProtectedRoute>
-        } />
-        <Route path="profile/settings" element={
+        {/* Legacy routes redirected to canonical Security tab */}
+        <Route path="settings/security/2fa" element={<Navigate to="/settings?tab=security" replace />} />
+        <Route path="settings/security/session" element={<Navigate to="/settings?tab=security" replace />} />
+        <Route path="settings" element={
           <ProtectedRoute>
             <SettingsPage />
           </ProtectedRoute>
         } />
+        <Route path="profile/settings" element={<Navigate to="/settings" replace />} />
 
         {/* User Routes */}
         <Route path="dashboard" element={

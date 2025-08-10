@@ -251,7 +251,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                            currentPath.startsWith('/maintenance') ||
                            currentPath.startsWith('/court-operations') ||
                            currentPath.startsWith('/inventory') ||
-                           currentPath.startsWith('/system-settings');
+                           currentPath.startsWith('/system-settings') ||
+                           currentPath.startsWith('/settings');
         
         // Redirect admin users away from user-only pages or login page to admin dashboard
         if (currentPath === '/login' || 

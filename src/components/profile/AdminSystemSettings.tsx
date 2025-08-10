@@ -38,7 +38,9 @@ export function AdminSystemSettings() {
     systemStatus,
     modules,
     toggleModule,
-    isTogglingModule 
+    isTogglingModule,
+    clearCache,
+    isClearingCache 
   } = useSystemSettings();
 
   const { settings, isLoading: settingsLoading, isSaving, saveSettings } = useGlobalSystemSettings();
@@ -350,19 +352,36 @@ export function AdminSystemSettings() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={() => clearCache()}
+              disabled={isClearingCache}
+            >
               <Trash2 className="h-4 w-4" />
-              Clear System Cache
+              {isClearingCache ? 'Clearing Cache...' : 'Clear System Cache'}
             </Button>
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={() => toast({ title: 'Optimize Database', description: 'Coming soon' })}
+            >
               <FileText className="h-4 w-4" />
               Optimize Database
             </Button>
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={() => toast({ title: 'Clean Inactive Sessions', description: 'Coming soon' })}
+            >
               <Users className="h-4 w-4" />
               Clean Inactive Sessions
             </Button>
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={() => toast({ title: 'Archive Old Logs', description: 'Coming soon' })}
+            >
               <Clock className="h-4 w-4" />
               Archive Old Logs
             </Button>

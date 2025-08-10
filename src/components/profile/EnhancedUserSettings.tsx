@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -126,10 +127,24 @@ export function EnhancedUserSettings() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const rawTab = searchParams.get('tab') ?? 'notifications';
+  const mapToCanonical = (t: string) => {
+    if (t === 'appearance' || t === 'language') return 'display';
+    if (t === 'privacy') return 'security';
+    return t;
+  };
+  const initialTab = mapToCanonical(rawTab);
+  const [activeTab, setActiveTab] = useState<string>(initialTab);
 
   useEffect(() => {
     loadSettings();
   }, [user?.id]);
+
+  useEffect(() => {
+    const nextRaw = searchParams.get('tab') ?? 'notifications';
+    setActiveTab(mapToCanonical(nextRaw));
+  }, [searchParams]);
 
   const loadSettings = async () => {
     if (!user?.id) return;
@@ -283,23 +298,15 @@ export function EnhancedUserSettings() {
         </Card>
       )}
 
-      <Tabs defaultValue="notifications" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6">
+      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setSearchParams({ tab: v }, { replace: true } as any); }} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
           <TabsTrigger value="notifications" className="flex items-center gap-2">
             <Bell className="h-4 w-4" />
             <span className="hidden sm:inline">Notifications</span>
           </TabsTrigger>
-          <TabsTrigger value="privacy" className="flex items-center gap-2">
-            <Shield className="h-4 w-4" />
-            <span className="hidden sm:inline">Privacy</span>
-          </TabsTrigger>
-          <TabsTrigger value="appearance" className="flex items-center gap-2">
+          <TabsTrigger value="display" className="flex items-center gap-2">
             <Palette className="h-4 w-4" />
-            <span className="hidden sm:inline">Appearance</span>
-          </TabsTrigger>
-          <TabsTrigger value="language" className="flex items-center gap-2">
-            <Globe className="h-4 w-4" />
-            <span className="hidden sm:inline">Language</span>
+            <span className="hidden sm:inline">Display</span>
           </TabsTrigger>
           <TabsTrigger value="security" className="flex items-center gap-2">
             <Lock className="h-4 w-4" />
@@ -451,37 +458,11 @@ export function EnhancedUserSettings() {
                   </div>
                 )}
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        {/* Privacy Tab */}
-        <TabsContent value="privacy" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5" />
-                Privacy Settings
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
+              <Separator />
+
               <div className="space-y-4">
-                <div>
-                  <Label>Profile Visibility</Label>
-                  <Select
-                    value={settings.profile_visibility}
-                    onValueChange={(value: any) => updateSetting('profile_visibility', value)}
-                  >
-                    <SelectTrigger className="mt-2">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="public">Public</SelectItem>
-                      <SelectItem value="contacts_only">Contacts Only</SelectItem>
-                      <SelectItem value="private">Private</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <h3 className="font-medium">Privacy & Communications</h3>
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
@@ -510,13 +491,7 @@ export function EnhancedUserSettings() {
                     onCheckedChange={(value) => updateSetting('allow_contact_requests', value)}
                   />
                 </div>
-              </div>
 
-              <Separator />
-
-              <div className="space-y-4">
-                <h3 className="font-medium">Data Sharing</h3>
-                
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>Analytics Data</Label>
@@ -543,13 +518,15 @@ export function EnhancedUserSettings() {
           </Card>
         </TabsContent>
 
-        {/* Appearance Tab */}
-        <TabsContent value="appearance" className="space-y-6">
+        {/* Privacy merged into Notifications & Security */}
+
+        {/* Display Tab (Appearance + Language) */}
+        <TabsContent value="display" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Palette className="h-5 w-5" />
-                Appearance Settings
+                Display Settings
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -649,22 +626,6 @@ export function EnhancedUserSettings() {
                     onCheckedChange={(value) => updateSetting('high_contrast', value)}
                   />
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Language & Region Tab */}
-        <TabsContent value="language" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5" />
-                Language & Region
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
                 <div>
                   <Label>Language</Label>
                   <Select
@@ -680,17 +641,6 @@ export function EnhancedUserSettings() {
                       <SelectItem value="fr">Français</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-
-                <div>
-                  <Label>Timezone</Label>
-                  <Input
-                    type="text"
-                    value={settings.timezone}
-                    onChange={(e) => updateSetting('timezone', e.target.value)}
-                    placeholder="e.g., America/New_York"
-                    className="mt-2"
-                  />
                 </div>
 
                 <div>
@@ -726,6 +676,34 @@ export function EnhancedUserSettings() {
                   </Select>
                 </div>
               </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <h3 className="font-medium">Display Options</h3>
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Compact Mode</Label>
+                    <p className="text-sm text-muted-foreground">Reduce spacing and show more content</p>
+                  </div>
+                  <Switch
+                    checked={settings.compact_mode}
+                    onCheckedChange={(value) => updateSetting('compact_mode', value)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>High Contrast</Label>
+                    <p className="text-sm text-muted-foreground">Increase contrast for better visibility</p>
+                  </div>
+                  <Switch
+                    checked={settings.high_contrast}
+                    onCheckedChange={(value) => updateSetting('high_contrast', value)}
+                  />
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -741,6 +719,22 @@ export function EnhancedUserSettings() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
+                <div>
+                  <Label>Profile Visibility</Label>
+                  <Select
+                    value={settings.profile_visibility}
+                    onValueChange={(value: any) => updateSetting('profile_visibility', value)}
+                  >
+                    <SelectTrigger className="mt-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="public">Public</SelectItem>
+                      <SelectItem value="contacts_only">Contacts Only</SelectItem>
+                      <SelectItem value="private">Private</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label className="flex items-center gap-2">

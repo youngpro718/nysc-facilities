@@ -50,9 +50,9 @@ export function SecurityMonitoring() {
 
         if (eventsError) throw eventsError;
 
-        // Fetch current rate limits
+        // Fetch current rate limits (prefer canonical table)
         const { data: limits, error: limitsError } = await supabase
-          .from('auth_rate_limits')
+          .from('security_rate_limits')
           .select('*')
           .order('last_attempt', { ascending: false })
           .limit(20);

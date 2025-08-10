@@ -48,6 +48,24 @@ export function useEnabledModules() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Load system-level module defaults from catalog (if available)
+      let systemDefaults: Partial<EnabledModules> = {};
+      try {
+        const { data: sysMods } = await supabase
+          .from('system_modules')
+          .select('id, enabled');
+        if (sysMods && Array.isArray(sysMods)) {
+          sysMods.forEach((m: any) => {
+            const key = m.id as keyof EnabledModules;
+            if (key in DEFAULT_MODULES && typeof m.enabled === 'boolean') {
+              systemDefaults[key] = m.enabled as any;
+            }
+          });
+        }
+      } catch (e) {
+        // ignore and fall back to hardcoded defaults
+      }
+
       const { data: profile, error } = await supabase
         .from('profiles')
         .select(`
@@ -62,7 +80,7 @@ export function useEnabledModules() {
         return;
       }
 
-      let finalModules = { ...DEFAULT_MODULES };
+      let finalModules = { ...DEFAULT_MODULES, ...systemDefaults };
       
       if (profile?.enabled_modules && typeof profile.enabled_modules === 'object') {
         const modules = profile.enabled_modules as Record<string, boolean>;
@@ -75,7 +93,7 @@ export function useEnabledModules() {
           }
         });
         
-        finalModules = { ...DEFAULT_MODULES, ...validModules };
+        finalModules = { ...DEFAULT_MODULES, ...systemDefaults, ...validModules };
       }
       
       // Auto-enable supply_requests and inventory for Supply Department users
@@ -134,7 +152,24 @@ export function useEnabledModules() {
   };
 
   const resetToDefaults = async () => {
-    await updateEnabledModules(DEFAULT_MODULES);
+    // Pull latest system defaults and reset profile to those
+    let systemDefaults: Partial<EnabledModules> = {};
+    try {
+      const { data: sysMods } = await supabase
+        .from('system_modules')
+        .select('id, enabled');
+      if (sysMods && Array.isArray(sysMods)) {
+        sysMods.forEach((m: any) => {
+          const key = m.id as keyof EnabledModules;
+          if (key in DEFAULT_MODULES && typeof m.enabled === 'boolean') {
+            systemDefaults[key] = m.enabled as any;
+          }
+        });
+      }
+    } catch (e) {
+      // ignore, fall back to hardcoded defaults
+    }
+    await updateEnabledModules({ ...DEFAULT_MODULES, ...systemDefaults });
   };
 
   useEffect(() => {
