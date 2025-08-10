@@ -75,8 +75,12 @@ function getNavigationPath(title: string, isAdmin?: boolean): string {
   const pathMap: Record<string, string> = {
     'Dashboard': isAdmin ? '/' : '/dashboard',
     'Spaces': '/spaces',
+    'Operations': '/operations', // Contains Issues, Maintenance, Supply Requests
     'Issues': '/issues',
     'Occupants': '/occupants',
+    'Inventory': '/inventory',
+    'Supply Requests': isAdmin ? '/admin/supply-requests' : '/supply-requests',
+    'Supply Room': '/supply-room',
     'Keys': '/keys',
     'Lighting': '/lighting',
     'Maintenance': '/maintenance',
@@ -86,15 +90,24 @@ function getNavigationPath(title: string, isAdmin?: boolean): string {
     'Admin Profile': '/admin-profile',
     'Profile': '/profile',
   };
-  return pathMap[title] || '/';
+  const path = pathMap[title];
+  if (!path) {
+    console.warn('MobileMenu: Unmapped navigation title', title);
+    return '/';
+  }
+  return path;
 }
 
 function getNavigationDescription(title: string): string {
   const descriptionMap: Record<string, string> = {
     'Dashboard': 'Overview & stats',
     'Spaces': 'Manage buildings',
+    'Operations': 'Issues, Maintenance, Supplies',
     'Issues': 'Track problems',
     'Occupants': 'Manage people',
+    'Inventory': 'Stock & assets',
+    'Supply Requests': 'Request and track supplies',
+    'Supply Room': 'Supply room management',
     'Keys': 'Key management',
     'Lighting': 'Control lights',
     'Maintenance': 'Schedule & track maintenance',

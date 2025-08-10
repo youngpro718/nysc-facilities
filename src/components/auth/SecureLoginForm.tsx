@@ -4,6 +4,7 @@ import { SecureForm } from '@/components/security/SecureForm';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { delay } from '@/utils/timing';
+import { normalizeSupabaseError } from '@/lib/supabaseErrors';
 
 interface SecureLoginFormProps {
   loading: boolean;
@@ -57,7 +58,8 @@ export const SecureLoginForm = ({
       });
     } catch (error: any) {
       console.error("Auth error:", error);
-      toast.error(error.message || "Authentication failed");
+      const normalized = normalizeSupabaseError(error);
+      toast.error(normalized.userMessage, { description: normalized.message });
       throw error; // Re-throw to let SecureForm handle it
     } finally {
       setLoading(false);

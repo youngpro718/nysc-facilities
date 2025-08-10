@@ -78,7 +78,6 @@ export function useSecurityValidation() {
     maxAttempts: number = 5,
     windowMinutes: number = 15
   ): Promise<boolean> => {
-    
     try {
       const { data, error } = await supabase.rpc('check_rate_limit', {
         identifier,
@@ -89,10 +88,10 @@ export function useSecurityValidation() {
       
       if (error) throw error;
       
-      return data;
+      return Boolean(data);
     } catch (error) {
-      console.error('Rate limit check error:', error);
-      return false; // Block on error for security
+      console.warn('Rate limit check error (allowing attempt by default):', error);
+      return true; // Allow on error to prevent blocking login due to RPC issues
     }
   }, []);
 
@@ -119,13 +118,13 @@ export function useSecurityValidation() {
       const { error } = await supabase.rpc('log_security_event', {
         action_type: action,
         resource_type: resourceType,
-        resource_id: resourceId || null,
-        details: details ? JSON.stringify(details) : '{}'
+        resource_id: resourceId || '00000000-0000-0000-0000-000000000000',
+        details: details ?? {}
       });
       
       if (error) throw error;
     } catch (error) {
-      console.error('Security event logging error:', error);
+      console.warn('Security event logging error (non-blocking):', error);
       // Fallback logging - continue operation even if audit logging fails
     }
   }, []);

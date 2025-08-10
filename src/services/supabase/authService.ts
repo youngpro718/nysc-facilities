@@ -33,6 +33,7 @@ export async function signUpWithEmail(email: string, password: string, userData:
     email,
     password,
     options: {
+      emailRedirectTo: `${window.location.origin}/`,
       data: {
         first_name: userData.first_name,
         last_name: userData.last_name,

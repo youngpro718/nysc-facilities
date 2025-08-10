@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
 import { toast } from 'sonner';
+import { normalizeSupabaseError } from '@/lib/supabaseErrors';
 
 export interface AuthState {
   session: Session | null;
@@ -236,7 +237,8 @@ export function useAuthSession(): AuthSessionHook {
       });
     } catch (error: any) {
       console.error('Sign in error:', error);
-      toast.error(error.message || 'Authentication failed');
+      const normalized = normalizeSupabaseError(error);
+      toast.error(normalized.userMessage, { description: normalized.message });
       throw error;
     }
   };
