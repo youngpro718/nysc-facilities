@@ -19,7 +19,9 @@ import {
   Bell
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useGlobalSystemSettings } from "@/hooks/admin/useGlobalSystemSettings";
+import { useToast } from "@/hooks/use-toast";
 import { ModuleManagement } from "./ModuleManagement";
 import { useSystemSettings } from "@/hooks/admin/useSystemSettings";
 
@@ -39,21 +41,80 @@ export function AdminSystemSettings() {
     isTogglingModule 
   } = useSystemSettings();
 
+  const { settings, isLoading: settingsLoading, isSaving, saveSettings } = useGlobalSystemSettings();
+  const { toast } = useToast();
+
   const [systemSettings, setSystemSettings] = useState({
-    maintenanceMode: systemStatus?.maintenance === 'active',
+    maintenanceMode: false,
     autoBackups: true,
     userRegistration: true,
     emailNotifications: true,
     auditLogging: true,
-    systemName: 'NYSC Facilities Hub',
-    adminEmail: 'admin@nysc.gov',
-    welcomeMessage: 'Welcome to the NYSC Facilities Management System',
+    systemName: '',
+    adminEmail: '',
+    welcomeMessage: '',
     backupRetention: '30',
     logLevel: 'info'
   });
 
+  useEffect(() => {
+    if (settings) {
+      setSystemSettings({
+        maintenanceMode: settings.maintenanceMode,
+        autoBackups: settings.autoBackups,
+        userRegistration: settings.userRegistration,
+        emailNotifications: settings.emailNotifications,
+        auditLogging: settings.auditLogging,
+        systemName: settings.systemName,
+        adminEmail: settings.adminEmail,
+        welcomeMessage: settings.welcomeMessage,
+        backupRetention: String(settings.backupRetention),
+        logLevel: settings.logLevel
+      });
+    }
+  }, [settings]);
+
   const updateSetting = (key: string, value: any) => {
     setSystemSettings(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleResetDefaults = () => {
+    setSystemSettings({
+      maintenanceMode: false,
+      autoBackups: true,
+      userRegistration: true,
+      emailNotifications: true,
+      auditLogging: true,
+      systemName: 'NYSC Facilities Hub',
+      adminEmail: '',
+      welcomeMessage: '',
+      backupRetention: '30',
+      logLevel: 'info'
+    });
+  };
+
+  const handleSave = async () => {
+    try {
+      const ok = await saveSettings({
+        maintenanceMode: systemSettings.maintenanceMode,
+        autoBackups: systemSettings.autoBackups,
+        userRegistration: systemSettings.userRegistration,
+        emailNotifications: systemSettings.emailNotifications,
+        auditLogging: systemSettings.auditLogging,
+        systemName: systemSettings.systemName,
+        adminEmail: systemSettings.adminEmail,
+        welcomeMessage: systemSettings.welcomeMessage,
+        backupRetention: parseInt(systemSettings.backupRetention, 10) || 30,
+        logLevel: systemSettings.logLevel,
+      });
+      if (ok) {
+        toast({ title: 'Settings saved' });
+      } else {
+        toast({ title: 'Failed to save settings', variant: 'destructive' });
+      }
+    } catch (e) {
+      toast({ title: 'Failed to save settings', variant: 'destructive' });
+    }
   };
 
   return (
@@ -320,10 +381,10 @@ export function AdminSystemSettings() {
               </p>
             </div>
             <div className="flex gap-3">
-              <Button variant="outline">
+              <Button variant="outline" onClick={handleResetDefaults} disabled={settingsLoading || isSaving}>
                 Reset to Defaults
               </Button>
-              <Button>
+              <Button onClick={handleSave} disabled={settingsLoading || isSaving}>
                 Save Changes
               </Button>
             </div>

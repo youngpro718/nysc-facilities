@@ -50,22 +50,8 @@ export type Database = {
             foreignKeyName: "access_delegation_delegate_id_fkey"
             columns: ["delegate_id"]
             isOneToOne: false
-            referencedRelation: "elevator_pass_assignments"
-            referencedColumns: ["occupant_id"]
-          },
-          {
-            foreignKeyName: "access_delegation_delegate_id_fkey"
-            columns: ["delegate_id"]
-            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "access_delegation_delegator_id_fkey"
-            columns: ["delegator_id"]
-            isOneToOne: false
-            referencedRelation: "elevator_pass_assignments"
-            referencedColumns: ["occupant_id"]
           },
           {
             foreignKeyName: "access_delegation_delegator_id_fkey"
@@ -256,7 +242,7 @@ export type Database = {
         Row: {
           compress_backups: boolean | null
           created_at: string | null
-          created_by: string | null
+          created_by: string
           description: string | null
           encrypt_backups: boolean | null
           id: string
@@ -268,7 +254,7 @@ export type Database = {
         Insert: {
           compress_backups?: boolean | null
           created_at?: string | null
-          created_by?: string | null
+          created_by: string
           description?: string | null
           encrypt_backups?: boolean | null
           id?: string
@@ -280,7 +266,7 @@ export type Database = {
         Update: {
           compress_backups?: boolean | null
           created_at?: string | null
-          created_by?: string | null
+          created_by?: string
           description?: string | null
           encrypt_backups?: boolean | null
           id?: string
@@ -296,7 +282,7 @@ export type Database = {
           compressed: boolean | null
           compression_ratio: number | null
           created_at: string | null
-          created_by: string | null
+          created_by: string
           description: string | null
           encrypted: boolean | null
           id: string
@@ -311,7 +297,7 @@ export type Database = {
           compressed?: boolean | null
           compression_ratio?: number | null
           created_at?: string | null
-          created_by?: string | null
+          created_by: string
           description?: string | null
           encrypted?: boolean | null
           id?: string
@@ -326,7 +312,7 @@ export type Database = {
           compressed?: boolean | null
           compression_ratio?: number | null
           created_at?: string | null
-          created_by?: string | null
+          created_by?: string
           description?: string | null
           encrypted?: boolean | null
           id?: string
@@ -726,13 +712,6 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "department_access_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "elevator_pass_assignments"
-            referencedColumns: ["occupant_id"]
-          },
           {
             foreignKeyName: "department_access_profile_id_fkey"
             columns: ["profile_id"]
@@ -1690,13 +1669,6 @@ export type Database = {
             foreignKeyName: "hallways_inspected_by_fkey"
             columns: ["inspected_by"]
             isOneToOne: false
-            referencedRelation: "elevator_pass_assignments"
-            referencedColumns: ["occupant_id"]
-          },
-          {
-            foreignKeyName: "hallways_inspected_by_fkey"
-            columns: ["inspected_by"]
-            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -2265,13 +2237,6 @@ export type Database = {
             foreignKeyName: "issues_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
-            referencedRelation: "spaces_dashboard_mv"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "issues_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
             referencedRelation: "unified_spaces"
             referencedColumns: ["id"]
           },
@@ -2282,10 +2247,15 @@ export type Database = {
           assigned_at: string
           assignment_meta: Json | null
           created_at: string | null
+          expected_return_at: string | null
           id: string
+          is_elevator_card: boolean | null
           is_spare: boolean | null
           key_id: string | null
           occupant_id: string | null
+          recipient_email: string | null
+          recipient_name: string | null
+          recipient_type: string | null
           return_reason: string | null
           returned_at: string | null
           spare_key_reason: string | null
@@ -2296,10 +2266,15 @@ export type Database = {
           assigned_at?: string
           assignment_meta?: Json | null
           created_at?: string | null
+          expected_return_at?: string | null
           id?: string
+          is_elevator_card?: boolean | null
           is_spare?: boolean | null
           key_id?: string | null
           occupant_id?: string | null
+          recipient_email?: string | null
+          recipient_name?: string | null
+          recipient_type?: string | null
           return_reason?: string | null
           returned_at?: string | null
           spare_key_reason?: string | null
@@ -2310,10 +2285,15 @@ export type Database = {
           assigned_at?: string
           assignment_meta?: Json | null
           created_at?: string | null
+          expected_return_at?: string | null
           id?: string
+          is_elevator_card?: boolean | null
           is_spare?: boolean | null
           key_id?: string | null
           occupant_id?: string | null
+          recipient_email?: string | null
+          recipient_name?: string | null
+          recipient_type?: string | null
           return_reason?: string | null
           returned_at?: string | null
           spare_key_reason?: string | null
@@ -2321,20 +2301,6 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "key_assignments_key_id_fkey"
-            columns: ["key_id"]
-            isOneToOne: false
-            referencedRelation: "elevator_pass_assignments"
-            referencedColumns: ["key_id"]
-          },
-          {
-            foreignKeyName: "key_assignments_key_id_fkey"
-            columns: ["key_id"]
-            isOneToOne: false
-            referencedRelation: "key_assignment_stats"
-            referencedColumns: ["key_id"]
-          },
           {
             foreignKeyName: "key_assignments_key_id_fkey"
             columns: ["key_id"]
@@ -2368,6 +2334,7 @@ export type Database = {
       key_audit_logs: {
         Row: {
           action_type: string
+          assignment_id: string | null
           changes: Json
           created_at: string | null
           details: Json | null
@@ -2378,6 +2345,7 @@ export type Database = {
         }
         Insert: {
           action_type: string
+          assignment_id?: string | null
           changes?: Json
           created_at?: string | null
           details?: Json | null
@@ -2388,6 +2356,7 @@ export type Database = {
         }
         Update: {
           action_type?: string
+          assignment_id?: string | null
           changes?: Json
           created_at?: string | null
           details?: Json | null
@@ -2398,18 +2367,25 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "key_audit_logs_key_id_fkey"
-            columns: ["key_id"]
+            foreignKeyName: "key_audit_logs_assignment_id_fkey"
+            columns: ["assignment_id"]
             isOneToOne: false
             referencedRelation: "elevator_pass_assignments"
-            referencedColumns: ["key_id"]
+            referencedColumns: ["assignment_id"]
           },
           {
-            foreignKeyName: "key_audit_logs_key_id_fkey"
-            columns: ["key_id"]
+            foreignKeyName: "key_audit_logs_assignment_id_fkey"
+            columns: ["assignment_id"]
             isOneToOne: false
-            referencedRelation: "key_assignment_stats"
-            referencedColumns: ["key_id"]
+            referencedRelation: "key_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_audit_logs_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "key_assignments_view"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "key_audit_logs_key_id_fkey"
@@ -2458,20 +2434,6 @@ export type Database = {
             foreignKeyName: "key_door_locations_table_key_id_fkey"
             columns: ["key_id"]
             isOneToOne: false
-            referencedRelation: "elevator_pass_assignments"
-            referencedColumns: ["key_id"]
-          },
-          {
-            foreignKeyName: "key_door_locations_table_key_id_fkey"
-            columns: ["key_id"]
-            isOneToOne: false
-            referencedRelation: "key_assignment_stats"
-            referencedColumns: ["key_id"]
-          },
-          {
-            foreignKeyName: "key_door_locations_table_key_id_fkey"
-            columns: ["key_id"]
-            isOneToOne: false
             referencedRelation: "key_inventory_view"
             referencedColumns: ["id"]
           },
@@ -2513,13 +2475,6 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "key_management_roles_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: true
-            referencedRelation: "elevator_pass_assignments"
-            referencedColumns: ["occupant_id"]
-          },
           {
             foreignKeyName: "key_management_roles_profile_id_fkey"
             columns: ["profile_id"]
@@ -2659,20 +2614,6 @@ export type Database = {
           vendor_order_id?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "key_orders_key_id_fkey"
-            columns: ["key_id"]
-            isOneToOne: false
-            referencedRelation: "elevator_pass_assignments"
-            referencedColumns: ["key_id"]
-          },
-          {
-            foreignKeyName: "key_orders_key_id_fkey"
-            columns: ["key_id"]
-            isOneToOne: false
-            referencedRelation: "key_assignment_stats"
-            referencedColumns: ["key_id"]
-          },
           {
             foreignKeyName: "key_orders_key_id_fkey"
             columns: ["key_id"]
@@ -2829,20 +2770,6 @@ export type Database = {
             foreignKeyName: "key_requests_key_id_fkey"
             columns: ["key_id"]
             isOneToOne: false
-            referencedRelation: "elevator_pass_assignments"
-            referencedColumns: ["key_id"]
-          },
-          {
-            foreignKeyName: "key_requests_key_id_fkey"
-            columns: ["key_id"]
-            isOneToOne: false
-            referencedRelation: "key_assignment_stats"
-            referencedColumns: ["key_id"]
-          },
-          {
-            foreignKeyName: "key_requests_key_id_fkey"
-            columns: ["key_id"]
-            isOneToOne: false
             referencedRelation: "key_inventory_view"
             referencedColumns: ["id"]
           },
@@ -2873,13 +2800,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "rooms"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "key_requests_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "elevator_pass_assignments"
-            referencedColumns: ["occupant_id"]
           },
           {
             foreignKeyName: "key_requests_user_id_fkey"
@@ -2929,20 +2849,6 @@ export type Database = {
             foreignKeyName: "key_stock_transactions_key_id_fkey"
             columns: ["key_id"]
             isOneToOne: false
-            referencedRelation: "elevator_pass_assignments"
-            referencedColumns: ["key_id"]
-          },
-          {
-            foreignKeyName: "key_stock_transactions_key_id_fkey"
-            columns: ["key_id"]
-            isOneToOne: false
-            referencedRelation: "key_assignment_stats"
-            referencedColumns: ["key_id"]
-          },
-          {
-            foreignKeyName: "key_stock_transactions_key_id_fkey"
-            columns: ["key_id"]
-            isOneToOne: false
             referencedRelation: "key_inventory_view"
             referencedColumns: ["id"]
           },
@@ -2971,6 +2877,7 @@ export type Database = {
           captain_office_notes: string | null
           created_at: string | null
           id: string
+          is_elevator_card: boolean | null
           is_passkey: boolean | null
           key_scope: string | null
           location_data: Json | null
@@ -2990,6 +2897,7 @@ export type Database = {
           captain_office_notes?: string | null
           created_at?: string | null
           id?: string
+          is_elevator_card?: boolean | null
           is_passkey?: boolean | null
           key_scope?: string | null
           location_data?: Json | null
@@ -3009,6 +2917,7 @@ export type Database = {
           captain_office_notes?: string | null
           created_at?: string | null
           id?: string
+          is_elevator_card?: boolean | null
           is_passkey?: boolean | null
           key_scope?: string | null
           location_data?: Json | null
@@ -3159,13 +3068,6 @@ export type Database = {
             foreignKeyName: "lighting_fixtures_last_scheduled_by_fkey"
             columns: ["last_scheduled_by"]
             isOneToOne: false
-            referencedRelation: "elevator_pass_assignments"
-            referencedColumns: ["occupant_id"]
-          },
-          {
-            foreignKeyName: "lighting_fixtures_last_scheduled_by_fkey"
-            columns: ["last_scheduled_by"]
-            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -3202,38 +3104,58 @@ export type Database = {
       lighting_issues: {
         Row: {
           bulb_type: string
+          created_at: string | null
+          fixture_id: string | null
           form_factor: string | null
           id: string
+          issue_id: string | null
           issue_type: string
           location: string
           notes: string | null
           reported_at: string
           resolved_at: string | null
           status: string
+          updated_at: string | null
         }
         Insert: {
           bulb_type: string
+          created_at?: string | null
+          fixture_id?: string | null
           form_factor?: string | null
           id?: string
+          issue_id?: string | null
           issue_type: string
           location: string
           notes?: string | null
           reported_at?: string
           resolved_at?: string | null
           status?: string
+          updated_at?: string | null
         }
         Update: {
           bulb_type?: string
+          created_at?: string | null
+          fixture_id?: string | null
           form_factor?: string | null
           id?: string
+          issue_id?: string | null
           issue_type?: string
           location?: string
           notes?: string | null
           reported_at?: string
           resolved_at?: string | null
           status?: string
+          updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "lighting_issues_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
+            referencedRelation: "issues"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lighting_maintenance: {
         Row: {
@@ -3276,13 +3198,6 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "lighting_maintenance_assigned_technician_fkey"
-            columns: ["assigned_technician"]
-            isOneToOne: false
-            referencedRelation: "elevator_pass_assignments"
-            referencedColumns: ["occupant_id"]
-          },
           {
             foreignKeyName: "lighting_maintenance_assigned_technician_fkey"
             columns: ["assigned_technician"]
@@ -3359,22 +3274,8 @@ export type Database = {
             foreignKeyName: "lighting_maintenance_schedules_assigned_technician_fkey"
             columns: ["assigned_technician"]
             isOneToOne: false
-            referencedRelation: "elevator_pass_assignments"
-            referencedColumns: ["occupant_id"]
-          },
-          {
-            foreignKeyName: "lighting_maintenance_schedules_assigned_technician_fkey"
-            columns: ["assigned_technician"]
-            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "lighting_maintenance_schedules_completed_by_fkey"
-            columns: ["completed_by"]
-            isOneToOne: false
-            referencedRelation: "elevator_pass_assignments"
-            referencedColumns: ["occupant_id"]
           },
           {
             foreignKeyName: "lighting_maintenance_schedules_completed_by_fkey"
@@ -3523,13 +3424,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "floors"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "location_access_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "elevator_pass_assignments"
-            referencedColumns: ["occupant_id"]
           },
           {
             foreignKeyName: "location_access_profile_id_fkey"
@@ -3711,13 +3605,6 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "maintenance_projects_project_manager_fkey"
-            columns: ["project_manager"]
-            isOneToOne: false
-            referencedRelation: "elevator_pass_assignments"
-            referencedColumns: ["occupant_id"]
-          },
           {
             foreignKeyName: "maintenance_projects_project_manager_fkey"
             columns: ["project_manager"]
@@ -4357,6 +4244,7 @@ export type Database = {
           id: string
           last_name: string
           notes: string | null
+          personnel_profile_id: string | null
           phone: string | null
           room_id: string | null
           start_date: string | null
@@ -4380,6 +4268,7 @@ export type Database = {
           id?: string
           last_name: string
           notes?: string | null
+          personnel_profile_id?: string | null
           phone?: string | null
           room_id?: string | null
           start_date?: string | null
@@ -4403,6 +4292,7 @@ export type Database = {
           id?: string
           last_name?: string
           notes?: string | null
+          personnel_profile_id?: string | null
           phone?: string | null
           room_id?: string | null
           start_date?: string | null
@@ -4413,6 +4303,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "occupants_personnel_profile_id_fkey"
+            columns: ["personnel_profile_id"]
+            isOneToOne: false
+            referencedRelation: "personnel_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "occupants_room_id_fkey"
             columns: ["room_id"]
@@ -4446,6 +4343,51 @@ export type Database = {
             columns: ["supervisor_id"]
             isOneToOne: false
             referencedRelation: "occupants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      office_elevator_card_allocations: {
+        Row: {
+          allocated_at: string
+          created_by: string | null
+          id: string
+          key_id: string
+          notes: string | null
+          office_name: string
+          quantity_delta: number
+        }
+        Insert: {
+          allocated_at?: string
+          created_by?: string | null
+          id?: string
+          key_id: string
+          notes?: string | null
+          office_name?: string
+          quantity_delta: number
+        }
+        Update: {
+          allocated_at?: string
+          created_by?: string | null
+          id?: string
+          key_id?: string
+          notes?: string | null
+          office_name?: string
+          quantity_delta?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "office_elevator_card_allocations_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_inventory_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "office_elevator_card_allocations_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "keys"
             referencedColumns: ["id"]
           },
         ]
@@ -4528,6 +4470,51 @@ export type Database = {
         }
         Relationships: []
       }
+      physical_key_requests: {
+        Row: {
+          building: string | null
+          created_at: string
+          department: string | null
+          id: string
+          key_description: string | null
+          location_text: string | null
+          needed_from: string | null
+          needed_until: string | null
+          reason: string | null
+          requester_email: string
+          requester_name: string
+          status: string
+        }
+        Insert: {
+          building?: string | null
+          created_at?: string
+          department?: string | null
+          id?: string
+          key_description?: string | null
+          location_text?: string | null
+          needed_from?: string | null
+          needed_until?: string | null
+          reason?: string | null
+          requester_email: string
+          requester_name: string
+          status?: string
+        }
+        Update: {
+          building?: string | null
+          created_at?: string
+          department?: string | null
+          id?: string
+          key_description?: string | null
+          location_text?: string | null
+          needed_from?: string | null
+          needed_until?: string | null
+          reason?: string | null
+          requester_email?: string
+          requester_name?: string
+          status?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           access_level: Database["public"]["Enums"]["access_level_enum"] | null
@@ -4559,6 +4546,7 @@ export type Database = {
           time_zone: string | null
           title: string | null
           updated_at: string | null
+          user_settings: Json
           username: string | null
           verification_status:
             | Database["public"]["Enums"]["verification_status_enum"]
@@ -4594,6 +4582,7 @@ export type Database = {
           time_zone?: string | null
           title?: string | null
           updated_at?: string | null
+          user_settings?: Json
           username?: string | null
           verification_status?:
             | Database["public"]["Enums"]["verification_status_enum"]
@@ -4629,6 +4618,7 @@ export type Database = {
           time_zone?: string | null
           title?: string | null
           updated_at?: string | null
+          user_settings?: Json
           username?: string | null
           verification_status?:
             | Database["public"]["Enums"]["verification_status_enum"]
@@ -5131,13 +5121,6 @@ export type Database = {
             foreignKeyName: "role_assignments_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "elevator_pass_assignments"
-            referencedColumns: ["occupant_id"]
-          },
-          {
-            foreignKeyName: "role_assignments_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -5474,20 +5457,6 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "room_key_access_key_id_fkey"
-            columns: ["key_id"]
-            isOneToOne: false
-            referencedRelation: "elevator_pass_assignments"
-            referencedColumns: ["key_id"]
-          },
-          {
-            foreignKeyName: "room_key_access_key_id_fkey"
-            columns: ["key_id"]
-            isOneToOne: false
-            referencedRelation: "key_assignment_stats"
-            referencedColumns: ["key_id"]
-          },
           {
             foreignKeyName: "room_key_access_key_id_fkey"
             columns: ["key_id"]
@@ -6347,6 +6316,39 @@ export type Database = {
         }
         Relationships: []
       }
+      security_rate_limits: {
+        Row: {
+          attempt_type: string
+          attempts: number
+          blocked_until: string | null
+          created_at: string
+          id: number
+          identifier: string
+          last_attempt: string
+          updated_at: string
+        }
+        Insert: {
+          attempt_type: string
+          attempts?: number
+          blocked_until?: string | null
+          created_at?: string
+          id?: number
+          identifier: string
+          last_attempt?: string
+          updated_at?: string
+        }
+        Update: {
+          attempt_type?: string
+          attempts?: number
+          blocked_until?: string | null
+          created_at?: string
+          id?: number
+          identifier?: string
+          last_attempt?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       service_impacts: {
         Row: {
           alternative_arrangements: string | null
@@ -6662,13 +6664,6 @@ export type Database = {
             foreignKeyName: "supply_request_fulfillment_log_performed_by_fkey"
             columns: ["performed_by"]
             isOneToOne: false
-            referencedRelation: "elevator_pass_assignments"
-            referencedColumns: ["occupant_id"]
-          },
-          {
-            foreignKeyName: "supply_request_fulfillment_log_performed_by_fkey"
-            columns: ["performed_by"]
-            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -6854,22 +6849,8 @@ export type Database = {
             foreignKeyName: "fk_supply_requests_requester_id"
             columns: ["requester_id"]
             isOneToOne: false
-            referencedRelation: "elevator_pass_assignments"
-            referencedColumns: ["occupant_id"]
-          },
-          {
-            foreignKeyName: "fk_supply_requests_requester_id"
-            columns: ["requester_id"]
-            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "supply_requests_assigned_fulfiller_id_fkey"
-            columns: ["assigned_fulfiller_id"]
-            isOneToOne: false
-            referencedRelation: "elevator_pass_assignments"
-            referencedColumns: ["occupant_id"]
           },
           {
             foreignKeyName: "supply_requests_assigned_fulfiller_id_fkey"
@@ -6906,25 +6887,61 @@ export type Database = {
       }
       system_settings: {
         Row: {
+          admin_email: string
+          audit_logging: boolean
+          auto_backups: boolean
+          backup_retention: number
           created_at: string | null
+          created_by: string | null
+          email_notifications: boolean
           id: string
           key: string
+          log_level: string
+          maintenance_mode: boolean
+          system_name: string
           updated_at: string | null
+          updated_by: string | null
+          user_registration: boolean
           value: Json
+          welcome_message: string
         }
         Insert: {
+          admin_email?: string
+          audit_logging?: boolean
+          auto_backups?: boolean
+          backup_retention?: number
           created_at?: string | null
+          created_by?: string | null
+          email_notifications?: boolean
           id?: string
           key: string
+          log_level?: string
+          maintenance_mode?: boolean
+          system_name?: string
           updated_at?: string | null
+          updated_by?: string | null
+          user_registration?: boolean
           value?: Json
+          welcome_message?: string
         }
         Update: {
+          admin_email?: string
+          audit_logging?: boolean
+          auto_backups?: boolean
+          backup_retention?: number
           created_at?: string | null
+          created_by?: string | null
+          email_notifications?: boolean
           id?: string
           key?: string
+          log_level?: string
+          maintenance_mode?: boolean
+          system_name?: string
           updated_at?: string | null
+          updated_by?: string | null
+          user_registration?: boolean
           value?: Json
+          welcome_message?: string
         }
         Relationships: []
       }
@@ -7254,21 +7271,7 @@ export type Database = {
             foreignKeyName: "unified_spaces_inspected_by_fkey"
             columns: ["inspected_by"]
             isOneToOne: false
-            referencedRelation: "elevator_pass_assignments"
-            referencedColumns: ["occupant_id"]
-          },
-          {
-            foreignKeyName: "unified_spaces_inspected_by_fkey"
-            columns: ["inspected_by"]
-            isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "unified_spaces_parent_room_fkey"
-            columns: ["parent_room_id"]
-            isOneToOne: false
-            referencedRelation: "spaces_dashboard_mv"
             referencedColumns: ["id"]
           },
           {
@@ -7440,26 +7443,46 @@ export type Database = {
           key_name: string | null
           last_name: string | null
           occupant_id: string | null
+          recipient_email: string | null
+          recipient_name: string | null
+          recipient_type: string | null
           return_reason: string | null
           returned_at: string | null
           spare_key_reason: string | null
           status: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "key_assignments_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_inventory_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_assignments_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "keys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_assignments_occupant_id_fkey"
+            columns: ["occupant_id"]
+            isOneToOne: false
+            referencedRelation: "occupant_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_assignments_occupant_id_fkey"
+            columns: ["occupant_id"]
+            isOneToOne: false
+            referencedRelation: "occupants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       key_assignment_stats: {
-        Row: {
-          current_assignments: number | null
-          current_holders: Json | null
-          current_spare_assignments: number | null
-          key_id: string | null
-          key_name: string | null
-          status: Database["public"]["Enums"]["key_status_enum"] | null
-          type: Database["public"]["Enums"]["key_type_enum"] | null
-        }
-        Relationships: []
-      }
-      key_assignments_view: {
         Row: {
           active_assignments: number | null
           key_id: string | null
@@ -7467,20 +7490,6 @@ export type Database = {
           returned_assignments: number | null
         }
         Relationships: [
-          {
-            foreignKeyName: "key_assignments_key_id_fkey"
-            columns: ["key_id"]
-            isOneToOne: false
-            referencedRelation: "elevator_pass_assignments"
-            referencedColumns: ["key_id"]
-          },
-          {
-            foreignKeyName: "key_assignments_key_id_fkey"
-            columns: ["key_id"]
-            isOneToOne: false
-            referencedRelation: "key_assignment_stats"
-            referencedColumns: ["key_id"]
-          },
           {
             foreignKeyName: "key_assignments_key_id_fkey"
             columns: ["key_id"]
@@ -7497,6 +7506,58 @@ export type Database = {
           },
         ]
       }
+      key_assignments_view: {
+        Row: {
+          assigned_at: string | null
+          assignment_meta: Json | null
+          created_at: string | null
+          department: string | null
+          email: string | null
+          first_name: string | null
+          id: string | null
+          is_spare: boolean | null
+          key_id: string | null
+          key_name: string | null
+          key_type: Database["public"]["Enums"]["key_type_enum"] | null
+          last_name: string | null
+          occupant_id: string | null
+          return_reason: string | null
+          returned_at: string | null
+          spare_key_reason: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "key_assignments_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_inventory_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_assignments_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "keys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_assignments_occupant_id_fkey"
+            columns: ["occupant_id"]
+            isOneToOne: false
+            referencedRelation: "occupant_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_assignments_occupant_id_fkey"
+            columns: ["occupant_id"]
+            isOneToOne: false
+            referencedRelation: "occupants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       key_inventory_view: {
         Row: {
           active_assignments: number | null
@@ -7505,6 +7566,7 @@ export type Database = {
           captain_office_copy: boolean | null
           captain_office_notes: string | null
           created_at: string | null
+          current_assignments: number | null
           id: string | null
           is_passkey: boolean | null
           key_scope: string | null
@@ -7512,8 +7574,8 @@ export type Database = {
           lost_count: number | null
           name: string | null
           properties: Json | null
-          returned_assignments: number | null
           status: Database["public"]["Enums"]["key_status_enum"] | null
+          total_assignment_history: number | null
           total_quantity: number | null
           type: Database["public"]["Enums"]["key_type_enum"] | null
           updated_at: string | null
@@ -7576,28 +7638,49 @@ export type Database = {
       }
       occupant_details: {
         Row: {
-          access_level: string | null
-          assigned_resources: Json | null
           created_at: string | null
           department: string | null
           email: string | null
-          emergency_contact: Json | null
-          employment_type: string | null
           end_date: string | null
           first_name: string | null
-          hire_date: string | null
           id: string | null
           last_name: string | null
-          notes: string | null
           phone: string | null
           room_id: string | null
-          rooms: Json | null
           start_date: string | null
           status: Database["public"]["Enums"]["occupant_status_enum"] | null
-          supervisor_id: string | null
-          termination_date: string | null
           title: string | null
           updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string | null
+          email?: string | null
+          end_date?: string | null
+          first_name?: string | null
+          id?: string | null
+          last_name?: string | null
+          phone?: string | null
+          room_id?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["occupant_status_enum"] | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department?: string | null
+          email?: string | null
+          end_date?: string | null
+          first_name?: string | null
+          id?: string | null
+          last_name?: string | null
+          phone?: string | null
+          room_id?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["occupant_status_enum"] | null
+          title?: string | null
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -7619,20 +7702,6 @@ export type Database = {
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "rooms"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "occupants_supervisor_id_fkey"
-            columns: ["supervisor_id"]
-            isOneToOne: false
-            referencedRelation: "occupant_details"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "occupants_supervisor_id_fkey"
-            columns: ["supervisor_id"]
-            isOneToOne: false
-            referencedRelation: "occupants"
             referencedColumns: ["id"]
           },
         ]
@@ -7674,14 +7743,26 @@ export type Database = {
       }
       spaces: {
         Row: {
+          building_address: string | null
+          building_id: string | null
+          building_name: string | null
+          capacity: number | null
           created_at: string | null
+          current_function: string | null
+          current_occupancy: number | null
+          description: string | null
           floor_id: string | null
+          floor_name: string | null
+          floor_number: number | null
           id: string | null
+          is_storage: boolean | null
           name: string | null
+          phone_number: string | null
           room_number: string | null
-          room_type: Database["public"]["Enums"]["room_type_enum"] | null
+          room_type: string | null
           space_type: string | null
-          status: Database["public"]["Enums"]["status_enum"] | null
+          status: string | null
+          storage_type: string | null
           updated_at: string | null
         }
         Relationships: []
@@ -7689,17 +7770,14 @@ export type Database = {
       spaces_dashboard_mv: {
         Row: {
           building_name: string | null
+          capacity: number | null
           fixture_count: number | null
           floor_name: string | null
-          floor_number: number | null
-          id: string | null
-          is_storage: boolean | null
           issue_count: number | null
           name: string | null
-          occupant_count: number | null
-          open_issue_count: number | null
+          occupancy_count: number | null
           room_number: string | null
-          room_type: Database["public"]["Enums"]["room_type_enum"] | null
+          space_id: string | null
           space_type: string | null
           status: string | null
         }
@@ -7773,6 +7851,29 @@ export type Database = {
         }
         Relationships: []
       }
+      v_office_elevator_card_holdings: {
+        Row: {
+          key_id: string | null
+          office_name: string | null
+          quantity_held: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "office_elevator_card_allocations_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "key_inventory_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "office_elevator_card_allocations_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       add_admin_user: {
@@ -7822,7 +7923,7 @@ export type Database = {
         Args: {
           assignment_ids: string[]
           new_status: string
-          return_reason?: string
+          update_notes?: string
         }
         Returns: number
       }
@@ -7851,10 +7952,10 @@ export type Database = {
               time_window?: unknown
             }
           | {
-              p_identifier: string
-              p_attempt_type: string
-              p_max_attempts?: number
-              p_window_minutes?: number
+              identifier: string
+              attempt_type: string
+              max_attempts?: number
+              window_minutes?: number
             }
         Returns: boolean
       }
@@ -7923,12 +8024,13 @@ export type Database = {
         Returns: undefined
       }
       detect_overdue_assignments: {
-        Args: { days_threshold?: number }
+        Args: Record<PropertyKey, never>
         Returns: {
           assignment_id: string
-          key_id: string
-          occupant_id: string
+          occupant_name: string
+          key_name: string
           days_overdue: number
+          assigned_at: string
         }[]
       }
       ensure_admin_user: {
@@ -7947,6 +8049,28 @@ export type Database = {
           status: string
           room_type: string
         }[]
+      }
+      fn_allocate_elevator_cards_to_office: {
+        Args: {
+          p_key_id: string
+          p_quantity: number
+          p_office_name?: string
+          p_notes?: string
+        }
+        Returns: undefined
+      }
+      fn_issue_elevator_pass: {
+        Args: {
+          p_key_id: string
+          p_recipient_type: string
+          p_occupant_id: string
+          p_recipient_name: string
+          p_recipient_email: string
+          p_expected_return_at: string
+          p_reason: string
+          p_notes: string
+        }
+        Returns: string
       }
       fulfill_supply_request: {
         Args: { p_request_id: string; p_fulfillment_notes?: string }
@@ -8063,32 +8187,12 @@ export type Database = {
         Returns: string
       }
       get_energy_analytics: {
-        Args: Record<PropertyKey, never> | { building_filter?: string }
-        Returns: {
-          id: string
-          building_name: string
-          total_consumption: number
-          average_consumption: number
-          efficiency_score: number
-          last_reading: string
-        }[]
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       get_facility_analytics: {
-        Args:
-          | Record<PropertyKey, never>
-          | {
-              building_filter?: string
-              date_range_start?: string
-              date_range_end?: string
-            }
-        Returns: {
-          total_buildings: number
-          total_floors: number
-          total_spaces: number
-          active_issues: number
-          maintenance_requests: number
-          occupancy_rate: number
-        }[]
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       get_key_inventory_summary: {
         Args: Record<PropertyKey, never>
@@ -8113,6 +8217,17 @@ export type Database = {
           parent_name: string
           parent_room_number: string
           level: number
+        }[]
+      }
+      get_rate_limit_status: {
+        Args: { p_identifier: string; p_attempt_type?: string }
+        Returns: {
+          identifier: string
+          attempt_type: string
+          attempts: number
+          last_attempt: string
+          blocked_until: string
+          is_blocked: boolean
         }[]
       }
       get_room_assignments_with_details: {
@@ -8225,6 +8340,26 @@ export type Database = {
           created_at: string
         }[]
       }
+      gtrgm_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_decompress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_in: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_options: {
+        Args: { "": unknown }
+        Returns: undefined
+      }
+      gtrgm_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
       has_role: {
         Args: { check_role: Database["public"]["Enums"]["user_role"] }
         Returns: boolean
@@ -8274,6 +8409,12 @@ export type Database = {
               details?: Json
             }
           | {
+              action_type: string
+              resource_type?: string
+              resource_id?: string
+              details?: string
+            }
+          | {
               p_action: string
               p_resource_type: string
               p_resource_id?: string
@@ -8294,6 +8435,10 @@ export type Database = {
       migrate_spaces_data: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      normalize_email: {
+        Args: { txt: string }
+        Returns: string
       }
       process_key_order_receipt: {
         Args: {
@@ -8319,9 +8464,17 @@ export type Database = {
         Args: { view_name: string }
         Returns: undefined
       }
+      refresh_spaces_dashboard: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       remove_user_role: {
         Args: { target_user_id: string; reason?: string }
         Returns: undefined
+      }
+      reset_rate_limit: {
+        Args: { p_identifier: string; p_attempt_type?: string }
+        Returns: boolean
       }
       rollback_transaction: {
         Args: Record<PropertyKey, never>
@@ -8368,6 +8521,18 @@ export type Database = {
       secure_role_assignment: {
         Args: { target_user_id: string; new_role: string }
         Returns: boolean
+      }
+      set_limit: {
+        Args: { "": number }
+        Returns: number
+      }
+      show_limit: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      show_trgm: {
+        Args: { "": string }
+        Returns: string[]
       }
       start_supply_request_work: {
         Args: { p_request_id: string }
