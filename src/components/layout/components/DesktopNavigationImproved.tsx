@@ -58,7 +58,6 @@ export const DesktopNavigationImproved = ({
             );
           }
 
-          // Type assertion since we know this is not a separator
           const navItem = item as { title: string; icon: any };
           const Icon = navItem.icon;
           const isActive = location.pathname === getNavigationPath(navItem.title, isAdmin);
@@ -69,14 +68,15 @@ export const DesktopNavigationImproved = ({
                 <button
                   onClick={() => handleNavigation(navItem.title)}
                   className={cn(
-                    "flex items-center justify-center w-10 h-10 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95",
+                    "flex items-center gap-2 h-10 px-3 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95",
                     isActive
                       ? "bg-primary text-primary-foreground shadow-md"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                      : "text-foreground hover:bg-muted"
                   )}
                   aria-label={navItem.title}
                 >
                   <Icon className="h-5 w-5" />
+                  <span className="text-sm font-medium">{navItem.title}</span>
                 </button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="text-sm">
