@@ -24,7 +24,7 @@ interface RateLimit {
   identifier: string;
   attempt_type: string;
   attempts: number;
-  first_attempt: string;
+  first_attempt?: string;
   last_attempt: string;
   blocked_until?: string;
 }
@@ -45,7 +45,7 @@ export function SecurityMonitoring() {
         const { data: events, error: eventsError } = await supabase
           .from('security_audit_log')
           .select('*')
-          .order('timestamp', { ascending: false })
+          .order('created_at', { ascending: false })
           .limit(50);
 
         if (eventsError) throw eventsError;

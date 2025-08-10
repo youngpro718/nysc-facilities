@@ -52,7 +52,7 @@ export function useEnabledModules() {
       let systemDefaults: Partial<EnabledModules> = {};
       try {
         const { data: sysMods } = await supabase
-          .from('system_modules')
+          .from('system_modules' as any)
           .select('id, enabled');
         if (sysMods && Array.isArray(sysMods)) {
           sysMods.forEach((m: any) => {
@@ -156,7 +156,7 @@ export function useEnabledModules() {
     let systemDefaults: Partial<EnabledModules> = {};
     try {
       const { data: sysMods } = await supabase
-        .from('system_modules')
+        .from('system_modules' as any)
         .select('id, enabled');
       if (sysMods && Array.isArray(sysMods)) {
         sysMods.forEach((m: any) => {

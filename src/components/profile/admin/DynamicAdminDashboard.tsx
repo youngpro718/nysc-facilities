@@ -97,7 +97,7 @@ export function DynamicAdminDashboard() {
     let recentActivities: Array<{ id: string; type: 'user_login' | 'system_update' | 'issue_created' | 'maintenance'; description: string; timestamp: string; user?: string }> = [];
     try {
       const { data: auditLogs, error: auditErr } = await supabase
-        .from('audit_logs')
+        .from('security_audit_log' as any)
         .select('*')
         .order('created_at', { ascending: false })
         .limit(10);

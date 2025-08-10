@@ -83,7 +83,7 @@ export function useSystemSettings() {
     queryKey: ['system-status'],
     queryFn: async () => {
       // Use backend RPC for real health status
-      const { data, error } = await supabase.rpc('get_system_health');
+      const { data, error } = await supabase.rpc('get_system_health' as any);
       if (error || !data) {
         return {
           system: 'offline',
@@ -92,10 +92,11 @@ export function useSystemSettings() {
           maintenance: 'none',
         } as SystemStatus;
       }
+      const result: any = data as any;
       return {
-        system: (data.system as SystemStatus['system']) ?? 'online',
-        database: (data.database as SystemStatus['database']) ?? 'connected',
-        security: (data.security as SystemStatus['security']) ?? 'secure',
+        system: (result.system as SystemStatus['system']) ?? 'online',
+        database: (result.database as SystemStatus['database']) ?? 'connected',
+        security: (result.security as SystemStatus['security']) ?? 'secure',
         maintenance: 'none',
       } as SystemStatus;
     },
@@ -118,7 +119,7 @@ export function useSystemSettings() {
       let catalog: { id: string; name: string; description: string; enabled?: boolean }[] = [];
       try {
         const { data: sysMods } = await supabase
-          .from('system_modules')
+          .from('system_modules' as any)
           .select('id, name, description, enabled')
           .order('name', { ascending: true });
         catalog = (sysMods ?? []) as any[];
@@ -243,13 +244,14 @@ export function useSystemSettings() {
   const clearCache = useMutation({
     mutationFn: async () => {
       // Call server-side maintenance RPC
-      const { data, error } = await supabase.rpc('clear_app_cache');
+      const { data, error } = await supabase.rpc('clear_app_cache' as any);
       // Regardless of server response, refresh client caches to reflect any changes
       queryClient.clear();
       if (error) {
         return { success: false, message: 'Server cache clear failed' };
       }
-      return { success: true, message: (data?.message as string) || 'Cache cleared successfully' };
+      const msg = (data as any)?.message as string | undefined;
+      return { success: true, message: msg || 'Cache cleared successfully' };
     },
   });
 

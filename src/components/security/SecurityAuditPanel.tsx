@@ -25,7 +25,7 @@ interface RateLimit {
   identifier: string;
   attempt_type: string;
   attempts: number;
-  first_attempt: string;
+  first_attempt?: string;
   last_attempt: string;
   blocked_until?: string;
 }

@@ -6885,6 +6885,30 @@ export type Database = {
         }
         Relationships: []
       }
+      system_modules: {
+        Row: {
+          description: string | null
+          enabled: boolean
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          description?: string | null
+          enabled?: boolean
+          id: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       system_settings: {
         Row: {
           admin_email: string
@@ -7952,10 +7976,10 @@ export type Database = {
               time_window?: unknown
             }
           | {
-              identifier: string
-              attempt_type: string
-              max_attempts?: number
-              window_minutes?: number
+              p_identifier: string
+              p_attempt_type: string
+              p_max_attempts?: number
+              p_window_minutes?: number
             }
         Returns: boolean
       }
@@ -7971,6 +7995,10 @@ export type Database = {
       cleanup_old_backups: {
         Args: { policy_id: string }
         Returns: undefined
+      }
+      clear_app_cache: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       commit_transaction: {
         Args: Record<PropertyKey, never>
@@ -8309,6 +8337,10 @@ export type Database = {
           open_issue_count: number
           fixture_count: number
         }[]
+      }
+      get_system_health: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       get_user_role: {
         Args: { user_id: string }
