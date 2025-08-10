@@ -58,6 +58,7 @@ export async function createLightingIssue(data: LightingIssueCreateData): Promis
 
     // Then create a corresponding entry in the main issues table
     const issueTitle = `Lighting Issue: ${data.issue_type.replace('_', ' ')} - ${data.location}`;
+    const mappedPriority = data.priority === 'critical' ? 'high' : (data.priority || 'medium');
     const { data: mainIssue, error: mainError } = await supabase
       .from('issues')
       .insert({
@@ -66,7 +67,7 @@ export async function createLightingIssue(data: LightingIssueCreateData): Promis
         description: `${data.issue_type.replace('_', ' ')} reported at ${data.location}. Bulb type: ${data.bulb_type}. ${data.notes || ''}`,
         location_description: data.location,
         status: 'open',
-        priority: data.priority || 'medium',
+        priority: mappedPriority,
         reported_by: data.reported_by,
         created_by: data.reported_by,
         tags: ['lighting', data.issue_type],
@@ -91,7 +92,14 @@ export async function createLightingIssue(data: LightingIssueCreateData): Promis
       })
       .eq('id', data.fixture_id);
 
-    return { lightingIssue, mainIssue };
+    return { 
+      lightingIssue: {
+        ...lightingIssue,
+        issue_type: lightingIssue.issue_type as 'blown_bulb' | 'ballast_issue' | 'other',
+        status: lightingIssue.status as 'open' | 'deferred' | 'resolved'
+      }, 
+      mainIssue 
+    };
   } catch (error) {
     console.error('Error creating lighting issue:', error);
     throw error;
@@ -105,32 +113,26 @@ export async function getLightingIssuesWithDetails(): Promise<LightingIssueWithD
   try {
     const { data, error } = await supabase
       .from('lighting_issues')
-      .select(`
-        *, 
-        lighting_fixtures!inner(name, room_number, floor_id, building_id),
-        floors!inner(name, building_id),
-        buildings!inner(name),
-        auth.users!reported_by(name)
-      `)
+      .select('*')
       .order('reported_at', { ascending: false });
 
     if (error) throw error;
 
-    return data.map(item => ({
+    return (data || []).map(item => ({
       id: item.id,
       location: item.location,
       bulb_type: item.bulb_type,
       form_factor: item.form_factor,
-      issue_type: item.issue_type,
-      status: item.status,
+      issue_type: item.issue_type as 'blown_bulb' | 'ballast_issue' | 'other',
+      status: item.status as 'open' | 'deferred' | 'resolved',
       notes: item.notes,
       reported_at: item.reported_at,
       resolved_at: item.resolved_at,
-      fixture_name: item.lighting_fixtures.name,
-      room_number: item.lighting_fixtures.room_number,
-      floor_name: item.floors.name,
-      building_name: item.buildings.name,
-      reported_by_name: item.auth.users.name,
+      fixture_name: 'Unknown Fixture',
+      room_number: 'Unknown Room',
+      floor_name: 'Unknown Floor',
+      building_name: 'Unknown Building',
+      reported_by_name: 'Unknown User',
       issue_id: item.issue_id,
     }));
   } catch (error) {
@@ -177,7 +179,11 @@ export async function updateLightingIssue(
         .eq('id', lightingIssue.fixture_id);
     }
 
-    return lightingIssue;
+    return {
+      ...lightingIssue,
+      issue_type: lightingIssue.issue_type as 'blown_bulb' | 'ballast_issue' | 'other',
+      status: lightingIssue.status as 'open' | 'deferred' | 'resolved'
+    };
   } catch (error) {
     console.error('Error updating lighting issue:', error);
     throw error;
@@ -193,33 +199,27 @@ export async function getLightingIssuesByStatus(
   try {
     const { data, error } = await supabase
       .from('lighting_issues')
-      .select(`
-        *, 
-        lighting_fixtures!inner(name, room_number, floor_id, building_id),
-        floors!inner(name, building_id),
-        buildings!inner(name),
-        auth.users!reported_by(name)
-      `)
+      .select('*')
       .eq('status', status)
       .order('reported_at', { ascending: false });
 
     if (error) throw error;
 
-    return data.map(item => ({
+    return (data || []).map(item => ({
       id: item.id,
       location: item.location,
       bulb_type: item.bulb_type,
       form_factor: item.form_factor,
-      issue_type: item.issue_type,
-      status: item.status,
+      issue_type: item.issue_type as 'blown_bulb' | 'ballast_issue' | 'other',
+      status: item.status as 'open' | 'deferred' | 'resolved',
       notes: item.notes,
       reported_at: item.reported_at,
       resolved_at: item.resolved_at,
-      fixture_name: item.lighting_fixtures.name,
-      room_number: item.lighting_fixtures.room_number,
-      floor_name: item.floors.name,
-      building_name: item.buildings.name,
-      reported_by_name: item.auth.users.name,
+      fixture_name: 'Unknown Fixture',
+      room_number: 'Unknown Room',
+      floor_name: 'Unknown Floor',
+      building_name: 'Unknown Building',
+      reported_by_name: 'Unknown User',
       issue_id: item.issue_id,
     }));
   } catch (error) {
@@ -242,7 +242,11 @@ export async function getLightingIssuesForFixture(
       .order('reported_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(item => ({
+      ...item,
+      issue_type: item.issue_type as 'blown_bulb' | 'ballast_issue' | 'other',
+      status: item.status as 'open' | 'deferred' | 'resolved'
+    }));
   } catch (error) {
     console.error('Error fetching lighting issues for fixture:', error);
     return [];

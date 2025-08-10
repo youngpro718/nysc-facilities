@@ -40,6 +40,10 @@ export function useLightingFixtures() {
         created_at: raw.created_at || null,
         updated_at: raw.updated_at || null,
         bulb_count: raw.bulb_count || 1,
+        requires_electrician: raw.requires_electrician || false,
+        reported_out_date: raw.reported_out_date || null,
+        replaced_date: raw.replaced_date || null,
+        notes: raw.notes || null,
         electrical_issues: raw.electrical_issues || {
           short_circuit: false,
           wiring_issues: false,
@@ -48,8 +52,6 @@ export function useLightingFixtures() {
         ballast_issue: raw.ballast_issue || false,
         ballast_check_notes: raw.ballast_check_notes || null,
         emergency_circuit: raw.emergency_circuit || false,
-        backup_power_source: raw.backup_power_source || null,
-        emergency_duration_minutes: raw.emergency_duration_minutes || null,
         maintenance_history: raw.maintenance_history || [],
         inspection_history: raw.inspection_history || [],
         spatial_assignment: raw.spatial_assignment ? {

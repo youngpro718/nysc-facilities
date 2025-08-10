@@ -37,6 +37,10 @@ export function useLightingFixtures() {
         created_at: raw.created_at || null,
         updated_at: raw.updated_at || null,
         bulb_count: raw.bulb_count || 1,
+        requires_electrician: raw.requires_electrician || false,
+        reported_out_date: raw.reported_out_date || null,
+        replaced_date: raw.replaced_date || null,
+        notes: raw.notes || null,
         electrical_issues: typeof raw.electrical_issues === 'object' ? {
           short_circuit: (raw.electrical_issues as any)?.short_circuit || false,
           wiring_issues: (raw.electrical_issues as any)?.wiring_issues || false,
@@ -49,9 +53,7 @@ export function useLightingFixtures() {
         ballast_issue: raw.ballast_issue || false,
         ballast_check_notes: raw.ballast_check_notes || null,
         emergency_circuit: false, // These fields are not in the schema yet
-        backup_power_source: null,
-        emergency_duration_minutes: null,
-        maintenance_history: Array.isArray(raw.maintenance_history) 
+        maintenance_history: Array.isArray(raw.maintenance_history)
           ? (raw.maintenance_history as any[]).map(record => ({
               id: record.id || '',
               date: record.date || '',
