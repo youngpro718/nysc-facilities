@@ -2,7 +2,8 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { editLightingFormSchema, type EditLightingFormData } from "../schemas/editLightingSchema";
-import { type LightingFixture, type Space, LightingTechnology } from "@/types/lighting";
+import { type LightingFixture, LightingTechnology } from "@/types/lighting";
+import { type Space } from "@/components/lighting/types";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { generateFixtureName } from "../schemas/lightingSchema";
@@ -70,7 +71,8 @@ export function useEditLightingForm(
           name: roomResult.data.name,
           room_number: roomResult.data.room_number,
           floor_id: roomResult.data.floor_id,
-          space_type: 'room'
+          space_type: 'room',
+          type: 'room'
         } as Space;
       }
       
@@ -86,7 +88,8 @@ export function useEditLightingForm(
           name: hallwayResult.data.name,
           room_number: null,
           floor_id: hallwayResult.data.floor_id,
-          space_type: 'hallway'
+          space_type: 'hallway',
+          type: 'hallway'
         } as Space;
       }
       

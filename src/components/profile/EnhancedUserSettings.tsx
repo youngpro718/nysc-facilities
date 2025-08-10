@@ -169,7 +169,7 @@ export function EnhancedUserSettings() {
       const { error } = await supabase
         .from('profiles')
         .update({
-          user_settings: settings,
+          user_settings: settings as any,
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);

@@ -7,10 +7,10 @@ import { handleReportError } from './reportErrorHandler';
 
 // Initialize PDF fonts with error handling
 try {
-  pdfMake.vfs = pdfFonts?.pdfMake?.vfs || {};
+  pdfMake.vfs = (pdfFonts as any)?.vfs || {};
 } catch (error) {
   console.warn('PDF fonts initialization failed, using fallback:', error);
-  pdfMake.vfs = {};
+  pdfMake.vfs = {} as any;
 }
 
 export interface PdfSection {

@@ -1,4 +1,4 @@
-import { PostgrestFilterBuilder } from "@supabase/postgrest-js";
+
 
 export type ReportProgress = {
   status: 'pending' | 'generating' | 'completed' | 'error';
@@ -48,7 +48,7 @@ export interface DatabaseTable {
   table_schema: string;
 }
 
-export type QueryBuilder<T> = PostgrestFilterBuilder<any, any, T[]>;
+export type QueryBuilder<T> = any;
 
 export interface ReportTemplate {
   id: string;

@@ -417,7 +417,7 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms, userId }: Issu
             <div className="space-y-6">
               {/* Location Selection - Use SmartLocationStep */}
               <SmartLocationStep 
-                form={form}
+                form={form as any}
                 assignedRooms={roomAssignments}
                 primaryRoom={primaryRoom}
               />
@@ -469,7 +469,7 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms, userId }: Issu
               {/* Problem Type Selection */}
               {selectedIssueType && (
                 <Card className="p-6 animate-fade-in">
-                  <ProblemTypeField form={form} />
+                  <ProblemTypeField form={form as any} />
                 </Card>
               )}
             </div>
@@ -479,7 +479,7 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms, userId }: Issu
             <Card className="p-6 animate-fade-in">
               <h3 className="text-lg font-semibold mb-4">Describe the issue</h3>
               <div className="space-y-6">
-                <DescriptionField form={form} />
+                <DescriptionField form={form as any} />
                 <IssuePhotoForm
                   selectedPhotos={selectedPhotos}
                   uploading={uploading}

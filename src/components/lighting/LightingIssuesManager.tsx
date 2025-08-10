@@ -17,10 +17,10 @@ import {
   getLightingIssuesWithDetails, 
   updateLightingIssue, 
   getLightingIssueStats,
-  deleteLightingIssue,
   getLightingIssuesByStatus 
 } from '@/services/supabase/lightingIssuesIntegration';
-import { getLightingFixtures } from '@/services/supabase/lightingService';
+import { deleteLightingIssue } from '@/services/supabase/lightingIssuesService';
+import { fetchLightingFixtures } from '@/services/supabase/lightingService';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,14 +45,22 @@ export const LightingIssuesManager: React.FC<LightingIssuesManagerProps> = ({ cl
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [expandedIssue, setExpandedIssue] = useState<string | null>(null);
   
-  const [newIssue, setNewIssue] = useState({
+  const [newIssue, setNewIssue] = useState<{ 
+    fixture_id: string;
+    location: string;
+    bulb_type: string;
+    form_factor: string;
+    issue_type: 'blown_bulb' | 'ballast_issue' | 'other';
+    notes: string;
+    priority: 'low' | 'medium' | 'high' | 'critical';
+  }>({
     fixture_id: '',
     location: '',
     bulb_type: '',
     form_factor: '',
-    issue_type: 'blown_bulb' as const,
+    issue_type: 'blown_bulb',
     notes: '',
-    priority: 'medium' as const,
+    priority: 'medium',
   });
 
   // Fetch lighting issues
@@ -66,9 +74,9 @@ export const LightingIssuesManager: React.FC<LightingIssuesManagerProps> = ({ cl
   });
 
   // Fetch lighting fixtures
-  const { data: fixtures = [] } = useQuery({
+  const { data: fixtures = [] } = useQuery<any[]>({
     queryKey: ['lighting-fixtures'],
-    queryFn: getLightingFixtures,
+    queryFn: fetchLightingFixtures,
     enabled: !!user,
   });
 

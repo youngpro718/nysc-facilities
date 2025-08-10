@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Lightbulb, AlertTriangle, CheckCircle, Clock, Building2 } from 'lucide-react';
-import { getLightingFixtures } from '@/services/supabase/lightingService';
+import { fetchLightingFixtures } from '@/services/supabase/lightingService';
 import { createLightingIssue } from '@/services/supabase/lightingIssuesIntegration';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -62,13 +62,13 @@ export const IntegratedLightingIssueCreator: React.FC<IntegratedLightingIssueCre
   const { data: fixtures = [], isLoading: fixturesLoading } = useQuery({
     queryKey: ['lighting-fixtures', buildingId, floorId, roomId],
     queryFn: async () => {
-      const allFixtures = await getLightingFixtures();
+      const allFixtures = await fetchLightingFixtures();
       
       // Filter fixtures based on provided IDs
       return allFixtures.filter(fixture => {
-        if (roomId && fixture.room_id !== roomId) return false;
-        if (floorId && fixture.floor_id !== floorId) return false;
-        if (buildingId && fixture.building_id !== buildingId) return false;
+        if (roomId && fixture.space_id !== roomId) return false;
+        if (floorId && fixture.floor_id && fixture.floor_id !== floorId) return false;
+        if (buildingId && fixture.building_id && fixture.building_id !== buildingId) return false;
         return true;
       });
     },
@@ -87,12 +87,12 @@ export const IntegratedLightingIssueCreator: React.FC<IntegratedLightingIssueCre
 
     setIsSubmitting(true);
     try {
-      // Create both lighting issue and main issue
       const result = await createLightingIssue({
         fixture_id: data.fixture_id,
-        issue_type: data.issue_type,
+        issue_type: (['blown_bulb', 'ballast_issue'].includes(data.issue_type) 
+          ? (data.issue_type as 'blown_bulb' | 'ballast_issue') 
+          : 'other'),
         priority: data.priority,
-        description: data.description,
         location: data.location,
         bulb_type: data.bulb_type,
         notes: data.notes,

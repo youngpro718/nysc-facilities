@@ -57,7 +57,7 @@ export function MaintenanceDialog({ fixture, onComplete }: MaintenanceDialogProp
       const { error } = await supabase
         .from('lighting_fixtures')
         .update({
-          maintenance_history: [...currentHistory, maintenanceRecord],
+          maintenance_history: [...currentHistory, maintenanceRecord] as any,
           status: 'functional', // Reset status to functional after maintenance
           maintenance_notes: notes || null,
           updated_at: new Date().toISOString()

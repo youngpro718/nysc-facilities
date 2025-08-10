@@ -61,7 +61,7 @@ export function InspectionDialog({ fixture, onComplete }: InspectionDialogProps)
       const { error } = await supabase
         .from('lighting_fixtures')
         .update({
-          inspection_history: [...currentHistory, inspectionRecord],
+          inspection_history: [...currentHistory, inspectionRecord] as any,
           status: newStatus,
           updated_at: new Date().toISOString()
         })

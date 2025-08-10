@@ -8,12 +8,12 @@ import { format } from "date-fns";
 
 // Initialize PDF fonts - simplified approach
 try {
-  pdfMake.vfs = pdfFonts?.pdfMake?.vfs || {};
+  pdfMake.vfs = (pdfFonts as any)?.vfs || {};
   console.log('PDF fonts initialized successfully');
 } catch (error) {
   console.error('Failed to initialize PDF fonts:', error);
   // Fallback: use browser default fonts
-  pdfMake.vfs = {};
+  pdfMake.vfs = {} as any;
 }
 
 export async function fetchDataWithProgress<T>(

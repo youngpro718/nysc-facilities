@@ -1,9 +1,9 @@
 
-import { PostgrestFilterBuilder } from "@supabase/postgrest-js";
+import { supabase } from "@/integrations/supabase/client";
 import { ReportCallback } from "./reports/types";
 
 export async function fetchDataWithProgress<T>(
-  queryBuilder: PostgrestFilterBuilder<any, any, T[]>,
+  queryBuilder: any,
   progressCallback: ReportCallback,
   startProgress: number,
   endProgress: number

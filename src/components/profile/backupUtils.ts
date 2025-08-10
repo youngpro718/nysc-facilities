@@ -43,9 +43,11 @@ export interface BackupRestoration {
 }
 
 export async function createBackupVersion(backup: Pick<BackupVersion, 'name' | 'tables' | 'size_bytes' | 'description'>) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('No authenticated user');
   const { data, error } = await supabase
     .from('backup_versions')
-    .insert([backup])
+    .insert([{ ...backup, created_by: user.id }])
     .select()
     .single();
 
@@ -80,9 +82,11 @@ export async function fetchBackupPolicies(): Promise<BackupRetentionPolicy[]> {
 }
 
 export async function createBackupPolicy(policy: Omit<BackupRetentionPolicy, 'id' | 'created_at' | 'updated_at'>) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('No authenticated user');
   const { data, error } = await supabase
     .from('backup_retention_policies')
-    .insert([policy])
+    .insert([{ ...policy, created_by: user.id }])
     .select()
     .single();
 
