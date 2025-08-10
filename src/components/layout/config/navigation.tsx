@@ -178,8 +178,8 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
   // Standard user navigation
   return [
     { title: 'Dashboard', icon: LayoutDashboard },
-    { title: 'Supply Requests', icon: FileText },
-    { title: 'Issues', icon: MessageSquare },
+    { title: 'My Requests', icon: FileText },
+    { title: 'My Issues', icon: MessageSquare },
     { type: "separator" },
     { title: 'Profile', icon: User },
   ];
