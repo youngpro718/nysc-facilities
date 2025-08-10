@@ -47,12 +47,12 @@ export const IssueReportForm: React.FC<IssueReportFormProps> = ({ open, onClose,
         status: 'open',
       };
 
-      const { error } = await supabase.from('issues').insert([payload]);
+      const { error } = await supabase.from('issues').insert([payload as any]);
       if (error) throw error;
 
       toast.success("Issue reported successfully");
       form.reset();
-      onSubmit?.(values);
+      onSubmit?.(values as any);
       onClose();
     } catch (err: any) {
       console.error('IssueReportForm submit error:', err);

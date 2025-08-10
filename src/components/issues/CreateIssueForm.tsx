@@ -121,7 +121,7 @@ export function CreateIssueForm({ onSuccess }: CreateIssueFormProps) {
 
       const { error } = await supabase
         .from('issues')
-        .insert([payload]);
+        .insert([payload as any]);
 
       if (error) throw error;
       

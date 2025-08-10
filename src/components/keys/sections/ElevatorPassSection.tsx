@@ -150,7 +150,7 @@ export function ElevatorPassSection() {
         .rpc("bulk_update_assignment_status", {
           assignment_ids: assignmentIds,
           new_status: "returned",
-          return_reason: reason || "Bulk return",
+          update_notes: reason || "Bulk return",
         });
 
       if (error) throw error;
