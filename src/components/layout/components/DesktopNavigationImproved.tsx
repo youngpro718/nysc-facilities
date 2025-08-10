@@ -23,24 +23,11 @@ export const DesktopNavigationImproved = ({
   console.log('DesktopNavigationImproved - isAdmin:', isAdmin);
 
   const handleNavigation = (title: string) => {
-    const pathMap: Record<string, string> = {
-      'Dashboard': isAdmin ? '/' : '/dashboard',
-      'Spaces': '/spaces',
-      'Operations': '/operations', // Contains Issues, Maintenance, Supply Requests
-      'Occupants': '/occupants',
-      'Keys': '/keys',
-      'Inventory': '/inventory',
-      'Lighting': '/lighting',
-      'Court Operations': '/court-operations',
-      'Supply Room': '/supply-room',
-      'My Requests': '/my-requests',
-      'My Issues': '/my-issues',
-      'Admin Profile': '/admin-profile',
-      'Profile': '/profile',
-    };
-    const path = pathMap[title];
+    const path = getNavigationPath(title, isAdmin);
     if (path) {
       navigate(path);
+    } else {
+      console.warn("DesktopNavigationImproved: Unmapped navigation title", title);
     }
   };
 
@@ -60,7 +47,7 @@ export const DesktopNavigationImproved = ({
 
           const navItem = item as { title: string; icon: any };
           const Icon = navItem.icon;
-          const isActive = location.pathname === getNavigationPath(navItem.title, isAdmin);
+          const isActive = location.pathname.startsWith(getNavigationPath(navItem.title, isAdmin));
           
           return (
             <Tooltip key={navItem.title}>
@@ -68,15 +55,14 @@ export const DesktopNavigationImproved = ({
                 <button
                   onClick={() => handleNavigation(navItem.title)}
                   className={cn(
-                    "flex items-center gap-2 h-10 px-3 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95",
+                    "flex items-center justify-center w-10 h-10 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95",
                     isActive
                       ? "bg-primary text-primary-foreground shadow-md"
-                      : "text-foreground hover:bg-muted"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
                   )}
                   aria-label={navItem.title}
                 >
                   <Icon className="h-5 w-5" />
-                  <span className="text-sm font-medium">{navItem.title}</span>
                 </button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="text-sm">
@@ -117,7 +103,8 @@ function getNavigationPath(title: string, isAdmin?: boolean): string {
     'Issues': '/issues',
     'Occupants': '/occupants',
     'Inventory': '/inventory',
-    'Supply Requests': '/admin/supply-requests',
+    'Supply Requests': isAdmin ? '/admin/supply-requests' : '/supply-requests',
+    'Supply Room': '/supply-room',
     'Keys': '/keys',
     'Lighting': '/lighting',
     'Maintenance': '/maintenance',
