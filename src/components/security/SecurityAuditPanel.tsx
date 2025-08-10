@@ -21,7 +21,7 @@ interface SecurityEvent {
 }
 
 interface RateLimit {
-  id: string;
+  id: number;
   identifier: string;
   attempt_type: string;
   attempts: number;

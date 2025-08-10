@@ -80,10 +80,10 @@ export function useSecurityValidation() {
   ): Promise<boolean> => {
     try {
       const { data, error } = await supabase.rpc('check_rate_limit', {
-        identifier,
-        attempt_type: attemptType,
-        max_attempts: maxAttempts,
-        window_minutes: windowMinutes
+        p_identifier: identifier,
+        p_attempt_type: attemptType,
+        p_max_attempts: maxAttempts,
+        p_window_minutes: windowMinutes
       });
       
       if (error) throw error;
