@@ -207,12 +207,12 @@ export class Scene3DManager {
       throw new Error('Scene3DManager: Container element is required');
     }
 
-    // Clear any existing canvas elements to prevent WebGL context conflicts
-    const existingCanvases = container.querySelectorAll('canvas');
-    existingCanvases.forEach(canvas => {
-      if (canvas.parentNode) {
-        canvas.parentNode.removeChild(canvas);
-      }
+    // Clear any existing Three.js canvas wrappers to prevent context conflicts
+    const existingThreeWrappers = container.querySelectorAll('[data-three-canvas="true"]');
+    existingThreeWrappers.forEach((el) => {
+      try {
+        el.parentElement?.removeChild(el);
+      } catch {}
     });
 
     this.container = container;
@@ -254,8 +254,14 @@ export class Scene3DManager {
       this.controls.autoRotate = false;
       this.controls.target.set(0, 0, 0);
 
-      // Add renderer to container
-      container.appendChild(this.renderer.domElement);
+      // Mount renderer into a dedicated wrapper to avoid other libs grabbing this canvas
+      const wrapper = document.createElement('div');
+      wrapper.setAttribute('data-three-canvas', 'true');
+      wrapper.style.width = '100%';
+      wrapper.style.height = '100%';
+      this.renderer.domElement.setAttribute('data-three', 'true');
+      wrapper.appendChild(this.renderer.domElement);
+      container.appendChild(wrapper);
 
       // Setup mouse interaction
       this.setupMouseInteraction();
@@ -285,8 +291,22 @@ export class Scene3DManager {
 
       window.removeEventListener('resize', this.handleResize);
 
-      if (this.container && this.renderer.domElement) {
-        this.container.removeChild(this.renderer.domElement);
+      // Remove the renderer's DOM element from its parent wrapper if it exists
+      const canvas = this.renderer?.domElement as HTMLCanvasElement | null;
+      const parent = canvas?.parentElement;
+      if (parent && parent.contains(canvas!)) {
+        parent.removeChild(canvas!);
+      }
+      // Also remove the wrapper if it has our marker
+      if (parent && parent.getAttribute('data-three-canvas') === 'true') {
+        parent.parentElement?.removeChild(parent);
+      }
+      // Ensure any leftover three wrappers are removed from container
+      if (this.container) {
+        const wrappers = this.container.querySelectorAll('[data-three-canvas="true"]');
+        wrappers.forEach((el) => {
+          try { el.parentElement?.removeChild(el); } catch {}
+        });
       }
 
       // Properly dispose of Three.js resources
@@ -331,6 +351,10 @@ export class Scene3DManager {
       this.roomDataMap.clear();
       
       // Dispose of renderer and WebGL context
+      try {
+        // Force context loss to free GPU resources and avoid context-type conflicts
+        (this.renderer as any)?.forceContextLoss?.();
+      } catch {}
       this.renderer.dispose();
       
       this.isInitialized = false;

@@ -1,4 +1,5 @@
 
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -36,6 +37,56 @@ export function KeyHistorySection() {
     },
   });
 
+  // Collect occupant IDs referenced in changes to map to names
+  const occupantIds = useMemo(() => {
+    const set = new Set<string>();
+    (history || []).forEach((log) => {
+      const occId = (log as any)?.changes?.occupant_id as string | undefined;
+      if (occId) set.add(occId);
+    });
+    return Array.from(set);
+  }, [history]);
+
+  const { data: occupantsMap } = useQuery({
+    queryKey: ["audit-occupants-map", occupantIds.join(",")],
+    enabled: occupantIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("occupants")
+        .select("id, first_name, last_name")
+        .in("id", occupantIds);
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      (data || []).forEach((o: any) => {
+        map[o.id] = `${o.first_name ?? ""} ${o.last_name ?? ""}`.trim();
+      });
+      return map;
+    },
+  });
+
+  const prettyLabel = (key: string) => {
+    if (key === "occupant_id") return "Occupant";
+    if (key === "assigned_at") return "Assigned At";
+    if (key === "returned_at") return "Returned At";
+    if (key === "is_spare") return "Spare Key";
+    if (key === "recipient_type") return "Recipient Type";
+    if (key === "recipient_name") return "Recipient Name";
+    if (key === "recipient_email") return "Recipient Email";
+    return key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  };
+
+  const prettyValue = (key: string, value: any) => {
+    if (key === "occupant_id") {
+      const name = occupantsMap?.[value as string];
+      return name ? `${name}` : String(value);
+    }
+    if (/_at$/.test(key) && value) {
+      try { return format(new Date(value), "MMM d, yyyy HH:mm"); } catch { return String(value); }
+    }
+    if (typeof value === "boolean") return value ? "Yes" : "No";
+    return String(value);
+  };
+
   return (
     <div className="space-y-4">
       <div>
@@ -72,7 +123,7 @@ export function KeyHistorySection() {
                 <TableCell>
                   {Object.entries(log.changes || {}).map(([key, value]) => (
                     <div key={key} className="text-sm">
-                      <span className="font-medium">{key}:</span> {String(value)}
+                      <span className="font-medium">{prettyLabel(key)}:</span> {prettyValue(key, value)}
                     </div>
                   ))}
                 </TableCell>

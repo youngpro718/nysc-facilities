@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Room } from "../types/RoomTypes";
@@ -11,6 +11,8 @@ import { format, differenceInDays } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RoomInventory } from "../../RoomInventory";
 import { ParentRoomHierarchy } from "../ParentRoomHierarchy";
+import { LightingStatusWheel } from "@/components/spaces/LightingStatusWheel";
+import { useNavigate } from "react-router-dom";
 
 interface CardBackProps {
   room: EnhancedRoom;
@@ -20,6 +22,10 @@ interface CardBackProps {
 export function CardBack({ room, onFlip }: CardBackProps) {
   const [isInventoryDialogOpen, setIsInventoryDialogOpen] = useState(false);
   const { data: roomAccess, isLoading: isAccessLoading } = useRoomAccess(room.id);
+  const navigate = useNavigate();
+
+  const totalLights = useMemo(() => room.total_fixtures_count ?? room.lighting_fixtures?.length ?? 0, [room]);
+  const functionalLights = useMemo(() => room.functional_fixtures_count ?? room.lighting_fixtures?.filter(f => f.status === 'functional')?.length ?? 0, [room]);
 
   return (
     <div className="p-5 flex flex-col h-full bg-card border rounded-md shadow-sm">
@@ -200,9 +206,22 @@ export function CardBack({ room, onFlip }: CardBackProps) {
               <div className="space-y-2">
                 {room.current_occupants.map((occupant, index) => (
                   <div key={index} className="text-sm text-muted-foreground">
-                    <p className="font-medium">
+                    <button
+                      type="button"
+                      className="font-medium hover:underline"
+                      title={`Open ${occupant.first_name} ${occupant.last_name}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (occupant.id) {
+                          navigate(`/occupants/${encodeURIComponent(occupant.id)}`);
+                        } else {
+                          const name = `${occupant.first_name ?? ''} ${occupant.last_name ?? ''}`.trim();
+                          navigate(`/occupants?search=${encodeURIComponent(name)}`);
+                        }
+                      }}
+                    >
                       {occupant.first_name} {occupant.last_name}
-                    </p>
+                    </button>
                     {occupant.assignment_type && (
                       <p className="text-xs capitalize">
                         {occupant.assignment_type.replace(/_/g, ' ')}
@@ -216,38 +235,69 @@ export function CardBack({ room, onFlip }: CardBackProps) {
           )}
           
           {/* Lighting Fixture Details */}
-          {room.lighting_fixtures && room.lighting_fixtures.length > 0 && (
+          {(totalLights > 0) && (
             <div className="space-y-2">
               <h4 className="text-sm font-medium flex items-center gap-1">
                 <Lightbulb className="h-3.5 w-3.5 text-muted-foreground" />
-                Lighting Status ({room.functional_fixtures_count}/{room.total_fixtures_count})
+                Lighting Status ({functionalLights}/{totalLights})
               </h4>
+              <div className="flex items-center gap-2">
+                <LightingStatusWheel
+                  functional={functionalLights}
+                  total={totalLights}
+                  size={28}
+                  title={`${functionalLights}/${totalLights} lights functional`}
+                  onClick={() => navigate(`/lighting?room=${encodeURIComponent(room.name ?? room.room_number ?? room.id)}`)}
+                />
+                <span className="text-xs text-muted-foreground">Lighting</span>
+              </div>
               <div className="space-y-2">
-                {room.lighting_fixtures.map((fixture, index) => (
-                  <div key={fixture.id || index} className="text-sm bg-muted/50 p-2 rounded-md">
+                {(room.lighting_fixtures ?? []).filter(f => f.status !== 'functional').map((fixture, index) => (
+                  <button
+                    key={fixture.id || index}
+                    type="button"
+                    className="text-xs bg-amber-50 border border-amber-200 text-amber-700 p-2 rounded-md w-full text-left hover:bg-amber-100"
+                    title={`Open fixture ${fixture.location ?? fixture.id}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const base = `/lighting?room=${encodeURIComponent(room.name ?? room.room_number ?? room.id)}&status=out`;
+                      const url = fixture.id ? `${base}&fixtureId=${encodeURIComponent(fixture.id)}` : base;
+                      navigate(url);
+                    }}
+                  >
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
-                        <Badge variant={
-                          fixture.status === 'functional' ? 'default' :
-                          fixture.status === 'flickering' ? 'secondary' :
-                          'destructive'
-                        } className="text-xs">
+                        <Badge variant={fixture.status === 'flickering' ? 'secondary' : 'destructive'} className="text-[10px]">
                           {fixture.status}
                         </Badge>
-                        <span className="font-medium">{fixture.location}</span>
+                        <span className="font-medium">{fixture.location ?? fixture.id}</span>
                       </div>
                       {fixture.outage_duration_days && fixture.outage_duration_days > 0 && (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                           <Clock className="h-3 w-3" />
                           {fixture.outage_duration_days}d out
                         </div>
                       )}
                     </div>
                     {fixture.ballast_issue && (
-                      <p className="text-xs text-orange-600 mt-1">⚠ Ballast issue detected</p>
+                      <p className="text-[10px] text-orange-600 mt-1">⚠ Ballast issue detected</p>
                     )}
-                  </div>
+                  </button>
                 ))}
+                {/* Fallback: show a generic chip if we know there are non-functional lights but we don't have a detailed fixtures list */}
+                {((room.lighting_fixtures ?? []).filter(f => f.status !== 'functional').length === 0)
+                  && (totalLights > functionalLights) && (
+                  <button
+                    type="button"
+                    className="text-xs bg-amber-50 border border-amber-200 text-amber-700 p-2 rounded-md w-full text-left hover:bg-amber-100"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/lighting?room=${encodeURIComponent(room.name ?? room.room_number ?? room.id)}&status=out`);
+                    }}
+                  >
+                    View {totalLights - functionalLights} lights out
+                  </button>
+                )}
               </div>
             </div>
           )}

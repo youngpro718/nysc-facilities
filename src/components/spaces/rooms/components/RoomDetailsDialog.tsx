@@ -1,15 +1,9 @@
 import { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
+import { ModalFrame } from "@/components/common/ModalFrame";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Building2, 
   MapPin, 
@@ -74,21 +68,23 @@ export function RoomDetailsDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[85vh] p-0">
-        <DialogHeader className="p-6 pb-4 relative">
-          <DialogTitle className="flex items-center justify-between pr-8">
-            <span className="text-lg font-semibold">{room.name}</span>
+      <ModalFrame
+        title={
+          <div className="flex items-center justify-between pr-2">
+            <span className="text-lg font-semibold truncate">{room.name}</span>
             <Badge variant={getStatusVariant(room.status)}>
               {room.status.replace('_', ' ').toUpperCase()}
             </Badge>
-          </DialogTitle>
-          <DialogDescription className="text-left">
+          </div>
+        }
+        description={
+          <span>
             Room #{room.room_number} • {room.room_type.replace('_', ' ')}
-          </DialogDescription>
-        </DialogHeader>
-
-        <ScrollArea className="flex-1 px-6">
-          <div className="space-y-6 pb-6">
+          </span>
+        }
+        size="md"
+      >
+        <div className="space-y-6">
             {/* Basic Information */}
             <div className="space-y-3">
               <h4 className="font-medium flex items-center gap-2">
@@ -258,61 +254,139 @@ export function RoomDetailsDialog({
                 )}
               </div>
             </div>
-          </div>
-        </ScrollArea>
 
-        {/* Action Buttons */}
-        <div className="border-t p-4 space-y-2">
-          <EditSpaceDialog
-            id={room.id}
-            type="room"
-            initialData={{
-              id: room.id,
-              name: room.name,
-              room_number: room.room_number || '',
-              room_type: room.room_type,
-              description: room.description || '',
-              status: room.status,
-              floor_id: room.floor_id,
-              is_storage: room.is_storage || false,
-              storage_type: room.storage_type || null,
-              storage_capacity: room.storage_capacity || null,
-              storage_notes: room.storage_notes || null,
-              parent_room_id: room.parent_room_id || null,
-              current_function: room.current_function || null,
-              phone_number: room.phone_number || null,
-              courtroom_photos: room.courtroom_photos || null,
-              connections: room.space_connections?.map(conn => ({
-                id: conn.id,
-                connectionType: conn.connection_type,
-                toSpaceId: conn.to_space_id,
-                direction: conn.direction || null
-              })) || [],
-              type: "room"
-            }}
-            variant="custom"
-          >
-            <Button className="w-full" size="lg">
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Room
-            </Button>
-          </EditSpaceDialog>
-          <Button
-            variant="destructive"
-            className="w-full"
-            size="lg"
-            onClick={() => {
-              if (window.confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
-                onDelete(room.id);
-                onClose();
-              }
-            }}
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete Room
-          </Button>
+        {/* Issues */}
+        {room.issues && room.issues.length > 0 && (
+          <>
+            <Separator />
+            <div className="space-y-3">
+              <h4 className="font-medium flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                Current Issues ({room.issues.length})
+              </h4>
+              <div className="space-y-2">
+                {room.issues.slice(0, 3).map((issue: any, index: number) => (
+                  <div key={index} className="p-2 bg-muted rounded-md">
+                    <p className="text-xs font-medium">{issue.title || issue.issue_type}</p>
+                    {issue.description && (
+                      <p className="text-xs text-muted-foreground mt-1">{issue.description}</p>
+                    )}
+                  </div>
+                ))}
+                {room.issues.length > 3 && (
+                  <p className="text-xs text-muted-foreground">
+                    +{room.issues.length - 3} more issues
+                  </p>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Occupants */}
+        {room.current_occupants && room.current_occupants.length > 0 && (
+          <>
+            <Separator />
+            <div className="space-y-3">
+              <h4 className="font-medium flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Current Occupants ({room.current_occupants.length})
+              </h4>
+              <div className="space-y-2">
+                {room.current_occupants.slice(0, 5).map((occupant: any, index: number) => (
+                  <div key={index} className="flex items-center justify-between text-sm">
+                    <span>{occupant.name || occupant.user_name}</span>
+                    <Badge variant="outline" className="text-xs">
+                      {occupant.role || occupant.position}
+                    </Badge>
+                  </div>
+                ))}
+                {room.current_occupants.length > 5 && (
+                  <p className="text-xs text-muted-foreground">
+                    +{room.current_occupants.length - 5} more occupants
+                  </p>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Timestamps */}
+        <Separator />
+        <div className="space-y-3">
+          <h4 className="font-medium flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            Timeline
+          </h4>
+          <div className="grid grid-cols-1 gap-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Created:</span>
+              <span>{formatDate(room.created_at)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Updated:</span>
+              <span>{formatDate(room.updated_at)}</span>
+            </div>
+            {room.function_change_date && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Function Changed:</span>
+                <span>{formatDate(room.function_change_date)}</span>
+              </div>
+            )}
+          </div>
         </div>
-      </DialogContent>
-    </Dialog>
-  );
+      </div>
+      <div className="border-t pt-4 space-y-2">
+        <EditSpaceDialog
+          id={room.id}
+          type="room"
+          initialData={{
+            id: room.id,
+            name: room.name,
+            room_number: room.room_number || '',
+            room_type: room.room_type,
+            description: room.description || '',
+            status: room.status,
+            floor_id: room.floor_id,
+            is_storage: room.is_storage || false,
+            storage_type: room.storage_type || null,
+            storage_capacity: room.storage_capacity || null,
+            storage_notes: room.storage_notes || null,
+            parent_room_id: room.parent_room_id || null,
+            current_function: room.current_function || null,
+            phone_number: room.phone_number || null,
+            courtroom_photos: room.courtroom_photos || null,
+            connections: room.space_connections?.map(conn => ({
+              id: conn.id,
+              connectionType: conn.connection_type,
+              toSpaceId: conn.to_space_id,
+              direction: conn.direction || null
+            })) || [],
+            type: "room"
+          }}
+          variant="custom"
+        >
+          <Button className="w-full" size="lg">
+            <Edit className="h-4 w-4 mr-2" />
+            Edit Room
+          </Button>
+        </EditSpaceDialog>
+        <Button
+          variant="destructive"
+          className="w-full"
+          size="lg"
+          onClick={() => {
+            if (window.confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
+              onDelete(room.id);
+              onClose();
+            }
+          }}
+        >
+          <Trash2 className="h-4 w-4 mr-2" />
+          Delete Room
+        </Button>
+      </div>
+    </ModalFrame>
+  </Dialog>
+);
 }

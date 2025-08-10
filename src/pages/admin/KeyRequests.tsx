@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -380,6 +380,9 @@ export default function AdminKeyRequests() {
             <DialogTitle>
               {actionType === 'approve' ? 'Approve' : 'Reject'} Key Request
             </DialogTitle>
+            <DialogDescription>
+              Confirm your action and optionally provide notes for the requester.
+            </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4">

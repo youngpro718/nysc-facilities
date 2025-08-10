@@ -34,8 +34,29 @@ const Layout = () => {
   console.log('Layout - navigation:', navigation);
 
   const handleNavigationChange = (index: number | null) => {
-    if (index === null || !userRole) return;
-    const routes = getNavigationRoutes(permissions, userRole, profile);
+    if (index === null) return;
+
+    // If userRole not ready yet, use a safe default (standard user routes)
+    const routes = userRole
+      ? getNavigationRoutes(permissions, userRole, profile)
+      : getNavigationRoutes(
+          {
+            spaces: null,
+            issues: null,
+            occupants: null,
+            inventory: null,
+            supply_requests: null,
+            keys: null,
+            lighting: null,
+            maintenance: null,
+            court_operations: null,
+            operations: null,
+            dashboard: null,
+          } as any,
+          'standard' as any,
+          undefined
+        );
+
     const route = routes[index];
     if (route) {
       navigate(route);
@@ -111,6 +132,14 @@ const Layout = () => {
                       onNavigationChange={handleNavigationChange}
                       onSignOut={signOut}
                     />
+                  ) : isAuthenticated ? (
+                    <MobileMenu
+                      isOpen={isMobileMenuOpen}
+                      onOpenChange={setIsMobileMenuOpen}
+                      navigation={userNavigation}
+                      onNavigationChange={handleNavigationChange}
+                      onSignOut={signOut}
+                    />
                   ) : (
                     <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                   )}
@@ -121,6 +150,11 @@ const Layout = () => {
                   {navReady ? (
                     <DesktopNavigationImproved
                       navigation={navigation}
+                      onSignOut={signOut}
+                    />
+                  ) : isAuthenticated ? (
+                    <DesktopNavigationImproved
+                      navigation={userNavigation}
                       onSignOut={signOut}
                     />
                   ) : (

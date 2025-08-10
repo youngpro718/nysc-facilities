@@ -16,6 +16,7 @@ export function CreateKeyForm({ onSubmit, isSubmitting, onCancel }: CreateKeyFor
       name: "",
       type: "physical_key",
       isPasskey: false,
+      isElevatorCard: false,
       quantity: 1,
       spareKeys: 0,
       keyScope: "door",
@@ -27,12 +28,18 @@ export function CreateKeyForm({ onSubmit, isSubmitting, onCancel }: CreateKeyFor
     },
   });
 
+  const isElevatorCard = form.watch("isElevatorCard");
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <BasicKeyFields form={form} />
-        <LocationFields form={form} />
-        <OccupantField form={form} />
+        {!isElevatorCard && (
+          <>
+            <LocationFields form={form} />
+            <OccupantField form={form} />
+          </>
+        )}
 
         <div className="flex justify-end gap-2 pt-4">
           <Button

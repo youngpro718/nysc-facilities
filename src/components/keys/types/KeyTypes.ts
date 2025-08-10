@@ -37,6 +37,7 @@ export interface KeyData {
   total_quantity: number;
   available_quantity: number;
   is_passkey: boolean;
+  is_elevator_card?: boolean;
   key_scope: 'door' | 'room' | 'room_door';
   properties: KeyProperties;
   location_data: LocationData;
@@ -57,6 +58,7 @@ export interface KeyFormData {
   name: string;
   type: KeyType;
   isPasskey: boolean;
+  isElevatorCard: boolean;
   quantity: number;
   spareKeys: number;
   keyScope: 'door' | 'room' | 'room_door';

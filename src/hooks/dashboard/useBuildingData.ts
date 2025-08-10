@@ -4,8 +4,9 @@ import { BuildingError } from "./types/errors";
 import type { Building, Activity } from "@/types/dashboard";
 
 export const useBuildingData = (userId?: string) => {
+  const enabled = !!userId;
   // Fetch buildings with caching
-  const { data: buildings = [], isLoading: buildingsLoading, refetch: refetchBuildings } = useQuery<Building[]>({
+  const { data: buildings = [], isLoading: buildingsIsLoading, refetch: refetchBuildings } = useQuery<Building[]>({
     queryKey: ['buildings'],
     queryFn: async () => {
       try {
@@ -96,12 +97,12 @@ export const useBuildingData = (userId?: string) => {
         throw new BuildingError(error instanceof Error ? error.message : 'Failed to fetch buildings');
       }
     },
-    enabled: !!userId,
+    enabled,
     staleTime: 300000, // Consider data fresh for 5 minutes
   });
 
   // Fetch recent activities
-  const { data: activities = [], refetch: refetchActivities } = useQuery<Activity[]>({
+  const { data: activities = [], isLoading: activitiesIsLoading, refetch: refetchActivities } = useQuery<Activity[]>({
     queryKey: ['building-activities'],
     queryFn: async () => {
       try {
@@ -128,7 +129,7 @@ export const useBuildingData = (userId?: string) => {
         return [];
       }
     },
-    enabled: !!userId,
+    enabled,
     staleTime: 60000, // Consider data fresh for 1 minute
   });
 
@@ -138,8 +139,9 @@ export const useBuildingData = (userId?: string) => {
 
   return {
     buildings,
-    buildingsLoading,
+    buildingsLoading: buildingsIsLoading || !enabled,
     activities,
+    activitiesLoading: activitiesIsLoading || !enabled,
     refreshData
   };
 };

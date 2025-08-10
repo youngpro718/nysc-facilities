@@ -21,11 +21,13 @@ interface LightingFixturesListProps {
   fixtures?: LightingFixture[];
   isLoading?: boolean;
   refetch?: () => void;
+  targetRoomId?: string;
+  targetFixtureId?: string;
 }
 
 type ViewMode = 'all' | 'by-room';
 
-export const LightingFixturesList = ({ selectedBuilding, selectedFloor, statusFilter, fixtures: fixturesProp, isLoading: isLoadingProp, refetch: refetchProp }: LightingFixturesListProps) => {
+export const LightingFixturesList = ({ selectedBuilding, selectedFloor, statusFilter, fixtures: fixturesProp, isLoading: isLoadingProp, refetch: refetchProp, targetRoomId, targetFixtureId }: LightingFixturesListProps) => {
   const [selectedFixtures, setSelectedFixtures] = useState<string[]>([]);
   const [isMobile, setIsMobile] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('by-room');
@@ -47,7 +49,14 @@ export const LightingFixturesList = ({ selectedBuilding, selectedFloor, statusFi
     const list = fixtures || [];
     const search = (filters.search || '').toLowerCase();
     return list.filter((f) => {
-      if (statusFilter && f.status !== statusFilter) return false;
+      // Support friendly status in URL like 'out' meaning any non-functional fixture
+      if (statusFilter) {
+        if (statusFilter === 'out') {
+          if (f.status === 'functional') return false;
+        } else {
+          if (f.status !== statusFilter) return false;
+        }
+      }
       if (filters.status && f.status !== filters.status) return false;
       if (filters.building && f.building_name !== filters.building) return false;
       if (filters.floor && f.floor_name !== filters.floor) return false;
@@ -62,6 +71,13 @@ export const LightingFixturesList = ({ selectedBuilding, selectedFloor, statusFi
 
   // Reset pagination when filters change
   useEffect(() => { setPage(1); }, [filters, statusFilter]);
+
+  // If deep-link targets provided, ensure we are in by-room view so we can scroll to a room
+  useEffect(() => {
+    if (targetRoomId || targetFixtureId) {
+      setViewMode('by-room');
+    }
+  }, [targetRoomId, targetFixtureId]);
 
   const totalPages = Math.max(1, Math.ceil((filteredFixtures.length || 0) / pageSize));
   const pagedFixtures = useMemo(() => {
@@ -219,6 +235,8 @@ export const LightingFixturesList = ({ selectedBuilding, selectedFloor, statusFi
           onFixtureUpdated={refetch}
           selectedBuilding={selectedBuilding}
           selectedFloor={selectedFloor}
+          targetRoomId={targetRoomId}
+          targetFixtureId={targetFixtureId}
         />
       ) : (
         <>

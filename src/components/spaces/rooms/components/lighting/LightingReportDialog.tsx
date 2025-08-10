@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { ModalFrame } from "@/components/common/ModalFrame";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Lightbulb, Zap, AlertTriangle } from "lucide-react";
@@ -17,6 +18,7 @@ export function LightingReportDialog({ room, trigger }: LightingReportDialogProp
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const roomId = room?.id;
 
   const handleFixtureReport = async (location: string, issueType: 'light_out' | 'flickering' | 'ballast_issue') => {
     setIsSubmitting(true);
@@ -80,14 +82,15 @@ export function LightingReportDialog({ room, trigger }: LightingReportDialogProp
       <DialogTrigger asChild>
         {trigger}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+      <ModalFrame
+        title={
+          <span className="flex items-center gap-2">
             <Lightbulb className="h-5 w-5 text-yellow-500" />
             Report Lighting Issue - {room.name}
-          </DialogTitle>
-        </DialogHeader>
-        
+          </span>
+        }
+        size="md"
+      >
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
             Click on the specific location where you're experiencing a lighting issue:
@@ -159,13 +162,27 @@ export function LightingReportDialog({ room, trigger }: LightingReportDialogProp
           </div>
           
           <div className="pt-4 border-t">
-            <p className="text-xs text-muted-foreground">
-              Reports are automatically timestamped and will be tracked until resolution.
-              Maintenance will be notified immediately for critical lighting issues.
-            </p>
+            <div className="text-xs text-muted-foreground space-y-2">
+              <p>
+                Reports are automatically timestamped and will be tracked until resolution.
+                Maintenance will be notified immediately for critical lighting issues.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {roomId && (
+                  <Button variant="outline" size="xs" asChild>
+                    <a href={`/lighting?roomId=${roomId}&status=open`}>View lighting issues for this room</a>
+                  </Button>
+                )}
+                {roomId && (
+                  <Button variant="secondary" size="xs" asChild>
+                    <a href={`/spaces?roomId=${roomId}`}>Open room card</a>
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
-      </DialogContent>
+      </ModalFrame>
     </Dialog>
   );
 }

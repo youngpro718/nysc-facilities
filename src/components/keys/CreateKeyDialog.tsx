@@ -40,11 +40,12 @@ export function CreateKeyDialog({
           name: data.name,
           type: data.type,
           is_passkey: data.isPasskey,
+          is_elevator_card: data.isElevatorCard,
           total_quantity: totalQuantity,
           available_quantity: totalQuantity,
-          key_scope: data.keyScope,
+          key_scope: data.isElevatorCard ? null : data.keyScope,
           status: "available",
-          location_data: {
+          location_data: data.isElevatorCard ? null : {
             building_id: data.buildingId || null,
             floor_id: data.isPasskey ? null : data.floorId,
             door_id: data.isPasskey ? null : (data.keyScope === 'door' ? data.doorId : null),
@@ -58,8 +59,8 @@ export function CreateKeyDialog({
 
       console.log("Key created successfully:", newKey);
 
-      // If there's an occupant, handle key assignment
-      if (data.occupantId) {
+      // If it's NOT an elevator card and there's an occupant, handle key assignment
+      if (!data.isElevatorCard && data.occupantId) {
         console.log("Creating key assignment for occupant:", data.occupantId);
         
         try {

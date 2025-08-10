@@ -41,7 +41,7 @@ export async function createLightingIssue(data: LightingIssueCreateData): Promis
     // First, get the fixture details
     const { data: fixture, error: fixtureError } = await supabase
       .from('lighting_fixtures')
-      .select('name, room_number, floor_id, building_id')
+      .select('id, name, room_id, room_number, floor_id, building_id')
       .eq('id', data.fixture_id)
       .single();
 
@@ -78,7 +78,7 @@ export async function createLightingIssue(data: LightingIssueCreateData): Promis
         reported_by: data.reported_by,
         created_by: data.reported_by,
         tags: ['lighting', data.issue_type],
-        room_id: fixture.room_id,
+        room_id: fixture?.room_id ?? null,
         floor_id: fixture.floor_id,
         building_id: fixture.building_id,
       })

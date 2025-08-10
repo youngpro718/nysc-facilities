@@ -1,12 +1,15 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Users, Calculator, Info, TrendingUp } from "lucide-react";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { ModalFrame } from "@/components/common/ModalFrame";
+import { Users, Calculator, Info, TrendingUp, Pencil } from "lucide-react";
 import { EnhancedRoom } from "../../types/EnhancedRoomTypes";
 import { calculateRoomCapacity, formatCapacityInfo, type CapacityCalculationResult } from "@/utils/capacityCalculations";
 import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { EditSpaceDialog } from "../../../EditSpaceDialog";
 
 interface EnhancedCapacityBadgeProps {
   room: EnhancedRoom;
@@ -41,10 +44,10 @@ export function EnhancedCapacityBadge({ room, showDetails = false }: EnhancedCap
     return "default";
   };
 
-  const badgeContent = (
+  const badgeCore = (
     <Badge 
       variant={getUtilizationColor(utilizationPercent)}
-      className="flex items-center gap-1 cursor-pointer hover:bg-opacity-80"
+      className="flex items-center gap-1"
     >
       <Users className="h-3 w-3" />
       {currentOccupancy}/{capacityResult.recommendedCapacity}
@@ -54,24 +57,61 @@ export function EnhancedCapacityBadge({ room, showDetails = false }: EnhancedCap
     </Badge>
   );
 
+  const tooltipOnly = (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant="ghost" size="sm" className="h-auto p-1 hover:bg-accent/50">
+            {badgeCore}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-xs text-xs">
+          Current occupancy vs. recommended capacity. Click to view details and edit.
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+
   if (!showDetails) {
-    return badgeContent;
+    return tooltipOnly;
   }
 
   return (
     <Dialog>
-      <DialogTrigger asChild>
-        {badgeContent}
-      </DialogTrigger>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+      <TooltipProvider delayDuration={200}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-auto p-1 hover:bg-accent/50">
+                {badgeCore}
+              </Button>
+            </DialogTrigger>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-xs text-xs">
+            Current occupancy vs. recommended capacity. Click to view details and edit.
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+      <ModalFrame
+        title={
+          <span className="flex items-center gap-2">
             <Calculator className="h-5 w-5" />
             Capacity Analysis - {room.name}
-          </DialogTitle>
-        </DialogHeader>
-        
+          </span>
+        }
+        size="lg"
+      >
         <div className="space-y-6">
+          {/* Quick action */}
+          <div className="flex justify-end">
+            <EditSpaceDialog id={room.id} type="room" variant="custom" initialData={room}>
+              <Button size="sm" variant="outline" className="flex items-center gap-2">
+                <Pencil className="h-4 w-4" />
+                Edit capacity & usage
+              </Button>
+            </EditSpaceDialog>
+          </div>
+
           {/* Current Status */}
           <Card>
             <CardHeader className="pb-3">
@@ -165,7 +205,7 @@ export function EnhancedCapacityBadge({ room, showDetails = false }: EnhancedCap
             </CardContent>
           </Card>
         </div>
-      </DialogContent>
+      </ModalFrame>
     </Dialog>
   );
 }

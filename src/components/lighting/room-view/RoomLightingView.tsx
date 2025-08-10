@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,8 @@ interface RoomLightingViewProps {
   onFixtureUpdated: () => void;
   selectedBuilding?: string;
   selectedFloor?: string;
+  targetRoomId?: string;
+  targetFixtureId?: string;
 }
 
 type RoomGroup = {
@@ -36,7 +38,9 @@ export const RoomLightingView = ({
   onFixtureDelete,
   onFixtureUpdated,
   selectedBuilding,
-  selectedFloor
+  selectedFloor,
+  targetRoomId,
+  targetFixtureId
 }: RoomLightingViewProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<FilterType>('all');
@@ -130,6 +134,28 @@ export const RoomLightingView = ({
     };
   }, [roomGroups, fixtures]);
 
+  // Auto-focus the target room and optionally fixture
+  useEffect(() => {
+    if (!targetRoomId) return;
+    const el = document.getElementById(`room-card-${targetRoomId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      el.classList.add('ring-2', 'ring-primary');
+      window.setTimeout(() => el.classList.remove('ring-2', 'ring-primary'), 2000);
+    }
+    if (targetFixtureId) {
+      // wait a tick for room expansion
+      window.setTimeout(() => {
+        const fixtureEl = document.querySelector(`[data-fixture-id="${targetFixtureId}"]`);
+        if (fixtureEl) {
+          (fixtureEl as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
+          (fixtureEl as HTMLElement).classList.add('ring-2', 'ring-primary');
+          window.setTimeout(() => (fixtureEl as HTMLElement).classList.remove('ring-2', 'ring-primary'), 2000);
+        }
+      }, 150);
+    }
+  }, [targetRoomId, targetFixtureId, filteredRooms]);
+
   return (
     <div className="space-y-6">
       {/* Header with search and filters */}
@@ -195,6 +221,7 @@ export const RoomLightingView = ({
               onFixtureSelect={onFixtureSelect}
               onFixtureDelete={onFixtureDelete}
               onFixtureUpdated={onFixtureUpdated}
+              defaultExpanded={targetRoomId === room.roomId}
             />
           ))
         ) : (

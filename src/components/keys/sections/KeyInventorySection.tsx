@@ -9,10 +9,12 @@ import { CreateKeyDialog } from "../CreateKeyDialog";
 import { KeyInventoryHeader } from "./inventory/KeyInventoryHeader";
 import { KeyInventoryTable } from "./inventory/KeyInventoryTable";
 import { DeleteKeyDialog } from "./inventory/DeleteKeyDialog";
+import { ImportKeysDialog } from "@/components/keys/dialogs/ImportKeysDialog";
 
 export function KeyInventorySection() {
   const [keyToDelete, setKeyToDelete] = useState<KeyData | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [filters, setFilters] = useState<KeyFilterOptions>({});
   const [sort, setSort] = useState<SortOption>({ field: 'name', direction: 'asc' });
 
@@ -171,7 +173,41 @@ export function KeyInventorySection() {
 
   return (
     <div className="space-y-4">
-      <KeyInventoryHeader onAddKey={() => setCreateDialogOpen(true)} />
+      <KeyInventoryHeader 
+        onAddKey={() => setCreateDialogOpen(true)} 
+        onImport={() => setImportOpen(true)}
+        onExport={() => {
+          const rows = (keys || []).map(k => ({
+            id: k.id,
+            name: k.name,
+            type: k.type,
+            status: k.status,
+            total_quantity: k.total_quantity,
+            available_quantity: k.available_quantity,
+            is_passkey: k.is_passkey ? "yes" : "no",
+            key_scope: k.key_scope || "",
+            active_assignments: (k as any).active_assignments ?? "",
+            returned_assignments: (k as any).returned_assignments ?? "",
+            lost_count: (k as any).lost_count ?? "",
+          }));
+          const headers = Object.keys(rows[0] || { id: "", name: "", type: "", status: "", total_quantity: "", available_quantity: "", is_passkey: "", key_scope: "", active_assignments: "", returned_assignments: "", lost_count: "" });
+          const csv = [
+            headers.join(','),
+            ...rows.map(r => headers.map(h => {
+              const val = String((r as any)[h] ?? "");
+              const escaped = val.replace(/"/g, '""');
+              return `"${escaped}"`;
+            }).join(','))
+          ].join('\n');
+          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `keys_inventory_${new Date().toISOString()}.csv`;
+          a.click();
+          URL.revokeObjectURL(url);
+        }}
+      />
 
       <KeyFilters
         onFilterChange={setFilters}
@@ -194,6 +230,12 @@ export function KeyInventorySection() {
         keyToDelete={keyToDelete}
         onOpenChange={() => setKeyToDelete(null)}
         onConfirmDelete={handleDeleteKey}
+      />
+
+      <ImportKeysDialog 
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImported={refetch}
       />
     </div>
   );

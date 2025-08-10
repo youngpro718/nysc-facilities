@@ -1,6 +1,8 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
@@ -11,15 +13,28 @@ import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-interface FormData {
-  title: string;
-  description: string;
-  issue_type: string;
-  priority: 'low' | 'medium' | 'high';
-  building_id?: string;
-  floor_id?: string;
-  room_id?: string;
-}
+const formSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  description: z.string().min(1, "Description is required"),
+  issue_type: z.enum([
+    "maintenance",
+    "electrical",
+    "plumbing",
+    "hvac",
+    "lighting",
+    "security",
+    "cleaning",
+    "other",
+  ] as const, {
+    required_error: "Issue type is required",
+  }),
+  priority: z.enum(["low", "medium", "high"] as const),
+  building_id: z.string().optional().nullable(),
+  floor_id: z.string().optional().nullable(),
+  room_id: z.string().optional().nullable(),
+});
+
+type FormData = z.infer<typeof formSchema>;
 
 interface CreateIssueFormProps {
   onSuccess?: () => void;
@@ -31,13 +46,20 @@ export function CreateIssueForm({ onSuccess }: CreateIssueFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
-      priority: 'medium'
-    }
+      title: "",
+      description: "",
+      issue_type: undefined as unknown as FormData["issue_type"],
+      priority: 'medium',
+      building_id: undefined,
+      floor_id: undefined,
+      room_id: undefined,
+    },
   });
 
   // Fetch buildings
-  const { data: buildings } = useQuery({
+  const { data: buildings, isLoading: isLoadingBuildings } = useQuery({
     queryKey: ['buildings'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -51,7 +73,7 @@ export function CreateIssueForm({ onSuccess }: CreateIssueFormProps) {
   });
 
   // Fetch floors for selected building
-  const { data: floors } = useQuery({
+  const { data: floors, isLoading: isLoadingFloors } = useQuery({
     queryKey: ['floors', selectedBuilding],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -67,7 +89,7 @@ export function CreateIssueForm({ onSuccess }: CreateIssueFormProps) {
   });
 
   // Fetch rooms for selected floor
-  const { data: rooms } = useQuery({
+  const { data: rooms, isLoading: isLoadingRooms } = useQuery({
     queryKey: ['rooms', selectedFloor],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -85,18 +107,21 @@ export function CreateIssueForm({ onSuccess }: CreateIssueFormProps) {
   const onSubmit = async (data: FormData) => {
     try {
       setIsSubmitting(true);
+      // Build a compact payload without undefined/null optional fields
+      const payload: Record<string, unknown> = {
+        title: data.title,
+        description: data.description,
+        issue_type: data.issue_type,
+        priority: data.priority,
+        status: 'open',
+      };
+      if (data.building_id) payload.building_id = data.building_id;
+      if (data.floor_id) payload.floor_id = data.floor_id;
+      if (data.room_id) payload.room_id = data.room_id;
+
       const { error } = await supabase
         .from('issues')
-        .insert([{
-          title: data.title,
-          description: data.description,
-          issue_type: data.issue_type,
-          priority: data.priority,
-          building_id: data.building_id,
-          floor_id: data.floor_id,
-          room_id: data.room_id,
-          status: 'open'
-        }]);
+        .insert([payload]);
 
       if (error) throw error;
       
@@ -123,7 +148,7 @@ export function CreateIssueForm({ onSuccess }: CreateIssueFormProps) {
               <FormItem>
                 <FormLabel>Title</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="Issue title" />
+                  <Input {...field} placeholder="Issue title" aria-invalid={!!form.formState.errors.title} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -137,7 +162,7 @@ export function CreateIssueForm({ onSuccess }: CreateIssueFormProps) {
               <FormItem>
                 <FormLabel>Description</FormLabel>
                 <FormControl>
-                  <Textarea {...field} placeholder="Describe the issue" />
+                  <Textarea {...field} placeholder="Describe the issue" aria-invalid={!!form.formState.errors.description} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -152,7 +177,7 @@ export function CreateIssueForm({ onSuccess }: CreateIssueFormProps) {
                 <FormLabel>Issue Type</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger aria-invalid={!!form.formState.errors.issue_type}>
                       <SelectValue placeholder="Select issue type" />
                     </SelectTrigger>
                   </FormControl>
@@ -209,11 +234,11 @@ export function CreateIssueForm({ onSuccess }: CreateIssueFormProps) {
                     form.setValue('floor_id', undefined);
                     form.setValue('room_id', undefined);
                   }} 
-                  value={field.value}
+                  value={field.value ?? undefined}
                 >
                   <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select building" />
+                    <SelectTrigger disabled={isLoadingBuildings}>
+                      <SelectValue placeholder={isLoadingBuildings ? "Loading buildings..." : "Select building"} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -241,12 +266,12 @@ export function CreateIssueForm({ onSuccess }: CreateIssueFormProps) {
                     setSelectedFloor(value);
                     form.setValue('room_id', undefined);
                   }} 
-                  value={field.value}
-                  disabled={!selectedBuilding}
+                  value={field.value ?? undefined}
+                  disabled={!selectedBuilding || isLoadingFloors}
                 >
                   <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select floor" />
+                    <SelectTrigger disabled={!selectedBuilding || isLoadingFloors}>
+                      <SelectValue placeholder={!selectedBuilding ? "Select building first" : (isLoadingFloors ? "Loading floors..." : "Select floor")} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -270,12 +295,12 @@ export function CreateIssueForm({ onSuccess }: CreateIssueFormProps) {
                 <FormLabel>Room</FormLabel>
                 <Select 
                   onValueChange={field.onChange} 
-                  value={field.value}
-                  disabled={!selectedFloor}
+                  value={field.value ?? undefined}
+                  disabled={!selectedFloor || isLoadingRooms}
                 >
                   <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select room" />
+                    <SelectTrigger disabled={!selectedFloor || isLoadingRooms}>
+                      <SelectValue placeholder={!selectedFloor ? "Select floor first" : (isLoadingRooms ? "Loading rooms..." : "Select room")} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -296,7 +321,7 @@ export function CreateIssueForm({ onSuccess }: CreateIssueFormProps) {
             disabled={isSubmitting}
             className="w-full"
           >
-            Create Issue
+            {isSubmitting ? 'Creating…' : 'Create Issue'}
           </Button>
         </form>
       </Form>

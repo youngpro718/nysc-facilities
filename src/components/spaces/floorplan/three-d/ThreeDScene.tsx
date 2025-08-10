@@ -121,7 +121,14 @@ export const ThreeDScene = forwardRef<SceneRef, ThreeDSceneProps>(function Three
   // Memoized bounds calculation
   const sceneBounds = useMemo(() => {
     if (!validatedObjects.length) {
-      return { minX: -300, maxX: 300, minY: -300, maxY: 300, centerX: 0, centerY: 0 };
+      return {
+        minX: -500,
+        maxX: 500,
+        minY: -500,
+        maxY: 500,
+        centerX: 0,
+        centerY: 0
+      };
     }
     
     const bounds = validatedObjects.reduce((acc, obj) => {
@@ -141,6 +148,8 @@ export const ThreeDScene = forwardRef<SceneRef, ThreeDSceneProps>(function Three
       centerY: (bounds.minY + bounds.maxY) / 2
     };
   }, [validatedObjects]);
+
+  // Use raw 2D coordinates/sizes to match 2D view exactly
 
   // Camera control methods
   const fitToFloor = useCallback(() => {
@@ -169,7 +178,7 @@ export const ThreeDScene = forwardRef<SceneRef, ThreeDSceneProps>(function Three
   const focusObject = useCallback((objectId: string) => {
     const object = validatedObjects.find(obj => obj.id === objectId);
     if (object && controlsRef.current) {
-      controlsRef.current.target.set(object.position.x, 0, object.position.y);
+      controlsRef.current.target.set(object.position.x - sceneBounds.centerX, 0, object.position.y - sceneBounds.centerY);
       controlsRef.current.update();
     }
   }, [validatedObjects]);
@@ -227,17 +236,15 @@ export const ThreeDScene = forwardRef<SceneRef, ThreeDSceneProps>(function Three
   // Fix cleanup function in initialization effect
   useEffect(() => {
     if (camera && visibleObjects.length > 0 && !sceneState.hasInitialized) {
-      const centerX = visibleObjects.reduce((sum, obj) => sum + obj.position.x, 0) / visibleObjects.length;
-      const centerY = visibleObjects.reduce((sum, obj) => sum + obj.position.y, 0) / visibleObjects.length;
       const maxDim = Math.max(600, Math.max(...visibleObjects.map(obj => {
         return Math.max(obj.size.width || 150, obj.size.height || 100);
       })));
       
-      camera.position.set(centerX, maxDim, centerY + maxDim);
-      camera.lookAt(centerX, 0, centerY);
+      camera.position.set(sceneBounds.centerX, maxDim, sceneBounds.centerY + maxDim);
+      camera.lookAt(sceneBounds.centerX, 0, sceneBounds.centerY);
       
       if (controlsRef.current) {
-        controlsRef.current.target.set(centerX, 0, centerY);
+        controlsRef.current.target.set(sceneBounds.centerX, 0, sceneBounds.centerY);
         controlsRef.current.update();
       }
       
@@ -309,15 +316,15 @@ export const ThreeDScene = forwardRef<SceneRef, ThreeDSceneProps>(function Three
       <SceneLighting intensity={effectiveLightIntensity} />
       <OrbitControls 
         ref={controlsRef} 
-        enableDamping
-        dampingFactor={0.1}
-        rotateSpeed={0.5}
-        maxPolarAngle={Math.PI / 2 - 0.1}
-        minDistance={100}
-        maxDistance={3000}
+        enableDamping={config.enableDamping}
+        dampingFactor={config.dampingFactor}
+        rotateSpeed={config.rotateSpeed}
+        maxPolarAngle={config.maxPolarAngle}
+        minDistance={config.minDistance}
+        maxDistance={config.maxDistance}
       />
       
-      <GridSystem enabled={true} gridSize={config.gridSize} />
+      <GridSystem enabled={config.gridSize > 0} gridSize={config.gridSize} />
       
       <group>
         {/* Render connections */}
@@ -363,14 +370,16 @@ export const ThreeDScene = forwardRef<SceneRef, ThreeDSceneProps>(function Three
           
           const isSelected = selectedObjectId === obj.id;
           const rotation = objectData.rotation || 0;
+          const renderPos = objectData.position;
+          const renderSize = objectData.size;
           
           return (
             <Space3D
               key={obj.id}
               id={obj.id}
               type={obj.type as 'room' | 'hallway' | 'door'}
-              position={objectData.position}
-              size={objectData.size}
+              position={renderPos}
+              size={renderSize}
               rotation={rotation}
               label={obj.label || obj.data?.name || (obj.data as any)?.room_number || `${obj.type}-${obj.id}`}
               properties={objectData.data?.properties}

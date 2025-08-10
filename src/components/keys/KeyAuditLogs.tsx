@@ -20,8 +20,10 @@ import {
   Trash2,
   Plus,
   RotateCcw,
-  Shield
+  Shield,
+  Download
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 type AuditLog = {
   id: string;
@@ -138,8 +140,40 @@ export default function KeyAuditLogs({ keyId }: { keyId: string }) {
       });
   };
 
+  const handleExportCsv = () => {
+    const rows = (auditLogs || []).map((log) => ({
+      id: log.id,
+      action: log.action_type,
+      performed_by_department: log.performer?.department || "Administration",
+      created_at: format(new Date(log.created_at), "yyyy-MM-dd HH:mm:ss"),
+      details: JSON.stringify(log.details || {}),
+    }));
+    const headers = Object.keys(rows[0] || { id: "", action: "", performed_by_department: "", created_at: "", details: "" });
+    const csv = [
+      headers.join(","),
+      ...rows.map(r => headers.map(h => {
+        const val = String((r as any)[h] ?? "");
+        const escaped = val.replace(/"/g, '""');
+        return `"${escaped}"`;
+      }).join(","))
+    ].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `key_${keyId}_audit_logs_${new Date().toISOString()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="rounded-md border">
+      <div className="flex items-center justify-between p-3 border-b">
+        <div className="font-medium">Audit History</div>
+        <Button variant="outline" size="sm" onClick={handleExportCsv}>
+          <Download className="h-4 w-4 mr-2" /> Export CSV
+        </Button>
+      </div>
       <Table>
         <TableHeader>
           <TableRow>

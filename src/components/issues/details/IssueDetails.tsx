@@ -1,5 +1,5 @@
 
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -64,6 +64,12 @@ export const IssueDetails = ({ issueId, onClose }: IssueDetailsProps) => {
   return (
     <Dialog open={!!issueId} onOpenChange={() => onClose()}>
       <DialogContent className="max-w-3xl h-[90vh] flex flex-col overflow-hidden animate-in fade-in-0 zoom-in-95">
+        <DialogHeader>
+          <DialogTitle>{isEditing ? 'Edit Issue' : issue.title}</DialogTitle>
+          <DialogDescription>
+            {isEditing ? 'Update the issue details and save your changes.' : 'View details, timeline, photos, and comments for this issue.'}
+          </DialogDescription>
+        </DialogHeader>
         {isEditing ? (
           <>
             <IssueDetailsHeader

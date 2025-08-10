@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Lightbulb, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
-import { getLightingFixtures } from '@/services/supabase/lightingService';
+import { fetchLightingFixtures } from '@/services/supabase/lightingService';
 import { createLightingIssue } from '@/services/supabase/lightingIssuesIntegration';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import type { LightingFixture } from '@/types/lighting';
+import type { LightingIssueCreateData } from '@/services/supabase/lightingIssuesIntegration';
 
 const lightingIssueSchema = z.object({
   fixture_id: z.string().min(1, 'Please select a lighting fixture'),
@@ -52,9 +54,9 @@ export const LightingIssueForm: React.FC<LightingIssueFormProps> = ({
   });
 
   // Fetch lighting fixtures
-  const { data: fixtures = [], isLoading: fixturesLoading } = useQuery({
+  const { data: fixtures = [], isLoading: fixturesLoading } = useQuery<LightingFixture[]>({
     queryKey: ['lighting-fixtures'],
-    queryFn: getLightingFixtures,
+    queryFn: fetchLightingFixtures,
     enabled: !!user,
   });
 
@@ -70,10 +72,18 @@ export const LightingIssueForm: React.FC<LightingIssueFormProps> = ({
 
     setIsSubmitting(true);
     try {
-      await createLightingIssue({
-        ...data,
+      const payload: LightingIssueCreateData = {
+        fixture_id: data.fixture_id,
+        location: data.location,
+        bulb_type: data.bulb_type,
+        form_factor: data.form_factor || undefined,
+        issue_type: data.issue_type,
+        notes: data.notes || undefined,
         reported_by: user.id,
-      });
+        priority: data.priority,
+      };
+
+      await createLightingIssue(payload);
 
       toast({
         title: 'Success',
@@ -154,8 +164,13 @@ export const LightingIssueForm: React.FC<LightingIssueFormProps> = ({
                   <FormLabel>Lighting Fixture</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a lighting fixture" />
+                      <SelectTrigger 
+                        disabled={fixturesLoading || fixtures.length === 0 || !user}
+                        aria-invalid={!!form.formState.errors.fixture_id}
+                      >
+                        <SelectValue 
+                          placeholder={fixturesLoading ? 'Loading fixtures...' : (fixtures.length === 0 ? 'No fixtures available' : 'Select a lighting fixture')} 
+                        />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -193,6 +208,7 @@ export const LightingIssueForm: React.FC<LightingIssueFormProps> = ({
                   <FormControl>
                     <Input 
                       placeholder="e.g., Main lobby ceiling light, Room 201 desk lamp" 
+                      aria-invalid={!!form.formState.errors.location}
                       {...field} 
                     />
                   </FormControl>
@@ -213,6 +229,7 @@ export const LightingIssueForm: React.FC<LightingIssueFormProps> = ({
                   <FormControl>
                     <Input 
                       placeholder="e.g., LED, Fluorescent, Incandescent, Halogen" 
+                      aria-invalid={!!form.formState.errors.bulb_type}
                       {...field} 
                     />
                   </FormControl>
@@ -305,7 +322,7 @@ export const LightingIssueForm: React.FC<LightingIssueFormProps> = ({
                   <FormLabel>Priority</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger aria-invalid={!!form.formState.errors.priority}>
                         <SelectValue placeholder="Select priority" />
                       </SelectTrigger>
                     </FormControl>

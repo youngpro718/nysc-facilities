@@ -79,7 +79,11 @@ export function BasicFixtureFields({ form }: BasicFixtureFieldsProps) {
                 type="number" 
                 min={1} 
                 {...field} 
-                onChange={(e) => field.onChange(parseInt(e.target.value))}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  const n = parseInt(raw, 10);
+                  field.onChange(Number.isNaN(n) ? undefined : Math.max(1, n));
+                }}
               />
             </FormControl>
             <FormMessage />

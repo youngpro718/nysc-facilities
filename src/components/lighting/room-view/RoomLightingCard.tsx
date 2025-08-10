@@ -19,6 +19,7 @@ interface RoomLightingCardProps {
   onFixtureSelect: (fixtureId: string, selected: boolean) => void;
   onFixtureDelete: (fixtureId: string) => void;
   onFixtureUpdated: () => void;
+  defaultExpanded?: boolean;
 }
 
 export const RoomLightingCard = ({
@@ -31,9 +32,10 @@ export const RoomLightingCard = ({
   selectedFixtures,
   onFixtureSelect,
   onFixtureDelete,
-  onFixtureUpdated
+  onFixtureUpdated,
+  defaultExpanded
 }: RoomLightingCardProps) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(!!defaultExpanded);
 
   const totalFixtures = fixtures.length;
   const functionalFixtures = fixtures.filter(f => f.status === 'functional').length;
@@ -70,7 +72,7 @@ export const RoomLightingCard = ({
   const allSelected = fixtures.length > 0 && fixtures.every(f => selectedFixtures.includes(f.id));
 
   return (
-    <Card className="w-full">
+    <Card id={`room-card-${roomId}`} className="w-full">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">

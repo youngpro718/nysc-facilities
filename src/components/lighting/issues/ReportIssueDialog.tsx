@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { AlertTriangle } from 'lucide-react';
 import { LightingFixture } from '@/types/lighting';
 import * as locationUtil from '@/components/lighting/utils/location';
@@ -43,6 +43,9 @@ export function ReportIssueDialog({ fixture }: ReportIssueDialogProps) {
       <DialogContent className="sm:max-w-[520px] p-4">
         <DialogHeader>
           <DialogTitle>Report Lighting Issue for {fixture.name}</DialogTitle>
+          <DialogDescription>
+            Provide location context and details about the lighting problem so maintenance can respond quickly.
+          </DialogDescription>
         </DialogHeader>
         <LightingIssueForm 
           prefillData={{

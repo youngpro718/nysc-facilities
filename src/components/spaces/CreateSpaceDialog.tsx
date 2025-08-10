@@ -3,13 +3,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { ModalFrame } from "@/components/common/ModalFrame";
 import { Form } from "@/components/ui/form";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -135,10 +130,7 @@ export function CreateSpaceDialog() {
           Add Space
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Create New Space</DialogTitle>
-        </DialogHeader>
+      <ModalFrame title="Create New Space" size="md">
         <FormProvider {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
     <CreateSpaceFormFields form={form} />
@@ -169,7 +161,7 @@ export function CreateSpaceDialog() {
     </div>
           </form>
         </FormProvider>
-      </DialogContent>
+      </ModalFrame>
     </Dialog>
   );
 }

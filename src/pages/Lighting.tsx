@@ -9,6 +9,8 @@ export default function Lighting() {
   const { fixtures, isLoading, refetch } = useLightingFixtures();
   const [searchParams] = useSearchParams();
   const statusFilter = searchParams.get('status') || undefined;
+  const targetRoomId = searchParams.get('roomId') || undefined;
+  const targetFixtureId = searchParams.get('fixtureId') || undefined;
   
   return (
     <div className="container mx-auto p-4 sm:p-6 space-y-6">
@@ -38,6 +40,8 @@ export default function Lighting() {
           fixtures={fixtures || []}
           isLoading={isLoading}
           refetch={refetch}
+          targetRoomId={targetRoomId}
+          targetFixtureId={targetFixtureId}
         />
       )}
     </div>

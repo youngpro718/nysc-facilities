@@ -3,12 +3,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
+import { ModalFrame } from "@/components/common/ModalFrame";
 import {
   Form,
   FormControl,
@@ -28,7 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { InventoryFormInputs } from "./types/inventoryTypes";
 
 const formSchema = z.object({
@@ -86,13 +81,9 @@ export function AddInventoryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[525px] max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle>Add New Item</DialogTitle>
-        </DialogHeader>
-        <ScrollArea className="h-[70vh] pr-4">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <ModalFrame title="Add New Item" size="md">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="name"
@@ -264,10 +255,9 @@ export function AddInventoryDialog({
                   {isSubmitting ? "Adding..." : "Add Item"}
                 </Button>
               </div>
-            </form>
-          </Form>
-        </ScrollArea>
-      </DialogContent>
+          </form>
+        </Form>
+      </ModalFrame>
     </Dialog>
   );
 }

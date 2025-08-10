@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -69,6 +69,9 @@ export function AssignZoneDialog({ selectedFixtures, onComplete }: AssignZoneDia
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Assign Fixtures to Zone</DialogTitle>
+          <DialogDescription>
+            Select a lighting zone to associate with the selected fixtures.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <Select onValueChange={setSelectedZone} value={selectedZone}>

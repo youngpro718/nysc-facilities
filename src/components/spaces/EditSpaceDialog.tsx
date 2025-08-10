@@ -4,13 +4,8 @@ import { dbToFormRoom, formToDbRoom } from "./forms/room/roomFieldMapping";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog } from "@/components/ui/dialog";
+import { ModalFrame } from "@/components/common/ModalFrame";
 import { Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -224,16 +219,12 @@ export function EditSpaceDialog({
         </div>
       )}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{type === 'hallway' ? 'Edit Hallway' : 'Edit Room'}</DialogTitle>
-          </DialogHeader>
-          <ScrollArea className="max-h-[80vh] overflow-y-auto">
-            <div className="p-1">
-              {renderContent()}
-            </div>
-          </ScrollArea>
-        </DialogContent>
+        <ModalFrame
+          title={type === 'hallway' ? 'Edit Hallway' : 'Edit Room'}
+          size="lg"
+        >
+          {renderContent()}
+        </ModalFrame>
       </Dialog>
     </>
   );

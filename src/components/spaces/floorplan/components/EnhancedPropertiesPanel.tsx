@@ -118,7 +118,11 @@ export function EnhancedPropertiesPanel({
                       <div className="p-3 bg-slate-50 dark:bg-slate-700 rounded-lg">
                         <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Position</p>
                         <p className="text-slate-900 dark:text-slate-100 font-mono text-sm">
-                          ({Math.round(selectedObject.position.x)}, {Math.round(selectedObject.position.y)})
+                          (
+                            {typeof selectedObject.position?.x === 'number' ? Math.round(selectedObject.position.x) : 'N/A'},
+                            {' '}
+                            {typeof selectedObject.position?.y === 'number' ? Math.round(selectedObject.position.y) : 'N/A'}
+                          )
                         </p>
                       </div>
                       {selectedObject.data?.size && (
