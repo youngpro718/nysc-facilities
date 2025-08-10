@@ -56,20 +56,40 @@ export function useRolePermissions() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get user role
-      const { data: roleData, error: roleError } = await supabase
+      // Get user role with fallback to secure function
+      const roleQuery = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (roleError) {
-        console.error('Error fetching user role:', roleError);
-        return;
+      if (roleQuery.error) {
+        console.error('Error fetching user role (RLS likely):', roleQuery.error);
       }
 
-      let role = roleData?.role as CourtRole;
-      console.log('useRolePermissions - Initial role from user_roles:', role);
+      let role = (roleQuery.data?.role as CourtRole | null) || null;
+
+      if (!role) {
+        // Fallback to secure RPC that bypasses RLS
+        try {
+          const { data: secureRole, error: rpcError } = await supabase.rpc('get_current_user_role');
+          if (rpcError) {
+            console.error('Error in get_current_user_role RPC:', rpcError);
+          } else if (secureRole) {
+            role = secureRole as CourtRole;
+            console.log('useRolePermissions - Role from secure RPC:', role);
+          }
+        } catch (e) {
+          console.error('Exception calling get_current_user_role:', e);
+        }
+      }
+
+      // Default to standard if still unknown
+      if (!role) {
+        role = 'standard';
+      }
+
+      console.log('useRolePermissions - Final role from role lookup layer:', role);
       
       // Check if user is assigned to Supply Department and override role if needed
       const { data: profileData } = await supabase
