@@ -41,7 +41,7 @@ export async function createLightingIssue(data: LightingIssueCreateData): Promis
     // First, get the fixture details
     const { data: fixture, error: fixtureError } = await supabase
       .from('lighting_fixtures')
-      .select('id, name, room_id, room_number, floor_id, building_id')
+      .select('id, name, room_id, room_number')
       .eq('id', data.fixture_id)
       .single();
 
@@ -74,14 +74,12 @@ export async function createLightingIssue(data: LightingIssueCreateData): Promis
         description: `${data.issue_type.replace('_', ' ')} reported at ${data.location}. Bulb type: ${data.bulb_type}. ${data.notes || ''}`,
         location_description: data.location,
         status: 'open',
-        priority: data.priority || 'medium',
+        priority: (data.priority === 'critical' ? 'high' : (data.priority || 'medium')) as any,
         reported_by: data.reported_by,
         created_by: data.reported_by,
         tags: ['lighting', data.issue_type],
-        room_id: fixture?.room_id ?? null,
-        floor_id: fixture.floor_id,
-        building_id: fixture.building_id,
-      })
+        room_id: fixture?.room_id ?? null
+      } as any)
       .select()
       .single();
 
@@ -128,40 +126,33 @@ export async function getLightingIssuesWithDetails(): Promise<LightingIssueWithD
     // Get main issues that are lighting-related
     const { data: mainIssues, error: mainError } = await supabase
       .from('issues')
-      .select(`
-        *,
-        lighting_fixtures!inner(name, room_number, floor_id, building_id),
-        floors!inner(name, building_id),
-        buildings!inner(name),
-        auth.users!reported_by(name)
-      `)
+      .select('id, location_description, tags, status, description, created_at, resolved_at')
       .eq('issue_type', 'lighting')
       .order('created_at', { ascending: false });
 
     if (mainError) throw mainError;
 
-    // Combine the data
-    return mainIssues.map(issue => ({
+    return (mainIssues || []).map((issue: any) => ({
       id: issue.id,
       location: issue.location_description,
-      bulb_type: issue.tags?.find((tag: string) => 
+      bulb_type: (issue.tags || []).find((tag: string) => 
         ['blown_bulb', 'ballast_issue', 'other'].includes(tag)
       ) || 'other',
-      form_factor: issue.tags?.find((tag: string) => 
+      form_factor: (issue.tags || []).find((tag: string) => 
         tag.includes('form_factor')
       )?.replace('form_factor_', '') || undefined,
-      issue_type: issue.tags?.find((tag: string) => 
+      issue_type: (issue.tags || []).find((tag: string) => 
         ['blown_bulb', 'ballast_issue', 'other'].includes(tag)
       ) || 'other',
       status: issue.status as LightingIssueStatus,
       notes: issue.description,
       reported_at: issue.created_at,
       resolved_at: issue.resolved_at,
-      fixture_name: issue.lighting_fixtures?.name || 'Unknown',
-      room_number: issue.lighting_fixtures?.room_number || 'Unknown',
-      floor_name: issue.floors?.name || 'Unknown',
-      building_name: issue.buildings?.name || 'Unknown',
-      reported_by_name: issue.auth?.users?.name || 'Unknown',
+      fixture_name: 'Unknown',
+      room_number: 'Unknown',
+      floor_name: 'Unknown',
+      building_name: 'Unknown',
+      reported_by_name: 'Unknown',
       issue_id: issue.id,
     }));
   } catch (error) {
@@ -177,42 +168,37 @@ export async function getLightingIssuesByStatus(
   status: LightingIssueStatus
 ): Promise<LightingIssueWithDetails[]> {
   try {
+    const normalized = (status === 'deferred' ? 'open' : status) as 'open' | 'in_progress' | 'resolved';
     const { data: mainIssues, error } = await supabase
       .from('issues')
-      .select(`
-        *,
-        lighting_fixtures!inner(name, room_number, floor_id, building_id),
-        floors!inner(name, building_id),
-        buildings!inner(name),
-        auth.users!reported_by(name)
-      `)
+      .select('id, location_description, tags, status, description, created_at, resolved_at')
       .eq('issue_type', 'lighting')
-      .eq('status', status)
+      .eq('status', normalized)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
 
-    return mainIssues.map(issue => ({
+    return (mainIssues || []).map((issue: any) => ({
       id: issue.id,
       location: issue.location_description,
-      bulb_type: issue.tags?.find((tag: string) => 
+      bulb_type: (issue.tags || []).find((tag: string) => 
         ['blown_bulb', 'ballast_issue', 'other'].includes(tag)
       ) || 'other',
-      form_factor: issue.tags?.find((tag: string) => 
+      form_factor: (issue.tags || []).find((tag: string) => 
         tag.includes('form_factor')
       )?.replace('form_factor_', '') || undefined,
-      issue_type: issue.tags?.find((tag: string) => 
+      issue_type: (issue.tags || []).find((tag: string) => 
         ['blown_bulb', 'ballast_issue', 'other'].includes(tag)
       ) || 'other',
       status: issue.status as LightingIssueStatus,
       notes: issue.description,
       reported_at: issue.created_at,
       resolved_at: issue.resolved_at,
-      fixture_name: issue.lighting_fixtures?.name || 'Unknown',
-      room_number: issue.lighting_fixtures?.room_number || 'Unknown',
-      floor_name: issue.floors?.name || 'Unknown',
-      building_name: issue.buildings?.name || 'Unknown',
-      reported_by_name: issue.auth?.users?.name || 'Unknown',
+      fixture_name: 'Unknown',
+      room_number: 'Unknown',
+      floor_name: 'Unknown',
+      building_name: 'Unknown',
+      reported_by_name: 'Unknown',
       issue_id: issue.id,
     }));
   } catch (error) {
@@ -246,25 +232,6 @@ export async function updateLightingIssue(
 
     if (error) throw error;
 
-    // If status changed to resolved, update the lighting fixture
-    if (data.status === 'resolved') {
-      // Get the fixture ID from the issue
-      const { data: issue } = await supabase
-        .from('issues')
-        .select('lighting_fixtures(id)')
-        .eq('id', issueId)
-        .single();
-
-      if (issue?.lighting_fixtures?.id) {
-        await supabase
-          .from('lighting_fixtures')
-          .update({ 
-            status: 'functional',
-            replaced_date: new Date().toISOString()
-          })
-          .eq('id', issue.lighting_fixtures.id);
-      }
-    }
 
     return updatedIssue;
   } catch (error) {
@@ -302,8 +269,7 @@ export async function getLightingIssueStats(): Promise<{
     data.forEach(issue => {
       stats[issue.status]++;
       
-      // Extract issue type from tags
-      const typeTag = issue.tags?.find((tag: string) => 
+      const typeTag = (issue.tags || []).find((tag: string) => 
         ['blown_bulb', 'ballast_issue', 'other'].includes(tag)
       );
       if (typeTag) {

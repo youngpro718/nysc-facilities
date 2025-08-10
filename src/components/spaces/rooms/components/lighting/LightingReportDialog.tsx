@@ -8,6 +8,7 @@ import { Lightbulb, Zap, AlertTriangle } from "lucide-react";
 import { EnhancedRoom, LightingIssueReport } from "../../types/EnhancedRoomTypes";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { NavLink } from 'react-router-dom';
 
 interface LightingReportDialogProps {
   room: EnhancedRoom;

@@ -14,7 +14,6 @@ const mockRooms: EnhancedRoom[] = [
     description: "Main courtroom for civil proceedings with advanced AV system",
     status: StatusEnum.ACTIVE,
     floor_id: "floor-1",
-    building_id: "building-1",
     current_function: "Civil Court Proceedings",
     phone_number: "(555) 123-4567",
     current_occupants: [
@@ -33,7 +32,6 @@ const mockRooms: EnhancedRoom[] = [
     description: "Main administrative office for court operations",
     status: StatusEnum.ACTIVE,
     floor_id: "floor-1",
-    building_id: "building-1",
     current_function: "Administrative Operations",
     current_occupants: [
       { first_name: "Alice", last_name: "Johnson" },
@@ -52,7 +50,6 @@ const mockRooms: EnhancedRoom[] = [
     description: "General storage for office supplies and equipment",
     status: StatusEnum.ACTIVE,
     floor_id: "floor-1",
-    building_id: "building-1",
     is_storage: true,
     storage_type: StorageTypeEnum.GENERAL,
     storage_capacity: 500,
@@ -68,7 +65,7 @@ const mockRooms: EnhancedRoom[] = [
     description: "Locker facilities for female court officers",
     status: StatusEnum.UNDER_MAINTENANCE,
     floor_id: "floor-2",
-    building_id: "building-1",
+    
     current_function: "Staff Facilities",
     is_storage: false,
     created_at: new Date().toISOString(),

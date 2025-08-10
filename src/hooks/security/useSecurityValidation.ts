@@ -78,18 +78,13 @@ export function useSecurityValidation() {
     maxAttempts: number = 5,
     windowMinutes: number = 15
   ): Promise<boolean> => {
-    // Bypass rate limiting in development if DISABLE_RATE_LIMIT is set
-    if (import.meta.env.VITE_DISABLE_RATE_LIMIT === 'true') {
-      console.log('Rate limiting disabled for development');
-      return true; // Allow the attempt
-    }
     
     try {
       const { data, error } = await supabase.rpc('check_rate_limit', {
-        p_identifier: identifier,
-        p_attempt_type: attemptType,
-        p_max_attempts: maxAttempts,
-        p_window_minutes: windowMinutes
+        identifier,
+        attempt_type: attemptType,
+        max_attempts: maxAttempts,
+        window_minutes: windowMinutes
       });
       
       if (error) throw error;
@@ -122,12 +117,10 @@ export function useSecurityValidation() {
   ) => {
     try {
       const { error } = await supabase.rpc('log_security_event', {
-        p_action: action,
-        p_resource_type: resourceType,
-        p_resource_id: resourceId || null,
-        p_details: details ? JSON.stringify(details) : '{}',
-        p_ip_address: null, // Could be populated from request headers in edge function
-        p_user_agent: navigator.userAgent
+        action_type: action,
+        resource_type: resourceType,
+        resource_id: resourceId || null,
+        details: details ? JSON.stringify(details) : '{}'
       });
       
       if (error) throw error;

@@ -186,7 +186,7 @@ export function useUserSettings() {
       const { error } = await supabase
         .from('profiles')
         .update({
-          user_settings: settingsToSave,
+          user_settings: settingsToSave as any,
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);

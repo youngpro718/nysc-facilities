@@ -66,7 +66,7 @@ export function useGlobalSystemSettings() {
         // Attempt to create a default row (admin-only)
         const { data: inserted, error: insertError } = await supabase
           .from('system_settings')
-          .insert({})
+          .insert({ key: 'default' })
           .select('*')
           .single();
         if (insertError) {

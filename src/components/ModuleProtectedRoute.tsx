@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, NavLink } from 'react-router-dom';
 import { useEnabledModules, EnabledModules } from '@/hooks/useEnabledModules';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -54,10 +54,10 @@ export function ModuleProtectedRoute({ children, moduleKey, moduleName }: Module
                 Go Back
               </Button>
               <Button asChild>
-                <a href="/admin-profile">
+                <NavLink to="/admin-profile">
                   <Settings className="h-4 w-4 mr-2" />
                   Admin Settings
-                </a>
+                </NavLink>
               </Button>
             </div>
           </CardContent>

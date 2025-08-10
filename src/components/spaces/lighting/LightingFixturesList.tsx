@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useLightingFixtures } from "@/components/lighting/hooks/useLightingFixtures";
+import { useLightingFixtures } from "@/hooks/useLightingFixtures";
 import { LightingFixtureCard } from "@/components/lighting/card/LightingFixtureCard";
 import { LightingHeader } from "@/components/lighting/components/LightingHeader";
 

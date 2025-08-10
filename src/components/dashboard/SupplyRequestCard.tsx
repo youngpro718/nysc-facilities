@@ -7,6 +7,8 @@ import { useSupplyRequests } from '@/hooks/useSupplyRequests';
 import { useAuth } from '@/hooks/useAuth';
 import { SupplyRequestForm } from '@/components/supply-requests/SupplyRequestForm';
 import { Package, Plus, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
+
 
 export function SupplyRequestCard() {
   const { user } = useAuth();
@@ -157,7 +159,7 @@ export function SupplyRequestCard() {
             {requests.length > 3 && (
               <div className="text-center pt-2">
                 <Button variant="outline" size="sm" asChild>
-                  <a href="/my-requests">View All Requests</a>
+                  <NavLink to="/my-requests">View All Requests</NavLink>
                 </Button>
               </div>
             )}
