@@ -276,13 +276,16 @@ export function useRolePermissions() {
       };
 
       let effectiveRole: CourtRole = role;
-      // Admin-only preview role override using localStorage
+      // Admin-only preview role override, limited to Admin Profile page
       try {
         const preview = typeof window !== 'undefined' ? (localStorage.getItem('preview_role') as CourtRole | null) : null;
         const validRoles: CourtRole[] = ['judge','court_aide','clerk','sergeant','court_officer','bailiff','court_reporter','administrative_assistant','facilities_manager','supply_room_staff','admin','standard'];
-        if (role === 'admin' && preview && validRoles.includes(preview)) {
+        const onAdminProfile = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin-profile');
+        if (role === 'admin' && preview && validRoles.includes(preview) && onAdminProfile) {
           console.log('useRolePermissions - Applying preview role override:', preview);
           effectiveRole = preview;
+        } else if (role === 'admin' && preview && !onAdminProfile) {
+          console.info('useRolePermissions - Ignoring preview role outside Admin Profile');
         }
       } catch (e) {
         // ignore preview errors
