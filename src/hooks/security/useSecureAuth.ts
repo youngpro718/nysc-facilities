@@ -85,29 +85,20 @@ export function useSecureAuth() {
       // Validate inputs
       const emailValidation = await validateEmail(email);
       if (!emailValidation.isValid) {
-        await logSecurityEvent('failed_signup_validation', 'authentication', undefined, {
-          reason: 'invalid_email',
-          errors: emailValidation.errors
-        });
         throw new Error(emailValidation.errors[0]);
       }
 
-      const passwordValidation = await validatePassword(password);
-      if (!passwordValidation.isValid) {
-        await logSecurityEvent('failed_signup_validation', 'authentication', undefined, {
-          reason: 'weak_password',
-          errors: passwordValidation.errors
-        });
+      // Use simplified password validation
+      const { data: passwordValidation, error: passwordError } = await supabase.rpc('validate_simple_password', { password });
+      if (passwordError) throw passwordError;
+      
+      if (!passwordValidation.is_valid) {
         throw new Error(passwordValidation.errors.join(', '));
       }
 
       // Check rate limiting
       const rateLimitOk = await checkRateLimit(email, 'signup');
       if (!rateLimitOk) {
-        await logSecurityEvent('rate_limit_exceeded', 'authentication', undefined, {
-          identifier: email,
-          attempt_type: 'signup'
-        });
         throw new Error('Too many signup attempts. Please try again later.');
       }
 
@@ -157,7 +148,7 @@ export function useSecureAuth() {
     } finally {
       setIsLoading(false);
     }
-  }, [validateEmail, validatePassword, sanitizeInput, checkRateLimit, logSecurityEvent]);
+  }, [validateEmail, sanitizeInput, checkRateLimit, logSecurityEvent]);
 
   return {
     secureSignIn,

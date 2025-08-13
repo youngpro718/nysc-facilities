@@ -7955,6 +7955,10 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: boolean
       }
+      change_user_password: {
+        Args: { new_password: string }
+        Returns: Json
+      }
       check_admin_privileges: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -8421,12 +8425,6 @@ export type Database = {
               details?: Json
             }
           | {
-              action_type: string
-              resource_type?: string
-              resource_id?: string
-              details?: string
-            }
-          | {
               p_action: string
               p_resource_type: string
               p_resource_id?: string
@@ -8534,6 +8532,10 @@ export type Database = {
         Args: { target_user_id: string; new_role: string }
         Returns: boolean
       }
+      setup_emergency_admin: {
+        Args: { user_email: string }
+        Returns: Json
+      }
       start_supply_request_work: {
         Args: { p_request_id: string }
         Returns: undefined
@@ -8560,6 +8562,10 @@ export type Database = {
         Returns: boolean
       }
       validate_password_strength: {
+        Args: { password: string }
+        Returns: Json
+      }
+      validate_simple_password: {
         Args: { password: string }
         Returns: Json
       }
