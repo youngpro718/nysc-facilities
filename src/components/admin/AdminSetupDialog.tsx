@@ -36,8 +36,9 @@ export const AdminSetupDialog: React.FC<AdminSetupDialogProps> = ({
         throw error;
       }
 
-      if (!data.success) {
-        throw new Error(data.message);
+      const adminResult = data as { success: boolean; message?: string };
+      if (!adminResult.success) {
+        throw new Error(adminResult.message || 'Admin setup failed');
       }
 
       toast.success('Admin account configured successfully!');

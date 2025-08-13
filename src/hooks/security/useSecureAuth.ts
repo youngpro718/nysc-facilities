@@ -27,13 +27,17 @@ export function useSecureAuth() {
         throw new Error(emailValidation.errors[0]);
       }
 
-      const passwordValidation = await validatePassword(password);
-      if (!passwordValidation.isValid) {
+      // Use simplified password validation for login
+      const { data: passwordValidation, error: passwordError } = await supabase.rpc('validate_simple_password', { password });
+      if (passwordError) throw passwordError;
+      
+      const pwdResult = passwordValidation as { is_valid: boolean; errors: string[] };
+      if (!pwdResult.is_valid) {
         await logSecurityEvent('failed_login_validation', 'authentication', undefined, {
           reason: 'weak_password',
-          errors: passwordValidation.errors
+          errors: pwdResult.errors
         });
-        throw new Error('Password does not meet security requirements');
+        throw new Error(pwdResult.errors.join(', '));
       }
 
       // Check rate limiting
@@ -92,8 +96,9 @@ export function useSecureAuth() {
       const { data: passwordValidation, error: passwordError } = await supabase.rpc('validate_simple_password', { password });
       if (passwordError) throw passwordError;
       
-      if (!passwordValidation.is_valid) {
-        throw new Error(passwordValidation.errors.join(', '));
+      const pwdResult = passwordValidation as { is_valid: boolean; errors: string[] };
+      if (!pwdResult.is_valid) {
+        throw new Error(pwdResult.errors.join(', '));
       }
 
       // Check rate limiting
