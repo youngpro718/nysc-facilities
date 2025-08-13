@@ -7,6 +7,7 @@ import { ChevronDown, ChevronRight, MapPin, Lightbulb, AlertTriangle, CheckCircl
 import { LightingFixture } from "@/types/lighting";
 import { LightingFixtureCard } from "@/components/lighting/card/LightingFixtureCard";
 import { cn } from "@/lib/utils";
+import { RoomSlideOver } from "./RoomSlideOver";
 
 interface RoomLightingCardProps {
   roomId: string;
@@ -36,6 +37,7 @@ export const RoomLightingCard = ({
   defaultExpanded
 }: RoomLightingCardProps) => {
   const [isExpanded, setIsExpanded] = useState(!!defaultExpanded);
+  const [isSlideOverOpen, setIsSlideOverOpen] = useState(false);
 
   const totalFixtures = fixtures.length;
   const functionalFixtures = fixtures.filter(f => f.status === 'functional').length;
@@ -97,6 +99,9 @@ export const RoomLightingCard = ({
             <Badge variant="outline" className="font-medium">
               {totalFixtures} fixture{totalFixtures !== 1 ? 's' : ''}
             </Badge>
+            <Button variant="outline" size="sm" onClick={() => setIsSlideOverOpen(true)}>
+              View Room
+            </Button>
           </div>
         </div>
 
@@ -181,6 +186,22 @@ export const RoomLightingCard = ({
           </CardContent>
         </CollapsibleContent>
       </Collapsible>
+
+      {/* Room slide-over */}
+      <RoomSlideOver
+        open={isSlideOverOpen}
+        onOpenChange={setIsSlideOverOpen}
+        roomId={roomId}
+        roomNumber={roomNumber}
+        roomName={roomName}
+        buildingName={buildingName}
+        floorName={floorName}
+        fixtures={fixtures}
+        onFixtureUpdated={onFixtureUpdated}
+        onFixtureDelete={onFixtureDelete}
+        selectedFixtures={selectedFixtures}
+        onFixtureSelect={onFixtureSelect}
+      />
     </Card>
   );
 };

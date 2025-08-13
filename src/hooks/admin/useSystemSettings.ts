@@ -116,31 +116,43 @@ export function useSystemSettings() {
       const userId = userRes?.user?.id;
 
       // 2) Load module catalog (system-level list only)
+      // Define a full default catalog to ensure UI completeness even if DB is sparse
+      const defaultCatalog: { id: string; name: string; description: string; enabled?: boolean }[] = [
+        { id: 'spaces', name: 'Spaces Management', description: 'Manage buildings, floors, rooms, and space layouts' },
+        { id: 'operations', name: 'Operations', description: 'Consolidated Issues, Maintenance, and Supply Requests' },
+        { id: 'issues', name: 'Issue Tracking', description: 'Track and resolve facility issues and maintenance requests' },
+        { id: 'maintenance', name: 'Maintenance Management', description: 'Schedule and track facility maintenance operations' },
+        { id: 'supply_requests', name: 'Supply Requests', description: 'Process and fulfill supply and material requests' },
+        { id: 'inventory', name: 'Inventory Management', description: 'Manage supplies, equipment, and inventory tracking' },
+        { id: 'keys', name: 'Key Management', description: 'Manage key assignments and access control' },
+        { id: 'occupants', name: 'Occupant Management', description: 'Manage room assignments and occupant information' },
+        { id: 'court_operations', name: 'Court Operations', description: 'Specialized court scheduling and operations' },
+        { id: 'lighting', name: 'Lighting Management', description: 'Manage lighting fixtures and maintenance' },
+        { id: 'analytics', name: 'Advanced Analytics', description: 'AI-powered insights and predictive analytics' },
+        { id: 'reports', name: 'Reporting System', description: 'Generate and schedule facility reports' },
+      ];
+
       let catalog: { id: string; name: string; description: string; enabled?: boolean }[] = [];
       try {
         const { data: sysMods } = await supabase
           .from('system_modules' as any)
           .select('id, name, description, enabled')
           .order('name', { ascending: true });
-        catalog = (sysMods ?? []) as any[];
+        // Normalize any inconsistent IDs from the DB (e.g., hyphens to underscores)
+        catalog = ((sysMods ?? []) as any[]).map((m) => ({
+          ...m,
+          id: String(m.id).replace(/-/g, '_'),
+        }));
       } catch (_) {
         catalog = [];
       }
 
-      // Fallback catalog if table is empty or missing
-      if (!catalog.length) {
-        catalog = [
-          { id: 'spaces', name: 'Spaces Management', description: 'Manage buildings, floors, rooms, and space layouts' },
-          { id: 'issues', name: 'Issue Tracking', description: 'Track and resolve facility issues and maintenance requests' },
-          { id: 'inventory', name: 'Inventory Management', description: 'Manage supplies, equipment, and inventory tracking' },
-          { id: 'keys', name: 'Key Management', description: 'Manage key assignments and access control' },
-          { id: 'occupants', name: 'Occupant Management', description: 'Manage room assignments and occupant information' },
-          { id: 'court-operations', name: 'Court Operations', description: 'Specialized court scheduling and operations' },
-          { id: 'lighting', name: 'Lighting Management', description: 'Manage lighting fixtures and maintenance' },
-          { id: 'analytics', name: 'Advanced Analytics', description: 'AI-powered insights and predictive analytics' },
-          { id: 'reports', name: 'Reporting System', description: 'Generate and schedule facility reports' },
-        ];
-      }
+      // Merge DB catalog with defaults to ensure all expected modules are present
+      // DB values take precedence for name/description/enabled
+      const byId = new Map<string, { id: string; name: string; description: string; enabled?: boolean }>();
+      for (const m of defaultCatalog) byId.set(m.id, { ...m });
+      for (const m of catalog) byId.set(m.id, { ...byId.get(m.id), ...m });
+      catalog = Array.from(byId.values());
 
       // 3) Load profile-specific enabled_modules
       let profileEnabled: Record<string, boolean> = {};

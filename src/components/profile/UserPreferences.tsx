@@ -1,3 +1,6 @@
+// DEPRECATED: Do not use. User preferences are centralized in
+// `src/components/profile/EnhancedUserSettings.tsx` surfaced via SettingsPage.
+// This file is retained temporarily for reference and will be removed after cleanup.
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

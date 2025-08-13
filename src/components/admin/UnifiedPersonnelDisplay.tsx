@@ -3,13 +3,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useUnifiedPersonnelView } from '@/hooks/useUnifiedPersonnelView';
+import { useUnifiedPersonnel } from '@/hooks/useUnifiedPersonnel';
 import { Users, Search, Phone, Mail, MapPin, UserCheck } from 'lucide-react';
 
 export function UnifiedPersonnelDisplay() {
-  const { personnel, stats, isLoading, error } = useUnifiedPersonnelView();
+  const { personnel, stats, isLoading, error } = useUnifiedPersonnel();
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'registered_user' | 'court_personnel'>('all');
+  const [filterType, setFilterType] = useState<'all' | 'occupant' | 'court_personnel'>('all');
 
   if (isLoading) {
     return (
@@ -47,8 +47,8 @@ export function UnifiedPersonnelDisplay() {
 
   const getPersonnelTypeBadge = (type: string) => {
     switch (type) {
-      case 'registered_user':
-        return <Badge className="bg-blue-100 text-blue-800">Registered User</Badge>;
+      case 'occupant':
+        return <Badge className="bg-blue-100 text-blue-800">Occupant</Badge>;
       case 'court_personnel':
         return <Badge className="bg-purple-100 text-purple-800">Court Personnel</Badge>;
       default:
@@ -77,8 +77,8 @@ export function UnifiedPersonnelDisplay() {
             <div className="flex items-center gap-2">
               <UserCheck className="h-5 w-5 text-green-600" />
               <div>
-                <div className="text-2xl font-bold">{stats.registeredUsers}</div>
-                <div className="text-sm text-gray-600">Registered Users</div>
+                <div className="text-2xl font-bold">{stats.occupants}</div>
+                <div className="text-sm text-gray-600">Occupants</div>
               </div>
             </div>
           </CardContent>
@@ -127,11 +127,11 @@ export function UnifiedPersonnelDisplay() {
                 All ({stats.total})
               </Button>
               <Button
-                variant={filterType === 'registered_user' ? 'default' : 'outline'}
-                onClick={() => setFilterType('registered_user')}
+                variant={filterType === 'occupant' ? 'default' : 'outline'}
+                onClick={() => setFilterType('occupant')}
                 size="sm"
               >
-                Users ({stats.registeredUsers})
+                Occupants ({stats.occupants})
               </Button>
               <Button
                 variant={filterType === 'court_personnel' ? 'default' : 'outline'}

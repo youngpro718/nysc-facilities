@@ -4,6 +4,7 @@ import { CreateLightingDialog } from "@/components/lighting/CreateLightingDialog
 import { useLightingFixtures } from "@/hooks/useLightingFixtures";
 import { Lightbulb } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
+import { RoomSummaryChips } from "@/components/lighting/RoomSummaryChips";
 
 export default function Lighting() {
   const { fixtures, isLoading, refetch } = useLightingFixtures();
@@ -29,6 +30,9 @@ export default function Lighting() {
           onZoneCreated={() => {}}
         />
       </div>
+
+      {/* Room-level summary */}
+      <RoomSummaryChips />
 
       {isLoading ? (
         <div className="flex items-center justify-center py-12">

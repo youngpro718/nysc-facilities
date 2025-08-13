@@ -1,3 +1,6 @@
+// DEPRECATED: Do not use. Security settings are centralized under
+// `src/components/profile/EnhancedUserSettings.tsx` (user-level) and admin/system panels.
+// This file is retained temporarily for reference and will be removed after cleanup.
 
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";

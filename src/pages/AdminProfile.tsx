@@ -141,15 +141,6 @@ export default function AdminProfile() {
               <CardTitle>Admin Overview</CardTitle>
               <CardDescription>Your personal admin dashboard and quick actions</CardDescription>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => navigate('/system-settings')}
-              className="gap-2"
-            >
-              <Settings className="h-4 w-4" />
-              System Settings
-            </Button>
           </CardHeader>
           <CardContent>
             <DynamicAdminDashboard />

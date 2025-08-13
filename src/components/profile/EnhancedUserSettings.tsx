@@ -121,7 +121,7 @@ const defaultSettings: UserSettings = {
 };
 
 export function EnhancedUserSettings() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { toast } = useToast();
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
   const [isLoading, setIsLoading] = useState(true);
@@ -181,10 +181,31 @@ export function EnhancedUserSettings() {
 
     try {
       setIsSaving(true);
+      // Persist only the simplified schema
+      const minimalSettings = {
+        email_notifications: settings.email_notifications,
+        desktop_notifications: settings.desktop_notifications,
+        notification_frequency: settings.notification_frequency === 'weekly' || settings.notification_frequency === 'hourly' ? 'daily' : settings.notification_frequency,
+        theme: settings.theme,
+        font_size: settings.font_size,
+        language: settings.language,
+        timezone: settings.timezone,
+        date_format: settings.date_format,
+        time_format: settings.time_format,
+        two_factor_enabled: settings.two_factor_enabled,
+        login_notifications: settings.login_notifications,
+        session_timeout: settings.session_timeout,
+        high_contrast: settings.high_contrast,
+        screen_reader_support: settings.screen_reader_support,
+        keyboard_navigation: settings.keyboard_navigation,
+        motion_reduced: settings.motion_reduced,
+        data_sharing_analytics: settings.data_sharing_analytics,
+      } as Partial<UserSettings>;
+
       const { error } = await supabase
         .from('profiles')
         .update({
-          user_settings: settings as any,
+          user_settings: minimalSettings as any,
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
@@ -318,7 +339,7 @@ export function EnhancedUserSettings() {
           </TabsTrigger>
         </TabsList>
 
-        {/* Notifications Tab */}
+        {/* Notifications Tab (trimmed) */}
         <TabsContent value="notifications" className="space-y-6">
           <Card>
             <CardHeader>
@@ -346,34 +367,6 @@ export function EnhancedUserSettings() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label className="flex items-center gap-2">
-                      <Smartphone className="h-4 w-4" />
-                      Push Notifications
-                    </Label>
-                    <p className="text-sm text-muted-foreground">Receive push notifications</p>
-                  </div>
-                  <Switch
-                    checked={settings.push_notifications}
-                    onCheckedChange={(value) => updateSetting('push_notifications', value)}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label className="flex items-center gap-2">
-                      <Phone className="h-4 w-4" />
-                      SMS Notifications
-                    </Label>
-                    <p className="text-sm text-muted-foreground">Receive text messages for urgent updates</p>
-                  </div>
-                  <Switch
-                    checked={settings.sms_notifications}
-                    onCheckedChange={(value) => updateSetting('sms_notifications', value)}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label className="flex items-center gap-2">
                       <Monitor className="h-4 w-4" />
                       Desktop Notifications
                     </Label>
@@ -382,20 +375,6 @@ export function EnhancedUserSettings() {
                   <Switch
                     checked={settings.desktop_notifications}
                     onCheckedChange={(value) => updateSetting('desktop_notifications', value)}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label className="flex items-center gap-2">
-                      {settings.notification_sound ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-                      Notification Sound
-                    </Label>
-                    <p className="text-sm text-muted-foreground">Play sound for notifications</p>
-                  </div>
-                  <Switch
-                    checked={settings.notification_sound}
-                    onCheckedChange={(value) => updateSetting('notification_sound', value)}
                   />
                 </div>
               </div>
@@ -414,84 +393,16 @@ export function EnhancedUserSettings() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="immediate">Immediate</SelectItem>
-                      <SelectItem value="hourly">Hourly Digest</SelectItem>
                       <SelectItem value="daily">Daily Digest</SelectItem>
-                      <SelectItem value="weekly">Weekly Digest</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label className="flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      Quiet Hours
-                    </Label>
-                    <p className="text-sm text-muted-foreground">Disable notifications during specified hours</p>
-                  </div>
-                  <Switch
-                    checked={settings.quiet_hours_enabled}
-                    onCheckedChange={(value) => updateSetting('quiet_hours_enabled', value)}
-                  />
-                </div>
-
-                {settings.quiet_hours_enabled && (
-                  <div className="grid grid-cols-2 gap-4 ml-6">
-                    <div>
-                      <Label>Start Time</Label>
-                      <Input
-                        type="time"
-                        value={settings.quiet_hours_start}
-                        onChange={(e) => updateSetting('quiet_hours_start', e.target.value)}
-                        className="mt-2"
-                      />
-                    </div>
-                    <div>
-                      <Label>End Time</Label>
-                      <Input
-                        type="time"
-                        value={settings.quiet_hours_end}
-                        onChange={(e) => updateSetting('quiet_hours_end', e.target.value)}
-                        className="mt-2"
-                      />
-                    </div>
-                  </div>
-                )}
               </div>
 
               <Separator />
 
               <div className="space-y-4">
-                <h3 className="font-medium">Privacy & Communications</h3>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label className="flex items-center gap-2">
-                      <Eye className="h-4 w-4" />
-                      Show Online Status
-                    </Label>
-                    <p className="text-sm text-muted-foreground">Let others see when you're online</p>
-                  </div>
-                  <Switch
-                    checked={settings.show_online_status}
-                    onCheckedChange={(value) => updateSetting('show_online_status', value)}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label className="flex items-center gap-2">
-                      <User className="h-4 w-4" />
-                      Allow Contact Requests
-                    </Label>
-                    <p className="text-sm text-muted-foreground">Allow others to send you contact requests</p>
-                  </div>
-                  <Switch
-                    checked={settings.allow_contact_requests}
-                    onCheckedChange={(value) => updateSetting('allow_contact_requests', value)}
-                  />
-                </div>
-
+                <h3 className="font-medium">Data</h3>
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>Analytics Data</Label>
@@ -502,25 +413,12 @@ export function EnhancedUserSettings() {
                     onCheckedChange={(value) => updateSetting('data_sharing_analytics', value)}
                   />
                 </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Marketing Communications</Label>
-                    <p className="text-sm text-muted-foreground">Receive marketing emails and updates</p>
-                  </div>
-                  <Switch
-                    checked={settings.data_sharing_marketing}
-                    onCheckedChange={(value) => updateSetting('data_sharing_marketing', value)}
-                  />
-                </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Privacy merged into Notifications & Security */}
-
-        {/* Display Tab (Appearance + Language) */}
+        {/* Display Tab (Appearance + Language) - trimmed */}
         <TabsContent value="display" className="space-y-6">
           <Card>
             <CardHeader>
@@ -564,25 +462,6 @@ export function EnhancedUserSettings() {
                 </div>
 
                 <div>
-                  <Label>Color Scheme</Label>
-                  <Select
-                    value={settings.color_scheme}
-                    onValueChange={(value: any) => updateSetting('color_scheme', value)}
-                  >
-                    <SelectTrigger className="mt-2">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="blue">Blue</SelectItem>
-                      <SelectItem value="green">Green</SelectItem>
-                      <SelectItem value="purple">Purple</SelectItem>
-                      <SelectItem value="orange">Orange</SelectItem>
-                      <SelectItem value="red">Red</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
                   <Label>Font Size</Label>
                   <Select
                     value={settings.font_size}
@@ -603,29 +482,6 @@ export function EnhancedUserSettings() {
               <Separator />
 
               <div className="space-y-4">
-                <h3 className="font-medium">Display Options</h3>
-                
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Compact Mode</Label>
-                    <p className="text-sm text-muted-foreground">Reduce spacing and show more content</p>
-                  </div>
-                  <Switch
-                    checked={settings.compact_mode}
-                    onCheckedChange={(value) => updateSetting('compact_mode', value)}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>High Contrast</Label>
-                    <p className="text-sm text-muted-foreground">Increase contrast for better visibility</p>
-                  </div>
-                  <Switch
-                    checked={settings.high_contrast}
-                    onCheckedChange={(value) => updateSetting('high_contrast', value)}
-                  />
-                </div>
                 <div>
                   <Label>Language</Label>
                   <Select
@@ -676,34 +532,6 @@ export function EnhancedUserSettings() {
                   </Select>
                 </div>
               </div>
-
-              <Separator />
-
-              <div className="space-y-4">
-                <h3 className="font-medium">Display Options</h3>
-                
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Compact Mode</Label>
-                    <p className="text-sm text-muted-foreground">Reduce spacing and show more content</p>
-                  </div>
-                  <Switch
-                    checked={settings.compact_mode}
-                    onCheckedChange={(value) => updateSetting('compact_mode', value)}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>High Contrast</Label>
-                    <p className="text-sm text-muted-foreground">Increase contrast for better visibility</p>
-                  </div>
-                  <Switch
-                    checked={settings.high_contrast}
-                    onCheckedChange={(value) => updateSetting('high_contrast', value)}
-                  />
-                </div>
-              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -719,26 +547,10 @@ export function EnhancedUserSettings() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
-                <div>
-                  <Label>Profile Visibility</Label>
-                  <Select
-                    value={settings.profile_visibility}
-                    onValueChange={(value: any) => updateSetting('profile_visibility', value)}
-                  >
-                    <SelectTrigger className="mt-2">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="public">Public</SelectItem>
-                      <SelectItem value="contacts_only">Contacts Only</SelectItem>
-                      <SelectItem value="private">Private</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label className="flex items-center gap-2">
-                      <Key className="h-4 w-4" />
+                      <Shield className="h-4 w-4" />
                       Two-Factor Authentication
                     </Label>
                     <p className="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
@@ -749,31 +561,26 @@ export function EnhancedUserSettings() {
                   />
                 </div>
 
-                <div>
-                  <Label>Session Timeout (minutes)</Label>
-                  <Select
-                    value={settings.session_timeout.toString()}
-                    onValueChange={(value) => updateSetting('session_timeout', parseInt(value))}
-                  >
-                    <SelectTrigger className="mt-2">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="15">15 minutes</SelectItem>
-                      <SelectItem value="30">30 minutes</SelectItem>
-                      <SelectItem value="60">1 hour</SelectItem>
-                      <SelectItem value="120">2 hours</SelectItem>
-                      <SelectItem value="240">4 hours</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+                {isAdmin && (
+                  <div>
+                    <Label>Session Timeout (minutes)</Label>
+                    <Select
+                      value={settings.session_timeout.toString()}
+                      onValueChange={(value) => updateSetting('session_timeout', parseInt(value))}
+                    >
+                      <SelectTrigger className="mt-2">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="15">15</SelectItem>
+                        <SelectItem value="30">30</SelectItem>
+                        <SelectItem value="60">60</SelectItem>
+                        <SelectItem value="120">120</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
-              <Separator />
-
-              <div className="space-y-4">
-                <h3 className="font-medium">Login & Device Security</h3>
-                
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>Login Notifications</Label>
@@ -782,17 +589,6 @@ export function EnhancedUserSettings() {
                   <Switch
                     checked={settings.login_notifications}
                     onCheckedChange={(value) => updateSetting('login_notifications', value)}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Device Tracking</Label>
-                    <p className="text-sm text-muted-foreground">Track and manage your devices</p>
-                  </div>
-                  <Switch
-                    checked={settings.device_tracking}
-                    onCheckedChange={(value) => updateSetting('device_tracking', value)}
                   />
                 </div>
               </div>
@@ -847,16 +643,7 @@ export function EnhancedUserSettings() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Text-to-Speech</Label>
-                    <p className="text-sm text-muted-foreground">Enable text-to-speech for content</p>
-                  </div>
-                  <Switch
-                    checked={settings.text_to_speech}
-                    onCheckedChange={(value) => updateSetting('text_to_speech', value)}
-                  />
-                </div>
+                {/* Text-to-Speech removed for now */}
               </div>
             </CardContent>
           </Card>

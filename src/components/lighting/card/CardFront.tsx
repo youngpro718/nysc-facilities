@@ -8,12 +8,20 @@ import { LightingFixture } from "@/types/lighting";
 import { EditLightingDialog } from "../EditLightingDialog";
 import { ReportIssueDialog } from "../issues/ReportIssueDialog";
 import { cn } from "@/lib/utils";
-import { Lightbulb, RotateCw, Trash2, Calendar, Clock } from "lucide-react";
+import { Lightbulb, RotateCw, Trash2, Calendar, Clock, MoreHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { useQuery } from "@tanstack/react-query";
 import { getLightingIssuesForFixture } from "@/services/supabase/lightingIssuesService";
 import { useNavigate } from "react-router-dom";
 import * as locationUtil from "@/components/lighting/utils/location";
 import { StatusBadge } from "@/components/lighting/components/StatusBadge";
+import { markLightsFixed, markLightsOut, toggleElectricianRequired } from "@/services/supabase/lightingService";
 
 interface CardFrontProps {
   fixture: LightingFixture;
@@ -42,6 +50,64 @@ export function CardFront({
   });
 
   const openIssue = (fixtureIssues || []).find((i: any) => i.status !== "resolved" && (i.issue_id || i.id));
+
+  // Helper to find the latest resolved issue
+  const latestResolvedIssue = (fixtureIssues || [])
+    .filter((i: any) => i.status === 'resolved' && i.resolved_at)
+    .sort((a: any, b: any) => new Date(b.resolved_at).getTime() - new Date(a.resolved_at).getTime())[0];
+
+  // Format compact duration like 2d 3h or 5h 12m
+  const formatDuration = (startISO: string, endISO?: string) => {
+    const start = new Date(startISO).getTime();
+    const end = endISO ? new Date(endISO).getTime() : Date.now();
+    if (Number.isNaN(start) || Number.isNaN(end) || end < start) return '—';
+    const ms = end - start;
+    const minutes = Math.floor(ms / 60000);
+    const days = Math.floor(minutes / (60 * 24));
+    const hours = Math.floor((minutes - days * 24 * 60) / 60);
+    const mins = minutes % 60;
+    if (days > 0) return `${days}d ${hours}h`;
+    if (hours > 0) return `${hours}h ${mins}m`;
+    return `${mins}m`;
+  };
+
+  const formatIssueType = (issueType?: string) => {
+    if (!issueType) return 'Unknown';
+    if (issueType === 'blown_bulb' || issueType === 'bulb') return 'Bulb';
+    if (issueType === 'ballast_issue' || issueType === 'balance' || issueType === 'ballast') return 'Ballast (Electrician)';
+    return issueType.replace(/_/g, ' ');
+  };
+
+  // Quick actions
+  const [isActing, setIsActing] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const handleMarkOut = async (requiresElectrician: boolean) => {
+    try {
+      setIsActing(true);
+      await markLightsOut([fixture.id], requiresElectrician);
+      onFixtureUpdated();
+    } finally {
+      setIsActing(false);
+    }
+  };
+  const handleMarkFixed = async () => {
+    try {
+      setIsActing(true);
+      await markLightsFixed([fixture.id]);
+      onFixtureUpdated();
+    } finally {
+      setIsActing(false);
+    }
+  };
+  const handleToggleElectrician = async () => {
+    try {
+      setIsActing(true);
+      await toggleElectricianRequired([fixture.id], !fixture.requires_electrician);
+      onFixtureUpdated();
+    } finally {
+      setIsActing(false);
+    }
+  };
 
   // Status colors centralized in StatusBadge
 
@@ -75,7 +141,7 @@ export function CardFront({
 
   return (
     <Card className={cn(
-      "w-full h-full overflow-hidden transition-all duration-200",
+      "w-full h-full min-h-[220px] transition-all duration-200 flex flex-col",
       isSelected && "ring-2 ring-primary"
     )}>
       <div className="absolute top-4 left-4 z-10">
@@ -95,38 +161,24 @@ export function CardFront({
         </Button>
       </div>
 
-      <CardHeader className="pt-6 pb-1">
-        <div className="flex flex-col gap-2">
-          <div className="flex gap-2 items-center">
-            {getTypeIcon(fixture.type)}
-            <StatusBadge status={fixture.status} />
-          </div>
-          <h3 className="font-medium text-sm truncate">{fixture.name}</h3>
+      <CardHeader className="pt-3 pb-1">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="font-semibold text-sm truncate">{fixture.name}</h3>
+          <StatusBadge status={fixture.status} />
         </div>
       </CardHeader>
 
-      <CardContent className="pb-3 space-y-3">
-        <div className="grid grid-cols-2 gap-y-2 text-sm">
-          <div className="text-muted-foreground">Technology</div>
-          <div className="font-medium">{fixture.technology || 'N/A'}</div>
-          
-          <div className="text-muted-foreground">Bulbs</div>
-          <div className="font-medium flex items-center gap-1">
-            <Lightbulb className="h-3 w-3" />
-            {fixture.bulb_count}
-          </div>
-          
-          <div className="text-muted-foreground">Zone</div>
-          <div className="font-medium">{fixture.zone_name || 'Unassigned'}</div>
-          
-          <div className="text-muted-foreground">Position</div>
-          <div className="font-medium">{fixture.position || 'N/A'}</div>
-        </div>
-
+      <CardContent className="pb-3 space-y-2 flex flex-col h-full">
+        {/* Meta: two lines */}
         <div className="text-xs text-muted-foreground truncate">
-          <span className="inline-flex max-w-full items-center gap-1 rounded-full bg-muted px-2 py-1">
-            {getLocationText()}
-          </span>
+          {getLocationText()}
+        </div>
+        <div className="text-xs text-muted-foreground truncate">
+          <span>{fixture.technology || 'N/A'}</span>
+          <span className="mx-1">•</span>
+          <span className="inline-flex items-center gap-1"><Lightbulb className="h-3 w-3" />{fixture.bulb_count ?? '—'}</span>
+          <span className="mx-1">•</span>
+          <span>{fixture.zone_name || 'Unassigned'}</span>
         </div>
 
         {fixture.next_maintenance_date && (
@@ -139,7 +191,70 @@ export function CardFront({
           </div>
         )}
 
-        <div className="flex justify-end pt-2">
+        {/* Outage/repair chips */}
+        <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+          {openIssue ? (
+            <>
+              <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5">
+                <Clock className="h-3 w-3" />
+                Out for {formatDuration(openIssue.reported_at)}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-secondary text-secondary-foreground px-2 py-0.5">
+                Issue: {formatIssueType(openIssue.issue_type)}
+              </span>
+            </>
+          ) : latestResolvedIssue ? (
+            <>
+              <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5">
+                <Clock className="h-3 w-3" />
+                Repaired in {formatDuration(latestResolvedIssue.reported_at, latestResolvedIssue.resolved_at)}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-secondary text-secondary-foreground px-2 py-0.5">
+                Issue: {formatIssueType(latestResolvedIssue.issue_type)}
+              </span>
+            </>
+          ) : (
+            // Fallback to fixture-level timestamps if no issue records
+            <>
+              {fixture.reported_out_date && !fixture.replaced_date && (
+                <>
+                  <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5">
+                    <Clock className="h-3 w-3" />
+                    Out for {formatDuration(fixture.reported_out_date)}
+                  </span>
+                  {fixture.requires_electrician ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-secondary text-secondary-foreground px-2 py-0.5">
+                      Issue: Ballast (Electrician)
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-secondary text-secondary-foreground px-2 py-0.5">
+                      Issue: Bulb
+                    </span>
+                  )}
+                </>
+              )}
+              {fixture.reported_out_date && fixture.replaced_date && (
+                <>
+                  <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5">
+                    <Clock className="h-3 w-3" />
+                    Repaired in {formatDuration(fixture.reported_out_date, fixture.replaced_date)}
+                  </span>
+                  {fixture.requires_electrician ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-secondary text-secondary-foreground px-2 py-0.5">
+                      Issue: Ballast (Electrician)
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-secondary text-secondary-foreground px-2 py-0.5">
+                      Issue: Bulb
+                    </span>
+                  )}
+                </>
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="mt-auto flex justify-between items-center gap-2 pt-2 border-t">
           {showDeleteConfirm ? (
             <div className="flex items-center gap-2">
               <span className="text-xs text-red-600">Confirm?</span>
@@ -160,31 +275,62 @@ export function CardFront({
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              {openIssue ? (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => {
-                    const issueId = (openIssue as any).issue_id ?? (openIssue as any).id;
-                    navigate(`/operations?issue_id=${issueId}`);
-                  }}
-                >
-                  View Issue
-                </Button>
+              {/* Quick actions for outage / repair */}
+              {fixture.status !== 'non_functional' ? (
+                <>
+                  <Button size="sm" variant="secondary" disabled={isActing} onClick={() => handleMarkOut(false)}>
+                    Out - Bulb
+                  </Button>
+                  <Button size="sm" variant="destructive" disabled={isActing} onClick={() => handleMarkOut(true)}>
+                    Out - Electrician
+                  </Button>
+                </>
               ) : (
-                <ReportIssueDialog fixture={fixture} />
+                <>
+                  <Button size="sm" variant="default" disabled={isActing} onClick={handleMarkFixed}>
+                    Mark Repaired
+                  </Button>
+                </>
               )}
-              <EditLightingDialog
-                fixture={fixture}
-                onFixtureUpdated={onFixtureUpdated}
-              />
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={() => setShowDeleteConfirm(true)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+
+              {/* Secondary actions in menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {fixture.status === 'non_functional' && (
+                    <DropdownMenuItem onClick={() => handleToggleElectrician()} disabled={isActing}>
+                      {fixture.requires_electrician ? 'Unset Electrician' : 'Needs Electrician'}
+                    </DropdownMenuItem>
+                  )}
+                  {openIssue ? (
+                    <DropdownMenuItem onClick={() => {
+                      const issueId = (openIssue as any).issue_id ?? (openIssue as any).id;
+                      navigate(`/operations?issue_id=${issueId}`);
+                    }}>
+                      View Issue
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem asChild>
+                      <div>
+                        <ReportIssueDialog fixture={fixture} />
+                      </div>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <div>
+                      <EditLightingDialog fixture={fixture} onFixtureUpdated={onFixtureUpdated} />
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)}>
+                    <Trash2 className="h-4 w-4 mr-2" /> Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           )}
         </div>

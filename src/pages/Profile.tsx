@@ -1,8 +1,6 @@
 import { User, Shield, ChevronLeft, Bell, Settings2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { PersonalInfoForm } from "@/components/profile/PersonalInfoForm";
-import { NotificationPreferencesCard } from "@/components/notifications/NotificationPreferencesCard";
-import { SecuritySection } from "@/components/profile/SecuritySection";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { MobileProfileHeader } from "@/components/profile/mobile/MobileProfileHeader";
 import { MobileSettingsCard } from "@/components/profile/mobile/MobileSettingsCard";
@@ -10,15 +8,12 @@ import { SettingsVerification } from "@/components/profile/SettingsVerification"
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 
 export default function Profile() {
   const navigate = useNavigate();
-  const [isAdmin, setIsAdmin] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    checkUserRole();
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
@@ -30,47 +25,15 @@ export default function Profile() {
     setIsMobile(window.innerWidth < 768);
   };
 
-  const checkUserRole = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: roleData } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      setIsAdmin(roleData?.role === 'admin');
-    } catch (error) {
-      console.error('Error checking user role:', error);
-    }
-  };
 
   const notificationSettings = [
     {
-      id: 'email-notifications',
-      title: 'Email Notifications',
-      description: 'Receive updates via email',
+      id: 'manage-notifications',
+      title: 'Manage Notifications',
+      description: 'Configure email and desktop alerts in Settings',
       icon: Bell,
-      type: 'toggle' as const,
-      value: true,
-      onChange: (value: boolean) => {
-        // TODO: Implement email notification settings update
-        console.log('Email notifications:', value);
-      }
-    },
-    {
-      id: 'push-notifications',
-      title: 'Push Notifications',
-      description: 'Receive push notifications on mobile',
-      icon: Bell,
-      type: 'toggle' as const,
-      value: false,
-      onChange: (value: boolean) => {
-        // TODO: Implement push notification settings update
-        console.log('Push notifications:', value);
-      }
+      type: 'navigation' as const,
+      action: () => navigate('/settings?tab=notifications')
     }
   ];
 
@@ -177,10 +140,14 @@ export default function Profile() {
           <div className="space-y-2">
             <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">Notification Settings</h2>
             <p className="text-sm sm:text-base text-muted-foreground">
-              Choose how you want to receive notifications
+              Configure your notification preferences in Settings
             </p>
           </div>
-          <NotificationPreferencesCard />
+          <div className="flex">
+            <Button onClick={() => navigate('/settings?tab=notifications')} className="ml-auto">
+              Open Settings
+            </Button>
+          </div>
         </div>
       </Card>
 
@@ -189,10 +156,14 @@ export default function Profile() {
           <div className="space-y-2">
             <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">Security</h2>
             <p className="text-sm sm:text-base text-muted-foreground">
-              Two-factor authentication, login alerts, and device tracking
+              Manage two-factor authentication and login notifications in Settings
             </p>
           </div>
-          <SecuritySection isAdmin={isAdmin} />
+          <div className="flex">
+            <Button onClick={() => navigate('/settings?tab=security')} className="ml-auto">
+              Open Security Settings
+            </Button>
+          </div>
         </div>
       </Card>
 

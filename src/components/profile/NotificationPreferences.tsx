@@ -1,3 +1,6 @@
+// DEPRECATED: Do not use. Notification settings are centralized in
+// `src/components/profile/EnhancedUserSettings.tsx` and surfaced via SettingsPage.
+// This file is retained temporarily for reference and will be removed after cleanup.
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
