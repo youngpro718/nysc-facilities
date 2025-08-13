@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useGlobalSystemSettings } from "@/hooks/admin/useGlobalSystemSettings";
 import { useToast } from "@/hooks/use-toast";
 import { ModuleManagement } from "./ModuleManagement";
@@ -45,6 +46,7 @@ export function AdminSystemSettings() {
 
   const { settings, isLoading: settingsLoading, isSaving, saveSettings } = useGlobalSystemSettings();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const [systemSettings, setSystemSettings] = useState({
     maintenanceMode: false,
@@ -56,7 +58,8 @@ export function AdminSystemSettings() {
     adminEmail: '',
     welcomeMessage: '',
     backupRetention: '30',
-    logLevel: 'info'
+    logLevel: 'debug',
+    demoMode: localStorage.getItem('DEMO_MODE') === 'true'
   });
 
   useEffect(() => {
@@ -150,6 +153,38 @@ export function AdminSystemSettings() {
               <Switch
                 checked={systemSettings.maintenanceMode}
                 onCheckedChange={(checked) => updateSetting("maintenanceMode", checked)}
+              />
+            </div>
+          </div>
+
+          {/* Demo Mode */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label className="text-sm font-medium">Demo Mode (Bypass Login)</Label>
+              <p className="text-sm text-muted-foreground">
+                Allow instant access to the Admin Dashboard without authentication (for demos)
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant={systemSettings.demoMode ? "secondary" : "outline"}>
+                {systemSettings.demoMode ? "Enabled" : "Disabled"}
+              </Badge>
+              <Switch
+                checked={systemSettings.demoMode}
+                onCheckedChange={(checked) => {
+                  updateSetting('demoMode', checked);
+                  try {
+                    if (checked) {
+                      localStorage.setItem('DEMO_MODE', 'true');
+                      toast({ title: 'Demo Mode enabled', description: 'Auth bypass active. Redirecting to Admin…' });
+                      // Small delay to let toast render
+                      setTimeout(() => navigate('/'), 50);
+                    } else {
+                      localStorage.removeItem('DEMO_MODE');
+                      toast({ title: 'Demo Mode disabled', description: 'Authentication required on next navigation.' });
+                    }
+                  } catch {}
+                }}
               />
             </div>
           </div>

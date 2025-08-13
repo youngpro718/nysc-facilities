@@ -14,6 +14,10 @@ interface ModuleProtectedRouteProps {
 export function ModuleProtectedRoute({ children, moduleKey, moduleName }: ModuleProtectedRouteProps) {
   const { enabledModules, loading } = useEnabledModules();
 
+  // Demo Mode bypass: skip module gating for demos
+  const demoMode = typeof window !== 'undefined' && window.localStorage?.getItem('DEMO_MODE') === 'true';
+  if (demoMode) return <>{children}</>;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">

@@ -1,6 +1,6 @@
 
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { getRoleBasedNavigation, userNavigation, getNavigationRoutes } from "./config/navigation";
@@ -20,6 +20,21 @@ const Layout = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isAuthenticated, isAdmin, isLoading, signOut, user } = useAuth();
   const { permissions, userRole, profile, loading: permissionsLoading } = useRolePermissions();
+  const [demoMode, setDemoMode] = useState<boolean>(false);
+
+  useEffect(() => {
+    try {
+      setDemoMode(localStorage.getItem('DEMO_MODE') === 'true');
+    } catch { /* no-op */ }
+  }, [location.pathname]);
+
+  const disableDemoMode = () => {
+    try {
+      localStorage.removeItem('DEMO_MODE');
+    } catch { /* no-op */ }
+    setDemoMode(false);
+    navigate('/login');
+  };
 
   // Only build navigation once permissions are ready to avoid flashing the wrong menu after login
   const navReady = !!userRole && !permissionsLoading;
@@ -68,6 +83,18 @@ const Layout = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {demoMode && (
+        <div className="w-full bg-amber-100 text-amber-900 border-b border-amber-200 py-2 px-4 text-sm flex items-center justify-between">
+          <div>
+            Demo Mode is enabled — authentication is bypassed and all modules are accessible.
+          </div>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={disableDemoMode}>
+              Disable Demo Mode
+            </Button>
+          </div>
+        </div>
+      )}
       {!isLoginPage && isAuthenticated && (
         <header className="bg-card shadow sticky top-0 z-50 safe-area-top">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

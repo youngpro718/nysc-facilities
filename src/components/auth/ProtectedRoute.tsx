@@ -24,7 +24,8 @@ export function ProtectedRoute({
   // Dev-only bypass: allow rendering without auth when explicitly enabled
   const disableAuthGuard =
     (import.meta as any)?.env?.VITE_DISABLE_AUTH_GUARD === 'true' ||
-    (import.meta as any)?.env?.VITE_DISABLE_MODULE_GATES === 'true';
+    (import.meta as any)?.env?.VITE_DISABLE_MODULE_GATES === 'true' ||
+    (typeof window !== 'undefined' && window.localStorage?.getItem('DEMO_MODE') === 'true');
 
   if (disableAuthGuard) {
     return <>{children}</>;

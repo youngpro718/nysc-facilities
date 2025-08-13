@@ -43,7 +43,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Dev-only bypass for auth redirects
   const devBypass =
     (import.meta as any)?.env?.VITE_DISABLE_AUTH_GUARD === 'true' ||
-    (import.meta as any)?.env?.VITE_DISABLE_MODULE_GATES === 'true';
+    (import.meta as any)?.env?.VITE_DISABLE_MODULE_GATES === 'true' ||
+    (typeof window !== 'undefined' && window.localStorage?.getItem('DEMO_MODE') === 'true');
 
   // Function to fetch user profile data
   const getUserProfile = useCallback(async (userId: string) => {
@@ -60,11 +61,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // If Demo Mode, synthesize an authenticated admin state and skip Supabase flows
+  useEffect(() => {
+    if (devBypass && typeof window !== 'undefined' && window.localStorage?.getItem('DEMO_MODE') === 'true') {
+      const demoProfile: UserProfile = {
+        id: 'demo-user',
+        email: 'demo@example.com',
+        first_name: 'Demo',
+        last_name: 'Admin',
+        verification_status: 'verified',
+        access_level: 'admin' as any,
+      } as any;
+
+      setSession(null);
+      setUser(null);
+      setProfile(demoProfile);
+      setIsAdmin(true);
+      setIsLoading(false);
+    }
+  }, [devBypass]);
+
   // Refresh session function
   const refreshSession = useCallback(async () => {
     try {
       setIsLoading(true);
       
+      if (devBypass && typeof window !== 'undefined' && window.localStorage?.getItem('DEMO_MODE') === 'true') {
+        // In Demo Mode, keep synthesized state
+        setIsLoading(false);
+        return;
+      }
+
       const currentSession = await getSession();
       
       if (!currentSession) {
@@ -220,9 +247,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let mounted = true;
     let isInitialized = false;
 
+    // In Demo Mode, do not register Supabase auth listener
+    if (devBypass && typeof window !== 'undefined' && window.localStorage?.getItem('DEMO_MODE') === 'true') {
+      setIsLoading(false);
+      return;
+    }
+
     // Centralized redirect logic
     const handleRedirect = (userData: { isAdmin: boolean; profile: UserProfile | null }) => {
-      if (devBypass) return; // skip redirects in dev bypass
+      if (devBypass) return; // skip redirects in dev bypass and demo mode
       if (!mounted) return;
       
       const currentPath = window.location.pathname;
