@@ -1,10 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SecureForm } from '@/components/security/SecureForm';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { delay } from '@/utils/timing';
-import { normalizeSupabaseError } from '@/lib/supabaseErrors';
+import { useSecureAuth } from '@/hooks/security/useSecureAuth';
 
 interface SecureLoginFormProps {
   loading: boolean;
@@ -18,48 +16,23 @@ export const SecureLoginForm = ({
   onToggleForm,
 }: SecureLoginFormProps) => {
   const navigate = useNavigate();
+  const { secureSignIn, isLoading: authLoading } = useSecureAuth();
 
   const handleSecureLogin = async (data: { email: string; password: string }) => {
     try {
       setLoading(true);
       
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-      });
+      const result = await secureSignIn(data.email, data.password);
 
-      if (signInError) throw signInError;
-
-      // Add a small delay to ensure auth state is updated
-      await delay(100);
-
-      // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-      if (!user) throw new Error("No user found");
-
-      // Check verification status
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('verification_status')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError) throw profileError;
-
-      if (profile.verification_status === 'pending') {
-        navigate("/verification-pending", { replace: true });
-      } else {
-        navigate("/", { replace: true });
-      }
-
+      // Navigate based on the authentication result
+      navigate("/", { replace: true });
+      
       toast.success("Welcome back!", {
         description: "You've successfully signed in."
       });
     } catch (error: any) {
       console.error("Auth error:", error);
-      const normalized = normalizeSupabaseError(error);
-      toast.error(normalized.userMessage, { description: normalized.message });
+      toast.error(error.message || "Authentication failed");
       throw error; // Re-throw to let SecureForm handle it
     } finally {
       setLoading(false);

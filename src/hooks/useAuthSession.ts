@@ -222,10 +222,12 @@ export function useAuthSession(): AuthSessionHook {
     }
   }, [fetchUserData, updateAuthState]);
 
-  // Login function
+  // Login function - uses direct auth for session management compatibility
   const signIn = async (email: string, password: string) => {
     try {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      // NOTE: For session management compatibility, still using direct auth
+      // but should be migrated to use secure auth system at higher level
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });

@@ -7,7 +7,7 @@ import { Mail, Lock, Building2, Loader2, User, Users, Phone, Camera } from "luci
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/useAuth";
+import { useSecureAuth } from '@/hooks/security/useSecureAuth';
 import { UserSignupData } from "@/types/auth";
 import { 
   Accordion, 
@@ -37,7 +37,7 @@ export const SignupForm = ({
   setLoading,
   onToggleForm,
 }: SignupFormProps) => {
-  const { signUp } = useAuth();
+  const { secureSignUp, isLoading: authLoading } = useSecureAuth();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [title, setTitle] = useState("");
@@ -86,18 +86,28 @@ export const SignupForm = ({
         emergency_contact: Object.values(emergencyContact).some(Boolean) ? emergencyContact : undefined
       };
       
-      await signUp(email, password, userData);
+      await secureSignUp(email, password, userData);
       
-      // Upload avatar if selected
+      // Upload avatar if selected - need to wait for user to be created
       if (avatarFile) {
-        // Get the newly created user to upload avatar
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await uploadAvatar(avatarFile, user.id);
-        }
+        // Small delay to ensure user is fully created
+        setTimeout(async () => {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            try {
+              await uploadAvatar(avatarFile, user.id);
+            } catch (error) {
+              console.error('Avatar upload error:', error);
+              toast.error('Account created but avatar upload failed');
+            }
+          }
+        }, 1000);
       }
-    } catch (error) {
-      // Error is already handled in signUp
+      
+      toast.success('Account created successfully! Please check your email for verification.');
+    } catch (error: any) {
+      console.error('Signup error:', error);
+      toast.error(error.message || 'Account creation failed');
     } finally {
       setLoading(false);
     }

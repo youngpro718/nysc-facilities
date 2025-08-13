@@ -5,9 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Mail, Lock, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { delay } from "@/utils/timing";
+import { useSecureAuth } from '@/hooks/security/useSecureAuth';
 
 interface LoginFormProps {
   email: string;
@@ -29,6 +28,7 @@ export const LoginForm = ({
   onToggleForm,
 }: LoginFormProps) => {
   const navigate = useNavigate();
+  const { secureSignIn, isLoading: authLoading } = useSecureAuth();
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
@@ -40,36 +40,10 @@ export const LoginForm = ({
     try {
       setLoading(true);
       
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      await secureSignIn(email, password);
 
-      if (signInError) throw signInError;
-
-      // Add a small delay to ensure auth state is updated
-      await delay(100);
-
-      // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-      if (!user) throw new Error("No user found");
-
-      // Check verification status
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('verification_status')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError) throw profileError;
-
-      if (profile.verification_status === 'pending') {
-        navigate("/verification-pending", { replace: true });
-      } else {
-        navigate("/", { replace: true });
-      }
-
+      navigate("/", { replace: true });
+      
       toast.success("Welcome back!", {
         description: "You've successfully signed in."
       });
