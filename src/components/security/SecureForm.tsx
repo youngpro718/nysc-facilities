@@ -58,7 +58,8 @@ export function SecureForm({ onSubmit, isLoading = false, title, submitText }: S
         allErrors.push(...emailValidation.errors);
       }
 
-      // Validate password for signup forms (if this is a strong password requirement)
+      // Skip password validation for login - let the backend handle it
+      // Only validate passwords for signup forms
       if (title.toLowerCase().includes('sign up') || title.toLowerCase().includes('register')) {
         const passwordValidation = await validatePassword(password);
         if (!passwordValidation.isValid) {
