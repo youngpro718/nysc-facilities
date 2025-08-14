@@ -74,7 +74,8 @@ export function AdminSystemSettings() {
         adminEmail: settings.adminEmail,
         welcomeMessage: settings.welcomeMessage,
         backupRetention: String(settings.backupRetention),
-        logLevel: settings.logLevel
+        logLevel: settings.logLevel,
+        demoMode: localStorage.getItem('DEMO_MODE') === 'true'
       });
     }
   }, [settings]);
@@ -94,7 +95,8 @@ export function AdminSystemSettings() {
       adminEmail: '',
       welcomeMessage: '',
       backupRetention: '30',
-      logLevel: 'info'
+      logLevel: 'info',
+      demoMode: false
     });
   };
 

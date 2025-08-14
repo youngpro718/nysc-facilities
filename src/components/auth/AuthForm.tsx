@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { SecureLoginForm } from "./SecureLoginForm";
-import { SignupForm } from "./SignupForm";
+import { SimpleSignupForm } from "./SimpleSignupForm";
 
 export interface AuthFormProps {
   isLogin: boolean;
@@ -14,13 +14,7 @@ export function AuthForm({ isLogin, setIsLogin }: AuthFormProps) {
 
   if (!isLogin) {
     return (
-      <SignupForm
-        email={email}
-        setEmail={setEmail}
-        password={password}
-        setPassword={setPassword}
-        loading={loading}
-        setLoading={setLoading}
+      <SimpleSignupForm
         onToggleForm={() => setIsLogin(true)}
       />
     );

@@ -184,7 +184,7 @@ const Layout = () => {
                   Demo Mode is enabled — auth is bypassed and all modules are accessible.
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <Button size="xs" variant="outline" onClick={disableDemoMode}>
+                  <Button size="sm" variant="outline" onClick={disableDemoMode}>
                     Disable
                   </Button>
                 </div>

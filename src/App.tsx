@@ -17,6 +17,7 @@ import MyIssues from "@/pages/MyIssues";
 import AdminProfile from "@/pages/AdminProfile";
 import SystemSettings from "@/pages/SystemSettings";
 import VerificationPending from "@/pages/VerificationPending";
+import FeaturesPreview from "@/pages/FeaturesPreview";
 import AccessManagement from "@/pages/AccessManagement";
 import ThemeSettings from "@/pages/settings/ThemeSettings";
 import SettingsPage from '@/pages/SettingsPage';
@@ -192,6 +193,7 @@ function AppContent() {
         {/* Public Routes */}
         <Route path="login" element={<LoginPage />} />
         <Route path="verification-pending" element={<VerificationPending />} />
+        <Route path="features-preview" element={<FeaturesPreview />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
