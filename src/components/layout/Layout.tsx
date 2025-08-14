@@ -83,19 +83,7 @@ const Layout = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {demoMode && (
-        <div className="w-full bg-amber-100 text-amber-900 border-b border-amber-200 py-2 px-4 text-sm flex items-center justify-between">
-          <div>
-            Demo Mode is enabled — authentication is bypassed and all modules are accessible.
-          </div>
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" onClick={disableDemoMode}>
-              Disable Demo Mode
-            </Button>
-          </div>
-        </div>
-      )}
-      {!isLoginPage && isAuthenticated && (
+      {!isLoginPage && (isAuthenticated || demoMode) && (
         <header className="bg-card shadow sticky top-0 z-50 safe-area-top">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex h-14 sm:h-16 items-center justify-between">
@@ -190,6 +178,18 @@ const Layout = () => {
                 </div>
               </div>
             </div>
+            {demoMode && (
+              <div className="w-full bg-amber-100 text-amber-900 border-t border-amber-200 py-1.5 px-3 text-xs sm:text-sm flex items-center justify-between rounded-b">
+                <div className="truncate pr-2">
+                  Demo Mode is enabled — auth is bypassed and all modules are accessible.
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button size="xs" variant="outline" onClick={disableDemoMode}>
+                    Disable
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </header>
       )}
