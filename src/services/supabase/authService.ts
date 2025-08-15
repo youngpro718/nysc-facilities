@@ -105,7 +105,7 @@ export async function fetchUserProfile(userId: string) {
     `).eq('id', userId).single(),
     supabase.from('occupant_room_assignments').select(`
       room_id,
-      rooms(room_number)
+      rooms!occupant_room_assignments_room_id_fkey(room_number)
     `).eq('occupant_id', userId)
   ]);
   
