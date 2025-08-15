@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,18 +46,39 @@ export function SimpleSignupForm({ onToggleForm }: SimpleSignupFormProps) {
         return;
       }
 
+      console.log('Starting signup process for:', formData.email);
+
       const userData = {
         first_name: formData.firstName.trim(),
         last_name: formData.lastName.trim()
       };
 
-      await signUpWithEmail(formData.email, formData.password, userData);
+      console.log('Calling signUpWithEmail with data:', userData);
+      const result = await signUpWithEmail(formData.email, formData.password, userData);
+      console.log('Signup result:', result);
       
       toast.success("Account created! Please check your email to verify your account.");
       
     } catch (error: any) {
-      console.error("Signup error:", error);
-      toast.error(error.message || "Failed to create account. Please try again.");
+      console.error("Signup error details:", {
+        error,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
+      
+      let errorMessage = "Failed to create account. Please try again.";
+      
+      if (error.message?.includes("duplicate key value violates unique constraint")) {
+        errorMessage = "An account with this email already exists. Please try signing in instead.";
+      } else if (error.message?.includes("Database error")) {
+        errorMessage = "There was a database error. Please try again in a moment.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
