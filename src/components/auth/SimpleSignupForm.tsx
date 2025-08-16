@@ -5,21 +5,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, UserPlus } from "lucide-react";
-import { signUpWithEmail } from "@/services/supabase/authService";
+import { useSecureAuth } from "@/hooks/security/useSecureAuth";
 import { toast } from "sonner";
 
 interface SimpleSignupFormProps {
   onToggleForm: () => void;
+  onSuccess?: () => void;
 }
 
-export function SimpleSignupForm({ onToggleForm }: SimpleSignupFormProps) {
+export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormProps) {
+  const { secureSignUp, isLoading } = useSecureAuth();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
     password: ""
   });
-  const [loading, setLoading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false); // Prevent double submissions
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -28,10 +31,11 @@ export function SimpleSignupForm({ onToggleForm }: SimpleSignupFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Prevent multiple submissions
-    if (loading) return;
+    // Prevent multiple rapid submissions
+    if (isSubmitted || isProcessing || isLoading) return;
     
-    setLoading(true);
+    setIsProcessing(true);
+    setIsSubmitted(true);
 
     try {
       // Basic validation
@@ -55,14 +59,28 @@ export function SimpleSignupForm({ onToggleForm }: SimpleSignupFormProps) {
         last_name: formData.lastName.trim()
       };
 
-      await signUpWithEmail(formData.email, formData.password, userData);
-      
-      toast.success("Account created! Please check your email to verify your account.");
+      const data = await secureSignUp(formData.email, formData.password, userData);
+
+      if (data?.user && !data.user.email_confirmed_at) {
+        toast.success("Account created! Please check your email to verify your account.");
+        onSuccess?.();
+      } else if (data?.user) {
+        toast.success("Account created successfully!");
+        onSuccess?.();
+      }
       
     } catch (error: any) {
+      console.error('Signup error:', error);
+      
+      // Reset states on error so user can try again
+      setIsSubmitted(false);
+      setIsProcessing(false);
+      
       let errorMessage = "Failed to create account. Please try again.";
       
-      if (error.message?.includes("User already registered")) {
+      if (error.message?.includes('duplicate key') || error.message?.includes('unique_user_role')) {
+        errorMessage = "Account processing issue detected. Please try again or contact support if this persists.";
+      } else if (error.message?.includes("User already registered")) {
         errorMessage = "An account with this email already exists. Please try signing in instead.";
       } else if (error.message?.includes("Invalid email")) {
         errorMessage = "Please enter a valid email address.";
@@ -74,7 +92,8 @@ export function SimpleSignupForm({ onToggleForm }: SimpleSignupFormProps) {
       
       toast.error(errorMessage);
     } finally {
-      setLoading(false);
+      // Keep processing flag active for a short time to prevent rapid resubmissions
+      setTimeout(() => setIsProcessing(false), 2000);
     }
   };
 
@@ -100,7 +119,7 @@ export function SimpleSignupForm({ onToggleForm }: SimpleSignupFormProps) {
                 value={formData.firstName}
                 onChange={(e) => handleInputChange("firstName", e.target.value)}
                 placeholder="John"
-                disabled={loading}
+                disabled={isLoading || isProcessing}
                 required
               />
             </div>
@@ -112,7 +131,7 @@ export function SimpleSignupForm({ onToggleForm }: SimpleSignupFormProps) {
                 value={formData.lastName}
                 onChange={(e) => handleInputChange("lastName", e.target.value)}
                 placeholder="Smith"
-                disabled={loading}
+                disabled={isLoading || isProcessing}
                 required
               />
             </div>
@@ -126,7 +145,7 @@ export function SimpleSignupForm({ onToggleForm }: SimpleSignupFormProps) {
               value={formData.email}
               onChange={(e) => handleInputChange("email", e.target.value)}
               placeholder="john.smith@example.com"
-              disabled={loading}
+              disabled={isLoading || isProcessing}
               required
             />
           </div>
@@ -139,7 +158,7 @@ export function SimpleSignupForm({ onToggleForm }: SimpleSignupFormProps) {
               value={formData.password}
               onChange={(e) => handleInputChange("password", e.target.value)}
               placeholder="At least 6 characters"
-              disabled={loading}
+              disabled={isLoading || isProcessing}
               required
               minLength={6}
             />
@@ -148,9 +167,9 @@ export function SimpleSignupForm({ onToggleForm }: SimpleSignupFormProps) {
           <Button 
             type="submit" 
             className="w-full" 
-            disabled={loading}
+            disabled={isLoading || isSubmitted || isProcessing}
           >
-            {loading ? (
+            {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Creating Account...
@@ -166,7 +185,7 @@ export function SimpleSignupForm({ onToggleForm }: SimpleSignupFormProps) {
               type="button"
               onClick={onToggleForm}
               className="text-primary hover:underline font-medium"
-              disabled={loading}
+              disabled={isLoading || isProcessing}
             >
               Sign in
             </button>
