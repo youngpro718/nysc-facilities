@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -7906,15 +7906,15 @@ export type Database = {
       }
       advance_fulfillment_stage: {
         Args: {
+          p_metadata?: Json
+          p_notes?: string
           p_request_id: string
           p_stage: string
-          p_notes?: string
-          p_metadata?: Json
         }
         Returns: undefined
       }
       advance_key_order_status: {
-        Args: { p_order_id: string; p_fulfilled_by?: string; p_notes?: string }
+        Args: { p_fulfilled_by?: string; p_notes?: string; p_order_id: string }
         Returns: undefined
       }
       approve_user: {
@@ -7923,20 +7923,20 @@ export type Database = {
       }
       assign_key_if_available: {
         Args:
+          | { is_spare?: boolean; key_id: string; occupant_id: string }
           | { key_id: string; occupant_id: string }
-          | { key_id: string; occupant_id: string; is_spare?: boolean }
         Returns: Json
       }
       assign_user_role: {
         Args: {
-          target_user_id: string
           new_role: Database["public"]["Enums"]["user_role"]
           reason?: string
+          target_user_id: string
         }
         Returns: undefined
       }
       audit_user_action: {
-        Args: { action_type: string; target_resource: string; details?: Json }
+        Args: { action_type: string; details?: Json; target_resource: string }
         Returns: undefined
       }
       begin_transaction: {
@@ -7980,20 +7980,20 @@ export type Database = {
               time_window?: unknown
             }
           | {
-              p_identifier: string
               p_attempt_type: string
+              p_identifier: string
               p_max_attempts?: number
               p_window_minutes?: number
             }
         Returns: boolean
       }
       check_relocation_conflicts: {
-        Args: { p_room_id: string; p_start_date: string; p_end_date: string }
+        Args: { p_end_date: string; p_room_id: string; p_start_date: string }
         Returns: {
-          conflicting_relocation_id: string
-          conflict_type: string
-          conflict_start_date: string
           conflict_end_date: string
+          conflict_start_date: string
+          conflict_type: string
+          conflicting_relocation_id: string
         }[]
       }
       cleanup_old_backups: {
@@ -8009,15 +8009,15 @@ export type Database = {
         Returns: undefined
       }
       complete_backup_restoration: {
-        Args: { restoration_id: string; success: boolean; error_msg?: string }
+        Args: { error_msg?: string; restoration_id: string; success: boolean }
         Returns: undefined
       }
       complete_supply_request_work: {
-        Args: { p_request_id: string; p_notes?: string }
+        Args: { p_notes?: string; p_request_id: string }
         Returns: undefined
       }
       create_assignment_batch: {
-        Args: { creator_id: string; batch_metadata: Json }
+        Args: { batch_metadata: Json; creator_id: string }
         Returns: string
       }
       create_emergency_admin: {
@@ -8026,50 +8026,50 @@ export type Database = {
       }
       create_key_order: {
         Args: {
-          p_key_id: string
-          p_quantity: number
-          p_requestor_id: string
-          p_recipient_id?: string
           p_expected_delivery_date?: string
+          p_key_id: string
           p_notes?: string
+          p_quantity: number
+          p_recipient_id?: string
+          p_requestor_id: string
         }
         Returns: string
       }
       create_user_notification: {
         Args: {
-          p_user_id: string
-          p_type: string
-          p_title: string
-          p_message: string
-          p_urgency?: string
           p_action_url?: string
+          p_message: string
           p_metadata?: Json
           p_related_id?: string
+          p_title: string
+          p_type: string
+          p_urgency?: string
+          p_user_id: string
         }
         Returns: string
       }
       demote_admin_user: {
         Args: {
-          target_user_id: string
           new_role?: Database["public"]["Enums"]["user_role"]
+          target_user_id: string
         }
         Returns: undefined
       }
       detect_overdue_assignments: {
         Args: Record<PropertyKey, never>
         Returns: {
-          assignment_id: string
-          occupant_name: string
-          key_name: string
-          days_overdue: number
           assigned_at: string
+          assignment_id: string
+          days_overdue: number
+          key_name: string
+          occupant_name: string
         }[]
       }
       ensure_admin_user: {
         Args: { user_email: string }
         Returns: {
-          success: boolean
           message: string
+          success: boolean
           user_id: string
         }[]
       }
@@ -8078,34 +8078,34 @@ export type Database = {
         Returns: {
           id: string
           label: string
-          status: string
           room_type: string
+          status: string
         }[]
       }
       fn_allocate_elevator_cards_to_office: {
         Args: {
           p_key_id: string
-          p_quantity: number
-          p_office_name?: string
           p_notes?: string
+          p_office_name?: string
+          p_quantity: number
         }
         Returns: undefined
       }
       fn_issue_elevator_pass: {
         Args: {
-          p_key_id: string
-          p_recipient_type: string
-          p_occupant_id: string
-          p_recipient_name: string
-          p_recipient_email: string
           p_expected_return_at: string
-          p_reason: string
+          p_key_id: string
           p_notes: string
+          p_occupant_id: string
+          p_reason: string
+          p_recipient_email: string
+          p_recipient_name: string
+          p_recipient_type: string
         }
         Returns: string
       }
       fulfill_supply_request: {
-        Args: { p_request_id: string; p_fulfillment_notes?: string }
+        Args: { p_fulfillment_notes?: string; p_request_id: string }
         Returns: undefined
       }
       generate_issue_number: {
@@ -8115,19 +8115,19 @@ export type Database = {
       get_building_hierarchy: {
         Args: Record<PropertyKey, never>
         Returns: {
+          active_spaces: number
+          building_address: string
           building_id: string
           building_name: string
-          building_address: string
+          door_count: number
           floor_id: string
           floor_name: string
           floor_number: number
-          total_spaces: number
-          room_count: number
           hallway_count: number
-          door_count: number
-          active_spaces: number
-          total_occupants: number
+          room_count: number
           total_issues: number
+          total_occupants: number
+          total_spaces: number
         }[]
       }
       get_child_rooms: {
@@ -8142,55 +8142,55 @@ export type Database = {
       get_connected_objects: {
         Args: { p_object_id: string }
         Returns: {
-          id: string
-          type: Database["public"]["Enums"]["floor_plan_object_type"]
-          label: string
           connection_type: string
+          id: string
+          label: string
+          type: Database["public"]["Enums"]["floor_plan_object_type"]
         }[]
       }
       get_court_maintenance_info: {
         Args: Record<PropertyKey, never>
         Returns: {
           court_id: string
-          room_number: string
-          maintenance_status: string
-          maintenance_start_date: string
           maintenance_end_date: string
           maintenance_notes: string
-          schedule_id: string
+          maintenance_start_date: string
+          maintenance_status: string
           maintenance_title: string
-          scheduled_start_date: string
-          scheduled_end_date: string
+          room_number: string
+          schedule_id: string
           schedule_status: string
+          scheduled_end_date: string
+          scheduled_start_date: string
         }[]
       }
       get_court_personnel: {
         Args: Record<PropertyKey, never>
         Returns: {
-          id: string
-          first_name: string
-          last_name: string
-          email: string
-          department: string
-          role: string
           access_level: string
           created_at: string
+          department: string
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          role: string
           updated_at: string
         }[]
       }
       get_courtroom_availability: {
         Args: Record<PropertyKey, never>
         Returns: {
-          id: string
-          room_number: string
-          courtroom_number: string
-          maintenance_status: string
-          availability_status: string
-          spectator_capacity: number
-          juror_capacity: number
           accessibility_features: Json
+          availability_status: string
+          courtroom_number: string
+          id: string
           is_active: boolean
+          juror_capacity: number
+          maintenance_status: string
           notes: string
+          room_number: string
+          spectator_capacity: number
         }[]
       }
       get_current_user_role: {
@@ -8200,17 +8200,17 @@ export type Database = {
       get_dashboard_stats: {
         Args: Record<PropertyKey, never>
         Returns: {
-          total_rooms: number
-          occupied_rooms: number
           available_rooms: number
           maintenance_rooms: number
+          occupied_rooms: number
+          total_rooms: number
         }[]
       }
       get_door_room_details: {
         Args: { door_id: string }
         Returns: {
-          room_type: string
           room_number: string
+          room_type: string
           status: string
         }[]
       }
@@ -8229,13 +8229,13 @@ export type Database = {
       get_key_inventory_summary: {
         Args: Record<PropertyKey, never>
         Returns: {
+          available_quantity: number
           key_id: string
           key_name: string
           key_type: string
-          total_quantity: number
-          available_quantity: number
           reserved_quantity: number
           status: string
+          total_quantity: number
         }[]
       }
       get_next_lighting_sequence: {
@@ -8245,58 +8245,58 @@ export type Database = {
       get_parent_chain: {
         Args: { child_room_id: string }
         Returns: {
+          level: number
           parent_id: string
           parent_name: string
           parent_room_number: string
-          level: number
         }[]
       }
       get_rate_limit_status: {
-        Args: { p_identifier: string; p_attempt_type?: string }
+        Args: { p_attempt_type?: string; p_identifier: string }
         Returns: {
-          identifier: string
           attempt_type: string
           attempts: number
-          last_attempt: string
           blocked_until: string
+          identifier: string
           is_blocked: boolean
+          last_attempt: string
         }[]
       }
       get_room_assignments_with_details: {
         Args: { p_room_id?: string }
         Returns: {
-          assignment_id: string
-          occupant_id: string
-          room_id: string
-          assignment_type: string
-          is_primary: boolean
           assigned_at: string
-          occupant_name: string
-          room_number: string
-          floor_name: string
+          assignment_id: string
+          assignment_type: string
           building_name: string
+          floor_name: string
+          is_primary: boolean
+          occupant_id: string
+          occupant_name: string
+          room_id: string
+          room_number: string
         }[]
       }
       get_room_details: {
         Args: { p_space_id?: string }
         Returns: {
-          space_id: string
+          building_id: string
+          building_name: string
+          capacity: number
+          created_at: string
+          description: string
+          floor_id: string
+          floor_name: string
           name: string
           room_number: string
           room_type: string
-          building_id: string
-          building_name: string
-          floor_id: string
-          floor_name: string
-          capacity: number
+          space_id: string
           status: string
-          description: string
-          created_at: string
           updated_at: string
         }[]
       }
       get_room_size_category: {
-        Args: { room_width: number; room_height: number }
+        Args: { room_height: number; room_width: number }
         Returns: string
       }
       get_room_size_from_data: {
@@ -8310,36 +8310,36 @@ export type Database = {
           p_space_type?: string
         }
         Returns: {
+          building_name: string
+          capacity: number
+          fixture_count: number
+          floor_name: string
+          issue_count: number
+          name: string
+          occupancy_count: number
+          room_number: string
           space_id: string
           space_type: string
-          name: string
-          room_number: string
-          building_name: string
-          floor_name: string
-          capacity: number
-          occupancy_count: number
-          issue_count: number
-          fixture_count: number
           status: string
         }[]
       }
       get_spaces_dashboard_data: {
         Args: { building_filter?: string; space_type_filter?: string }
         Returns: {
-          id: string
-          name: string
-          space_type: string
-          room_number: string
-          status: string
+          building_name: string
+          fixture_count: number
           floor_name: string
           floor_number: number
-          building_name: string
-          room_type: string
+          id: string
           is_storage: boolean
-          occupant_count: number
           issue_count: number
+          name: string
+          occupant_count: number
           open_issue_count: number
-          fixture_count: number
+          room_number: string
+          room_type: string
+          space_type: string
+          status: string
         }[]
       }
       get_system_health: {
@@ -8353,13 +8353,13 @@ export type Database = {
       get_user_verification_data: {
         Args: Record<PropertyKey, never>
         Returns: {
-          id: string
-          first_name: string
-          last_name: string
-          email: string
-          department: string
-          is_approved: boolean
           created_at: string
+          department: string
+          email: string
+          first_name: string
+          id: string
+          is_approved: boolean
+          last_name: string
           updated_at: string
           user_role: Database["public"]["Enums"]["user_role"]
         }[]
@@ -8367,13 +8367,13 @@ export type Database = {
       get_user_verification_info: {
         Args: Record<PropertyKey, never>
         Returns: {
-          user_id: string
+          created_at: string
           email: string
           first_name: string
           last_name: string
-          verification_status: string
           role: string
-          created_at: string
+          user_id: string
+          verification_status: string
         }[]
       }
       has_role: {
@@ -8420,24 +8420,24 @@ export type Database = {
         Args:
           | {
               action_type: string
-              resource_type?: string
-              resource_id?: string
               details?: Json
+              resource_id?: string
+              resource_type?: string
             }
           | {
               p_action: string
-              p_resource_type: string
-              p_resource_id?: string
               p_details?: Json
               p_ip_address?: unknown
+              p_resource_id?: string
+              p_resource_type: string
               p_user_agent?: string
             }
           | {
               p_action: string
-              p_resource_type: string
-              p_resource_id?: string
               p_details?: string
               p_ip_address?: string
+              p_resource_id?: string
+              p_resource_type: string
               p_user_agent?: string
             }
         Returns: undefined
@@ -8453,8 +8453,8 @@ export type Database = {
       process_key_order_receipt: {
         Args: {
           p_order_id: string
-          p_quantity_received: number
           p_performed_by: string
+          p_quantity_received: number
         }
         Returns: undefined
       }
@@ -8479,11 +8479,11 @@ export type Database = {
         Returns: undefined
       }
       remove_user_role: {
-        Args: { target_user_id: string; reason?: string }
+        Args: { reason?: string; target_user_id: string }
         Returns: undefined
       }
       reset_rate_limit: {
-        Args: { p_identifier: string; p_attempt_type?: string }
+        Args: { p_attempt_type?: string; p_identifier: string }
         Returns: boolean
       }
       rollback_transaction: {
@@ -8502,8 +8502,8 @@ export type Database = {
         Args: {
           p_item_id: string
           p_new_quantity: number
-          p_performed_by?: string
           p_notes?: string
+          p_performed_by?: string
           p_status?: string
         }
         Returns: undefined
@@ -8514,22 +8514,22 @@ export type Database = {
       }
       search_spaces: {
         Args: {
+          p_building_id?: string
           p_search_term: string
           p_space_type?: string
-          p_building_id?: string
         }
         Returns: {
-          space_id: string
-          space_type: string
-          name: string
-          room_number: string
           building_name: string
           floor_name: string
+          name: string
           relevance_score: number
+          room_number: string
+          space_id: string
+          space_type: string
         }[]
       }
       secure_role_assignment: {
-        Args: { target_user_id: string; new_role: string }
+        Args: { new_role: string; target_user_id: string }
         Returns: boolean
       }
       setup_emergency_admin: {

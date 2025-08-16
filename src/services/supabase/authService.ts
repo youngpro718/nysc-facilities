@@ -29,8 +29,6 @@ export async function signInWithEmail(email: string, password: string) {
  * Sign up with email, password and user data
  */
 export async function signUpWithEmail(email: string, password: string, userData: UserSignupData) {
-  console.log('🔧 signUpWithEmail - Starting signup process', { email, userData });
-  
   try {
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -49,33 +47,16 @@ export async function signUpWithEmail(email: string, password: string, userData:
       }
     });
 
-    console.log('🔧 signUpWithEmail - Auth signup result', { 
-      data: data ? 'User created' : 'No data', 
-      user: data?.user ? 'User exists' : 'No user',
-      session: data?.session ? 'Session exists' : 'No session',
-      error: error ? error.message : 'No error'
-    });
-
     if (error) {
-      console.error('🔧 signUpWithEmail - Auth signup error', error);
       throw error;
     }
 
     if (!data.user) {
-      console.error('🔧 signUpWithEmail - No user returned from signup');
       throw new Error('No user returned from signup');
     }
 
-    console.log('🔧 signUpWithEmail - Signup successful for user:', data.user.id);
     return data;
   } catch (error: any) {
-    console.error('🔧 signUpWithEmail - Complete error details:', {
-      error,
-      message: error.message,
-      details: error.details,
-      hint: error.hint,
-      code: error.code
-    });
     throw error;
   }
 }

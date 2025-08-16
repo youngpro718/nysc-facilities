@@ -27,6 +27,10 @@ export function SimpleSignupForm({ onToggleForm }: SimpleSignupFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent multiple submissions
+    if (loading) return;
+    
     setLoading(true);
 
     try {
@@ -46,34 +50,24 @@ export function SimpleSignupForm({ onToggleForm }: SimpleSignupFormProps) {
         return;
       }
 
-      console.log('Starting signup process for:', formData.email);
-
       const userData = {
         first_name: formData.firstName.trim(),
         last_name: formData.lastName.trim()
       };
 
-      console.log('Calling signUpWithEmail with data:', userData);
-      const result = await signUpWithEmail(formData.email, formData.password, userData);
-      console.log('Signup result:', result);
+      await signUpWithEmail(formData.email, formData.password, userData);
       
       toast.success("Account created! Please check your email to verify your account.");
       
     } catch (error: any) {
-      console.error("Signup error details:", {
-        error,
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      });
-      
       let errorMessage = "Failed to create account. Please try again.";
       
-      if (error.message?.includes("duplicate key value violates unique constraint")) {
+      if (error.message?.includes("User already registered")) {
         errorMessage = "An account with this email already exists. Please try signing in instead.";
-      } else if (error.message?.includes("Database error")) {
-        errorMessage = "There was a database error. Please try again in a moment.";
+      } else if (error.message?.includes("Invalid email")) {
+        errorMessage = "Please enter a valid email address.";
+      } else if (error.message?.includes("Password")) {
+        errorMessage = "Password must be at least 6 characters long.";
       } else if (error.message) {
         errorMessage = error.message;
       }
