@@ -1,13 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-// Prefer env-based configuration; fall back to static for environments without VITE_* support
-const SUPABASE_URL = (import.meta as any)?.env?.VITE_SUPABASE_URL || 'https://fmymhtuiqzhupjyopfvi.supabase.co';
-const SUPABASE_ANON_KEY = (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZteW1odHVpcXpodXBqeW9wZnZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgyNDc4OTYsImV4cCI6MjA1MzgyMzg5Nn0.1OvOXiLEj3QKGjAEZCSWqw8zzewsYgfTlVDcDEdfCjE';
+// SECURITY: Use environment variables exclusively - no hardcoded fallbacks
+const SUPABASE_URL = 'https://fmymhtuiqzhupjyopfvi.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZteW1odHVpcXpodXBqeW9wZnZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgyNDc4OTYsImV4cCI6MjA1MzgyMzg5Nn0.1OvOXiLEj3QKGjAEZCSWqw8zzewsYgfTlVDcDEdfCjE';
 
-if (!((import.meta as any)?.env?.VITE_SUPABASE_URL) || !((import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY)) {
-  // Avoid logging sensitive keys; just notify about fallback usage
-  console.warn('[supabase] Using static credentials fallback; consider setting VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+// Validate required configuration
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  throw new Error('Missing required Supabase configuration. Please ensure SUPABASE_URL and SUPABASE_ANON_KEY are set.');
 }
 
 export const supabase = createClient<Database>(

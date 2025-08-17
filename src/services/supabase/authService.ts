@@ -98,10 +98,10 @@ export async function fetchUserProfile(userId: string) {
     // If RLS is blocking, try using the secure function
     console.log('🔍 fetchUserProfile - Trying secure function for role check...');
     try {
-      const { data: secureRoleData, error: secureError } = await supabase.rpc('get_current_user_role');
-      console.log('🔍 fetchUserProfile - Secure role response:', { data: secureRoleData, error: secureError });
-      if (!secureError && secureRoleData) {
-        (roleResponse as any).data = { role: secureRoleData };
+      const { data: secureRoleData, error: secureError } = await supabase.rpc('is_current_user_admin');
+      console.log('🔍 fetchUserProfile - Secure admin check response:', { data: secureRoleData, error: secureError });
+      if (!secureError && secureRoleData !== null) {
+        (roleResponse as any).data = { role: secureRoleData ? 'admin' : 'user' };
         (roleResponse as any).error = null;
       }
     } catch (secureRoleError) {

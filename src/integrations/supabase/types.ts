@@ -557,6 +557,7 @@ export type Database = {
           maintenance_start_date: string | null
           maintenance_status: string | null
           notes: string | null
+          operational_status: string | null
           room_id: string
           room_number: string
           spectator_capacity: number | null
@@ -575,6 +576,7 @@ export type Database = {
           maintenance_start_date?: string | null
           maintenance_status?: string | null
           notes?: string | null
+          operational_status?: string | null
           room_id: string
           room_number: string
           spectator_capacity?: number | null
@@ -593,6 +595,7 @@ export type Database = {
           maintenance_start_date?: string | null
           maintenance_status?: string | null
           notes?: string | null
+          operational_status?: string | null
           room_id?: string
           room_number?: string
           spectator_capacity?: number | null
@@ -6316,6 +6319,45 @@ export type Database = {
         }
         Relationships: []
       }
+      security_operations_audit: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          ip_address: unknown | null
+          operation_details: Json | null
+          operation_type: string
+          success: boolean
+          target_resource: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          ip_address?: unknown | null
+          operation_details?: Json | null
+          operation_type: string
+          success: boolean
+          target_resource?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          ip_address?: unknown | null
+          operation_details?: Json | null
+          operation_type?: string
+          success?: boolean
+          target_resource?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       security_rate_limits: {
         Row: {
           attempt_type: string
@@ -7347,7 +7389,22 @@ export type Database = {
           urgency?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "occupant_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "occupants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -8401,7 +8458,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: {
-        Args: { user_id: string }
+        Args: Record<PropertyKey, never> | { user_id: string }
         Returns: boolean
       }
       is_admin_or_authorized: {
@@ -8440,6 +8497,16 @@ export type Database = {
               p_resource_type: string
               p_user_agent?: string
             }
+        Returns: undefined
+      }
+      log_security_operation: {
+        Args: {
+          error_message?: string
+          operation_details?: Json
+          operation_type: string
+          success?: boolean
+          target_resource?: string
+        }
         Returns: undefined
       }
       migrate_spaces_data: {
@@ -8527,6 +8594,10 @@ export type Database = {
           space_id: string
           space_type: string
         }[]
+      }
+      secure_promote_to_admin: {
+        Args: { target_email: string }
+        Returns: Json
       }
       secure_role_assignment: {
         Args: { new_role: string; target_user_id: string }
