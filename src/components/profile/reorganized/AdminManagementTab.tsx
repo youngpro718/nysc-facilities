@@ -5,6 +5,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Users, Shield, UserCheck, Settings, Crown, Info, UserPlus } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { useEnabledModules } from "@/hooks/useEnabledModules";
 import { UnifiedPersonnelDisplay } from "@/components/admin/UnifiedPersonnelDisplay";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,7 +14,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+// import type { CourtRole } from '@/hooks/useRolePermissions';
 
+// Temporary scope: restrict to DB-supported roles until ua-003 expands schema
+// TODO(ua-003): Align with full CourtRole set once DB/user_roles supports it
 type UserRole = 'admin' | 'standard';
 
 interface UserWithRole {
@@ -25,6 +30,70 @@ interface UserWithRole {
   created_at?: string;
   is_approved?: boolean;
   verification_status?: string;
+}
+
+function ModulesManagementSection() {
+  const { enabledModules, updateEnabledModules, resetToDefaults, loading } = useEnabledModules();
+
+  const moduleLabels: Record<keyof typeof enabledModules, string> = {
+    spaces: 'Spaces',
+    issues: 'Issues',
+    occupants: 'Occupants',
+    inventory: 'Inventory',
+    supply_requests: 'Supply Requests',
+    keys: 'Keys',
+    lighting: 'Lighting',
+    maintenance: 'Maintenance',
+    court_operations: 'Court Operations',
+    operations: 'Operations',
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Module Management
+            </CardTitle>
+            <CardDescription>
+              Enable or disable modules visible in your navigation and pages. This affects access for your profile.
+            </CardDescription>
+          </div>
+          <Button variant="outline" onClick={resetToDefaults} disabled={loading}>
+            Reset to Defaults
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="text-center py-8">Loading modules…</div>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {Object.keys(enabledModules).map((key) => {
+              const k = key as keyof typeof enabledModules;
+              return (
+                <div key={k} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <div className="font-medium">{moduleLabels[k]}</div>
+                    <div className="text-xs text-muted-foreground">Module key: {k}</div>
+                  </div>
+                  <Switch
+                    checked={!!enabledModules[k]}
+                    onCheckedChange={(checked) => updateEnabledModules({ [k]: checked })}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        )}
+        <p className="mt-4 text-xs text-muted-foreground">
+          Note: In development, you can set VITE_DISABLE_MODULE_GATES=true to bypass module gates for quick exploration.
+        </p>
+      </CardContent>
+    </Card>
+  );
 }
 
 const roleDefinitions: Record<UserRole, { 
@@ -62,12 +131,28 @@ const roleDefinitions: Record<UserRole, {
 };
 
 export function AdminManagementTab() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedUserId, setSelectedUserId] = useState('');
   const [selectedRole, setSelectedRole] = useState<UserRole>('standard');
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+
+  // Guard: restrict this tab to admin users only
+  if (!isAdmin) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Access restricted</CardTitle>
+            <CardDescription>
+              You do not have permission to view this section.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
 
   // Load all users with their roles
   const { data: usersWithRoles = [], isLoading } = useQuery({
@@ -84,7 +169,8 @@ export function AdminManagementTab() {
         // Build a quick lookup for roles by user_id
         const roleMap = new Map<string, { role?: UserRole; created_at?: string }>();
         userRoles?.forEach((ur) => {
-          roleMap.set(ur.user_id, { role: ur.role as UserRole, created_at: ur.created_at });
+          const roleVal = (ur.role === 'admin' || ur.role === 'standard') ? (ur.role as UserRole) : undefined;
+          roleMap.set(ur.user_id, { role: roleVal, created_at: ur.created_at });
         });
 
         // mutations moved to component scope
@@ -155,6 +241,21 @@ export function AdminManagementTab() {
         .update({ is_approved: true, verification_status: 'verified', access_level: 'read' })
         .eq('id', userId);
       if (error) throw error;
+      // Emit admin notification (non-blocking)
+      try {
+        const { error: emitError } = await (supabase as any).rpc('emit_admin_notification', {
+          p_type: 'user_approved',
+          p_title: 'User Approved',
+          p_message: `User ${userId} was approved`,
+          p_urgency: 'medium',
+          p_related_table: 'profiles',
+          p_related_id: userId,
+          p_metadata: { actor_id: user.id, target_user_id: userId }
+        });
+        if (emitError) console.warn('emit_admin_notification failed (approve):', emitError);
+      } catch (e) {
+        console.warn('emit_admin_notification threw (approve):', e);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
@@ -175,6 +276,21 @@ export function AdminManagementTab() {
         .update({ is_approved: false, verification_status: 'rejected' })
         .eq('id', userId);
       if (error) throw error;
+      // Emit admin notification (non-blocking)
+      try {
+        const { error: emitError } = await (supabase as any).rpc('emit_admin_notification', {
+          p_type: 'user_rejected',
+          p_title: 'User Rejected',
+          p_message: `User ${userId} was rejected`,
+          p_urgency: 'high',
+          p_related_table: 'profiles',
+          p_related_id: userId,
+          p_metadata: { actor_id: user.id, target_user_id: userId }
+        });
+        if (emitError) console.warn('emit_admin_notification failed (reject):', emitError);
+      } catch (e) {
+        console.warn('emit_admin_notification threw (reject):', e);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
@@ -226,6 +342,21 @@ export function AdminManagementTab() {
 
         if (error) throw error;
       }
+      // Emit admin notification (non-blocking)
+      try {
+        const { error: emitError } = await (supabase as any).rpc('emit_admin_notification', {
+          p_type: 'role_assigned',
+          p_title: 'Role Assigned',
+          p_message: `Role ${role} assigned to user ${userId}`,
+          p_urgency: 'medium',
+          p_related_table: 'user_roles',
+          p_related_id: userId,
+          p_metadata: { actor_id: user.id, target_user_id: userId, role }
+        });
+        if (emitError) console.warn('emit_admin_notification failed (assign):', emitError);
+      } catch (e) {
+        console.warn('emit_admin_notification threw (assign):', e);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
@@ -254,6 +385,21 @@ export function AdminManagementTab() {
         .delete()
         .eq('user_id', userId);
       if (error) throw error;
+      // Emit admin notification (non-blocking)
+      try {
+        const { error: emitError } = await (supabase as any).rpc('emit_admin_notification', {
+          p_type: 'role_removed',
+          p_title: 'Role Removed',
+          p_message: `Role removed from user ${userId}`,
+          p_urgency: 'low',
+          p_related_table: 'user_roles',
+          p_related_id: userId,
+          p_metadata: { actor_id: user.id, target_user_id: userId }
+        });
+        if (emitError) console.warn('emit_admin_notification failed (remove):', emitError);
+      } catch (e) {
+        console.warn('emit_admin_notification threw (remove):', e);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
@@ -326,7 +472,7 @@ export function AdminManagementTab() {
       </div>
 
       <Tabs defaultValue="roles" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="roles" className="gap-2">
             <Users className="h-4 w-4" />
             Role Assignments
@@ -338,6 +484,10 @@ export function AdminManagementTab() {
           <TabsTrigger value="permissions" className="gap-2">
             <Settings className="h-4 w-4" />
             Role Definitions
+          </TabsTrigger>
+          <TabsTrigger value="modules" className="gap-2">
+            <Settings className="h-4 w-4" />
+            Modules
           </TabsTrigger>
         </TabsList>
 
@@ -546,6 +696,10 @@ export function AdminManagementTab() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="modules" className="space-y-4">
+          <ModulesManagementSection />
         </TabsContent>
 
         <TabsContent value="personnel" className="space-y-4">

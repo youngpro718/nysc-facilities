@@ -142,7 +142,7 @@ function AppContent() {
           </ProtectedRoute>
         } />
         <Route path="admin/supply-requests" element={
-          <ProtectedRoute requireAdmin>
+          <ProtectedRoute>
             <ModuleProtectedRoute moduleKey="supply_requests" moduleName="Supply Requests">
               <AdminSupplyRequests />
             </ModuleProtectedRoute>

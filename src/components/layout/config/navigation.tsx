@@ -98,7 +98,7 @@ export const secondaryNavigationItems: NavigationItem[] = [
         title: 'Supply Requests',
         href: '/admin/supply-requests',
         icon: Package,
-        adminOnly: true,
+        adminOnly: false,
         moduleKey: 'supply_requests',
       },
       {
@@ -169,6 +169,7 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
     return [
       { title: 'Dashboard', icon: LayoutDashboard },
       { title: 'Supply Room', icon: Package },
+      { title: 'Supply Requests', icon: Package },
       { title: 'Inventory', icon: Package2 },
       { type: "separator" },
       { title: 'Profile', icon: User },
@@ -235,6 +236,7 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
     return [
       '/dashboard', // User Dashboard for supply staff
       '/supply-room',
+      '/admin/supply-requests',
       '/inventory',
       '', // Separator doesn't have a route
       '/profile',

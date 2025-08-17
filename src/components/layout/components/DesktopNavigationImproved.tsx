@@ -19,8 +19,6 @@ export const DesktopNavigationImproved = ({
   const location = useLocation();
   const { isAdmin } = useAuth();
   
-  console.log('DesktopNavigationImproved - navigation items:', navigation);
-  console.log('DesktopNavigationImproved - isAdmin:', isAdmin);
 
   const handleNavigation = (title: string) => {
     const path = getNavigationPath(title, isAdmin);

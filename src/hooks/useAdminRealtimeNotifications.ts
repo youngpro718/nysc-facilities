@@ -67,7 +67,10 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
               label: 'View',
               onClick: () => {
                 // Navigate based on notification type
-                switch (notification.notification_type) {
+                const actionUrl = (notification as any)?.metadata?.action_url as string | undefined;
+                if (actionUrl) {
+                  window.location.href = actionUrl;
+                } else switch (notification.notification_type) {
                   case 'new_key_request':
                     window.location.href = '/admin/key-requests';
                     break;
@@ -79,6 +82,15 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
                     break;
                   case 'new_key_order':
                     window.location.href = '/admin/key-orders';
+                    break;
+                  case 'new_user_pending':
+                    window.location.href = '/admin';
+                    break;
+                  case 'user_approved':
+                  case 'user_rejected':
+                  case 'role_assigned':
+                  case 'role_removed':
+                    window.location.href = '/admin';
                     break;
                   default:
                     window.location.href = '/admin';
@@ -110,6 +122,26 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
               break;
             case 'issue_status_change':
               icon = '🔄';
+              toastFn = toast.info;
+              break;
+            case 'new_user_pending':
+              icon = '🆕';
+              toastFn = toast.info;
+              break;
+            case 'user_approved':
+              icon = '✅';
+              toastFn = toast.success;
+              break;
+            case 'user_rejected':
+              icon = '🚫';
+              toastFn = toast.warning;
+              break;
+            case 'role_assigned':
+              icon = '👤';
+              toastFn = toast.info;
+              break;
+            case 'role_removed':
+              icon = '➖';
               toastFn = toast.info;
               break;
           }

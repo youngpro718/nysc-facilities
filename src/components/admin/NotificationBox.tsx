@@ -19,6 +19,11 @@ const notificationIcons = {
   supply_request: Package,
   issue: AlertTriangle,
   maintenance: Wrench,
+  user_approved: AlertCircle,
+  user_rejected: AlertCircle,
+  role_assigned: AlertCircle,
+  role_removed: AlertCircle,
+  new_user_pending: AlertCircle,
 };
 
 export const NotificationBox = () => {
@@ -43,6 +48,12 @@ export const NotificationBox = () => {
     // Mark notification as read
     markAsReadMutation.mutate(notification.id);
     
+    // Prefer deep link if provided
+    const actionUrl = (notification as any)?.metadata?.action_url as string | undefined;
+    if (actionUrl) {
+      navigate(actionUrl);
+      return;
+    }
     // Navigate based on notification type
     switch (notification.notification_type) {
       case 'new_key_request':
@@ -57,6 +68,15 @@ export const NotificationBox = () => {
         break;
       case 'new_key_order':
         navigate('/admin/key-orders');
+        break;
+      case 'new_user_pending':
+        navigate('/admin');
+        break;
+      case 'user_approved':
+      case 'user_rejected':
+      case 'role_assigned':
+      case 'role_removed':
+        navigate('/admin');
         break;
       default:
         navigate('/admin');
