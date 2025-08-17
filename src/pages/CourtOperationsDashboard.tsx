@@ -4,11 +4,14 @@ import { InteractiveOperationsDashboard } from "@/components/court/InteractiveOp
 import { AssignmentManagementPanel } from "@/components/court/AssignmentManagementPanel";
 import { SetTemporaryLocationDialog } from "@/components/court/SetTemporaryLocationDialog";
 import { MapPin, Users } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 
 export const CourtOperationsDashboard = () => {
 
   const [tempLocationOpen, setTempLocationOpen] = useState(false);
   const [selectedCourtRoom, setSelectedCourtRoom] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = searchParams.get('tab') || 'operations';
 
   const handleSetTemporaryLocation = (courtroomId: string) => {
     setSelectedCourtRoom(courtroomId);
@@ -27,7 +30,16 @@ export const CourtOperationsDashboard = () => {
 
       </div>
 
-      <Tabs defaultValue="operations" className="w-full">
+      <Tabs
+        value={tab}
+        onValueChange={(val) =>
+          setSearchParams({
+            tab: val,
+            room: searchParams.get('room') || undefined,
+          })
+        }
+        className="w-full"
+      >
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="operations" className="flex items-center gap-2">
             <MapPin className="h-4 w-4" />

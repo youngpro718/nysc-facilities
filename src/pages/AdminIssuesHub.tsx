@@ -16,16 +16,20 @@ import { Plus, BarChart3, RefreshCw, Lightbulb } from "lucide-react";
 import { IssueDialog } from "@/components/issues/IssueDialog";
 
 export type GroupingMode = 'priority' | 'room' | 'date' | 'reporter' | 'status';
-export type ViewMode = 'cards' | 'table' | 'timeline';
+export type ViewMode = 'cards' | 'table' | 'timeline' | 'board';
+export type StatusFilter = 'all' | 'open' | 'in_progress' | 'resolved';
+export type PriorityFilter = 'all' | 'high' | 'medium' | 'low';
 
 const AdminIssuesHub = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showLightingIssueDialog, setShowLightingIssueDialog] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [groupingMode, setGroupingMode] = useState<GroupingMode>('priority');
-  const [viewMode, setViewMode] = useState<ViewMode>('cards');
+  const [viewMode, setViewMode] = useState<ViewMode>('board');
   const [selectedIssues, setSelectedIssues] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all');
   
   const {
     allIssues,
@@ -157,6 +161,10 @@ const AdminIssuesHub = () => {
             onSearchChange={setSearchQuery}
             totalIssues={allIssues.length}
             selectedCount={selectedIssues.length}
+            statusFilter={statusFilter}
+            priorityFilter={priorityFilter}
+            onStatusFilterChange={setStatusFilter}
+            onPriorityFilterChange={setPriorityFilter}
           />
 
           {/* Bulk Management Tools */}
@@ -178,6 +186,8 @@ const AdminIssuesHub = () => {
             onSelectionChange={setSelectedIssues}
             onIssueUpdate={handleIssueUpdate}
             isLoading={isLoading}
+            statusFilter={statusFilter}
+            priorityFilter={priorityFilter}
           />
 
           {/* Create Issue Dialog */}

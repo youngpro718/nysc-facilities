@@ -12,13 +12,38 @@ export function useRoomAssignment(onSuccess: () => void) {
     assignmentType: string,
     isPrimaryAssignment: boolean
   ) => {
+    const uuidRe =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!selectedRoom) {
       toast.error("Please select a room to assign");
+      return;
+    }
+    if (!uuidRe.test(selectedRoom)) {
+      toast.error("Invalid room id format");
+      return;
+    }
+    if (!selectedOccupants?.length) {
+      toast.error("No occupants selected");
+      return;
+    }
+    const invalidOcc = selectedOccupants.filter((id) => !uuidRe.test(id));
+    if (invalidOcc.length) {
+      toast.error(`Invalid occupant id(s): ${invalidOcc.join(", ")}`);
       return;
     }
 
     try {
       setIsAssigning(true);
+
+      // Require a real Supabase session (RLS needs authenticated role)
+      const { data: authData, error: authErr } = await supabase.auth.getSession();
+      if (authErr) {
+        console.error('Auth session retrieval error:', authErr);
+      }
+      if (!authData?.session) {
+        toast.error("You must be signed in to assign rooms.");
+        return false;
+      }
 
       const assignments = selectedOccupants.map((occupantId) => ({
         occupant_id: occupantId,
@@ -59,7 +84,16 @@ export function useRoomAssignment(onSuccess: () => void) {
         .select();
 
       if (assignmentError) {
-        console.error('Room assignment error:', assignmentError);
+        // Provide rich diagnostics for debugging
+        console.error('Room assignment error:', assignmentError, {
+          assignments,
+          context: {
+            selectedRoom,
+            selectedOccupants,
+            assignmentType,
+            isPrimaryAssignment,
+          },
+        });
         throw assignmentError;
       }
 
@@ -69,8 +103,14 @@ export function useRoomAssignment(onSuccess: () => void) {
       onSuccess();
       return true;
     } catch (error: any) {
+      // Compose detailed error message from Supabase error shape when available
+      const code = error?.code ? ` [${error.code}]` : '';
+      const details = error?.details ? `\nDetails: ${error.details}` : '';
+      const hint = error?.hint ? `\nHint: ${error.hint}` : '';
+      const msg = error?.message || "Failed to assign rooms";
+      const composed = `${msg}${code}${details}${hint}`;
       console.error('Failed to assign rooms:', error);
-      toast.error(error.message || "Failed to assign rooms");
+      toast.error(composed);
       return false;
     } finally {
       setIsAssigning(false);

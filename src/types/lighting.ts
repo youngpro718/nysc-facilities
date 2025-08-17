@@ -79,6 +79,9 @@ export interface LightingFixture {
   maintenance_notes?: string | null;
   inspection_history?: InspectionRecord[];
   spatial_assignment?: SpatialAssignment;
+  // Computed client-side metrics
+  outage_minutes?: number | null;      // if currently out (reported_out_date && !replaced_date)
+  repair_minutes?: number | null;      // if repaired (reported_out_date && replaced_date)
 }
 
 export interface RoomLightingConfig {

@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
-import { Building2, ArrowDownToLine } from "lucide-react";
+import { Building2, Layers } from "lucide-react";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -127,7 +127,7 @@ export function BuildingFloorNav({
 
         <div className="flex-1 space-y-2">
           <div className="flex items-center gap-2">
-            <ArrowDownToLine className="h-4 w-4 text-muted-foreground" />
+            <Layers className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-medium">Floor</span>
           </div>
           <Popover 
@@ -141,6 +141,8 @@ export function BuildingFloorNav({
                 aria-expanded={isFloorOpen}
                 className="w-[200px] justify-between"
                 disabled={!selectedBuilding || selectedBuilding === 'all' || isFloorsLoading}
+                aria-disabled={!selectedBuilding || selectedBuilding === 'all' || isFloorsLoading}
+                aria-busy={isFloorsLoading}
               >
                 <span className={cn("truncate", !selectedFloor && "text-muted-foreground")}>
                   {selectedFloor === "all" 
@@ -188,6 +190,13 @@ export function BuildingFloorNav({
               </Command>
             </PopoverContent>
           </Popover>
+          {/* Helper caption for clarity */}
+          {(!selectedBuilding || selectedBuilding === 'all') && (
+            <p className="text-xs text-muted-foreground">Select a building to enable floor selection.</p>
+          )}
+          {isFloorsLoading && selectedBuilding && selectedBuilding !== 'all' && (
+            <p className="text-xs text-muted-foreground">Loading floors…</p>
+          )}
         </div>
       </div>
     </Card>

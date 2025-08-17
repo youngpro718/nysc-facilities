@@ -41,7 +41,7 @@ export function VerifiedUsersSection({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <div className="flex items-center gap-2 text-sm text-slate-700">
         <Users className="h-4 w-4" />
         {users.length} verified user{users.length !== 1 ? 's' : ''} with standard access
       </div>

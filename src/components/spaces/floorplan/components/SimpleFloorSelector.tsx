@@ -56,7 +56,7 @@ export function SimpleFloorSelector({
 
   // Group floors by building
   const groupedFloors = floors?.reduce<GroupedFloors>((acc, floor) => {
-    const buildingName = floor.building?.name || "Uncategorized";
+    const buildingName = floor.building?.name ?? "";
     if (!acc[buildingName]) {
       acc[buildingName] = [];
     }
@@ -87,7 +87,9 @@ export function SimpleFloorSelector({
           <div key={buildingName}>
             {index > 0 && <SelectSeparator />}
             <SelectGroup>
-              <SelectLabel className="font-semibold">{buildingName}</SelectLabel>
+              {buildingName && (
+                <SelectLabel className="font-semibold">{buildingName}</SelectLabel>
+              )}
               {buildingFloors.map((floor) => (
                 <SelectItem key={floor.id} value={floor.id}>
                   {floor.name}

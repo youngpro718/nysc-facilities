@@ -6,6 +6,8 @@
 
 import { AdvancedAnalyticsService } from '@/services/analytics/advancedAnalyticsService';
 import { OptimizedSpacesService } from '@/services/optimized/spacesService';
+import { fetchLightingFixtures } from '@/services/supabase/lightingService';
+import type { LightingFixture, LightStatus } from '@/types/lighting';
 
 // Report interfaces
 export interface ReportConfig {
@@ -35,6 +37,15 @@ export interface GeneratedReport {
   size_bytes: number;
   download_url?: string;
   data?: any;
+}
+
+export interface LightingAuditorReportOptions {
+  format: 'pdf' | 'csv' | 'json';
+  buildingId?: string;
+  floorId?: string;
+  status?: LightStatus | 'out' | 'all';
+  selectedFixtureIds?: string[];
+  fixtures?: LightingFixture[]; // optionally pass pre-filtered fixtures (e.g., current view)
 }
 
 /**
@@ -110,6 +121,127 @@ export class ReportGenerationService {
     } catch (error) {
       console.error('Error generating facility report:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Generate Lighting Auditor Report
+   * Produces a comprehensive export of lighting fixtures suitable for auditors.
+   * Supports CSV, JSON, and a simple PDF (HTML) format.
+   */
+  static async generateLightingAuditorReport(options: LightingAuditorReportOptions): Promise<GeneratedReport> {
+    const reportId = `lighting_auditor_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const title = 'Lighting Auditor Export';
+
+    // 1) Get fixtures: prefer provided list (e.g., current filtered fixtures in UI); else fetch all
+    let fixtures: LightingFixture[] = Array.isArray(options.fixtures)
+      ? options.fixtures
+      : await fetchLightingFixtures();
+
+    // 2) Apply optional filters
+    if (options.selectedFixtureIds && options.selectedFixtureIds.length > 0) {
+      const set = new Set(options.selectedFixtureIds);
+      fixtures = fixtures.filter(f => set.has(f.id));
+    }
+
+    if (options.status && options.status !== 'all') {
+      fixtures = fixtures.filter(f => options.status === 'out' ? f.status !== 'functional' : f.status === options.status);
+    }
+
+    if (options.buildingId) {
+      // building_id may be undefined in some fetch paths; also attempt building_name match if provided id is actually a name
+      fixtures = fixtures.filter(f => (f as any).building_id === options.buildingId || f.building_name === options.buildingId);
+    }
+
+    if (options.floorId) {
+      fixtures = fixtures.filter(f => (f as any).floor_id === options.floorId || f.floor_name === options.floorId);
+    }
+
+    // 3) Prepare dataset
+    const headers = [
+      'Fixture ID', 'Name', 'Type', 'Technology', 'Status',
+      'Requires Electrician', 'Ballast Issue', 'Bulb Count', 'Position',
+      'Space Type', 'Space Name', 'Room Number', 'Zone',
+      'Building', 'Floor',
+      'Reported Out Date', 'Replaced Date', 'Outage Minutes', 'Repair Minutes',
+      'Notes', 'Created At', 'Updated At'
+    ];
+
+    const rows = fixtures.map(f => ([
+      f.id,
+      f.name ?? '',
+      f.type ?? '',
+      f.technology ?? '',
+      f.status ?? '',
+      String(f.requires_electrician ?? false),
+      String(f.ballast_issue ?? false),
+      String(f.bulb_count ?? ''),
+      f.position ?? '',
+      f.space_type ?? '',
+      f.space_name ?? '',
+      f.room_number ?? '',
+      (f as any).zone_name ?? '',
+      f.building_name ?? '',
+      f.floor_name ?? '',
+      f.reported_out_date ?? '',
+      f.replaced_date ?? '',
+      f.outage_minutes != null ? String(f.outage_minutes) : '',
+      f.repair_minutes != null ? String(f.repair_minutes) : '',
+      f.notes ?? '',
+      f.created_at ?? '',
+      f.updated_at ?? ''
+    ]));
+
+    const generatedAt = new Date().toISOString();
+
+    switch (options.format) {
+      case 'csv': {
+        const csvContent = [
+          headers.join(','),
+          ...rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+        ].join('\n');
+        return {
+          id: reportId,
+          title,
+          generated_at: generatedAt,
+          format: 'csv',
+          size_bytes: csvContent.length,
+          data: csvContent,
+        };
+      }
+      case 'json': {
+        const json = JSON.stringify({
+          metadata: {
+            id: reportId,
+            title,
+            generated_at: generatedAt,
+            total_fixtures: fixtures.length,
+          },
+          fixtures,
+        }, null, 2);
+        return {
+          id: reportId,
+          title,
+          generated_at: generatedAt,
+          format: 'json',
+          size_bytes: json.length,
+          data: json,
+        };
+      }
+      case 'pdf': {
+        // Simple HTML representation suitable for printing/exporting to PDF client-side
+        const html = this.generateLightingPDFContent({ title, generatedAt, headers, rows, total: fixtures.length });
+        return {
+          id: reportId,
+          title,
+          generated_at: generatedAt,
+          format: 'pdf',
+          size_bytes: html.length * 2,
+          data: html,
+        };
+      }
+      default:
+        throw new Error(`Unsupported lighting report format: ${options.format}`);
     }
   }
 
@@ -429,6 +561,43 @@ export class ReportGenerationService {
     </div>
 </body>
 </html>`;
+  }
+
+  /**
+   * Generate simple HTML for Lighting Auditor report table
+   */
+  private static generateLightingPDFContent(args: { title: string; generatedAt: string; headers: string[]; rows: string[][]; total: number }): string {
+    const { title, generatedAt, headers, rows, total } = args;
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>${title}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 32px; color: #111; }
+    h1 { margin: 0 0 8px; }
+    .meta { color: #666; font-size: 12px; margin-bottom: 16px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; vertical-align: top; }
+    th { background: #f5f5f5; position: sticky; top: 0; }
+    .summary { margin: 12px 0 16px; font-weight: bold; }
+  </style>
+  </head>
+  <body>
+    <h1>${title}</h1>
+    <div class="meta">Generated: ${new Date(generatedAt).toLocaleString()}</div>
+    <div class="summary">Total fixtures: ${total}</div>
+    <table>
+      <thead>
+        <tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
+      </thead>
+      <tbody>
+        ${rows.map(r => `<tr>${r.map(c => `<td>${String(c ?? '')}</td>`).join('')}</tr>`).join('')}
+      </tbody>
+    </table>
+  </body>
+  </html>`;
   }
 
   /**

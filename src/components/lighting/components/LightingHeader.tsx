@@ -10,6 +10,8 @@ import {
 import { RefreshCw, CheckSquare, XSquare, Download, Layers } from "lucide-react";
 import { LightingFixture } from "@/types/lighting";
 import { AssignZoneDialog } from "./AssignZoneDialog";
+import { useLightingAuditorExport } from "@/hooks/reports/useReporting";
+import type { LightingAuditorReportOptions } from "@/services/reports/reportGenerationService";
 
 export interface LightingHeaderProps {
   selectedFixtures: string[];
@@ -18,6 +20,10 @@ export interface LightingHeaderProps {
   onBulkStatusUpdate?: (status: LightingFixture['status']) => void;
   onBulkDelete: () => void;
   onFixtureCreated: () => void;
+  showTitle?: boolean;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
+  lastUpdated?: Date | null;
 }
 
 export const LightingHeader = ({
@@ -26,31 +32,74 @@ export const LightingHeader = ({
   onSelectAll,
   onBulkStatusUpdate,
   onBulkDelete,
-  onFixtureCreated
+  onFixtureCreated,
+  showTitle = true,
+  onRefresh,
+  isRefreshing = false,
+  lastUpdated = null,
 }: LightingHeaderProps) => {
-  const exportSelectedFixtures = () => {
-    if (!fixtures) return;
-    
-    const selectedData = fixtures.filter(f => selectedFixtures.includes(f.id));
-    const csvContent = "data:text/csv;charset=utf-8," + 
-      "Name,Type,Status,Zone,Building,Floor,Room Number\n" +
-      selectedData.map(f => 
-        `"${f.name}","${f.type}","${f.status}","${f.zone_name || 'Unassigned'}","${f.building_name || ''}","${f.floor_name || ''}","${f.room_number || ''}"`
-      ).join("\n");
+  const { exportAndDownload, isExporting } = useLightingAuditorExport();
+  const formatUpdated = (d: Date | null) => {
+    if (!d) return "";
+    const diff = Math.max(0, Math.floor((Date.now() - d.getTime()) / 1000));
+    if (diff < 5) return "just now";
+    if (diff < 60) return `${diff}s ago`;
+    const m = Math.floor(diff / 60);
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    return `${h}h ago`;
+  };
 
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "selected_fixtures.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleExport = async (format: 'csv' | 'pdf' | 'json', scope: 'filtered' | 'selected') => {
+    if (!fixtures || fixtures.length === 0) return;
+    const options: LightingAuditorReportOptions = {
+      format,
+      fixtures,
+      selectedFixtureIds: scope === 'selected' ? selectedFixtures : undefined,
+    };
+    await exportAndDownload(options);
   };
 
   return (
     <div className="flex justify-between items-center mb-6">
-      <h1 className="text-2xl font-bold">Lighting Management</h1>
+      {showTitle && (
+        <h1 className="text-2xl font-bold">Lighting Management</h1>
+      )}
       <div className="flex items-center gap-2">
+        {onRefresh && (
+          <>
+            <Button variant="ghost" size="sm" onClick={onRefresh} disabled={isRefreshing} className="gap-2">
+              <RefreshCw className={`${isRefreshing ? 'animate-spin ' : ''}h-4 w-4`} />
+              Refresh
+            </Button>
+            <span className="text-xs text-muted-foreground hidden sm:inline">
+              Updated {formatUpdated(lastUpdated)}
+            </span>
+          </>
+        )}
+        {/* Export filtered fixtures */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" disabled={!fixtures || fixtures.length === 0 || isExporting} className="flex items-center gap-2">
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => handleExport('csv', 'filtered')} disabled={!fixtures || fixtures.length === 0}>
+              <Download className="h-4 w-4 mr-2" />
+              Export Filtered as CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleExport('pdf', 'filtered')} disabled={!fixtures || fixtures.length === 0}>
+              <Download className="h-4 w-4 mr-2" />
+              Export Filtered as PDF
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleExport('json', 'filtered')} disabled={!fixtures || fixtures.length === 0}>
+              <Download className="h-4 w-4 mr-2" />
+              Export Filtered as JSON
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         {selectedFixtures.length > 0 && (
           <>
             <Button
@@ -96,9 +145,18 @@ export const LightingHeader = ({
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Delete Selected
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={exportSelectedFixtures}>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => handleExport('csv', 'selected')}>
                   <Download className="h-4 w-4 mr-2" />
-                  Export Selected
+                  Export Selected as CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport('pdf', 'selected')}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export Selected as PDF
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport('json', 'selected')}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export Selected as JSON
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -112,3 +170,4 @@ export const LightingHeader = ({
     </div>
   );
 };
+

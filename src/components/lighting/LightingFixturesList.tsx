@@ -43,6 +43,8 @@ export const LightingFixturesList = ({ selectedBuilding, selectedFloor, statusFi
   const handleDelete = hook.handleDelete;
   const handleBulkDelete = hook.handleBulkDelete;
   const handleBulkStatusUpdate = hook.handleBulkStatusUpdate;
+  const isRefreshing = hook.isFetching;
+  const lastUpdated = hook.lastUpdated;
 
   // Apply combined filters: external props + toolbar
   const filteredFixtures = useMemo(() => {
@@ -121,6 +123,13 @@ export const LightingFixturesList = ({ selectedBuilding, selectedFloor, statusFi
     }
   };
 
+  const handleHeaderBulkStatusUpdate = async (status: any) => {
+    if (selectedFixtures.length > 0) {
+      await handleBulkStatusUpdate(selectedFixtures, status);
+      setSelectedFixtures([]);
+    }
+  };
+
   // Convert fixtures to mobile format
   const mobileFixtures = filteredFixtures.map(fixture => ({
     id: fixture.id,
@@ -170,14 +179,21 @@ export const LightingFixturesList = ({ selectedBuilding, selectedFloor, statusFi
         onSelectAll={handleSelectAll}
         onBulkDelete={handleBulkDeleteAction}
         onFixtureCreated={refetch}
+        onBulkStatusUpdate={handleHeaderBulkStatusUpdate}
+        onRefresh={refetch}
+        isRefreshing={isRefreshing}
+        lastUpdated={lastUpdated}
+        showTitle={false}
       />
 
       {/* Filters toolbar */}
-      <LightingFiltersToolbar
-        fixtures={fixtures || []}
-        value={filters}
-        onChange={setFilters}
-      />
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b py-2 -mx-6 px-6 mb-4">
+        <LightingFiltersToolbar
+          fixtures={fixtures || []}
+          value={filters}
+          onChange={setFilters}
+        />
+      </div>
 
       {/* View mode toggle */}
       <div className="mb-6 flex items-center justify-between">
@@ -273,3 +289,4 @@ export const LightingFixturesList = ({ selectedBuilding, selectedFloor, statusFi
 ;
 
 export default LightingFixturesList;
+

@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { 
@@ -23,6 +24,7 @@ import { KeyOrder } from "@/components/keys/types/OrderTypes";
 interface KeyOrderCardProps {
   order: KeyOrder;
   onStatusUpdate: (orderId: string, newStatus: string, notes?: string) => void;
+  onReceiveKeys: (orderId: string, quantity: number) => Promise<void> | void;
 }
 
 const statusConfig = {
@@ -35,6 +37,11 @@ const statusConfig = {
     label: "In Progress", 
     color: "bg-blue-100 text-blue-800 border-blue-200",
     icon: Package 
+  },
+  received: {
+    label: "Received",
+    color: "bg-purple-100 text-purple-800 border-purple-200",
+    icon: Package
   },
   ready_for_pickup: { 
     label: "Ready for Pickup", 
@@ -64,27 +71,39 @@ const getNextStatus = (currentStatus: string): string | null => {
   const statusFlow = {
     pending_fulfillment: 'in_progress',
     in_progress: 'ready_for_pickup',
+    received: 'ready_for_pickup',
     ready_for_pickup: 'completed',
   };
   return statusFlow[currentStatus as keyof typeof statusFlow] || null;
 };
 
-export const AdminKeyOrderCard = ({ order, onStatusUpdate }: KeyOrderCardProps) => {
+export const AdminKeyOrderCard = ({ order, onStatusUpdate, onReceiveKeys }: KeyOrderCardProps) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateNotes, setUpdateNotes] = useState("");
   const [showDialog, setShowDialog] = useState(false);
+  const [showReceiveDialog, setShowReceiveDialog] = useState(false);
+  const [receiveQty, setReceiveQty] = useState(order.quantity);
 
   const statusInfo = statusConfig[order.status as keyof typeof statusConfig] || statusConfig.pending_fulfillment;
   const priorityInfo = priorityConfig[order.priority as keyof typeof priorityConfig] || priorityConfig.medium;
   const StatusIcon = statusInfo.icon;
   
-  const userName = order.first_name && order.last_name
-    ? `${order.first_name} ${order.last_name}`.trim()
-    : order.email || 'Unknown User';
+  const profile = (order as any)?.key_requests?.profiles;
+  const userName = (profile?.first_name || '') || (profile?.last_name || '')
+    ? `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim()
+    : profile?.email || 'Unknown User';
 
-  const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
+  const userInitials = userName
+    .split(' ')
+    .filter(Boolean)
+    .map(n => n[0])
+    .join('')
+    .toUpperCase() || 'U';
+
+  const orderedDateStr = (order as any).ordered_at || (order as any).created_at;
 
   const nextStatus = getNextStatus(order.status);
+  const canReceive = order.status === 'pending_fulfillment' || order.status === 'in_progress';
 
   const handleStatusUpdate = async () => {
     if (!nextStatus) return;
@@ -94,6 +113,17 @@ export const AdminKeyOrderCard = ({ order, onStatusUpdate }: KeyOrderCardProps) 
       await onStatusUpdate(order.id, nextStatus, updateNotes || undefined);
       setUpdateNotes("");
       setShowDialog(false);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleReceive = async () => {
+    setIsUpdating(true);
+    try {
+      const qty = Math.max(1, Math.min(receiveQty || 1, order.quantity));
+      await onReceiveKeys(order.id, qty);
+      setShowReceiveDialog(false);
     } finally {
       setIsUpdating(false);
     }
@@ -122,7 +152,7 @@ export const AdminKeyOrderCard = ({ order, onStatusUpdate }: KeyOrderCardProps) 
             <div>
               <CardTitle className="text-lg">{userName}</CardTitle>
               <p className="text-sm text-muted-foreground">
-                {(order as any).user_profiles?.email || 'No email'}
+                {profile?.email || 'No email'}
               </p>
             </div>
           </div>
@@ -147,7 +177,9 @@ export const AdminKeyOrderCard = ({ order, onStatusUpdate }: KeyOrderCardProps) 
           </div>
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span>Ordered: {format(new Date(order.created_at), 'MMM dd, yyyy')}</span>
+            <span>
+              Ordered: {orderedDateStr ? format(new Date(orderedDateStr), 'MMM dd, yyyy') : 'N/A'}
+            </span>
           </div>
           {order.request_type && (
             <div className="flex items-center gap-2">
@@ -179,53 +211,97 @@ export const AdminKeyOrderCard = ({ order, onStatusUpdate }: KeyOrderCardProps) 
             Order #{order.id.slice(0, 8)}
           </div>
           
-          {nextStatus && order.status !== 'completed' && order.status !== 'cancelled' && (
-            <Dialog open={showDialog} onOpenChange={setShowDialog}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="gap-2">
-                  Advance to {statusConfig[nextStatus as keyof typeof statusConfig]?.label}
-                  <ArrowRight className="h-3 w-3" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Update Order Status</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <p>
-                    Change status from <Badge className={statusInfo.color}>{statusInfo.label}</Badge> to{' '}
-                    <Badge className={statusConfig[nextStatus as keyof typeof statusConfig]?.color}>
-                      {statusConfig[nextStatus as keyof typeof statusConfig]?.label}
-                    </Badge>
-                  </p>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Notes (optional)</label>
-                    <Textarea
-                      placeholder="Add any notes about this status update..."
-                      value={updateNotes}
-                      onChange={(e) => setUpdateNotes(e.target.value)}
-                      rows={3}
-                    />
+          <div className="flex items-center gap-2">
+            {canReceive && (
+              <Dialog open={showReceiveDialog} onOpenChange={setShowReceiveDialog}>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="outline" className="gap-2">
+                    Receive
+                    <Package className="h-3 w-3" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Receive Keys</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">Enter the quantity received for this order.</p>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Quantity</label>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={order.quantity}
+                        value={receiveQty}
+                        onChange={(e) => setReceiveQty(Number(e.target.value))}
+                      />
+                      <p className="text-xs text-muted-foreground">Max: {order.quantity}</p>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        variant="outline"
+                        onClick={() => setShowReceiveDialog(false)}
+                        disabled={isUpdating}
+                      >
+                        Cancel
+                      </Button>
+                      <Button onClick={handleReceive} disabled={isUpdating}>
+                        {isUpdating ? 'Receiving...' : 'Confirm'}
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex justify-end gap-2">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setShowDialog(false)}
-                      disabled={isUpdating}
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={handleStatusUpdate}
-                      disabled={isUpdating}
-                    >
-                      {isUpdating ? 'Updating...' : 'Update Status'}
-                    </Button>
+                </DialogContent>
+              </Dialog>
+            )}
+
+            {nextStatus && order.status !== 'completed' && order.status !== 'cancelled' && (
+              <Dialog open={showDialog} onOpenChange={setShowDialog}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="gap-2">
+                    Advance to {statusConfig[nextStatus as keyof typeof statusConfig]?.label}
+                    <ArrowRight className="h-3 w-3" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Update Order Status</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <p>
+                      Change status from <Badge className={statusInfo.color}>{statusInfo.label}</Badge> to{' '}
+                      <Badge className={statusConfig[nextStatus as keyof typeof statusConfig]?.color}>
+                        {statusConfig[nextStatus as keyof typeof statusConfig]?.label}
+                      </Badge>
+                    </p>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Notes (optional)</label>
+                      <Textarea
+                        placeholder="Add any notes about this status update..."
+                        value={updateNotes}
+                        onChange={(e) => setUpdateNotes(e.target.value)}
+                        rows={3}
+                      />
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setShowDialog(false)}
+                        disabled={isUpdating}
+                      >
+                        Cancel
+                      </Button>
+                      <Button 
+                        onClick={handleStatusUpdate}
+                        disabled={isUpdating}
+                      >
+                        {isUpdating ? 'Updating...' : 'Update Status'}
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

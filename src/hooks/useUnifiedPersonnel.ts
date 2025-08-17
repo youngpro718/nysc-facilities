@@ -189,6 +189,14 @@ export const useUnifiedPersonnel = () => {
     return personnel.find(p => p.id === id || p.unified_id === id);
   };
 
+  // Get people without an email (useful for selecting court personnel who need accounts)
+  const getPersonnelWithoutEmail = (
+    type: 'all' | 'court_personnel' | 'occupant' = 'all'
+  ) => {
+    const list = type === 'all' ? personnel : personnel.filter(p => p.personnel_type === type);
+    return list.filter(p => !p.email);
+  };
+
   return {
     personnel,
     stats,
@@ -199,10 +207,16 @@ export const useUnifiedPersonnel = () => {
     getPersonnelByType,
     searchPersonnel,
     getPersonnelById,
+    getPersonnelWithoutEmail,
     // Convenience getters
     occupants: personnel.filter(p => p.personnel_type === 'occupant'),
     courtPersonnel: personnel.filter(p => p.personnel_type === 'court_personnel'),
-    activePersonnel: personnel.filter(p => p.status === 'active')
+    activePersonnel: personnel.filter(p => p.status === 'active'),
+    // Convenience lists for UI
+    personnelWithoutEmail: personnel.filter(p => !p.email),
+    courtPersonnelWithoutEmail: personnel.filter(
+      p => p.personnel_type === 'court_personnel' && !p.email
+    ),
   };
 };
 

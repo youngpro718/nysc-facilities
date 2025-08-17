@@ -3,6 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Lock, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { 
   Building, 
   Users, 
@@ -91,18 +98,33 @@ const features = [
 
 export default function FeaturesPreview() {
   const navigate = useNavigate();
+  const { profile } = useAuth();
+  const isPending = profile?.verification_status === 'pending';
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState<typeof features[0] | null>(null);
+
+  const openPreview = (feature: typeof features[0]) => {
+    setSelected(feature);
+    setOpen(true);
+  };
 
   const handleFeatureClick = (feature: typeof features[0]) => {
     if (feature.status === "available") {
-      // Navigate to actual feature
+      // Pending users see in-page demo instead of navigating
+      if (isPending) {
+        openPreview(feature);
+        return;
+      }
+
+      // Navigate to actual feature for verified users
       if (feature.title === "Issue Reporting") {
-        navigate("/issues");
+        navigate("/my-issues");
       } else if (feature.title === "System Settings") {
         navigate("/settings");
       }
     } else if (feature.status === "preview") {
-      // Show preview/demo
-      // Could implement feature demos here
+      // Always show preview/demo in-page
+      openPreview(feature);
     }
     // Locked features do nothing
   };
@@ -223,6 +245,83 @@ export default function FeaturesPreview() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Preview Modal */}
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{selected?.title} Preview</DialogTitle>
+              <DialogDescription>
+                {selected?.status === 'available' ? 'Read-only demo while your account is pending verification.' : 'This is a limited preview of the feature.'}
+              </DialogDescription>
+            </DialogHeader>
+
+            {selected?.title === 'Issue Reporting' && (
+              <div className="space-y-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="issue-title">Issue Title</Label>
+                  <Input id="issue-title" placeholder="Leaky faucet in Room 204" disabled />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="issue-desc">Description</Label>
+                  <Textarea id="issue-desc" placeholder="Describe the problem..." rows={4} disabled />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Recent Issues (sample)</Label>
+                  <div className="rounded-md border bg-background">
+                    <div className="p-3 border-b text-sm flex items-center justify-between">
+                      <span>Light flickering - Courtroom 3</span>
+                      <Badge variant="outline">Open</Badge>
+                    </div>
+                    <div className="p-3 border-b text-sm flex items-center justify-between">
+                      <span>HVAC not cooling - Floor 5</span>
+                      <Badge variant="outline">In Progress</Badge>
+                    </div>
+                    <div className="p-3 text-sm flex items-center justify-between">
+                      <span>Door handle loose - Room 118</span>
+                      <Badge variant="outline">Resolved</Badge>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-xs text-muted-foreground">This is a demo. Submission is disabled until verification.</div>
+              </div>
+            )}
+
+            {selected?.title === 'System Settings' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">Email Notifications</div>
+                    <div className="text-sm text-muted-foreground">Receive updates about requests and issues</div>
+                  </div>
+                  <Switch disabled />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">Dark Mode</div>
+                    <div className="text-sm text-muted-foreground">Personalize your theme</div>
+                  </div>
+                  <Switch disabled />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">Two-Factor Authentication</div>
+                    <div className="text-sm text-muted-foreground">Enhance your account security</div>
+                  </div>
+                  <Switch disabled />
+                </div>
+                <div className="text-xs text-muted-foreground">This is a demo. Changes are disabled until verification.</div>
+              </div>
+            )}
+
+            {selected && selected.title !== 'Issue Reporting' && selected.title !== 'System Settings' && (
+              <div className="space-y-3 text-sm text-muted-foreground">
+                <p>{selected.description}</p>
+                <p>Interactive preview coming soon.</p>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

@@ -1,12 +1,14 @@
-
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+// Removed Select import: using a checkbox instead for admin request
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, UserPlus } from "lucide-react";
 import { useSecureAuth } from "@/hooks/security/useSecureAuth";
 import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface SimpleSignupFormProps {
   onToggleForm: () => void;
@@ -15,11 +17,14 @@ interface SimpleSignupFormProps {
 
 export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormProps) {
   const { secureSignUp, isLoading } = useSecureAuth();
+  const navigate = useNavigate();
+  // Removed personnel picker; users will type their name
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
-    password: ""
+    password: "",
+    requestedAccessLevel: "standard"
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false); // Prevent double submissions
@@ -56,16 +61,27 @@ export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormPr
 
       const userData = {
         first_name: formData.firstName.trim(),
-        last_name: formData.lastName.trim()
+        last_name: formData.lastName.trim(),
+        requested_access_level: formData.requestedAccessLevel
       };
 
       const data = await secureSignUp(formData.email, formData.password, userData);
 
-      if (data?.user && !data.user.email_confirmed_at) {
-        toast.success("Account created! Please check your email to verify your account.");
-        onSuccess?.();
-      } else if (data?.user) {
-        toast.success("Account created successfully!");
+      if (data?.user) {
+        // Set onboarding flags to trigger onboarding after verification for this user only
+        try {
+          localStorage.setItem('ONBOARD_AFTER_SIGNUP', 'true');
+          localStorage.setItem('ONBOARD_AFTER_SIGNUP_EMAIL', formData.email);
+        } catch { /* no-op */ }
+
+        if (!data.user.email_confirmed_at) {
+          toast.success("Account created! Please check your email to verify your account.");
+        } else {
+          toast.success("Account created successfully!");
+        }
+
+        // Navigate to verification pending page
+        setTimeout(() => navigate('/verification-pending'), 0);
         onSuccess?.();
       }
       
@@ -98,8 +114,8 @@ export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormPr
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader className="space-y-1 text-center">
+    <Card className="w-full bg-transparent border-transparent shadow-none">
+      <CardHeader className="space-y-1 text-center p-0 pb-2">
         <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
           <UserPlus className="h-5 w-5" />
           Create Account
@@ -108,9 +124,10 @@ export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormPr
           Get started quickly with just the basics
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          {/* Name fields only; personnel lookup removed */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="firstName">First Name</Label>
               <Input
@@ -164,6 +181,27 @@ export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormPr
             />
           </div>
 
+          {/* Request Administrative Access (optional) */}
+          <div className="flex items-start gap-3">
+            <Checkbox
+              id="request-admin"
+              checked={formData.requestedAccessLevel === "administrative"}
+              onCheckedChange={(checked) =>
+                handleInputChange(
+                  "requestedAccessLevel",
+                  checked ? "administrative" : "standard"
+                )
+              }
+              disabled={isLoading || isProcessing}
+            />
+            <div className="space-y-1">
+              <Label htmlFor="request-admin" className="font-medium">Request Administrative Access</Label>
+              <p className="text-xs text-muted-foreground max-w-prose">
+                Leave unchecked for Standard access. If checked, an administrator will review and approve administrative privileges.
+              </p>
+            </div>
+          </div>
+
           <Button 
             type="submit" 
             className="w-full" 
@@ -195,3 +233,4 @@ export function SimpleSignupForm({ onToggleForm, onSuccess }: SimpleSignupFormPr
     </Card>
   );
 }
+

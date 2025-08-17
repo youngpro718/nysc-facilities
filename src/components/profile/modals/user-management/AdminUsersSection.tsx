@@ -45,7 +45,7 @@ export function AdminUsersSection({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <div className="flex items-center gap-2 text-sm text-slate-700">
         <Crown className="h-4 w-4" />
         {users.length} admin user{users.length !== 1 ? 's' : ''} with full system access
       </div>

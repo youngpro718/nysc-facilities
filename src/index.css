@@ -202,6 +202,36 @@
   }
 }
 
+/* Form readability fixes */
+@layer base {
+  /* Ensure placeholders are readable on light/dark backgrounds */
+  input::placeholder,
+  textarea::placeholder {
+    /* Slightly darker than muted-foreground for contrast */
+    color: hsl(var(--foreground) / 0.55);
+    opacity: 1; /* Safari */
+  }
+
+  /* Fix WebKit autofill painting dark backgrounds that hide text */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill,
+  textarea:-webkit-autofill:hover,
+  textarea:-webkit-autofill:focus,
+  select:-webkit-autofill,
+  select:-webkit-autofill:hover,
+  select:-webkit-autofill:focus {
+    /* Paint the field with our theme background */
+    -webkit-box-shadow: 0 0 0px 1000px hsl(var(--background)) inset;
+    box-shadow: 0 0 0px 1000px hsl(var(--background)) inset;
+    /* Make autofilled text clearly readable */
+    -webkit-text-fill-color: hsl(var(--foreground));
+    caret-color: hsl(var(--foreground));
+    transition: background-color 9999s ease-in-out 0s;
+  }
+}
+
 @layer utilities {
   .perspective-1000 {
     perspective: 1000px;

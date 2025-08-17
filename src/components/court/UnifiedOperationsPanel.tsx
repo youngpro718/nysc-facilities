@@ -48,6 +48,50 @@ export const UnifiedOperationsPanel = () => {
         .select("*")
         .eq("space_type", "courtroom");
 
+      // Build maintenance lookups for quick room mapping
+      const maintenanceByRoomId = new Map<string, any[]>();
+      const maintenanceByName = new Map<string, any[]>();
+      (maintenance || []).forEach((m: any) => {
+        if (m.space_id) {
+          const arr = maintenanceByRoomId.get(m.space_id) || [];
+          arr.push(m);
+          maintenanceByRoomId.set(m.space_id, arr);
+        } else if (m.space_name) {
+          const key = String(m.space_name).toLowerCase();
+          const arr = maintenanceByName.get(key) || [];
+          arr.push(m);
+          maintenanceByName.set(key, arr);
+        }
+      });
+
+      const now = new Date();
+      const isMaintenanceActive = (m: any) => {
+        const status = m.status;
+        if (status === "completed" || status === "cancelled") return false;
+        if (status === "in_progress") return true;
+        const start = m.actual_start_date || m.scheduled_start_date;
+        const end = m.actual_end_date || m.scheduled_end_date;
+        if (!start) return false;
+        const startDt = new Date(start);
+        if (!end) return now >= startDt;
+        const endDt = new Date(end);
+        return now >= startDt && now <= endDt;
+      };
+
+      const getActiveMaintenanceWindow = (items: any[]) => {
+        const actives = (items || []).filter(isMaintenanceActive);
+        if (actives.length === 0) return null;
+        let start: string | null = null;
+        let end: string | null = null;
+        for (const m of actives) {
+          const s = m.actual_start_date || m.scheduled_start_date;
+          const e = m.actual_end_date || m.scheduled_end_date;
+          if (s && (!start || new Date(s) < new Date(start))) start = s;
+          if (e && (!end || new Date(e) > new Date(end))) end = e;
+        }
+        return { start, end };
+      };
+
       // Get shutdown data
       const { data: shutdowns } = await supabase
         .from("room_shutdowns")
@@ -75,6 +119,16 @@ export const UnifiedOperationsPanel = () => {
         let temporaryLocation = "";
         let maintenanceStart = "";
         let maintenanceEnd = "";
+        
+        // Determine active maintenance for this room (by id or by name fallback)
+        const maintenanceItemsForRoom =
+          (maintenanceByRoomId.get(room.id) || []) as any[];
+        const nameKey = String(room.room_number || "").toLowerCase();
+        const byNameItems = (maintenanceByName.get(nameKey) || []) as any[];
+        const activeWindow = getActiveMaintenanceWindow([
+          ...maintenanceItemsForRoom,
+          ...byNameItems,
+        ]);
 
         if (roomShutdown && (roomShutdown.status === "in_progress" || roomShutdown.status === "scheduled")) {
           status = "shutdown";
@@ -83,6 +137,11 @@ export const UnifiedOperationsPanel = () => {
         } else if (!room.is_active) {
           status = "inactive";
           issueDescription = "Room inactive";
+        } else if (activeWindow) {
+          status = "maintenance";
+          issueDescription = "Under maintenance";
+          maintenanceStart = activeWindow.start || "";
+          maintenanceEnd = activeWindow.end || "";
         } else if (hasAssignment) {
           status = "assigned";
           issueDescription = "Currently assigned";

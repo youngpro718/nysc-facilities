@@ -105,10 +105,10 @@ export function SecureForm({ onSubmit, isLoading = false, title, submitText }: S
   }, [email, password, validateForm, onSubmit, logSecurityEvent, isRateLimited]);
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-card rounded-lg border">
-      <div className="flex items-center gap-2 mb-6">
+    <div className="max-w-md mx-auto p-0">
+      <div className="flex items-center gap-2 mb-4">
         <Shield className="h-5 w-5 text-primary" />
-        <h2 className="text-2xl font-semibold">{title}</h2>
+        <h2 className="text-xl font-semibold text-neutral-900">{title}</h2>
       </div>
 
       {errors.length > 0 && (

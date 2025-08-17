@@ -79,6 +79,7 @@ export function CreateShutdownDialog({
       });
       queryClient.invalidateQueries({ queryKey: ['room-shutdowns'] });
       queryClient.invalidateQueries({ queryKey: ['courtroom-availability'] });
+      queryClient.invalidateQueries({ queryKey: ['interactive-operations'] });
       reset();
       onOpenChange(false);
     },

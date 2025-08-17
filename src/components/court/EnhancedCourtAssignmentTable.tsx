@@ -375,10 +375,17 @@ export const EnhancedCourtAssignmentTable = () => {
         if (error) throw error;
       } else {
         // Create new assignment
+        const maxSort = Math.max(
+          0,
+          ...((assignments || [])
+            .filter(a => !!a.assignment_id)
+            .map(a => a.sort_order || 0))
+        );
         const insertData: any = {
+          room_id: existingAssignment?.room_id || roomId,
           room_number: existingAssignment?.room_number || "",
           [field]: value,
-          sort_order: assignments?.length || 0 + 1
+          sort_order: maxSort + 1
         };
         console.log('➕ Creating new assignment:', insertData);
         const { error } = await supabase
@@ -390,6 +397,10 @@ export const EnhancedCourtAssignmentTable = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["court-assignments-enhanced"] });
       queryClient.invalidateQueries({ queryKey: ["court-personnel"] });
+      // Keep Overview and Quick Actions in sync
+      queryClient.invalidateQueries({ queryKey: ["interactive-operations"] });
+      queryClient.invalidateQueries({ queryKey: ["quick-actions"] });
+      queryClient.invalidateQueries({ queryKey: ["assignment-stats"] });
       setEditingCell(null);
       setEditingValue("");
       toast({
@@ -402,6 +413,34 @@ export const EnhancedCourtAssignmentTable = () => {
         variant: "destructive",
         title: "Error",
         description: "Failed to update assignment: " + error.message,
+      });
+    },
+  });
+
+  // Delete assignment mutation (component scope)
+  const deleteAssignmentMutation = useMutation({
+    mutationFn: async (assignmentId: string) => {
+      const { error } = await supabase
+        .from('court_assignments')
+        .delete()
+        .eq('id', assignmentId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["court-assignments-enhanced"] });
+      queryClient.invalidateQueries({ queryKey: ["interactive-operations"] });
+      queryClient.invalidateQueries({ queryKey: ["quick-actions"] });
+      queryClient.invalidateQueries({ queryKey: ["assignment-stats"] });
+      toast({
+        title: "Assignment deleted",
+        description: "Court assignment has been deleted successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete assignment: " + error.message,
       });
     },
   });
@@ -421,13 +460,16 @@ export const EnhancedCourtAssignmentTable = () => {
         if (assignment.assignment_id) {
           await supabase
             .from('court_assignments')
-            .update({ sort_order: index })
+            .update({ sort_order: index + 1 })
             .eq('id', assignment.assignment_id);
         }
       });
 
-      // Invalidate queries to refresh the data
+      // Invalidate queries to refresh the data across dashboard panels
       queryClient.invalidateQueries({ queryKey: ["court-assignments-enhanced"] });
+      queryClient.invalidateQueries({ queryKey: ["interactive-operations"] });
+      queryClient.invalidateQueries({ queryKey: ["quick-actions"] });
+      queryClient.invalidateQueries({ queryKey: ["assignment-stats"] });
       
       toast({
         title: "Order Updated",
@@ -457,6 +499,7 @@ export const EnhancedCourtAssignmentTable = () => {
       const { data: assignmentsData, error: assignmentsError } = await supabase
         .from("court_assignments")
         .select(`
+          room_id,
           id,
           room_number,
           part,
@@ -471,16 +514,16 @@ export const EnhancedCourtAssignmentTable = () => {
 
       if (assignmentsError) throw assignmentsError;
 
-      // Create a map of assignments by room_number
+      // Create a map of assignments by room_id (authoritative key)
       const assignmentMap = new Map();
       assignmentsData?.forEach(assignment => {
-        assignmentMap.set(assignment.room_number, assignment);
+        assignmentMap.set(assignment.room_id, assignment);
       });
 
       const mappedData = (roomsData || []).map((room, index) => {
-        const assignment = assignmentMap.get(room.room_number);
+        const assignment = assignmentMap.get(room.room_id);
         return {
-          room_id: room.id, // Use court_rooms.id as room_id
+          room_id: room.room_id,
           room_number: room.room_number,
           courtroom_number: room.courtroom_number,
           assignment_id: assignment?.id || null,
@@ -494,7 +537,7 @@ export const EnhancedCourtAssignmentTable = () => {
           fax: assignment?.fax || null,
           calendar_day: assignment?.calendar_day || null,
           is_active: true, // Default to active
-          sort_order: assignment?.sort_order ?? index,
+          sort_order: assignment?.sort_order ?? index + 1,
         } as CourtAssignmentRow;
       });
 
@@ -597,7 +640,7 @@ export const EnhancedCourtAssignmentTable = () => {
                     }
                   }}
                   onDelete={(assignmentId) => {
-                    // Delete logic would go here
+                    deleteAssignmentMutation.mutate(assignmentId);
                   }}
                   hasIssues={hasIssues}
                   urgentIssues={urgentIssues}

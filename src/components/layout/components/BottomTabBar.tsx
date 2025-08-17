@@ -1,0 +1,91 @@
+import React from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { cn } from "@/lib/utils";
+import { NavigationTab } from "../types";
+import { useAuth } from "@/hooks/useAuth";
+import { MoreHorizontal } from "lucide-react";
+
+interface BottomTabBarProps {
+  navigation: NavigationTab[];
+  onOpenMobileMenu: () => void;
+}
+
+export const BottomTabBar: React.FC<BottomTabBarProps> = ({ navigation, onOpenMobileMenu }) => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { isAdmin } = useAuth();
+
+  const items = navigation.filter((i) => (i as any).title) as Array<{ title: string; icon: any }>;
+  const primary = items.slice(0, 4);
+  const hasMore = items.length > 4;
+
+  const handleNav = (title: string) => {
+    const path = getNavigationPath(title, isAdmin);
+    if (path) navigate(path);
+  };
+
+  return (
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/75 md:hidden"
+      role="navigation"
+      aria-label="Mobile primary navigation"
+    >
+      <div className="mx-auto max-w-7xl px-2">
+        <div className={cn("grid", hasMore ? "grid-cols-5" : "grid-cols-4")}>
+          {primary.map((item) => {
+            const Icon = item.icon;
+            const path = getNavigationPath(item.title, isAdmin);
+            const isActive = path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
+            return (
+              <button
+                key={item.title}
+                onClick={() => handleNav(item.title)}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-1 py-2 h-[58px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                  isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                )}
+                aria-current={isActive ? "page" : undefined}
+              >
+                <Icon className="h-5 w-5" aria-hidden="true" />
+                <span className="text-[11px] leading-none font-medium">{item.title}</span>
+              </button>
+            );
+          })}
+
+          {hasMore && (
+            <button
+              onClick={onOpenMobileMenu}
+              className="flex flex-col items-center justify-center gap-1 py-2 h-[58px] text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              aria-label="More"
+            >
+              <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
+              <span className="text-[11px] leading-none font-medium">More</span>
+            </button>
+          )}
+        </div>
+      </div>
+    </nav>
+  );
+};
+
+function getNavigationPath(title: string, isAdmin?: boolean): string {
+  const pathMap: Record<string, string> = {
+    Dashboard: isAdmin ? "/" : "/dashboard",
+    Spaces: "/spaces",
+    Operations: "/operations",
+    Issues: "/issues",
+    Occupants: "/occupants",
+    Inventory: "/inventory",
+    "Supply Requests": isAdmin ? "/admin/supply-requests" : "/supply-requests",
+    "Supply Room": "/supply-room",
+    Keys: "/keys",
+    Lighting: "/lighting",
+    Maintenance: "/maintenance",
+    "Court Operations": "/court-operations",
+    "My Requests": "/my-requests",
+    "My Issues": "/my-issues",
+    "Admin Profile": "/admin-profile",
+    Profile: "/profile",
+  };
+  return pathMap[title] || "/";
+}

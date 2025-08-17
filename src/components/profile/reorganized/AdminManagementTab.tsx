@@ -4,12 +4,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Shield, UserCheck, Settings, Crown, Gavel, ClipboardList, Info, UserPlus } from "lucide-react";
-import { SecuritySection } from "@/components/profile/SecuritySection";
+import { Users, Shield, UserCheck, Settings, Crown, Info, UserPlus } from "lucide-react";
 import { UnifiedPersonnelDisplay } from "@/components/admin/UnifiedPersonnelDisplay";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -25,6 +23,8 @@ interface UserWithRole {
   role?: UserRole;
   personnel_type: 'registered_user' | 'court_personnel';
   created_at?: string;
+  is_approved?: boolean;
+  verification_status?: string;
 }
 
 const roleDefinitions: Record<UserRole, { 
@@ -81,11 +81,18 @@ export function AdminManagementTab() {
 
         if (rolesError) throw rolesError;
 
-        // Get all profiles
+        // Build a quick lookup for roles by user_id
+        const roleMap = new Map<string, { role?: UserRole; created_at?: string }>();
+        userRoles?.forEach((ur) => {
+          roleMap.set(ur.user_id, { role: ur.role as UserRole, created_at: ur.created_at });
+        });
+
+        // mutations moved to component scope
+
+        // Get all profiles (approved + pending) so admins can approve new users here
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
-          .select('id, first_name, last_name, email, department')
-          .eq('is_approved', true);
+          .select('id, first_name, last_name, email, department, is_approved, verification_status');
 
         if (profilesError) throw profilesError;
 
@@ -100,28 +107,24 @@ export function AdminManagementTab() {
         // Combine and format the data
         const allUsers: UserWithRole[] = [];
 
-        // Join user roles with profiles manually
-        userRoles?.forEach(userRole => {
-          const profile = profiles?.find(p => p.id === userRole.user_id);
-          if (profile) {
-            allUsers.push({
-              id: userRole.user_id,
-              full_name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim(),
-              email: profile.email,
-              department: profile.department || '',
-              role: userRole.role as UserRole,
-              personnel_type: 'registered_user',
-              created_at: userRole.created_at
-            });
-          }
+        // Start with all profiles (registered users), attach role if present
+        profiles?.forEach((profile) => {
+          const roleInfo = roleMap.get(profile.id);
+          allUsers.push({
+            id: profile.id,
+            full_name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim(),
+            email: profile.email,
+            department: profile.department || '',
+            role: roleInfo?.role,
+            personnel_type: 'registered_user',
+            created_at: roleInfo?.created_at,
+            is_approved: (profile as any).is_approved,
+            verification_status: (profile as any).verification_status,
+          });
         });
 
         // Add court personnel (they don't have assignable roles, just for display)
-        courtPersonnel?.forEach(person => {
-          const nameParts = person.name.split(' ');
-          const firstName = nameParts[0] || '';
-          const lastName = nameParts.slice(1).join(' ') || '';
-          
+        courtPersonnel?.forEach((person) => {
           allUsers.push({
             id: `court_${person.id}`,
             full_name: person.name,
@@ -138,6 +141,49 @@ export function AdminManagementTab() {
         throw error;
       }
     },
+  });
+
+  // Derived selection after data is available
+  const selectedUser = usersWithRoles?.find(u => u.id === selectedUserId);
+
+  // Approve a registered user (sets verified + read access)
+  const approveUser = useMutation({
+    mutationFn: async (userId: string) => {
+      if (!user?.id) throw new Error('Not authenticated');
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_approved: true, verification_status: 'verified', access_level: 'read' })
+        .eq('id', userId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
+      toast({ title: 'User approved', description: 'The user has been approved and granted read access.' });
+    },
+    onError: (error) => {
+      console.error('Error approving user:', error);
+      toast({ title: 'Error', description: 'Failed to approve user', variant: 'destructive' });
+    }
+  });
+
+  // Reject a registered user (marks as rejected)
+  const rejectUser = useMutation({
+    mutationFn: async (userId: string) => {
+      if (!user?.id) throw new Error('Not authenticated');
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_approved: false, verification_status: 'rejected' })
+        .eq('id', userId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
+      toast({ title: 'User rejected', description: 'The user has been marked as rejected.' });
+    },
+    onError: (error) => {
+      console.error('Error rejecting user:', error);
+      toast({ title: 'Error', description: 'Failed to reject user', variant: 'destructive' });
+    }
   });
 
   // Get role statistics
@@ -200,9 +246,41 @@ export function AdminManagementTab() {
     },
   });
 
+  const removeRole = useMutation({
+    mutationFn: async (userId: string) => {
+      if (!user?.id) throw new Error('Not authenticated');
+      const { error } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
+      toast({
+        title: "Success",
+        description: "Role removed successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to remove role",
+        variant: "destructive",
+      });
+      console.error('Error removing role:', error);
+    },
+  });
+
   const handleAssignRole = () => {
     if (selectedUserId && selectedRole) {
       assignRole.mutate({ userId: selectedUserId, role: selectedRole });
+    }
+  };
+
+  const handleRemoveRole = (userId: string) => {
+    if (window.confirm('Remove role from this user?')) {
+      removeRole.mutate(userId);
     }
   };
 
@@ -298,17 +376,21 @@ export function AdminManagementTab() {
                             <SelectValue placeholder="Select a user" />
                           </SelectTrigger>
                           <SelectContent>
-                            {usersWithRoles.map((user) => (
-                              <SelectItem key={user.id} value={user.id}>
-                                <div>
-                                  <div className="font-medium">{user.full_name}</div>
-                                  <div className="text-sm text-muted-foreground">{user.email}</div>
-                                  <div className="text-xs text-blue-600">
-                                    {user.personnel_type === 'court_personnel' ? 'Court Personnel' : 'Registered User'}
+                            {usersWithRoles
+                              .filter((u) =>
+                                u.personnel_type === 'registered_user' &&
+                                u.verification_status === 'verified'
+                              )
+                              .sort((a, b) => a.full_name.localeCompare(b.full_name))
+                              .map((user) => (
+                                <SelectItem key={user.id} value={user.id}>
+                                  <div>
+                                    <div className="font-medium">{user.full_name || user.email}</div>
+                                    <div className="text-sm text-muted-foreground">{user.email}</div>
+                                    <div className="text-xs text-blue-600">Registered User</div>
                                   </div>
-                                </div>
-                              </SelectItem>
-                            ))}
+                                </SelectItem>
+                              ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -337,7 +419,11 @@ export function AdminManagementTab() {
                         </Button>
                         <Button 
                           onClick={handleAssignRole} 
-                          disabled={!selectedUserId || assignRole.isPending}
+                          disabled={
+                            !selectedUserId ||
+                            assignRole.isPending ||
+                            (selectedUser as any)?.verification_status !== 'verified'
+                          }
                         >
                           {assignRole.isPending ? 'Assigning...' : 'Assign Role'}
                         </Button>
@@ -360,6 +446,7 @@ export function AdminManagementTab() {
                       <TableHead>Role</TableHead>
                       <TableHead>Type</TableHead>
                       <TableHead>Assigned</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -371,7 +458,11 @@ export function AdminManagementTab() {
                           <TableCell>{user.email}</TableCell>
                           <TableCell>{user.department}</TableCell>
                           <TableCell>
-                            {roleInfo ? (
+                            {user.personnel_type === 'registered_user' && user.verification_status === 'rejected' ? (
+                              <Badge variant="destructive">Rejected</Badge>
+                            ) : user.personnel_type === 'registered_user' && (user.is_approved !== true || user.verification_status !== 'verified') ? (
+                              <Badge variant="secondary">Pending Approval</Badge>
+                            ) : roleInfo ? (
                               <Badge className={roleInfo.color}>
                                 {roleInfo.label}
                               </Badge>
@@ -386,6 +477,66 @@ export function AdminManagementTab() {
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
                             {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'System'}
+                          </TableCell>
+                          <TableCell className="space-x-2">
+                            {user.personnel_type === 'registered_user' ? (
+                              user.is_approved !== true || user.verification_status !== 'verified' ? (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => approveUser.mutate(user.id)}
+                                    disabled={approveUser.isPending}
+                                  >
+                                    {approveUser.isPending ? 'Approving...' : 'Approve'}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => rejectUser.mutate(user.id)}
+                                    disabled={rejectUser.isPending}
+                                  >
+                                    {rejectUser.isPending ? 'Rejecting...' : 'Reject'}
+                                  </Button>
+                                </>
+                              ) : user.role ? (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedUserId(user.id);
+                                      setSelectedRole(user.role as UserRole);
+                                      setIsAssignDialogOpen(true);
+                                    }}
+                                  >
+                                    Change
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleRemoveRole(user.id)}
+                                    disabled={removeRole.isPending}
+                                  >
+                                    {removeRole.isPending ? 'Removing...' : 'Remove'}
+                                  </Button>
+                                </>
+                              ) : (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedUserId(user.id);
+                                    setSelectedRole('standard');
+                                    setIsAssignDialogOpen(true);
+                                  }}
+                                  disabled={user.is_approved !== true || user.verification_status !== 'verified'}
+                                >
+                                  Assign
+                                </Button>
+                              )
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
                           </TableCell>
                         </TableRow>
                       );

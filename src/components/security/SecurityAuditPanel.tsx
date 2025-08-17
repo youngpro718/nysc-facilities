@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Shield, Activity, Users, AlertTriangle, RotateCcw } from 'lucide-react';
+import { Shield, Activity, Users, AlertTriangle, RotateCcw, Clock, BarChart3, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
+import { RateLimitManager } from '@/components/admin/RateLimitManager';
 
 interface SecurityEvent {
   id: string;
@@ -35,6 +36,8 @@ export function SecurityAuditPanel() {
   const [securityEvents, setSecurityEvents] = useState<SecurityEvent[]>([]);
   const [rateLimits, setRateLimits] = useState<RateLimit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null);
+  const [showManager, setShowManager] = useState(false);
 
   const fetchSecurityData = async () => {
     if (!isAdmin) return;
@@ -65,6 +68,7 @@ export function SecurityAuditPanel() {
         ip_address: String(event.ip_address || 'unknown')
       })));
       setRateLimits(limits || []);
+      setLastRefreshedAt(new Date());
     } catch (error) {
       console.error('Failed to fetch security data:', error);
       toast.error('Failed to load security audit data');
@@ -90,6 +94,18 @@ export function SecurityAuditPanel() {
     return 'default';
   };
 
+  // Derived summary stats
+  const summary = useMemo(() => {
+    const totalEvents = securityEvents.length;
+    const failedOrBlockedEvents = securityEvents.filter(e =>
+      /failed|blocked/i.test(e.action)
+    ).length;
+    const activeBlocks = rateLimits.filter(r => r.blocked_until && new Date(r.blocked_until) > new Date()).length;
+    const recentWindowMs = 1000 * 60 * 60; // 1 hour
+    const recentEvents = securityEvents.filter(e => new Date(e.created_at).getTime() > Date.now() - recentWindowMs).length;
+    return { totalEvents, failedOrBlockedEvents, activeBlocks, recentEvents };
+  }, [securityEvents, rateLimits]);
+
   if (!isAdmin) {
     return (
       <Card>
@@ -111,12 +127,49 @@ export function SecurityAuditPanel() {
             <Shield className="h-6 w-6" />
             Security Audit Panel
           </h2>
-          <p className="text-muted-foreground">Monitor security events and authentication attempts</p>
+          <p className="text-muted-foreground">Monitor security events and authentication attempts. Use this panel to understand recent activity and any active rate-limit blocks.</p>
         </div>
         <Button onClick={fetchSecurityData} disabled={isLoading}>
           <RotateCcw className="h-4 w-4 mr-2" />
           Refresh
         </Button>
+      </div>
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Events (50 latest)</span>
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className="text-2xl font-semibold mt-1">{summary.totalEvents}</div>
+            <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+              <Clock className="h-3.5 w-3.5" /> Updated {lastRefreshedAt ? lastRefreshedAt.toLocaleTimeString() : '—'}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-sm text-muted-foreground">Failed/Blocked</div>
+            <div className="text-2xl font-semibold mt-1">{summary.failedOrBlockedEvents}</div>
+            <div className="text-xs text-muted-foreground mt-1">Across recent events</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-sm text-muted-foreground">Active Blocks</div>
+            <div className="text-2xl font-semibold mt-1">{summary.activeBlocks}</div>
+            <div className="text-xs text-muted-foreground mt-1">Users currently blocked</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-sm text-muted-foreground">Events (last hour)</div>
+            <div className="text-2xl font-semibold mt-1">{summary.recentEvents}</div>
+            <div className="text-xs text-muted-foreground mt-1">Spike may indicate abuse</div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -128,7 +181,7 @@ export function SecurityAuditPanel() {
               Recent Security Events
             </CardTitle>
             <CardDescription>
-              Latest security-related actions and events
+              Latest security-related actions and events. Failed or blocked actions are highlighted.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -169,7 +222,7 @@ export function SecurityAuditPanel() {
               Rate Limit Status
             </CardTitle>
             <CardDescription>
-              Authentication attempt monitoring and rate limiting
+              Authentication attempt monitoring and rate limiting. Attempts show how many recent actions were recorded; a "Blocked until" value means further attempts are temporarily denied.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -204,6 +257,23 @@ export function SecurityAuditPanel() {
             </ScrollArea>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Optional management tools */}
+      <div className="border rounded-lg">
+        <button
+          type="button"
+          className="w-full flex items-center justify-between px-4 py-3 text-left"
+          onClick={() => setShowManager(v => !v)}
+        >
+          <span className="font-medium">Manage Rate Limits</span>
+          {showManager ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </button>
+        {showManager && (
+          <div className="p-4">
+            <RateLimitManager />
+          </div>
+        )}
       </div>
     </div>
   );

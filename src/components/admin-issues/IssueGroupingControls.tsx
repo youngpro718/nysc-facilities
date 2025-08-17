@@ -3,7 +3,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import type { GroupingMode, ViewMode } from "@/pages/AdminIssuesHub";
+import type { GroupingMode, ViewMode, StatusFilter, PriorityFilter } from "@/pages/AdminIssuesHub";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface IssueGroupingControlsProps {
   groupingMode: GroupingMode;
@@ -14,6 +15,10 @@ interface IssueGroupingControlsProps {
   onSearchChange: (query: string) => void;
   totalIssues: number;
   selectedCount: number;
+  statusFilter: StatusFilter;
+  priorityFilter: PriorityFilter;
+  onStatusFilterChange: (value: StatusFilter) => void;
+  onPriorityFilterChange: (value: PriorityFilter) => void;
 }
 
 export function IssueGroupingControls({
@@ -24,7 +29,11 @@ export function IssueGroupingControls({
   searchQuery,
   onSearchChange,
   totalIssues,
-  selectedCount
+  selectedCount,
+  statusFilter,
+  priorityFilter,
+  onStatusFilterChange,
+  onPriorityFilterChange
 }: IssueGroupingControlsProps) {
   const groupingOptions = [
     { value: 'priority', label: 'Priority', icon: AlertTriangle },
@@ -34,7 +43,15 @@ export function IssueGroupingControls({
     { value: 'status', label: 'Status', icon: CheckSquare },
   ] as const;
 
+  const activeFilterCount = (statusFilter !== 'all' ? 1 : 0) + (priorityFilter !== 'all' ? 1 : 0);
+
+  const clearFilters = () => {
+    onStatusFilterChange('all');
+    onPriorityFilterChange('all');
+  };
+
   const viewOptions = [
+    { value: 'board', label: 'Board', icon: Grid },
     { value: 'cards', label: 'Cards', icon: Grid },
     { value: 'table', label: 'Table', icon: List },
     { value: 'timeline', label: 'Timeline', icon: Zap },
@@ -54,10 +71,56 @@ export function IssueGroupingControls({
           />
         </div>
         
-        <Button variant="outline" size="sm">
-          <Filter className="h-4 w-4 mr-2" />
-          Advanced Filters
-        </Button>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Filter className="h-4 w-4 mr-2" />
+              Advanced Filters
+              {activeFilterCount > 0 && (
+                <Badge variant="destructive" className="ml-2 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center">
+                  {activeFilterCount}
+                </Badge>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80" align="end">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Status</label>
+                <Select value={statusFilter} onValueChange={(v) => onStatusFilterChange(v as StatusFilter)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="open">Open</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="resolved">Resolved</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Priority</label>
+                <Select value={priorityFilter} onValueChange={(v) => onPriorityFilterChange(v as PriorityFilter)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filter by priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="low">Low</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {activeFilterCount > 0 && (
+                <Button variant="outline" className="w-full" onClick={clearFilters}>
+                  Clear Filters
+                </Button>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
 
       {/* Controls Row */}

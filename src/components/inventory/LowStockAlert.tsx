@@ -22,19 +22,16 @@ export function LowStockAlert({
   roomName,
   onManageItem,
 }: LowStockAlertProps) {
-  // Fixed low stock logic: items with quantity < minimum_quantity
-  const lowStockItems = items.filter(item => 
-    item.minimum_quantity && item.quantity < item.minimum_quantity
+  // Low stock: 0 < quantity <= minimum_quantity (exclude 0 which is out of stock)
+  const lowStockItems = items.filter(item =>
+    (item.minimum_quantity || 0) > 0 && item.quantity > 0 && item.quantity <= (item.minimum_quantity || 0)
   );
 
-  const outOfStockItems = lowStockItems.filter(item => item.quantity === 0);
-  const criticalItems = lowStockItems.filter(item => 
-    item.quantity > 0 && item.quantity < (item.minimum_quantity || 0)
-  );
+  const outOfStockItems = items.filter(item => item.quantity === 0);
 
   const getStockStatus = (item: InventoryItem) => {
     if (item.quantity === 0) return { label: "Out of Stock", color: "bg-red-500" };
-    if (item.quantity < (item.minimum_quantity || 0)) return { label: "Low Stock", color: "bg-yellow-500" };
+    if ((item.minimum_quantity || 0) > 0 && item.quantity <= (item.minimum_quantity || 0)) return { label: "Low Stock", color: "bg-yellow-500" };
     return { label: "Normal", color: "bg-green-500" };
   };
 
@@ -110,7 +107,7 @@ export function LowStockAlert({
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-amber-600">
-                  {criticalItems.length}
+                  {lowStockItems.length}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Items running low

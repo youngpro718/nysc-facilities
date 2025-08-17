@@ -27,9 +27,11 @@ import {
 // Import existing components
 import { EnhancedIssuesList } from "@/components/admin-issues/EnhancedIssuesList";
 import { IssueAnalyticsPanel } from "@/components/admin-issues/IssueAnalyticsPanel";
+import { IssueGroupingControls } from "@/components/admin-issues/IssueGroupingControls";
 import { MaintenanceScheduleList } from "@/components/maintenance/MaintenanceScheduleList";
 import { MaintenanceIssuesList } from "@/components/maintenance/MaintenanceIssuesList";
 import AdvancedAnalyticsDashboard from "@/components/analytics/AdvancedAnalyticsDashboard";
+import type { GroupingMode, ViewMode, StatusFilter, PriorityFilter } from "@/pages/AdminIssuesHub";
 
 
 // Import dialogs
@@ -53,8 +55,22 @@ export default function Operations() {
   const buildingId = searchParams.get('building');
   const filter = searchParams.get('filter');
   const issueIdParam = searchParams.get('issue_id');
+  const tabParam = searchParams.get('tab');
   
-  const [activeTab, setActiveTab] = useState(buildingId ? "issues" : "overview");
+  const [activeTab, setActiveTab] = useState(tabParam || (buildingId ? "issues" : "overview"));
+  const viewParam = searchParams.get('view');
+
+  // Issues tab local state
+  const [groupingMode, setGroupingMode] = useState<GroupingMode>('priority');
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    viewParam && ['cards','table','timeline','board'].includes(viewParam)
+      ? (viewParam as ViewMode)
+      : 'table'
+  );
+  const [selectedIssues, setSelectedIssues] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all');
 
   // Clear building filter
   const clearBuildingFilter = () => {
@@ -74,13 +90,29 @@ export default function Operations() {
   const [showReportIssue, setShowReportIssue] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Keep URL `tab` param in sync when switching tabs
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('tab', value);
+    setSearchParams(newParams);
+  };
+
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode);
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('view', mode);
+    newParams.set('tab', 'issues');
+    setSearchParams(newParams);
+  };
+
   // Dialog manager for issue details opened via URL param
   const { dialogState, openDialog, closeDialog } = useDialogManager();
 
   useEffect(() => {
     if (issueIdParam) {
       openDialog('issueDetails', { issueId: issueIdParam });
-      setActiveTab('issues');
+      handleTabChange('issues');
     } else {
       if (dialogState.isOpen && dialogState.type === 'issueDetails') {
         closeDialog();
@@ -88,6 +120,22 @@ export default function Operations() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [issueIdParam]);
+
+  // React to `tab` query param changes
+  useEffect(() => {
+    if (tabParam && ['overview','issues','maintenance','analytics'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabParam]);
+
+  // React to `view` query param changes
+  useEffect(() => {
+    if (viewParam && ['cards','table','timeline','board'].includes(viewParam)) {
+      setViewMode(viewParam as ViewMode);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewParam]);
 
   const handleCloseIssueDialog = () => {
     const newParams = new URLSearchParams(searchParams);
@@ -409,7 +457,7 @@ export default function Operations() {
       )}
 
       {/* Main Content Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4" />
@@ -496,7 +544,7 @@ export default function Operations() {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    onClick={() => setActiveTab('issues')}
+                    onClick={() => handleTabChange('issues')}
                     className="hover:bg-red-50 hover:border-red-200"
                   >
                     View All Issues
@@ -566,7 +614,7 @@ export default function Operations() {
                     variant="outline" 
                     size="sm" 
                     className="w-full hover:bg-orange-50 hover:border-orange-200 transition-colors"
-                    onClick={() => setActiveTab('maintenance')}
+                    onClick={() => handleTabChange('maintenance')}
                   >
                     View All Maintenance
                   </Button>
@@ -650,6 +698,22 @@ export default function Operations() {
             </Card>
           </div>
 
+          {/* Issues Controls */}
+          <IssueGroupingControls
+            groupingMode={groupingMode}
+            viewMode={viewMode}
+            onGroupingChange={setGroupingMode}
+            onViewModeChange={handleViewModeChange}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            totalIssues={allIssues?.length || 0}
+            selectedCount={selectedIssues.length}
+            statusFilter={statusFilter}
+            priorityFilter={priorityFilter}
+            onStatusFilterChange={setStatusFilter}
+            onPriorityFilterChange={setPriorityFilter}
+          />
+
           {/* Issues Table */}
           <Card>
             <CardHeader>
@@ -668,14 +732,17 @@ export default function Operations() {
             <CardContent className="p-0">
               <EnhancedIssuesList 
                 issues={allIssues || []}
-                viewMode="table"
-                groupingMode="priority"
-                searchQuery=""
-                selectedIssues={[]}
-                onSelectionChange={() => {}}
+                viewMode={viewMode}
+                groupingMode={groupingMode}
+                searchQuery={searchQuery}
+                selectedIssues={selectedIssues}
+                onSelectionChange={setSelectedIssues}
                 onIssueUpdate={refreshAllData}
                 isLoading={isLoading}
                 buildingId={buildingId}
+                filter={filter}
+                statusFilter={statusFilter}
+                priorityFilter={priorityFilter}
               />
             </CardContent>
           </Card>

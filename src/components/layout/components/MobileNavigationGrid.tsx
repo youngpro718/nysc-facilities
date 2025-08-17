@@ -41,35 +41,47 @@ export const MobileNavigationGrid: React.FC<MobileNavigationGridProps> = ({
       <div className="grid grid-cols-2 gap-3">
         {items.map((item) => {
           const Icon = item.icon;
-          const isActive = location.pathname === item.path;
-          
+          const isRoot = item.path === "/";
+          const isActive = isRoot
+            ? location.pathname === "/"
+            : location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
+
           return (
             <button
               key={item.title}
+              type="button"
+              role="link"
+              aria-label={item.title}
+              aria-current={isActive ? "page" : undefined}
               onClick={() => handleNavigation(item.path)}
               className={cn(
-                "flex flex-col items-center justify-center gap-3 p-4 rounded-xl border-2 transition-all duration-200 active:scale-95",
+                "flex flex-col items-center justify-center gap-3 p-4 rounded-xl border-2 transition-all duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-h-[96px]",
                 isActive
                   ? "border-primary bg-primary/5 text-primary"
                   : "border-border hover:border-primary/20 hover:bg-muted/50"
               )}
             >
-              <div className={cn(
-                "p-3 rounded-lg transition-colors",
-                isActive 
-                  ? "bg-primary/10" 
-                  : "bg-muted"
-              )}>
-                <Icon className={cn(
-                  "h-6 w-6 transition-colors",
-                  isActive ? "text-primary" : "text-muted-foreground"
-                )} />
+              <div
+                className={cn(
+                  "p-3 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center",
+                  isActive ? "bg-primary/10" : "bg-muted"
+                )}
+                aria-hidden="true"
+              >
+                <Icon
+                  className={cn(
+                    "h-6 w-6 transition-colors",
+                    isActive ? "text-primary" : "text-muted-foreground"
+                  )}
+                />
               </div>
               <div className="text-center">
-                <p className={cn(
-                  "text-sm font-medium",
-                  isActive ? "text-primary" : "text-foreground"
-                )}>
+                <p
+                  className={cn(
+                    "text-sm font-medium",
+                    isActive ? "text-primary" : "text-foreground"
+                  )}
+                >
                   {item.title}
                 </p>
                 {item.description && (

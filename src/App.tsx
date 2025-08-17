@@ -37,6 +37,8 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ModuleProtectedRoute } from "@/components/ModuleProtectedRoute";
 import ErrorBoundary from "@/components/error/ErrorBoundary";
 import AuthErrorBoundary from "@/components/error/AuthErrorBoundary";
+import Users from "@/pages/Users";
+import AdminSupplyRequests from "@/pages/admin/SupplyRequests";
 
 
 // Create a client
@@ -129,9 +131,21 @@ function AppContent() {
             <AccessManagement />
           </ProtectedRoute>
         } />
+        <Route path="users" element={
+          <ProtectedRoute requireAdmin>
+            <Users />
+          </ProtectedRoute>
+        } />
         <Route path="admin/key-requests" element={
           <ProtectedRoute requireAdmin>
             <AdminKeyRequests />
+          </ProtectedRoute>
+        } />
+        <Route path="admin/supply-requests" element={
+          <ProtectedRoute requireAdmin>
+            <ModuleProtectedRoute moduleKey="supply_requests" moduleName="Supply Requests">
+              <AdminSupplyRequests />
+            </ModuleProtectedRoute>
           </ProtectedRoute>
         } />
         {/* Supply Requests now handled by Operations page */}
@@ -161,6 +175,9 @@ function AppContent() {
         {/* Legacy routes redirected to canonical Security tab */}
         <Route path="settings/security/2fa" element={<Navigate to="/settings?tab=security" replace />} />
         <Route path="settings/security/session" element={<Navigate to="/settings?tab=security" replace />} />
+        {/* Legacy operations routes redirected to consolidated Operations hub */}
+        <Route path="issues" element={<Navigate to="/operations?tab=issues" replace />} />
+        <Route path="maintenance" element={<Navigate to="/operations?tab=maintenance" replace />} />
         <Route path="settings" element={
           <ProtectedRoute>
             <SettingsPage />

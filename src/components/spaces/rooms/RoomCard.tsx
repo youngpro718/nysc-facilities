@@ -40,9 +40,9 @@ export function RoomCard({ room, onDelete, onRoomClick }: RoomCardProps) {
   };
 
   const handleCardClick = () => {
-    if (isMobile) {
-      onRoomClick?.(room);
-    }
+    // Always open details on click, using enhanced data if available
+    const displayRoomAny = (enhancedRoom || room) as unknown as Room;
+    onRoomClick?.(displayRoomAny);
   };
 
   // Use enhanced room data if available, fallback to basic room data

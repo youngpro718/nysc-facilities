@@ -1,87 +1,27 @@
-import { ChevronLeft, Settings, Shield } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { RateLimitManager } from "@/components/admin/RateLimitManager";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DynamicAdminDashboard } from "@/components/profile/admin/DynamicAdminDashboard";
 import { MobileProfileHeader } from "@/components/profile/mobile/MobileProfileHeader";
-import { RoleManagement } from "@/components/profile/RoleManagement";
 import { useState, useEffect } from "react";
 import { useRolePermissions, CourtRole } from "@/hooks/useRolePermissions";
 import { Badge } from "@/components/ui/badge";
+import { AdminSystemSettings } from "@/components/profile/AdminSystemSettings";
+import { DatabaseSection } from "@/components/profile/DatabaseSection";
+import { SecurityAuditPanel } from "@/components/security/SecurityAuditPanel";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Admin sections kept inline
 import { AdminManagementTab } from "@/components/profile/reorganized/AdminManagementTab";
 
-// Admin-only role preview control used within AdminProfile header
-function PreviewRoleControl() {
-  const { userRole, refetch } = useRolePermissions();
-  const [preview, setPreview] = useState<string | null>(
-    typeof window !== 'undefined' ? localStorage.getItem('preview_role') : null
-  );
-
-  if (userRole !== 'admin') return null;
-
-  const roles: CourtRole[] = [
-    'admin',
-    'standard',
-    'judge',
-    'court_aide',
-    'clerk',
-    'sergeant',
-    'court_officer',
-    'bailiff',
-    'court_reporter',
-    'administrative_assistant',
-    'facilities_manager',
-    'supply_room_staff',
-  ];
-
-  const onChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value as CourtRole | '';
-    if (!value || value === 'admin') {
-      localStorage.removeItem('preview_role');
-      setPreview(null);
-    } else {
-      localStorage.setItem('preview_role', value);
-      setPreview(value);
-    }
-    refetch?.();
-  };
-
-  const clear = () => {
-    localStorage.removeItem('preview_role');
-    setPreview(null);
-    refetch?.();
-  };
-
-  return (
-    <div className="ml-auto flex items-center gap-2">
-      {preview && (
-        <Badge variant="secondary" className="hidden sm:inline-flex">Preview: {preview}</Badge>
-      )}
-      <select
-        aria-label="Preview as role"
-        className="border rounded-md px-2 py-1 text-sm bg-background"
-        onChange={onChange}
-        value={preview ?? 'admin'}
-      >
-        {roles.map(r => (
-          <option key={r} value={r}>{r}</option>
-        ))}
-      </select>
-      {preview && (
-        <Button size="sm" variant="outline" onClick={clear} title="Clear preview role">
-          Clear
-        </Button>
-      )}
-    </div>
-  );
-}
+// Role preview control removed per request
 
 export default function AdminProfile() {
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(false);
+  const { isAdmin, userRole, refetch } = useRolePermissions();
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -89,6 +29,21 @@ export default function AdminProfile() {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Clear any legacy preview role to avoid masking admin sections
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const hadPreview = localStorage.getItem('preview_role');
+        if (hadPreview) {
+          localStorage.removeItem('preview_role');
+          refetch?.();
+        }
+      }
+    } catch {
+      // no-op
+    }
+  }, [refetch]);
 
   // Remove the broken navigation settings and use modals instead
   // These functions are now handled by the MobileAdminDashboard modals
@@ -111,7 +66,41 @@ export default function AdminProfile() {
         </div>
 
         <MobileProfileHeader />
-        <DynamicAdminDashboard />
+        {isAdmin ? (
+          <div className="space-y-6">
+            <DynamicAdminDashboard />
+
+            <Card>
+              <CardHeader>
+                <CardTitle>User Management</CardTitle>
+                <CardDescription>Manage users, roles, permissions, and access</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AdminManagementTab />
+              </CardContent>
+            </Card>
+
+            <SecurityAuditPanel />
+
+            <RateLimitManager />
+
+            <AdminSystemSettings />
+
+            <DatabaseSection />
+          </div>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>Admin Sections Hidden</CardTitle>
+              <CardDescription>
+                You are previewing as "{userRole}". Admin-only sections are hidden on this page.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              Use the role selector to switch back to Admin.
+            </CardContent>
+          </Card>
+        )}
       </div>
     );
   }
@@ -128,64 +117,57 @@ export default function AdminProfile() {
           <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
         </Button>
         <h1 className="text-2xl sm:text-3xl font-semibold">Admin Profile</h1>
-        {/* Admin-only UI role preview control */}
-        <PreviewRoleControl />
       </div>
 
       <MobileProfileHeader />
 
       <div className="space-y-6">
-        <Card>
-          <CardHeader className="flex items-center justify-between space-y-0">
-            <div>
-              <CardTitle>Admin Overview</CardTitle>
-              <CardDescription>Your personal admin dashboard and quick actions</CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <DynamicAdminDashboard />
-          </CardContent>
-        </Card>
+        {isAdmin ? (
+          <Tabs defaultValue="users" className="w-full">
+            <TabsList className="w-full grid grid-cols-2 sm:grid-cols-4">
+              <TabsTrigger value="users">Users</TabsTrigger>
+              <TabsTrigger value="security">Security</TabsTrigger>
+              <TabsTrigger value="system">System</TabsTrigger>
+              <TabsTrigger value="database">Database</TabsTrigger>
+            </TabsList>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Access the most common admin tasks</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-3">
-              <Button variant="secondary" onClick={() => navigate('/settings')}>Open Settings</Button>
-              <Button variant="secondary" onClick={() => navigate('/settings?tab=security')} className="gap-2">
-                <Shield className="h-4 w-4" /> Security Settings
-              </Button>
-              <Button variant="secondary" onClick={() => navigate('/system-settings')} className="gap-2">
-                <Settings className="h-4 w-4" /> System Settings
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            <TabsContent value="users">
+              <Card>
+                <CardHeader>
+                  <CardTitle>User Management</CardTitle>
+                  <CardDescription>Manage users, roles, permissions, and access</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <AdminManagementTab />
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>User Management</CardTitle>
-            <CardDescription>Manage users, roles, permissions, and access</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <AdminManagementTab />
-          </CardContent>
-        </Card>
+            <TabsContent value="security">
+              <SecurityAuditPanel />
+            </TabsContent>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Security Management</CardTitle>
-            <CardDescription>Rate limits and access controls</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-6">
-              <RateLimitManager />
-            </div>
-          </CardContent>
-        </Card>
+            <TabsContent value="system">
+              <AdminSystemSettings />
+            </TabsContent>
+
+            <TabsContent value="database">
+              <DatabaseSection />
+            </TabsContent>
+          </Tabs>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>Admin Sections Hidden</CardTitle>
+              <CardDescription>
+                You are previewing as "{userRole}". Admin-only sections are hidden on this page.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              Use the role selector above to switch back to Admin.
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

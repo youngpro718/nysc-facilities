@@ -50,6 +50,166 @@ export function useRolePermissions() {
   });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  
+  // Define role permissions mapping based on court roles
+  const rolePermissionsMap: Record<CourtRole, RolePermissions> = {
+    judge: {
+      spaces: null,
+      issues: 'write',
+      occupants: null,
+      inventory: null,
+      supply_requests: 'write',
+      keys: 'write',
+      lighting: null,
+      maintenance: null,
+      court_operations: null,
+      operations: 'write',
+      dashboard: 'read',
+    },
+    court_aide: {
+      spaces: 'read',
+      issues: 'write',
+      occupants: 'read',
+      inventory: 'admin',
+      supply_requests: 'admin',
+      keys: 'read',
+      lighting: null,
+      maintenance: null,
+      court_operations: null,
+      operations: 'write',
+      dashboard: 'read',
+    },
+    clerk: {
+      spaces: null,
+      issues: 'write',
+      occupants: 'read',
+      inventory: null,
+      supply_requests: 'write',
+      keys: 'write',
+      lighting: null,
+      maintenance: null,
+      court_operations: null,
+      operations: 'write',
+      dashboard: 'read',
+    },
+    sergeant: {
+      spaces: 'read',
+      issues: 'write',
+      occupants: 'read',
+      inventory: null,
+      supply_requests: null,
+      keys: 'admin',
+      lighting: null,
+      maintenance: null,
+      court_operations: null,
+      operations: 'admin',
+      dashboard: 'read',
+    },
+    court_officer: {
+      spaces: null,
+      issues: 'write',
+      occupants: 'read',
+      inventory: null,
+      supply_requests: null,
+      keys: 'write',
+      lighting: null,
+      maintenance: null,
+      court_operations: null,
+      operations: 'write',
+      dashboard: 'read',
+    },
+    bailiff: {
+      spaces: null,
+      issues: 'write',
+      occupants: 'read',
+      inventory: null,
+      supply_requests: 'write',
+      keys: 'write',
+      lighting: null,
+      maintenance: null,
+      court_operations: null,
+      operations: 'write',
+      dashboard: 'read',
+    },
+    court_reporter: {
+      spaces: null,
+      issues: 'write',
+      occupants: null,
+      inventory: null,
+      supply_requests: 'write',
+      keys: null,
+      lighting: null,
+      maintenance: null,
+      court_operations: null,
+      operations: 'write',
+      dashboard: 'read',
+    },
+    administrative_assistant: {
+      spaces: null,
+      issues: 'write',
+      occupants: 'admin',
+      inventory: null,
+      supply_requests: 'write',
+      keys: 'write',
+      lighting: null,
+      maintenance: null,
+      court_operations: null,
+      operations: 'write',
+      dashboard: 'read',
+    },
+    facilities_manager: {
+      spaces: 'admin',
+      issues: 'admin',
+      occupants: 'admin',
+      inventory: 'write',
+      supply_requests: 'write',
+      keys: 'admin',
+      lighting: 'admin',
+      maintenance: 'admin',
+      court_operations: null,
+      operations: 'admin',
+      dashboard: 'admin',
+    },
+    supply_room_staff: {
+      spaces: null,
+      issues: 'write',
+      occupants: 'read',
+      inventory: 'admin',
+      supply_requests: 'admin',
+      keys: null,
+      lighting: null,
+      maintenance: null,
+      court_operations: null,
+      operations: 'read',
+      dashboard: 'read',
+    },
+    admin: {
+      spaces: 'admin',
+      issues: 'admin',
+      occupants: 'admin',
+      inventory: 'admin',
+      supply_requests: 'admin',
+      keys: 'admin',
+      lighting: 'admin',
+      maintenance: 'admin',
+      court_operations: 'admin',
+      operations: 'admin',
+      dashboard: 'admin',
+    },
+    standard: {
+      spaces: null,
+      issues: 'write',
+      occupants: null,
+      inventory: null,
+      supply_requests: 'write',
+      keys: null,
+      lighting: null,
+      maintenance: null,
+      court_operations: null,
+      operations: null,
+      dashboard: 'read',
+    },
+  };
 
   const fetchUserRoleAndPermissions = async () => {
     try {
@@ -115,165 +275,7 @@ export function useRolePermissions() {
       console.log('useRolePermissions - Final role before preview:', role);
       setProfile(profileData);
 
-      // Define role permissions mapping based on court roles
-      const rolePermissionsMap: Record<CourtRole, RolePermissions> = {
-        judge: {
-          spaces: null,
-          issues: 'write',
-          occupants: null,
-          inventory: null,
-          supply_requests: 'write',
-          keys: 'write',
-          lighting: null,
-          maintenance: null,
-          court_operations: null,
-          operations: 'write',
-          dashboard: 'read',
-        },
-        court_aide: {
-          spaces: 'read',
-          issues: 'write',
-          occupants: 'read',
-          inventory: 'admin',
-          supply_requests: 'admin',
-          keys: 'read',
-          lighting: null,
-          maintenance: null,
-          court_operations: null,
-          operations: 'write',
-          dashboard: 'read',
-        },
-        clerk: {
-          spaces: null,
-          issues: 'write',
-          occupants: 'read',
-          inventory: null,
-          supply_requests: 'write',
-          keys: 'write',
-          lighting: null,
-          maintenance: null,
-          court_operations: null,
-          operations: 'write',
-          dashboard: 'read',
-        },
-        sergeant: {
-          spaces: 'read',
-          issues: 'write',
-          occupants: 'read',
-          inventory: null,
-          supply_requests: null,
-          keys: 'admin',
-          lighting: null,
-          maintenance: null,
-          court_operations: null,
-          operations: 'admin',
-          dashboard: 'read',
-        },
-        court_officer: {
-          spaces: null,
-          issues: 'write',
-          occupants: 'read',
-          inventory: null,
-          supply_requests: null,
-          keys: 'write',
-          lighting: null,
-          maintenance: null,
-          court_operations: null,
-          operations: 'write',
-          dashboard: 'read',
-        },
-        bailiff: {
-          spaces: null,
-          issues: 'write',
-          occupants: 'read',
-          inventory: null,
-          supply_requests: 'write',
-          keys: 'write',
-          lighting: null,
-          maintenance: null,
-          court_operations: null,
-          operations: 'write',
-          dashboard: 'read',
-        },
-        court_reporter: {
-          spaces: null,
-          issues: 'write',
-          occupants: null,
-          inventory: null,
-          supply_requests: 'write',
-          keys: null,
-          lighting: null,
-          maintenance: null,
-          court_operations: null,
-          operations: 'write',
-          dashboard: 'read',
-        },
-        administrative_assistant: {
-          spaces: null,
-          issues: 'write',
-          occupants: 'admin',
-          inventory: null,
-          supply_requests: 'write',
-          keys: 'write',
-          lighting: null,
-          maintenance: null,
-          court_operations: null,
-          operations: 'write',
-          dashboard: 'read',
-        },
-        facilities_manager: {
-          spaces: 'admin',
-          issues: 'admin',
-          occupants: 'admin',
-          inventory: 'write',
-          supply_requests: 'write',
-          keys: 'admin',
-          lighting: 'admin',
-          maintenance: 'admin',
-          court_operations: null,
-          operations: 'admin',
-          dashboard: 'admin',
-        },
-        supply_room_staff: {
-          spaces: null,
-          issues: 'write',
-          occupants: 'read',
-          inventory: 'admin',
-          supply_requests: 'admin',
-          keys: null,
-          lighting: null,
-          maintenance: null,
-          court_operations: null,
-          operations: 'read',
-          dashboard: 'read',
-        },
-        admin: {
-          spaces: 'admin',
-          issues: 'admin',
-          occupants: 'admin',
-          inventory: 'admin',
-          supply_requests: 'admin',
-          keys: 'admin',
-          lighting: 'admin',
-          maintenance: 'admin',
-          court_operations: 'admin',
-          operations: 'admin',
-          dashboard: 'admin',
-        },
-        standard: {
-          spaces: null,
-          issues: 'write',
-          occupants: null,
-          inventory: null,
-          supply_requests: 'write',
-          keys: null,
-          lighting: null,
-          maintenance: null,
-          court_operations: null,
-          operations: null,
-          dashboard: 'read',
-        },
-      };
+      // rolePermissionsMap moved above
 
       let effectiveRole: CourtRole = role;
       // Admin-only preview role override, limited to Admin Profile page
@@ -357,6 +359,28 @@ export function useRolePermissions() {
 
   useEffect(() => {
     fetchUserRoleAndPermissions();
+  }, []);
+
+  // Listen for preview role changes and storage updates to refresh permissions across the app
+  useEffect(() => {
+    const handlePreviewChange = () => {
+      fetchUserRoleAndPermissions();
+    };
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'preview_role') {
+        fetchUserRoleAndPermissions();
+      }
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('preview_role_changed', handlePreviewChange);
+      window.addEventListener('storage', handleStorage);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('preview_role_changed', handlePreviewChange);
+        window.removeEventListener('storage', handleStorage);
+      }
+    };
   }, []);
 
   return {

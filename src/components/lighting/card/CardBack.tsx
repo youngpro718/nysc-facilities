@@ -32,11 +32,12 @@ export function CardBack({ fixture, onFlip }: CardBackProps) {
   };
 
   return (
-    <Card className="w-full h-full overflow-auto">
+    <Card className="w-full h-full overflow-auto rounded-xl border bg-card/80 shadow-sm">
       <div className="absolute top-4 right-4 z-10">
         <Button
           variant="ghost"
           size="icon"
+          className="rounded-md hover:bg-muted/60"
           onClick={onFlip}
         >
           <RotateCw className="h-4 w-4" />
@@ -47,7 +48,7 @@ export function CardBack({ fixture, onFlip }: CardBackProps) {
         <h3 className="font-medium">Fixture Details</h3>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="px-4 space-y-4">
         <div className="space-y-2">
           <h4 className="text-sm font-medium flex items-center gap-2">
             <Clock className="h-4 w-4" />

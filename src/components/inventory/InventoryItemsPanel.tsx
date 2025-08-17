@@ -1,15 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Edit, Trash2, Package, TrendingDown, MapPin } from "lucide-react";
+import { Plus, Edit, Trash2, Package, TrendingDown, MapPin, Download } from "lucide-react";
 import { CreateItemDialog } from "./CreateItemDialog";
 import { EditItemDialog } from "./EditItemDialog";
 import { StockAdjustmentDialog } from "./StockAdjustmentDialog";
 import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type InventoryItem = {
   id: string;
@@ -27,15 +28,18 @@ type InventoryItem = {
   storage_room_id: string;
   created_at: string;
   updated_at: string;
-  inventory_categories?: {
-    name: string;
-    color: string;
-    icon: string;
-  } | null;
-  rooms?: {
-    name: string;
-    room_number: string;
-  } | null;
+};
+
+type InventoryCategory = {
+  id: string;
+  name: string;
+  color: string;
+};
+
+type Room = {
+  id: string;
+  name: string;
+  room_number: string;
 };
 
 export const InventoryItemsPanel = () => {
@@ -46,11 +50,46 @@ export const InventoryItemsPanel = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [stockDialogOpen, setStockDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedRoom, setSelectedRoom] = useState<string>("all");
+  const [sortKey, setSortKey] = useState<"name" | "quantity" | "updated_at">("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [exporting, setExporting] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Reference data
+  const { data: categories } = useQuery<InventoryCategory[]>({
+    queryKey: ["inventory-categories"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("inventory_categories")
+        .select("id,name,color")
+        .order("name");
+      if (error) throw error;
+      return (data || []) as InventoryCategory[];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: rooms } = useQuery<Room[]>({
+    queryKey: ["rooms"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("rooms")
+        .select("id,name,room_number")
+        .order("name");
+      if (error) throw error;
+      return (data || []) as Room[];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const categoriesById = useMemo(() => new Map((categories ?? []).map(c => [c.id, c])), [categories]);
+  const roomsById = useMemo(() => new Map((rooms ?? []).map(r => [r.id, r])), [rooms]);
+
   const { data, isLoading, isError, error } = useQuery<{ items: InventoryItem[]; total: number }>({
-    queryKey: ["inventory-items", searchQuery, page, pageSize],
+    queryKey: ["inventory-items", searchQuery, page, pageSize, selectedCategory, selectedRoom, sortKey, sortDir],
     queryFn: async () => {
       // Single round trip with relational selects + count + pagination
       const from = (page - 1) * pageSize;
@@ -59,12 +98,22 @@ export const InventoryItemsPanel = () => {
       let query = supabase
         .from("inventory_items")
         .select("*", { count: "exact" })
-        .order("name")
         .range(from, to);
 
       if (searchQuery) {
         query = query.or(`name.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
       }
+
+      if (selectedCategory && selectedCategory !== "all") {
+        query = query.eq("category_id", selectedCategory);
+      }
+      if (selectedRoom && selectedRoom !== "all") {
+        query = query.eq("storage_room_id", selectedRoom);
+      }
+
+      // Sorting
+      const ascending = sortDir === "asc";
+      query = query.order(sortKey, { ascending });
 
       const { data, error, count } = await query;
       if (error) throw error;
@@ -89,6 +138,11 @@ export const InventoryItemsPanel = () => {
   useEffect(() => {
     setPage(1);
   }, [searchQuery]);
+
+  // Also reset when filters or sort change
+  useEffect(() => {
+    setPage(1);
+  }, [selectedCategory, selectedRoom, sortKey, sortDir, pageSize]);
 
   const deleteItemMutation = useMutation({
     mutationFn: async (itemId: string) => {
@@ -130,9 +184,78 @@ export const InventoryItemsPanel = () => {
     }
   };
 
+  const handleExportCsv = async () => {
+    try {
+      setExporting(true);
+      // Fetch all matching rows (cap at 10k)
+      let query = supabase
+        .from("inventory_items")
+        .select("*")
+        .range(0, 9999);
+
+      if (searchQuery) {
+        query = query.or(`name.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
+      }
+      if (selectedCategory) {
+        query = query.eq("category_id", selectedCategory);
+      }
+      if (selectedRoom) {
+        query = query.eq("storage_room_id", selectedRoom);
+      }
+      query = query.order(sortKey, { ascending: sortDir === "asc" });
+
+      const { data, error } = await query;
+      if (error) throw error;
+      const rows = (data as InventoryItem[] | null) ?? [];
+
+      const csvRows: Record<string, any>[] = rows.map((it) => {
+        const cat = categoriesById.get(it.category_id);
+        const room = roomsById.get(it.storage_room_id);
+        return {
+          Name: it.name,
+          Quantity: it.quantity,
+          Unit: it.unit || "",
+          Minimum: it.minimum_quantity ?? 0,
+          Category: cat?.name ?? "",
+          Room: room?.name ?? "",
+          RoomNumber: room?.room_number ?? "",
+          UpdatedAt: it.updated_at,
+        };
+      });
+
+      const toCsv = (arr: Record<string, any>[]) => {
+        if (arr.length === 0) return "";
+        const headers = Object.keys(arr[0]);
+        const esc = (v: any) => {
+          const s = String(v ?? "");
+          const needsQuote = /[",\n]/.test(s);
+          const escaped = s.replace(/"/g, '""');
+          return needsQuote ? `"${escaped}"` : escaped;
+        };
+        const lines = [headers.join(","), ...arr.map(r => headers.map(h => esc(r[h])).join(","))];
+        return lines.join("\n");
+      };
+
+      const csv = toCsv(csvRows);
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `inventory_items_export_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      toast({ title: "Export complete", description: `Exported ${rows.length} items.` });
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Export failed", description: e?.message ?? String(e) });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const getStockStatus = (quantity: number, minimum: number) => {
     if (quantity === 0) return { label: "Out of Stock", color: "bg-red-100 text-red-800" };
-    if (quantity < minimum) return { label: "Low Stock", color: "bg-orange-100 text-orange-800" };
+    if (minimum > 0 && quantity > 0 && quantity <= minimum) return { label: "Low Stock", color: "bg-orange-100 text-orange-800" };
     return { label: "In Stock", color: "bg-green-100 text-green-800" };
   };
 
@@ -206,15 +329,71 @@ export const InventoryItemsPanel = () => {
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search items by name or description..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
+      {/* Filters & Sort */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full sm:max-w-3xl">
+          <div>
+            <label className="mb-1 block text-xs text-muted-foreground">Category</label>
+            <Select value={selectedCategory} onValueChange={(v) => setSelectedCategory(v)}>
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder="All categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                {(categories ?? []).map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-muted-foreground">Room</label>
+            <Select value={selectedRoom} onValueChange={(v) => setSelectedRoom(v)}>
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder="All rooms" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                {(rooms ?? []).map((r) => (
+                  <SelectItem key={r.id} value={r.id}>{r.name} {r.room_number ? `(${r.room_number})` : ''}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-muted-foreground">Sort</label>
+            <div className="flex gap-2">
+              <Select value={sortKey} onValueChange={(v) => setSortKey(v as any)}>
+                <SelectTrigger className="h-9 min-w-[8rem]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">Name</SelectItem>
+                  <SelectItem value="quantity">Quantity</SelectItem>
+                  <SelectItem value="updated_at">Last Updated</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={sortDir} onValueChange={(v) => setSortDir(v as any)}>
+                <SelectTrigger className="h-9 min-w-[6.5rem]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="asc">Asc</SelectItem>
+                  <SelectItem value="desc">Desc</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => { setSelectedCategory("all"); setSelectedRoom("all"); setSortKey("name"); setSortDir("asc"); setSearchQuery(""); }}>
+            Reset
+          </Button>
+          <Button variant="outline" onClick={handleExportCsv} disabled={exporting}>
+            <Download className="h-4 w-4 mr-2" />
+            {exporting ? "Exporting..." : "Export CSV"}
+          </Button>
+        </div>
       </div>
 
       {/* Items Grid */}
@@ -246,11 +425,15 @@ export const InventoryItemsPanel = () => {
                         <Badge className={stockStatus.color}>
                           {stockStatus.label}
                         </Badge>
-                        {item.inventory_categories && (
-                          <Badge variant="outline">
-                            {item.inventory_categories.name}
-                          </Badge>
-                        )}
+                        {(() => {
+                          const cat = categoriesById.get(item.category_id);
+                          if (!cat) return null;
+                          return (
+                            <Badge variant="outline">
+                              {cat.name}
+                            </Badge>
+                          );
+                        })()}
                       </div>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
@@ -263,12 +446,16 @@ export const InventoryItemsPanel = () => {
                             Min: {item.minimum_quantity}
                           </div>
                         )}
-                        {item.rooms && (
-                          <div className="flex items-center gap-1">
-                            <MapPin className="h-4 w-4" />
-                            {item.rooms.name} ({item.rooms.room_number})
-                          </div>
-                        )}
+                        {(() => {
+                          const room = roomsById.get(item.storage_room_id);
+                          if (!room) return null;
+                          return (
+                            <div className="flex items-center gap-1">
+                              <MapPin className="h-4 w-4" />
+                              {room.name} {room.room_number ? `(${room.room_number})` : ""}
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                     <div className="flex gap-2">

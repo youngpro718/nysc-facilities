@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,11 +18,7 @@ import {
   Clock, 
   AlertTriangle, 
   BarChart3,
-  Warehouse,
-  ClipboardList,
-  Settings,
   Users,
-  TrendingUp,
   XCircle,
   Search,
   MapPin,
@@ -31,9 +26,8 @@ import {
   Truck
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { InventoryManagement } from './InventoryManagement';
-import { SupplyRequestTracking } from './SupplyRequestTracking';
-import { SupplyAnalytics } from './SupplyAnalytics';
+ 
+ 
 
 interface SupplyRequest {
   id: string;

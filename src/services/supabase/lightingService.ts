@@ -2,70 +2,99 @@
 import { supabase } from '@/integrations/supabase/client';
 import { LightingFixture, LightStatus, LightingFixtureFormData, LightingZoneFormData, RoomLightingStats } from '@/types/lighting';
 
+// Feature flags to optionally use database views if available
+const USE_ENRICHED_LIGHTING_VIEW = import.meta.env.VITE_USE_ENRICHED_LIGHTING_VIEW === 'true';
+const USE_ROOM_LIGHTING_STATS_VIEW = import.meta.env.VITE_USE_ROOM_LIGHTING_STATS_VIEW === 'true';
+
+// Compute durations in minutes for outage (open) and repair (closed)
+function computeDurations(reported_out_date?: string | null, replaced_date?: string | null) {
+  let outage_minutes: number | null = null;
+  let repair_minutes: number | null = null;
+  if (reported_out_date) {
+    const start = new Date(reported_out_date).getTime();
+    if (!Number.isNaN(start)) {
+      if (replaced_date) {
+        const end = new Date(replaced_date).getTime();
+        if (!Number.isNaN(end) && end >= start) {
+          repair_minutes = Math.floor((end - start) / 60000);
+        }
+      } else {
+        const now = Date.now();
+        if (now >= start) {
+          outage_minutes = Math.floor((now - start) / 60000);
+        }
+      }
+    }
+  }
+  return { outage_minutes, repair_minutes };
+}
+
 /**
  * Fetch all lighting fixtures with a simplified approach
  */
 export async function fetchLightingFixtures(): Promise<LightingFixture[]> {
   try {
-    // 1) Try enriched view first (if created). This reduces client joins and improves perf.
-    //    If the view doesn't exist, we'll catch and fall back to stitching below.
-    try {
-      // Cast to any because the generated Database types may not include this view yet
-      const { data: enriched, error: enrichedError } = await (supabase as any)
-        .from('lighting_fixtures_enriched')
-        .select(`
-          id,
-          name,
-          type,
-          status,
-          space_id,
-          space_type,
-          position,
-          technology,
-          created_at,
-          updated_at,
-          bulb_count,
-          ballast_issue,
-          requires_electrician,
-          reported_out_date,
-          replaced_date,
-          notes,
-          room_number,
-          space_name,
-          building_name,
-          floor_name,
-          building_id,
-          floor_id
-        `);
+    // 1) Optionally try enriched view first to reduce client joins.
+    if (USE_ENRICHED_LIGHTING_VIEW) {
+      try {
+        // Cast to any because the generated Database types may not include this view yet
+        const { data: enriched, error: enrichedError } = await (supabase as any)
+          .from('lighting_fixtures_enriched')
+          .select(`
+            id,
+            name,
+            type,
+            status,
+            space_id,
+            space_type,
+            position,
+            technology,
+            created_at,
+            updated_at,
+            bulb_count,
+            ballast_issue,
+            requires_electrician,
+            reported_out_date,
+            replaced_date,
+            notes,
+            room_number,
+            space_name,
+            building_name,
+            floor_name,
+            building_id,
+            floor_id
+          `);
 
-      if (!enrichedError && enriched && enriched.length > 0) {
-        return enriched.map((fixture: any): LightingFixture => ({
-          id: fixture.id,
-          name: fixture.name || '',
-          type: mapFixtureType(fixture.type),
-          status: (fixture.status as LightStatus) || 'functional',
-          room_number: fixture.room_number || null,
-          space_name: fixture.space_name || null,
-          space_id: fixture.space_id || null,
-          space_type: (fixture.space_type as 'room' | 'hallway') || 'room',
-          position: (fixture.position as 'ceiling' | 'wall' | 'floor' | 'desk') || 'ceiling',
-          technology: fixture.technology || null,
-          bulb_count: fixture.bulb_count || 1,
-          ballast_issue: fixture.ballast_issue || false,
-          requires_electrician: fixture.requires_electrician || false,
-          reported_out_date: fixture.reported_out_date || null,
-          replaced_date: fixture.replaced_date || null,
-          notes: fixture.notes || null,
-          created_at: fixture.created_at || null,
-          updated_at: fixture.updated_at || null,
-          building_name: fixture.building_name || null,
-          floor_name: fixture.floor_name || null,
-          building_id: fixture.building_id || undefined,
-          floor_id: fixture.floor_id || null
-        }));
+        if (!enrichedError && enriched && enriched.length > 0) {
+          return enriched.map((fixture: any): LightingFixture => ({
+            id: fixture.id,
+            name: fixture.name || '',
+            type: mapFixtureType(fixture.type),
+            status: (fixture.status as LightStatus) || 'functional',
+            room_number: fixture.room_number || null,
+            space_name: fixture.space_name || null,
+            space_id: fixture.space_id || null,
+            space_type: (fixture.space_type as 'room' | 'hallway') || 'room',
+            position: (fixture.position as 'ceiling' | 'wall' | 'floor' | 'desk') || 'ceiling',
+            technology: fixture.technology || null,
+            bulb_count: fixture.bulb_count || 1,
+            ballast_issue: fixture.ballast_issue || false,
+            requires_electrician: fixture.requires_electrician || false,
+            reported_out_date: fixture.reported_out_date || null,
+            replaced_date: fixture.replaced_date || null,
+            notes: fixture.notes || null,
+            created_at: fixture.created_at || null,
+            updated_at: fixture.updated_at || null,
+            building_name: fixture.building_name || null,
+            floor_name: fixture.floor_name || null,
+            building_id: fixture.building_id || undefined,
+            floor_id: fixture.floor_id || null,
+            ...computeDurations(fixture.reported_out_date, fixture.replaced_date)
+          }));
+        }
+      } catch (e) {
+        // View might not exist yet; ignore and fall back
       }
-    } catch (e) {
-      // View might not exist yet; ignore and fall back
     }
 
     // 2) Fallback: fetch base fixtures and stitch space data client-side
@@ -154,7 +183,8 @@ export async function fetchLightingFixtures(): Promise<LightingFixture[]> {
       updated_at: fixture.updated_at || null,
       building_name: null,
       floor_name: null,
-      building_id: undefined
+      building_id: undefined,
+      ...computeDurations(fixture.reported_out_date, fixture.replaced_date)
     }));
   } catch (error) {
     console.error('Error in fetchLightingFixtures:', error);
@@ -315,24 +345,32 @@ export async function resolveFixtureOutage(
  * Fetch per-room lighting stats from a SQL view
  */
 export async function fetchRoomLightingStats(): Promise<RoomLightingStats[]> {
-  // Using any for view since generated Database types may not include it
-  const { data, error } = await (supabase as any)
-    .from('room_lighting_stats_v')
-    .select('*');
+  // Skip querying the view unless explicitly enabled to avoid noisy 404s in dev
+  if (!USE_ROOM_LIGHTING_STATS_VIEW) return [];
 
-  if (error) throw error;
-  return (data || []).map((r: any): RoomLightingStats => ({
-    room_id: r.room_id ?? null,
-    room_name: r.room_name ?? null,
-    room_number: r.room_number ?? null,
-    fixture_count: Number(r.fixture_count ?? 0),
-    open_issues_total: Number(r.open_issues_total ?? 0),
-    open_replaceable: Number(r.open_replaceable ?? 0),
-    open_electrician: Number(r.open_electrician ?? 0),
-    mttr_minutes: r.mttr_minutes !== null && r.mttr_minutes !== undefined ? Number(r.mttr_minutes) : null,
-    longest_open_minutes: r.longest_open_minutes !== null && r.longest_open_minutes !== undefined ? Number(r.longest_open_minutes) : null,
-    has_sla_breach: Boolean(r.has_sla_breach),
-  }));
+  try {
+    // Using any for view since generated Database types may not include it
+    const { data, error } = await (supabase as any)
+      .from('room_lighting_stats_v')
+      .select('*');
+
+    if (error) throw error;
+    return (data || []).map((r: any): RoomLightingStats => ({
+      room_id: r.room_id ?? null,
+      room_name: r.room_name ?? null,
+      room_number: r.room_number ?? null,
+      fixture_count: Number(r.fixture_count ?? 0),
+      open_issues_total: Number(r.open_issues_total ?? 0),
+      open_replaceable: Number(r.open_replaceable ?? 0),
+      open_electrician: Number(r.open_electrician ?? 0),
+      mttr_minutes: r.mttr_minutes !== null && r.mttr_minutes !== undefined ? Number(r.mttr_minutes) : null,
+      longest_open_minutes: r.longest_open_minutes !== null && r.longest_open_minutes !== undefined ? Number(r.longest_open_minutes) : null,
+      has_sla_breach: Boolean(r.has_sla_breach),
+    }));
+  } catch (e) {
+    console.warn('room_lighting_stats_v not available; returning empty stats.');
+    return [];
+  }
 }
 
 /**

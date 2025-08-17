@@ -1,6 +1,5 @@
 
-import { useState } from "react";
-import { SparklesCore } from "@/components/ui/sparkles";
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { Loader2 } from "lucide-react";
@@ -9,6 +8,18 @@ import { useAuth } from "@/hooks/useAuth";
 const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
   const { isLoading, isAuthenticated } = useAuth();
+
+  // Force light theme while on the login page to ensure input backgrounds and text
+  // use light variables (prevents dark inputs on light backgrounds)
+  useEffect(() => {
+    const root = document.documentElement;
+    const prevClassName = root.className;
+    root.classList.remove("dark", "blue", "green", "purple");
+    root.classList.add("light");
+    return () => {
+      root.className = prevClassName;
+    };
+  }, []);
 
   // Show loading while auth state is being determined
   if (isLoading) {
@@ -28,46 +39,42 @@ const LoginPage = () => {
     );
   }
 
-  return (
-    <div className="h-screen relative w-full bg-courthouse flex flex-col items-center justify-center overflow-hidden">
-      <div className="w-full absolute inset-0 h-screen">
-        <SparklesCore
-          id="tsparticlesfullpage"
-          background="transparent"
-          minSize={0.6}
-          maxSize={1.4}
-          particleDensity={100}
-          className="w-full h-full"
-          particleColor="#FFFFFF"
-          speed={1}
-        />
-      </div>
 
-      <Card className="relative z-20 w-full max-w-md p-8 bg-white/10 backdrop-blur-lg rounded-lg shadow-xl border border-white/20 group/card">
-        <div className="absolute inset-0 -z-10" style={{ margin: '-1px' }}>
-          <div className="text-center text-white text-2xl font-bold py-4">
-            {isLogin ? "Sign In" : "Sign Up"}
-          </div>
-        </div>
-        
-        <div className="flex flex-col items-center gap-6 mb-8">
-          <img 
-            src="/lovable-uploads/ca12c24b-cc46-4318-b46d-8af88c0deae9.png" 
-            alt="NYSC Logo" 
-            className="h-20 w-20"
+
+  return (
+    <div className="min-h-screen relative w-full bg-background flex flex-col items-center justify-center px-4">
+      {/* Subtle watermark in corner */}
+      <img
+        src="/lovable-uploads/ca12c24b-cc46-4318-b46d-8af88c0deae9.png"
+        alt="Court Seal Watermark"
+        className="pointer-events-none select-none absolute right-6 top-6 opacity-10 w-24 h-24 -z-10"
+      />
+
+      <Card className="w-full max-w-md p-6 sm:p-7 bg-card shadow-sm border border-border">
+        <div className="flex items-center gap-3 mb-4">
+          <img
+            src="/lovable-uploads/ca12c24b-cc46-4318-b46d-8af88c0deae9.png"
+            alt="NYSC Logo"
+            className="h-10 w-10"
           />
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-white mb-2">
+          <div>
+            <h1 className="text-xl md:text-2xl font-semibold text-foreground">
               NYSC Facilities Hub
             </h1>
-            <p className="text-white/80">{isLogin ? "Welcome back" : "Create your account"}</p>
+            <p className="text-muted-foreground text-sm">
+              {isLogin ? "Sign in to continue" : "Create your account"}
+            </p>
           </div>
         </div>
 
-        <AuthForm 
-          isLogin={isLogin} 
+        <AuthForm
+          isLogin={isLogin}
           setIsLogin={setIsLogin}
         />
+
+        <p className="mt-6 text-[11px] text-slate-500 text-center">
+          Authorized use only. Activity may be monitored.
+        </p>
       </Card>
     </div>
   );

@@ -19,6 +19,18 @@ export function SimpleLightingTable({ fixtures, onRefresh }: SimpleLightingTable
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<'all' | 'functional' | 'non_functional' | 'needs_electrician'>('all');
 
+  const formatMinutes = (mins?: number | null) => {
+    if (mins === null || mins === undefined) return null;
+    const days = Math.floor(mins / (60 * 24));
+    const hours = Math.floor((mins % (60 * 24)) / 60);
+    const minutes = Math.floor(mins % 60);
+    const parts: string[] = [];
+    if (days > 0) parts.push(`${days}d`);
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0 && days === 0) parts.push(`${minutes}m`);
+    return parts.join(" ") || '0m';
+  };
+
   // Filter fixtures based on search and status
   const filteredFixtures = fixtures.filter(fixture => {
     const matchesSearch = fixture.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -208,8 +220,8 @@ export function SimpleLightingTable({ fixtures, onRefresh }: SimpleLightingTable
                 <th className="text-left p-3 font-medium">Type</th>
                 <th className="text-left p-3 font-medium">Status</th>
                 <th className="text-left p-3 font-medium">Ballast</th>
-                <th className="text-left p-3 font-medium">Reported Out</th>
-                <th className="text-left p-3 font-medium">Fixed</th>
+                <th className="text-left p-3 font-medium">Outage Age</th>
+                <th className="text-left p-3 font-medium">Repair Time</th>
               </tr>
             </thead>
             <tbody>
@@ -237,16 +249,18 @@ export function SimpleLightingTable({ fixtures, onRefresh }: SimpleLightingTable
                     )}
                   </td>
                   <td className="p-3 text-sm text-muted-foreground">
-                    {fixture.reported_out_date ? 
-                      formatDistanceToNow(new Date(fixture.reported_out_date), { addSuffix: true }) : 
-                      '-'
-                    }
+                    {fixture.outage_minutes != null
+                      ? `Out for ${formatMinutes(fixture.outage_minutes)}`
+                      : (fixture.reported_out_date
+                          ? formatDistanceToNow(new Date(fixture.reported_out_date), { addSuffix: true })
+                          : '-')}
                   </td>
                   <td className="p-3 text-sm text-muted-foreground">
-                    {fixture.replaced_date ? 
-                      formatDistanceToNow(new Date(fixture.replaced_date), { addSuffix: true }) : 
-                      '-'
-                    }
+                    {fixture.repair_minutes != null
+                      ? formatMinutes(fixture.repair_minutes)
+                      : (fixture.replaced_date
+                          ? formatDistanceToNow(new Date(fixture.replaced_date), { addSuffix: true })
+                          : '-')}
                   </td>
                 </tr>
               ))}

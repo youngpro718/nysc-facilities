@@ -51,8 +51,8 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
   const CurrentStepComponent = steps[currentStep].component;
 
   return (
-    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl">
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+      <Card className="w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <div>
@@ -115,7 +115,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
           </div>
         </CardHeader>
         
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 overflow-y-auto">
           <CurrentStepComponent />
           
           <div className="flex items-center justify-between pt-4 border-t">

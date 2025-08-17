@@ -26,6 +26,8 @@ export interface User {
   department: string;
   title: string;
   is_admin?: boolean;
+  metadata?: any;
+  access_level?: 'none' | 'read' | 'write' | 'admin';
 }
 
 export function EnhancedUserManagementModal({ open, onOpenChange }: UserManagementModalProps) {
@@ -42,6 +44,24 @@ export function EnhancedUserManagementModal({ open, onOpenChange }: UserManageme
     if (open) {
       loadUsers();
       getCurrentUser();
+      // Subscribe to realtime changes for profiles and user_roles to reflect new profiles/admin changes
+      const channel = supabase
+        .channel('admin-user-management')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'profiles' },
+          () => loadUsers()
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'user_roles' },
+          () => loadUsers()
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [open]);
 
@@ -92,15 +112,36 @@ export function EnhancedUserManagementModal({ open, onOpenChange }: UserManageme
 
   const handleVerifyUser = async (userId: string) => {
     try {
+      const user = users.find(u => u.id === userId);
+      const requested = (user as any)?.metadata?.requested_access_level as 'standard' | 'administrative' | 'read' | 'write' | 'admin' | undefined;
+      // Backward compatible mapping
+      const mapped:
+        | 'read'
+        | 'write'
+        | 'admin' = requested === 'administrative'
+          ? 'admin'
+          : requested === 'write'
+            ? 'write'
+            : 'read';
+
       const { error } = await supabase
         .from('profiles')
         .update({ 
           verification_status: 'verified',
-          is_approved: true 
+          is_approved: true,
+          access_level: mapped
         })
         .eq('id', userId);
 
       if (error) throw error;
+
+      // Ensure admin role is assigned if administrative was requested/mapped
+      if (mapped === 'admin') {
+        const { error: roleErr } = await supabase
+          .from('user_roles')
+          .insert({ user_id: userId, role: 'admin' });
+        if (roleErr) throw roleErr;
+      }
 
       toast({
         title: "User Verified",

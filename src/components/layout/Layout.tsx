@@ -1,17 +1,19 @@
 
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-import { getRoleBasedNavigation, userNavigation, getNavigationRoutes } from "./config/navigation";
+import { getRoleBasedNavigation, getNavigationRoutes } from "./config/navigation";
 import { useRolePermissions } from "@/hooks/useRolePermissions";
 import { MobileMenu } from "./components/MobileMenu";
+import { BottomTabBar } from "./components/BottomTabBar";
 import { DesktopNavigationImproved } from "./components/DesktopNavigationImproved";
-import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { NotificationBox } from "@/components/admin/NotificationBox";
-import { UserRound, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { useOnboarding } from "@/hooks/useOnboarding";
+import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 
 const Layout = () => {
   const location = useLocation();
@@ -20,21 +22,7 @@ const Layout = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isAuthenticated, isAdmin, isLoading, signOut, user } = useAuth();
   const { permissions, userRole, profile, loading: permissionsLoading } = useRolePermissions();
-  const [demoMode, setDemoMode] = useState<boolean>(false);
-
-  useEffect(() => {
-    try {
-      setDemoMode(localStorage.getItem('DEMO_MODE') === 'true');
-    } catch { /* no-op */ }
-  }, [location.pathname]);
-
-  const disableDemoMode = () => {
-    try {
-      localStorage.removeItem('DEMO_MODE');
-    } catch { /* no-op */ }
-    setDemoMode(false);
-    navigate('/login');
-  };
+  const { showOnboarding, completeOnboarding, skipOnboarding } = useOnboarding();
 
   // Only build navigation once permissions are ready to avoid flashing the wrong menu after login
   const navReady = !!userRole && !permissionsLoading;
@@ -52,25 +40,8 @@ const Layout = () => {
     if (index === null) return;
 
     // If userRole not ready yet, use a safe default (standard user routes)
-    const routes = userRole
-      ? getNavigationRoutes(permissions, userRole, profile)
-      : getNavigationRoutes(
-          {
-            spaces: null,
-            issues: null,
-            occupants: null,
-            inventory: null,
-            supply_requests: null,
-            keys: null,
-            lighting: null,
-            maintenance: null,
-            court_operations: null,
-            operations: null,
-            dashboard: null,
-          } as any,
-          'standard' as any,
-          undefined
-        );
+    if (!navReady) return; // avoid routing until nav is ready
+    const routes = getNavigationRoutes(permissions, userRole!, profile);
 
     const route = routes[index];
     if (route) {
@@ -83,7 +54,7 @@ const Layout = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {!isLoginPage && (isAuthenticated || demoMode) && (
+      {!isLoginPage && isAuthenticated && (
         <header className="bg-card shadow sticky top-0 z-50 safe-area-top">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex h-14 sm:h-16 items-center justify-between">
@@ -116,15 +87,18 @@ const Layout = () => {
                       {profile?.first_name} {profile?.last_name}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      {isAdmin ? 'Administrator' : 'User'}
+                      {navReady ? (userRole === 'admin' ? 'Administrator' : 'User') : ''}
                     </span>
                   </div>
                   <button
-                    className="focus:outline-none p-1 rounded-full hover:bg-muted/50 transition-colors"
+                    className="focus:outline-none p-1 rounded-full hover:bg-muted/50 transition-colors disabled:opacity-50"
                     title="Profile"
+                    disabled={!navReady}
                     onClick={() => {
-                      // Navigate to appropriate profile page based on user role
-                      navigate(isAdmin ? '/admin-profile' : '/profile');
+                      if (!navReady) return;
+                      // Use resolved userRole to avoid transient misroutes
+                      const goAdmin = userRole === 'admin';
+                      navigate(goAdmin ? '/admin-profile' : '/profile');
                     }}
                   >
                     <UserAvatar
@@ -147,15 +121,8 @@ const Layout = () => {
                       onNavigationChange={handleNavigationChange}
                       onSignOut={signOut}
                     />
-                  ) : isAuthenticated ? (
-                    <MobileMenu
-                      isOpen={isMobileMenuOpen}
-                      onOpenChange={setIsMobileMenuOpen}
-                      navigation={userNavigation}
-                      onNavigationChange={handleNavigationChange}
-                      onSignOut={signOut}
-                    />
                   ) : (
+                    // Minimal placeholder to avoid flicker
                     <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                   )}
                 </div>
@@ -167,38 +134,35 @@ const Layout = () => {
                       navigation={navigation}
                       onSignOut={signOut}
                     />
-                  ) : isAuthenticated ? (
-                    <DesktopNavigationImproved
-                      navigation={userNavigation}
-                      onSignOut={signOut}
-                    />
                   ) : (
+                    // Minimal placeholder to avoid flicker
                     <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                   )}
                 </div>
               </div>
             </div>
-            {demoMode && (
-              <div className="w-full bg-amber-100 text-amber-900 border-t border-amber-200 py-1.5 px-3 text-xs sm:text-sm flex items-center justify-between rounded-b">
-                <div className="truncate pr-2">
-                  Demo Mode is enabled — auth is bypassed and all modules are accessible.
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Button size="sm" variant="outline" onClick={disableDemoMode}>
-                    Disable
-                  </Button>
-                </div>
-              </div>
-            )}
+            
           </div>
         </header>
       )}
 
-      <main className="flex-1 pb-safe">
+      {/* Global Onboarding Wizard overlay (after header to ensure correct stacking order) */}
+      {isAuthenticated && !isLoginPage && showOnboarding && (
+        <OnboardingWizard onComplete={completeOnboarding} onSkip={skipOnboarding} />
+      )}
+
+      <main className="flex-1 pb-20 md:pb-0 pb-safe">
         <div className="mx-auto max-w-none xl:max-w-[95%] 2xl:max-w-[90%] px-3 sm:px-4 lg:px-8 xl:px-12 py-4 sm:py-8 xl:py-12">
           <Outlet />
         </div>
       </main>
+      {/* Mobile bottom tab bar */}
+      {isAuthenticated && !isLoginPage && navReady && (
+        <BottomTabBar
+          navigation={navigation}
+          onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
+        />
+      )}
     </div>
   );
 };

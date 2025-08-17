@@ -34,8 +34,8 @@ function UserCard({
 
   const getAccessLevelColor = (level: User['access_level']) => {
     switch (level) {
-      case 'admin': return 'bg-red-100 text-red-800';
-      case 'write': return 'bg-blue-100 text-blue-800';
+      case 'admin': return 'bg-blue-100 text-blue-800';
+      case 'write': return 'bg-green-100 text-green-800';
       case 'read': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -80,7 +80,7 @@ function UserCard({
             </div>
             <div className="flex items-center gap-2 mt-2">
               <Badge className={`text-xs ${getAccessLevelColor(user.access_level)}`}>
-                {user.access_level.toUpperCase()}
+                {user.access_level === 'admin' ? 'Administrative' : 'Standard'}
               </Badge>
               <Badge className={`text-xs ${getVerificationColor(user.verification_status)}`}>
                 {user.verification_status.toUpperCase()}
@@ -162,8 +162,7 @@ function UserCard({
               disabled={isUpdating}
               className="text-xs border rounded px-2 py-1"
             >
-              <option value="read">Read</option>
-              <option value="write">Write</option>
+              <option value="read">Standard</option>
             </select>
           )}
         </div>

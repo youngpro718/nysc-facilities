@@ -17,6 +17,7 @@ import { CurrentOccupantsSection } from "./components/CurrentOccupantsSection";
 import { useRoomData } from "./hooks/useRoomData";
 import { useRoomOccupants } from "./hooks/useRoomOccupants";
 import type { AssignRoomsDialogProps } from "./types/assignmentTypes";
+import { supabase } from "@/integrations/supabase/client";
 
 export function AssignRoomsDialog({
   open,
@@ -31,8 +32,24 @@ export function AssignRoomsDialog({
 
   const { isAuthenticated } = useAuth();
   const { isAssigning, handleAssignRoom } = useRoomAssignment(onSuccess);
-  
-  const authError = !isAuthenticated;
+  // Require a real session for data hooks and assigning (RLS). Dev bypass should not flip this.
+  const [hasSession, setHasSession] = useState(false);
+  const authError = !hasSession;
+  useEffect(() => {
+    let mounted = true;
+    const init = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (mounted) setHasSession(!!data?.session);
+    };
+    init();
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      setHasSession(!!session);
+    });
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
   const { data: availableRooms, isLoading: isLoadingRooms } = useRoomData(authError);
   const { data: currentOccupants, isLoading: isLoadingOccupants } = useRoomOccupants(selectedRoom, authError);
 
@@ -112,6 +129,11 @@ export function AssignRoomsDialog({
           <div className="text-sm text-muted-foreground">
             Selected occupants: {selectedOccupants.length}
           </div>
+          {authError && (
+            <div className="text-sm text-destructive">
+              You must be signed in to assign rooms.
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end gap-2">

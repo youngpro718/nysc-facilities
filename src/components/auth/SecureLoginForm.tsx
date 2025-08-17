@@ -1,5 +1,4 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { SecureForm } from '@/components/security/SecureForm';
 import { toast } from 'sonner';
 import { useSecureAuth } from '@/hooks/security/useSecureAuth';
@@ -15,7 +14,6 @@ export const SecureLoginForm = ({
   setLoading,
   onToggleForm,
 }: SecureLoginFormProps) => {
-  const navigate = useNavigate();
   const { secureSignIn, isLoading: authLoading } = useSecureAuth();
 
   const handleSecureLogin = async (data: { email: string; password: string }) => {
@@ -23,9 +21,6 @@ export const SecureLoginForm = ({
       setLoading(true);
       
       const result = await secureSignIn(data.email, data.password);
-
-      // Navigate based on the authentication result
-      navigate("/", { replace: true });
       
       toast.success("Welcome back!", {
         description: "You've successfully signed in."
@@ -51,14 +46,14 @@ export const SecureLoginForm = ({
       <div className="text-center space-y-2">
         <button
           type="button"
-          className="text-white hover:text-white/80 underline block mx-auto"
+          className="text-primary hover:underline underline-offset-2 block mx-auto"
           onClick={() => toast.info("Please contact your administrator to reset your password")}
         >
           Forgot password?
         </button>
         <button
           type="button"
-          className="text-white hover:text-white/80 underline text-sm block mx-auto"
+          className="text-muted-foreground hover:text-foreground underline underline-offset-2 text-sm block mx-auto"
           onClick={() => toast.info("Try a simpler password (6+ characters) or contact admin for account setup")}
         >
           Password issues?
@@ -67,7 +62,7 @@ export const SecureLoginForm = ({
 
       <button
         type="button"
-        className="w-full text-white hover:bg-white/10 transition-colors p-2 rounded"
+        className="w-full text-primary hover:underline underline-offset-2 transition-colors p-2 rounded"
         onClick={onToggleForm}
         disabled={loading}
       >

@@ -141,13 +141,14 @@ export function CardFront({
 
   return (
     <Card className={cn(
-      "w-full h-full min-h-[220px] transition-all duration-200 flex flex-col",
-      isSelected && "ring-2 ring-primary"
+      "w-full h-full min-h-[240px] flex flex-col rounded-xl border bg-card/80 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5",
+      isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background"
     )}>
       <div className="absolute top-4 left-4 z-10">
         <Checkbox 
           checked={isSelected}
           onCheckedChange={onSelect}
+          className="rounded-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
         />
       </div>
       
@@ -155,20 +156,21 @@ export function CardFront({
         <Button
           variant="ghost"
           size="icon"
+          className="rounded-md hover:bg-muted/60"
           onClick={onFlip}
         >
           <RotateCw className="h-4 w-4" />
         </Button>
       </div>
 
-      <CardHeader className="pt-3 pb-1">
+      <CardHeader className="pt-4 pb-2">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="font-semibold text-sm truncate">{fixture.name}</h3>
+          <h3 className="font-semibold text-[15px] truncate">{fixture.name}</h3>
           <StatusBadge status={fixture.status} />
         </div>
       </CardHeader>
 
-      <CardContent className="pb-3 space-y-2 flex flex-col h-full">
+      <CardContent className="px-4 pb-3 space-y-3 flex flex-col h-full">
         {/* Meta: two lines */}
         <div className="text-xs text-muted-foreground truncate">
           {getLocationText()}
@@ -183,7 +185,7 @@ export function CardFront({
 
         {fixture.next_maintenance_date && (
           <div className={cn(
-            "flex items-center gap-1 text-xs px-2 py-0.5 rounded-full",
+            "flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ring-1 ring-border",
             isMaintenanceSoon() ? "bg-yellow-50 text-yellow-800" : "bg-blue-50 text-blue-800"
           )}>
             <Calendar className="h-3 w-3" />
@@ -195,21 +197,21 @@ export function CardFront({
         <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
           {openIssue ? (
             <>
-              <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5">
+              <span className="inline-flex items-center gap-1 rounded-full ring-1 ring-border bg-muted/50 px-2 py-0.5">
                 <Clock className="h-3 w-3" />
                 Out for {formatDuration(openIssue.reported_at)}
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-secondary text-secondary-foreground px-2 py-0.5">
+              <span className="inline-flex items-center gap-1 rounded-full bg-secondary text-secondary-foreground ring-1 ring-border/50 px-2 py-0.5">
                 Issue: {formatIssueType(openIssue.issue_type)}
               </span>
             </>
           ) : latestResolvedIssue ? (
             <>
-              <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5">
+              <span className="inline-flex items-center gap-1 rounded-full ring-1 ring-border bg-muted/50 px-2 py-0.5">
                 <Clock className="h-3 w-3" />
                 Repaired in {formatDuration(latestResolvedIssue.reported_at, latestResolvedIssue.resolved_at)}
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-secondary text-secondary-foreground px-2 py-0.5">
+              <span className="inline-flex items-center gap-1 rounded-full bg-secondary text-secondary-foreground ring-1 ring-border/50 px-2 py-0.5">
                 Issue: {formatIssueType(latestResolvedIssue.issue_type)}
               </span>
             </>
@@ -218,16 +220,16 @@ export function CardFront({
             <>
               {fixture.reported_out_date && !fixture.replaced_date && (
                 <>
-                  <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5">
+                  <span className="inline-flex items-center gap-1 rounded-full ring-1 ring-border bg-muted/50 px-2 py-0.5">
                     <Clock className="h-3 w-3" />
                     Out for {formatDuration(fixture.reported_out_date)}
                   </span>
                   {fixture.requires_electrician ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-secondary text-secondary-foreground px-2 py-0.5">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-secondary text-secondary-foreground ring-1 ring-border/50 px-2 py-0.5">
                       Issue: Ballast (Electrician)
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-secondary text-secondary-foreground px-2 py-0.5">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-secondary text-secondary-foreground ring-1 ring-border/50 px-2 py-0.5">
                       Issue: Bulb
                     </span>
                   )}
@@ -235,16 +237,16 @@ export function CardFront({
               )}
               {fixture.reported_out_date && fixture.replaced_date && (
                 <>
-                  <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5">
+                  <span className="inline-flex items-center gap-1 rounded-full ring-1 ring-border bg-muted/50 px-2 py-0.5">
                     <Clock className="h-3 w-3" />
                     Repaired in {formatDuration(fixture.reported_out_date, fixture.replaced_date)}
                   </span>
                   {fixture.requires_electrician ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-secondary text-secondary-foreground px-2 py-0.5">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-secondary text-secondary-foreground ring-1 ring-border/50 px-2 py-0.5">
                       Issue: Ballast (Electrician)
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-secondary text-secondary-foreground px-2 py-0.5">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-secondary text-secondary-foreground ring-1 ring-border/50 px-2 py-0.5">
                       Issue: Bulb
                     </span>
                   )}
@@ -254,7 +256,7 @@ export function CardFront({
           )}
         </div>
 
-        <div className="mt-auto flex justify-between items-center gap-2 pt-2 border-t">
+        <div className="mt-auto flex justify-between items-center gap-2 pt-2 border-t bg-muted/30 rounded-b-xl backdrop-blur supports-[backdrop-filter]:bg-muted/20">
           {showDeleteConfirm ? (
             <div className="flex items-center gap-2">
               <span className="text-xs text-red-600">Confirm?</span>
@@ -296,7 +298,7 @@ export function CardFront({
               {/* Secondary actions in menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
+                  <Button variant="ghost" size="icon" className="rounded-md hover:bg-muted/60">
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>

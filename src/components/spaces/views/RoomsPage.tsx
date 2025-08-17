@@ -192,7 +192,7 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
                 }
               }}
               view={isMobile ? "grid" : view}
-              onRoomClick={isMobile ? handleRoomClick : undefined}
+              onRoomClick={handleRoomClick}
             />
           ) : (
             <RoomsContent
@@ -206,7 +206,7 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
                 }
               }}
               searchQuery={searchQuery}
-              onRoomClick={isMobile ? handleRoomClick : undefined}
+              onRoomClick={handleRoomClick}
             />
           )}
         </div>

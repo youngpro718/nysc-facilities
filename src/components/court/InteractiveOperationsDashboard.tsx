@@ -8,16 +8,25 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Building2, Users, Wrench, AlertTriangle, MapPin, Phone, Calendar, Power, PowerOff } from 'lucide-react';
 import { QuickActionsPanel } from './QuickActionsPanel';
+import { useNavigate } from 'react-router-dom';
+import { useCourtIssuesIntegration } from '@/hooks/useCourtIssuesIntegration';
+import { CreateShutdownDialog } from './CreateShutdownDialog';
+import { OpenRoomFlowDialog } from './OpenRoomFlowDialog';
 
 interface CourtRoom {
   id: string;
+  room_id: string;
   room_number: string;
   courtroom_number: string | null;
   is_active: boolean;
+  operational_status?: 'open' | 'occupied' | null;
 }
 
 interface CourtAssignment {
-  room_number: string;
+  room_id?: string;
+  id?: string;
+  sort_order?: number | null;
+  room_number?: string;
   part: string;
   justice: string | null;
   clerks: string[] | null;
@@ -44,7 +53,11 @@ interface RoomDetails {
 export function InteractiveOperationsDashboard() {
   const [selectedRoom, setSelectedRoom] = useState<RoomDetails | null>(null);
   const [filter, setFilter] = useState<string>('all');
+  const [shutdownDialogOpen, setShutdownDialogOpen] = useState(false);
+  const [openRoomDialogOpen, setOpenRoomDialogOpen] = useState(false);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { hasUrgentIssues, getCourtImpactSummary, getIssuesForRoom } = useCourtIssuesIntegration();
 
   const { data: roomsData, isLoading } = useQuery({
     queryKey: ['interactive-operations'],
@@ -52,13 +65,13 @@ export function InteractiveOperationsDashboard() {
       // Get all court rooms
       const { data: courtrooms } = await supabase
         .from("court_rooms")
-        .select("id, room_number, courtroom_number, is_active")
+        .select("id, room_id, room_number, courtroom_number, is_active")
         .order("room_number");
 
       // Get all assignments with parts
       const { data: assignments } = await supabase
         .from("court_assignments")
-        .select("room_number, part, justice, clerks, sergeant, tel, fax, calendar_day")
+        .select("room_id, id, sort_order, room_number, part, justice, clerks, sergeant, tel, fax, calendar_day")
         .not("part", "is", null)
         .not("part", "eq", "");
 
@@ -68,17 +81,19 @@ export function InteractiveOperationsDashboard() {
         .select("court_room_id, status, temporary_location, reason")
         .or("status.eq.in_progress,status.eq.scheduled");
 
-      const assignmentMap = new Map(assignments?.map(a => [a.room_number, a]) || []);
+      const assignmentMap = new Map(assignments?.map(a => [a.room_id, a]) || []);
       const shutdownMap = new Map(shutdowns?.map(s => [s.court_room_id, s]) || []);
 
       return (courtrooms || []).map(room => {
-        const assignment = assignmentMap.get(room.room_number);
+        const assignment = assignmentMap.get(room.room_id);
         const shutdown = shutdownMap.get(room.id);
         
         let status: RoomDetails['status'] = 'available';
         if (!room.is_active) status = 'inactive';
         else if (shutdown && (shutdown.status === 'in_progress' || shutdown.status === 'scheduled')) status = 'shutdown';
         else if (assignment) status = 'occupied';
+        else if ((room as any).operational_status === 'occupied') status = 'occupied';
+        else status = 'available';
 
         return {
           room,
@@ -92,8 +107,17 @@ export function InteractiveOperationsDashboard() {
 
   const filteredRooms = roomsData?.filter(room => {
     if (filter === 'all') return true;
+    if (filter === 'urgent') return hasUrgentIssues(room.room.room_id);
     return room.status === filter;
   }) || [];
+
+  const roomsToDisplay = filter === 'occupied'
+    ? [...filteredRooms].sort((a, b) => {
+        const ao = (a.assignment?.sort_order ?? Number.MAX_SAFE_INTEGER) as number;
+        const bo = (b.assignment?.sort_order ?? Number.MAX_SAFE_INTEGER) as number;
+        return ao - bo;
+      })
+    : filteredRooms;
 
   const toggleRoomStatus = async (roomId: string, currentStatus: boolean) => {
     const { error } = await supabase
@@ -113,12 +137,34 @@ export function InteractiveOperationsDashboard() {
     setSelectedRoom(null);
   };
 
+  const setOperationalStatus = async (roomId: string, newStatus: 'open' | 'occupied' | null) => {
+    const { error } = await supabase
+      .from('court_rooms')
+      .update({ operational_status: newStatus } as any)
+      .eq('id', roomId);
+    if (error) {
+      console.error('Error updating operational_status:', error);
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ['interactive-operations'] });
+    setSelectedRoom(null);
+  };
+
+  const impactSummary = getCourtImpactSummary();
+  const urgentRoomsCount = roomsData?.filter(r => hasUrgentIssues(r.room.room_id)).length || 0;
+
+  // Compute available target rooms for assignment moves: active, not shutdown, and available
+  const availableTargets = (roomsData || [])
+    .filter(r => r.status === 'available' && r.room.is_active)
+    .map(r => ({ id: r.room.id, room_id: r.room.room_id, room_number: r.room.room_number }));
+
   const statusCounts = {
     total: roomsData?.length || 0,
     available: roomsData?.filter(r => r.status === 'available').length || 0,
     occupied: roomsData?.filter(r => r.status === 'occupied').length || 0,
     shutdown: roomsData?.filter(r => r.status === 'shutdown').length || 0,
     inactive: roomsData?.filter(r => r.status === 'inactive').length || 0,
+    urgent: urgentRoomsCount,
   };
 
   const getStatusColor = (status: string) => {
@@ -166,63 +212,77 @@ export function InteractiveOperationsDashboard() {
           </div>
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card className="border-green-200 bg-green-50 dark:bg-green-950 dark:border-green-800">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2 text-green-800 dark:text-green-200">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-5">
+            <Card className="border-green-200 bg-green-50 dark:bg-green-950 dark:border-green-800 min-h-[110px]">
+              <CardHeader className="pb-1 pt-3">
+                <CardTitle className="text-sm font-medium flex items-center gap-2 text-green-800 dark:text-green-200 leading-tight">
                   <Building2 className="h-4 w-4" />
                   Available
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-1 pb-3">
                 <div className="text-2xl font-bold text-green-600">{statusCounts.available}</div>
                 <p className="text-xs text-green-700 dark:text-green-300">Ready for assignment</p>
               </CardContent>
             </Card>
 
-            <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2 text-blue-800 dark:text-blue-200">
+            <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800 min-h-[110px]">
+              <CardHeader className="pb-1 pt-3">
+                <CardTitle className="text-sm font-medium flex items-center gap-2 text-blue-800 dark:text-blue-200 leading-tight">
                   <Users className="h-4 w-4" />
                   Occupied
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-1 pb-3">
                 <div className="text-2xl font-bold text-blue-600">{statusCounts.occupied}</div>
                 <p className="text-xs text-blue-700 dark:text-blue-300">Currently assigned</p>
               </CardContent>
             </Card>
 
-            <Card className="border-red-200 bg-red-50 dark:bg-red-950 dark:border-red-800">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2 text-red-800 dark:text-red-200">
+            <Card className="border-red-200 bg-red-50 dark:bg-red-950 dark:border-red-800 min-h-[110px]">
+              <CardHeader className="pb-1 pt-3">
+                <CardTitle className="text-sm font-medium flex items-center gap-2 text-red-800 dark:text-red-200 leading-tight">
                   <AlertTriangle className="h-4 w-4" />
                   Shutdown
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-1 pb-3">
                 <div className="text-2xl font-bold text-red-600">{statusCounts.shutdown}</div>
                 <p className="text-xs text-red-700 dark:text-red-300">Temporarily closed</p>
               </CardContent>
             </Card>
 
-            <Card className="border-slate-200 bg-slate-50 dark:bg-slate-950 dark:border-slate-800">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2 text-slate-800 dark:text-slate-200">
+            <Card className="border-slate-200 bg-slate-50 dark:bg-slate-950 dark:border-slate-800 min-h-[110px]">
+              <CardHeader className="pb-1 pt-3">
+                <CardTitle className="text-sm font-medium flex items-center gap-2 text-slate-800 dark:text-slate-200 leading-tight">
                   <Wrench className="h-4 w-4" />
                   Inactive
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-1 pb-3">
                 <div className="text-2xl font-bold text-slate-600">{statusCounts.inactive}</div>
                 <p className="text-xs text-slate-700 dark:text-slate-300">Not in use</p>
               </CardContent>
             </Card>
+
+            <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950 dark:border-amber-800 min-h-[110px]">
+              <CardHeader className="pb-1 pt-3">
+                <CardTitle className="text-sm font-medium flex items-center gap-2 text-amber-800 dark:text-amber-200 leading-tight">
+                  <AlertTriangle className="h-4 w-4" />
+                  Urgent Issues
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-1 pb-3">
+                <div className="text-2xl font-bold text-amber-600">{statusCounts.urgent}</div>
+                <p className="text-xs text-amber-700 dark:text-amber-300">Needs immediate attention</p>
+              </CardContent>
+            </Card>
+
           </div>
 
           {/* Filter Buttons */}
-          <div className="flex flex-wrap gap-2">
-            {['all', 'available', 'occupied', 'shutdown', 'inactive'].map((filterType) => (
+          <div className="flex flex-wrap gap-3 mt-1">
+            {['all', 'available', 'occupied', 'shutdown', 'inactive', 'urgent'].map((filterType) => (
               <Button
                 key={filterType}
                 variant={filter === filterType ? 'default' : 'outline'}
@@ -243,16 +303,23 @@ export function InteractiveOperationsDashboard() {
 
       {/* Interactive Room Grid - Compact Tiles */}
       <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2">
-        {filteredRooms.map((room) => (
+        {roomsToDisplay.map((room) => (
           <div
             key={room.room.id}
-            className="group relative bg-card border rounded-lg p-3 cursor-pointer hover:shadow-md transition-all duration-200 hover:border-primary/50 hover:bg-accent/50"
+            className={`group relative bg-card border rounded-lg p-3 cursor-pointer hover:shadow-md transition-all duration-200 hover:border-primary/50 hover:bg-accent/50 ${hasUrgentIssues(room.room.room_id) ? 'ring-1 ring-red-500/40' : ''}`}
             onClick={() => setSelectedRoom(room)}
           >
             {/* Compact Header */}
             <div className="flex items-center justify-between mb-2">
               <span className="font-semibold text-sm text-foreground">{room.room.room_number}</span>
-              <div className={`w-2.5 h-2.5 rounded-full ${getStatusDotColor(room.status)}`} />
+              <div className="flex items-center gap-1.5">
+                {hasUrgentIssues(room.room.room_id) && (
+                  <span title="Urgent issue affecting this room">
+                    <AlertTriangle className="h-3.5 w-3.5 text-red-600" />
+                  </span>
+                )}
+                <div className={`w-2.5 h-2.5 rounded-full ${getStatusDotColor(room.status)}`} />
+              </div>
             </div>
             
             {/* Status Badge - Minimal */}
@@ -342,7 +409,7 @@ export function InteractiveOperationsDashboard() {
               {/* Quick Actions Header */}
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold">Quick Actions</h3>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap md:flex-nowrap">
                   <Button
                     size="sm"
                     variant="outline"
@@ -350,6 +417,9 @@ export function InteractiveOperationsDashboard() {
                     className="text-xs"
                   >
                     {selectedRoom?.room.is_active ? <PowerOff className="h-3 w-3" /> : <Power className="h-3 w-3" />}
+                  </Button>
+                  <Button size="sm" className="text-xs" onClick={() => setOpenRoomDialogOpen(true)}>
+                    Open Room…
                   </Button>
                 </div>
               </div>
@@ -382,49 +452,83 @@ export function InteractiveOperationsDashboard() {
                 </div>
               </div>
 
+              {/* Issues for this Room */}
+              {selectedRoom && getIssuesForRoom(selectedRoom.room.room_id).length > 0 && (
+                <div>
+                  <h4 className="font-medium mb-2 text-sm">Issues</h4>
+                  <div className="space-y-2 text-sm bg-amber-50 dark:bg-amber-950 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
+                    {getIssuesForRoom(selectedRoom.room.room_id).slice(0, 3).map((issue) => (
+                      <div key={issue.id} className="flex items-start justify-between">
+                        <div>
+                          <div className="font-medium flex items-center gap-1">
+                            {issue.priority === 'urgent' && <AlertTriangle className="h-3.5 w-3.5 text-red-600" />}
+                            {issue.title}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Priority: {issue.priority}</div>
+                        </div>
+                        <Badge variant="outline" className="capitalize">{issue.status}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-2 flex justify-end">
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="text-xs px-0"
+                      onClick={() => {
+                        navigate('/operations?tab=issues');
+                        setSelectedRoom(null);
+                      }}
+                    >
+                      View all issues
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {/* Assignment Details - Editable */}
               {selectedRoom?.assignment && (
                 <div>
-                  <h4 className="font-medium mb-2 text-sm">Current Assignment</h4>
-                  <div className="space-y-2 text-sm bg-gray-50 p-3 rounded-lg">
+                  <h4 className="font-medium mb-2 text-sm text-foreground">Current Assignment</h4>
+                  <div className="space-y-2 text-sm bg-muted border p-3 rounded-lg text-foreground">
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">Part:</span>
-                      <span className="font-medium">{selectedRoom.assignment.part}</span>
+                      <span className="font-medium text-foreground">{selectedRoom.assignment.part}</span>
                     </div>
                     {selectedRoom.assignment.justice && (
                       <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Justice:</span>
-                        <span className="font-medium">{selectedRoom.assignment.justice}</span>
+                        <span className="font-medium text-foreground">{selectedRoom.assignment.justice}</span>
                       </div>
                     )}
                     {selectedRoom.assignment.clerks && (
                       <div className="flex justify-between items-start">
                         <span className="text-muted-foreground">Clerks:</span>
-                        <span className="font-medium text-right">{selectedRoom.assignment.clerks.join(', ')}</span>
+                        <span className="font-medium text-right text-foreground">{selectedRoom.assignment.clerks.join(', ')}</span>
                       </div>
                     )}
                     {selectedRoom.assignment.sergeant && (
                       <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Sergeant:</span>
-                        <span className="font-medium">{selectedRoom.assignment.sergeant}</span>
+                        <span className="font-medium text-foreground">{selectedRoom.assignment.sergeant}</span>
                       </div>
                     )}
                     {selectedRoom.assignment.calendar_day && (
                       <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Calendar:</span>
-                        <span className="font-medium">{selectedRoom.assignment.calendar_day}</span>
+                        <span className="font-medium text-foreground">{selectedRoom.assignment.calendar_day}</span>
                       </div>
                     )}
                     {selectedRoom.assignment.tel && (
                       <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Phone:</span>
-                        <span className="font-medium">{selectedRoom.assignment.tel}</span>
+                        <span className="font-medium text-foreground">{selectedRoom.assignment.tel}</span>
                       </div>
                     )}
                     {selectedRoom.assignment.fax && (
                       <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Fax:</span>
-                        <span className="font-medium">{selectedRoom.assignment.fax}</span>
+                        <span className="font-medium text-foreground">{selectedRoom.assignment.fax}</span>
                       </div>
                     )}
                   </div>
@@ -458,7 +562,17 @@ export function InteractiveOperationsDashboard() {
               {!selectedRoom?.assignment && selectedRoom?.status === 'available' && (
                 <div className="text-center py-4">
                   <p className="text-muted-foreground text-sm mb-3">This room is available for assignment</p>
-                  <Button size="sm" variant="outline" className="text-xs">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs"
+                    onClick={() => {
+                      if (selectedRoom?.room) {
+                        navigate(`/court-operations?tab=assignments&room=${selectedRoom.room.room_id || selectedRoom.room.id}`);
+                        setSelectedRoom(null);
+                      }
+                    }}
+                  >
                     View in Assignments
                   </Button>
                 </div>
@@ -468,15 +582,36 @@ export function InteractiveOperationsDashboard() {
               <div className="border-t pt-4">
                 <h4 className="font-medium mb-2 text-sm">Quick Links</h4>
                 <div className="grid grid-cols-2 gap-2">
-                  <Button size="sm" variant="outline" className="text-xs">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs"
+                    onClick={() => {
+                      if (selectedRoom?.room) {
+                        navigate(`/court-operations?tab=assignments&room=${selectedRoom.room.room_id || selectedRoom.room.id}`);
+                        setSelectedRoom(null);
+                      }
+                    }}
+                  >
                     <Users className="h-3 w-3 mr-1" />
                     Assignments
                   </Button>
-                  <Button size="sm" variant="outline" className="text-xs">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs"
+                    onClick={() => {
+                      navigate('/operations?tab=maintenance');
+                      setSelectedRoom(null);
+                    }}
+                  >
                     <Wrench className="h-3 w-3 mr-1" />
                     Maintenance
                   </Button>
                 </div>
+                {false && selectedRoom && selectedRoom.status !== 'shutdown' && selectedRoom.room.is_active && (
+                  <div className="mt-3 grid grid-cols-1 gap-2" />
+                )}
               </div>
             </div>
           </ScrollArea>
@@ -502,6 +637,24 @@ export function InteractiveOperationsDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {selectedRoom && (
+        <CreateShutdownDialog
+          open={shutdownDialogOpen}
+          onOpenChange={setShutdownDialogOpen}
+          courtroomId={selectedRoom.room.id}
+          roomNumber={selectedRoom.room.room_number}
+        />
+      )}
+      {selectedRoom && (
+        <OpenRoomFlowDialog
+          open={openRoomDialogOpen}
+          onOpenChange={setOpenRoomDialogOpen}
+          room={{ id: selectedRoom.room.id, room_id: selectedRoom.room.room_id, room_number: selectedRoom.room.room_number }}
+          hasAssignment={!!selectedRoom.assignment}
+          availableTargets={availableTargets.filter(t => t.id !== selectedRoom.room.id)}
+          onRequestShutdown={() => setShutdownDialogOpen(true)}
+        />
+      )}
     </div>
   );
 }

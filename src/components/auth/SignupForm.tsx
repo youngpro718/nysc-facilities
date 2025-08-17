@@ -116,38 +116,38 @@ export const SignupForm = ({
   const formSections = [
     {
       id: "personal",
-      icon: <User className="h-5 w-5 text-white/50" />,
+      icon: <User className="h-5 w-5 text-slate-500" />,
       title: "Personal Information",
       children: (
         <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="firstName" className="text-white">First Name *</Label>
+              <Label htmlFor="firstName" className="text-slate-700">First Name *</Label>
               <Input
                 id="firstName"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
-                className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                className=""
                 placeholder="Enter your first name"
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="lastName" className="text-white">Last Name *</Label>
+              <Label htmlFor="lastName" className="text-slate-700">Last Name *</Label>
               <Input
                 id="lastName"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
-                className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                className=""
                 placeholder="Enter your last name"
                 required
               />
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="courtPosition" className="text-white">Court Position</Label>
+            <Label htmlFor="courtPosition" className="text-slate-700">Court Position</Label>
             <Select value={courtPosition} onValueChange={setCourtPosition}>
-              <SelectTrigger className="bg-white/10 border-white/20 text-white">
+              <SelectTrigger>
                 <SelectValue placeholder="Select your position (optional)" />
               </SelectTrigger>
               <SelectContent>
@@ -172,42 +172,42 @@ export const SignupForm = ({
     },
     {
       id: "contact",
-      icon: <Mail className="h-5 w-5 text-white/50" />,
+      icon: <Mail className="h-5 w-5 text-slate-500" />,
       title: "Contact Information",
       children: (
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-white">Email *</Label>
+            <Label htmlFor="email" className="text-slate-700">Email *</Label>
             <Input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+              className=""
               placeholder="Enter your email"
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-white">Password *</Label>
+            <Label htmlFor="password" className="text-slate-700">Password *</Label>
             <Input
               id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+              className=""
               placeholder="Enter your password"
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="phone" className="text-white">Phone Number</Label>
+            <Label htmlFor="phone" className="text-slate-700">Phone Number</Label>
             <Input
               id="phone"
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+              className=""
               placeholder="Enter your phone number (optional)"
             />
           </div>
@@ -216,14 +216,14 @@ export const SignupForm = ({
     },
     {
       id: "department",
-      icon: <Building2 className="h-5 w-5 text-white/50" />,
+      icon: <Building2 className="h-5 w-5 text-slate-500" />,
       title: "Court Information",
       children: (
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="department" className="text-white">Court</Label>
+            <Label htmlFor="department" className="text-slate-700">Court</Label>
             <Select value={departmentId} onValueChange={setDepartmentId}>
-              <SelectTrigger className="bg-white/10 border-white/20 text-white">
+              <SelectTrigger>
                 <SelectValue placeholder="Select court (optional)" />
               </SelectTrigger>
               <SelectContent>
@@ -236,12 +236,12 @@ export const SignupForm = ({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="title" className="text-white">Official Title</Label>
+            <Label htmlFor="title" className="text-slate-700">Official Title</Label>
             <Input
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+              className=""
               placeholder="Enter your official title (optional)"
             />
           </div>
@@ -250,7 +250,7 @@ export const SignupForm = ({
     },
     {
       id: "emergency",
-      icon: <Phone className="h-5 w-5 text-white/50" />,
+      icon: <Phone className="h-5 w-5 text-slate-500" />,
       title: "Emergency Contact",
       children: (
         <div className="space-y-4">
@@ -258,26 +258,26 @@ export const SignupForm = ({
             placeholder="Contact Name (optional)"
             value={emergencyContact.name}
             onChange={(e) => setEmergencyContact(prev => ({ ...prev, name: e.target.value }))}
-            className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+            className=""
           />
           <Input
             placeholder="Contact Phone (optional)"
             value={emergencyContact.phone}
             onChange={(e) => setEmergencyContact(prev => ({ ...prev, phone: e.target.value }))}
-            className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+            className=""
           />
           <Input
             placeholder="Relationship (optional)"
             value={emergencyContact.relationship}
             onChange={(e) => setEmergencyContact(prev => ({ ...prev, relationship: e.target.value }))}
-            className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+            className=""
           />
         </div>
       )
     },
     {
       id: "avatar",
-      icon: <Camera className="h-5 w-5 text-white/50" />,
+      icon: <Camera className="h-5 w-5 text-slate-500" />,
       title: "Profile Picture",
       children: (
         <AvatarUploadStep 
@@ -293,8 +293,8 @@ export const SignupForm = ({
     <form className="space-y-6" onSubmit={handleSignup}>
       <Accordion type="single" collapsible className="w-full">
         {formSections.map((section) => (
-          <AccordionItem key={section.id} value={section.id} className="border-white/20">
-            <AccordionTrigger className="text-white hover:text-white/80">
+          <AccordionItem key={section.id} value={section.id} className="border-border">
+            <AccordionTrigger className="text-slate-800 hover:text-slate-900">
               <div className="flex items-center gap-2">
                 {section.icon}
                 <span>{section.title}</span>
@@ -321,7 +321,7 @@ export const SignupForm = ({
         <Button
           type="button"
           variant="ghost"
-          className="w-full text-white hover:bg-white/10 transition-colors"
+          className="w-full text-slate-600 hover:text-slate-800 transition-colors"
           onClick={onToggleForm}
           disabled={loading}
         >

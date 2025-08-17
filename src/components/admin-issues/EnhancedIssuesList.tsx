@@ -1,10 +1,11 @@
 import { useMemo } from "react";
 import { Loader2 } from "lucide-react";
 import { EnhancedIssueCard } from "./EnhancedIssueCard";
+import { KanbanBoard } from "@/components/admin-issues/kanban/KanbanBoard";
 import { IssueTableView } from "./IssueTableView";
 import { IssueTimelineView } from "./IssueTimelineView";
 import type { EnhancedIssue } from "@/hooks/dashboard/useAdminIssuesData";
-import type { GroupingMode, ViewMode } from "@/pages/AdminIssuesHub";
+import type { GroupingMode, ViewMode, StatusFilter, PriorityFilter } from "@/pages/AdminIssuesHub";
 
 interface EnhancedIssuesListProps {
   issues: EnhancedIssue[];
@@ -17,6 +18,8 @@ interface EnhancedIssuesListProps {
   isLoading: boolean;
   buildingId?: string | null;
   filter?: string | null;
+  statusFilter?: StatusFilter;
+  priorityFilter?: PriorityFilter;
 }
 
 export function EnhancedIssuesList({
@@ -29,7 +32,9 @@ export function EnhancedIssuesList({
   onIssueUpdate,
   isLoading,
   buildingId,
-  filter
+  filter,
+  statusFilter = 'all',
+  priorityFilter = 'all'
 }: EnhancedIssuesListProps) {
   // Filter issues based on search query, building, and filter
   const filteredIssues = useMemo(() => {
@@ -43,6 +48,16 @@ export function EnhancedIssuesList({
     // Filter by status if provided
     if (filter === 'active') {
       result = result.filter(issue => issue.status !== 'resolved');
+    }
+
+    // Status filter from controls
+    if (statusFilter && statusFilter !== 'all') {
+      result = result.filter(issue => issue.status === statusFilter);
+    }
+
+    // Priority filter from controls
+    if (priorityFilter && priorityFilter !== 'all') {
+      result = result.filter(issue => issue.priority === priorityFilter);
     }
     
     // Filter by search query
@@ -58,7 +73,7 @@ export function EnhancedIssuesList({
     }
     
     return result;
-  }, [issues, searchQuery, buildingId, filter]);
+  }, [issues, searchQuery, buildingId, filter, statusFilter, priorityFilter]);
 
   // Group issues based on grouping mode
   const groupedIssues = useMemo(() => {
@@ -139,6 +154,15 @@ export function EnhancedIssuesList({
   }
 
   // Render based on view mode
+  if (viewMode === 'board') {
+    return (
+      <KanbanBoard
+        issues={filteredIssues}
+        onIssueUpdate={onIssueUpdate}
+      />
+    );
+  }
+
   if (viewMode === 'table') {
     return (
       <IssueTableView

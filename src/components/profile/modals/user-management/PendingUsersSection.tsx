@@ -43,7 +43,7 @@ export function PendingUsersSection({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <div className="flex items-center gap-2 text-sm text-slate-700">
         <AlertCircle className="h-4 w-4" />
         {users.length} user{users.length !== 1 ? 's' : ''} waiting for verification
       </div>
@@ -101,8 +101,18 @@ export function PendingUsersSection({
                     {user.title || 'Not specified'}
                   </span>
                 </div>
-                <div className="col-span-2">
-                  <span className="font-medium">Requested:</span>
+                <div>
+                  <span className="font-medium">Requested Access:</span>
+                  <span className="ml-2 text-slate-800">
+                    {(() => {
+                      const raw = (user as any)?.metadata?.requested_access_level as string | undefined;
+                      if (!raw) return 'Not specified';
+                      return (raw === 'administrative' || raw === 'admin') ? 'Administrative' : 'Standard';
+                    })()}
+                  </span>
+                </div>
+                <div>
+                  <span className="font-medium">Requested At:</span>
                   <span className="ml-2 text-muted-foreground">
                     {new Date(user.created_at).toLocaleString()}
                   </span>

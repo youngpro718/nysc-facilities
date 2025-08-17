@@ -2,12 +2,20 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronRight, MapPin, Lightbulb, AlertTriangle, CheckCircle, Settings } from "lucide-react";
+import { ChevronDown, ChevronRight, MapPin, Lightbulb, AlertTriangle, CheckCircle, MoreVertical } from "lucide-react";
 import { LightingFixture } from "@/types/lighting";
 import { LightingFixtureCard } from "@/components/lighting/card/LightingFixtureCard";
 import { cn } from "@/lib/utils";
-import { RoomSlideOver } from "./RoomSlideOver";
+import { toast } from "sonner";
 
 interface RoomLightingCardProps {
   roomId: string;
@@ -37,7 +45,7 @@ export const RoomLightingCard = ({
   defaultExpanded
 }: RoomLightingCardProps) => {
   const [isExpanded, setIsExpanded] = useState(!!defaultExpanded);
-  const [isSlideOverOpen, setIsSlideOverOpen] = useState(false);
+  // Slide-over removed per design change; expanding the card shows details
 
   const totalFixtures = fixtures.length;
   const functionalFixtures = fixtures.filter(f => f.status === 'functional').length;
@@ -77,18 +85,21 @@ export const RoomLightingCard = ({
     <Card id={`room-card-${roomId}`} className="w-full">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <CardTitle className="text-lg">{roomNumber}</CardTitle>
-                <p className="text-sm text-muted-foreground">{roomName}</p>
-                {buildingName && floorName && (
-                  <p className="text-xs text-muted-foreground">
-                    {buildingName} • {floorName}
-                  </p>
-                )}
-              </div>
+          <div
+            className="flex items-center gap-2 cursor-pointer select-none"
+            onClick={() => setIsExpanded((v) => !v)}
+            role="button"
+            aria-expanded={isExpanded}
+          >
+            <MapPin className="h-4 w-4 text-muted-foreground" />
+            <div>
+              <CardTitle className="text-lg">{roomNumber}</CardTitle>
+              <p className="text-sm text-muted-foreground">{roomName}</p>
+              {buildingName && floorName && (
+                <p className="text-xs text-muted-foreground">
+                  {buildingName} • {floorName}
+                </p>
+              )}
             </div>
           </div>
           
@@ -99,9 +110,37 @@ export const RoomLightingCard = ({
             <Badge variant="outline" className="font-medium">
               {totalFixtures} fixture{totalFixtures !== 1 ? 's' : ''}
             </Badge>
-            <Button variant="outline" size="sm" onClick={() => setIsSlideOverOpen(true)}>
-              View Room
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Room actions</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={toggleSelectAllRoom}>
+                  Select all fixtures
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsExpanded((v) => !v)}>
+                  {isExpanded ? 'Collapse' : 'Expand'}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={async () => {
+                    try {
+                      const url = `${window.location.pathname}#room-card-${roomId}`;
+                      await navigator.clipboard.writeText(url);
+                      toast.success('Room link copied');
+                    } catch (e) {
+                      toast.error('Failed to copy link');
+                    }
+                  }}
+                >
+                  Copy link to room
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -187,21 +226,6 @@ export const RoomLightingCard = ({
         </CollapsibleContent>
       </Collapsible>
 
-      {/* Room slide-over */}
-      <RoomSlideOver
-        open={isSlideOverOpen}
-        onOpenChange={setIsSlideOverOpen}
-        roomId={roomId}
-        roomNumber={roomNumber}
-        roomName={roomName}
-        buildingName={buildingName}
-        floorName={floorName}
-        fixtures={fixtures}
-        onFixtureUpdated={onFixtureUpdated}
-        onFixtureDelete={onFixtureDelete}
-        selectedFixtures={selectedFixtures}
-        onFixtureSelect={onFixtureSelect}
-      />
     </Card>
   );
 };

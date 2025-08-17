@@ -50,18 +50,18 @@ export function AvatarUploadStep({
   return (
     <div className={`space-y-4 ${className}`}>
       <div className="text-center space-y-4">
-        <Avatar className="w-24 h-24 mx-auto ring-2 ring-white/20">
+        <Avatar className="w-24 h-24 mx-auto ring-2 ring-slate-200">
           <AvatarImage src={previewUrl || undefined} />
-          <AvatarFallback className="text-xl font-semibold bg-white/10 text-white">
+          <AvatarFallback className="text-xl font-semibold bg-slate-100 text-slate-700">
             {firstName && lastName ? getInitials() : <Camera className="w-8 h-8" />}
           </AvatarFallback>
         </Avatar>
 
         <div className="space-y-2">
-          <Label className="text-white text-sm font-medium">
+          <Label className="text-slate-700 text-sm font-medium">
             Profile Picture (Optional)
           </Label>
-          <p className="text-white/60 text-xs">
+          <p className="text-slate-600 text-xs">
             Add a profile photo to help others recognize you
           </p>
         </div>
@@ -81,7 +81,7 @@ export function AvatarUploadStep({
             type="button"
             variant="outline"
             onClick={openFileDialog}
-            className="w-full bg-white/10 border-white/20 text-white hover:bg-white/20"
+            className="w-full"
           >
             <Upload className="h-4 w-4 mr-2" />
             Choose Photo
@@ -92,7 +92,7 @@ export function AvatarUploadStep({
               type="button"
               variant="outline"
               onClick={openFileDialog}
-              className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20"
+              className="flex-1"
             >
               <Upload className="h-4 w-4 mr-2" />
               Change Photo
@@ -101,7 +101,7 @@ export function AvatarUploadStep({
               type="button"
               variant="outline"
               onClick={handleRemove}
-              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+              className=""
             >
               <X className="h-4 w-4" />
             </Button>
@@ -109,7 +109,7 @@ export function AvatarUploadStep({
         )}
       </div>
 
-      <div className="text-xs text-white/50 text-center space-y-1">
+      <div className="text-xs text-slate-500 text-center space-y-1">
         <p>Supported: JPG, PNG, GIF, WebP</p>
         <p>Maximum size: 5MB</p>
       </div>

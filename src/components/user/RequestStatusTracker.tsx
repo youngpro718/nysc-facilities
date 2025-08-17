@@ -26,13 +26,12 @@ const requestStatuses = [
 ];
 
 const orderStatuses = [
-  { key: 'pending_fulfillment', label: 'Pending Order', icon: Clock },
-  { key: 'ordered', label: 'Ordered', icon: Package },
-  { key: 'in_transit', label: 'In Transit', icon: Truck },
+  { key: 'pending_fulfillment', label: 'Pending Fulfillment', icon: Clock },
+  { key: 'in_progress', label: 'In Progress', icon: Package },
   { key: 'received', label: 'Received', icon: Package },
   { key: 'ready_for_pickup', label: 'Ready for Pickup', icon: MapPin },
-  { key: 'delivered', label: 'Delivered', icon: CheckCircle },
-  { key: 'completed', label: 'Completed', icon: CheckCircle }
+  { key: 'completed', label: 'Completed', icon: CheckCircle },
+  { key: 'cancelled', label: 'Cancelled', icon: XCircle },
 ];
 
 const getStatusConfig = (status: string) => {
@@ -91,12 +90,11 @@ export function RequestStatusTracker({ request, orderStatus }: RequestStatusTrac
     if (request.status === 'approved' && orderStatus) {
       switch (orderStatus) {
         case 'pending_fulfillment': return "Order is being processed";
-        case 'ordered': return "Keys have been ordered from vendor";
-        case 'in_transit': return "Keys are in transit";
+        case 'in_progress': return "Order is in progress";
         case 'received': return "Keys have been received";
         case 'ready_for_pickup': return "Keys are ready for pickup at facilities office";
-        case 'delivered': return "Keys have been delivered";
         case 'completed': return "Order completed";
+        case 'cancelled': return "Order was cancelled";
         default: return "Processing order";
       }
     }

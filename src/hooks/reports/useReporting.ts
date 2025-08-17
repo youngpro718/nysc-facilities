@@ -10,6 +10,7 @@ import {
   ReportGenerationService,
   type ReportConfig,
   type GeneratedReport,
+  type LightingAuditorReportOptions,
 } from '@/services/reports/reportGenerationService';
 
 // Query keys for reports
@@ -253,6 +254,36 @@ export function useReportDownload() {
   return {
     downloadReport,
     previewReport,
+  };
+}
+
+/**
+ * Hook for Lighting Auditor Export
+ * Triggers lighting auditor report generation (CSV, PDF, JSON) and provides download helpers
+ */
+export function useLightingAuditorExport() {
+  const mutation = useMutation({
+    mutationFn: (options: LightingAuditorReportOptions) =>
+      ReportGenerationService.generateLightingAuditorReport(options),
+  });
+
+  const { downloadReport } = useReportDownload();
+
+  const exportAndDownload = useCallback(async (options: LightingAuditorReportOptions) => {
+    const report = await mutation.mutateAsync(options);
+    if (report) downloadReport(report);
+    return report;
+  }, [mutation, downloadReport]);
+
+  return {
+    exportLightingAudit: mutation.mutate,
+    exportLightingAuditAsync: mutation.mutateAsync,
+    exportAndDownload,
+    isExporting: mutation.isPending,
+    error: mutation.error,
+    data: mutation.data,
+    reset: mutation.reset,
+    downloadReport,
   };
 }
 

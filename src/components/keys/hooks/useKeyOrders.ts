@@ -24,7 +24,7 @@ export function useKeyOrders() {
           *,
           key_requests(
             *,
-            profiles(first_name, last_name)
+            profiles(first_name, last_name, email)
           ),
           keys(name, type)
         `)

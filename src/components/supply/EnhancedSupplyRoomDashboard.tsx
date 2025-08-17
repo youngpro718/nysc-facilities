@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,17 +11,13 @@ import {
   CheckCircle, 
   Clock, 
   AlertTriangle, 
-  BarChart3,
   Warehouse,
   ClipboardList,
   Settings,
-  Users,
-  TrendingUp,
   RefreshCw
 } from 'lucide-react';
 import { InventoryManagement } from './InventoryManagement';
 import { SupplyRequestTracking } from './SupplyRequestTracking';
-import { SupplyAnalytics } from './SupplyAnalytics';
 
 export function EnhancedSupplyRoomDashboard() {
   const { user } = useAuth();
@@ -114,7 +109,7 @@ export function EnhancedSupplyRoomDashboard() {
           <h1 className="text-3xl font-bold">Supply Room Management</h1>
           <p className="text-muted-foreground">
             {supplyRole === 'supply_manager' 
-              ? 'Complete supply room management and analytics'
+              ? 'Complete supply room management'
               : supplyRole === 'supply_staff'
               ? 'Supply request fulfillment and inventory management'
               : 'Track your supply requests and view available inventory'
@@ -178,7 +173,7 @@ export function EnhancedSupplyRoomDashboard() {
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-3">
           <TabsTrigger value="dashboard">
             <ClipboardList className="h-4 w-4 mr-2" />
             Requests
@@ -187,12 +182,6 @@ export function EnhancedSupplyRoomDashboard() {
             <TabsTrigger value="inventory">
               <Warehouse className="h-4 w-4 mr-2" />
               Inventory
-            </TabsTrigger>
-          )}
-          {supplyRole === 'supply_manager' && (
-            <TabsTrigger value="analytics">
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Analytics
             </TabsTrigger>
           )}
           <TabsTrigger value="settings">
@@ -211,11 +200,7 @@ export function EnhancedSupplyRoomDashboard() {
           </TabsContent>
         )}
 
-        {supplyRole === 'supply_manager' && (
-          <TabsContent value="analytics" className="space-y-4">
-            <SupplyAnalytics userRole={supplyRole} />
-          </TabsContent>
-        )}
+        {/* Analytics tab removed */}
 
         <TabsContent value="settings" className="space-y-4">
           <Card>

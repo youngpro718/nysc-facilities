@@ -75,8 +75,10 @@ const statusConfig = {
 const orderStatusConfig = {
   pending_fulfillment: { icon: Clock, label: "Pending Fulfillment", progress: 10 },
   in_progress: { icon: Package, label: "In Progress", progress: 40 },
+  received: { icon: Truck, label: "Received", progress: 75 },
   ready_for_pickup: { icon: Key, label: "Ready for Pickup", progress: 100 },
-  completed: { icon: CheckCircle, label: "Completed", progress: 100 }
+  completed: { icon: CheckCircle, label: "Completed", progress: 100 },
+  cancelled: { icon: XCircle, label: "Cancelled", progress: 0 },
 };
 
 const getRequestTypeLabel = (type: string) => {
@@ -94,6 +96,22 @@ export function RequestDetailsModal({ request, order, open, onClose, onCancel }:
   const requestStatus = statusConfig[request.status as keyof typeof statusConfig] || statusConfig.pending;
   const StatusIcon = requestStatus.icon;
   const canCancel = request.status === 'pending' && onCancel;
+
+  const normalizeOrderStatus = (status?: string) => {
+    switch (status) {
+      case 'ordered':
+      case 'in_transit':
+        return 'in_progress';
+      case 'delivered':
+        return 'completed';
+      case 'partially_received':
+        return 'received';
+      default:
+        return status || '';
+    }
+  };
+
+  const normalizedOrderStatus = normalizeOrderStatus(order?.status);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -214,18 +232,18 @@ export function RequestDetailsModal({ request, order, open, onClose, onCancel }:
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">
-                      {orderStatusConfig[order.status as keyof typeof orderStatusConfig]?.label || order.status}
+                      {orderStatusConfig[normalizedOrderStatus as keyof typeof orderStatusConfig]?.label || normalizedOrderStatus}
                     </span>
                     <span className="text-sm text-muted-foreground">
-                      {orderStatusConfig[order.status as keyof typeof orderStatusConfig]?.progress || 0}%
+                      {orderStatusConfig[normalizedOrderStatus as keyof typeof orderStatusConfig]?.progress || 0}%
                     </span>
                   </div>
                   <Progress 
-                    value={orderStatusConfig[order.status as keyof typeof orderStatusConfig]?.progress || 0} 
+                    value={orderStatusConfig[normalizedOrderStatus as keyof typeof orderStatusConfig]?.progress || 0} 
                     className="h-2"
                   />
                   
-                  {order.status === 'ready_for_pickup' && (
+                  {normalizedOrderStatus === 'ready_for_pickup' && (
                     <div className="bg-green-50 border border-green-200 p-3 rounded-lg">
                       <p className="text-sm text-green-800 font-medium">
                         🎉 Your key is ready for pickup at the facilities office!

@@ -1,6 +1,5 @@
 
 import { FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -27,7 +26,6 @@ export const LoginForm = ({
   setLoading,
   onToggleForm,
 }: LoginFormProps) => {
-  const navigate = useNavigate();
   const { secureSignIn, isLoading: authLoading } = useSecureAuth();
 
   const handleLogin = async (e: FormEvent) => {
@@ -41,8 +39,6 @@ export const LoginForm = ({
       setLoading(true);
       
       await secureSignIn(email, password);
-
-      navigate("/", { replace: true });
       
       toast.success("Welcome back!", {
         description: "You've successfully signed in."
@@ -58,17 +54,17 @@ export const LoginForm = ({
   return (
     <form className="space-y-6" onSubmit={handleLogin}>
       <div className="space-y-2">
-        <Label htmlFor="email" className="text-white">
+        <Label htmlFor="email" className="text-slate-700">
           Email
         </Label>
         <div className="relative">
-          <Mail className="absolute left-3 top-2.5 h-5 w-5 text-white/50" />
+          <Mail className="absolute left-3 top-2.5 h-5 w-5 text-slate-500" />
           <Input
             id="email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="bg-white/10 border-white/20 text-white pl-10 placeholder:text-white/50"
+            className="pl-10"
             placeholder="Enter your email"
             autoComplete="email"
           />
@@ -76,17 +72,17 @@ export const LoginForm = ({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password" className="text-white">
+        <Label htmlFor="password" className="text-slate-700">
           Password
         </Label>
         <div className="relative">
-          <Lock className="absolute left-3 top-2.5 h-5 w-5 text-white/50" />
+          <Lock className="absolute left-3 top-2.5 h-5 w-5 text-slate-500" />
           <Input
             id="password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="bg-white/10 border-white/20 text-white pl-10 placeholder:text-white/50"
+            className="pl-10"
             placeholder="Enter your password"
             autoComplete="current-password"
           />
@@ -97,7 +93,7 @@ export const LoginForm = ({
         <Button
           type="button"
           variant="link"
-          className="text-white hover:text-white/80"
+          className="text-slate-600 hover:text-slate-800"
           onClick={() => toast.info("Please contact your administrator to reset your password")}
         >
           Forgot password?
@@ -107,7 +103,8 @@ export const LoginForm = ({
       <div className="space-y-4">
         <Button
           type="submit"
-          className="w-full bg-white text-courthouse hover:bg-white/90 transition-colors"
+          variant="default"
+          className="w-full"
           disabled={loading}
         >
           {loading ? (
@@ -120,7 +117,7 @@ export const LoginForm = ({
         <Button
           type="button"
           variant="ghost"
-          className="w-full text-white hover:bg-white/10 transition-colors"
+          className="w-full text-foreground"
           onClick={onToggleForm}
           disabled={loading}
         >

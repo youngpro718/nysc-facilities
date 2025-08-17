@@ -36,12 +36,12 @@ export function InventoryTable({
     }
   };
 
-  // Fixed low stock logic: quantity < minimum_quantity
+  // Fixed low stock logic: 0 < quantity <= minimum_quantity
   const getStockStatus = (item: InventoryItem) => {
     if (item.quantity === 0) {
       return { label: "Out of Stock", variant: "destructive" as const };
     }
-    if (item.minimum_quantity && item.quantity < item.minimum_quantity) {
+    if ((item.minimum_quantity || 0) > 0 && item.quantity > 0 && item.quantity <= (item.minimum_quantity || 0)) {
       return { label: "Low Stock", variant: "secondary" as const };
     }
     return { label: "In Stock", variant: "default" as const };

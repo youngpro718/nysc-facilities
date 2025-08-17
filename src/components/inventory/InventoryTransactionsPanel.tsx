@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { History, Search, Plus, Minus, RotateCw, Filter } from "lucide-react";
 import { format } from "date-fns";
+import { useRealtime } from "@/hooks/useRealtime";
 
 type Transaction = {
   id: string;
@@ -31,6 +32,11 @@ export const InventoryTransactionsPanel = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<string>("all");
+
+  // Realtime: refetch transactions list on changes
+  useRealtime({ table: "inventory_item_transactions", queryKeys: ["inventory-transactions"] });
+  // Also refresh when item names change (joined display)
+  useRealtime({ table: "inventory_items", queryKeys: ["inventory-transactions"] });
 
   const { data: transactions, isLoading } = useQuery({
     queryKey: ["inventory-transactions", searchQuery, typeFilter, dateFilter],

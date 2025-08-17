@@ -56,7 +56,7 @@ export default function VerificationPending() {
   }
 
   return (
-    <div className="min-h-screen relative w-full bg-courthouse flex flex-col items-center justify-center overflow-hidden">
+    <div className="min-h-screen relative w-full flex flex-col items-center justify-center overflow-hidden">
       <SparklesCore
         id="tsparticlesfullpage"
         background="transparent"
@@ -67,29 +67,29 @@ export default function VerificationPending() {
         particleColor="#FFFFFF"
       />
       
-      <Card className="relative z-20 w-full max-w-lg p-8 bg-white/10 backdrop-blur-lg rounded-lg shadow-xl border border-white/20">
-        <div className="flex flex-col items-center gap-6 text-center text-white">
+      <Card className="relative z-20 w-full max-w-lg p-8">
+        <div className="flex flex-col items-center gap-6 text-center text-foreground">
           <div className="relative">
             <CheckCircle className="h-16 w-16" />
             <div className="absolute -top-2 -right-2">
-              <Loader2 className="h-6 w-6 animate-spin text-white/80" />
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           </div>
           
           <div className="space-y-2">
             <h1 className="text-2xl font-bold">Welcome to NYSC Facilities Hub!</h1>
-            <p className="text-white/80">
+            <p className="text-muted-foreground">
               Your account has been created successfully. While we verify your information, 
               you can explore the platform and see what features are available.
             </p>
           </div>
 
-          <div className="w-full p-4 rounded-lg bg-white/5 border border-white/20">
+          <div className="w-full p-4 rounded-lg bg-muted">
             <div className="flex items-center gap-3">
-              <Building2 className="h-5 w-5 text-white/60" />
+              <Building2 className="h-5 w-5 text-muted-foreground" />
               <div className="text-left">
                 <p className="font-medium text-sm">Limited Access Active</p>
-                <p className="text-xs text-white/60">
+                <p className="text-xs text-muted-foreground">
                   You can browse and learn about features while verification is in progress
                 </p>
               </div>
@@ -97,27 +97,16 @@ export default function VerificationPending() {
           </div>
           
           <div className="flex flex-col gap-3 w-full">
-            <Button
-              onClick={handleExploreFeatures}
-              className="bg-white/20 hover:bg-white/30 text-white border border-white/30 flex items-center gap-2"
-            >
+            <Button onClick={handleExploreFeatures} className="flex items-center gap-2">
               Explore Features
               <ArrowRight className="h-4 w-4" />
             </Button>
             
-            <Button
-              variant="ghost"
-              className="text-white hover:bg-white/10"
-              onClick={handleCheckStatus}
-            >
+            <Button variant="ghost" onClick={handleCheckStatus}>
               Check Verification Status
             </Button>
             
-            <Button
-              variant="ghost"
-              className="text-white/60 hover:bg-white/10 hover:text-white"
-              onClick={handleSignOut}
-            >
+            <Button variant="ghost" className="text-muted-foreground hover:text-foreground" onClick={handleSignOut}>
               Return to Login
             </Button>
           </div>

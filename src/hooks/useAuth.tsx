@@ -42,9 +42,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Dev-only bypass for auth redirects
   const devBypass =
-    (import.meta as any)?.env?.VITE_DISABLE_AUTH_GUARD === 'true' ||
-    (import.meta as any)?.env?.VITE_DISABLE_MODULE_GATES === 'true' ||
-    (typeof window !== 'undefined' && window.localStorage?.getItem('DEMO_MODE') === 'true');
+    (import.meta as any)?.env?.VITE_DISABLE_AUTH_GUARD === 'true';
+
+  // Warn if dev bypass enabled
+  useEffect(() => {
+    if (devBypass) {
+      console.warn('[Auth] VITE_DISABLE_AUTH_GUARD is true: authentication guards and redirects are bypassed for development.');
+    }
+  }, [devBypass]);
 
   // Function to fetch user profile data
   const getUserProfile = useCallback(async (userId: string) => {
@@ -61,36 +66,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // If Demo Mode, synthesize an authenticated admin state and skip Supabase flows
-  useEffect(() => {
-    if (devBypass && typeof window !== 'undefined' && window.localStorage?.getItem('DEMO_MODE') === 'true') {
-      const demoProfile: UserProfile = {
-        id: 'demo-user',
-        email: 'demo@example.com',
-        first_name: 'Demo',
-        last_name: 'Admin',
-        verification_status: 'verified',
-        access_level: 'admin' as any,
-      } as any;
-
-      setSession(null);
-      setUser(null);
-      setProfile(demoProfile);
-      setIsAdmin(true);
-      setIsLoading(false);
-    }
-  }, [devBypass]);
-
   // Refresh session function
   const refreshSession = useCallback(async () => {
     try {
       setIsLoading(true);
-      
-      if (devBypass && typeof window !== 'undefined' && window.localStorage?.getItem('DEMO_MODE') === 'true') {
-        // In Demo Mode, keep synthesized state
-        setIsLoading(false);
-        return;
-      }
 
       const currentSession = await getSession();
       
@@ -168,6 +147,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('useAuth: Starting sign up process');
       await signUpWithEmail(email, password, userData);
       
+      // Set onboarding flags to trigger onboarding after verification for this user only
+      try {
+        localStorage.setItem('ONBOARD_AFTER_SIGNUP', 'true');
+        localStorage.setItem('ONBOARD_AFTER_SIGNUP_EMAIL', email);
+      } catch {
+        // no-op
+      }
+
       toast.success('Account created successfully!', {
         description: "Please check your email for verification instructions."
       });
@@ -247,71 +234,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let mounted = true;
     let isInitialized = false;
 
-    // In Demo Mode, do not register Supabase auth listener
-    if (devBypass && typeof window !== 'undefined' && window.localStorage?.getItem('DEMO_MODE') === 'true') {
-      setIsLoading(false);
-      return;
-    }
-
     // Centralized redirect logic
     const handleRedirect = (userData: { isAdmin: boolean; profile: UserProfile | null }) => {
-      if (devBypass) return; // skip redirects in dev bypass and demo mode
+      if (devBypass) return; // skip redirects in dev bypass
       if (!mounted) return;
-      
+
       const currentPath = window.location.pathname;
-      
+
       console.log('handleRedirect: Current path:', currentPath, 'isAdmin:', userData.isAdmin);
-      
-      // Handle verification pending
+
+      // Always enforce verification flow
       if (userData.profile?.verification_status === 'pending') {
-        if (currentPath !== '/verification-pending') {
+        // Allowlist public routes where unverified users can browse
+        const allowlist = new Set(['/verification-pending', '/features-preview']);
+        if (!allowlist.has(currentPath)) {
           console.log('handleRedirect: Redirecting to verification pending');
           navigate('/verification-pending', { replace: true });
         }
         return;
       }
-      
+
+      // Relaxed redirects to prevent bouncing:
+      // - Admins: only redirect from login to admin home
+      // - Regular users: only redirect from login to user dashboard
       if (userData.isAdmin) {
-        // Admin user redirect logic
-        const isAdminPage = currentPath === '/' || 
-                           currentPath.startsWith('/spaces') ||
-                           currentPath.startsWith('/occupants') ||
-                           currentPath.startsWith('/keys') ||
-                           currentPath.startsWith('/lighting') ||
-                           currentPath.startsWith('/operations') ||
-                           currentPath.startsWith('/access-management') ||
-                           currentPath.startsWith('/admin') ||
-                           currentPath.startsWith('/maintenance') ||
-                           currentPath.startsWith('/court-operations') ||
-                           currentPath.startsWith('/inventory') ||
-                           currentPath.startsWith('/system-settings') ||
-                           currentPath.startsWith('/settings');
-        
-        // Redirect admin users away from user-only pages or login page to admin dashboard
-        if (currentPath === '/login' || 
-            currentPath.startsWith('/dashboard') || 
-            currentPath === '/my-requests' || 
-            currentPath === '/my-issues' ||
-            currentPath === '/profile') {
-          console.log('handleRedirect: Admin user, redirecting to admin dashboard');
-          navigate('/', { replace: true });
-        } else if (!isAdminPage) {
-          // If admin is on an unknown/invalid page, redirect to admin dashboard
-          console.log('handleRedirect: Admin user on unknown page, redirecting to admin dashboard');
+        if (currentPath === '/login') {
+          console.log('handleRedirect: Admin coming from login, redirecting to home');
           navigate('/', { replace: true });
         }
-      } else {
-        // Regular user redirect logic
-        const isUserPage = currentPath.startsWith('/dashboard') || 
-                          currentPath === '/my-requests' || 
-                          currentPath === '/my-issues' ||
-                          currentPath === '/profile';
-        
-        // Redirect regular users away from admin pages or login page to user dashboard
-        if (currentPath === '/login' || !isUserPage) {
-          console.log('handleRedirect: Regular user, redirecting to user dashboard');
-          navigate('/dashboard', { replace: true });
-        }
+        return;
+      }
+
+      if (currentPath === '/login') {
+        console.log('handleRedirect: Regular user coming from login, redirecting to dashboard');
+        navigate('/dashboard', { replace: true });
       }
     };
 
@@ -319,6 +275,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const initializeAuth = async () => {
       try {
         console.log('useAuth: Initializing authentication...');
+        setIsLoading(true);
         const currentSession = await getSession();
         
         if (!mounted) return;
@@ -439,7 +396,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [getUserProfile, navigate])
 
   // Compute isAuthenticated derived from session
-  const isAuthenticated = !!session;
+  const isAuthenticated = devBypass || !!session;
 
   // Provide the auth context to children
   return (

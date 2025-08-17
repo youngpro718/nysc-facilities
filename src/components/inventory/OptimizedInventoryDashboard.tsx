@@ -344,7 +344,9 @@ export function OptimizedInventoryDashboard() {
                           {item.description || 'No description'}
                         </p>
                         <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                          <span>Category: {item.category_name || 'Uncategorized'}</span>
+                          {item.category_name && (
+                            <span>Category: {item.category_name}</span>
+                          )}
                           <span>Location: {item.location || 'Not specified'}</span>
                         </div>
                       </div>
@@ -408,9 +410,11 @@ export function OptimizedInventoryDashboard() {
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          Category: {item.category_name || 'Uncategorized'}
-                        </p>
+                        {item.category_name && (
+                          <p className="text-sm text-muted-foreground">
+                            Category: {item.category_name}
+                          </p>
+                        )}
                       </div>
                       <div className="text-right">
                         <div className="text-lg font-semibold text-orange-700">

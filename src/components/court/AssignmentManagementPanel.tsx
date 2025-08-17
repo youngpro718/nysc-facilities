@@ -2,11 +2,10 @@ import { EnhancedCourtAssignmentTable } from "./EnhancedCourtAssignmentTable";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { RefreshCw, AlertTriangle, Users, Calendar, Wrench, MapPin } from "lucide-react";
+import { RefreshCw, AlertTriangle, Users, Calendar, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const AssignmentManagementPanel = () => {
   const { getCourtImpactSummary } = useCourtIssuesIntegration();
@@ -18,17 +17,13 @@ export const AssignmentManagementPanel = () => {
       // Get all court rooms with their availability status
       const { data: courtrooms } = await supabase
         .from("court_rooms")
-        .select("id, room_number, is_active");
+        .select("id, room_id, room_number, is_active");
       
       const { data: assignments } = await supabase
         .from("court_assignments")
-        .select("room_number, part")
+        .select("room_id, part")
         .not("part", "is", null)
         .not("part", "eq", "");
-
-      const { data: availability } = await supabase
-        .from("court_rooms")
-        .select("id, maintenance_status, temporary_location");
 
       const { data: shutdowns } = await supabase
         .from("room_shutdowns")
@@ -45,15 +40,16 @@ export const AssignmentManagementPanel = () => {
       // Count rooms by actual availability
       let availableCount = 0;
       let assignedCount = 0;
-      let maintenanceCount = 0;
       let shutdownCount = 0;
       let relocatedCount = 0;
-      let inactiveCount = 0;
+      // track inactive rooms only for flow control; not surfaced in metrics
+
+      const assignedRoomIds = new Set((assignments || []).map((a: any) => a.room_id).filter(Boolean));
 
       courtrooms?.forEach(room => {
         const roomShutdown = shutdownMap.get(room.id);
-        // Check if room has a part assigned (simple assignment logic)
-        const hasAssignment = assignments?.some(a => a.room_number === room.room_number && a.part);
+        // Check if room has a part assigned using room_id key
+        const hasAssignment = assignedRoomIds.has(room.room_id);
 
         if (roomShutdown && (roomShutdown.status === "in_progress" || roomShutdown.status === "scheduled")) {
           shutdownCount++;
@@ -61,7 +57,7 @@ export const AssignmentManagementPanel = () => {
             relocatedCount++;
           }
         } else if (!room.is_active) {
-          inactiveCount++;
+          // skip counting if inactive
         } else if (hasAssignment) {
           assignedCount++;
         } else {
@@ -73,7 +69,6 @@ export const AssignmentManagementPanel = () => {
         totalCourtrooms,
         assignedRooms: assignedCount,
         availableRooms: availableCount,
-        underMaintenance: maintenanceCount,
         shutdownRooms: shutdownCount,
         temporarilyRelocated: relocatedCount,
         unassignedRooms: availableCount
@@ -150,16 +145,7 @@ export const AssignmentManagementPanel = () => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Under Maintenance</CardTitle>
-            <Wrench className="h-4 w-4 text-orange-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{assignmentStats?.underMaintenance || 0}</div>
-            <p className="text-xs text-muted-foreground">Currently unavailable</p>
-          </CardContent>
-        </Card>
+        {/* Removed Under Maintenance card due to unavailable metric */}
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

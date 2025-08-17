@@ -1,10 +1,10 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Package, TrendingDown, Plus } from "lucide-react";
+import { useRealtime } from "@/hooks/useRealtime";
 
 type LowStockItem = {
   id: string;
@@ -22,6 +22,11 @@ type LowStockItem = {
 };
 
 export const LowStockPanel = () => {
+  // Realtime: refetch low/out-of-stock lists on relevant table changes
+  useRealtime({ table: "inventory_items", queryKeys: ["low-stock-items", "out-of-stock-items"] });
+  useRealtime({ table: "inventory_categories", queryKeys: ["low-stock-items", "out-of-stock-items"] });
+  useRealtime({ table: "rooms", queryKeys: ["low-stock-items", "out-of-stock-items"] });
+
   const { data: lowStockItems, isLoading, isError: lowErr, error: lowError } = useQuery({
     queryKey: ["low-stock-items"],
     queryFn: async (): Promise<LowStockItem[]> => {
@@ -79,10 +84,10 @@ export const LowStockPanel = () => {
           } as LowStockItem;
         });
 
-        return enriched.filter(item => item.quantity < item.minimum_quantity);
+        return enriched.filter(item => item.quantity > 0 && item.minimum_quantity > 0 && item.quantity <= item.minimum_quantity);
       } catch (e) {
         console.warn('[LowStockPanel] enrichment failed, using base data:', e);
-        return base.filter(item => item.quantity < item.minimum_quantity);
+        return base.filter(item => item.quantity > 0 && item.minimum_quantity > 0 && item.quantity <= item.minimum_quantity);
       }
     },
   });
@@ -151,7 +156,7 @@ export const LowStockPanel = () => {
         badgeClass: "",
       };
     }
-    if (quantity < minimum) {
+    if (quantity > 0 && quantity <= minimum) {
       return {
         level: "warning",
         label: "Low Stock",

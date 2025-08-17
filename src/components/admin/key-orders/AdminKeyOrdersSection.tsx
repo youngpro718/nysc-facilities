@@ -26,7 +26,7 @@ export const AdminKeyOrdersSection = () => {
           *,
           key_requests(
             *,
-            profiles(first_name, last_name)
+            profiles(first_name, last_name, email)
           ),
           keys(name, type)
         `)
@@ -38,10 +38,11 @@ export const AdminKeyOrdersSection = () => {
   });
 
   const filteredOrders = keyOrders?.filter(order => {
+    const profile = (order as any)?.key_requests?.profiles;
     const matchesSearch = searchQuery === "" || 
-      order.user_profiles?.first_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.user_profiles?.last_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.user_profiles?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      profile?.first_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      profile?.last_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      profile?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.notes?.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesStatus = statusFilter === "all" || order.status === statusFilter;
@@ -52,7 +53,7 @@ export const AdminKeyOrdersSection = () => {
   const stats = {
     total: keyOrders?.length || 0,
     pending: keyOrders?.filter(o => o.status === 'pending_fulfillment').length || 0,
-    inProgress: keyOrders?.filter(o => o.status === 'ordered').length || 0,
+    inProgress: keyOrders?.filter(o => o.status === 'in_progress').length || 0,
     ready: keyOrders?.filter(o => o.status === 'ready_for_pickup').length || 0,
     completed: keyOrders?.filter(o => o.status === 'completed').length || 0,
   };
@@ -63,9 +64,7 @@ export const AdminKeyOrdersSection = () => {
         .from('key_orders')
         .update({ 
           status: newStatus as any,
-          ...(notes && { notes: notes }),
-          ...(newStatus === 'completed' && { delivered_at: new Date().toISOString() }),
-          delivered_by: (await supabase.auth.getUser()).data.user?.id
+          ...(notes && { notes: notes })
         })
         .eq('id', orderId);
 
@@ -75,7 +74,33 @@ export const AdminKeyOrdersSection = () => {
       refetch();
     } catch (error) {
       console.error('Error updating order status:', error);
-      toast.error('Failed to update order status');
+      const message = (error as any)?.message || 'Failed to update order status';
+      toast.error(message);
+    }
+  };
+
+  const handleReceiveKeys = async (orderId: string, quantity: number) => {
+    try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+
+      const userId = userData.user?.id;
+      if (!userId) throw new Error('Not authenticated');
+
+      const { error } = await supabase.rpc('process_key_order_receipt', {
+        p_order_id: orderId,
+        p_quantity_received: quantity,
+        p_performed_by: userId,
+      });
+
+      if (error) throw error;
+
+      toast.success(`Received ${quantity} key${quantity > 1 ? 's' : ''}`);
+      refetch();
+    } catch (error) {
+      console.error('Error receiving keys:', error);
+      const message = (error as any)?.message || 'Failed to receive keys';
+      toast.error(message);
     }
   };
 
@@ -169,11 +194,9 @@ export const AdminKeyOrdersSection = () => {
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value="pending_fulfillment">Pending Fulfillment</SelectItem>
-            <SelectItem value="ordered">Ordered</SelectItem>
-            <SelectItem value="in_transit">In Transit</SelectItem>
+            <SelectItem value="in_progress">In Progress</SelectItem>
             <SelectItem value="received">Received</SelectItem>
             <SelectItem value="ready_for_pickup">Ready for Pickup</SelectItem>
-            <SelectItem value="delivered">Delivered</SelectItem>
             <SelectItem value="completed">Completed</SelectItem>
             <SelectItem value="cancelled">Cancelled</SelectItem>
           </SelectContent>
@@ -201,6 +224,7 @@ export const AdminKeyOrdersSection = () => {
               key={order.id}
               order={order}
               onStatusUpdate={handleStatusUpdate}
+              onReceiveKeys={handleReceiveKeys}
             />
           ))
         )}

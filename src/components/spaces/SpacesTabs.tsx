@@ -2,11 +2,12 @@ import React, { useState, Suspense } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   Home, 
-  Settings, 
+  Wrench, 
   Map, 
-  Users, 
+  KeyRound, 
   Activity, 
   LayoutPanelLeft,
   GitFork,
@@ -50,103 +51,139 @@ const SpacesTabs = ({ selectedBuilding, selectedFloor }: SpaceViewProps) => {
 
         {/* Horizontal Navigation Buttons */}
         <div className="flex gap-3 flex-wrap">
-          <button
-            onClick={() => setActiveView('rooms')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-              activeView === 'rooms' 
-                ? 'bg-primary text-primary-foreground shadow-md' 
-                : 'bg-accent hover:bg-accent/80'
-            }`}
-          >
-            <div className={`p-2 rounded-lg ${
-              activeView === 'rooms' ? 'bg-primary-foreground/20' : 'bg-primary'
-            }`}>
-              <Home className={`h-4 w-4 ${
-                activeView === 'rooms' ? 'text-primary-foreground' : 'text-white'
-              }`} />
-            </div>
-            <div className="text-left">
-              <h4 className="font-medium text-sm">Room Management</h4>
-              <p className={`text-xs ${
-                activeView === 'rooms' ? 'text-primary-foreground/70' : 'text-muted-foreground'
-              }`}>Primary workspace</p>
-            </div>
-            {activeView === 'rooms' && (
-              <Badge variant="secondary" className="ml-2">
-                <Activity className="h-3 w-3 mr-1" />
-                Active
-              </Badge>
-            )}
-          </button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setActiveView('rooms')}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                    activeView === 'rooms' 
+                      ? 'bg-primary text-primary-foreground shadow-md' 
+                      : 'bg-accent hover:bg-accent/80'
+                  }`}
+                  aria-pressed={activeView === 'rooms'}
+                  aria-current={activeView === 'rooms' ? 'page' : undefined}
+                >
+                  <div className={`p-2 rounded-lg ${
+                    activeView === 'rooms' ? 'bg-primary-foreground/20' : 'bg-primary'
+                  }`}>
+                    <Home className={`h-4 w-4 ${
+                      activeView === 'rooms' ? 'text-primary-foreground' : 'text-white'
+                    }`} />
+                  </div>
+                  <div className="text-left">
+                    <h4 className="font-medium text-sm">Room Management</h4>
+                    <p className={`text-xs ${
+                      activeView === 'rooms' ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                    }`}>Primary workspace</p>
+                  </div>
+                  {activeView === 'rooms' && (
+                    <Badge variant="secondary" className="ml-2">
+                      <Activity className="h-3 w-3 mr-1" />
+                      Active
+                    </Badge>
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Room Management</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
-          <button
-            onClick={() => setActiveView('infrastructure')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-              activeView === 'infrastructure' 
-                ? 'bg-slate-600 text-white shadow-md' 
-                : 'bg-accent hover:bg-accent/80'
-            }`}
-          >
-            <div className={`p-2 rounded-lg ${
-              activeView === 'infrastructure' ? 'bg-white/20' : 'bg-slate-500'
-            }`}>
-              <Settings className={`h-4 w-4 ${
-                activeView === 'infrastructure' ? 'text-white' : 'text-white'
-              }`} />
-            </div>
-            <div className="text-left">
-              <h4 className="font-medium text-sm">Infrastructure</h4>
-              <p className={`text-xs ${
-                activeView === 'infrastructure' ? 'text-white/70' : 'text-muted-foreground'
-              }`}>Hallways & doors</p>
-            </div>
-          </button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setActiveView('infrastructure')}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                    activeView === 'infrastructure' 
+                      ? 'bg-slate-600 text-white shadow-md' 
+                      : 'bg-accent hover:bg-accent/80'
+                  }`}
+                  aria-pressed={activeView === 'infrastructure'}
+                  aria-current={activeView === 'infrastructure' ? 'page' : undefined}
+                >
+                  <div className={`p-2 rounded-lg ${
+                    activeView === 'infrastructure' ? 'bg-white/20' : 'bg-slate-500'
+                  }`}>
+                    <Wrench className={`h-4 w-4 ${
+                      activeView === 'infrastructure' ? 'text-white' : 'text-white'
+                    }`} />
+                  </div>
+                  <div className="text-left">
+                    <h4 className="font-medium text-sm">Infrastructure</h4>
+                    <p className={`text-xs ${
+                      activeView === 'infrastructure' ? 'text-white/70' : 'text-muted-foreground'
+                    }`}>Hallways & doors</p>
+                  </div>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Hallways & doors</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
-          <button
-            onClick={() => setActiveView('floorplan')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-              activeView === 'floorplan' 
-                ? 'bg-green-600 text-white shadow-md' 
-                : 'bg-accent hover:bg-accent/80'
-            }`}
-          >
-            <div className={`p-2 rounded-lg ${
-              activeView === 'floorplan' ? 'bg-white/20' : 'bg-green-500'
-            }`}>
-              <Map className={`h-4 w-4 ${
-                activeView === 'floorplan' ? 'text-white' : 'text-white'
-              }`} />
-            </div>
-            <div className="text-left">
-              <h4 className="font-medium text-sm">Floor Plan</h4>
-              <p className={`text-xs ${
-                activeView === 'floorplan' ? 'text-white/70' : 'text-muted-foreground'
-              }`}>Visual overview</p>
-            </div>
-          </button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setActiveView('floorplan')}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                    activeView === 'floorplan' 
+                      ? 'bg-green-600 text-white shadow-md' 
+                      : 'bg-accent hover:bg-accent/80'
+                  }`}
+                  aria-pressed={activeView === 'floorplan'}
+                  aria-current={activeView === 'floorplan' ? 'page' : undefined}
+                >
+                  <div className={`p-2 rounded-lg ${
+                    activeView === 'floorplan' ? 'bg-white/20' : 'bg-green-500'
+                  }`}>
+                    <Map className={`h-4 w-4 ${
+                      activeView === 'floorplan' ? 'text-white' : 'text-white'
+                    }`} />
+                  </div>
+                  <div className="text-left">
+                    <h4 className="font-medium text-sm">Floor Plan</h4>
+                    <p className={`text-xs ${
+                      activeView === 'floorplan' ? 'text-white/70' : 'text-muted-foreground'
+                    }`}>Visual overview</p>
+                  </div>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Interactive floor plan</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
-          <button
-            onClick={() => setActiveView('access')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-              activeView === 'access' 
-                ? 'bg-purple-600 text-white shadow-md' 
-                : 'bg-accent hover:bg-accent/80'
-            }`}
-          >
-            <div className={`p-2 rounded-lg ${
-              activeView === 'access' ? 'bg-white/20' : 'bg-purple-500'
-            }`}>
-              <Users className={`h-4 w-4 ${
-                activeView === 'access' ? 'text-white' : 'text-white'
-              }`} />
-            </div>
-            <div className="text-left">
-              <h4 className="font-medium text-sm">Access Control</h4>
-              <p className={`text-xs ${
-                activeView === 'access' ? 'text-white/70' : 'text-muted-foreground'
-              }`}>User permissions</p>
-            </div>
-          </button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setActiveView('access')}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                    activeView === 'access' 
+                      ? 'bg-purple-600 text-white shadow-md' 
+                      : 'bg-accent hover:bg-accent/80'
+                  }`}
+                  aria-pressed={activeView === 'access'}
+                  aria-current={activeView === 'access' ? 'page' : undefined}
+                >
+                  <div className={`p-2 rounded-lg ${
+                    activeView === 'access' ? 'bg-white/20' : 'bg-purple-500'
+                  }`}>
+                    <KeyRound className={`h-4 w-4 ${
+                      activeView === 'access' ? 'text-white' : 'text-white'
+                    }`} />
+                  </div>
+                  <div className="text-left">
+                    <h4 className="font-medium text-sm">Access Control</h4>
+                    <p className={`text-xs ${
+                      activeView === 'access' ? 'text-white/70' : 'text-muted-foreground'
+                    }`}>User permissions</p>
+                  </div>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Manage access permissions</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
 
@@ -182,7 +219,7 @@ const SpacesTabs = ({ selectedBuilding, selectedFloor }: SpaceViewProps) => {
           <div className="bg-card border rounded-lg">
             <div className="p-6 border-b">
               <h2 className="text-xl font-semibold flex items-center gap-2">
-                <Settings className="h-5 w-5" />
+                <Wrench className="h-5 w-5" />
                 Infrastructure Management
               </h2>
               <p className="text-muted-foreground mt-1">
@@ -284,7 +321,7 @@ const SpacesTabs = ({ selectedBuilding, selectedFloor }: SpaceViewProps) => {
           <div className="bg-card border rounded-lg">
             <div className="p-6 border-b">
               <h2 className="text-xl font-semibold flex items-center gap-2">
-                <Users className="h-5 w-5" />
+                <KeyRound className="h-5 w-5" />
                 Room Access Management
               </h2>
               <p className="text-muted-foreground mt-1">

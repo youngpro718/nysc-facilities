@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Navigate, NavLink } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { useEnabledModules, EnabledModules } from '@/hooks/useEnabledModules';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,9 +14,7 @@ interface ModuleProtectedRouteProps {
 export function ModuleProtectedRoute({ children, moduleKey, moduleName }: ModuleProtectedRouteProps) {
   const { enabledModules, loading } = useEnabledModules();
 
-  // Demo Mode bypass: skip module gating for demos
-  const demoMode = typeof window !== 'undefined' && window.localStorage?.getItem('DEMO_MODE') === 'true';
-  if (demoMode) return <>{children}</>;
+  // Always enforce module gating
 
   if (loading) {
     return (

@@ -49,10 +49,26 @@ const statusConfig = {
 };
 
 const orderStatusConfig = {
-  ordered: { icon: Package, label: "Ordered", progress: 25 },
+  pending_fulfillment: { icon: Clock, label: "Pending Fulfillment", progress: 10 },
+  in_progress: { icon: Package, label: "In Progress", progress: 40 },
   received: { icon: Truck, label: "Received", progress: 75 },
   ready_for_pickup: { icon: Key, label: "Ready for Pickup", progress: 100 },
-  delivered: { icon: CheckCircle, label: "Delivered", progress: 100 }
+  completed: { icon: CheckCircle, label: "Completed", progress: 100 },
+  cancelled: { icon: XCircle, label: "Cancelled", progress: 0 },
+};
+
+const normalizeOrderStatus = (status?: string) => {
+  switch (status) {
+    case 'ordered':
+    case 'in_transit':
+      return 'in_progress';
+    case 'delivered':
+      return 'completed';
+    case 'partially_received':
+      return 'received';
+    default:
+      return (status || '') as keyof typeof orderStatusConfig;
+  }
 };
 
 const getRequestTypeLabel = (type: string) => {
@@ -281,15 +297,25 @@ export default function MyRequests() {
                       <div className="border-t pt-4">
                         <div className="flex items-center justify-between mb-2">
                           <p className="font-medium text-sm">Order Progress</p>
-                          <span className="text-sm text-muted-foreground">
-                            {orderStatusConfig[relatedOrder.status as keyof typeof orderStatusConfig]?.label || relatedOrder.status}
-                          </span>
+                          {(() => {
+                            const normalized = normalizeOrderStatus(relatedOrder.status);
+                            return (
+                              <span className="text-sm text-muted-foreground">
+                                {orderStatusConfig[normalized as keyof typeof orderStatusConfig]?.label || normalized}
+                              </span>
+                            );
+                          })()}
                         </div>
-                        <Progress 
-                          value={orderStatusConfig[relatedOrder.status as keyof typeof orderStatusConfig]?.progress || 0} 
-                          className="h-2"
-                        />
-                        {relatedOrder.status === 'ready_for_pickup' && (
+                        {(() => {
+                          const normalized = normalizeOrderStatus(relatedOrder.status);
+                          return (
+                            <Progress 
+                              value={orderStatusConfig[normalized as keyof typeof orderStatusConfig]?.progress || 0} 
+                              className="h-2"
+                            />
+                          );
+                        })()}
+                        {normalizeOrderStatus(relatedOrder.status) === 'ready_for_pickup' && (
                           <p className="text-sm text-green-600 mt-2 font-medium">
                             🎉 Your key is ready for pickup at the facilities office!
                           </p>
