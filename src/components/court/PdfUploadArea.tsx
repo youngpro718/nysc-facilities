@@ -3,7 +3,7 @@ import { useDropzone } from 'react-dropzone';
 import { Upload, FileText, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { parsePDF, ParsedTermData } from '@/utils/pdfParser';
+import { ParsedTermData, parsePDF } from '@/utils/pdfParser';
 
 interface PdfUploadAreaProps {
   onPdfParsed: (data: ParsedTermData) => void;
@@ -94,15 +94,32 @@ export const PdfUploadArea = ({ onPdfParsed, onFileUploaded, disabled }: PdfUplo
 
       console.log('✅ Upload successful:', uploadData);
 
-      // Step 2: Parse the PDF using Edge Function
+      // Step 2: Parse the PDF using Edge Function with timeout and graceful fallback
       console.log('📄 Step 2: Parsing PDF with server-side processing...');
-      const { data: parsedData, error: parseError } = await supabase.functions.invoke('parse-pdf', {
-        body: { filePath: filePath }
-      });
+      const EDGE_TIMEOUT_MS = 30000; // 30s timeout to avoid hanging UI
+      let parsedData: ParsedTermData | null = null;
 
-      if (parseError) {
-        console.error('❌ Parse error:', parseError);
-        throw new Error(`PDF parsing failed: ${parseError.message}`);
+      try {
+        const edgeInvocation = supabase.functions.invoke('parse-pdf', {
+          body: { filePath: filePath }
+        });
+
+        // Add timeout protection so UI doesn't get stuck if function runs too long
+        const edgeResult: any = await Promise.race([
+          edgeInvocation,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Edge function timeout')), EDGE_TIMEOUT_MS))
+        ]);
+
+        if (edgeResult?.error) {
+          console.error('❌ Edge parse error:', edgeResult.error);
+          throw new Error(`PDF parsing failed: ${edgeResult.error.message || 'Unknown error'}`);
+        }
+
+        parsedData = edgeResult?.data as ParsedTermData;
+      } catch (edgeErr) {
+        console.warn('⚠️ Edge function parsing failed or timed out. Falling back to client-side parsing...', edgeErr);
+        // Fallback to client-side parsing to keep the flow unblocked
+        parsedData = await parsePDF(file);
       }
 
       if (!parsedData || parsedData.assignments.length === 0) {

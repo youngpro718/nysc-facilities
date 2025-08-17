@@ -132,7 +132,6 @@ export const PersonnelProfilesTab: React.FC = () => {
         .from('personnel_profiles')
         .insert([{
           ...data,
-          full_name: `${data.first_name} ${data.last_name}`.trim(),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }]);
@@ -158,7 +157,6 @@ export const PersonnelProfilesTab: React.FC = () => {
         .from('personnel_profiles')
         .update({
           ...data,
-          full_name: `${data.first_name} ${data.last_name}`.trim(),
           updated_at: new Date().toISOString()
         })
         .eq('id', id);
@@ -185,7 +183,6 @@ export const PersonnelProfilesTab: React.FC = () => {
         .from('personnel_profiles')
         .insert(csvData.map(row => ({
           ...row,
-          full_name: `${row.first_name || ''} ${row.last_name || ''}`.trim(),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })));

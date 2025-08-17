@@ -4,7 +4,7 @@ import { EnhancedRoom } from "../types/EnhancedRoomTypes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Trash2, ArrowRightFromLine, Users, Shield, Lightbulb, ShoppingBag } from "lucide-react";
+import { Trash2, ArrowRightFromLine, Users, Shield, Lightbulb, ShoppingBag, AlertTriangle } from "lucide-react";
 import { EditSpaceDialog } from "../../EditSpaceDialog";
 import { CourtroomPhotos } from './CourtroomPhotos';
 import { CourtroomPhotoThumbnail } from './CourtroomPhotoThumbnail';
@@ -12,6 +12,7 @@ import { ParentRoomHierarchy } from "../ParentRoomHierarchy";
 import { RoomAccessSummary } from "@/components/access/RoomAccessSummary";
 import { SmartBadges } from "./badges/SmartBadges";
 import { LightingReportDialog } from "./lighting/LightingReportDialog";
+import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
 
 interface CardFrontProps {
   room: EnhancedRoom;
@@ -21,8 +22,28 @@ interface CardFrontProps {
 }
 
 export function CardFront({ room, onFlip, onDelete, isHovered = false }: CardFrontProps) {
+  const { getIssuesForRoom } = useCourtIssuesIntegration();
+  const unresolvedIssues = getIssuesForRoom(room.id);
+  const hasIssues = unresolvedIssues.length > 0;
+  const highSeverityCount = unresolvedIssues.filter(i => ["urgent", "high", "critical"].includes((i.priority || "").toLowerCase())).length;
   return (
     <div className="relative p-5 flex flex-col h-full overflow-y-auto">
+      {/* Issue Alert - Top Left Corner */}
+      {hasIssues && (
+        <div className="absolute top-2 left-2 flex items-center gap-2 z-10">
+          <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+          <Badge variant="destructive" className="text-[10px] flex items-center gap-1">
+            <AlertTriangle className="h-3 w-3" />
+            {unresolvedIssues.length}
+            <span className="hidden sm:inline">open</span>
+            {highSeverityCount > 0 && (
+              <span className="ml-1 text-[10px] bg-white/20 px-1 rounded">
+                {highSeverityCount} high
+              </span>
+            )}
+          </Badge>
+        </div>
+      )}
       {/* Hover Action Buttons - Top Right Corner */}
       <div className={`absolute top-2 right-2 flex flex-col gap-1 transition-all duration-300 z-10 ${
         isHovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'

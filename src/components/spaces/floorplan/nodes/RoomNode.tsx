@@ -71,7 +71,7 @@ export function RoomNode({ data, selected }: NodeProps<FloorPlanObjectData>) {
             fontStyle: 'italic',
             marginTop: '2px'
           }}>
-            Child Room
+            Sub room
           </div>
         )}
         {connectionCount > 0 && (

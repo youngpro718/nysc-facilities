@@ -80,14 +80,14 @@ export function ParentRoomHierarchy({
         {roomData.parent_room_id && showParent && (
           <div className="flex items-center gap-1">
             <Building2 className="h-3 w-3" />
-            <span>Child of room</span>
+            <span>Sub room of suite</span>
           </div>
         )}
         {showChildren && (
           <div className="flex items-center gap-1">
             <Users className="h-3 w-3" />
             <Badge variant="secondary" className="text-xs">
-              Has children
+              Has sub rooms
             </Badge>
           </div>
         )}
@@ -103,7 +103,7 @@ export function ParentRoomHierarchy({
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
               <Building2 className="h-4 w-4" />
-              Parent Hierarchy
+              Office Suite Hierarchy
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
@@ -125,13 +125,13 @@ export function ParentRoomHierarchy({
         </Card>
       )}
 
-      {/* Child Rooms */}
+      {/* Sub rooms */}
       {showChildren && children && children.length > 0 && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
               <Users className="h-4 w-4" />
-              Child Rooms ({children.length})
+              Sub rooms ({children.length})
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">

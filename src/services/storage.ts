@@ -342,6 +342,6 @@ export const storageService = {
  * Note: Should only be called after authentication is confirmed
  */
 export async function initializeStorage(): Promise<void> {
-  // Verify the courtroom-photos bucket exists
-  await storageService.ensureBucketsExist(['courtroom-photos']);
+  // Verify required buckets exist
+  await storageService.ensureBucketsExist(['courtroom-photos', 'term-pdfs']);
 }

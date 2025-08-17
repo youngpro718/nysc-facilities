@@ -185,7 +185,7 @@ export default function Operations() {
     }).length || 0;
 
     return {
-      activeIssues: issueStats?.open || 0,
+      activeIssues: (issueStats?.open || 0) + (issueStats?.in_progress || 0),
       criticalCount: criticalIssues?.length || 0,
       inProgress: issueStats?.in_progress || 0,
       resolvedToday,
@@ -678,7 +678,7 @@ export default function Operations() {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Open Issues</p>
+                    <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Active Issues</p>
                     <p className="text-2xl font-bold text-blue-600">{enhancedMetrics.activeIssues}</p>
                   </div>
                   <AlertCircle className="h-8 w-8 text-blue-500" />

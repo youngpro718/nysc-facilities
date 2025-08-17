@@ -15,6 +15,14 @@ interface ReportIssueDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+interface RoomOption {
+  id: string;
+  name: string | null;
+  room_number: string | null;
+  floor_id: string | null;
+  floors?: { building_id: string | null } | null;
+}
+
 export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -26,18 +34,20 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
     issue_type: "",
     severity: "medium",
     recurring_issue: false,
+    room_id: "",
+    building_id: "",
   });
 
   // Get rooms for space selection
-  const { data: rooms } = useQuery({
+  const { data: rooms } = useQuery<RoomOption[]>({
     queryKey: ["rooms-for-issues"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("rooms")
-        .select("id, name, room_number")
+        .select("id, name, room_number, floor_id, floors(building_id)")
         .order("room_number");
       if (error) throw error;
-      return data;
+      return (data as unknown as RoomOption[]) || [];
     },
   });
 
@@ -45,15 +55,28 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
     e.preventDefault();
     console.log('Issue form submitted with data:', formData);
     
+    // If user selected a room, ensure room_id is set
+    if (formData.space_type === 'room' && !formData.room_id) {
+      return toast({
+        title: "Room required",
+        description: "Please select a room for this issue.",
+        variant: "destructive",
+      });
+    }
+
     try {
       console.log('Inserting into unified issues table...');
       const { error } = await supabase
         .from("issues")
         .insert({
+          title: formData.title,
           description: formData.description,
           type: formData.issue_type,
-          priority: (formData.severity === 'critical' ? 'high' : formData.severity) as "high" | "medium" | "low",
-          status: 'open'
+          // Normalize: treat "critical" selection as "urgent" to trigger DB workflows
+          priority: (formData.severity === 'critical' ? 'urgent' : formData.severity),
+          status: 'open',
+          room_id: formData.room_id || null,
+          building_id: formData.building_id || null,
         } as any);
 
       if (error) {
@@ -67,6 +90,12 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
       await queryClient.invalidateQueries({ queryKey: ['userIssues'] });
       await queryClient.invalidateQueries({ queryKey: ['roomIssues'] });
       await queryClient.invalidateQueries({ queryKey: ['maintenanceIssues'] });
+      await queryClient.invalidateQueries({ queryKey: ['adminIssues'] });
+      await queryClient.invalidateQueries({ queryKey: ['court-issues'] });
+      await queryClient.invalidateQueries({ queryKey: ['interactive-operations'] });
+      await queryClient.invalidateQueries({ queryKey: ['quick-actions'] });
+      await queryClient.invalidateQueries({ queryKey: ['assignment-stats'] });
+      await queryClient.invalidateQueries({ queryKey: ['courtroom-availability'] });
 
       toast({
         title: "Issue Reported",
@@ -81,6 +110,8 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
         issue_type: "",
         severity: "medium",
         recurring_issue: false,
+        room_id: "",
+        building_id: "",
       });
       onOpenChange(false);
     } catch (error) {
@@ -150,15 +181,23 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
               <Label htmlFor="space_name">Space Name/Number *</Label>
               {formData.space_type === "room" && rooms ? (
                 <Select 
-                  value={formData.space_name} 
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, space_name: value }))}
+                  value={formData.room_id}
+                  onValueChange={(value) => {
+                    const selected = rooms?.find((r: RoomOption) => r.id === value);
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      room_id: value,
+                      space_name: selected?.room_number || '',
+                      building_id: selected?.floors?.building_id || '',
+                    }));
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select room" />
                   </SelectTrigger>
                   <SelectContent>
-                    {rooms.map((room) => (
-                      <SelectItem key={room.id} value={room.room_number}>
+                    {(rooms || []).map((room: RoomOption) => (
+                      <SelectItem key={room.id} value={room.id}>
                         {room.room_number} - {room.name}
                       </SelectItem>
                     ))}

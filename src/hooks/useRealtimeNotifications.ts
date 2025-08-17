@@ -264,15 +264,15 @@ export const useRealtimeNotifications = (): RealtimeNotificationHook => {
             if (toastType === 'success') {
               toast.success(message, {
                 action: {
-                  label: 'View Issue',
-                  onClick: () => window.location.href = `/issues/${issue.id}`
+                  label: 'Issues',
+                  onClick: () => window.location.href = `/operations?tab=issues&issue_id=${issue.id}`
                 }
               });
             } else {
               toast.info(message, {
                 action: {
-                  label: 'View Issue',
-                  onClick: () => window.location.href = `/issues/${issue.id}`
+                  label: 'Issues',
+                  onClick: () => window.location.href = `/operations?tab=issues&issue_id=${issue.id}`
                 }
               });
             }

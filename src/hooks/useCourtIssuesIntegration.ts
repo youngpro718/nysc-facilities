@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export interface CourtIssue {
   id: string;
@@ -37,6 +37,7 @@ export interface CourtImpactNotification {
 export const useCourtIssuesIntegration = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [recentIssueEvents, setRecentIssueEvents] = useState<{ id: string; room_id: string; priority: string; ts: number }[]>([]);
 
   // Fetch active issues affecting courtrooms
   const { data: courtIssues, isLoading: issuesLoading } = useQuery({
@@ -175,6 +176,33 @@ export const useCourtIssuesIntegration = () => {
 
   // Real-time subscription for new issues
   useEffect(() => {
+    // Helper to enrich a bare issue record with courtroom and assignment details
+    const enrichIssue = async (issue: any) => {
+      try {
+        const [{ data: courtRoom }, { data: courtAssignment }] = await Promise.all([
+          supabase.from("court_rooms").select("courtroom_number").eq("room_id", issue.room_id).maybeSingle(),
+          supabase.from("court_assignments").select("justice, clerks, sergeant").eq("room_id", issue.room_id).maybeSingle(),
+        ]);
+
+        return {
+          ...issue,
+          courtroom_number: courtRoom?.courtroom_number,
+          assignments: courtAssignment
+            ? {
+                justice: courtAssignment.justice,
+                clerks: courtAssignment.clerks || [],
+                sergeant: courtAssignment.sergeant,
+              }
+            : undefined,
+          justice: courtAssignment?.justice || '',
+          clerks: courtAssignment?.clerks || [],
+          sergeant: courtAssignment?.sergeant || '',
+        };
+      } catch (e) {
+        return issue;
+      }
+    };
+
     const channel = supabase
       .channel('court-issues-changes')
       .on(
@@ -188,13 +216,84 @@ export const useCourtIssuesIntegration = () => {
         (payload) => {
           console.log('Court issue change detected:', payload);
           
-          // Invalidate queries to refetch data
+          // Optimistically update cache for immediate UI updates
+          queryClient.setQueryData(["court-issues"], (old: any[] | undefined) => {
+            const current = Array.isArray(old) ? old : [];
+            const evt = payload.eventType;
+            const newRow: any = (payload as any).new;
+            const oldRow: any = (payload as any).old;
+
+            if (evt === 'INSERT' && newRow?.room_id) {
+              // Prepend lightweight issue immediately
+              const optimistic = {
+                id: newRow.id,
+                title: newRow.title,
+                description: newRow.description,
+                status: newRow.status,
+                priority: newRow.priority,
+                room_id: newRow.room_id,
+                space_id: newRow.space_id,
+                impact_level: newRow.impact_level,
+                created_at: newRow.created_at,
+                updated_at: newRow.updated_at,
+                room_number: undefined,
+                courtroom_number: undefined,
+                assignments: undefined,
+                justice: '',
+                clerks: [],
+                sergeant: '',
+              };
+              // Avoid duplicates
+              const filtered = current.filter((i) => i.id !== optimistic.id);
+              return [optimistic, ...filtered];
+            }
+
+            if (evt === 'UPDATE' && newRow?.id) {
+              return current.map((i) => (i.id === newRow.id ? { ...i, ...newRow } : i));
+            }
+
+            if (evt === 'DELETE' && oldRow?.id) {
+              return current.filter((i) => i.id !== oldRow.id);
+            }
+
+            return current;
+          });
+
+          // Kick off background enrichment for INSERT to fill courtroom/assignment details
+          if (payload.eventType === 'INSERT' && (payload as any).new?.room_id) {
+            const newRow: any = (payload as any).new;
+
+            // Record recent event for UI highlights/banners
+            setRecentIssueEvents((prev) => {
+              const next = [{ id: newRow.id, room_id: newRow.room_id, priority: newRow.priority, ts: Date.now() }, ...prev.filter(e => e.id !== newRow.id)];
+              return next.slice(0, 25); // keep short history
+            });
+            // Auto-expire highlight after 15s
+            setTimeout(() => {
+              setRecentIssueEvents((prev) => prev.filter((e) => e.id !== newRow.id));
+            }, 15000);
+
+            enrichIssue(newRow).then((enriched) => {
+              queryClient.setQueryData(["court-issues"], (old: any[] | undefined) => {
+                const current = Array.isArray(old) ? old : [];
+                return [enriched, ...current.filter((i) => i.id !== enriched.id)];
+              });
+            });
+          }
+
+          // Still invalidate related queries to stay consistent
           queryClient.invalidateQueries({ queryKey: ["court-issues"] });
           queryClient.invalidateQueries({ queryKey: ["courtroom-availability"] });
+          // Ensure admin dashboards and operations metrics refresh immediately
+          queryClient.invalidateQueries({ queryKey: ["adminIssues"] });
+          queryClient.invalidateQueries({ queryKey: ["interactive-operations"] });
 
-          // Handle new critical issues
-          if (payload.eventType === 'INSERT' && payload.new.priority === 'urgent') {
-            const newIssue = payload.new as any;
+          // Handle new critical issues (urgent/critical/high)
+          if (
+            payload.eventType === 'INSERT' &&
+            ['urgent', 'critical', 'high'].includes(String((payload as any).new?.priority || '').toLowerCase())
+          ) {
+            const newIssue = (payload as any).new as any;
             toast({
               title: "URGENT: New Courtroom Issue",
               description: `Critical issue reported in room ${newIssue.room_id}: ${newIssue.title}`,
@@ -217,10 +316,14 @@ export const useCourtIssuesIntegration = () => {
 
   // Check if courtroom has critical issues
   const hasUrgentIssues = (roomId: string) => {
-    return courtIssues?.some(issue => 
-      issue.room_id === roomId && 
-      (issue.priority === 'urgent' || issue.status === 'urgent')
-    ) || false;
+    return (
+      courtIssues?.some(
+        (issue) =>
+          issue.room_id === roomId &&
+          // Treat "urgent" (and optionally "critical") priority as urgent indicators
+          (issue.priority === 'urgent' || issue.priority === 'critical')
+      ) || false
+    );
   };
 
   // Get impact summary for court operations
@@ -228,7 +331,9 @@ export const useCourtIssuesIntegration = () => {
     if (!courtIssues) return null;
 
     const affectedRooms = new Set(courtIssues.map(issue => issue.room_id));
-    const urgentIssues = courtIssues.filter(issue => issue.priority === 'urgent');
+    const urgentIssues = courtIssues.filter((issue) =>
+      ['urgent', 'critical', 'high'].includes(String(issue.priority || '').toLowerCase())
+    );
     const affectedAssignments = courtIssues.filter(issue => issue.assignments);
 
     return {
@@ -239,6 +344,10 @@ export const useCourtIssuesIntegration = () => {
     };
   };
 
+  // Recent issues helpers for UI highlight/banners
+  const isIssueRecentlyAdded = (issueId: string) => recentIssueEvents.some(e => e.id === issueId);
+  const getRecentlyAffectedRooms = () => Array.from(new Set(recentIssueEvents.map(e => e.room_id)));
+
   return {
     courtIssues: courtIssues || [],
     isLoading: issuesLoading,
@@ -247,5 +356,8 @@ export const useCourtIssuesIntegration = () => {
     getIssuesForRoom,
     hasUrgentIssues,
     getCourtImpactSummary,
+    recentIssueEvents,
+    isIssueRecentlyAdded,
+    getRecentlyAffectedRooms,
   };
 };

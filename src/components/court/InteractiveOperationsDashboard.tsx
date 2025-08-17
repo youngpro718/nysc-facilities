@@ -313,6 +313,12 @@ export function InteractiveOperationsDashboard() {
             <div className="flex items-center justify-between mb-2">
               <span className="font-semibold text-sm text-foreground">{room.room.room_number}</span>
               <div className="flex items-center gap-1.5">
+                {/* Unresolved issues count */}
+                {getIssuesForRoom(room.room.room_id).length > 0 && (
+                  <Badge variant="destructive" className="text-[10px] px-1 py-0 h-4 leading-none">
+                    {getIssuesForRoom(room.room.room_id).length}
+                  </Badge>
+                )}
                 {hasUrgentIssues(room.room.room_id) && (
                   <span title="Urgent issue affecting this room">
                     <AlertTriangle className="h-3.5 w-3.5 text-red-600" />

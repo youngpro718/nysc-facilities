@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
 import { useAdminNotifications, useMarkNotificationRead } from "@/hooks/useAdminNotifications";
 import { useAdminRealtimeNotifications } from "@/hooks/useAdminRealtimeNotifications";
+import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
 
 const notificationIcons = {
   new_key_request: Key,
@@ -36,11 +37,26 @@ export const NotificationBox = () => {
   
   // Use real-time notifications for immediate toast alerts
   useAdminRealtimeNotifications();
+  // Court issues summary for distinct critical indicator
+  const { courtIssues } = useCourtIssuesIntegration();
+  const openHighSeverityIssues = (courtIssues || []).filter(i =>
+    ['critical', 'urgent', 'high'].includes((i.priority || '').toLowerCase())
+  ).length;
   
   // Calculate unread count
   const unreadCount = notifications?.filter(n => 
     !n.read_by || n.read_by.length === 0
   ).length || 0;
+
+  // Critical courtroom issues (from admin notifications and live court issues)
+  const criticalIssueUnreadCount = notifications?.filter(n =>
+    (!n.read_by || n.read_by.length === 0) &&
+    (["new_issue", "issue_status_change", "issue"].includes(n.notification_type)) &&
+    (["high", "urgent", "critical"].includes((n.urgency || "").toLowerCase()))
+  ).length || 0;
+
+  const showCriticalPulse = (openHighSeverityIssues > 0) || (criticalIssueUnreadCount > 0);
+  const criticalCount = Math.max(openHighSeverityIssues, criticalIssueUnreadCount);
 
   const handleNotificationClick = (notification: any) => {
     setIsOpen(false);
@@ -97,7 +113,8 @@ export const NotificationBox = () => {
   };
 
   const getNotificationColor = (type: string, urgency: string) => {
-    if (urgency === 'high') {
+    const u = (urgency || '').toLowerCase();
+    if (['high', 'urgent', 'critical'].includes(u)) {
       return 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400';
     }
     
@@ -130,13 +147,27 @@ export const NotificationBox = () => {
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="sm" className="relative">
-          <Bell className="h-5 w-5" />
+          <Bell className={`h-5 w-5 ${showCriticalPulse ? 'text-red-600 dark:text-red-400' : ''}`} />
+          {showCriticalPulse && (
+            <>
+              <span className="pointer-events-none absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500/70 opacity-75 animate-ping" />
+              <span className="pointer-events-none absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500/40" />
+            </>
+          )}
           {unreadCount > 0 && (
             <Badge 
               variant="destructive" 
-              className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+              className="absolute -top-1 -right-1 z-10 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
             >
               {unreadCount > 99 ? '99+' : unreadCount}
+            </Badge>
+          )}
+          {criticalCount > 0 && (
+            <Badge 
+              variant="destructive" 
+              className="absolute -top-1 -left-1 z-10 h-4 min-w-4 px-1 rounded-full p-0 flex items-center justify-center text-[10px]"
+            >
+              {criticalCount > 99 ? '99+' : criticalCount}
             </Badge>
           )}
         </Button>

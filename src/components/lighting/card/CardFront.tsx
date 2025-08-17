@@ -311,9 +311,9 @@ export function CardFront({
                   {openIssue ? (
                     <DropdownMenuItem onClick={() => {
                       const issueId = (openIssue as any).issue_id ?? (openIssue as any).id;
-                      navigate(`/operations?issue_id=${issueId}`);
+                      navigate(`/operations?tab=issues&issue_id=${issueId}`);
                     }}>
-                      View Issue
+                      Issues
                     </DropdownMenuItem>
                   ) : (
                     <DropdownMenuItem asChild>

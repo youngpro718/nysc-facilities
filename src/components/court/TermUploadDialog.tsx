@@ -20,9 +20,10 @@ import { ParsedTermData, ParsedAssignment } from "@/utils/pdfParser";
 interface TermUploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onCreated?: (termId: string) => void;
 }
 
-export const TermUploadDialog = ({ open, onOpenChange }: TermUploadDialogProps) => {
+export const TermUploadDialog = ({ open, onOpenChange, onCreated }: TermUploadDialogProps) => {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     term_name: "",
@@ -60,17 +61,31 @@ export const TermUploadDialog = ({ open, onOpenChange }: TermUploadDialogProps) 
   };
 
   const handleTemplateAssignments = (templateAssignments: any[]) => {
-    const formattedAssignments = templateAssignments.map(ta => ({
-      id: ta.id,
-      partCode: ta.part,
-      justiceName: ta.justice,
-      roomNumber: ta.room_number,
-      clerks: ta.clerks || [],
-      sergeant: ta.sergeant || "",
-      tel: ta.tel || "",
-      fax: ta.fax || "",
-      calendarDay: ""
-    }));
+    const formattedAssignments: ParsedAssignment[] = templateAssignments.map((ta) => {
+      const mapped: ParsedAssignment = {
+        partCode: ta.part,
+        justiceName: ta.justice,
+        roomNumber: ta.room_number || undefined,
+        clerkNames: ta.clerks || [],
+        sergeantName: ta.sergeant || undefined,
+      };
+
+      // Map telephone to either extension or phone depending on format
+      if (ta.tel) {
+        const telStr = String(ta.tel).trim();
+        if (/^\d{3,5}$/.test(telStr)) {
+          mapped.extension = telStr;
+        } else {
+          mapped.phone = telStr;
+        }
+      }
+
+      if (ta.fax) {
+        mapped.fax = String(ta.fax).trim();
+      }
+
+      return mapped;
+    });
     setAssignments(formattedAssignments);
     setCurrentTab("preview");
   };
@@ -114,27 +129,35 @@ export const TermUploadDialog = ({ open, onOpenChange }: TermUploadDialogProps) 
 
       if (termError) throw termError;
 
-      // If we have assignments, process them via the edge function
+      // Notify parent that a term was created
+      onCreated?.(termData.id);
+
+      // If we have assignments, process them via the edge function (background, non-blocking)
       if (assignments.length > 0 && formData.pdf_url) {
-        const { data: processResult, error: processError } = await supabase.functions
+        // Fire-and-forget to avoid blocking the UI on long-running processing
+        supabase.functions
           .invoke('parse-term-sheet', {
             body: {
               term_id: termData.id,
               pdf_url: formData.pdf_url,
               client_extracted: { assignments }
             }
+          })
+          .then(({ data, error }) => {
+            if (error) {
+              console.warn('Edge function error:', error);
+            } else {
+              console.log('Processing result:', data);
+            }
+          })
+          .catch((err) => {
+            console.warn('Failed to invoke parse-term-sheet:', err);
           });
-
-        if (processError) {
-          console.warn('Edge function error:', processError);
-        } else {
-          console.log('Processing result:', processResult);
-        }
       }
 
       toast({
         title: "Term Created",
-        description: `Successfully created term with ${assignments.length} assignments.`,
+        description: `Successfully created term with ${assignments.length} assignments. Assignments are being processed in the background.`,
       });
 
       // Reset form

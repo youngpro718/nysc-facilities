@@ -3,8 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, AlertCircle, Clock, CheckCircle } from "lucide-react";
+import { MapPin, AlertCircle, Clock, CheckCircle, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
+import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
 
 type CourtroomAvailability = {
   id: string;
@@ -26,6 +27,7 @@ interface CourtAvailabilityPanelProps {
 }
 
 export const CourtAvailabilityPanel = ({ onSetTemporaryLocation }: CourtAvailabilityPanelProps) => {
+  const { getIssuesForRoom } = useCourtIssuesIntegration();
   const { data: courtrooms, isLoading, refetch } = useQuery({
     queryKey: ["courtroom-availability"],
     queryFn: async () => {
@@ -115,6 +117,13 @@ export const CourtAvailabilityPanel = ({ onSetTemporaryLocation }: CourtAvailabi
                   <CardTitle className="text-lg flex items-center gap-2">
                     {getAvailabilityIcon(courtroom.availability_status)}
                     Courtroom {courtroom.courtroom_number || courtroom.room_number}
+                    {getIssuesForRoom((courtroom as any).room_id).length > 0 && (
+                      <Badge variant="destructive" className="text-[10px] px-1 py-0 h-5 leading-none flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3" />
+                        {getIssuesForRoom((courtroom as any).room_id).length}
+                        <span className="hidden sm:inline">open</span>
+                      </Badge>
+                    )}
                   </CardTitle>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
                     <div className="flex items-center gap-1">

@@ -1,17 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Save, X, Filter, Download, GripVertical, AlertTriangle, Bell } from "lucide-react";
+import { Save, X, Filter, Download, GripVertical, AlertTriangle, Bell } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useRealtime } from "@/hooks/useRealtime";
 import { useCourtPersonnel } from "@/hooks/useCourtPersonnel";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
 import { PersonnelSelector } from "./PersonnelSelector";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import {
   DndContext,
   closestCenter,
@@ -36,6 +37,7 @@ interface CourtAssignmentRow {
   room_id: string;
   room_number: string;
   courtroom_number: string | null;
+  court_room_id?: string | null;
   assignment_id: string | null;
   part: string | null;
   justice: string | null;
@@ -65,6 +67,10 @@ interface SortableRowProps {
   onDelete: (assignmentId: string) => void;
   hasIssues: boolean;
   urgentIssues: boolean;
+  hasMaintenance: boolean;
+  isIncomplete: boolean;
+  tooltipText?: string;
+  isRecentlyAffected: boolean;
 }
 
 const SortableRow = ({ 
@@ -78,7 +84,11 @@ const SortableRow = ({
   onKeyDown,
   onDelete,
   hasIssues,
-  urgentIssues
+  urgentIssues,
+  hasMaintenance,
+  isIncomplete,
+  tooltipText,
+  isRecentlyAffected
 }: SortableRowProps) => {
   const {
     attributes,
@@ -168,11 +178,12 @@ const SortableRow = ({
       if (field === 'calendar_day') {
         return (
           <div className="flex items-center gap-2">
-            <Select value={editingValue as string} onValueChange={setEditingValue}>
-              <SelectTrigger className="h-8 w-32">
+            <Select value={(editingValue as string) || 'none'} onValueChange={setEditingValue}>
+              <SelectTrigger className="h-8 w-40">
                 <SelectValue placeholder="Select day" />
               </SelectTrigger>
               <SelectContent className="bg-background border shadow-lg z-50">
+                <SelectItem value="none">No calendar day</SelectItem>
                 <SelectItem value="Monday">Monday</SelectItem>
                 <SelectItem value="Tuesday">Tuesday</SelectItem>
                 <SelectItem value="Wednesday">Wednesday</SelectItem>
@@ -240,19 +251,42 @@ const SortableRow = ({
             <span className="text-muted-foreground italic">Click to add</span>
           )
         ) : (
-          displayValue || (
-            <span className="text-muted-foreground italic">Click to add</span>
+          // Special label for calendar_day when empty
+          (field === 'calendar_day' && (!displayValue || (displayValue as string).trim() === '')) ? (
+            <span className="text-muted-foreground italic">No calendar day</span>
+          ) : (
+            displayValue || (
+              <span className="text-muted-foreground italic">Click to add</span>
+            )
           )
         )}
       </div>
     );
   };
 
-  return (
+  const glowClass = hasMaintenance
+    ? 'ring-2 ring-red-500/60 shadow-[0_0_16px_rgba(239,68,68,0.6)]'
+    : !row.is_active
+      ? 'ring-2 ring-blue-500/60 shadow-[0_0_16px_rgba(59,130,246,0.6)]'
+      : hasIssues
+        ? 'ring-2 ring-yellow-500/60 shadow-[0_0_16px_rgba(234,179,8,0.6)]'
+        : isIncomplete
+          ? 'ring-2 ring-purple-500/60 shadow-[0_0_16px_rgba(168,85,247,0.6)]'
+          : '';
+
+  const rowAnimationClass = hasMaintenance
+    ? 'animate-red-glow'
+    : (!row.is_active
+        ? 'animate-blue-glow'
+        : (hasIssues
+            ? 'animate-yellow-glow'
+            : (isIncomplete ? 'animate-purple-glow' : '')));
+
+  const rowElement = (
     <tr
       ref={setNodeRef}
       style={style}
-      className={`border-b hover:bg-muted/50 ${urgentIssues ? 'bg-red-50 border-red-200' : hasIssues ? 'bg-yellow-50 border-yellow-200' : ''}`}
+      className={`border-b hover:bg-muted/50 ${urgentIssues ? 'bg-red-50 border-red-200' : hasIssues ? 'bg-yellow-50 border-yellow-200' : ''} ${glowClass} ${rowAnimationClass} ${isRecentlyAffected ? 'ring-2 ring-amber-400 animate-pulse' : ''}`}
     >
       <td className="p-2">
         <div className="flex items-center gap-2">
@@ -307,25 +341,44 @@ const SortableRow = ({
         {renderEditableCell("calendar_day", row.calendar_day || "")}
       </td>
       <td className="p-2">
-        <Badge variant={row.assignment_id ? "default" : "secondary"}>
-          {row.assignment_id ? "Assigned" : "Available"}
-        </Badge>
-      </td>
-      <td className="p-2">
-        <div className="flex items-center gap-2">
-          {row.assignment_id && (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => onDelete(row.assignment_id!)}
-              className="text-destructive hover:text-destructive"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
+        {(() => {
+          let text = "Assigned";
+          let variant: any = "default";
+          if (hasMaintenance) {
+            text = "Maintenance";
+            variant = "destructive";
+          } else if (!row.is_active) {
+            text = "Inactive";
+            variant = "outline";
+          } else if (urgentIssues || hasIssues) {
+            text = urgentIssues ? "Urgent issues" : "Open issues";
+            variant = urgentIssues ? "destructive" : "default";
+          } else if (!row.assignment_id) {
+            text = "No assignment";
+            variant = "secondary";
+          } else if (isIncomplete) {
+            text = "No justice assigned";
+            variant = "secondary";
+          }
+          return <Badge variant={variant}>{text}</Badge>;
+        })()}
       </td>
     </tr>
+  );
+
+  if (!tooltipText) return rowElement;
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          {rowElement}
+        </TooltipTrigger>
+        <TooltipContent side="top">
+          {tooltipText}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 };
 
@@ -343,8 +396,25 @@ export const EnhancedCourtAssignmentTable = () => {
     courtIssues, 
     getIssuesForRoom, 
     hasUrgentIssues, 
-    getCourtImpactSummary 
+    getCourtImpactSummary,
+    getRecentlyAffectedRooms 
   } = useCourtIssuesIntegration();
+  const recentlyAffectedRooms = getRecentlyAffectedRooms();
+
+  // Fetch active/scheduled shutdowns to determine maintenance
+  const { data: shutdowns } = useQuery({
+    queryKey: ["room-shutdowns-active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("room_shutdowns")
+        .select("court_room_id, status")
+        .or("status.eq.in_progress,status.eq.scheduled");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const maintenanceSet = useMemo(() => new Set((shutdowns || []).map((s: any) => s.court_room_id)), [shutdowns]);
 
   // Get impact summary
   const impactSummary = getCourtImpactSummary();
@@ -356,18 +426,20 @@ export const EnhancedCourtAssignmentTable = () => {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
-
-  // Mutation for updating assignments
   const updateAssignmentMutation = useMutation({
     mutationFn: async ({ roomId, field, value }: { roomId: string; field: string; value: string | string[] }) => {
-      console.log('🔄 Saving assignment:', { roomId, field, value });
+      console.log(' Saving assignment:', { roomId, field, value });
       const existingAssignment = assignments?.find(row => row.room_id === roomId);
-      console.log('📋 Existing assignment:', existingAssignment);
+      console.log(' Existing assignment:', existingAssignment);
+      // Normalize empty/'none' calendar_day to null
+      const normalizedValue = (field === 'calendar_day' && (value === '' || value === undefined || value === 'none'))
+        ? null
+        : value;
       
       if (existingAssignment?.assignment_id) {
         // Update existing assignment
-        const updateData: any = { [field]: value };
-        console.log('✏️ Updating existing assignment:', updateData);
+        const updateData: any = { [field]: normalizedValue };
+        console.log(' Updating existing assignment:', updateData);
         const { error } = await supabase
           .from("court_assignments")
           .update(updateData)
@@ -384,10 +456,10 @@ export const EnhancedCourtAssignmentTable = () => {
         const insertData: any = {
           room_id: existingAssignment?.room_id || roomId,
           room_number: existingAssignment?.room_number || "",
-          [field]: value,
+          [field]: normalizedValue,
           sort_order: maxSort + 1
         };
-        console.log('➕ Creating new assignment:', insertData);
+        console.log(' Creating new assignment:', insertData);
         const { error } = await supabase
           .from("court_assignments")
           .insert(insertData);
@@ -489,7 +561,8 @@ export const EnhancedCourtAssignmentTable = () => {
           id,
           room_id,
           room_number,
-          courtroom_number
+          courtroom_number,
+          is_active
         `)
         .order("room_number");
 
@@ -526,6 +599,7 @@ export const EnhancedCourtAssignmentTable = () => {
           room_id: room.room_id,
           room_number: room.room_number,
           courtroom_number: room.courtroom_number,
+          court_room_id: room.id,
           assignment_id: assignment?.id || null,
           part: assignment?.part || null,
           justice: assignment?.justice || null,
@@ -536,7 +610,7 @@ export const EnhancedCourtAssignmentTable = () => {
           tel: assignment?.tel || null,
           fax: assignment?.fax || null,
           calendar_day: assignment?.calendar_day || null,
-          is_active: true, // Default to active
+          is_active: (room as any)?.is_active ?? true,
           sort_order: assignment?.sort_order ?? index + 1,
         } as CourtAssignmentRow;
       });
@@ -586,7 +660,6 @@ export const EnhancedCourtAssignmentTable = () => {
               <th className="p-3 text-left font-medium">Fax</th>
               <th className="p-3 text-left font-medium">Calendar Day</th>
               <th className="p-3 text-left font-medium">Status</th>
-              <th className="p-3 text-left font-medium">Actions</th>
             </tr>
           </thead>
           <SortableContext
@@ -598,11 +671,27 @@ export const EnhancedCourtAssignmentTable = () => {
               const roomIssues = getIssuesForRoom(row.room_id);
               const hasIssues = roomIssues.length > 0;
               const urgentIssues = hasUrgentIssues(row.room_id);
+              const hasMaintenance = row.court_room_id ? maintenanceSet.has(row.court_room_id) : false;
+              // Yellow highlight ONLY when no judge, and only if room is active
+              const isIncomplete = row.is_active && !(row.justice && row.justice.trim());
+              const isRecentlyAffected = recentlyAffectedRooms.includes(row.room_id);
+
+              let tooltipText: string | undefined = undefined;
+              if (hasMaintenance) {
+                tooltipText = 'Under maintenance';
+              } else if (!row.is_active) {
+                tooltipText = 'Inactive courtroom';
+              } else if (hasIssues) {
+                tooltipText = urgentIssues ? 'Urgent issues' : 'Open issues';
+              } else if (isIncomplete) {
+                tooltipText = row.assignment_id ? 'No justice assigned' : 'No assignment';
+              }
 
               return (
                 <SortableRow
                   key={row.room_id}
                   row={row}
+                  tooltipText={tooltipText}
                   onEdit={(rowId, field, currentValue) => {
                     setEditingCell({ rowId, field });
                     setEditingValue(currentValue);
@@ -644,6 +733,9 @@ export const EnhancedCourtAssignmentTable = () => {
                   }}
                   hasIssues={hasIssues}
                   urgentIssues={urgentIssues}
+                  hasMaintenance={hasMaintenance}
+                  isIncomplete={isIncomplete}
+                  isRecentlyAffected={isRecentlyAffected}
                 />
               );
             })}

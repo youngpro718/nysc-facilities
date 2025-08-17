@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from 'sonner';
 
 interface AdminRealtimeNotificationHook {
@@ -12,6 +13,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
   const { user, isAdmin } = useAuth();
   const [isConnected, setIsConnected] = useState(false);
   const [lastNotification, setLastNotification] = useState<any>(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!user?.id || !isAdmin) return;
@@ -59,6 +61,8 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
           const notification = payload.new;
           
           setLastNotification(notification);
+          // Keep the notifications list in sync
+          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
           
           // Show toast notification based on urgency and type
           const toastOptions = {
@@ -178,6 +182,8 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
               onClick: () => window.location.href = '/admin/key-requests'
             }
           });
+          // If a trigger also inserts into admin_notifications, keep cache fresh
+          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
         }
       )
       .subscribe();
@@ -217,6 +223,8 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
               }
             });
           }
+          // Keep notifications list updated if backend mirrors to admin_notifications
+          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
         }
       )
       .subscribe();
@@ -233,13 +241,13 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         },
         (payload) => {
           console.log('New issue for admin:', payload);
-          const issue = payload.new;
-          
-          const isCritical = issue.priority === 'critical';
+          const issue = payload.new as any;
+          const priority = (issue?.priority || '').toLowerCase();
+          const isCritical = ['critical', 'urgent', 'high'].includes(priority);
           
           if (isCritical) {
             toast.error('🚨 Critical Issue Reported', {
-              description: `Critical: "${issue.title}"`,
+              description: `High severity: "${issue.title}"`,
               duration: 12000,
               action: {
                 label: 'Address Now',
@@ -256,6 +264,61 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
               }
             });
           }
+          // Invalidate related caches for immediate UI refresh across dashboards
+          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
+          queryClient.invalidateQueries({ queryKey: ['adminIssues'] });
+          queryClient.invalidateQueries({ queryKey: ['issues'] });
+          queryClient.invalidateQueries({ queryKey: ['court-issues'] });
+          queryClient.invalidateQueries({ queryKey: ['interactive-operations'] });
+          queryClient.invalidateQueries({ queryKey: ['quick-actions'] });
+          queryClient.invalidateQueries({ queryKey: ['assignment-stats'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'issues'
+        },
+        (payload) => {
+          console.log('Issue updated for admin:', payload);
+          const issue = payload.new as any;
+          if (issue?.status === 'resolved') {
+            toast.success('✅ Issue Resolved', {
+              description: `"${issue.title}" has been resolved.`,
+              duration: 6000,
+              action: {
+                label: 'View',
+                onClick: () => window.location.href = '/admin/issues'
+              }
+            });
+          }
+          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
+          queryClient.invalidateQueries({ queryKey: ['adminIssues'] });
+          queryClient.invalidateQueries({ queryKey: ['issues'] });
+          queryClient.invalidateQueries({ queryKey: ['court-issues'] });
+          queryClient.invalidateQueries({ queryKey: ['interactive-operations'] });
+          queryClient.invalidateQueries({ queryKey: ['quick-actions'] });
+          queryClient.invalidateQueries({ queryKey: ['assignment-stats'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'issues'
+        },
+        (payload) => {
+          console.log('Issue deleted for admin:', payload);
+          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
+          queryClient.invalidateQueries({ queryKey: ['adminIssues'] });
+          queryClient.invalidateQueries({ queryKey: ['issues'] });
+          queryClient.invalidateQueries({ queryKey: ['court-issues'] });
+          queryClient.invalidateQueries({ queryKey: ['interactive-operations'] });
+          queryClient.invalidateQueries({ queryKey: ['quick-actions'] });
+          queryClient.invalidateQueries({ queryKey: ['assignment-stats'] });
         }
       )
       .subscribe();

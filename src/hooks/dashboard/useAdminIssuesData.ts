@@ -18,6 +18,7 @@ export interface IssueStats {
 }
 
 export interface EnhancedIssue extends UserIssue {
+  room_id?: string;
   reporter?: {
     id: string;
     first_name: string;
@@ -79,7 +80,7 @@ export const useAdminIssuesData = () => {
 
             // Get room occupants if room exists
             let room_occupants: any[] = [];
-            if (issue.building_id) {
+            if (issue.room_id) {
               const { data: occupants } = await supabase
                 .from('occupant_room_assignments')
                 .select(`
@@ -91,7 +92,7 @@ export const useAdminIssuesData = () => {
                     email
                   )
                 `)
-                .eq('room_id', issue.building_id);
+                .eq('room_id', issue.room_id);
               
               room_occupants = occupants?.map(occ => ({
                 ...(occ.occupants as any),
@@ -131,7 +132,13 @@ export const useAdminIssuesData = () => {
     open: allIssues?.filter(issue => issue.status === 'open').length || 0,
     in_progress: allIssues?.filter(issue => issue.status === 'in_progress').length || 0,
     resolved: allIssues?.filter(issue => issue.status === 'resolved').length || 0,
-    critical: allIssues?.filter(issue => issue.priority === 'high' && issue.status !== 'resolved').length || 0,
+    critical:
+      allIssues?.filter((issue) => {
+        const p = String(issue.priority || '').toLowerCase();
+        const isCriticalPriority = ['urgent', 'critical', 'high'].includes(p);
+        const isActive = ['open', 'in_progress'].includes(issue.status);
+        return isCriticalPriority && isActive;
+      }).length || 0,
     high: allIssues?.filter(issue => issue.priority === 'high').length || 0,
     medium: allIssues?.filter(issue => issue.priority === 'medium').length || 0,
     low: allIssues?.filter(issue => issue.priority === 'low').length || 0,
@@ -144,7 +151,9 @@ export const useAdminIssuesData = () => {
       const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
       return new Date(issue.created_at) > weekAgo;
     }).length || 0,
-    roomsWithIssues: new Set(allIssues?.filter(issue => issue.building_id).map(issue => issue.building_id)).size || 0,
+    roomsWithIssues: new Set(
+      allIssues?.filter(issue => issue.room_id).map(issue => issue.room_id as string)
+    ).size || 0,
   };
 
   // Critical issues (high priority and open/in_progress)

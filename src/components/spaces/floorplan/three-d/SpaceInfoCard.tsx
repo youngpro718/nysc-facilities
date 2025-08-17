@@ -109,7 +109,7 @@ export function SpaceInfoCard({
                 {/* Child rooms / connected spaces clickable list */}
                 {Array.isArray(data.properties?.connected_spaces) && data.properties.connected_spaces.length > 0 && (
                   <div className="text-xs">
-                    <div className="font-medium mb-0.5">Child Rooms</div>
+                    <div className="font-medium mb-0.5">Sub rooms</div>
                     <div className="flex flex-wrap gap-1">
                       {data.properties.connected_spaces.map((c: any, idx: number) => {
                         const id = c?.id ?? undefined;

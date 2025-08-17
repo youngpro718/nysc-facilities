@@ -15,9 +15,11 @@ import {
   CheckCircle,
   AlertCircle,
   Gavel,
-  Shield
+  Shield,
+  FileText
 } from "lucide-react";
 import { format } from "date-fns";
+import { TermUploadDialog } from "./TermUploadDialog";
 
 interface CourtTerm {
   id: string;
@@ -58,6 +60,7 @@ interface CourtTermsPanelProps {
 export const CourtTermsPanel = ({ onTermSelected }: CourtTermsPanelProps) => {
   const [selectedTermId, setSelectedTermId] = useState<string | null>(null);
   const [termDetailOpen, setTermDetailOpen] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -223,6 +226,13 @@ export const CourtTermsPanel = ({ onTermSelected }: CourtTermsPanelProps) => {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold">Court Terms</h2>
+        <Button onClick={() => setUploadDialogOpen(true)}>
+          <FileText className="h-4 w-4 mr-2" />
+          Add Term
+        </Button>
+      </div>
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
@@ -541,6 +551,18 @@ export const CourtTermsPanel = ({ onTermSelected }: CourtTermsPanelProps) => {
           )}
         </DialogContent>
       </Dialog>
+      <TermUploadDialog
+        open={uploadDialogOpen}
+        onOpenChange={setUploadDialogOpen}
+        onCreated={(termId) => {
+          queryClient.invalidateQueries({ queryKey: ["court-terms"] });
+          setUploadDialogOpen(false);
+          toast({
+            title: "Term Created",
+            description: "The term has been added successfully.",
+          });
+        }}
+      />
 
 
     </div>

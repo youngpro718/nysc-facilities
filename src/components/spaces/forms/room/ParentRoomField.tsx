@@ -83,7 +83,7 @@ export function ParentRoomField({ form, floorId, currentRoomId }: ParentRoomFiel
       name="parentRoomId"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Parent Room (Optional)</FormLabel>
+          <FormLabel>Office Suite (Optional)</FormLabel>
           <Select
             onValueChange={(value) => field.onChange(value === 'none' ? null : value)}
             value={field.value || 'none'}
@@ -91,11 +91,11 @@ export function ParentRoomField({ form, floorId, currentRoomId }: ParentRoomFiel
           >
             <FormControl>
               <SelectTrigger>
-                <SelectValue placeholder="Select a parent room..." />
+                <SelectValue placeholder="Select an office suite..." />
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              <SelectItem value="none">No parent room</SelectItem>
+              <SelectItem value="none">No office suite</SelectItem>
               {potentialParents?.map((room) => (
                 <SelectItem key={room.id} value={room.id}>
                   {room.room_number} - {room.name}
@@ -104,7 +104,7 @@ export function ParentRoomField({ form, floorId, currentRoomId }: ParentRoomFiel
             </SelectContent>
           </Select>
           <FormDescription>
-            Select a parent room if this is a subdivision or sub-office of a larger space.
+            Select an office suite if this is a sub room or subdivision of a larger space.
           </FormDescription>
           <FormMessage />
         </FormItem>

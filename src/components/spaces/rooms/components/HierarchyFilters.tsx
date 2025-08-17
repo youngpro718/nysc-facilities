@@ -53,17 +53,17 @@ export function HierarchyFilters({
           </div>
           <div className="flex items-center gap-2 text-sm">
             <Home className="h-4 w-4 text-blue-500" />
-            <span className="text-muted-foreground">Parents:</span>
+            <span className="text-muted-foreground">Office Suites:</span>
             <Badge variant="secondary">{hierarchyStats.parentRooms}</Badge>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <Users className="h-4 w-4 text-green-500" />
-            <span className="text-muted-foreground">Children:</span>
+            <span className="text-muted-foreground">Sub rooms:</span>
             <Badge variant="secondary">{hierarchyStats.childRooms}</Badge>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <Building2 className="h-4 w-4 text-orange-500" />
-            <span className="text-muted-foreground">Independent:</span>
+            <span className="text-muted-foreground">Standalone:</span>
             <Badge variant="secondary">{hierarchyStats.orphanRooms}</Badge>
           </div>
         </div>
@@ -72,7 +72,7 @@ export function HierarchyFilters({
         <div className="space-y-3 pt-3 border-t">
           <div className="flex items-center justify-between">
             <Label htmlFor="show-parents" className="text-sm">
-              Show only parent rooms
+              Show only office suites
             </Label>
             <Switch
               id="show-parents"
@@ -83,7 +83,7 @@ export function HierarchyFilters({
           
           <div className="flex items-center justify-between">
             <Label htmlFor="show-children" className="text-sm">
-              Show only child rooms
+              Show only sub rooms
             </Label>
             <Switch
               id="show-children"
@@ -94,7 +94,7 @@ export function HierarchyFilters({
           
           <div className="flex items-center justify-between">
             <Label htmlFor="group-by-parent" className="text-sm">
-              Group by parent room
+              Group by office suite
             </Label>
             <Switch
               id="group-by-parent"

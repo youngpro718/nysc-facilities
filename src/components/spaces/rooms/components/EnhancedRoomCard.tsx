@@ -16,6 +16,7 @@ import {
   MapPin
 } from "lucide-react";
 import { EnhancedRoom } from "../types/EnhancedRoomTypes";
+import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
 
 interface EnhancedRoomCardProps {
   room: EnhancedRoom;
@@ -35,7 +36,18 @@ export function EnhancedRoomCard({
   // Calculate room health score (mock data for demo)
   const healthScore = 85; // This would come from real data
   const occupancyRate = 75; // This would come from real data
-  const hasIssues = Math.random() > 0.7; // Mock issue detection
+  // Unresolved issues for this room (open or in_progress from hook)
+  const { getIssuesForRoom, hasUrgentIssues } = useCourtIssuesIntegration();
+  const unresolvedIssues = getIssuesForRoom(room.id);
+  const hasIssues = unresolvedIssues.length > 0;
+  const highSeverityCount = unresolvedIssues.filter(i => ["urgent", "high", "critical"].includes((i.priority || "").toLowerCase())).length;
+
+  // Visual highlight classes for rooms with issues (yellow glow; red for urgent)
+  const issueGlowClasses = hasIssues
+    ? (hasUrgentIssues(room.id)
+        ? 'ring-2 ring-red-500/60 shadow-[0_0_18px_rgba(239,68,68,0.6)] animate-pulse'
+        : 'ring-2 ring-yellow-500/60 shadow-[0_0_16px_rgba(234,179,8,0.6)] animate-yellow-glow')
+    : '';
 
   // Room type color mapping
   const getRoomTypeColor = (type: string) => {
@@ -64,7 +76,7 @@ export function EnhancedRoomCard({
   if (variant === 'compact') {
     return (
       <Card 
-        className={`relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-[1.02] bg-gradient-to-br ${getRoomTypeColor(room.room_type)}`}
+        className={`relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-[1.02] bg-gradient-to-br ${getRoomTypeColor(room.room_type)} ${issueGlowClasses}`}
         onClick={() => onRoomClick?.(room)}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -98,7 +110,7 @@ export function EnhancedRoomCard({
 
   return (
     <Card 
-      className={`relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-[1.02] bg-gradient-to-br ${getRoomTypeColor(room.room_type)} ${variant === 'detailed' ? 'h-[400px]' : 'h-[320px]'}`}
+      className={`relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-[1.02] bg-gradient-to-br ${getRoomTypeColor(room.room_type)} ${variant === 'detailed' ? 'h-[400px]' : 'h-[320px]'} ${issueGlowClasses}`}
       onClick={() => onRoomClick?.(room)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -124,8 +136,18 @@ export function EnhancedRoomCard({
 
       {/* Issue Alert */}
       {hasIssues && (
-        <div className="absolute top-3 left-3 z-10">
+        <div className="absolute top-3 left-3 z-10 flex items-center gap-2">
           <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+          <Badge variant="destructive" className="text-[10px] flex items-center gap-1">
+            <AlertTriangle className="h-3 w-3" />
+            {unresolvedIssues.length}
+            <span className="hidden sm:inline">open</span>
+            {highSeverityCount > 0 && (
+              <span className="ml-1 text-[10px] bg-white/20 px-1 rounded">
+                {highSeverityCount} high
+              </span>
+            )}
+          </Badge>
         </div>
       )}
 

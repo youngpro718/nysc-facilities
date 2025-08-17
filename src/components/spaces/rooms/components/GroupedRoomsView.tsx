@@ -73,12 +73,12 @@ export function GroupedRoomsView({ groupedRooms, onDelete, view, onRoomClick }: 
                       <Home className="h-4 w-4 text-blue-500" />
                       {parentRoom.name}
                       <Badge variant="secondary" className="text-xs">
-                        Parent Room
+                        Office Suite
                       </Badge>
                     </CardTitle>
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="text-xs">
-                        {children.length} {children.length === 1 ? 'child' : 'children'}
+                        {children.length} {children.length === 1 ? 'sub room' : 'sub rooms'}
                       </Badge>
                       <Badge variant="secondary" className="text-xs">
                         {parentRoom.room_number}
@@ -95,12 +95,12 @@ export function GroupedRoomsView({ groupedRooms, onDelete, view, onRoomClick }: 
                     <SimpleRoomCard room={parentRoom} onDelete={onDelete} onRoomClick={onRoomClick} />
                   </div>
                   
-                  {/* Child rooms */}
+                  {/* Sub rooms */}
                   {children.length > 0 && (
                     <div className="space-y-4">
                       <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                         <Users className="h-4 w-4" />
-                        Child Rooms ({children.length})
+                        Sub rooms ({children.length})
                       </div>
                       <div className={
                         view === 'grid' 
@@ -122,13 +122,13 @@ export function GroupedRoomsView({ groupedRooms, onDelete, view, onRoomClick }: 
         );
       })}
 
-      {/* Independent rooms */}
+      {/* Standalone rooms */}
       {groupedRooms.orphanRooms.length > 0 && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Home className="h-4 w-4 text-orange-500" />
-              Independent Rooms
+              Standalone Rooms
               <Badge variant="outline" className="text-xs">
                 {groupedRooms.orphanRooms.length} rooms
               </Badge>
