@@ -9,8 +9,8 @@ interface SpaceListFiltersProps {
   onSortChange: (value: string) => void;
   statusFilter: string;
   onStatusFilterChange: (value: string) => void;
-  view: "grid" | "list";
-  onViewChange: (view: "grid" | "list") => void;
+  view: "grid" | "list" | "master-detail";
+  onViewChange: (view: "grid" | "list" | "master-detail") => void;
 }
 
 export const SpaceListFilters = ({
