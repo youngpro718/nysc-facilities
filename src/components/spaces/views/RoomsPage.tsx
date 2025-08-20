@@ -64,6 +64,13 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
     window.addEventListener('resize', checkIsMobile);
     return () => window.removeEventListener('resize', checkIsMobile);
   }, []);
+
+  // Auto-select first room when in master-detail view and rooms are loaded
+  useEffect(() => {
+    if (view === "master-detail" && hierarchyFilteredRooms.length > 0 && !selectedRoom) {
+      setSelectedRoom(hierarchyFilteredRooms[0]);
+    }
+  }, [view, hierarchyFilteredRooms, selectedRoom]);
   
   // Hierarchy filter states
   const [showOnlyParents, setShowOnlyParents] = useState(false);
@@ -197,9 +204,9 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
 
       {/* Main Content Area */}
       {view === "master-detail" && !isMobile ? (
-        <ResizablePanelGroup direction="vertical" className="h-[800px] rounded-lg border">
+        <ResizablePanelGroup direction="vertical" className="h-[800px] rounded-lg border overflow-hidden">
           {/* Top Panel - Room Detail */}
-          <ResizablePanel defaultSize={60} minSize={40}>
+          <ResizablePanel defaultSize={60} minSize={35} maxSize={75}>
             <RoomDetailPanel 
               room={selectedRoom}
               onEdit={(room) => {
@@ -217,7 +224,7 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
           <ResizableHandle withHandle />
           
           {/* Bottom Panel - Room List */}
-          <ResizablePanel defaultSize={40} minSize={30}>
+          <ResizablePanel defaultSize={40} minSize={25} maxSize={65}>
             <div className="h-full border-t bg-background">
               <div className="p-4 border-b bg-muted/50">
                 <h3 className="font-medium text-sm">All Rooms</h3>
