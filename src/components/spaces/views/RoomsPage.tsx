@@ -98,7 +98,7 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
 
   // Auto-select first room when in master-detail view and rooms are loaded
   useEffect(() => {
-    if (view === "master-detail" && hierarchyFilteredRooms.length > 0 && !selectedRoom && !isLoading) {
+    if (view === "master-detail" && hierarchyFilteredRooms?.length > 0 && !selectedRoom && !isLoading) {
       setSelectedRoom(hierarchyFilteredRooms[0]);
     }
   }, [view, hierarchyFilteredRooms, selectedRoom, isLoading]);
