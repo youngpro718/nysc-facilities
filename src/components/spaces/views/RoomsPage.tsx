@@ -49,6 +49,8 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  
+  console.log("Current view mode:", view, "isMobile:", isMobile, "should show master-detail:", view === "master-detail" && !isMobile);
 
   // Check if mobile on mount and resize
   useEffect(() => {
