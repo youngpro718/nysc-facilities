@@ -229,11 +229,11 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
               <div className="p-4 border-b bg-muted/50">
                 <h3 className="font-medium text-sm">All Rooms</h3>
                 <p className="text-xs text-muted-foreground">
-                  {hierarchyFilteredRooms.length} rooms • Click to view details
+                  {hierarchyFilteredRooms?.length || 0} rooms • Click to view details
                 </p>
               </div>
               <CompactRoomList
-                rooms={hierarchyFilteredRooms}
+                rooms={hierarchyFilteredRooms || []}
                 selectedRoomId={selectedRoom?.id || null}
                 onRoomSelect={handleRoomSelect}
                 isLoading={isLoading}
