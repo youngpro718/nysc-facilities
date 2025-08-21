@@ -64,13 +64,6 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
     window.addEventListener('resize', checkIsMobile);
     return () => window.removeEventListener('resize', checkIsMobile);
   }, []);
-
-  // Auto-select first room when in master-detail view and rooms are loaded
-  useEffect(() => {
-    if (view === "master-detail" && hierarchyFilteredRooms.length > 0 && !selectedRoom) {
-      setSelectedRoom(hierarchyFilteredRooms[0]);
-    }
-  }, [view, hierarchyFilteredRooms, selectedRoom]);
   
   // Hierarchy filter states
   const [showOnlyParents, setShowOnlyParents] = useState(false);
@@ -102,6 +95,13 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
     showOnlyChildren,
     groupByParent,
   });
+
+  // Auto-select first room when in master-detail view and rooms are loaded
+  useEffect(() => {
+    if (view === "master-detail" && hierarchyFilteredRooms.length > 0 && !selectedRoom && !isLoading) {
+      setSelectedRoom(hierarchyFilteredRooms[0]);
+    }
+  }, [view, hierarchyFilteredRooms, selectedRoom, isLoading]);
 
   const deleteRoomMutation = useMutation({
     mutationFn: (roomId: string) => deleteSpace(roomId, 'room'),
