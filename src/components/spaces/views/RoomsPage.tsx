@@ -135,6 +135,7 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
   };
 
   const handleRoomSelect = (room: Room) => {
+    console.log('Room selected for panel:', room.name, room.id);
     setSelectedRoomForPanel(room);
   };
 
