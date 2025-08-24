@@ -47,7 +47,7 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
   const [sortBy, setSortBy] = useState<SortOption>("name_asc");
   const [statusFilter, setStatusFilter] = useState("all");
   const [roomTypeFilter, setRoomTypeFilter] = useState("");
-  const [view, setView] = useState<"master-detail" | "grid" | "list">("master-detail");
+  const [view, setView] = useState<ViewOption>("master-detail");
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -57,10 +57,13 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
   // Check if mobile on mount and resize
   useEffect(() => {
     const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-      // Default to grid view on mobile for better UX
-      if (window.innerWidth < 768) {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      // Default to grid view on mobile, master-detail on desktop
+      if (mobile) {
         setView("grid");
+      } else {
+        setView("master-detail");
       }
     };
     
