@@ -33,7 +33,7 @@ export type SortOption =
   | "room_type_asc"
   | "room_type_desc";
 
-export type ViewOption = "master-detail" | "grid" | "list";
+export type ViewOption = "grid" | "list";
 
 interface RoomsPageProps {
   selectedBuilding: string;
@@ -47,24 +47,16 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
   const [sortBy, setSortBy] = useState<SortOption>("name_asc");
   const [statusFilter, setStatusFilter] = useState("all");
   const [roomTypeFilter, setRoomTypeFilter] = useState("");
-  const [view, setView] = useState<ViewOption>("master-detail");
+  const [view, setView] = useState<ViewOption>("grid");
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   
-  console.log("Current view mode:", view, "isMobile:", isMobile, "should show master-detail:", view === "master-detail" && !isMobile);
-
   // Check if mobile on mount and resize
   useEffect(() => {
     const checkIsMobile = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
-      // Default to grid view on mobile, master-detail on desktop
-      if (mobile) {
-        setView("grid");
-      } else {
-        setView("master-detail");
-      }
     };
     
     checkIsMobile();
@@ -102,12 +94,6 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
     groupByParent,
   });
 
-  // Auto-select the first room on desktop to populate details panel
-  useEffect(() => {
-    if (!isMobile && !selectedRoom && hierarchyFilteredRooms && hierarchyFilteredRooms.length > 0) {
-      setSelectedRoom(hierarchyFilteredRooms[0]);
-    }
-  }, [isMobile, selectedRoom, hierarchyFilteredRooms]);
 
   const deleteRoomMutation = useMutation({
     mutationFn: (roomId: string) => deleteSpace(roomId, 'room'),
@@ -141,12 +127,8 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
   };
 
   const handleRoomClick = (room: Room) => {
-    if (view === "master-detail") {
-      setSelectedRoom(room);
-    } else {
-      setSelectedRoom(room);
-      setIsRoomDialogOpen(true);
-    }
+    setSelectedRoom(room);
+    setIsRoomDialogOpen(true);
   };
 
   const handleRoomSelect = (room: Room) => {
@@ -197,8 +179,8 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
         />
       )}
 
-      {/* Hierarchy Filters - only show when not in master-detail view */}
-      {!isMobile && view !== "master-detail" && (
+      {/* Hierarchy Filters */}
+      {!isMobile && (
         <HierarchyFilters
           showOnlyParents={showOnlyParents}
           onShowOnlyParentsChange={setShowOnlyParents}
@@ -211,111 +193,44 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
       )}
 
       {/* Main Content Area */}
-      {view === "master-detail" && !isMobile ? (
-        <ResizablePanelGroup direction="vertical" className="h-[800px] rounded-lg border overflow-hidden">
-          {/* Top Panel - Room Detail */}
-          <ResizablePanel defaultSize={60} minSize={35} maxSize={75}>
-            <RoomDetailPanel 
-              room={selectedRoom}
-              onEdit={(room) => {
-                setSelectedRoom(room);
-                setIsRoomDialogOpen(true);
-              }}
-              onDelete={(id) => {
-                if (window.confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
-                  deleteRoomMutation.mutate(id);
-                }
-              }}
-            />
-          </ResizablePanel>
-
-          <ResizableHandle withHandle />
-
-          {/* Bottom Panel - Room List */}
-          <ResizablePanel defaultSize={40} minSize={25} maxSize={65}>
-            <div className="h-full border-t bg-background">
-              <div className="p-4 border-b bg-muted/50">
-                <h3 className="font-medium text-sm">All Rooms</h3>
-                <p className="text-xs text-muted-foreground">
-                  {hierarchyFilteredRooms?.length || 0} rooms • Click to view details
-                </p>
-              </div>
-              <CompactRoomList
-                rooms={hierarchyFilteredRooms || []}
-                selectedRoomId={selectedRoom?.id || null}
-                onRoomSelect={handleRoomSelect}
-                isLoading={isLoading}
-              />
-            </div>
-          </ResizablePanel>
-        </ResizablePanelGroup>
-      ) : (
-        <div className="grid gap-6 grid-cols-1 lg:grid-cols-12">
-
-          {/* Left: Sidebar list on desktop; full content on mobile */}
-          <div className="col-span-1 lg:col-span-3">
-            {isMobile ? (
-              groupByParent ? (
-                <GroupedRoomsView
-                  groupedRooms={groupedRooms}
-                  onDelete={(id) => {
-                    if (window.confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
-                      deleteRoomMutation.mutate(id);
-                    }
-                  }}
-                  view={"grid"}
-                  onRoomClick={handleRoomClick}
-                />
-              ) : (
-                <RoomsContent
-                  isLoading={isLoading}
-                  rooms={rooms || []}
-                  filteredRooms={hierarchyFilteredRooms}
-                  view={"grid"}
-                  onDelete={(id) => {
-                    if (window.confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
-                      deleteRoomMutation.mutate(id);
-                    }
-                  }}
-                  searchQuery={searchQuery}
-                  onRoomClick={handleRoomClick}
-                />
-              )
-            ) : (
-              <RoomsSidebarList
-                rooms={hierarchyFilteredRooms}
-                selectedRoomId={selectedRoom?.id || null}
-                onSelect={handleRoomClick}
-              />
-            )}
-          </div>
-
-          {/* Right: Details panel page on desktop (includes RoomCard + full details) */}
-          <div className="hidden lg:block lg:col-span-9">
-            <RoomDetailsPanel
-              room={selectedRoom}
-              onDelete={(id) => {
-                deleteRoomMutation.mutate(id);
-              }}
-              onClose={() => setSelectedRoom(null)}
-            />
-          </div>
-        </div>
-      )}
-
-      {isMobile && (
-        <RoomDetailsDialog
-          room={selectedRoom}
-          isOpen={isRoomDialogOpen}
-          onClose={() => {
-            setIsRoomDialogOpen(false);
-            setSelectedRoom(null);
-          }}
+      {groupByParent ? (
+        <GroupedRoomsView
+          groupedRooms={groupedRooms}
           onDelete={(id) => {
-            deleteRoomMutation.mutate(id);
+            if (window.confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
+              deleteRoomMutation.mutate(id);
+            }
           }}
+          view={view}
+          onRoomClick={handleRoomClick}
+        />
+      ) : (
+        <RoomsContent
+          isLoading={isLoading}
+          rooms={rooms || []}
+          filteredRooms={hierarchyFilteredRooms}
+          view={view}
+          onDelete={(id) => {
+            if (window.confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
+              deleteRoomMutation.mutate(id);
+            }
+          }}
+          searchQuery={searchQuery}
+          onRoomClick={handleRoomClick}
         />
       )}
+
+      <RoomDetailsDialog
+        room={selectedRoom}
+        isOpen={isRoomDialogOpen}
+        onClose={() => {
+          setIsRoomDialogOpen(false);
+          setSelectedRoom(null);
+        }}
+        onDelete={(id) => {
+          deleteRoomMutation.mutate(id);
+        }}
+      />
       
       {/* Mobile Inventory Dialog */}
       <MobileInventoryDialog />

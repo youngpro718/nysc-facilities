@@ -16,7 +16,7 @@ export const SpacesList = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("name_asc");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [view, setView] = useState<"grid" | "list" | "master-detail">("grid");
+  const [view, setView] = useState<"grid" | "list">("grid");
 
   const { data: spaces, isLoading, refetch } = useQuery({
     queryKey: ['spaces'],
