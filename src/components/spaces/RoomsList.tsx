@@ -22,7 +22,7 @@ const RoomsList = ({ selectedBuilding, selectedFloor }: RoomsListProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("name_asc");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [view, setView] = useState<"grid" | "list">("grid");
+  const [view, setView] = useState<"grid" | "list" | "master-detail">("grid");
 
   const { data: rooms, isLoading, error, refetch } = useRoomsQuery({
     buildingId: selectedBuilding === 'all' ? undefined : selectedBuilding,
