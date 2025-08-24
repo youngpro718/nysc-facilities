@@ -37,7 +37,7 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("name_asc");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [view, setView] = useState<"grid" | "list" | "master-detail">("grid");
+  
 
   const { data: doors, isLoading } = useQuery({
     queryKey: ['doors', selectedFloor],
@@ -195,8 +195,6 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
         onSortChange={setSortBy}
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
-        view={view}
-        onViewChange={setView}
       />
 
       {isLoading ? (
@@ -206,62 +204,35 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
           {groupedDoors.transition.length > 0 && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Transition Doors</h3>
-              {view === 'grid' ? (
-                <GridView
-                  items={groupedDoors.transition}
-                  onDelete={(id) => deleteDoor.mutate(id)}
-                  renderItemContent={renderDoorContent}
-                  type="door"
-                />
-              ) : (
-                <ListView
-                  items={groupedDoors.transition}
-                  onDelete={(id) => deleteDoor.mutate(id)}
-                  renderRow={renderDoorRow}
-                  type="door"
-                />
-              )}
+              <GridView
+                items={groupedDoors.transition}
+                onDelete={(id) => deleteDoor.mutate(id)}
+                renderItemContent={renderDoorContent}
+                type="door"
+              />
             </div>
           )}
 
           {groupedDoors.problem.length > 0 && (
             <div className="space-y-4 mt-8">
               <h3 className="text-lg font-semibold">Problem Doors</h3>
-              {view === 'grid' ? (
-                <GridView
-                  items={groupedDoors.problem}
-                  onDelete={(id) => deleteDoor.mutate(id)}
-                  renderItemContent={renderDoorContent}
-                  type="door"
-                />
-              ) : (
-                <ListView
-                  items={groupedDoors.problem}
-                  onDelete={(id) => deleteDoor.mutate(id)}
-                  renderRow={renderDoorRow}
-                  type="door"
-                />
-              )}
+              <GridView
+                items={groupedDoors.problem}
+                onDelete={(id) => deleteDoor.mutate(id)}
+                renderItemContent={renderDoorContent}
+                type="door"
+              />
             </div>
           )}
 
           <div className="space-y-4 mt-8">
             <h3 className="text-lg font-semibold">Standard Doors</h3>
-            {view === 'grid' ? (
-              <GridView
-                items={groupedDoors.standard}
-                onDelete={(id) => deleteDoor.mutate(id)}
-                renderItemContent={renderDoorContent}
-                type="door"
-              />
-            ) : (
-              <ListView
-                items={groupedDoors.standard}
-                onDelete={(id) => deleteDoor.mutate(id)}
-                renderRow={renderDoorRow}
-                type="door"
-              />
-            )}
+            <GridView
+              items={groupedDoors.standard}
+              onDelete={(id) => deleteDoor.mutate(id)}
+              renderItemContent={renderDoorContent}
+              type="door"
+            />
           </div>
         </>
       )}

@@ -35,7 +35,7 @@ export type SortOption =
   | "room_type_asc"
   | "room_type_desc";
 
-export type ViewOption = "grid" | "list" | "master-detail";
+
 
 interface RoomsPageProps {
   selectedBuilding: string;
@@ -49,7 +49,7 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
   const [sortBy, setSortBy] = useState<SortOption>("name_asc");
   const [statusFilter, setStatusFilter] = useState("all");
   const [roomTypeFilter, setRoomTypeFilter] = useState("");
-  const [view, setView] = useState<ViewOption>("grid");
+  
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -135,13 +135,7 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
   };
 
   const handleRoomSelect = (room: Room) => {
-    if (view === "master-detail") {
-      setSelectedRoomForPanel(room);
-    } else {
-      setSelectedRoom(room);
-      // On mobile, open modal. On desktop, show inline panel.
-      setIsRoomDialogOpen(isMobile);
-    }
+    setSelectedRoomForPanel(room);
   };
 
   if (error) {
@@ -180,8 +174,6 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
           onStatusFilterChange={setStatusFilter}
           roomTypeFilter={roomTypeFilter}
           onRoomTypeFilterChange={setRoomTypeFilter}
-          view={view}
-          onViewChange={setView}
           onRefresh={handleRefresh}
         />
       )}
@@ -199,8 +191,8 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
         />
       )}
 
-      {/* Main Content Area */}
-      {view === "master-detail" && !isMobile ? (
+      {/* Main Content Area - Master Detail View */}
+      {!isMobile ? (
         <ResizablePanelGroup direction="horizontal" className="min-h-[600px] rounded-lg border">
           <ResizablePanel defaultSize={30} minSize={25} maxSize={40}>
             <div className="h-full">
@@ -244,7 +236,7 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
               deleteRoomMutation.mutate(id);
             }
           }}
-          view={view === "master-detail" ? "grid" : view}
+          view="grid"
           onRoomClick={handleRoomClick}
         />
       ) : (
@@ -252,7 +244,7 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
           isLoading={isLoading}
           rooms={rooms || []}
           filteredRooms={hierarchyFilteredRooms}
-          view={view === "master-detail" ? "grid" : view}
+          view="grid"
           onDelete={(id) => {
             if (window.confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
               deleteRoomMutation.mutate(id);

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ViewToggle } from "./ViewToggle";
+
 import { CreateSpaceDialog } from "./CreateSpaceDialog";
 import { EditSpaceDialog } from "./EditSpaceDialog";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +16,7 @@ export const SpacesList = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("name_asc");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [view, setView] = useState<"grid" | "list" | "master-detail">("grid");
+  
 
   const { data: spaces, isLoading, refetch } = useQuery({
     queryKey: ['spaces'],
@@ -57,10 +57,6 @@ export const SpacesList = () => {
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">Spaces</h1>
           <div className="flex items-center gap-4">
-            <ViewToggle 
-              view={view} 
-              onViewChange={setView}
-            />
             <CreateSpaceDialog />
           </div>
         </div>
@@ -72,8 +68,6 @@ export const SpacesList = () => {
           onSortChange={setSortBy}
           statusFilter={statusFilter}
           onStatusFilterChange={setStatusFilter}
-          view={view}
-          onViewChange={setView}
         />
       </div>
 

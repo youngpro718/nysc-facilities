@@ -1,7 +1,5 @@
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ViewToggle } from "./ViewToggle";
-
 interface SpaceListFiltersProps {
   searchQuery: string;
   onSearchChange: (value: string) => void;
@@ -9,8 +7,6 @@ interface SpaceListFiltersProps {
   onSortChange: (value: string) => void;
   statusFilter: string;
   onStatusFilterChange: (value: string) => void;
-  view: "grid" | "list" | "master-detail";
-  onViewChange: (view: "grid" | "list" | "master-detail") => void;
 }
 
 export const SpaceListFilters = ({
@@ -20,8 +16,6 @@ export const SpaceListFilters = ({
   onSortChange,
   statusFilter,
   onStatusFilterChange,
-  view,
-  onViewChange,
 }: SpaceListFiltersProps) => {
   return (
     <div className="flex flex-col gap-4 mb-6 sm:flex-row sm:items-center">
@@ -53,9 +47,6 @@ export const SpaceListFilters = ({
           <SelectItem value="under_maintenance">Under Maintenance</SelectItem>
         </SelectContent>
       </Select>
-      <div className="ml-auto">
-        <ViewToggle view={view} onViewChange={onViewChange} />
-      </div>
     </div>
   );
 };

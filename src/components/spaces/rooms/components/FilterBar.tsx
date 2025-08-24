@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 
-import { ViewToggle } from "../../ViewToggle";
+
 import { Badge } from "@/components/ui/badge";
 
 import { Briefcase, GavelIcon, Warehouse, Users, User, Building } from "lucide-react";
@@ -16,8 +16,6 @@ interface FilterBarProps {
   onSortChange: (value: string) => void;
   statusFilter: string;
   onStatusFilterChange: (value: string) => void;
-  view: "grid" | "list" | "master-detail";
-  onViewChange: (view: "grid" | "list" | "master-detail") => void;
   onRefresh: () => void;
   roomTypeFilter: string;
   onRoomTypeFilterChange: (value: string) => void;
@@ -30,8 +28,6 @@ export function FilterBar({
   onSortChange,
   statusFilter,
   onStatusFilterChange,
-  view,
-  onViewChange,
   onRefresh,
   roomTypeFilter,
   onRoomTypeFilterChange,
@@ -80,7 +76,7 @@ export function FilterBar({
             <SelectItem value="created_at_desc">Recently Added</SelectItem>
           </SelectContent>
         </Select>
-        <ViewToggle view={view} onViewChange={onViewChange} />
+        
         <Button variant="outline" size="icon" onClick={onRefresh}>
           <svg 
             xmlns="http://www.w3.org/2000/svg" 

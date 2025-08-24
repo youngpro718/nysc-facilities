@@ -21,22 +21,26 @@ export function RoomsSidebarList({ rooms, selectedRoomId, onSelect }: RoomsSideb
             const isActive = room.id === selectedRoomId;
             return (
               <li key={room.id}>
-                <button
+                  <button
                   type="button"
                   onClick={() => onSelect(room)}
                   className={cn(
-                    "w-full text-left px-3 py-2 hover:bg-accent/60 transition-colors",
+                    "w-full text-left px-3 py-1.5 hover:bg-accent/60 transition-colors",
                     isActive && "bg-accent/50"
                   )}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <div className="truncate font-medium">{room.room_number || room.name}</div>
-                      <div className="truncate text-xs text-muted-foreground">{room.name}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="truncate font-medium">{room.room_number || room.name}</div>
+                        <span className="shrink-0 whitespace-nowrap text-[10px] rounded border px-1.5 py-0.5 leading-tight text-muted-foreground">
+                          {room.room_type}
+                        </span>
+                      </div>
+                      {room.room_number && room.name !== room.room_number && (
+                        <div className="truncate text-xs text-muted-foreground">{room.name}</div>
+                      )}
                     </div>
-                    <span className="shrink-0 whitespace-nowrap text-[10px] rounded border px-1.5 py-0.5 leading-tight text-muted-foreground">
-                      {room.room_type}
-                    </span>
                   </div>
                 </button>
               </li>

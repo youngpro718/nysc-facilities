@@ -20,7 +20,7 @@ const HallwaysList = ({ selectedBuilding, selectedFloor }: HallwaysListProps) =>
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("name_asc");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [view, setView] = useState<"grid" | "list" | "master-detail">("grid");
+  
 
   const { hallways, isLoading, deleteHallway } = useHallwayData({
     selectedBuilding,
@@ -122,28 +122,17 @@ const HallwaysList = ({ selectedBuilding, selectedFloor }: HallwaysListProps) =>
         onSortChange={setSortBy}
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
-        view={view}
-        onViewChange={setView}
       />
 
       {isLoading ? (
         <div className="text-center">Loading hallways...</div>
       ) : (
-        view === 'grid' ? (
-          <GridView
-            items={filteredAndSortedHallways}
-            onDelete={(id) => deleteHallway.mutate(id)}
-            renderItemContent={renderGridContent}
-            type="hallway"
-          />
-        ) : (
-          <ListView
-            items={filteredAndSortedHallways}
-            onDelete={(id) => deleteHallway.mutate(id)}
-            renderRow={renderListRow}
-            type="hallway"
-          />
-        )
+        <GridView
+          items={filteredAndSortedHallways}
+          onDelete={(id) => deleteHallway.mutate(id)}
+          renderItemContent={renderGridContent}
+          type="hallway"
+        />
       )}
     </div>
   );
