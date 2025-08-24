@@ -10,7 +10,7 @@ export interface RoomsContentProps {
   isLoading: boolean;
   rooms: Room[];
   filteredRooms: Room[];
-  view: "grid" | "list" | "master-detail";
+  view: "grid" | "list";
   onDelete: (id: string) => void;
   searchQuery?: string;
   onRoomClick?: (room: Room) => void;

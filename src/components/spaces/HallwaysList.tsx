@@ -20,7 +20,7 @@ const HallwaysList = ({ selectedBuilding, selectedFloor }: HallwaysListProps) =>
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("name_asc");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [view, setView] = useState<"grid" | "list" | "master-detail">("grid");
+  const [view, setView] = useState<"grid" | "list">("grid");
 
   const { hallways, isLoading, deleteHallway } = useHallwayData({
     selectedBuilding,

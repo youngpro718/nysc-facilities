@@ -16,8 +16,8 @@ interface FilterBarProps {
   onSortChange: (value: string) => void;
   statusFilter: string;
   onStatusFilterChange: (value: string) => void;
-  view: "grid" | "list" | "master-detail";
-  onViewChange: (view: "grid" | "list" | "master-detail") => void;
+  view: "grid" | "list";
+  onViewChange: (view: "grid" | "list") => void;
   onRefresh: () => void;
   roomTypeFilter: string;
   onRoomTypeFilterChange: (value: string) => void;

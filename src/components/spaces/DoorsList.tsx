@@ -37,7 +37,7 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("name_asc");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [view, setView] = useState<"grid" | "list" | "master-detail">("grid");
+  const [view, setView] = useState<"grid" | "list">("grid");
 
   const { data: doors, isLoading } = useQuery({
     queryKey: ['doors', selectedFloor],
