@@ -11,9 +11,10 @@ interface RoomCardProps {
   room: Room;
   onDelete: (id: string) => void;
   onRoomClick?: (room: Room) => void;
+  variant?: "default" | "panel";
 }
 
-export function RoomCard({ room, onDelete, onRoomClick }: RoomCardProps) {
+export function RoomCard({ room, onDelete, onRoomClick, variant = "default" }: RoomCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -34,9 +35,7 @@ export function RoomCard({ room, onDelete, onRoomClick }: RoomCardProps) {
 
   const handleFlip = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!isMobile) {
-      setIsFlipped(prev => !prev);
-    }
+    setIsFlipped(prev => !prev);
   };
 
   const handleCardClick = () => {
@@ -50,14 +49,14 @@ export function RoomCard({ room, onDelete, onRoomClick }: RoomCardProps) {
 
   return (
     <Card 
-      className={`relative h-[320px] group overflow-hidden cursor-pointer transition-all duration-200 ease-out ${
+      className={`relative ${variant === 'panel' ? 'h-[520px] md:h-[560px] lg:h-[600px]' : 'h-[320px]'} group overflow-hidden ${variant === 'panel' ? 'cursor-default' : 'cursor-pointer'} transition-all duration-200 ease-out ${
         isHovered 
           ? 'shadow-2xl shadow-black/20 dark:shadow-black/40' 
           : 'shadow-md hover:shadow-lg'
       }`}
-      onClick={handleCardClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onClick={variant === 'panel' ? undefined : handleCardClick}
+      onMouseEnter={() => { setIsHovered(true); }}
+      onMouseLeave={() => { setIsHovered(false); }}
     >
       <CardContent className="p-0 h-full">
         {/* Perspective wrapper ensures proper 3D rendering of front/back faces */}
@@ -68,7 +67,7 @@ export function RoomCard({ room, onDelete, onRoomClick }: RoomCardProps) {
           <div 
             className="relative w-full h-full transition-all duration-500"
             style={{ 
-              transform: !isMobile && isFlipped ? 'rotateY(180deg)' : 'rotateY(0)',
+              transform: (isFlipped) ? 'rotateY(180deg)' : 'rotateY(0)',
               transformStyle: 'preserve-3d',
               // Cross-browser hints to avoid flattening/tearing
               willChange: 'transform',
@@ -80,25 +79,24 @@ export function RoomCard({ room, onDelete, onRoomClick }: RoomCardProps) {
               className="absolute inset-0 w-full h-full bg-card"
               style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' as any }}
             >
-              <CardFront room={displayRoom} onFlip={handleFlip} onDelete={onDelete} isHovered={isHovered} />
+              <CardFront room={displayRoom} onFlip={handleFlip} onDelete={onDelete} isHovered={variant === 'panel' ? true : isHovered} />
             </div>
             
-            {/* Back of card - Hidden on mobile */}
-            {!isMobile && (
-              <div 
-                className="absolute inset-0 w-full h-full bg-card"
-                style={{ 
-                  backfaceVisibility: 'hidden',
-                  WebkitBackfaceVisibility: 'hidden' as any,
-                  transform: 'rotateY(180deg)'
-                }}
-              >
-                <CardBack room={displayRoom} onFlip={handleFlip} />
-              </div>
-            )}
+            {/* Back of card */}
+            <div 
+              className="absolute inset-0 w-full h-full bg-card"
+              style={{ 
+                backfaceVisibility: 'hidden',
+                WebkitBackfaceVisibility: 'hidden' as any,
+                transform: 'rotateY(180deg)'
+              }}
+            >
+              <CardBack room={displayRoom} onFlip={handleFlip} />
+            </div>
           </div>
         </div>
       </CardContent>
     </Card>
   );
 }
+

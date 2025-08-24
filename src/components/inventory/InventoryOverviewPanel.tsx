@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Package, TrendingDown, Folder, Activity, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useRealtime } from "@/hooks/useRealtime";
 
 type InventoryStats = {
   total_items: number;
@@ -37,32 +36,9 @@ export const InventoryOverviewPanel = () => {
   const [range, setRange] = useState<"7d" | "30d" | "90d" | "ytd">("30d");
   const [typeFilter, setTypeFilter] = useState<"all" | "add" | "remove" | "adjustment">("all");
 
-  // Realtime subscriptions to keep overview up-to-date
-  useRealtime({
-    table: "inventory_items",
-    queryKeys: [
-      "inventory-stats",
-      "inventory-analytics",
-      "recent-transactions",
-      "low-stock-overview",
-    ],
-  });
-  useRealtime({
-    table: "inventory_item_transactions",
-    queryKeys: [
-      "inventory-stats",
-      "inventory-analytics",
-      "recent-transactions",
-    ],
-  });
-  useRealtime({
-    table: "inventory_categories",
-    queryKeys: [
-      "inventory-stats",
-      "inventory-analytics",
-      "low-stock-overview",
-    ],
-  });
+  // TEMP: Force minimum threshold to 3 for testing across overview
+  const FORCED_MINIMUM = 3;
+
 
   const startDate = useMemo(() => {
     const now = new Date();
@@ -96,15 +72,13 @@ export const InventoryOverviewPanel = () => {
         txCountQuery,
       ]);
 
-      // Get items with minimum quantity set, then filter in JavaScript
+      // Get all items; compute low stock client-side using forced minimum
       const {
         data: allItems,
         error: itemsError
       } = await supabase
         .from("inventory_items")
-        .select("*")
-        .not("minimum_quantity", "is", null)
-        .gt("minimum_quantity", 0);
+        .select("*");
       console.log('Inventory query error:', itemsError);
       console.log('Inventory items found:', allItems);
       if (itemsError) {
@@ -118,8 +92,8 @@ export const InventoryOverviewPanel = () => {
         } as InventoryStats;
       }
 
-      // Filter for items that are low stock (0 < qty <= minimum)
-      const lowStockItems = (allItems || []).filter(item => item.minimum_quantity > 0 && item.quantity > 0 && item.quantity <= item.minimum_quantity);
+      // Filter for items that are low stock (0 < qty <= FORCED_MINIMUM)
+      const lowStockItems = (allItems || []).filter(item => (item?.quantity || 0) > 0 && (item?.quantity || 0) <= FORCED_MINIMUM);
       console.log('Low stock items found:', lowStockItems);
       return {
         total_items: itemsResult.count || 0,
@@ -305,19 +279,19 @@ export const InventoryOverviewPanel = () => {
       const {
         data,
         error
-      } = await supabase.from("inventory_items").select(`
+      } = await supabase
+        .from("inventory_items")
+        .select(`
           id,
           name,
           quantity,
-          minimum_quantity,
           category_id
-        `).not("minimum_quantity", "is", null).gt("minimum_quantity", 0).order("quantity", {
-        ascending: true
-      });
+        `)
+        .order("quantity", { ascending: true });
       if (error) throw error;
 
-      // Filter items that are below minimum quantity
-      const filteredItems = (data || []).filter(item => item.quantity > 0 && item.quantity <= item.minimum_quantity);
+      // Filter items that are below FORCED_MINIMUM
+      const filteredItems = (data || []).filter(item => (item?.quantity || 0) > 0 && (item?.quantity || 0) <= FORCED_MINIMUM);
 
       // Enrich with category names
       const categoryIds = Array.from(new Set(filteredItems.map((i: any) => i.category_id).filter(Boolean)));
@@ -335,7 +309,7 @@ export const InventoryOverviewPanel = () => {
         id: item.id,
         name: item.name,
         quantity: item.quantity,
-        minimum_quantity: item.minimum_quantity,
+        minimum_quantity: FORCED_MINIMUM,
         // Only include a category name if we have one; otherwise leave undefined/null
         category_name: categoriesById.get(item.category_id) ?? null
       })) as LowStockItem[];

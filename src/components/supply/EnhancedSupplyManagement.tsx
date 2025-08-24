@@ -41,6 +41,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
+// Temporary forced minimum threshold for low stock across the app (testing only)
+// TODO: Gate behind an env/feature flag and revert to DB-driven minimums when ready
+const FORCED_MINIMUM = 3;
+
 interface SupplyRequestWithDetails {
   id: string;
   title: string;
@@ -187,19 +191,16 @@ export function EnhancedSupplyManagement() {
           id,
           name,
           quantity,
-          minimum_quantity,
           inventory_categories (name)
         `);
 
       if (error) throw error;
 
+      // Use forced minimum for consistency across the app
       const lowStock = data.filter(
         (item: any) =>
-          typeof item.minimum_quantity === 'number' &&
-          item.minimum_quantity > 0 &&
           typeof item.quantity === 'number' &&
-          item.quantity > 0 &&
-          item.quantity <= item.minimum_quantity
+          item.quantity <= FORCED_MINIMUM
       );
       const totalItems = data.length;
       const totalValue = data.reduce((sum, item) => sum + item.quantity, 0);
@@ -225,13 +226,11 @@ export function EnhancedSupplyManagement() {
           id,
           name,
           quantity,
-          minimum_quantity,
           unit,
           inventory_categories(name)
         `)
-        .or('and(quantity.gt.0,minimum_quantity.gt.0,quantity.lte.minimum_quantity),quantity.eq.0');
-      
-      return data || [];
+      // Apply forced minimum client-side for consistency
+      return (data || []).filter((item: any) => item.quantity <= FORCED_MINIMUM);
     },
     enabled: isAdmin
   });
@@ -664,7 +663,7 @@ export function EnhancedSupplyManagement() {
                           )}
                         </div>
                         <p className="text-sm text-gray-600 mt-1">
-                          {item.quantity} {item.unit} (Min: {item.minimum_quantity})
+                          {item.quantity} {item.unit} (Min: {FORCED_MINIMUM})
                         </p>
                       </div>
                     </div>

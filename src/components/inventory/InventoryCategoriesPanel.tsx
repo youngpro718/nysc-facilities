@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Folder, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CategoryFormDialog } from "./CategoryFormDialog";
-import { useRealtime } from "@/hooks/useRealtime";
 
 type Category = {
   id: string;
@@ -27,9 +26,7 @@ export const InventoryCategoriesPanel = () => {
   const [dialogMode, setDialogMode] = useState<"create" | "edit">("create");
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
 
-  // Realtime: refresh categories list and counts when categories or items change
-  useRealtime({ table: "inventory_categories", queryKeys: ["inventory-categories-with-counts"] });
-  useRealtime({ table: "inventory_items", queryKeys: ["inventory-categories-with-counts"] });
+  // Realtime handled by global RealtimeProvider; queries are invalidated centrally
 
   const { data: categories, isLoading } = useQuery({
     queryKey: ["inventory-categories-with-counts"],

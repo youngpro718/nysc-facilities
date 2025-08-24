@@ -21,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { FormButtons } from "@/components/ui/form-buttons";
 import { Plus, Minus, RotateCw } from "lucide-react";
+import { inventoryQueryKeys } from "@/hooks/optimized/useOptimizedInventory";
 
 type InventoryItem = {
   id: string;
@@ -72,6 +73,12 @@ export const StockAdjustmentDialog = ({ open, onOpenChange, item }: StockAdjustm
       queryClient.invalidateQueries({ queryKey: ["inventory-items"] });
       queryClient.invalidateQueries({ queryKey: ["inventory-stats"] });
       queryClient.invalidateQueries({ queryKey: ["recent-transactions"] });
+      // Invalidate optimized inventory caches to reflect changes immediately
+      queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.dashboardStats() });
+      queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.allItems() });
+      queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.lowStock() });
+      queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.categories() });
       toast({
         title: "Stock adjusted",
         description: `Successfully ${adjustmentType === "add" ? "added" : adjustmentType === "remove" ? "removed" : "adjusted"} ${quantity} ${item.unit || "units"} for ${item.name}.`,

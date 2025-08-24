@@ -15,7 +15,6 @@ import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useDebouncedInventorySearch } from "@/hooks/optimized/useOptimizedInventory";
-import { useRealtime } from "@/hooks/useRealtime";
 
 interface InventoryPageProps {
   roomId?: string;
@@ -84,43 +83,6 @@ export function InventoryPage({ roomId }: InventoryPageProps) {
     retry: 2,
     staleTime: 3 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
-  });
- 
-  // Realtime subscriptions for inventory-related tables
-  useRealtime({
-    table: "inventory_items",
-    queryKeys: [
-      "inventory",
-      "inventory-items",
-      "inventory-stats",
-      "inventory-analytics",
-      "low-stock-overview",
-      "low-stock-items",
-      "out-of-stock-items",
-      "inventory-categories-with-counts",
-      "categories",
-      "recent-transactions",
-    ],
-  });
-  useRealtime({
-    table: "inventory_item_transactions",
-    queryKeys: [
-      "inventory-transactions",
-      "inventory-stats",
-      "inventory-analytics",
-      "recent-transactions",
-      "inventory",
-    ],
-  });
-  useRealtime({
-    table: "inventory_categories",
-    queryKeys: [
-      "categories",
-      "inventory-categories-with-counts",
-      "inventory-stats",
-      "inventory-analytics",
-      "inventory",
-    ],
   });
  
   // Client-side filter fallback removed in favor of server-side search for accuracy/perf

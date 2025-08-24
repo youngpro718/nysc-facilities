@@ -22,22 +22,24 @@ export function LowStockAlert({
   roomName,
   onManageItem,
 }: LowStockAlertProps) {
-  // Low stock: 0 < quantity <= minimum_quantity (exclude 0 which is out of stock)
+  // Temporary forced minimum for consistent low stock UI across app
+  const FORCED_MINIMUM = 3;
+  // Low stock: 0 < quantity <= FORCED_MINIMUM (exclude 0 which is out of stock)
   const lowStockItems = items.filter(item =>
-    (item.minimum_quantity || 0) > 0 && item.quantity > 0 && item.quantity <= (item.minimum_quantity || 0)
+    item.quantity > 0 && item.quantity <= FORCED_MINIMUM
   );
 
   const outOfStockItems = items.filter(item => item.quantity === 0);
 
   const getStockStatus = (item: InventoryItem) => {
     if (item.quantity === 0) return { label: "Out of Stock", color: "bg-red-500" };
-    if ((item.minimum_quantity || 0) > 0 && item.quantity <= (item.minimum_quantity || 0)) return { label: "Low Stock", color: "bg-yellow-500" };
+    if (item.quantity > 0 && item.quantity <= FORCED_MINIMUM) return { label: "Low Stock", color: "bg-yellow-500" };
     return { label: "Normal", color: "bg-green-500" };
   };
 
   const getUrgencyBadge = (item: InventoryItem) => {
     if (item.quantity === 0) return { label: "Critical", variant: "destructive" as const };
-    if (item.quantity < (item.minimum_quantity || 0) / 2) return { label: "High", variant: "destructive" as const };
+    if (item.quantity < FORCED_MINIMUM / 2) return { label: "High", variant: "destructive" as const };
     return { label: "Medium", variant: "secondary" as const };
   };
 
@@ -141,7 +143,7 @@ export function LowStockAlert({
                         
                         <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
                           <span>Current: {item.quantity} {item.unit || 'units'}</span>
-                          <span>Minimum: {item.minimum_quantity || 0} {item.unit || 'units'}</span>
+                          <span>Minimum: {FORCED_MINIMUM} {item.unit || 'units'}</span>
                         </div>
 
                         {item.category && (

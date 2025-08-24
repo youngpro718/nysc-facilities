@@ -45,20 +45,23 @@ export function LightingStatusBadge({ roomId, roomNumber }: LightingStatusBadgeP
     enabled: !!roomId,
   });
 
+  // Render a neutral badge with counts even when there are no issues
   if (!lightingStatus || lightingStatus.total === 0) {
     return null;
   }
 
+  const hasIssues = lightingStatus.hasDownFixtures || lightingStatus.issues > 0;
+
   const getStatusVariant = () => {
     if (lightingStatus.hasDownFixtures) return "destructive";
     if (lightingStatus.issues > 0) return "secondary";
-    return "default";
+    return "outline";
   };
 
   const getStatusText = () => {
-    if (lightingStatus.hasDownFixtures) return "Lights Down";
-    if (lightingStatus.issues > 0) return `${lightingStatus.issues} Issues`;
-    return "All Good";
+    if (lightingStatus.hasDownFixtures) return `Lights Down (${lightingStatus.functional}/${lightingStatus.total})`;
+    if (lightingStatus.issues > 0) return `${lightingStatus.issues} Issues (${lightingStatus.functional}/${lightingStatus.total})`;
+    return `${lightingStatus.functional}/${lightingStatus.total} OK`;
   };
 
   const handleClick = (e: React.MouseEvent) => {

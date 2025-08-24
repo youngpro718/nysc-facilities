@@ -61,7 +61,8 @@ export async function createSpace(data: CreateSpaceFormData) {
         floor_id: data.floorId,
         description: data.description || null,
         phone_number: data.phoneNumber || null,
-        current_function: data.currentFunction || null,
+        // If marked as storage, do not persist a current_function
+        current_function: data.isStorage ? null : (data.currentFunction || null),
         is_storage: !!data.isStorage,
         storage_type: data.isStorage && data.storageType ? 
           storageTypeToString(data.storageType as StorageTypeEnum) : null,

@@ -20,6 +20,16 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import * as XLSX from 'xlsx';
 
+// Sanitize string values to prevent Excel from interpreting text as formulas
+const sanitizeForExcel = (value: any) => {
+  if (typeof value !== 'string') return value;
+  const trimmed = value.trim();
+  if (/^[=+\-@]/.test(trimmed) || /^[\t\r]/.test(value)) {
+    return "'" + value;
+  }
+  return value;
+};
+
 interface OccupantImportExportProps {
   occupants?: any[];
   onImportSuccess?: () => void;
@@ -52,7 +62,12 @@ export function OccupantImportExport({ occupants = [], onImportSuccess }: Occupa
   });
 
   const exportToExcel = (data: any[], filename: string) => {
-    const worksheet = XLSX.utils.json_to_sheet(data);
+    const sanitized = data.map((row: any) =>
+      Object.fromEntries(
+        Object.entries(row).map(([k, v]) => [k, sanitizeForExcel(v)])
+      )
+    );
+    const worksheet = XLSX.utils.json_to_sheet(sanitized);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Occupants');
     XLSX.writeFile(workbook, `${filename}.xlsx`);

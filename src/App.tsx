@@ -31,6 +31,7 @@ import { ThemeProvider } from "@/providers/ThemeProvider";
 import { EnhancedThemeProvider } from "@/providers/EnhancedThemeProvider";
 import SimpleDashboardProvider from "@/providers/SimpleDashboardProvider";
 import { Toaster } from "@/components/ui/sonner";
+import RealtimeProvider from "@/providers/RealtimeProvider";
 import { useConditionalNotifications } from "@/hooks/useConditionalNotifications";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -229,22 +230,24 @@ function App() {
   return (
     <ErrorBoundary onError={(error) => console.error('App: Global error caught:', error)}>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <EnhancedThemeProvider>
-            <SimpleDashboardProvider>
-              <BrowserRouter>
-                <AuthErrorBoundary onError={(error) => console.error('App: Auth error caught:', error)}>
-                  <AuthProvider>
-                    <NotificationsWrapper>
-                      <AppContent />
-                    </NotificationsWrapper>
-                  </AuthProvider>
-                </AuthErrorBoundary>
-              </BrowserRouter>
-              <Toaster />
-            </SimpleDashboardProvider>
-          </EnhancedThemeProvider>
-        </ThemeProvider>
+        <RealtimeProvider>
+          <ThemeProvider>
+            <EnhancedThemeProvider>
+              <SimpleDashboardProvider>
+                <BrowserRouter>
+                  <AuthErrorBoundary onError={(error) => console.error('App: Auth error caught:', error)}>
+                    <AuthProvider>
+                      <NotificationsWrapper>
+                        <AppContent />
+                      </NotificationsWrapper>
+                    </AuthProvider>
+                  </AuthErrorBoundary>
+                </BrowserRouter>
+                <Toaster />
+              </SimpleDashboardProvider>
+            </EnhancedThemeProvider>
+          </ThemeProvider>
+        </RealtimeProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );

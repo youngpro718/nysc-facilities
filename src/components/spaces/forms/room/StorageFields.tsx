@@ -66,6 +66,13 @@ export function StorageFields({ form }: StorageFieldsProps) {
     }
   }, [isStorage, form]);
 
+  // When storage is enabled, clear currentFunction to maintain data integrity
+  useEffect(() => {
+    if (isStorage) {
+      form.setValue("currentFunction", "", { shouldValidate: false });
+    }
+  }, [isStorage, form]);
+
   return (
     <Card>
       <CardHeader>

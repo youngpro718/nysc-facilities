@@ -35,6 +35,13 @@ export interface RoomPersistentIssue {
   latest_issue_date: string;
 }
 
+export interface RoomHistoryStats {
+  total_issues: number;
+  unique_occupants: number;
+  current_occupants: number;
+  last_issue_date?: string;
+}
+
 export interface EnhancedRoom extends Room {
   // Courtroom data
   court_room?: CourtRoomData;
@@ -48,6 +55,7 @@ export interface EnhancedRoom extends Room {
   room_size_category?: 'small' | 'medium' | 'large';
   persistent_issues?: RoomPersistentIssue;
   vacancy_status?: 'vacant' | 'occupied' | 'at_capacity';
+  history_stats?: RoomHistoryStats;
   
   // Quick calculated stats
   lighting_percentage?: number;

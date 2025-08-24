@@ -1,10 +1,9 @@
 
-import { Room } from "../types/RoomTypes";
 import { EnhancedRoom } from "../types/EnhancedRoomTypes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Trash2, ArrowRightFromLine, Users, Shield, Lightbulb, ShoppingBag, AlertTriangle } from "lucide-react";
+import { Trash2, ArrowRightFromLine, Users, Shield, Lightbulb, ShoppingBag, AlertTriangle, Phone, Link2, CalendarDays, StickyNote, History, Pencil } from "lucide-react";
 import { EditSpaceDialog } from "../../EditSpaceDialog";
 import { CourtroomPhotos } from './CourtroomPhotos';
 import { CourtroomPhotoThumbnail } from './CourtroomPhotoThumbnail';
@@ -13,6 +12,8 @@ import { RoomAccessSummary } from "@/components/access/RoomAccessSummary";
 import { SmartBadges } from "./badges/SmartBadges";
 import { LightingReportDialog } from "./lighting/LightingReportDialog";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
+import { getNormalizedCurrentUse } from "../utils/currentUse";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface CardFrontProps {
   room: EnhancedRoom;
@@ -26,8 +27,25 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false }: CardFro
   const unresolvedIssues = getIssuesForRoom(room.id);
   const hasIssues = unresolvedIssues.length > 0;
   const highSeverityCount = unresolvedIssues.filter(i => ["urgent", "high", "critical"].includes((i.priority || "").toLowerCase())).length;
+  const currentUse = getNormalizedCurrentUse(room);
+  const formatRelative = (iso?: string) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    const diffMs = Date.now() - d.getTime();
+    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    if (days <= 0) return "today";
+    if (days === 1) return "1 day ago";
+    if (days < 30) return `${days} days ago`;
+    const months = Math.floor(days / 30);
+    if (months === 1) return "1 month ago";
+    if (months < 12) return `${months} months ago`;
+    const years = Math.floor(months / 12);
+    return years === 1 ? "1 year ago" : `${years} years ago`;
+  };
   return (
     <div className="relative p-5 flex flex-col h-full overflow-y-auto">
+      {/* Actions moved into header row; removed absolute-positioned mobile flip */}
       {/* Issue Alert - Top Left Corner */}
       {hasIssues && (
         <div className="absolute top-2 left-2 flex items-center gap-2 z-10">
@@ -44,123 +62,181 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false }: CardFro
           </Badge>
         </div>
       )}
-      {/* Hover Action Buttons - Top Right Corner */}
-      <div className={`absolute top-2 right-2 flex flex-col gap-1 transition-all duration-300 z-10 ${
-        isHovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-      }`}>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            onFlip(e);
-          }}
-          className="hidden md:flex bg-black/80 hover:bg-black text-white border-0 shadow-lg transition-all duration-200 h-8 w-8 p-0"
-          title="More Details"
-        >
-          <ArrowRightFromLine className="h-3 w-3" />
-        </Button>
-        
-        <LightingReportDialog
-          room={room}
-          trigger={
-            <Button
-              variant="secondary"
-              size="sm"
-              className="bg-black/80 hover:bg-black text-white border-0 shadow-lg transition-all duration-200 h-8 w-8 p-0"
-              title="Report Light Out"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Lightbulb className="h-3 w-3" />
-            </Button>
-          }
-        />
-        
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button
-              variant="secondary"
-              size="sm"
-              className="bg-black/80 hover:bg-black text-white border-0 shadow-lg transition-all duration-200 h-8 w-8 p-0"
-              title="Who Has Access"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Shield className="h-3 w-3" />
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Room Access - {room.name}</DialogTitle>
-            </DialogHeader>
-            <RoomAccessSummary roomId={room.id} />
-          </DialogContent>
-        </Dialog>
-
-        <EditSpaceDialog
-          id={room.id}
-          type="room"
-          initialData={{
-            id: room.id,
-            name: room.name,
-            room_number: room.room_number || '',
-            room_type: room.room_type,
-            description: room.description || '',
-            status: room.status,
-            floor_id: room.floor_id,
-            is_storage: room.is_storage || false,
-            storage_type: room.storage_type || null,
-            storage_capacity: room.storage_capacity || null,
-            storage_notes: room.storage_notes || null,
-            parent_room_id: room.parent_room_id || null,
-            current_function: room.current_function || null,
-            phone_number: room.phone_number || null,
-            courtroom_photos: room.courtroom_photos || null,
-            connections: room.space_connections?.map(conn => ({
-              id: conn.id,
-              connectionType: conn.connection_type,
-              toSpaceId: conn.to_space_id,
-              direction: conn.direction || null
-            })) || [],
-            type: "room"
-          }}
-        />
-        
-        <Button
-          variant="destructive"
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(room.id);
-          }}
-          className="bg-red-600/90 hover:bg-red-600 text-white border-0 shadow-lg transition-all duration-200 h-8 w-8 p-0"
-          title="Delete Room"
-        >
-          <Trash2 className="h-3 w-3" />
-        </Button>
-      </div>
+      {/* Absolute actions removed; actions moved into header below */}
       <div className="mb-3">
         <div className="flex justify-between items-start">
           <div>
             <h3 className="text-lg font-semibold text-foreground">{room.name}</h3>
             <p className="text-sm text-muted-foreground">Room {room.room_number}</p>
           </div>
-          <Badge 
-            variant={
-              room.status === 'active' ? 'default' :
-              room.status === 'inactive' ? 'destructive' : 'outline'
-            }
-            className="ml-2"
-          >
-            {room.status.split('_').map(word => 
-              word.charAt(0).toUpperCase() + word.slice(1)
-            ).join(' ')}
-          </Badge>
+          <div className="flex flex-col items-end gap-1">
+            <TooltipProvider>
+              <div className="flex items-center gap-1 md:gap-1.5">
+                {/* Flip for more details */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={(e) => { e.stopPropagation(); onFlip(e); }}
+                      className="bg-black/80 hover:bg-black text-white border-0 shadow-lg transition-all duration-200 h-8 w-8 p-0"
+                    >
+                      <ArrowRightFromLine className="h-3 w-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>More details</TooltipContent>
+                </Tooltip>
+
+                {/* Report lighting issue */}
+                <LightingReportDialog
+                  room={room}
+                  trigger={
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="bg-black/80 hover:bg-black text-white border-0 shadow-lg transition-all duration-200 h-8 w-8 p-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Lightbulb className="h-3 w-3" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Report light out</TooltipContent>
+                    </Tooltip>
+                  }
+                />
+
+                {/* Inventory (for storage) */}
+                {room.is_storage && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="secondary" 
+                        size="sm"
+                        className="bg-black/80 hover:bg-black text-white border-0 shadow-lg transition-all duration-200 h-8 w-8 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const event = new CustomEvent('openInventoryDialog', { 
+                            detail: { roomId: room.id, roomName: room.name } 
+                          });
+                          window.dispatchEvent(event);
+                        }}
+                      >
+                        <ShoppingBag className="h-3 w-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>View inventory</TooltipContent>
+                  </Tooltip>
+                )}
+
+                {/* Access dialog */}
+                <Dialog>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="bg-black/80 hover:bg-black text-white border-0 shadow-lg transition-all duration-200 h-8 w-8 p-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Shield className="h-3 w-3" />
+                        </Button>
+                      </DialogTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>Who has access</TooltipContent>
+                  </Tooltip>
+                  <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Room Access - {room.name}</DialogTitle>
+                    </DialogHeader>
+                    <RoomAccessSummary roomId={room.id} />
+                  </DialogContent>
+                </Dialog>
+
+                {/* Edit room */}
+                <div onClick={(e) => e.stopPropagation()}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <EditSpaceDialog
+                        id={room.id}
+                        type="room"
+                        variant="custom"
+                        initialData={{
+                          id: room.id,
+                          name: room.name,
+                          room_number: room.room_number || '',
+                          room_type: room.room_type,
+                          description: room.description || '',
+                          status: room.status,
+                          floor_id: room.floor_id,
+                          is_storage: room.is_storage || false,
+                          storage_type: room.storage_type || null,
+                          storage_capacity: room.storage_capacity || null,
+                          storage_notes: room.storage_notes || null,
+                          parent_room_id: room.parent_room_id || null,
+                          current_function: room.current_function || null,
+                          phone_number: room.phone_number || null,
+                          courtroom_photos: room.courtroom_photos || null,
+                          connections: room.space_connections?.map(conn => ({
+                            id: conn.id,
+                            connectionType: conn.connection_type,
+                            toSpaceId: conn.to_space_id,
+                            direction: conn.direction || null
+                          })) || [],
+                          type: "room"
+                        }}
+                      >
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="bg-black/80 hover:bg-black text-white border-0 shadow-lg transition-all duration-200 h-8 w-8 p-0"
+                          title="Edit Room"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                      </EditSpaceDialog>
+                    </TooltipTrigger>
+                    <TooltipContent>Edit room</TooltipContent>
+                  </Tooltip>
+                </div>
+
+                {/* Delete room */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={(e) => { e.stopPropagation(); onDelete(room.id); }}
+                      className="bg-red-600/90 hover:bg-red-600 text-white border-0 shadow-lg transition-all duration-200 h-8 w-8 p-0"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Delete room</TooltipContent>
+                </Tooltip>
+              </div>
+            </TooltipProvider>
+
+            <Badge 
+              variant={
+                room.status === 'active' ? 'default' :
+                room.status === 'inactive' ? 'destructive' : 'outline'
+              }
+              className="ml-2"
+            >
+              {room.status.split('_').map(word => 
+                word.charAt(0).toUpperCase() + word.slice(1)
+              ).join(' ')}
+            </Badge>
+          </div>
         </div>
         
-        <div className="flex items-center mt-1">
+        <div className="flex flex-wrap items-center gap-1.5 mt-1">
           <Badge 
             variant="secondary" 
-            className="text-xs"
+            className="text-[11px] whitespace-nowrap"
           >
             {room.room_type.replace(/_/g, ' ')}
           </Badge>
@@ -168,9 +244,39 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false }: CardFro
           {room.is_storage && (
             <Badge 
               variant="secondary" 
-              className="ml-2 text-xs"
+              className="text-[11px] whitespace-nowrap"
             >
               Storage
+            </Badge>
+          )}
+
+          {room.room_size_category && (
+            <Badge 
+              variant="outline" 
+              className="text-[11px] capitalize whitespace-nowrap"
+            >
+              Size: {room.room_size_category}
+            </Badge>
+          )}
+
+          {room.temporary_storage_use && (
+            <Badge 
+              variant="outline" 
+              className="text-[11px] whitespace-nowrap"
+              title="Temporarily used as storage"
+            >
+              Temporary use
+            </Badge>
+          )}
+
+          {room.original_room_type && room.original_room_type !== room.room_type && (
+            <Badge 
+              variant="outline" 
+              className="text-[11px] flex items-center gap-1 whitespace-nowrap"
+              title={`Originally ${String(room.original_room_type).replace(/_/g, ' ')}`}
+            >
+              <History className="h-3 w-3" />
+              Original: {String(room.original_room_type).replace(/_/g, ' ')}
             </Badge>
           )}
         </div>
@@ -179,6 +285,56 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false }: CardFro
         <div className="mt-3">
           <SmartBadges room={room} />
         </div>
+
+        {/* Mobile Access Quick Action removed - actions are in header for all breakpoints */}
+
+        {/* Quick Facts */}
+        {(room.phone_number || (room.space_connections?.length ?? 0) > 0 || room.function_change_date || (room.room_type === 'courtroom' && room.court_room) || (room.is_storage && (room.storage_notes || '').trim() !== "")) && (
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs">
+            {room.phone_number && (
+              <div className="flex items-center text-muted-foreground">
+                <Phone className="h-3.5 w-3.5 mr-1" />
+                <a
+                  href={`tel:${room.phone_number}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="hover:underline"
+                >
+                  {room.phone_number}
+                </a>
+              </div>
+            )}
+
+            {(room.space_connections?.length ?? 0) > 0 && (
+              <div 
+                className="flex items-center text-muted-foreground"
+                title={(room.space_connections || [])
+                  .map(conn => conn.to_space?.name || conn.to_space?.type || '')
+                  .filter(Boolean)
+                  .slice(0, 5)
+                  .join(', ')}
+              >
+                <Link2 className="h-3.5 w-3.5 mr-1" />
+                {(room.space_connections?.length || 0)} connection{(room.space_connections?.length || 0) === 1 ? '' : 's'}
+              </div>
+            )}
+
+            {room.function_change_date && (
+              <div className="flex items-center text-muted-foreground">
+                <CalendarDays className="h-3.5 w-3.5 mr-1" />
+                Changed {formatRelative(room.function_change_date)}
+              </div>
+            )}
+
+            {/* Jury/Spectator capacities removed per UI simplification */}
+
+            {room.is_storage && room.storage_notes && room.storage_notes.trim() !== "" && (
+              <div className="flex items-center text-muted-foreground sm:col-span-2">
+                <StickyNote className="h-3.5 w-3.5 mr-1" />
+                <span className="truncate" title={room.storage_notes}>{room.storage_notes}</span>
+              </div>
+            )}
+          </div>
+        )}
         
         {/* Parent-Child Hierarchy Info */}
         <div className="mt-2">
@@ -219,17 +375,12 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false }: CardFro
         {/* Practical Room Information */}
         <div className="space-y-2 mb-3">
           {/* Room Function & Usage */}
-          {room.current_function && room.current_function !== room.room_type ? (
+          {currentUse && (
             <div className="text-sm">
               <span className="font-medium text-foreground">Current Use:</span>
-              <span className="text-muted-foreground ml-1">{room.current_function}</span>
+              <span className="text-muted-foreground ml-1">{currentUse}</span>
             </div>
-          ) : room.room_type === 'courtroom' && !room.current_function ? (
-            <div className="text-sm">
-              <span className="font-medium text-foreground">Function:</span>
-              <span className="text-muted-foreground ml-1">Active Courtroom</span>
-            </div>
-          ) : null}
+          )}
           
           {/* Floor & Building Info */}
           <div className="text-sm">
@@ -266,6 +417,12 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false }: CardFro
                 </Badge>
               )}
             </div>
+          </div>
+        )}
+
+        {room.updated_at && (
+          <div className="mt-3 text-[11px] text-muted-foreground">
+            Updated {formatRelative(room.updated_at)}
           </div>
         )}
       </div>

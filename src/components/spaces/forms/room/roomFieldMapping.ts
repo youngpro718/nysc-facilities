@@ -93,7 +93,8 @@ export function formToDbRoom(formData: RoomFormData): Partial<DatabaseRoom> {
     storage_type: formData.storageType ? storageTypeToString(formData.storageType) : null,
     storage_notes: formData.storageNotes || null,
     phone_number: formData.phoneNumber || null,
-    current_function: formData.currentFunction || null,
+    // If marked as storage, do not persist a current_function
+    current_function: formData.isStorage ? null : (formData.currentFunction || null),
     parent_room_id: formData.parentRoomId || null,
     courtroom_photos: formData.courtroom_photos || null,
     position: formData.position ? { x: formData.position.x || 0, y: formData.position.y || 0 } : { x: 0, y: 0 },

@@ -52,6 +52,7 @@ export function useEnhancedRoomData(roomId: string) {
 
       // Get courtroom data if applicable
       let courtRoomData = null;
+      let courtAssignment: { id: string } | null = null;
       if (room.room_type === 'courtroom') {
         const { data: courtRoom } = await supabase
           .from('court_rooms')
@@ -60,6 +61,14 @@ export function useEnhancedRoomData(roomId: string) {
           .single();
         
         courtRoomData = courtRoom;
+
+        // Fetch any active assignment for this courtroom to drive occupancy status
+        const { data: assignment } = await supabase
+          .from('court_assignments')
+          .select('id')
+          .eq('room_id', roomId)
+          .maybeSingle();
+        courtAssignment = assignment;
       }
 
       // Get lighting fixtures data
@@ -90,8 +99,15 @@ export function useEnhancedRoomData(roomId: string) {
       // Calculate vacancy status
       const occupantCount = room.current_occupants?.length || 0;
       let vacancyStatus: 'vacant' | 'occupied' | 'at_capacity' = 'vacant';
-      if (occupantCount > 0) {
-        vacancyStatus = 'occupied';
+      if (room.room_type === 'courtroom') {
+        // Courtrooms are considered occupied if they have an assignment and the courtroom is active
+        const hasAssignment = !!courtAssignment?.id;
+        const isActiveCourtRoom = (courtRoomData as any)?.is_active !== false;
+        vacancyStatus = hasAssignment && isActiveCourtRoom ? 'occupied' : 'vacant';
+      } else {
+        if (occupantCount > 0) {
+          vacancyStatus = 'occupied';
+        }
       }
 
       // Transform lighting fixtures with outage duration
@@ -108,6 +124,24 @@ export function useEnhancedRoomData(roomId: string) {
           ? Math.floor((Date.now() - new Date(fixture.reported_out_date).getTime()) / (1000 * 60 * 60 * 24))
           : undefined
       })) || [];
+
+      // Build history stats
+      // 1) Total issues and last issue date
+      const totalIssues = issues?.length || 0;
+      const lastIssueDate = issues && issues.length > 0
+        ? issues
+            .map((i: any) => new Date(i.created_at).getTime())
+            .reduce((a: number, b: number) => Math.max(a, b), 0)
+        : undefined;
+
+      // 2) Unique occupants who have been in the room historically
+      const { data: occHistory } = await supabase
+        .from('occupant_room_assignments')
+        .select('occupant_id')
+        .eq('room_id', roomId);
+      const uniqueOccupants = Array.isArray(occHistory)
+        ? new Set(occHistory.map((o: any) => o.occupant_id)).size
+        : 0;
 
       // Construct enhanced room object
       const enhancedRoom: EnhancedRoom = {
@@ -133,7 +167,13 @@ export function useEnhancedRoomData(roomId: string) {
           issue_count: issues?.length || 0,
           open_issues: openIssues.length,
           latest_issue_date: openIssues[0]?.created_at || new Date().toISOString()
-        } : undefined
+        } : undefined,
+        history_stats: {
+          total_issues: totalIssues,
+          unique_occupants: uniqueOccupants,
+          current_occupants: occupantCount,
+          last_issue_date: lastIssueDate ? new Date(lastIssueDate).toISOString() : undefined,
+        }
       };
 
       return enhancedRoom;

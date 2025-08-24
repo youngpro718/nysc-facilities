@@ -1,5 +1,9 @@
 import { supabase } from '@/integrations/supabase/client';
 
+// Temporary forced minimum threshold for low stock across the app (testing only)
+// TODO: Gate behind an env/feature flag and revert to DB-driven minimums when ready
+const FORCED_MINIMUM = 3;
+
 // Optimized types for inventory management
 export interface OptimizedInventoryItem {
   id: string;
@@ -61,7 +65,7 @@ export class OptimizedInventoryService {
           acc.total_items++;
           acc.total_value += item.quantity;
           
-          if (item.quantity <= item.minimum_quantity) {
+          if (item.quantity <= FORCED_MINIMUM) {
             acc.low_stock_count++;
           }
           
@@ -130,14 +134,14 @@ export class OptimizedInventoryService {
         name: item.name,
         description: item.description,
         quantity: item.quantity,
-        minimum_quantity: item.minimum_quantity,
+        minimum_quantity: FORCED_MINIMUM,
         unit: item.unit,
         location: item.location,
         status: item.status,
         category_name: item.inventory_categories?.name,
         category_color: item.inventory_categories?.color,
         last_updated: item.updated_at,
-        is_low_stock: item.quantity <= item.minimum_quantity,
+        is_low_stock: item.quantity <= FORCED_MINIMUM,
       }));
     } catch (error) {
       console.error('Error fetching inventory items:', error);
@@ -171,15 +175,15 @@ export class OptimizedInventoryService {
 
       if (error) throw error;
 
-      // Filter low stock items in JavaScript for better compatibility
-      const lowStockItems = data.filter((item: any) => item.quantity <= item.minimum_quantity);
+      // Filter low stock items in JavaScript using forced minimum for consistency
+      const lowStockItems = data.filter((item: any) => item.quantity <= FORCED_MINIMUM);
 
       return lowStockItems.map((item: any): OptimizedInventoryItem => ({
         id: item.id,
         name: item.name,
         description: item.description,
         quantity: item.quantity,
-        minimum_quantity: item.minimum_quantity,
+        minimum_quantity: FORCED_MINIMUM,
         unit: item.unit,
         location: item.location,
         status: item.status,
@@ -217,7 +221,7 @@ export class OptimizedInventoryService {
 
       return data.map((category: any): OptimizedInventoryCategory => {
         const items = category.inventory_items || [];
-        const lowStockItems = items.filter((item: any) => item.quantity <= item.minimum_quantity);
+        const lowStockItems = items.filter((item: any) => item.quantity <= FORCED_MINIMUM);
         const totalQuantity = items.reduce((sum: number, item: any) => sum + item.quantity, 0);
 
         return {
@@ -267,14 +271,14 @@ export class OptimizedInventoryService {
         name: item.name,
         description: item.description,
         quantity: item.quantity,
-        minimum_quantity: item.minimum_quantity,
+        minimum_quantity: FORCED_MINIMUM,
         unit: item.unit,
         location: item.location,
         status: item.status,
         category_name: item.inventory_categories?.name,
         category_color: item.inventory_categories?.color,
         last_updated: item.updated_at,
-        is_low_stock: item.quantity <= item.minimum_quantity,
+        is_low_stock: item.quantity <= FORCED_MINIMUM,
       }));
     } catch (error) {
       console.error('Error searching inventory items:', error);
@@ -314,14 +318,14 @@ export class OptimizedInventoryService {
         name: item.name,
         description: item.description,
         quantity: item.quantity,
-        minimum_quantity: item.minimum_quantity,
+        minimum_quantity: FORCED_MINIMUM,
         unit: item.unit,
         location: item.location,
         status: item.status,
         category_name: item.inventory_categories?.name,
         category_color: item.inventory_categories?.color,
         last_updated: item.updated_at,
-        is_low_stock: item.quantity <= item.minimum_quantity,
+        is_low_stock: item.quantity <= FORCED_MINIMUM,
       }));
     } catch (error) {
       console.error('Error fetching items by category:', error);

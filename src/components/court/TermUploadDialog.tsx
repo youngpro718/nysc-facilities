@@ -41,6 +41,18 @@ export const TermUploadDialog = ({ open, onOpenChange, onCreated }: TermUploadDi
   const [currentTab, setCurrentTab] = useState("upload");
   const [templateBuilderOpen, setTemplateBuilderOpen] = useState(false);
 
+  // Strict validation for external PDF URLs: only allow HTTPS and .pdf extension
+  const isValidPdfUrl = (urlStr: string) => {
+    try {
+      const url = new URL(urlStr.trim());
+      const isHttps = url.protocol === 'https:';
+      const hasPdfPath = url.pathname.toLowerCase().endsWith('.pdf');
+      return isHttps && hasPdfPath;
+    } catch {
+      return false;
+    }
+  };
+
   const handlePdfParsed = (data: ParsedTermData) => {
     setParsedData(data);
     setAssignments(data.assignments);
@@ -111,6 +123,16 @@ export const TermUploadDialog = ({ open, onOpenChange, onCreated }: TermUploadDi
       return;
     }
     
+    // Validate external PDF URL if provided
+    if (formData.pdf_url && !isValidPdfUrl(formData.pdf_url)) {
+      toast({
+        title: "Invalid PDF URL",
+        description: "Only HTTPS links ending with .pdf are allowed.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setIsUploading(true);
       

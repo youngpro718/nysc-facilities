@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { EnhancedRoom } from "../types/EnhancedRoomTypes";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
+import { getNormalizedCurrentUse } from "../utils/currentUse";
 
 interface EnhancedRoomCardProps {
   room: EnhancedRoom;
@@ -41,6 +42,7 @@ export function EnhancedRoomCard({
   const unresolvedIssues = getIssuesForRoom(room.id);
   const hasIssues = unresolvedIssues.length > 0;
   const highSeverityCount = unresolvedIssues.filter(i => ["urgent", "high", "critical"].includes((i.priority || "").toLowerCase())).length;
+  const currentUse = getNormalizedCurrentUse(room);
 
   // Visual highlight classes for rooms with issues (yellow glow; red for urgent)
   const issueGlowClasses = hasIssues
@@ -204,10 +206,10 @@ export function EnhancedRoomCard({
         {/* Content */}
         <div className="flex-1 space-y-3">
           {/* Current Function */}
-          {room.current_function && (
+          {currentUse && (
             <div>
               <p className="text-sm font-medium text-foreground">Current Use</p>
-              <p className="text-sm text-muted-foreground">{room.current_function}</p>
+              <p className="text-sm text-muted-foreground">{currentUse}</p>
             </div>
           )}
 

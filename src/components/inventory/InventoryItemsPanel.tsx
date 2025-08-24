@@ -11,7 +11,8 @@ import { EditItemDialog } from "./EditItemDialog";
 import { StockAdjustmentDialog } from "./StockAdjustmentDialog";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
+ // Temporary forced minimum for low stock across UI (should match service)
+ const FORCED_MINIMUM = 3;
 type InventoryItem = {
   id: string;
   name: string;
@@ -215,7 +216,7 @@ export const InventoryItemsPanel = () => {
           Name: it.name,
           Quantity: it.quantity,
           Unit: it.unit || "",
-          Minimum: it.minimum_quantity ?? 0,
+          Minimum: FORCED_MINIMUM,
           Category: cat?.name ?? "",
           Room: room?.name ?? "",
           RoomNumber: room?.room_number ?? "",
@@ -253,9 +254,9 @@ export const InventoryItemsPanel = () => {
     }
   };
 
-  const getStockStatus = (quantity: number, minimum: number) => {
+  const getStockStatus = (quantity: number) => {
     if (quantity === 0) return { label: "Out of Stock", color: "bg-red-100 text-red-800" };
-    if (minimum > 0 && quantity > 0 && quantity <= minimum) return { label: "Low Stock", color: "bg-orange-100 text-orange-800" };
+    if (quantity > 0 && quantity <= FORCED_MINIMUM) return { label: "Low Stock", color: "bg-orange-100 text-orange-800" };
     return { label: "In Stock", color: "bg-green-100 text-green-800" };
   };
 
@@ -414,7 +415,7 @@ export const InventoryItemsPanel = () => {
           </Card>
         ) : (
           items?.map((item) => {
-            const stockStatus = getStockStatus(item.quantity, item.minimum_quantity || 0);
+            const stockStatus = getStockStatus(item.quantity);
             return (
               <Card key={item.id}>
                 <CardHeader>
@@ -440,10 +441,10 @@ export const InventoryItemsPanel = () => {
                           <Package className="h-4 w-4" />
                           Quantity: {item.quantity} {item.unit && `(${item.unit})`}
                         </div>
-                        {item.minimum_quantity > 0 && (
+                        {FORCED_MINIMUM > 0 && (
                           <div className="flex items-center gap-1">
                             <TrendingDown className="h-4 w-4" />
-                            Min: {item.minimum_quantity}
+                            Min: {FORCED_MINIMUM}
                           </div>
                         )}
                         {(() => {

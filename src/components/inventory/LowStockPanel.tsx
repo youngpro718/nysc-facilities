@@ -1,10 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Package, TrendingDown, Plus } from "lucide-react";
-import { useRealtime } from "@/hooks/useRealtime";
+import { StockAdjustmentDialog } from "@/components/inventory/StockAdjustmentDialog";
 
 type LowStockItem = {
   id: string;
@@ -22,20 +23,36 @@ type LowStockItem = {
 };
 
 export const LowStockPanel = () => {
-  // Realtime: refetch low/out-of-stock lists on relevant table changes
-  useRealtime({ table: "inventory_items", queryKeys: ["low-stock-items", "out-of-stock-items"] });
-  useRealtime({ table: "inventory_categories", queryKeys: ["low-stock-items", "out-of-stock-items"] });
-  useRealtime({ table: "rooms", queryKeys: ["low-stock-items", "out-of-stock-items"] });
+  // Realtime handled by global RealtimeProvider; queries will be invalidated centrally
+  const queryClient = useQueryClient();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<{
+    id: string;
+    name: string;
+    quantity: number;
+    unit: string;
+  } | null>(null);
+
+  // TEMP: Force minimum threshold to 3 for testing across this panel
+  const FORCED_MINIMUM = 3;
+
+  const handleDialogOpenChange = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) {
+      // Refresh lists after a successful adjustment/close
+      queryClient.invalidateQueries({ queryKey: ["low-stock-items"] });
+      queryClient.invalidateQueries({ queryKey: ["out-of-stock-items"] });
+      queryClient.invalidateQueries({ queryKey: ["low-stock-overview"] }); // overview card
+    }
+  };
 
   const { data: lowStockItems, isLoading, isError: lowErr, error: lowError } = useQuery({
     queryKey: ["low-stock-items"],
     queryFn: async (): Promise<LowStockItem[]> => {
-      // Safer: simple select to avoid PostgREST 400s with nested relations
+      // Fetch items and compute low stock client-side using a forced minimum
       const { data, error } = await supabase
         .from("inventory_items")
         .select("*")
-        .not("minimum_quantity", "is", null)
-        .gt("minimum_quantity", 0)
         .order("quantity", { ascending: true });
 
       if (error) throw error;
@@ -44,7 +61,7 @@ export const LowStockPanel = () => {
         id: item.id,
         name: item.name,
         quantity: item.quantity,
-        minimum_quantity: item.minimum_quantity || 0,
+        minimum_quantity: FORCED_MINIMUM,
         unit: item.unit || '',
         location_details: item.location_details || '',
         preferred_vendor: item.preferred_vendor || '',
@@ -84,10 +101,10 @@ export const LowStockPanel = () => {
           } as LowStockItem;
         });
 
-        return enriched.filter(item => item.quantity > 0 && item.minimum_quantity > 0 && item.quantity <= item.minimum_quantity);
+        return enriched.filter(item => item.quantity > 0 && item.quantity <= FORCED_MINIMUM);
       } catch (e) {
         console.warn('[LowStockPanel] enrichment failed, using base data:', e);
-        return base.filter(item => item.quantity > 0 && item.minimum_quantity > 0 && item.quantity <= item.minimum_quantity);
+        return base.filter(item => item.quantity > 0 && item.quantity <= FORCED_MINIMUM);
       }
     },
   });
@@ -106,7 +123,7 @@ export const LowStockPanel = () => {
         id: item.id,
         name: item.name,
         quantity: item.quantity,
-        minimum_quantity: item.minimum_quantity || 0,
+        minimum_quantity: FORCED_MINIMUM,
         unit: item.unit || '',
         location_details: item.location_details || '',
         preferred_vendor: item.preferred_vendor || '',
@@ -281,7 +298,19 @@ export const LowStockPanel = () => {
                         </p>
                       )}
                     </div>
-                    <Button size="sm" variant="destructive">
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => {
+                        setSelectedItem({
+                          id: item.id,
+                          name: item.name,
+                          quantity: item.quantity,
+                          unit: item.unit,
+                        });
+                        setDialogOpen(true);
+                      }}
+                    >
                       <Plus className="h-4 w-4 mr-2" />
                       Restock
                     </Button>
@@ -337,7 +366,19 @@ export const LowStockPanel = () => {
                           </p>
                         )}
                       </div>
-                      <Button size="sm" variant="outline">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedItem({
+                            id: item.id,
+                            name: item.name,
+                            quantity: item.quantity,
+                            unit: item.unit,
+                          });
+                          setDialogOpen(true);
+                        }}
+                      >
                         <Plus className="h-4 w-4 mr-2" />
                         Add Stock
                       </Button>
@@ -359,6 +400,13 @@ export const LowStockPanel = () => {
             No items are currently below their minimum stock levels.
           </p>
         </Card>
+      )}
+      {selectedItem && (
+        <StockAdjustmentDialog
+          open={dialogOpen}
+          onOpenChange={handleDialogOpenChange}
+          item={selectedItem}
+        />
       )}
     </div>
   );

@@ -20,6 +20,7 @@ interface EnhancedIssuesListProps {
   filter?: string | null;
   statusFilter?: StatusFilter;
   priorityFilter?: PriorityFilter;
+  roomId?: string | null;
 }
 
 export function EnhancedIssuesList({
@@ -34,7 +35,8 @@ export function EnhancedIssuesList({
   buildingId,
   filter,
   statusFilter = 'all',
-  priorityFilter = 'all'
+  priorityFilter = 'all',
+  roomId
 }: EnhancedIssuesListProps) {
   // Filter issues based on search query, building, and filter
   const filteredIssues = useMemo(() => {
@@ -43,6 +45,11 @@ export function EnhancedIssuesList({
     // Filter by building if provided
     if (buildingId) {
       result = result.filter(issue => issue.building_id === buildingId);
+    }
+    
+    // Filter by room if provided
+    if (roomId) {
+      result = result.filter(issue => issue.room_id === roomId);
     }
     
     // Filter by status if provided
@@ -73,7 +80,7 @@ export function EnhancedIssuesList({
     }
     
     return result;
-  }, [issues, searchQuery, buildingId, filter, statusFilter, priorityFilter]);
+  }, [issues, searchQuery, buildingId, filter, statusFilter, priorityFilter, roomId]);
 
   // Group issues based on grouping mode
   const groupedIssues = useMemo(() => {

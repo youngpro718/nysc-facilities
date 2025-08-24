@@ -56,8 +56,9 @@ export default function Operations() {
   const filter = searchParams.get('filter');
   const issueIdParam = searchParams.get('issue_id');
   const tabParam = searchParams.get('tab');
+  const roomIdParam = searchParams.get('room_id');
   
-  const [activeTab, setActiveTab] = useState(tabParam || (buildingId ? "issues" : "overview"));
+  const [activeTab, setActiveTab] = useState(tabParam || (buildingId || roomIdParam ? "issues" : "overview"));
   const viewParam = searchParams.get('view');
 
   // Issues tab local state
@@ -743,6 +744,7 @@ export default function Operations() {
                 filter={filter}
                 statusFilter={statusFilter}
                 priorityFilter={priorityFilter}
+                roomId={roomIdParam}
               />
             </CardContent>
           </Card>

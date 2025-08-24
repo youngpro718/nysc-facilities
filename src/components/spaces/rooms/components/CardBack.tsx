@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Room } from "../types/RoomTypes";
 import { EnhancedRoom } from "../types/EnhancedRoomTypes";
-import { X, Building, Phone, ShoppingBag, Users, CircleAlert, Clipboard, Lightbulb, Clock, Accessibility, Key, Shield, AlertTriangle } from "lucide-react";
+import { X, Building, Phone, ShoppingBag, Users, CircleAlert, Clipboard, Lightbulb, Clock, Key, Shield, AlertTriangle, History as HistoryIcon } from "lucide-react";
 import { useRoomAccess } from "@/hooks/useRoomAccess";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format, differenceInDays } from "date-fns";
@@ -13,6 +13,7 @@ import { RoomInventory } from "../../RoomInventory";
 import { ParentRoomHierarchy } from "../ParentRoomHierarchy";
 import { LightingStatusWheel } from "@/components/spaces/LightingStatusWheel";
 import { useNavigate } from "react-router-dom";
+import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
 
 interface CardBackProps {
   room: EnhancedRoom;
@@ -23,6 +24,12 @@ export function CardBack({ room, onFlip }: CardBackProps) {
   const [isInventoryDialogOpen, setIsInventoryDialogOpen] = useState(false);
   const { data: roomAccess, isLoading: isAccessLoading } = useRoomAccess(room.id);
   const navigate = useNavigate();
+  const { getIssuesForRoom, hasUrgentIssues, isLoading: isIssuesLoading } = useCourtIssuesIntegration();
+  const unresolvedIssues = useMemo(() => getIssuesForRoom(room.id), [getIssuesForRoom, room.id]);
+  const highSeverityCount = useMemo(
+    () => unresolvedIssues.filter(i => ["urgent", "high", "critical"].includes((i.priority || "").toLowerCase())).length,
+    [unresolvedIssues]
+  );
 
   const totalLights = useMemo(() => room.total_fixtures_count ?? room.lighting_fixtures?.length ?? 0, [room]);
   const functionalLights = useMemo(() => room.functional_fixtures_count ?? room.lighting_fixtures?.filter(f => f.status === 'functional')?.length ?? 0, [room]);
@@ -33,13 +40,32 @@ export function CardBack({ room, onFlip }: CardBackProps) {
         <h3 className="text-lg font-semibold text-foreground">
           Room Details
         </h3>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onFlip}
-        >
-          <X className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          {(isIssuesLoading || unresolvedIssues.length > 0) && (
+            <Button
+              variant={hasUrgentIssues(room.id) ? "destructive" : "outline"}
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                const params = new URLSearchParams({ tab: "issues", room_id: room.id });
+                const buildingId = room.floor?.building?.id as string | undefined;
+                if (buildingId) params.set("building", buildingId);
+                navigate(`/operations?${params.toString()}`);
+              }}
+              title={hasUrgentIssues(room.id) ? `${highSeverityCount} urgent issues` : `${unresolvedIssues.length} open issues`}
+            >
+              <CircleAlert className="h-4 w-4 mr-1" />
+              {hasUrgentIssues(room.id) ? `${highSeverityCount} Urgent` : `Issues ${unresolvedIssues.length}`}
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onFlip}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
       
       <ScrollArea className="h-[calc(100%-2rem)] pr-2">
@@ -81,8 +107,42 @@ export function CardBack({ room, onFlip }: CardBackProps) {
                   Storage
                 </Badge>
               )}
+              {room.room_size_category && (
+                <Badge variant="outline" className="text-xs capitalize">
+                  Size: {room.room_size_category}
+                </Badge>
+              )}
             </div>
           </div>
+          
+          {/* History Overview */}
+          {room.history_stats && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium flex items-center gap-1">
+                <HistoryIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                History
+              </h4>
+              <div className="rounded-md border bg-muted/20">
+                <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-border">
+                  <div className="p-2">
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Issues</p>
+                    <p className="text-base font-semibold">{room.history_stats.total_issues}</p>
+                  </div>
+                  <div className="p-2">
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">People ever</p>
+                    <p className="text-base font-semibold">{room.history_stats.unique_occupants}</p>
+                  </div>
+                  <div className="p-2">
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Currently</p>
+                    <p className="text-base font-semibold">{room.history_stats.current_occupants}</p>
+                  </div>
+                </div>
+              </div>
+              {room.history_stats.last_issue_date && (
+                <p className="text-xs text-muted-foreground">Last issue: {format(new Date(room.history_stats.last_issue_date), 'MMM d, yyyy')}</p>
+              )}
+            </div>
+          )}
           
           {/* Contact Information */}
           {room.phone_number && (
@@ -197,11 +257,6 @@ export function CardBack({ room, onFlip }: CardBackProps) {
               <h4 className="text-sm font-medium flex items-center gap-1">
                 <Users className="h-3.5 w-3.5 text-muted-foreground" />
                 Occupants ({room.current_occupants.length})
-                {roomAccess?.current_occupancy && roomAccess.room_capacity && (
-                  <Badge variant={roomAccess.current_occupancy > roomAccess.room_capacity ? "destructive" : "secondary"} className="text-xs ml-1">
-                    {roomAccess.current_occupancy}/{roomAccess.room_capacity}
-                  </Badge>
-                )}
               </h4>
               <div className="space-y-2">
                 {room.current_occupants.map((occupant, index) => (
@@ -302,90 +357,9 @@ export function CardBack({ room, onFlip }: CardBackProps) {
             </div>
           )}
 
-          {/* Courtroom Capacity Details */}
-          {room.room_type === 'courtroom' && room.court_room && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium flex items-center gap-1">
-                <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                Courtroom Capacity
-              </h4>
-              <div className="space-y-2">
-                <div className="text-sm bg-muted/50 p-2 rounded-md">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <span className="font-medium">Juror Capacity:</span>
-                      <p className="text-lg font-bold text-primary">{room.court_room.juror_capacity}</p>
-                    </div>
-                    <div>
-                      <span className="font-medium">Spectator Capacity:</span>
-                      <p className="text-lg font-bold text-primary">{room.court_room.spectator_capacity}</p>
-                    </div>
-                  </div>
-                  
-                  {/* Accessibility Features */}
-                  <div className="mt-3 pt-2 border-t">
-                    <span className="text-xs font-medium text-muted-foreground">Accessibility:</span>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {room.court_room.accessibility_features.wheelchair_accessible && (
-                        <Badge variant="outline" className="text-xs">
-                          <Accessibility className="h-3 w-3 mr-1" />
-                          Wheelchair Access
-                        </Badge>
-                      )}
-                      {room.court_room.accessibility_features.hearing_assistance && (
-                        <Badge variant="outline" className="text-xs">Hearing Assistance</Badge>
-                      )}
-                      {room.court_room.accessibility_features.visual_aids && (
-                        <Badge variant="outline" className="text-xs">Visual Aids</Badge>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Courtroom capacity and accessibility removed per UI simplification */}
 
-          {/* Issue History (if any) */}
-          {room.issues && room.issues.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium flex items-center gap-1">
-                <CircleAlert className="h-3.5 w-3.5 text-muted-foreground" />
-                Recent Issues ({room.issues.length})
-                {room.has_persistent_issues && (
-                  <Badge variant="destructive" className="text-xs ml-2">
-                    Recurring
-                  </Badge>
-                )}
-              </h4>
-              <div className="space-y-2">
-                {room.issues.slice(0, 3).map((issue, index) => (
-                  <div key={index} className="text-sm bg-muted/50 p-2 rounded-md">
-                    <div className="flex justify-between">
-                      <Badge variant={
-                        issue.status === 'open' ? 'default' :
-                        issue.status === 'in_progress' ? 'secondary' :
-                        issue.status === 'resolved' ? 'outline' : 'destructive'
-                      } className="text-xs">
-                        {issue.status.replace(/_/g, ' ')}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(issue.created_at), 'MMM d, yyyy')}
-                      </span>
-                    </div>
-                    <p className="mt-1 line-clamp-2">{issue.description}</p>
-                    {issue.location && (
-                      <p className="text-xs text-muted-foreground mt-1">Location: {issue.location}</p>
-                    )}
-                  </div>
-                ))}
-                {room.issues.length > 3 && (
-                  <p className="text-xs text-muted-foreground text-center">
-                    + {room.issues.length - 3} more issues
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
+          {/* Detailed issue list removed; use Issues button in header and History stats above */}
         </div>
       </ScrollArea>
       

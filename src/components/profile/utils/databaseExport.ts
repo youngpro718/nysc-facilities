@@ -1,8 +1,18 @@
-
 import * as XLSX from 'xlsx';
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { ExportableTable, createBackupVersion } from "../backupUtils";
+
+// Sanitize string values to prevent Excel formula injection
+function sanitizeForExcel(value: any) {
+  if (typeof value !== 'string') return value;
+  const trimmed = value.trim();
+  // If a cell starts with one of these, Excel may interpret as formula
+  if (/^[=+\-@]/.test(trimmed) || /^[\t\r]/.test(value)) {
+    return "'" + value; // prefix apostrophe to force literal text
+  }
+  return value;
+}
 
 export async function exportDatabase(selectedTables: ExportableTable[], exportableTables: readonly ExportableTable[]) {
   const workbook = XLSX.utils.book_new();
@@ -16,7 +26,12 @@ export async function exportDatabase(selectedTables: ExportableTable[], exportab
     if (error) throw error;
     
     // Create worksheet for each table
-    const worksheet = XLSX.utils.json_to_sheet(data || []);
+    const sanitized = (data || []).map((row: any) =>
+      Object.fromEntries(
+        Object.entries(row).map(([k, v]) => [k, sanitizeForExcel(v)])
+      )
+    );
+    const worksheet = XLSX.utils.json_to_sheet(sanitized);
     XLSX.utils.book_append_sheet(workbook, worksheet, table);
   }
   
@@ -34,3 +49,4 @@ export async function exportDatabase(selectedTables: ExportableTable[], exportab
 
   return fileName;
 }
+

@@ -20,6 +20,9 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
 
     console.log('Setting up admin realtime notifications for user:', user.id);
 
+    // Track created channels to safely clean them up
+    const channels: ReturnType<typeof supabase.channel>[] = [];
+
     // Small helper to (re)subscribe with retry in case the Realtime service is still warming up
     const subscribeWithRetry = async (channel: ReturnType<typeof supabase.channel>, name: string) => {
       let attempt = 0;
@@ -159,6 +162,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
 
     // Kick off subscription with retry
     subscribeWithRetry(adminNotificationsChannel, 'Admin notifications');
+    channels.push(adminNotificationsChannel);
 
     // Subscribe to new key requests for immediate admin notification
     const keyRequestsChannel = supabase
@@ -186,7 +190,50 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
           queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'key_requests'
+        },
+        (payload) => {
+          console.log('Key request updated for admin:', payload);
+          const req = payload.new as any;
+          const status = (req?.status || '').toString();
+
+          let message = '';
+          let fn = toast.info;
+          switch (status) {
+            case 'approved':
+              message = 'A key request was approved';
+              fn = toast.success;
+              break;
+            case 'rejected':
+              message = 'A key request was rejected';
+              fn = toast.warning;
+              break;
+            case 'fulfilled':
+              message = 'A key request was fulfilled';
+              fn = toast.success;
+              break;
+            default:
+              message = `Key request status changed to ${status}`;
+          }
+
+          fn('🔑 Key Request Updated', {
+            description: message,
+            duration: 6000,
+            action: {
+              label: 'View',
+              onClick: () => window.location.href = '/admin/key-requests'
+            }
+          });
+          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
+        }
+      )
       .subscribe();
+    channels.push(keyRequestsChannel);
 
     // Subscribe to new supply requests for immediate admin notification
     const supplyRequestsChannel = supabase
@@ -228,6 +275,7 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         }
       )
       .subscribe();
+    channels.push(supplyRequestsChannel);
 
     // Subscribe to new issues for immediate admin notification
     const issuesChannel = supabase
@@ -322,13 +370,130 @@ export const useAdminRealtimeNotifications = (): AdminRealtimeNotificationHook =
         }
       )
       .subscribe();
+    channels.push(issuesChannel);
+
+    // Subscribe to key orders (INSERT and UPDATE)
+    const keyOrdersChannel = supabase
+      .channel('admin-key-orders-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'key_orders' },
+        (payload) => {
+          console.log('New key order for admin:', payload);
+          const order = payload.new as any;
+          toast.info('🛒 New Key Order', {
+            description: `Order #${order?.id ?? ''} created`,
+            duration: 6000,
+            action: { label: 'View', onClick: () => (window.location.href = '/admin/key-orders') },
+          });
+          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'key_orders' },
+        (payload) => {
+          console.log('Key order updated for admin:', payload);
+          const order = payload.new as any;
+          const status = (order?.status || '').toString();
+          const fn = ['completed', 'fulfilled', 'delivered'].includes(status) ? toast.success : toast.info;
+          fn('🔄 Key Order Updated', {
+            description: `Order #${order?.id ?? ''} status: ${status || 'updated'}`,
+            duration: 6000,
+            action: { label: 'View', onClick: () => (window.location.href = '/admin/key-orders') },
+          });
+          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
+        }
+      )
+      .subscribe();
+    channels.push(keyOrdersChannel);
+
+    // Subscribe to room assignments (INSERT, UPDATE, DELETE)
+    const roomAssignmentsChannel = supabase
+      .channel('admin-room-assignments-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'room_assignments' },
+        (payload) => {
+          console.log('Room assignment created for admin:', payload);
+          const assignment = payload.new as any;
+          toast.info('🛏️ New Room Assignment', {
+            description: `Assignment #${assignment?.id ?? ''} created`,
+            duration: 6000,
+            action: { label: 'View', onClick: () => (window.location.href = '/admin/room-assignments') },
+          });
+          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'room_assignments' },
+        (payload) => {
+          console.log('Room assignment updated for admin:', payload);
+          const assignment = payload.new as any;
+          toast.info('🔄 Room Assignment Updated', {
+            description: `Assignment #${assignment?.id ?? ''} updated`,
+            duration: 6000,
+            action: { label: 'View', onClick: () => (window.location.href = '/admin/room-assignments') },
+          });
+          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'room_assignments' },
+        (payload) => {
+          console.log('Room assignment deleted for admin:', payload);
+          toast.warning('➖ Room Assignment Removed', {
+            description: `An assignment was removed`,
+            duration: 6000,
+            action: { label: 'View', onClick: () => (window.location.href = '/admin/room-assignments') },
+          });
+          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
+        }
+      )
+      .subscribe();
+    channels.push(roomAssignmentsChannel);
+
+    // Subscribe to profiles (INSERT, UPDATE)
+    const profilesChannel = supabase
+      .channel('admin-profiles-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'profiles' },
+        (payload) => {
+          console.log('New profile for admin:', payload);
+          const profile = payload.new as any;
+          toast.info('🆕 New User Profile', {
+            description: `User ${profile?.full_name ?? profile?.email ?? ''} created`,
+            duration: 6000,
+            action: { label: 'View', onClick: () => (window.location.href = '/admin') },
+          });
+          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles' },
+        (payload) => {
+          console.log('Profile updated for admin:', payload);
+          const profile = payload.new as any;
+          toast.info('👤 User Profile Updated', {
+            description: `${profile?.full_name ?? profile?.email ?? 'A user'} was updated`,
+            duration: 6000,
+            action: { label: 'View', onClick: () => (window.location.href = '/admin') },
+          });
+          queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
+        }
+      )
+      .subscribe();
+    channels.push(profilesChannel);
 
     return () => {
       console.log('Cleaning up admin realtime subscriptions');
-      supabase.removeChannel(adminNotificationsChannel);
-      supabase.removeChannel(keyRequestsChannel);
-      supabase.removeChannel(supplyRequestsChannel);
-      supabase.removeChannel(issuesChannel);
+      channels.forEach((ch) => {
+        try { supabase.removeChannel(ch); } catch (_) {}
+      });
     };
   }, [user?.id, isAdmin]);
 

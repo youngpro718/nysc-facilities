@@ -1,4 +1,5 @@
 import { UseFormReturn } from "react-hook-form";
+import { useEffect } from "react";
 import { UnifiedSpaceFormData } from "../schemas/unifiedSpaceSchema";
 import { FormField, FormItem, FormLabel, FormMessage, FormControl } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,13 @@ export function UnifiedSpaceFormFields({ form, mode, roomId }: UnifiedSpaceFormF
   const floorId = form.watch("floorId");
   const isStorage = form.watch("isStorage");
   const roomType = form.watch("roomType");
+
+  // When storage is enabled, clear currentFunction to avoid inconsistent state
+  useEffect(() => {
+    if (isStorage) {
+      form.setValue("currentFunction", "", { shouldValidate: false });
+    }
+  }, [isStorage, form]);
 
   return (
     <div className="space-y-6">
@@ -151,8 +159,16 @@ export function UnifiedSpaceFormFields({ form, mode, roomId }: UnifiedSpaceFormF
               <FormItem>
                 <FormLabel>Current Function</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter current function" {...field} value={field.value || ""} />
+                  <Input 
+                    placeholder="Enter current function" 
+                    {...field} 
+                    value={field.value || ""}
+                    disabled={isStorage}
+                  />
                 </FormControl>
+                {isStorage && (
+                  <div className="text-xs text-muted-foreground">Disabled while room is marked as Storage</div>
+                )}
                 <FormMessage />
               </FormItem>
             )}

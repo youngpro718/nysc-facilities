@@ -1,4 +1,4 @@
-
+ 
 import * as XLSX from 'xlsx';
 import { useToast } from "@/hooks/use-toast";
 
@@ -14,6 +14,16 @@ export interface InventoryExcelRow {
   status?: string;
   notes?: string;
 }
+
+// Sanitize string values to prevent Excel from interpreting text as formulas
+const sanitizeForExcel = (value: any) => {
+  if (typeof value !== 'string') return value;
+  const trimmed = value.trim();
+  if (/^[=+\-@]/.test(trimmed) || /^[\t\r]/.test(value)) {
+    return "'" + value;
+  }
+  return value;
+};
 
 // Field mapping for flexible import
 const FIELD_MAPPINGS: Record<string, string[]> = {
@@ -45,7 +55,12 @@ const normalizeFieldName = (fieldName: string): string => {
 
 export const exportToExcel = (data: InventoryExcelRow[], fileName: string) => {
   try {
-    const ws = XLSX.utils.json_to_sheet(data);
+    const sanitized = data.map((row: any) =>
+      Object.fromEntries(
+        Object.entries(row).map(([k, v]) => [k, sanitizeForExcel(v)])
+      )
+    );
+    const ws = XLSX.utils.json_to_sheet(sanitized);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Inventory');
     XLSX.writeFile(wb, `${fileName}.xlsx`);

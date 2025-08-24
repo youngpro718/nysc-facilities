@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -20,6 +19,16 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import * as XLSX from 'xlsx';
+
+// Sanitize string values to prevent Excel from interpreting text as formulas
+const sanitizeForExcel = (value: any) => {
+  if (typeof value !== 'string') return value;
+  const trimmed = value.trim();
+  if (/^[=+\-@]/.test(trimmed) || /^[\t\r]/.test(value)) {
+    return "'" + value;
+  }
+  return value;
+};
 
 interface UserImportExportProps {
   users?: any[];
@@ -51,7 +60,12 @@ export function UserImportExport({ users = [], onImportSuccess }: UserImportExpo
   });
 
   const exportToExcel = (data: any[], filename: string) => {
-    const worksheet = XLSX.utils.json_to_sheet(data);
+    const sanitized = data.map((row: any) =>
+      Object.fromEntries(
+        Object.entries(row).map(([k, v]) => [k, sanitizeForExcel(v)])
+      )
+    );
+    const worksheet = XLSX.utils.json_to_sheet(sanitized);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Users');
     XLSX.writeFile(workbook, `${filename}.xlsx`);

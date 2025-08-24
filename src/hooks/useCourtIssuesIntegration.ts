@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export interface CourtIssue {
   id: string;
@@ -38,6 +38,43 @@ export const useCourtIssuesIntegration = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [recentIssueEvents, setRecentIssueEvents] = useState<{ id: string; room_id: string; priority: string; ts: number }[]>([]);
+  const invalidationTimerRef = useRef<number | null>(null);
+  // Simple sequential task queue to avoid overlapping state updates
+  const taskQueueRef = useRef<Array<() => Promise<void>>>([]);
+  const processingRef = useRef<boolean>(false);
+
+  const processQueue = async () => {
+    if (processingRef.current) return;
+    processingRef.current = true;
+    try {
+      // Process tasks one-by-one to prevent rapid cascading updates
+      while (taskQueueRef.current.length > 0) {
+        const task = taskQueueRef.current.shift();
+        if (task) {
+          try {
+            await task();
+          } catch (err) {
+            // Swallow individual task errors so the queue continues
+            console.warn('useCourtIssuesIntegration: queued task failed', err);
+          }
+        }
+      }
+    } finally {
+      processingRef.current = false;
+    }
+  };
+
+  // Debounce query invalidations to avoid flooding the network and React Query
+  const scheduleInvalidations = () => {
+    if (invalidationTimerRef.current) return;
+    invalidationTimerRef.current = window.setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: ["court-issues"] });
+      queryClient.invalidateQueries({ queryKey: ["courtroom-availability"] });
+      queryClient.invalidateQueries({ queryKey: ["adminIssues"] });
+      queryClient.invalidateQueries({ queryKey: ["interactive-operations"] });
+      invalidationTimerRef.current = null;
+    }, 500);
+  };
 
   // Fetch active issues affecting courtrooms
   const { data: courtIssues, isLoading: issuesLoading } = useQuery({
@@ -107,7 +144,9 @@ export const useCourtIssuesIntegration = () => {
         sergeant: issue.assignments?.sergeant || ''
       }));
     },
-    refetchInterval: 30000, // Refresh every 30 seconds
+    staleTime: 30000,
+    refetchInterval: false, // Prefer realtime + manual invalidations
+    refetchOnWindowFocus: false,
   });
 
   // Create courtroom shutdown when critical issue occurs
@@ -273,20 +312,19 @@ export const useCourtIssuesIntegration = () => {
               setRecentIssueEvents((prev) => prev.filter((e) => e.id !== newRow.id));
             }, 15000);
 
-            enrichIssue(newRow).then((enriched) => {
+            // Enqueue enrichment to serialize network + cache updates
+            taskQueueRef.current.push(async () => {
+              const enriched = await enrichIssue(newRow);
               queryClient.setQueryData(["court-issues"], (old: any[] | undefined) => {
                 const current = Array.isArray(old) ? old : [];
                 return [enriched, ...current.filter((i) => i.id !== enriched.id)];
               });
             });
+            void processQueue();
           }
 
-          // Still invalidate related queries to stay consistent
-          queryClient.invalidateQueries({ queryKey: ["court-issues"] });
-          queryClient.invalidateQueries({ queryKey: ["courtroom-availability"] });
-          // Ensure admin dashboards and operations metrics refresh immediately
-          queryClient.invalidateQueries({ queryKey: ["adminIssues"] });
-          queryClient.invalidateQueries({ queryKey: ["interactive-operations"] });
+          // Debounced invalidation to reduce overlapping async fetches
+          scheduleInvalidations();
 
           // Handle new critical issues (urgent/critical/high)
           if (
@@ -305,6 +343,13 @@ export const useCourtIssuesIntegration = () => {
       .subscribe();
 
     return () => {
+      if (invalidationTimerRef.current) {
+        clearTimeout(invalidationTimerRef.current);
+        invalidationTimerRef.current = null;
+      }
+      // Drain and stop the queue
+      taskQueueRef.current = [];
+      processingRef.current = false;
       supabase.removeChannel(channel);
     };
   }, [queryClient, toast]);

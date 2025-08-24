@@ -40,9 +40,16 @@ export const updateSpace = async (id: string, updates: Partial<UpdateSpaceData>)
   if ('room_number' in updates) roomUpdates.room_number = updates.room_number;
   if ('room_type' in updates) roomUpdates.room_type = updates.room_type;
   if ('floorId' in updates) roomUpdates.floor_id = updates.floorId;
+  // Also support snake_case floor_id if provided by upstream mapping
+  if ('floor_id' in (updates as any)) roomUpdates.floor_id = (updates as any).floor_id;
   if ('phone_number' in updates) roomUpdates.phone_number = updates.phone_number;
-  if ('current_function' in updates) roomUpdates.current_function = updates.current_function;
   if ('is_storage' in updates) roomUpdates.is_storage = updates.is_storage;
+  // Enforce: storage rooms cannot have a current_function
+  if (roomUpdates.is_storage === true) {
+    roomUpdates.current_function = null;
+  } else if ('current_function' in updates) {
+    roomUpdates.current_function = updates.current_function;
+  }
   if ('storage_type' in updates) roomUpdates.storage_type = updates.storage_type;
   if ('storage_capacity' in updates) roomUpdates.storage_capacity = updates.storage_capacity;
   if ('parent_room_id' in updates) roomUpdates.parent_room_id = updates.parent_room_id;

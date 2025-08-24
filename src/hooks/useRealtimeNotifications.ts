@@ -18,6 +18,9 @@ export const useRealtimeNotifications = (): RealtimeNotificationHook => {
 
     console.log('Setting up realtime notifications for user:', user.id);
 
+    // Track created channels for safe cleanup
+    const channels: ReturnType<typeof supabase.channel>[] = [];
+
     // Subscribe to user notifications
     const notificationsChannel = supabase
       .channel('user-notifications-realtime')
@@ -84,6 +87,7 @@ export const useRealtimeNotifications = (): RealtimeNotificationHook => {
         console.log('Notifications channel status:', status);
         setIsConnected(status === 'SUBSCRIBED');
       });
+    channels.push(notificationsChannel);
 
     // Subscribe to key request updates for real-time status changes
     const keyRequestsChannel = supabase
@@ -141,6 +145,7 @@ export const useRealtimeNotifications = (): RealtimeNotificationHook => {
         }
       )
       .subscribe();
+    channels.push(keyRequestsChannel);
 
     // Subscribe to key order updates
     const keyOrdersChannel = supabase
@@ -170,7 +175,8 @@ export const useRealtimeNotifications = (): RealtimeNotificationHook => {
         }
       )
       .subscribe();
-
+    channels.push(keyOrdersChannel);
+    
     // Subscribe to supply request updates
     const supplyRequestsChannel = supabase
       .channel('supply-requests-realtime')
@@ -230,7 +236,8 @@ export const useRealtimeNotifications = (): RealtimeNotificationHook => {
         }
       )
       .subscribe();
-
+    channels.push(supplyRequestsChannel);
+    
     // Subscribe to issue updates (for issues reported by the user)
     const issuesChannel = supabase
       .channel('issues-realtime')
@@ -280,7 +287,8 @@ export const useRealtimeNotifications = (): RealtimeNotificationHook => {
         }
       )
       .subscribe();
-
+    channels.push(issuesChannel);
+    
     // Subscribe to room assignment changes (for assignments involving the user)
     const roomAssignmentsChannel = supabase
       .channel('room-assignments-realtime')
@@ -330,14 +338,13 @@ export const useRealtimeNotifications = (): RealtimeNotificationHook => {
       )
       .subscribe();
 
+    channels.push(roomAssignmentsChannel);
+
     return () => {
       console.log('Cleaning up realtime subscriptions');
-      supabase.removeChannel(notificationsChannel);
-      supabase.removeChannel(keyRequestsChannel);
-      supabase.removeChannel(keyOrdersChannel);
-      supabase.removeChannel(supplyRequestsChannel);
-      supabase.removeChannel(issuesChannel);
-      supabase.removeChannel(roomAssignmentsChannel);
+      channels.forEach((ch) => {
+        try { supabase.removeChannel(ch); } catch (_) {}
+      });
     };
   }, [user?.id]);
 
