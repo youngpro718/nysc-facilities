@@ -119,7 +119,6 @@ export function KeyAssignmentSection() {
         isProcessing={isProcessing}
         onReturnKey={handleReturn}
         onEditAssignment={handleEdit}
-        getOccupantFullName={getOccupantFullName}
       />
 
       <EditElevatorPassDialog

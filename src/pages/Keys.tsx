@@ -82,13 +82,6 @@ export default function Keys() {
         </p>
       </div>
 
-      {/* Debug info */}
-      <div className="bg-blue-50 p-4 rounded-md border border-blue-200">
-        <p className="text-blue-700">Debug: Keys component is rendering</p>
-        <p className="text-blue-700">Loading: {isLoading ? 'Yes' : 'No'}</p>
-        <p className="text-blue-700">Key stats count: {keyStats?.length || 0}</p>
-      </div>
-
       <KeyStatisticsCards keyStats={keyStats} isLoading={isLoading} />
 
       <Tabs defaultValue="inventory" className="space-y-4 sm:space-y-6">

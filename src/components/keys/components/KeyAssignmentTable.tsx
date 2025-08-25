@@ -18,19 +18,31 @@ interface KeyAssignmentTableProps {
   isProcessing: boolean;
   onReturnKey: (assignmentId: string, keyId: string) => void;
   onEditAssignment?: (assignment: KeyAssignment) => void;
-  getOccupantFullName: (occupant: KeyAssignment['occupant']) => string;
 }
 
 export function KeyAssignmentTable({ 
   assignments, 
   isProcessing, 
   onReturnKey,
-  onEditAssignment,
-  getOccupantFullName 
+  onEditAssignment
 }: KeyAssignmentTableProps) {
-  
-  const getOccupantLocation = (occupant: KeyAssignment['occupant']) => {
-    return occupant?.department || 'No department assigned';
+  const getOccupantFullName = (occupant: KeyAssignment['occupant']) => {
+    if (!occupant) return 'Unknown';
+    return `${occupant.first_name} ${occupant.last_name}`;
+  };
+
+  const getRecipientName = (assignment: KeyAssignment) => {
+    if (assignment.occupant) {
+      return `${assignment.occupant.first_name} ${assignment.occupant.last_name}`;
+    }
+    return assignment.recipient_name || 'Unknown';
+  };
+
+  const getRecipientLocation = (assignment: KeyAssignment) => {
+    if (assignment.occupant?.department) {
+      return assignment.occupant.department;
+    }
+    return 'External recipient';
   };
 
   if (!assignments || assignments.length === 0) {
@@ -60,25 +72,23 @@ export function KeyAssignmentTable({
                 <KeyDetails assignment={assignment} />
               </TableCell>
               <TableCell>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    <span className="font-medium">
-                      {getOccupantFullName(assignment.occupant)}
-                    </span>
-                  </div>
-                  {assignment.occupant?.department && (
-                    <div className="text-sm text-muted-foreground">
-                      {assignment.occupant.department}
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      <span className="font-medium">
+                        {getRecipientName(assignment)}
+                      </span>
                     </div>
-                  )}
-                </div>
+                    <div className="text-sm text-muted-foreground">
+                      {getRecipientLocation(assignment)}
+                    </div>
+                  </div>
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-2 text-sm">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
                   <span className="text-muted-foreground">
-                    {getOccupantLocation(assignment.occupant)}
+                    {getRecipientLocation(assignment)}
                   </span>
                 </div>
               </TableCell>

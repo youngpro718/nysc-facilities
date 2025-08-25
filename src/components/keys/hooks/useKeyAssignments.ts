@@ -14,6 +14,8 @@ export function useKeyAssignments() {
           assigned_at,
           is_spare,
           spare_key_reason,
+          recipient_name,
+          recipient_email,
           keys (
             id,
             name,
@@ -26,6 +28,7 @@ export function useKeyAssignments() {
             id,
             first_name,
             last_name,
+            email,
             department
           )
         `)
