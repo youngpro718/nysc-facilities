@@ -31,7 +31,7 @@ import { IssueGroupingControls } from "@/components/admin-issues/IssueGroupingCo
 import { MaintenanceScheduleList } from "@/components/maintenance/MaintenanceScheduleList";
 import { MaintenanceIssuesList } from "@/components/maintenance/MaintenanceIssuesList";
 import AdvancedAnalyticsDashboard from "@/components/analytics/AdvancedAnalyticsDashboard";
-import type { GroupingMode, ViewMode, StatusFilter, PriorityFilter } from "@/pages/AdminIssuesHub";
+import type { GroupingMode, ViewMode, StatusFilter, PriorityFilter } from "@/types/issues";
 
 
 // Import dialogs

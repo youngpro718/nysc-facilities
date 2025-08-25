@@ -5,7 +5,7 @@ import { KanbanBoard } from "@/components/admin-issues/kanban/KanbanBoard";
 import { IssueTableView } from "./IssueTableView";
 import { IssueTimelineView } from "./IssueTimelineView";
 import type { EnhancedIssue } from "@/hooks/dashboard/useAdminIssuesData";
-import type { GroupingMode, ViewMode, StatusFilter, PriorityFilter } from "@/pages/AdminIssuesHub";
+import type { GroupingMode, ViewMode, StatusFilter, PriorityFilter } from "@/types/issues";
 
 interface EnhancedIssuesListProps {
   issues: EnhancedIssue[];

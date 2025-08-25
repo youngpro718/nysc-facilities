@@ -17,7 +17,6 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { useQuery } from "@tanstack/react-query";
-import { getLightingIssuesForFixture } from "@/services/supabase/lightingIssuesService";
 import { useNavigate } from "react-router-dom";
 import * as locationUtil from "@/components/lighting/utils/location";
 import { StatusBadge } from "@/components/lighting/components/StatusBadge";
@@ -43,10 +42,13 @@ export function CardFront({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const navigate = useNavigate();
 
-  // Fetch any issues related to this fixture
+  // Mock issues query since the service was removed
   const { data: fixtureIssues } = useQuery({
     queryKey: ["lighting-fixture-issues", fixture.id],
-    queryFn: () => getLightingIssuesForFixture(fixture.id),
+    queryFn: async () => {
+      // Return empty array since we're not using this functionality
+      return [];
+    }
   });
 
   const openIssue = (fixtureIssues || []).find((i: any) => i.status !== "resolved" && (i.issue_id || i.id));
