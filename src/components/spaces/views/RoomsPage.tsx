@@ -71,7 +71,6 @@ const RoomsPage = () => {
       return (data || []) as any[];
     },
   });
-  
   const { filteredAndSortedRooms } = useRoomFilters({
     rooms,
     searchQuery,

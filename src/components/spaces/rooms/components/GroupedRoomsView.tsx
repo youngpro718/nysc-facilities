@@ -6,7 +6,12 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ChevronDown, ChevronRight, Home, Users } from "lucide-react";
 import { Room } from "../types/RoomTypes";
 import { SimpleRoomCard } from "./SimpleRoomCard";
-import { GroupedRooms } from "../../hooks/useHierarchyFilters";
+// Define GroupedRooms interface locally since we're removing hierarchy filters
+interface GroupedRooms {
+  parentRooms: Room[];
+  childRooms: { [parentId: string]: Room[] };
+  orphanRooms: Room[];
+}
 
 interface GroupedRoomsViewProps {
   groupedRooms: GroupedRooms;
