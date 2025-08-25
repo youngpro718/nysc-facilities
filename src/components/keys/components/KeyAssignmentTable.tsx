@@ -17,6 +17,7 @@ interface KeyAssignmentTableProps {
   assignments: KeyAssignment[] | undefined;
   isProcessing: boolean;
   onReturnKey: (assignmentId: string, keyId: string) => void;
+  onEditAssignment?: (assignment: KeyAssignment) => void;
   getOccupantFullName: (occupant: KeyAssignment['occupant']) => string;
 }
 
@@ -24,6 +25,7 @@ export function KeyAssignmentTable({
   assignments, 
   isProcessing, 
   onReturnKey,
+  onEditAssignment,
   getOccupantFullName 
 }: KeyAssignmentTableProps) {
   
@@ -98,10 +100,7 @@ export function KeyAssignmentTable({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => {
-                      // TODO: Add edit functionality
-                      console.log('Edit assignment:', assignment.id);
-                    }}
+                    onClick={() => onEditAssignment?.(assignment)}
                   >
                     Edit
                   </Button>

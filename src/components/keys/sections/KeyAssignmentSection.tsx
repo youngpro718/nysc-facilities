@@ -7,14 +7,22 @@ import { KeyAssignmentTable } from "../components/KeyAssignmentTable";
 import { KeyAssignment } from "../types/assignmentTypes";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
+import { EditElevatorPassDialog } from "../dialogs/EditElevatorPassDialog";
 
 export function KeyAssignmentSection() {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedAssignment, setSelectedAssignment] = useState<KeyAssignment | null>(null);
   const { data: assignments, isLoading, refetch } = useKeyAssignments();
 
   const getOccupantFullName = (occupant: KeyAssignment['occupant']) => {
     if (!occupant) return 'Unknown';
     return `${occupant.first_name} ${occupant.last_name}`;
+  };
+
+  const handleEdit = (assignment: KeyAssignment) => {
+    setSelectedAssignment(assignment);
+    setEditDialogOpen(true);
   };
 
   const handleReturn = async (assignmentId: string, keyId: string) => {
@@ -110,7 +118,19 @@ export function KeyAssignmentSection() {
         assignments={assignments}
         isProcessing={isProcessing}
         onReturnKey={handleReturn}
+        onEditAssignment={handleEdit}
         getOccupantFullName={getOccupantFullName}
+      />
+
+      <EditElevatorPassDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        assignment={selectedAssignment}
+        onUpdated={() => {
+          refetch();
+          setEditDialogOpen(false);
+          setSelectedAssignment(null);
+        }}
       />
     </div>
   );
