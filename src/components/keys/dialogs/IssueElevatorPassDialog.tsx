@@ -158,9 +158,9 @@ export function IssueElevatorPassDialog({ open, onOpenChange, onIssued }: IssueE
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="occupant">Occupant</SelectItem>
+                  <SelectItem value="occupant">Internal Occupant</SelectItem>
                   <SelectItem value="security">Security</SelectItem>
-                  <SelectItem value="office">Office</SelectItem>
+                  <SelectItem value="office">External Department/Office</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -203,7 +203,7 @@ export function IssueElevatorPassDialog({ open, onOpenChange, onIssued }: IssueE
               <div>
                 <Label>Recipient Name</Label>
                 <Input
-                  placeholder="e.g., Security or Office name"
+                  placeholder="e.g., District Attorney Office, Judge Smith, etc."
                   value={recipientName}
                   onChange={(e) => setRecipientName(e.target.value)}
                   disabled={recipientType === "security"}

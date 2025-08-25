@@ -94,15 +94,27 @@ export function KeyAssignmentTable({
                 </div>
               </TableCell>
               <TableCell className="text-right">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onReturnKey(assignment.id, assignment.keys?.id || '')}
-                  disabled={isProcessing}
-                >
-                  <ArrowLeftRight className="mr-2 h-4 w-4" />
-                  Return Key
-                </Button>
+                <div className="flex items-center gap-2 justify-end">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      // TODO: Add edit functionality
+                      console.log('Edit assignment:', assignment.id);
+                    }}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onReturnKey(assignment.id, assignment.keys?.id || '')}
+                    disabled={isProcessing}
+                  >
+                    <ArrowLeftRight className="mr-2 h-4 w-4" />
+                    Return
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           ))}

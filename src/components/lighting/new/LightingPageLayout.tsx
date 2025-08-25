@@ -45,10 +45,10 @@ export function LightingPageLayout() {
     },
     {
       id: 'rooms',
-      label: 'Zones',
+      label: 'Rooms',
       icon: MapPin,
       component: RoomCentricView,
-      description: 'Organize fixtures into logical zones for better management'
+      description: 'Manage fixtures by room location and floor'
     },
     {
       id: 'maintenance',

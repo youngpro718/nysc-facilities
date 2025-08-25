@@ -1,4 +1,4 @@
-import { LightingFixturesList } from "@/components/lighting/LightingFixturesList";
+import { LightingFixturesListWithSelection } from "@/components/lighting/LightingFixturesListWithSelection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -79,97 +79,81 @@ export function SmartFixturesView() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Action Bar */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <CardTitle className="text-lg">Fixture Management</CardTitle>
-              {selectedFixtures.length > 0 && (
-                <Badge variant="secondary">
-                  {selectedFixtures.length} selected
-                </Badge>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <CreateLightingDialog 
-                onFixtureCreated={() => console.log('Fixture created')}
-                onZoneCreated={() => console.log('Zone created')}
-              />
-              
-              <Button
-                variant="outline"
+    <div className="space-y-4">
+      {/* Compact Action Bar */}
+      <div className="flex items-center justify-between p-4 bg-card rounded-lg border">
+        <div className="flex items-center gap-3">
+          <CreateLightingDialog 
+            onFixtureCreated={() => console.log('Fixture created')}
+            onZoneCreated={() => console.log('Zone created')}
+          />
+          {selectedFixtures.length > 0 && (
+            <Badge variant="secondary">
+              {selectedFixtures.length} selected
+            </Badge>
+          )}
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="outline" 
                 size="sm"
-                onClick={() => handleBulkAction('export')}
+                disabled={selectedFixtures.length === 0}
               >
-                <Download className="h-4 w-4 mr-2" />
-                Export
+                Bulk Actions
+                <MoreHorizontal className="h-4 w-4 ml-2" />
               </Button>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    disabled={selectedFixtures.length === 0}
-                  >
-                    Bulk Actions
-                    <MoreHorizontal className="h-4 w-4 ml-2" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={() => handleBulkAction('working')}>
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Mark as Working
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleBulkAction('maintenance_needed')}>
-                    <Timer className="h-4 w-4 mr-2" />
-                    Needs Maintenance
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleBulkAction('out_of_order')}>
-                    <ZapOff className="h-4 w-4 mr-2" />
-                    Mark Out of Order
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => handleBulkAction('assign_zone')}>
-                    <MapPin className="h-4 w-4 mr-2" />
-                    Assign to Zone
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleBulkAction('maintenance')}>
-                    <Wrench className="h-4 w-4 mr-2" />
-                    Schedule Maintenance
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem 
-                    onClick={() => handleBulkAction('delete')}
-                    className="text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Selected
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSettings}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => handleBulkAction('working')}>
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Mark as Working
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleBulkAction('maintenance_needed')}>
+                <Timer className="h-4 w-4 mr-2" />
+                Needs Maintenance
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleBulkAction('out_of_order')}>
+                <ZapOff className="h-4 w-4 mr-2" />
+                Mark Out of Order
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handleBulkAction('assign_zone')}>
+                <MapPin className="h-4 w-4 mr-2" />
+                Assign to Zone
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleBulkAction('maintenance')}>
+                <Wrench className="h-4 w-4 mr-2" />
+                Schedule Maintenance
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={() => handleBulkAction('delete')}
+                className="text-destructive"
               >
-                <Settings className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Manage lighting fixtures across all rooms and floors. Use bulk actions for efficient maintenance scheduling.
-          </p>
-        </CardContent>
-      </Card>
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Selected
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleBulkAction('export')}
+          >
+            <Download className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
 
       {/* Fixtures List */}
-      <LightingFixturesList />
+      <LightingFixturesListWithSelection 
+        selectedFixtures={selectedFixtures}
+        onSelectionChange={setSelectedFixtures}
+      />
     </div>
   );
 }
