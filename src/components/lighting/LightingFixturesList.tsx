@@ -23,12 +23,29 @@ interface LightingFixturesListProps {
   refetch?: () => void;
   targetRoomId?: string;
   targetFixtureId?: string;
+  selectedFixtures?: string[];
+  onSelectionChange?: (selected: string[]) => void;
 }
 
 type ViewMode = 'all' | 'by-room';
 
-export const LightingFixturesList = ({ selectedBuilding, selectedFloor, statusFilter, fixtures: fixturesProp, isLoading: isLoadingProp, refetch: refetchProp, targetRoomId, targetFixtureId }: LightingFixturesListProps) => {
-  const [selectedFixtures, setSelectedFixtures] = useState<string[]>([]);
+export const LightingFixturesList = ({ 
+  selectedBuilding, 
+  selectedFloor, 
+  statusFilter, 
+  fixtures: fixturesProp, 
+  isLoading: isLoadingProp, 
+  refetch: refetchProp, 
+  targetRoomId, 
+  targetFixtureId,
+  selectedFixtures: selectedFixturesProp,
+  onSelectionChange: onSelectionChangeProp
+}: LightingFixturesListProps) => {
+  const [internalSelectedFixtures, setInternalSelectedFixtures] = useState<string[]>([]);
+  
+  // Use parent-provided selection state if available, otherwise use internal state
+  const selectedFixtures = selectedFixturesProp ?? internalSelectedFixtures;
+  const setSelectedFixtures = onSelectionChangeProp ?? setInternalSelectedFixtures;
   const [isMobile, setIsMobile] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('by-room');
   const [filters, setFilters] = useState<LightingFilterState>({});

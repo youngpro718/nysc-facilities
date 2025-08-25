@@ -377,7 +377,7 @@ export async function fetchRoomLightingStats(): Promise<RoomLightingStats[]> {
  * Fetch lighting zones
  */
 export async function fetchLightingZones(buildingId?: string, floorId?: string) {
-  let query = supabase.from('lighting_zones').select('id, name');
+  let query = supabase.from('lighting_zones').select('id, name, type, floor_id');
   
   if (floorId && floorId !== 'all') {
     query = query.eq('floor_id', floorId);
@@ -386,11 +386,26 @@ export async function fetchLightingZones(buildingId?: string, floorId?: string) 
   const { data, error } = await query;
   
   if (error) throw error;
-  
-  return (data || []).map(zone => ({ 
-    label: zone.name, 
-    value: zone.id 
-  }));
+  return data || [];
+}
+
+export async function fetchFloorsForZones() {
+  const { data, error } = await supabase
+    .from('floors')
+    .select('id, name, floor_number, building_id')
+    .order('floor_number');
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function assignFixturesToZone(fixtureIds: string[], zoneId: string) {
+  const { error } = await supabase
+    .from('lighting_fixtures')
+    .update({ zone_id: zoneId })
+    .in('id', fixtureIds);
+
+  if (error) throw error;
 }
 
 /**

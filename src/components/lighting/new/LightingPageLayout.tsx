@@ -16,7 +16,7 @@ import {
 import { useLightingTabs } from "./hooks/useLightingTabs";
 import { EnhancedDashboard } from "./dashboard/EnhancedDashboard";
 import { OverviewView } from "./overview/OverviewView";
-import { SmartFixturesView } from "./fixtures/SmartFixturesView";
+import { CompactFixturesView } from "./fixtures/CompactFixturesView";
 import { RoomCentricView } from "./rooms/RoomCentricView";
 import { MaintenanceWorkflow } from "./maintenance/MaintenanceWorkflow";
 import { ReportsView } from "./reports/ReportsView";
@@ -40,7 +40,7 @@ export function LightingPageLayout() {
       id: 'fixtures',
       label: 'Fixtures',
       icon: Lightbulb,
-      component: SmartFixturesView,
+      component: CompactFixturesView,
       description: 'Manage individual lighting fixtures by room or status'
     },
     {

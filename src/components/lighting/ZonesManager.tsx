@@ -33,14 +33,14 @@ export function ZonesManager({ onCreateZoneClick, onZoneSelected }: ZonesManager
           {(zones || []).length === 0 ? (
             <div className="text-xs text-muted-foreground">No zones yet.</div>
           ) : (
-            (zones || []).map((z: { label: string; value: string }) => (
+            (zones || []).map((zone: { id: string; name: string; type: string; floor_id: string }) => (
               <Badge
-                key={z.value}
+                key={zone.id}
                 variant="outline"
                 className="cursor-pointer"
-                onClick={() => onZoneSelected?.(z.value)}
+                onClick={() => onZoneSelected?.(zone.id)}
               >
-                {z.label}
+                {zone.name}
               </Badge>
             ))
           )}

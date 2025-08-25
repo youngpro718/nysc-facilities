@@ -54,10 +54,10 @@ export function LightingZonesList({ selectedBuilding, selectedFloor }: LightingZ
       ) : zones && zones.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {zones.map(zone => (
-            <Card key={zone.value} className="p-6">
-              <h3 className="text-lg font-medium mb-2">{zone.label}</h3>
+            <Card key={zone.id} className="p-6">
+              <h3 className="text-lg font-medium mb-2">{zone.name}</h3>
               <p className="text-sm text-muted-foreground">
-                Zone ID: {zone.value.substring(0, 8)}...
+                Zone ID: {zone.id.substring(0, 8)}...
               </p>
             </Card>
           ))}

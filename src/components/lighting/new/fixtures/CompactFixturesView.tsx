@@ -1,78 +1,86 @@
 import { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { 
-  Plus,
-  Search,
-  Filter,
-  MoreHorizontal,
-  CheckCircle2,
-  RefreshCw
-} from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import { LightingFixturesListWithSelection } from "../../LightingFixturesListWithSelection";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Search, MoreVertical, RefreshCw, Filter, Lightbulb } from "lucide-react";
 import { CreateLightingDialog } from "../../CreateLightingDialog";
-import { useLightingFixtures } from "../../hooks/useLightingFixtures";
+import { LightingFixturesList } from "../../LightingFixturesList";
+import { useLightingFixtures } from "@/hooks/useLightingFixtures";
 import { toast } from "sonner";
-import { LightStatus } from "@/types/lighting";
+
+const statusOptions = [
+  { value: "all", label: "All Status" },
+  { value: "functional", label: "Functional" },
+  { value: "non_functional", label: "Non-Functional" },
+  { value: "maintenance_needed", label: "Needs Maintenance" },
+  { value: "pending_maintenance", label: "Pending Maintenance" },
+  { value: "scheduled_replacement", label: "Scheduled Replacement" }
+];
 
 export function CompactFixturesView() {
   const [selectedFixtures, setSelectedFixtures] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
-  
-  const { handleBulkDelete, handleBulkStatusUpdate, refetch } = useLightingFixtures();
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  const { 
+    fixtures, 
+    isLoading, 
+    refetch, 
+    handleDelete, 
+    handleBulkDelete, 
+    handleBulkStatusUpdate 
+  } = useLightingFixtures();
 
   const handleBulkAction = async (action: string) => {
     if (selectedFixtures.length === 0) {
-      toast.error("Please select fixtures first");
+      toast.error("No fixtures selected");
       return;
     }
 
-    switch (action) {
-      case 'mark-working':
-        await handleBulkStatusUpdate(selectedFixtures, 'functional' as LightStatus);
-        setSelectedFixtures([]);
-        break;
-      case 'mark-maintenance':
-        await handleBulkStatusUpdate(selectedFixtures, 'maintenance_needed' as LightStatus);
-        setSelectedFixtures([]);
-        break;
-      case 'mark-broken':
-        await handleBulkStatusUpdate(selectedFixtures, 'non_functional' as LightStatus);
-        setSelectedFixtures([]);
-        break;
-      case 'delete':
-        if (confirm(`Delete ${selectedFixtures.length} selected fixtures?`)) {
+    try {
+      switch (action) {
+        case "mark-functional":
+          await handleBulkStatusUpdate(selectedFixtures, "functional");
+          break;
+        case "mark-maintenance":
+          await handleBulkStatusUpdate(selectedFixtures, "maintenance_needed");
+          break;
+        case "mark-broken":
+          await handleBulkStatusUpdate(selectedFixtures, "non_functional");
+          break;
+        case "assign-zone":
+          toast.info("Zone assignment feature coming soon");
+          break;
+        case "delete":
           await handleBulkDelete(selectedFixtures);
-          setSelectedFixtures([]);
-        }
-        break;
-      case 'export':
-        toast.info(`Exporting data for ${selectedFixtures.length} fixtures`);
-        break;
-      case 'assign-zone':
-        toast.info('Zone assignment feature coming soon');
-        break;
-      case 'schedule-maintenance':
-        toast.info('Maintenance scheduling feature coming soon');
-        break;
+          break;
+        case "export":
+          toast.info("Export feature coming soon");
+          break;
+        default:
+          toast.error("Unknown action");
+      }
+      
+      setSelectedFixtures([]);
+    } catch (error) {
+      toast.error("Failed to perform bulk action");
     }
   };
 
+  const handleFixtureCreated = () => {
+    refetch();
+    toast.success("Fixture created successfully");
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Compact Action Bar */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        {/* Left side - Search and Add */}
-        <div className="flex gap-2 flex-1">
+      <div className="flex flex-col sm:flex-row gap-4 justify-between">
+        <div className="flex flex-col sm:flex-row gap-3 flex-1">
+          {/* Search */}
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
@@ -83,65 +91,50 @@ export function CompactFixturesView() {
             />
           </div>
           
-          <CreateLightingDialog 
-            onFixtureCreated={refetch}
-            onZoneCreated={refetch}
-          />
-        </div>
-
-        {/* Right side - Actions and Filters */}
-        <div className="flex items-center gap-2">
-          {selectedFixtures.length > 0 && (
-            <Badge variant="secondary" className="px-3">
-              {selectedFixtures.length} selected
-            </Badge>
-          )}
-
           {/* Status Filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-input bg-background rounded-md text-sm"
-          >
-            <option value="">All Status</option>
-            <option value="functional">Functional</option>
-            <option value="maintenance_needed">Needs Maintenance</option>
-            <option value="non_functional">Non-Functional</option>
-            <option value="scheduled_replacement">Needs Replacement</option>
-          </select>
-
-          {/* Bulk Actions Menu */}
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[180px]">
+              <Filter className="h-4 w-4 mr-2" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {statusOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="flex gap-2">
+          {/* Bulk Actions (only show when fixtures selected) */}
           {selectedFixtures.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <MoreHorizontal className="h-4 w-4" />
+                <Button variant="outline" size="sm">
+                  <MoreVertical className="h-4 w-4 mr-2" />
+                  Actions ({selectedFixtures.length})
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={() => handleBulkAction('mark-working')}>
-                  <CheckCircle2 className="h-4 w-4 mr-2" />
-                  Mark as Working
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => handleBulkAction("mark-functional")}>
+                  Mark as Functional
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleBulkAction('mark-maintenance')}>
-                  Mark as Needs Maintenance
+                <DropdownMenuItem onClick={() => handleBulkAction("mark-maintenance")}>
+                  Mark for Maintenance
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleBulkAction('mark-broken')}>
-                  Mark as Non-Functional
+                <DropdownMenuItem onClick={() => handleBulkAction("mark-broken")}>
+                  Mark as Broken
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => handleBulkAction('assign-zone')}>
+                <DropdownMenuItem onClick={() => handleBulkAction("assign-zone")}>
                   Assign to Zone
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleBulkAction('schedule-maintenance')}>
-                  Schedule Maintenance
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => handleBulkAction('export')}>
-                  Export Data
+                <DropdownMenuItem onClick={() => handleBulkAction("export")}>
+                  Export Selected
                 </DropdownMenuItem>
                 <DropdownMenuItem 
-                  onClick={() => handleBulkAction('delete')}
+                  onClick={() => handleBulkAction("delete")}
                   className="text-destructive"
                 >
                   Delete Selected
@@ -149,19 +142,81 @@ export function CompactFixturesView() {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-
+          
+          {/* Add New Button */}
+          <CreateLightingDialog 
+            onFixtureCreated={handleFixtureCreated}
+            onZoneCreated={() => {}}
+          />
+          
           {/* Refresh Button */}
-          <Button variant="outline" size="icon" onClick={refetch}>
-            <RefreshCw className="h-4 w-4" />
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={refetch}
+            disabled={isLoading}
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
           </Button>
         </div>
       </div>
 
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="p-4">
+          <div className="flex items-center gap-2">
+            <Lightbulb className="h-4 w-4 text-blue-500" />
+            <div>
+              <p className="text-sm text-muted-foreground">Total</p>
+              <p className="text-lg font-semibold">{fixtures?.length || 0}</p>
+            </div>
+          </div>
+        </Card>
+        
+        <Card className="p-4">
+          <div className="flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-green-500" />
+            <div>
+              <p className="text-sm text-muted-foreground">Functional</p>
+              <p className="text-lg font-semibold">
+                {fixtures?.filter(f => f.status === 'functional').length || 0}
+              </p>
+            </div>
+          </div>
+        </Card>
+        
+        <Card className="p-4">
+          <div className="flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-red-500" />
+            <div>
+              <p className="text-sm text-muted-foreground">Issues</p>
+              <p className="text-lg font-semibold">
+                {fixtures?.filter(f => f.status !== 'functional').length || 0}
+              </p>
+            </div>
+          </div>
+        </Card>
+        
+        <Card className="p-4">
+          <div className="flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-orange-500" />
+            <div>
+              <p className="text-sm text-muted-foreground">Maintenance</p>
+              <p className="text-lg font-semibold">
+                {fixtures?.filter(f => f.status === 'maintenance_needed').length || 0}
+              </p>
+            </div>
+          </div>
+        </Card>
+      </div>
+
       {/* Fixtures List */}
-      <LightingFixturesListWithSelection
+      <LightingFixturesList
         selectedFixtures={selectedFixtures}
         onSelectionChange={setSelectedFixtures}
-        statusFilter={statusFilter}
+        statusFilter={statusFilter === "all" ? undefined : statusFilter}
+        fixtures={fixtures}
+        isLoading={isLoading}
         refetch={refetch}
       />
     </div>

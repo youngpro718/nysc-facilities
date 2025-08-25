@@ -1,16 +1,21 @@
-
+import { UseFormReturn } from "react-hook-form";
+import { LightingZoneFormData } from "../schemas/lightingSchema";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LightingZoneFormData } from "../schemas/lightingSchema";
-import { UseFormReturn } from "react-hook-form";
+import { useQuery } from "@tanstack/react-query";
+import { fetchFloorsForZones } from "@/services/supabase/lightingService";
 
 interface CreateZoneFieldsProps {
   form: UseFormReturn<LightingZoneFormData>;
-  floors?: any[];
 }
 
-export function CreateZoneFields({ form, floors }: CreateZoneFieldsProps) {
+export function CreateZoneFields({ form }: CreateZoneFieldsProps) {
+  const { data: floors } = useQuery({
+    queryKey: ['floors'],
+    queryFn: fetchFloorsForZones
+  });
+
   return (
     <div className="space-y-4">
       <FormField
@@ -20,7 +25,7 @@ export function CreateZoneFields({ form, floors }: CreateZoneFieldsProps) {
           <FormItem>
             <FormLabel>Zone Name</FormLabel>
             <FormControl>
-              <Input {...field} />
+              <Input placeholder="Enter zone name" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -65,7 +70,7 @@ export function CreateZoneFields({ form, floors }: CreateZoneFieldsProps) {
               <SelectContent>
                 {floors?.map((floor) => (
                   <SelectItem key={floor.id} value={floor.id}>
-                    {floor.buildings?.name} - {floor.name}
+                    {floor.name} (Floor {floor.floor_number})
                   </SelectItem>
                 ))}
               </SelectContent>
