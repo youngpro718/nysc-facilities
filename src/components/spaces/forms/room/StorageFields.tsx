@@ -194,6 +194,27 @@ export function StorageFields({ form }: StorageFieldsProps) {
             
             <FormField
               control={form.control}
+              name="temporaryStorageUse"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Temporary Storage</FormLabel>
+                    <FormDescription>
+                      Mark this as temporary storage use (room will revert to original function)
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value || false}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
               name="storageNotes"
               render={({ field }) => (
                 <FormItem>

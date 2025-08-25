@@ -6,10 +6,12 @@ import { LightingDashboard } from "./dashboard/LightingDashboard";
 import { CreateLightingDialog } from "./CreateLightingDialog";
 import { LightingFixturesList } from "./LightingFixturesList";
 import { LightingZonesList } from "./LightingZonesList";
-import { Lightbulb, LayoutGrid } from "lucide-react";
+import { BulkLightingActions } from "./bulk/BulkLightingActions";
+import { EnhancedLightingCreation } from "./enhanced/EnhancedLightingCreation";
+import { Lightbulb, LayoutGrid, Settings } from "lucide-react";
 
 export const LightingManagement = () => {
-  const [view, setView] = useState<'fixtures' | 'zones'>('fixtures');
+  const [view, setView] = useState<'fixtures' | 'zones' | 'bulk-management' | 'enhanced-creation'>('fixtures');
   const [selectedBuilding, setSelectedBuilding] = useState<string>('all');
   const [selectedFloor, setSelectedFloor] = useState<string>('all');
 
@@ -28,13 +30,15 @@ export const LightingManagement = () => {
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Lighting Management</h2>
         <div className="flex items-center gap-4">
-          <Select value={view} onValueChange={(value: 'fixtures' | 'zones') => setView(value)}>
-            <SelectTrigger className="w-[180px]">
+          <Select value={view} onValueChange={(value: 'fixtures' | 'zones' | 'bulk-management' | 'enhanced-creation') => setView(value)}>
+            <SelectTrigger className="w-[220px]">
               <SelectValue placeholder="Select view" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="fixtures">Fixtures</SelectItem>
               <SelectItem value="zones">Zones</SelectItem>
+              <SelectItem value="enhanced-creation">Enhanced Creation</SelectItem>
+              <SelectItem value="bulk-management">Bulk Management</SelectItem>
             </SelectContent>
           </Select>
           <CreateLightingDialog 
@@ -47,15 +51,30 @@ export const LightingManagement = () => {
       <LightingDashboard />
 
       <div className="mt-8">
-        {view === 'fixtures' ? (
+        {view === 'fixtures' && (
           <LightingFixturesList 
             selectedBuilding={selectedBuilding}
             selectedFloor={selectedFloor}
           />
-        ) : (
+        )}
+        
+        {view === 'zones' && (
           <LightingZonesList 
             selectedBuilding={selectedBuilding}
             selectedFloor={selectedFloor}
+          />
+        )}
+        
+        {view === 'enhanced-creation' && (
+          <EnhancedLightingCreation 
+            onFixtureCreated={handleFixtureCreated}
+          />
+        )}
+        
+        {view === 'bulk-management' && (
+          <BulkLightingActions 
+            onClearComplete={handleFixtureCreated}
+            onImportComplete={handleFixtureCreated}
           />
         )}
       </div>
