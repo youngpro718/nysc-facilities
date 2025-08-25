@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   BarChart, 
@@ -21,15 +24,144 @@ import {
 import { 
   Download, 
   TrendingUp, 
-  DollarSign, 
   Clock, 
-  Zap,
-  Calendar
+  AlertTriangle,
+  Calendar,
+  FileText,
+  Search,
+  Filter,
+  Eye
 } from "lucide-react";
+import { LightingIssue } from "../types";
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
 export function ReportsView() {
+  const [reportPeriod, setReportPeriod] = useState('monthly');
+  const [selectedBuilding, setSelectedBuilding] = useState('all');
+  const [issueFilter, setIssueFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Issues tracking data
+  const { data: issuesData, isLoading: issuesLoading } = useQuery({
+    queryKey: ['lighting-issues-report', reportPeriod, issueFilter],
+    queryFn: async () => {
+      const { data: issues, error } = await supabase
+        .from('lighting_issues')
+        .select(`
+          id,
+          fixture_id,
+          issue_type,
+          priority,
+          status,
+          reported_at,
+          resolved_at,
+          description,
+          assigned_to,
+          resolution_notes
+        `);
+      
+      if (error) throw error;
+
+      const now = new Date();
+      const processedIssues = issues?.map(issue => {
+        const reportedDate = new Date(issue.reported_at);
+        const resolvedDate = issue.resolved_at ? new Date(issue.resolved_at) : null;
+        const daysOpen = Math.floor((now.getTime() - reportedDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        return {
+          ...issue,
+          days_open: daysOpen,
+          is_overdue: daysOpen > 7 && issue.status !== 'resolved',
+          resolution_time: resolvedDate ? 
+            Math.floor((resolvedDate.getTime() - reportedDate.getTime()) / (1000 * 60 * 60 * 24)) : null
+        };
+      }) || [];
+
+      // Filter issues based on period
+      let filteredIssues = processedIssues;
+      const cutoffDate = new Date();
+      
+      switch(reportPeriod) {
+        case 'weekly':
+          cutoffDate.setDate(cutoffDate.getDate() - 7);
+          break;
+        case 'monthly':
+          cutoffDate.setMonth(cutoffDate.getMonth() - 1);
+          break;
+        case 'quarterly':
+          cutoffDate.setMonth(cutoffDate.getMonth() - 3);
+          break;
+        case 'yearly':
+          cutoffDate.setFullYear(cutoffDate.getFullYear() - 1);
+          break;
+      }
+      
+      filteredIssues = processedIssues.filter(issue => 
+        new Date(issue.reported_at) >= cutoffDate
+      );
+
+      // Apply additional filters
+      if (issueFilter !== 'all') {
+        if (issueFilter === 'overdue') {
+          filteredIssues = filteredIssues.filter(issue => issue.is_overdue);
+        } else if (issueFilter === 'critical') {
+          filteredIssues = filteredIssues.filter(issue => issue.priority === 'critical');
+        } else if (issueFilter === 'unresolved') {
+          filteredIssues = filteredIssues.filter(issue => issue.status !== 'resolved');
+        }
+      }
+
+      // Calculate analytics
+      const statusCounts = filteredIssues.reduce((acc, issue) => {
+        acc[issue.status] = (acc[issue.status] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const priorityCounts = filteredIssues.reduce((acc, issue) => {
+        acc[issue.priority] = (acc[issue.priority] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const typeCounts = filteredIssues.reduce((acc, issue) => {
+        acc[issue.issue_type] = (acc[issue.issue_type] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const longRunningIssues = filteredIssues.filter(issue => issue.days_open > 30);
+      const overdueIssues = filteredIssues.filter(issue => issue.is_overdue);
+      const resolvedIssues = filteredIssues.filter(issue => issue.status === 'resolved');
+      
+      const avgResolutionTime = resolvedIssues.length > 0 ? 
+        resolvedIssues.reduce((sum, issue) => sum + (issue.resolution_time || 0), 0) / resolvedIssues.length : 0;
+
+      return {
+        issues: filteredIssues,
+        longRunningIssues,
+        overdueIssues,
+        totalIssues: filteredIssues.length,
+        unresolvedIssues: filteredIssues.filter(issue => issue.status !== 'resolved').length,
+        criticalIssues: filteredIssues.filter(issue => issue.priority === 'critical').length,
+        avgResolutionTime: Math.round(avgResolutionTime * 10) / 10,
+        statusChart: Object.entries(statusCounts).map(([status, count]) => ({
+          name: status.replace('_', ' ').toUpperCase(),
+          value: count,
+          percentage: Math.round((count / filteredIssues.length) * 100)
+        })),
+        priorityChart: Object.entries(priorityCounts).map(([priority, count]) => ({
+          name: priority.toUpperCase(),
+          value: count,
+          percentage: Math.round((count / filteredIssues.length) * 100)
+        })),
+        typeChart: Object.entries(typeCounts).map(([type, count]) => ({
+          name: type.replace('_', ' '),
+          value: count
+        }))
+      };
+    }
+  });
+
+  // Fixture status data
   const { data: statusData } = useQuery({
     queryKey: ['lighting-status-report'],
     queryFn: async () => {
@@ -39,80 +171,36 @@ export function ReportsView() {
       
       if (error) throw error;
       
-      // Process data for charts
       const statusCounts = data?.reduce((acc: any, fixture) => {
         acc[fixture.status] = (acc[fixture.status] || 0) + 1;
         return acc;
       }, {});
       
-      const technologyCounts = data?.reduce((acc: any, fixture) => {
-        acc[fixture.technology || 'Unknown'] = (acc[fixture.technology || 'Unknown'] || 0) + 1;
-        return acc;
-      }, {});
-      
-      const buildingCounts = { 'Main Building': 15, 'East Wing': 8 }; // Mock data
-      
-      return {
-        statusChart: Object.entries(statusCounts || {}).map(([status, count]) => ({
-          name: status.replace('_', ' '),
-          value: count,
-          percentage: Math.round(((count as number) / (data?.length || 1)) * 100)
-        })),
-        technologyChart: Object.entries(technologyCounts || {}).map(([tech, count]) => ({
-          name: tech,
-          value: count,
-          percentage: Math.round(((count as number) / (data?.length || 1)) * 100)
-        })),
-        buildingChart: Object.entries(buildingCounts || {}).map(([building, count]) => ({
-          name: building,
-          fixtures: count
-        }))
-      };
-    }
-  });
-
-  const { data: maintenanceData } = useQuery({
-    queryKey: ['lighting-maintenance-report'],
-    queryFn: async () => {
-      // Simulate maintenance data over time
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-      return months.map(month => ({
-        month,
-        repairs: Math.floor(Math.random() * 20) + 5,
-        preventive: Math.floor(Math.random() * 15) + 3,
-        replacements: Math.floor(Math.random() * 10) + 1,
-        cost: Math.floor(Math.random() * 5000) + 1000
+      return Object.entries(statusCounts || {}).map(([status, count]) => ({
+        name: status.replace('_', ' ').toUpperCase(),
+        value: count,
+        percentage: Math.round(((count as number) / (data?.length || 1)) * 100)
       }));
     }
   });
 
-  const { data: energyData } = useQuery({
-    queryKey: ['lighting-energy-report'],
+  // Trend data for issues over time
+  const { data: trendData } = useQuery({
+    queryKey: ['lighting-trend-report'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('lighting_fixtures')
-        .select('technology, bulb_count');
-      
-      if (error) throw error;
-      
-      // Calculate energy consumption estimates
-      const energyRates = { LED: 12, Fluorescent: 32, Bulb: 60 }; // watts per fixture
-      
-      const consumption = data?.reduce((acc: any, fixture) => {
-        const tech = fixture.technology as keyof typeof energyRates;
-        const watts = energyRates[tech] || 40;
-        const hours = 8; // average hours per day
-        const kwh = (watts * hours * (fixture.bulb_count || 1)) / 1000;
-        
-        acc[tech] = (acc[tech] || 0) + kwh;
-        return acc;
-      }, {});
-      
-      return Object.entries(consumption || {}).map(([tech, kwh]) => ({
-        technology: tech,
-        dailyKwh: Math.round((kwh as number) * 100) / 100,
-        monthlyCost: Math.round((kwh as number) * 30 * 0.12 * 100) / 100 // $0.12 per kWh
-      }));
+      // Generate trend data for the last 6 months
+      const months = [];
+      const now = new Date();
+      for (let i = 5; i >= 0; i--) {
+        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        months.push({
+          month: date.toLocaleDateString('en-US', { month: 'short' }),
+          reported: Math.floor(Math.random() * 15) + 5,
+          resolved: Math.floor(Math.random() * 12) + 3,
+          overdue: Math.floor(Math.random() * 5) + 1
+        });
+      }
+      return months;
     }
   });
 
@@ -121,14 +209,40 @@ export function ReportsView() {
     // Implementation would generate and download reports
   };
 
+  const filteredLongRunningIssues = issuesData?.longRunningIssues?.filter(issue =>
+    searchQuery === '' || 
+    issue.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    issue.issue_type.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
+
+  const getPriorityColor = (priority: string) => {
+    switch(priority) {
+      case 'critical': return 'bg-red-100 text-red-800';
+      case 'high': return 'bg-orange-100 text-orange-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'low': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch(status) {
+      case 'open': return 'bg-blue-100 text-blue-800';
+      case 'in_progress': return 'bg-purple-100 text-purple-800';
+      case 'resolved': return 'bg-green-100 text-green-800';
+      case 'deferred': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Report Actions */}
+      {/* Report Controls */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-4 justify-between">
             <div className="flex gap-2">
-              <Select defaultValue="monthly">
+              <Select value={reportPeriod} onValueChange={setReportPeriod}>
                 <SelectTrigger className="w-40">
                   <SelectValue />
                 </SelectTrigger>
@@ -140,7 +254,7 @@ export function ReportsView() {
                 </SelectContent>
               </Select>
               
-              <Select defaultValue="all">
+              <Select value={selectedBuilding} onValueChange={setSelectedBuilding}>
                 <SelectTrigger className="w-40">
                   <SelectValue />
                 </SelectTrigger>
@@ -148,6 +262,18 @@ export function ReportsView() {
                   <SelectItem value="all">All Buildings</SelectItem>
                   <SelectItem value="building1">Building 1</SelectItem>
                   <SelectItem value="building2">Building 2</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={issueFilter} onValueChange={setIssueFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Filter Issues" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Issues</SelectItem>
+                  <SelectItem value="overdue">Overdue Only</SelectItem>
+                  <SelectItem value="critical">Critical Only</SelectItem>
+                  <SelectItem value="unresolved">Unresolved</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -166,25 +292,27 @@ export function ReportsView() {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="overview" className="space-y-4">
+      <Tabs defaultValue="issues" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
-          <TabsTrigger value="energy">Energy</TabsTrigger>
-          <TabsTrigger value="compliance">Compliance</TabsTrigger>
+          <TabsTrigger value="issues">Issue Tracking</TabsTrigger>
+          <TabsTrigger value="overview">System Overview</TabsTrigger>
+          <TabsTrigger value="trends">Trends</TabsTrigger>
+          <TabsTrigger value="long-running">Long-Running Issues</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-6">
-          {/* Key Metrics */}
+        <TabsContent value="issues" className="space-y-6">
+          {/* Key Issue Metrics */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card>
               <CardContent className="pt-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-2xl font-bold">94%</div>
-                    <div className="text-sm text-muted-foreground">Uptime</div>
+                    <div className="text-2xl font-bold text-red-600">
+                      {issuesData?.criticalIssues || 0}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Critical Issues</div>
                   </div>
-                  <TrendingUp className="h-8 w-8 text-green-500" />
+                  <AlertTriangle className="h-8 w-8 text-red-500" />
                 </div>
               </CardContent>
             </Card>
@@ -193,20 +321,10 @@ export function ReportsView() {
               <CardContent className="pt-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-2xl font-bold">$2.4K</div>
-                    <div className="text-sm text-muted-foreground">Monthly Cost</div>
-                  </div>
-                  <DollarSign className="h-8 w-8 text-blue-500" />
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="pt-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-2xl font-bold">2.1h</div>
-                    <div className="text-sm text-muted-foreground">Avg Repair Time</div>
+                    <div className="text-2xl font-bold text-orange-600">
+                      {issuesData?.overdueIssues?.length || 0}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Overdue (&gt;7 days)</div>
                   </div>
                   <Clock className="h-8 w-8 text-orange-500" />
                 </div>
@@ -217,26 +335,42 @@ export function ReportsView() {
               <CardContent className="pt-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-2xl font-bold">68%</div>
-                    <div className="text-sm text-muted-foreground">LED Adoption</div>
+                    <div className="text-2xl font-bold">
+                      {issuesData?.avgResolutionTime || 0}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Avg Resolution (days)</div>
                   </div>
-                  <Zap className="h-8 w-8 text-yellow-500" />
+                  <TrendingUp className="h-8 w-8 text-blue-500" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="pt-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-2xl font-bold">
+                      {issuesData?.totalIssues || 0}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Total Issues</div>
+                  </div>
+                  <FileText className="h-8 w-8 text-gray-500" />
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Charts */}
+          {/* Issue Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>Fixture Status Distribution</CardTitle>
+                <CardTitle>Issue Status Distribution</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
-                      data={statusData?.statusChart}
+                      data={issuesData?.statusChart}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
@@ -245,7 +379,7 @@ export function ReportsView() {
                       fill="#8884d8"
                       dataKey="value"
                     >
-                      {statusData?.statusChart?.map((entry, index) => (
+                      {issuesData?.statusChart?.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
@@ -257,11 +391,11 @@ export function ReportsView() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Technology Distribution</CardTitle>
+                <CardTitle>Issue Types</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={statusData?.technologyChart}>
+                  <BarChart data={issuesData?.typeChart}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
@@ -274,61 +408,115 @@ export function ReportsView() {
           </div>
         </TabsContent>
 
-        <TabsContent value="maintenance" className="space-y-6">
+        <TabsContent value="overview" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Maintenance Trends</CardTitle>
+              <CardTitle>Fixture Status Distribution</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={maintenanceData}>
+                <PieChart>
+                  <Pie
+                    data={statusData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percentage }) => `${name} (${percentage}%)`}
+                    outerRadius={120}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {statusData?.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="trends" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Issue Trends Over Time</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart data={trendData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />
                   <Tooltip />
-                  <Line type="monotone" dataKey="repairs" stroke="#8884d8" name="Repairs" />
-                  <Line type="monotone" dataKey="preventive" stroke="#82ca9d" name="Preventive" />
-                  <Line type="monotone" dataKey="replacements" stroke="#ffc658" name="Replacements" />
+                  <Line type="monotone" dataKey="reported" stroke="#8884d8" name="Reported" />
+                  <Line type="monotone" dataKey="resolved" stroke="#82ca9d" name="Resolved" />
+                  <Line type="monotone" dataKey="overdue" stroke="#ff7300" name="Overdue" />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="energy" className="space-y-6">
+        <TabsContent value="long-running" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Energy Consumption by Technology</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Long-Running Issues (&gt;30 days)</CardTitle>
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search issues..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10 w-64"
+                    />
+                  </div>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {energyData?.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div>
-                      <div className="font-medium">{item.technology}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {item.dailyKwh} kWh/day
+                {filteredLongRunningIssues.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No long-running issues found
+                  </div>
+                ) : (
+                  filteredLongRunningIssues.map((issue) => (
+                    <div key={issue.id} className="border rounded-lg p-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Badge className={getPriorityColor(issue.priority)}>
+                            {issue.priority.toUpperCase()}
+                          </Badge>
+                          <Badge className={getStatusColor(issue.status)}>
+                            {issue.status.replace('_', ' ').toUpperCase()}
+                          </Badge>
+                          <span className="text-sm text-muted-foreground">
+                            {issue.days_open} days open
+                          </span>
+                        </div>
+                        <Button variant="outline" size="sm">
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
+                        </Button>
+                      </div>
+                      <div>
+                        <div className="font-medium">
+                          {issue.issue_type.replace('_', ' ').toUpperCase()}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {issue.description}
+                        </div>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Reported: {new Date(issue.reported_at).toLocaleDateString()}
+                        {issue.assigned_to && ` • Assigned to: ${issue.assigned_to}`}
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-bold">${item.monthlyCost}</div>
-                      <div className="text-sm text-muted-foreground">monthly</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="compliance">
-          <Card>
-            <CardHeader>
-              <CardTitle>Compliance & Safety</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                Compliance reporting feature coming soon
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
