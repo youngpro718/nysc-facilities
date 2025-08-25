@@ -244,12 +244,12 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false }: CardFro
             }
           </Badge>
 
-          {room.room_size_category && (
+          {room.capacity_size_category && (
             <Badge 
               variant="outline" 
               className="text-[11px] capitalize whitespace-nowrap"
             >
-              {room.room_size_category}
+              {room.capacity_size_category}
             </Badge>
           )}
 

@@ -3,15 +3,16 @@ import {
   stringToRoomType, 
   stringToStatus, 
   stringToStorageType,
-  stringToSimplifiedStorageType,
   roomTypeToString,
   statusToString,
   storageTypeToString,
-  simplifiedStorageTypeToString,
+  stringToCapacitySizeCategory,
+  capacitySizeCategoryToString,
   RoomTypeEnum,
   StatusEnum,
   StorageTypeEnum,
-  SimplifiedStorageTypeEnum
+  SimplifiedStorageTypeEnum,
+  CapacitySizeCategoryEnum
 } from "../../rooms/types/roomEnums";
 
 // Database room type (what comes from Supabase)
@@ -30,6 +31,8 @@ export interface DatabaseRoom {
   phone_number?: string;
   current_function?: string;
   parent_room_id?: string;
+  capacity_size_category?: string;
+  temporary_storage_use?: boolean;
   courtroom_photos?: {
     judge_view?: string;
     audience_view?: string;
@@ -73,6 +76,8 @@ export function dbToFormRoom(dbRoom: Partial<DatabaseRoom>, roomId?: string): Pa
     storageCapacity: dbRoom.storage_capacity || null,
     storageNotes: dbRoom.storage_notes || "",
     parentRoomId: dbRoom.parent_room_id || null,
+    capacitySizeCategory: dbRoom.capacity_size_category ? stringToCapacitySizeCategory(dbRoom.capacity_size_category) : CapacitySizeCategoryEnum.MEDIUM,
+    temporaryStorageUse: dbRoom.temporary_storage_use || false,
     courtroom_photos: dbRoom.courtroom_photos || null,
     connections: [], // This would need to be fetched separately
     position: dbRoom.position || { x: 0, y: 0 },
@@ -100,6 +105,8 @@ export function formToDbRoom(formData: RoomFormData): Partial<DatabaseRoom> {
     // If marked as storage, do not persist a current_function
     current_function: formData.isStorage ? null : (formData.currentFunction || null),
     parent_room_id: formData.parentRoomId || null,
+    capacity_size_category: formData.capacitySizeCategory ? capacitySizeCategoryToString(formData.capacitySizeCategory) : "medium",
+    temporary_storage_use: formData.temporaryStorageUse || false,
     courtroom_photos: formData.courtroom_photos || null,
     position: formData.position ? { x: formData.position.x || 0, y: formData.position.y || 0 } : { x: 0, y: 0 },
     size: formData.size ? { width: formData.size.width || 150, height: formData.size.height || 100 } : { width: 150, height: 100 },
