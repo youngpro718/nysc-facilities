@@ -89,11 +89,11 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false }: CardFro
                 </Tooltip>
 
                 {/* Room lighting management */}
-                <RoomLightingManager
-                  room={room}
-                  trigger={
-                    <Tooltip>
-                      <TooltipTrigger asChild>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <RoomLightingManager
+                      room={room}
+                      trigger={
                         <Button
                           variant="secondary"
                           size="sm"
@@ -101,11 +101,11 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false }: CardFro
                         >
                           <Lightbulb className="h-3 w-3" />
                         </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Manage lighting</TooltipContent>
-                    </Tooltip>
-                  }
-                />
+                      }
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>Manage lighting</TooltipContent>
+                </Tooltip>
 
                 {/* Inventory (for storage) */}
                 {room.is_storage && (
