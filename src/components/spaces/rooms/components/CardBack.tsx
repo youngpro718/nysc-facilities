@@ -115,32 +115,54 @@ export function CardBack({ room, onFlip }: CardBackProps) {
             </div>
           </div>
           
-          {/* History Overview */}
+          {/* Enhanced History Overview with Visual Elements */}
           {room.history_stats && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <h4 className="text-sm font-medium flex items-center gap-1">
                 <HistoryIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                History
+                Room History & Analytics
               </h4>
-              <div className="rounded-md border bg-muted/20">
-                <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-border">
-                  <div className="p-2">
-                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Issues</p>
-                    <p className="text-base font-semibold">{room.history_stats.total_issues}</p>
+              <div className="rounded-lg border bg-gradient-to-br from-muted/30 to-muted/10 p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-foreground mb-1">{room.history_stats.total_issues}</div>
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Total Issues</p>
+                    <div className="w-full bg-muted h-1 rounded-full mt-2">
+                      <div 
+                        className="h-1 rounded-full bg-red-400" 
+                        style={{ width: `${Math.min(100, (room.history_stats.total_issues / 10) * 100)}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="p-2">
-                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">People ever</p>
-                    <p className="text-base font-semibold">{room.history_stats.unique_occupants}</p>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-foreground mb-1">{room.history_stats.unique_occupants}</div>
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">People Ever</p>
+                    <div className="w-full bg-muted h-1 rounded-full mt-2">
+                      <div 
+                        className="h-1 rounded-full bg-blue-400" 
+                        style={{ width: `${Math.min(100, (room.history_stats.unique_occupants / 5) * 100)}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="p-2">
-                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Currently</p>
-                    <p className="text-base font-semibold">{room.history_stats.current_occupants}</p>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-foreground mb-1">{room.history_stats.current_occupants}</div>
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Currently</p>
+                    <div className="w-full bg-muted h-1 rounded-full mt-2">
+                      <div 
+                        className="h-1 rounded-full bg-green-400" 
+                        style={{ width: `${Math.min(100, (room.history_stats.current_occupants / 3) * 100)}%` }}
+                      />
+                    </div>
                   </div>
                 </div>
+                {room.history_stats.last_issue_date && (
+                  <div className="mt-3 pt-3 border-t border-muted text-center">
+                    <p className="text-xs text-muted-foreground">
+                      Last issue: <span className="font-medium">{format(new Date(room.history_stats.last_issue_date), 'MMM d, yyyy')}</span>
+                    </p>
+                  </div>
+                )}
               </div>
-              {room.history_stats.last_issue_date && (
-                <p className="text-xs text-muted-foreground">Last issue: {format(new Date(room.history_stats.last_issue_date), 'MMM d, yyyy')}</p>
-              )}
             </div>
           )}
           
@@ -192,14 +214,26 @@ export function CardBack({ room, onFlip }: CardBackProps) {
                 )}
               </h4>
               
-              {/* Key Holders */}
+              {/* Enhanced Key Holders Display */}
               {roomAccess.key_holders.length > 0 && (
-                <div className="bg-muted/50 p-2 rounded-md">
-                  <p className="text-xs font-medium mb-2">Key Holders ({roomAccess.key_holders.length})</p>
-                  <div className="space-y-1">
-                    {roomAccess.key_holders.slice(0, 3).map((holder, index) => (
-                      <div key={index} className="flex items-center justify-between text-xs">
-                        <span>{holder.first_name} {holder.last_name}</span>
+                <div className="bg-muted/50 p-3 rounded-lg">
+                  <p className="text-sm font-medium mb-3 flex items-center justify-between">
+                    Key Holders
+                    <Badge variant="secondary" className="text-xs">
+                      {roomAccess.key_holders.length} total
+                    </Badge>
+                  </p>
+                  <div className="space-y-2">
+                    {roomAccess.key_holders.slice(0, 4).map((holder, index) => (
+                      <div key={index} className="flex items-center justify-between p-2 bg-background/50 rounded-md">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                            <span className="text-xs font-medium text-primary">
+                              {holder.first_name?.[0]}{holder.last_name?.[0]}
+                            </span>
+                          </div>
+                          <span className="text-sm font-medium">{holder.first_name} {holder.last_name}</span>
+                        </div>
                         <div className="flex items-center gap-1">
                           {holder.is_passkey && (
                             <Badge variant="outline" className="text-xs px-1 py-0">
@@ -207,14 +241,16 @@ export function CardBack({ room, onFlip }: CardBackProps) {
                               Master
                             </Badge>
                           )}
-                          <span className="text-muted-foreground">{holder.key_name}</span>
+                          <span className="text-xs text-muted-foreground">{holder.key_name}</span>
                         </div>
                       </div>
                     ))}
-                    {roomAccess.key_holders.length > 3 && (
-                      <p className="text-xs text-muted-foreground text-center">
-                        + {roomAccess.key_holders.length - 3} more key holders
-                      </p>
+                    {roomAccess.key_holders.length > 4 && (
+                      <div className="text-center pt-2 border-t border-muted">
+                        <p className="text-xs text-muted-foreground">
+                          + {roomAccess.key_holders.length - 4} more key holders
+                        </p>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -251,19 +287,24 @@ export function CardBack({ room, onFlip }: CardBackProps) {
             </div>
           )}
 
-          {/* Occupants Information */}
+          {/* Enhanced Occupants Information */}
           {room.current_occupants && room.current_occupants.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium flex items-center gap-1">
-                <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                Occupants ({room.current_occupants.length})
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium flex items-center justify-between">
+                <div className="flex items-center gap-1">
+                  <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                  Current Occupants
+                </div>
+                <Badge variant="secondary" className="text-xs">
+                  {room.current_occupants.length} total
+                </Badge>
               </h4>
-              <div className="space-y-2">
+              <div className="bg-muted/30 p-3 rounded-lg space-y-3">
                 {room.current_occupants.map((occupant, index) => (
-                  <div key={index} className="text-sm text-muted-foreground">
+                  <div key={index} className="p-3 bg-background/50 rounded-md hover:bg-background/70 transition-colors">
                     <button
                       type="button"
-                      className="font-medium hover:underline"
+                      className="w-full text-left"
                       title={`Open ${occupant.first_name} ${occupant.last_name}`}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -275,36 +316,67 @@ export function CardBack({ room, onFlip }: CardBackProps) {
                         }
                       }}
                     >
-                      {occupant.first_name} {occupant.last_name}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                            <span className="text-sm font-medium text-primary">
+                              {occupant.first_name?.[0]}{occupant.last_name?.[0]}
+                            </span>
+                          </div>
+                          <div>
+                            <div className="font-medium text-sm hover:underline">
+                              {occupant.first_name} {occupant.last_name}
+                            </div>
+                            {occupant.assignment_type && (
+                              <div className="text-xs text-muted-foreground capitalize">
+                                {occupant.assignment_type.replace(/_/g, ' ')}
+                                {occupant.is_primary && ' • Primary'}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        {occupant.is_primary && (
+                          <Badge variant="outline" className="text-xs">
+                            Primary
+                          </Badge>
+                        )}
+                      </div>
                     </button>
-                    {occupant.assignment_type && (
-                      <p className="text-xs capitalize">
-                        {occupant.assignment_type.replace(/_/g, ' ')}
-                        {occupant.is_primary && ' (Primary)'}
-                      </p>
-                    )}
                   </div>
                 ))}
               </div>
             </div>
           )}
           
-          {/* Lighting Fixture Details */}
+          {/* Enhanced Lighting Status Display */}
           {(totalLights > 0) && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <h4 className="text-sm font-medium flex items-center gap-1">
                 <Lightbulb className="h-3.5 w-3.5 text-muted-foreground" />
-                Lighting Status ({functionalLights}/{totalLights})
+                Lighting System ({functionalLights}/{totalLights} functional)
               </h4>
-              <div className="flex items-center gap-2">
-                <LightingStatusWheel
-                  functional={functionalLights}
-                  total={totalLights}
-                  size={28}
-                  title={`${functionalLights}/${totalLights} lights functional`}
-                  onClick={() => navigate(`/lighting?room=${encodeURIComponent(room.name ?? room.room_number ?? room.id)}`)}
-                />
-                <span className="text-xs text-muted-foreground">Lighting</span>
+              <div className="bg-muted/30 p-4 rounded-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <LightingStatusWheel
+                    functional={functionalLights}
+                    total={totalLights}
+                    size={48}
+                    title={`${functionalLights}/${totalLights} lights functional`}
+                    onClick={() => navigate(`/lighting?room=${encodeURIComponent(room.name ?? room.room_number ?? room.id)}`)}
+                  />
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-foreground">
+                      {Math.round((functionalLights / totalLights) * 100)}%
+                    </div>
+                    <div className="text-xs text-muted-foreground">Functional</div>
+                  </div>
+                </div>
+                <div className="w-full bg-muted h-2 rounded-full">
+                  <div 
+                    className="h-2 rounded-full bg-primary transition-all duration-300" 
+                    style={{ width: `${(functionalLights / totalLights) * 100}%` }}
+                  />
+                </div>
               </div>
               <div className="space-y-2">
                 {(room.lighting_fixtures ?? []).filter(f => f.status !== 'functional').map((fixture, index) => (

@@ -3,7 +3,7 @@ import { EnhancedRoom } from "../types/EnhancedRoomTypes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Trash2, ArrowRightFromLine, Users, Shield, Lightbulb, ShoppingBag, AlertTriangle, Phone, Link2, CalendarDays, StickyNote, History, Pencil } from "lucide-react";
+import { Trash2, ArrowRightFromLine, Users, Shield, Lightbulb, ShoppingBag, AlertTriangle, Phone, Link2, CalendarDays, StickyNote, History, Pencil, Image } from "lucide-react";
 import { EditSpaceDialog } from "../../EditSpaceDialog";
 import { CourtroomPhotos } from './CourtroomPhotos';
 import { CourtroomPhotoThumbnail } from './CourtroomPhotoThumbnail';
@@ -281,8 +281,9 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false }: CardFro
           )}
         </div>
 
-        {/* Smart Badges Section */}
-        <div className="mt-3">
+        {/* Enhanced Smart Badges Section */}
+        <div className="mt-4">
+          <div className="text-xs font-medium text-muted-foreground mb-2">Status & Information</div>
           <SmartBadges room={room} />
         </div>
 
@@ -341,9 +342,15 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false }: CardFro
           <ParentRoomHierarchy roomId={room.id} compact={true} />
         </div>
         
-        {/* Show photo thumbnail on card if room is a courtroom and has photos */}
-        {room.room_type === 'courtroom' && (
-          <CourtroomPhotoThumbnail photos={room.courtroom_photos} />
+        {/* Enhanced courtroom photos section */}
+        {room.room_type === 'courtroom' && room.courtroom_photos && (
+          <div className="mt-4 mb-3">
+            <div className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+              <Image className="h-3 w-3" />
+              Courtroom Views
+            </div>
+            <CourtroomPhotoThumbnail photos={room.courtroom_photos} size="lg" />
+          </div>
         )}
         
         {/* Display CourtroomPhotos dialog component if room is a courtroom */}
@@ -372,49 +379,104 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false }: CardFro
       </div>
 
       <div className="flex-1">
-        {/* Practical Room Information */}
-        <div className="space-y-2 mb-3">
-          {/* Room Function & Usage */}
+        {/* Enhanced Practical Room Information */}
+        <div className="space-y-3 mb-4">
+          {/* Room Function & Usage with visual emphasis */}
           {currentUse && (
-            <div className="text-sm">
-              <span className="font-medium text-foreground">Current Use:</span>
-              <span className="text-muted-foreground ml-1">{currentUse}</span>
+            <div className="bg-muted/30 p-3 rounded-md">
+              <div className="text-xs font-medium text-muted-foreground mb-1">Current Use</div>
+              <div className="text-sm font-medium text-foreground">{currentUse}</div>
             </div>
           )}
           
-          {/* Floor & Building Info */}
-          <div className="text-sm">
-            <span className="font-medium text-foreground">Location:</span>
-            <span className="text-muted-foreground ml-1">
+          {/* Floor & Building Info with better spacing */}
+          <div className="bg-muted/30 p-3 rounded-md">
+            <div className="text-xs font-medium text-muted-foreground mb-1">Location</div>
+            <div className="text-sm font-medium text-foreground">
               {room.floor?.building?.name}, Floor {room.floor?.name}
-            </span>
+            </div>
           </div>
+
+          {/* Visual Room Statistics Panel */}
+          {(room.lighting_percentage !== undefined || room.history_stats) && (
+            <div className="bg-muted/30 p-3 rounded-md">
+              <div className="text-xs font-medium text-muted-foreground mb-2">Quick Stats</div>
+              <div className="grid grid-cols-2 gap-3">
+                {room.lighting_percentage !== undefined && (
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-foreground">{room.lighting_percentage}%</div>
+                    <div className="text-xs text-muted-foreground">Lighting</div>
+                    <div className="w-full bg-muted h-1 rounded-full mt-1">
+                      <div 
+                        className="h-1 rounded-full bg-primary" 
+                        style={{ width: `${room.lighting_percentage}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+                {room.history_stats && (
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-foreground">{room.history_stats.total_issues}</div>
+                    <div className="text-xs text-muted-foreground">Total Issues</div>
+                    {room.history_stats.total_issues > 0 && (
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {room.history_stats.current_occupants} current occupants
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
         
-        {/* Description - only if meaningful */}
+        {/* Description - expanded to use more space */}
         {room.description && room.description.trim() !== "" && !room.description.toLowerCase().includes("no description") ? (
-          <p className="text-sm text-muted-foreground line-clamp-3 mb-3">
-            {room.description}
-          </p>
+          <div className="mb-4">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {room.description}
+            </p>
+          </div>
         ) : null}
 
-        {/* Occupants Preview */}
+        {/* Enhanced Occupants Display */}
         {room.current_occupants && room.current_occupants.length > 0 && (
           <div className="mt-4">
-            <div className="flex items-center mb-1">
-              <Users className="h-4 w-4 mr-1 text-muted-foreground" />
-              <span className="text-sm font-medium">Occupants</span>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center">
+                <Users className="h-4 w-4 mr-1 text-muted-foreground" />
+                <span className="text-sm font-medium">Occupants</span>
+              </div>
+              <Badge variant="secondary" className="text-xs">
+                {room.current_occupants.length} total
+              </Badge>
             </div>
-            <div className="flex flex-wrap gap-1">
-              {room.current_occupants.slice(0, 2).map((occupant, index) => (
-                <Badge key={index} variant="outline" className="text-xs">
-                  {occupant.first_name} {occupant.last_name}
-                </Badge>
+            <div className="space-y-2">
+              {room.current_occupants.slice(0, 4).map((occupant, index) => (
+                <div key={index} className="flex items-center justify-between p-2 bg-muted/30 rounded-md">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="text-xs font-medium text-primary">
+                        {occupant.first_name?.[0]}{occupant.last_name?.[0]}
+                      </span>
+                    </div>
+                    <span className="text-sm font-medium">
+                      {occupant.first_name} {occupant.last_name}
+                    </span>
+                  </div>
+                  {occupant.assignment_type && (
+                    <Badge variant="outline" className="text-xs">
+                      {occupant.assignment_type.replace(/_/g, ' ')}{occupant.is_primary ? ' (Primary)' : ''}
+                    </Badge>
+                  )}
+                </div>
               ))}
-              {room.current_occupants.length > 2 && (
-                <Badge variant="outline" className="text-xs">
-                  +{room.current_occupants.length - 2} more
-                </Badge>
+              {room.current_occupants.length > 4 && (
+                <div className="text-center">
+                  <Badge variant="outline" className="text-xs">
+                    +{room.current_occupants.length - 4} more
+                  </Badge>
+                </div>
               )}
             </div>
           </div>
