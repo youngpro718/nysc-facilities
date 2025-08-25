@@ -32,104 +32,151 @@ export function CardBack({ fixture, onFlip }: CardBackProps) {
   };
 
   return (
-    <Card className="w-full h-full overflow-auto rounded-xl border bg-card/80 shadow-sm">
-      <div className="absolute top-4 right-4 z-10">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="rounded-md hover:bg-muted/60"
-          onClick={onFlip}
-        >
-          <RotateCw className="h-4 w-4" />
-        </Button>
-      </div>
+    <Card className="w-full h-full rounded-xl border bg-card shadow-sm relative">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="absolute top-3 right-3 z-10 rounded-md hover:bg-muted/60"
+        onClick={onFlip}
+      >
+        <RotateCw className="h-4 w-4" />
+      </Button>
 
-      <CardHeader className="pt-10 pb-2">
-        <h3 className="font-medium">Fixture Details</h3>
+      <CardHeader className="pt-12 pb-3">
+        <h3 className="font-semibold text-lg">Fixture Details</h3>
+        <p className="text-sm text-muted-foreground">{fixture.name}</p>
       </CardHeader>
 
-      <CardContent className="px-4 space-y-4">
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium flex items-center gap-2">
+      <CardContent className="px-4 space-y-6 pb-4">
+        {/* Quick Info Grid */}
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="space-y-1">
+            <span className="text-muted-foreground text-xs uppercase tracking-wide">Location</span>
+            <p className="font-medium">{fixture.space_name || fixture.room_number || 'Unassigned'}</p>
+          </div>
+          <div className="space-y-1">
+            <span className="text-muted-foreground text-xs uppercase tracking-wide">Type</span>
+            <p className="font-medium">{fixture.type || 'Standard'}</p>
+          </div>
+          <div className="space-y-1">
+            <span className="text-muted-foreground text-xs uppercase tracking-wide">Bulb Type</span>
+            <p className="font-medium">{fixture.bulb_count} bulbs</p>
+          </div>
+          <div className="space-y-1">
+            <span className="text-muted-foreground text-xs uppercase tracking-wide">Technology</span>
+            <p className="font-medium">{fixture.technology || 'LED'}</p>
+          </div>
+        </div>
+
+        {/* Maintenance Schedule */}
+        <div className="space-y-3">
+          <h4 className="text-sm font-semibold flex items-center gap-2 border-b pb-2">
             <Clock className="h-4 w-4" />
             Maintenance Schedule
           </h4>
           
-          <div className="grid grid-cols-2 gap-y-1 text-sm">
-            <div className="text-muted-foreground">Last Maintenance</div>
-            <div>{formatDate(fixture.last_maintenance_date)}</div>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">Last Maintenance</span>
+              <span className="text-sm font-medium">{formatDate(fixture.last_maintenance_date)}</span>
+            </div>
             
-            <div className="text-muted-foreground">Next Maintenance</div>
-            <div>{formatDate(fixture.next_maintenance_date)}</div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">Next Maintenance</span>
+              <span className={cn("text-sm font-medium", 
+                fixture.next_maintenance_date && new Date(fixture.next_maintenance_date) < new Date() 
+                  ? "text-destructive" 
+                  : "text-foreground"
+              )}>
+                {formatDate(fixture.next_maintenance_date)}
+              </span>
+            </div>
             
-            <div className="text-muted-foreground">Installation</div>
-            <div>{formatDate(fixture.installation_date)}</div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">Installation Date</span>
+              <span className="text-sm font-medium">{formatDate(fixture.installation_date)}</span>
+            </div>
           </div>
         </div>
 
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium flex items-center gap-2">
+        {/* Status & Issues */}
+        <div className="space-y-3">
+          <h4 className="text-sm font-semibold flex items-center gap-2 border-b pb-2">
             <AlertCircle className="h-4 w-4" />
-            Electrical Status
+            Status & Issues
           </h4>
           
-          {hasElectricalIssues() ? (
-            <div className="space-y-1">
-              {fixture.electrical_issues?.short_circuit && (
-                <Badge variant="destructive" className="mr-1">Short Circuit</Badge>
-              )}
-              {fixture.electrical_issues?.wiring_issues && (
-                <Badge variant="destructive" className="mr-1">Wiring Issues</Badge>
-              )}
-              {fixture.electrical_issues?.voltage_problems && (
-                <Badge variant="destructive" className="mr-1">Voltage Problems</Badge>
-              )}
-            </div>
-          ) : (
-            <Badge variant="outline" className="bg-green-50 text-green-700">No Electrical Issues</Badge>
-          )}
-          
-          {fixture.ballast_issue && (
-            <div className="mt-2">
-              <Badge variant="destructive" className="mb-1">Ballast Issue</Badge>
-              {fixture.ballast_check_notes && (
-                <p className="text-xs text-muted-foreground">{fixture.ballast_check_notes}</p>
-              )}
-            </div>
-          )}
+          <div className="space-y-2">
+            {hasElectricalIssues() ? (
+              <div className="space-y-2">
+                <p className="text-sm text-destructive font-medium">Electrical Issues Detected:</p>
+                <div className="flex flex-wrap gap-1">
+                  {fixture.electrical_issues?.short_circuit && (
+                    <Badge variant="destructive" className="text-xs">Short Circuit</Badge>
+                  )}
+                  {fixture.electrical_issues?.wiring_issues && (
+                    <Badge variant="destructive" className="text-xs">Wiring Issues</Badge>
+                  )}
+                  {fixture.electrical_issues?.voltage_problems && (
+                    <Badge variant="destructive" className="text-xs">Voltage Problems</Badge>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-green-700">No Electrical Issues</span>
+              </div>
+            )}
+            
+            {fixture.ballast_issue && (
+              <div className="mt-3 p-2 bg-destructive/10 rounded-md">
+                <Badge variant="destructive" className="mb-1 text-xs">Ballast Issue</Badge>
+                {fixture.ballast_check_notes && (
+                  <p className="text-xs text-muted-foreground mt-1">{fixture.ballast_check_notes}</p>
+                )}
+              </div>
+            )}
+          </div>
         </div>
         
+        {/* Maintenance History */}
         {fixture.maintenance_history && fixture.maintenance_history.length > 0 && (
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium flex items-center gap-2">
+          <div className="space-y-3">
+            <h4 className="text-sm font-semibold flex items-center gap-2 border-b pb-2">
               <CalendarClock className="h-4 w-4" />
               Recent Maintenance
             </h4>
             
-            <div className="space-y-2">
+            <div className="space-y-2 max-h-32 overflow-y-auto">
               {formatMaintenanceHistory(fixture.maintenance_history).map((item, idx) => (
-                <div key={idx} className="bg-muted p-2 rounded text-xs">
-                  <div className="flex justify-between">
-                    <span className="font-medium">{item.type}</span>
-                    <span>{item.date}</span>
+                <div key={idx} className="bg-muted/50 p-3 rounded-lg">
+                  <div className="flex justify-between items-start mb-1">
+                    <span className="text-sm font-medium">{item.type}</span>
+                    <span className="text-xs text-muted-foreground">{item.date}</span>
                   </div>
-                  {item.notes && <p className="text-muted-foreground mt-1">{item.notes}</p>}
+                  {item.notes && (
+                    <p className="text-xs text-muted-foreground leading-relaxed">{item.notes}</p>
+                  )}
                 </div>
               ))}
             </div>
             
             {fixture.maintenance_history?.length > 3 && (
-              <p className="text-xs text-muted-foreground">
-                + {fixture.maintenance_history.length - 3} more records
+              <p className="text-xs text-center text-muted-foreground">
+                + {fixture.maintenance_history.length - 3} more maintenance records
               </p>
             )}
           </div>
         )}
         
+        {/* Additional Notes */}
         {fixture.maintenance_notes && (
-          <div className="space-y-1">
-            <h4 className="text-sm font-medium">Additional Notes</h4>
-            <p className="text-xs text-muted-foreground">{fixture.maintenance_notes}</p>
+          <div className="space-y-2">
+            <h4 className="text-sm font-semibold border-b pb-2">Additional Notes</h4>
+            <div className="bg-muted/50 p-3 rounded-lg">
+              <p className="text-sm text-muted-foreground leading-relaxed">{fixture.maintenance_notes}</p>
+            </div>
           </div>
         )}
       </CardContent>

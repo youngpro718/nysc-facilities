@@ -2,6 +2,8 @@ import { LightingFixturesList } from "@/components/lighting/LightingFixturesList
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useLightingFixtures } from "@/hooks/useLightingFixtures";
+import { CreateLightingDialog } from "@/components/lighting/CreateLightingDialog";
 import { 
   Download, 
   Filter, 
@@ -9,7 +11,11 @@ import {
   Settings,
   Trash2,
   Wrench,
-  CheckCircle
+  CheckCircle,
+  Plus,
+  MapPin,
+  ZapOff,
+  Timer
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -23,8 +29,9 @@ import { toast } from "sonner";
 
 export function SmartFixturesView() {
   const [selectedFixtures, setSelectedFixtures] = useState<string[]>([]);
+  const { handleBulkDelete, handleBulkStatusUpdate } = useLightingFixtures();
 
-  const handleBulkAction = (action: string) => {
+  const handleBulkAction = async (action: string) => {
     if (selectedFixtures.length === 0) {
       toast.error("Please select fixtures to perform bulk actions");
       return;
@@ -32,13 +39,26 @@ export function SmartFixturesView() {
 
     switch (action) {
       case 'maintenance':
+        // Schedule maintenance for selected fixtures
         toast.success(`Scheduled maintenance for ${selectedFixtures.length} fixtures`);
         break;
-      case 'status_update':
-        toast.success(`Updated status for ${selectedFixtures.length} fixtures`);
+      case 'working':
+        await handleBulkStatusUpdate(selectedFixtures, 'functional');
+        break;
+      case 'out_of_order':
+        await handleBulkStatusUpdate(selectedFixtures, 'non_functional');
+        break;
+      case 'maintenance_needed':
+        await handleBulkStatusUpdate(selectedFixtures, 'maintenance_needed');
+        break;
+      case 'assign_zone':
+        toast.info("Zone assignment coming soon...");
         break;
       case 'delete':
-        toast.success(`Deleted ${selectedFixtures.length} fixtures`);
+        const success = await handleBulkDelete(selectedFixtures);
+        if (success) {
+          setSelectedFixtures([]);
+        }
         break;
       case 'export':
         toast.success("Exporting fixture data...");
@@ -47,7 +67,10 @@ export function SmartFixturesView() {
       default:
         toast.info(`Action: ${action}`);
     }
-    setSelectedFixtures([]);
+    
+    if (action !== 'delete') {
+      setSelectedFixtures([]);
+    }
   };
 
   const handleSettings = () => {
@@ -61,13 +84,19 @@ export function SmartFixturesView() {
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">Fixture Management</CardTitle>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              <CardTitle className="text-lg">Fixture Management</CardTitle>
               {selectedFixtures.length > 0 && (
-                <Badge variant="secondary" className="mr-2">
+                <Badge variant="secondary">
                   {selectedFixtures.length} selected
                 </Badge>
               )}
+            </div>
+            <div className="flex items-center gap-2">
+              <CreateLightingDialog 
+                onFixtureCreated={() => console.log('Fixture created')}
+                onZoneCreated={() => console.log('Zone created')}
+              />
               
               <Button
                 variant="outline"
@@ -89,14 +118,27 @@ export function SmartFixturesView() {
                     <MoreHorizontal className="h-4 w-4 ml-2" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => handleBulkAction('working')}>
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Mark as Working
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleBulkAction('maintenance_needed')}>
+                    <Timer className="h-4 w-4 mr-2" />
+                    Needs Maintenance
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleBulkAction('out_of_order')}>
+                    <ZapOff className="h-4 w-4 mr-2" />
+                    Mark Out of Order
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => handleBulkAction('assign_zone')}>
+                    <MapPin className="h-4 w-4 mr-2" />
+                    Assign to Zone
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleBulkAction('maintenance')}>
                     <Wrench className="h-4 w-4 mr-2" />
                     Schedule Maintenance
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleBulkAction('status_update')}>
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Update Status
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem 

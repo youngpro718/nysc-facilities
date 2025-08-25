@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useLightingTabs } from "./hooks/useLightingTabs";
 import { EnhancedDashboard } from "./dashboard/EnhancedDashboard";
+import { OverviewView } from "./overview/OverviewView";
 import { SmartFixturesView } from "./fixtures/SmartFixturesView";
 import { RoomCentricView } from "./rooms/RoomCentricView";
 import { MaintenanceWorkflow } from "./maintenance/MaintenanceWorkflow";
@@ -32,7 +33,7 @@ export function LightingPageLayout() {
       id: 'overview',
       label: 'Overview',
       icon: LayoutDashboard,
-      component: EnhancedDashboard,
+      component: OverviewView,
       description: 'Executive dashboard with key metrics and alerts'
     },
     {
@@ -44,10 +45,10 @@ export function LightingPageLayout() {
     },
     {
       id: 'rooms',
-      label: 'Rooms',
+      label: 'Zones',
       icon: MapPin,
       component: RoomCentricView,
-      description: 'Room-focused lighting health and management'
+      description: 'Organize fixtures into logical zones for better management'
     },
     {
       id: 'maintenance',
@@ -88,8 +89,7 @@ export function LightingPageLayout() {
             onClick={() => setActiveTab('overview')}
           >
             <Bell className="h-4 w-4 mr-2" />
-            Alerts
-            <Badge variant="destructive" className="ml-2">3</Badge>
+            View Alerts
           </Button>
           
           <CreateLightingDialog 
