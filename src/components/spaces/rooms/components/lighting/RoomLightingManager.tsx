@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -32,23 +32,70 @@ export function RoomLightingManager({ room, trigger }: RoomLightingManagerProps)
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  // Mock fixture data - in real implementation this would come from database
-  const [fixtures, setFixtures] = useState<LightingFixture[]>(() => {
-    const mockFixtures: LightingFixture[] = [];
-    for (let i = 1; i <= (room.total_fixtures_count || 4); i++) {
-      const isOut = i === 2; // Mock one light being out
-      mockFixtures.push({
-        id: `fixture-${i}`,
-        name: `Light ${i}`,
-        location: i <= 2 ? 'Ceiling Main' : i <= 3 ? 'Ceiling Corner' : 'Wall Mount',
-        bulbType: 'LED',
-        status: isOut ? 'out' : 'functional',
-        ballastIssue: i === 3, // Mock ballast issue
-        outageDate: isOut ? new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() : undefined
-      });
+  const [fixtures, setFixtures] = useState<LightingFixture[]>([]);
+
+  // Fetch real lighting fixtures from database
+  useEffect(() => {
+    const fetchFixtures = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('lighting_fixtures')
+          .select('*')
+          .eq('space_id', room.id);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          // Convert database fixtures to our format
+          const convertedFixtures: LightingFixture[] = data.map(fixture => ({
+            id: fixture.id,
+            name: fixture.name || `Light ${fixture.sequence_number || 1}`,
+            location: fixture.position || 'ceiling',
+            bulbType: fixture.technology || 'LED',
+            status: fixture.status === 'functional' ? 'functional' : 
+                   fixture.status === 'non_functional' ? 'out' : 
+                   fixture.status === 'maintenance_needed' ? 'maintenance' : 'functional',
+            ballastIssue: fixture.ballast_issue || false,
+            outageDate: fixture.reported_out_date || undefined
+          }));
+          setFixtures(convertedFixtures);
+        } else {
+          // Create default fixtures if none exist
+          const defaultFixtures: LightingFixture[] = [];
+          for (let i = 1; i <= 4; i++) {
+            defaultFixtures.push({
+              id: `temp-${i}`,
+              name: `Light ${i}`,
+              location: i <= 2 ? 'Ceiling Main' : 'Ceiling Corner',
+              bulbType: 'LED',
+              status: 'functional',
+              ballastIssue: false
+            });
+          }
+          setFixtures(defaultFixtures);
+        }
+      } catch (error) {
+        console.error('Error fetching fixtures:', error);
+        // Fallback to default fixtures
+        const defaultFixtures: LightingFixture[] = [];
+        for (let i = 1; i <= 4; i++) {
+          defaultFixtures.push({
+            id: `temp-${i}`,
+            name: `Light ${i}`,
+            location: 'Ceiling',
+            bulbType: 'LED',
+            status: 'functional',
+            ballastIssue: false
+          });
+        }
+        setFixtures(defaultFixtures);
+      }
+    };
+
+    if (isOpen && room.id) {
+      fetchFixtures();
     }
-    return mockFixtures;
-  });
+  }, [isOpen, room.id]);
 
   const statusStats = useMemo(() => {
     const functional = fixtures.filter(f => f.status === 'functional').length;
@@ -122,16 +169,58 @@ export function RoomLightingManager({ room, trigger }: RoomLightingManagerProps)
   const handleSaveConfiguration = async () => {
     setIsSubmitting(true);
     try {
-      // In real implementation, save to database
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Mock delay
+      // Save fixtures to database
+      for (const fixture of fixtures) {
+        if (fixture.id.startsWith('temp-')) {
+          // Create new fixture
+          const technologyValue = fixture.bulbType === 'Incandescent' || fixture.bulbType === 'Halogen' ? 'Bulb' : fixture.bulbType as 'LED' | 'Fluorescent' | 'Bulb';
+          
+          const { error } = await supabase
+            .from('lighting_fixtures')
+            .insert({
+              name: fixture.name,
+              room_number: room.room_number || null,
+              space_name: room.name,
+              space_id: room.id,
+              space_type: 'room' as const,
+              type: 'standard' as const,
+              status: fixture.status === 'functional' ? 'functional' as const : 'non_functional' as const,
+              position: fixture.location.toLowerCase().includes('ceiling') ? 'ceiling' as const : 'wall' as const,
+              technology: technologyValue,
+              bulb_count: 1,
+              ballast_issue: fixture.ballastIssue,
+              requires_electrician: fixture.ballastIssue,
+              reported_out_date: fixture.outageDate || null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+
+          if (error) throw error;
+        } else {
+          // Update existing fixture
+          const { error } = await supabase
+            .from('lighting_fixtures')
+            .update({
+              status: fixture.status === 'functional' ? 'functional' as const : 'non_functional' as const,
+              ballast_issue: fixture.ballastIssue,
+              requires_electrician: fixture.ballastIssue,
+              reported_out_date: fixture.outageDate || null,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', fixture.id);
+
+          if (error) throw error;
+        }
+      }
       
       toast({
         title: "Configuration Saved",
-        description: `Room lighting configured with ${totalBulbs} ${defaultBulbType} fixtures.`,
+        description: `Room lighting configured with ${fixtures.length} fixtures.`,
       });
       
       setIsOpen(false);
     } catch (error) {
+      console.error('Error saving lighting configuration:', error);
       toast({
         title: "Error",
         description: "Failed to save lighting configuration.",

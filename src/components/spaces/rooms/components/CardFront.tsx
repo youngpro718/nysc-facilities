@@ -11,6 +11,7 @@ import { ParentRoomHierarchy } from "../ParentRoomHierarchy";
 import { RoomAccessSummary } from "@/components/access/RoomAccessSummary";
 import { SmartBadges } from "./badges/SmartBadges";
 import { RoomLightingManager } from "./lighting/RoomLightingManager";
+import { RoomRepurposingDialog } from "./repurposing/RoomRepurposingDialog";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
 import { getNormalizedCurrentUse } from "../utils/currentUse";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -97,7 +98,6 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false }: CardFro
                           variant="secondary"
                           size="sm"
                           className="bg-black/80 hover:bg-black text-white border-0 shadow-lg transition-all duration-200 h-8 w-8 p-0"
-                          onClick={(e) => e.stopPropagation()}
                         >
                           <Lightbulb className="h-3 w-3" />
                         </Button>
@@ -270,14 +270,20 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false }: CardFro
           )}
 
           {room.original_room_type && room.original_room_type !== room.room_type && (
-            <Badge 
-              variant="outline" 
-              className="text-[11px] flex items-center gap-1 whitespace-nowrap"
-              title={`Originally ${String(room.original_room_type).replace(/_/g, ' ')}`}
-            >
-              <History className="h-3 w-3" />
-              Original: {String(room.original_room_type).replace(/_/g, ' ')}
-            </Badge>
+            <RoomRepurposingDialog
+              room={room}
+              onUpdate={() => window.location.reload()}
+              trigger={
+                <Badge 
+                  variant="outline" 
+                  className="text-[11px] flex items-center gap-1 whitespace-nowrap cursor-pointer hover:bg-muted/50"
+                  title={`Originally ${String(room.original_room_type).replace(/_/g, ' ')} - Click to manage`}
+                >
+                  <History className="h-3 w-3" />
+                  Original: {String(room.original_room_type).replace(/_/g, ' ')}
+                </Badge>
+              }
+            />
           )}
         </div>
 

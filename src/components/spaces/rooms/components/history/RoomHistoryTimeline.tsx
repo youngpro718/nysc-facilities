@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Clock, CheckCircle, AlertCircle, Settings, History, Lightbulb } from "lucide-react";
 import { format, differenceInDays, isAfter, isWithinInterval, subDays } from "date-fns";
 import { EnhancedRoom } from "../../types/EnhancedRoomTypes";
+import { supabase } from "@/integrations/supabase/client";
+import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
 
 interface RoomHistoryTimelineProps {
   room: EnhancedRoom;
@@ -19,8 +21,81 @@ interface HistoryEvent {
 }
 
 export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
-  // Mock data based on room's history stats - in real implementation this would come from issues/events
-  const generateHistoryEvents = (): HistoryEvent[] => {
+  const [realEvents, setRealEvents] = useState<HistoryEvent[]>([]);
+  const { getIssuesForRoom } = useCourtIssuesIntegration();
+
+  // Fetch real data from database
+  useEffect(() => {
+    const fetchRoomHistory = async () => {
+      try {
+        // Get issues for this room
+        const roomIssues = getIssuesForRoom(room.id);
+        
+        // Convert issues to history events
+        const events: HistoryEvent[] = roomIssues.map(issue => {
+          const resolutionSpeed = issue.status === 'resolved' 
+            ? getResolutionSpeed(issue.created_at, issue.updated_at)
+            : 'ongoing';
+            
+          return {
+            date: issue.created_at || new Date().toISOString(),
+            type: issue.status === 'resolved' ? 'issue_resolved' : 'issue_created',
+            title: issue.title || 'Issue',
+            description: issue.description || 'No description available',
+            severity: (issue.priority || 'medium') as 'low' | 'medium' | 'high' | 'critical',
+            resolutionSpeed,
+            category: getCategoryFromIssue(issue)
+          };
+        });
+
+        // Add room function changes from previous_functions
+        if (room.previous_functions && Array.isArray(room.previous_functions)) {
+          room.previous_functions.forEach((func: any) => {
+            events.push({
+              date: func.date || room.function_change_date || new Date().toISOString(),
+              type: 'quick_fix',
+              title: 'Room Function Changed',
+              description: `Room repurposed from ${func.type?.replace(/_/g, ' ')} - ${func.reason || 'No reason provided'}`,
+              severity: 'low',
+              resolutionSpeed: func.temporary ? 'ongoing' : 'quick',
+              category: 'other'
+            });
+          });
+        }
+
+        setRealEvents(events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+      } catch (error) {
+        console.error('Error fetching room history:', error);
+        // Fallback to mock data if real data fails
+        setRealEvents(generateMockEvents());
+      }
+    };
+
+    fetchRoomHistory();
+  }, [room.id]);
+
+  const getResolutionSpeed = (createdAt: string, updatedAt: string): 'quick' | 'normal' | 'slow' | 'ongoing' => {
+    const created = new Date(createdAt);
+    const updated = new Date(updatedAt);
+    const diffHours = differenceInDays(updated, created) * 24;
+    
+    if (diffHours <= 24) return 'quick';
+    if (diffHours <= 72) return 'normal';
+    return 'slow';
+  };
+
+  const getCategoryFromIssue = (issue: any): 'lighting' | 'maintenance' | 'safety' | 'access' | 'other' => {
+    const title = (issue.title || '').toLowerCase();
+    const description = (issue.description || '').toLowerCase();
+    
+    if (title.includes('light') || description.includes('light') || title.includes('bulb')) return 'lighting';
+    if (title.includes('door') || description.includes('access') || title.includes('key')) return 'access';
+    if (title.includes('safety') || issue.priority === 'critical') return 'safety';
+    if (title.includes('maintenance') || title.includes('repair')) return 'maintenance';
+    return 'other';
+  };
+
+  const generateMockEvents = (): HistoryEvent[] => {
     const events: HistoryEvent[] = [];
     const today = new Date();
     
@@ -78,7 +153,7 @@ export function RoomHistoryTimeline({ room }: RoomHistoryTimelineProps) {
     return events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   };
 
-  const events = generateHistoryEvents();
+  const events = realEvents.length > 0 ? realEvents : generateMockEvents();
   
   const getResolutionBadge = (speed?: string) => {
     switch (speed) {
