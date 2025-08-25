@@ -23,6 +23,7 @@ export function EditElevatorPassDialog({ open, onOpenChange, assignment, onUpdat
   const [recipientType, setRecipientType] = useState<RecipientType>("occupant");
   const [recipientName, setRecipientName] = useState("");
   const [recipientEmail, setRecipientEmail] = useState("");
+  const [recipientDepartment, setRecipientDepartment] = useState("");
   const [expectedReturnAt, setExpectedReturnAt] = useState<string>("");
   const [reason, setReason] = useState("");
   const [notes, setNotes] = useState("");
@@ -36,13 +37,16 @@ export function EditElevatorPassDialog({ open, onOpenChange, assignment, onUpdat
       setRecipientType("occupant");
       setRecipientName(`${assignment.occupant.first_name} ${assignment.occupant.last_name}`);
       setRecipientEmail(assignment.occupant.email || "");
+      setRecipientDepartment(assignment.occupant.department || "");
     } else {
       // Non-occupant assignment - check if it's security or office
       const name = assignment.recipient_name || "";
       if (name.toLowerCase().includes("security")) {
         setRecipientType("security");
+        setRecipientDepartment("Security");
       } else {
         setRecipientType("office");
+        setRecipientDepartment("External");
       }
       setRecipientName(name);
       setRecipientEmail(assignment.recipient_email || "");
@@ -143,21 +147,31 @@ export function EditElevatorPassDialog({ open, onOpenChange, assignment, onUpdat
           </div>
 
           {recipientType !== "occupant" && (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <Label>Recipient Name</Label>
-                <Input
-                  placeholder="e.g., District Attorney Office"
-                  value={recipientName}
-                  onChange={(e) => setRecipientName(e.target.value)}
-                />
+            <div className="space-y-3">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <Label>Recipient Name</Label>
+                  <Input
+                    placeholder="e.g., District Attorney Office"
+                    value={recipientName}
+                    onChange={(e) => setRecipientName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label>Email (optional)</Label>
+                  <Input 
+                    type="email" 
+                    value={recipientEmail} 
+                    onChange={(e) => setRecipientEmail(e.target.value)} 
+                  />
+                </div>
               </div>
               <div>
-                <Label>Email (optional)</Label>
-                <Input 
-                  type="email" 
-                  value={recipientEmail} 
-                  onChange={(e) => setRecipientEmail(e.target.value)} 
+                <Label>Department</Label>
+                <Input
+                  placeholder="e.g., District Attorney, Security, Maintenance"
+                  value={recipientDepartment}
+                  onChange={(e) => setRecipientDepartment(e.target.value)}
                 />
               </div>
             </div>
