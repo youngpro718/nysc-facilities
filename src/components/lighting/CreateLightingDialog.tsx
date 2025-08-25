@@ -2,15 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
-} from "@/components/ui/dialog";
+import { Plus, Lightbulb, MapPin } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Form } from "@/components/ui/form";
 import { lightingFixtureSchema, lightingZoneSchema, LightingFixtureFormData, LightingZoneFormData } from "./schemas/lightingSchema";
@@ -19,6 +11,8 @@ import { CreateZoneFields } from "./form-sections/CreateZoneFields";
 import { useLightingSubmit } from "./hooks/useLightingSubmit";
 import { useQuery } from "@tanstack/react-query";
 import { fetchLightingZones } from "@/services/supabase/lightingService";
+import { BaseLightingDialog } from "./shared/BaseLightingDialog";
+import { StandardFormSection } from "./shared/StandardFormSection";
 
 interface CreateLightingDialogProps {
   onFixtureCreated: () => void;
@@ -84,63 +78,79 @@ export function CreateLightingDialog({ onFixtureCreated, onZoneCreated }: Create
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+    <BaseLightingDialog
+      open={open}
+      onOpenChange={setOpen}
+      title="Add Lighting Component"
+      description="Create a new lighting fixture or zone in the system with proper configuration and context."
+      trigger={
         <Button data-testid="create-lighting-button" className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
           <span>Add New</span>
         </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Add Lighting Component</DialogTitle>
-          <DialogDescription>
-            Create a new lighting fixture or zone in the system.
-          </DialogDescription>
-        </DialogHeader>
+      }
+    >
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="fixture" className="flex items-center gap-2">
+            <Lightbulb className="h-4 w-4" />
+            Lighting Fixture
+          </TabsTrigger>
+          <TabsTrigger value="zone" className="flex items-center gap-2">
+            <MapPin className="h-4 w-4" />
+            Lighting Zone
+          </TabsTrigger>
+        </TabsList>
         
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="fixture">Lighting Fixture</TabsTrigger>
-            <TabsTrigger value="zone">Lighting Zone</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="fixture" className="space-y-4">
+        <TabsContent value="fixture" className="space-y-4 mt-6">
+          <StandardFormSection
+            title="Fixture Configuration"
+            description="Set up a new lighting fixture with all necessary technical details and location information."
+            icon={<Lightbulb className="h-4 w-4 text-primary" />}
+          >
             <Form {...fixtureForm}>
-              <form onSubmit={fixtureForm.handleSubmit(handleFixtureSubmit)} className="space-y-4">
+              <form onSubmit={fixtureForm.handleSubmit(handleFixtureSubmit)} className="space-y-6">
                 <CreateFixtureFields 
                   form={fixtureForm} 
                   zones={zones} 
                 />
-                <div className="flex justify-end gap-2">
+                <div className="flex justify-end gap-2 pt-4 border-t">
                   <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                     Cancel
                   </Button>
-                  <Button type="submit">
+                  <Button type="submit" className="flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
                     Create Fixture
                   </Button>
                 </div>
               </form>
             </Form>
-          </TabsContent>
-          
-          <TabsContent value="zone" className="space-y-4">
+          </StandardFormSection>
+        </TabsContent>
+        
+        <TabsContent value="zone" className="space-y-4 mt-6">
+          <StandardFormSection
+            title="Zone Configuration"
+            description="Create a new lighting zone to group and manage multiple fixtures together."
+            icon={<MapPin className="h-4 w-4 text-primary" />}
+          >
             <Form {...zoneForm}>
-              <form onSubmit={zoneForm.handleSubmit(handleZoneSubmit)} className="space-y-4">
+              <form onSubmit={zoneForm.handleSubmit(handleZoneSubmit)} className="space-y-6">
                 <CreateZoneFields form={zoneForm} />
-                <div className="flex justify-end gap-2">
+                <div className="flex justify-end gap-2 pt-4 border-t">
                   <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                     Cancel
                   </Button>
-                  <Button type="submit">
+                  <Button type="submit" className="flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
                     Create Zone
                   </Button>
                 </div>
               </form>
             </Form>
-          </TabsContent>
-        </Tabs>
-      </DialogContent>
-    </Dialog>
+          </StandardFormSection>
+        </TabsContent>
+      </Tabs>
+    </BaseLightingDialog>
   );
 }

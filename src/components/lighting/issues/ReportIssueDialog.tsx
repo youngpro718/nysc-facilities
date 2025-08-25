@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, MapPin, Lightbulb, Wrench } from 'lucide-react';
 import { LightingFixture } from '@/types/lighting';
 import * as locationUtil from '@/components/lighting/utils/location';
 import { LightingIssueForm } from './LightingIssueForm';
+import { BaseLightingDialog } from '../shared/BaseLightingDialog';
+import { StandardFormSection } from '../shared/StandardFormSection';
 
 interface ReportIssueDialogProps {
   fixture: LightingFixture;
@@ -28,9 +29,22 @@ export function ReportIssueDialog({ fixture }: ReportIssueDialogProps) {
     setOpen(false);
   };
   
+  const contextInfo = [
+    { label: "Fixture Name", value: fixture.name, icon: <Lightbulb className="h-3 w-3" /> },
+    { label: "Location", value: getLocationFromFixture(), icon: <MapPin className="h-3 w-3" /> },
+    { label: "Technology", value: fixture.technology || 'Unknown', icon: <Lightbulb className="h-3 w-3" /> },
+    { label: "Current Status", value: fixture.status, icon: <Wrench className="h-3 w-3" /> }
+  ];
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+    <BaseLightingDialog
+      open={open}
+      onOpenChange={setOpen}
+      title={`Report Issue: ${fixture.name}`}
+      description="Provide detailed information about the lighting problem to ensure quick and accurate maintenance response."
+      status={fixture.status}
+      contextInfo={contextInfo}
+      trigger={
         <Button 
           variant="outline" 
           size="sm"
@@ -39,14 +53,14 @@ export function ReportIssueDialog({ fixture }: ReportIssueDialogProps) {
           <AlertTriangle className="h-4 w-4 mr-1" />
           Report Issue
         </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[520px] p-4">
-        <DialogHeader>
-          <DialogTitle>Report Lighting Issue for {fixture.name}</DialogTitle>
-          <DialogDescription>
-            Provide location context and details about the lighting problem so maintenance can respond quickly.
-          </DialogDescription>
-        </DialogHeader>
+      }
+    >
+      <StandardFormSection
+        title="Issue Details"
+        description="Describe the specific problem and provide context to help maintenance prioritize and resolve the issue efficiently."
+        icon={<AlertTriangle className="h-4 w-4 text-amber-600" />}
+        variant="accent"
+      >
         <LightingIssueForm 
           prefillData={{
             location: getLocationFromFixture(),
@@ -56,7 +70,7 @@ export function ReportIssueDialog({ fixture }: ReportIssueDialogProps) {
           }}
           onSuccess={handleSuccess}
         />
-      </DialogContent>
-    </Dialog>
+      </StandardFormSection>
+    </BaseLightingDialog>
   );
 }

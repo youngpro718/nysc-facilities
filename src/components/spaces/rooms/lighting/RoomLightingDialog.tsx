@@ -3,15 +3,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
-import { Settings2 } from "lucide-react";
+import { Settings2, Home, Lightbulb, MapPin, Clock } from "lucide-react";
 import { LightingFixture, LightingTechnology } from "@/types/lighting";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -20,6 +13,8 @@ import { roomLightingSchema, type RoomLightingFormData } from "./schemas/roomLig
 import { BasicConfigSection } from "./form-sections/BasicConfigSection";
 import { AdditionalSettingsSection } from "./form-sections/AdditionalSettingsSection";
 import { ElectricalIssuesSection } from "./form-sections/ElectricalIssuesSection";
+import { BaseLightingDialog } from "../../../lighting/shared/BaseLightingDialog";
+import { StandardFormSection } from "../../../lighting/shared/StandardFormSection";
 
 interface RoomLightingDialogProps {
   roomId: string;
@@ -119,30 +114,86 @@ export function RoomLightingDialog({ roomId, fixture }: RoomLightingDialogProps)
     }
   };
 
+  const contextInfo = fixture ? [
+    { label: "Current Status", value: fixture.status, icon: <Lightbulb className="h-3 w-3" /> },
+    { label: "Room ID", value: roomId, icon: <Home className="h-3 w-3" /> },
+    { label: "Technology", value: fixture.technology || 'Unknown', icon: <Lightbulb className="h-3 w-3" /> },
+    { label: "Last Updated", value: new Date(fixture.updated_at || Date.now()).toLocaleDateString(), icon: <Clock className="h-3 w-3" /> }
+  ] : [
+    { label: "Room ID", value: roomId, icon: <Home className="h-3 w-3" /> },
+    { label: "Action", value: "Adding new configuration", icon: <Settings2 className="h-3 w-3" /> }
+  ];
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="icon">
+    <BaseLightingDialog
+      open={open}
+      onOpenChange={setOpen}
+      title={fixture ? 'Edit Lighting Configuration' : 'Add Lighting Configuration'}
+      description={fixture ? 
+        "Update the lighting configuration for this room with enhanced technical settings." : 
+        "Set up new lighting configuration for this room with proper technical specifications."
+      }
+      status={fixture?.status}
+      contextInfo={contextInfo}
+      trigger={
+        <Button variant="outline" size="icon" className="text-blue-600 border-blue-200 hover:bg-blue-50">
           <Settings2 className="h-4 w-4" />
         </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {fixture ? 'Edit Lighting Configuration' : 'Add Lighting Configuration'}
-          </DialogTitle>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <BasicConfigSection form={form as FormProps} />
-            <AdditionalSettingsSection form={form as FormProps} />
-            <ElectricalIssuesSection form={form as FormProps} />
-            <Button type="submit">
-              {fixture ? 'Update Configuration' : 'Add Configuration'}
-            </Button>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+      }
+    >
+      <div className="space-y-6">
+        <StandardFormSection
+          title="Basic Configuration"
+          description="Configure the primary lighting settings and room assignment for this fixture."
+          icon={<Home className="h-4 w-4 text-primary" />}
+        >
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <BasicConfigSection form={form as FormProps} />
+            </form>
+          </Form>
+        </StandardFormSection>
+
+        <StandardFormSection
+          title="Additional Settings"
+          description="Configure advanced features and special lighting requirements."
+          icon={<Settings2 className="h-4 w-4 text-primary" />}
+          variant="muted"
+        >
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <AdditionalSettingsSection form={form as FormProps} />
+            </form>
+          </Form>
+        </StandardFormSection>
+
+        <StandardFormSection
+          title="Electrical Issues"
+          description="Report and track any electrical problems or maintenance needs."
+          icon={<Lightbulb className="h-4 w-4 text-amber-600" />}
+          variant="accent"
+        >
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <ElectricalIssuesSection form={form as FormProps} />
+              
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" className="flex items-center gap-2">
+                  <Settings2 className="h-4 w-4" />
+                  {fixture ? 'Update Configuration' : 'Add Configuration'}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </StandardFormSection>
+      </div>
+    </BaseLightingDialog>
   );
 }

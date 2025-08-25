@@ -1,15 +1,15 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Wrench } from "lucide-react";
+import { Wrench, MapPin, Clock, Lightbulb } from "lucide-react";
 import { LightingFixture } from "@/types/lighting";
+import { BaseLightingDialog } from "../shared/BaseLightingDialog";
+import { StandardFormSection } from "../shared/StandardFormSection";
+import { StandardFormField } from "../shared/StandardFormField";
 
 interface MaintenanceDialogProps {
   fixture: LightingFixture;
@@ -81,55 +81,92 @@ export function MaintenanceDialog({ fixture, onComplete }: MaintenanceDialogProp
     }
   };
 
+  const contextInfo = [
+    { label: "Fixture Name", value: fixture.name, icon: <Lightbulb className="h-3 w-3" /> },
+    { label: "Current Status", value: fixture.status, icon: <Wrench className="h-3 w-3" /> },
+    { label: "Location", value: fixture.room_number || 'Unassigned', icon: <MapPin className="h-3 w-3" /> },
+    { label: "Last Maintenance", value: fixture.maintenance_history?.length ? 
+      new Date(fixture.maintenance_history[fixture.maintenance_history.length - 1].date).toLocaleDateString() : 'Never', 
+      icon: <Clock className="h-3 w-3" /> }
+  ];
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+    <BaseLightingDialog
+      open={open}
+      onOpenChange={setOpen}
+      title={`Record Maintenance: ${fixture.name}`}
+      description="Document maintenance work performed on this lighting fixture to track service history and maintain optimal performance."
+      status={fixture.status}
+      contextInfo={contextInfo}
+      trigger={
+        <Button variant="outline" size="sm" className="text-blue-600 border-blue-200 hover:bg-blue-50">
           <Wrench className="h-4 w-4 mr-2" />
           Record Maintenance
         </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Record Maintenance</DialogTitle>
-          <DialogDescription>
-            Record maintenance work performed on this lighting fixture.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Maintenance Type</Label>
+      }
+    >
+      <StandardFormSection
+        title="Maintenance Details"
+        description="Select the type of maintenance performed and provide detailed notes for future reference."
+        icon={<Wrench className="h-4 w-4 text-primary" />}
+        variant="accent"
+      >
+        <div className="space-y-6">
+          <div className="space-y-3">
+            <label className="text-sm font-medium flex items-center gap-2">
+              <Wrench className="h-4 w-4" />
+              Maintenance Type *
+            </label>
             <Select onValueChange={setType} value={type}>
               <SelectTrigger>
-                <SelectValue placeholder="Select type of maintenance" />
+                <SelectValue placeholder="Select type of maintenance performed" />
               </SelectTrigger>
               <SelectContent>
-                {MAINTENANCE_TYPES.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type}
+                {MAINTENANCE_TYPES.map((maintenanceType) => (
+                  <SelectItem key={maintenanceType} value={maintenanceType}>
+                    {maintenanceType}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label>Notes</Label>
+          <div className="space-y-3">
+            <label className="text-sm font-medium flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              Maintenance Notes
+            </label>
             <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Enter maintenance details..."
-              className="h-32"
+              placeholder="Describe the maintenance work performed, parts replaced, issues found, etc..."
+              className="h-32 resize-none"
             />
+            <div className="text-xs text-muted-foreground bg-muted/50 rounded p-2">
+              💡 Include details about parts replaced, procedures followed, and any issues discovered during maintenance.
+            </div>
           </div>
 
-          <div className="flex justify-end">
-            <Button onClick={handleSubmit} disabled={isSubmitting}>
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => setOpen(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSubmit} 
+              disabled={isSubmitting || !type}
+              className="flex items-center gap-2"
+            >
+              <Wrench className="h-4 w-4" />
               {isSubmitting ? "Recording..." : "Record Maintenance"}
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </StandardFormSection>
+    </BaseLightingDialog>
   );
 } 

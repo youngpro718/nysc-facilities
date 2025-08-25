@@ -1,13 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Edit } from "lucide-react";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle 
-} from "@/components/ui/dialog";
+import { Edit, Lightbulb, MapPin, Clock } from "lucide-react";
 import { Form } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,6 +9,8 @@ import { LightingFixture } from "@/types/lighting";
 import { CreateFixtureFields } from "./form-sections/CreateFixtureFields";
 import { lightingFixtureSchema, type LightingFixtureFormData } from "./schemas/lightingSchema";
 import { updateLightingFixturesStatus } from "@/services/supabase/lightingService";
+import { BaseLightingDialog } from "./shared/BaseLightingDialog";
+import { StandardFormSection } from "./shared/StandardFormSection";
 
 interface EditLightingDialogProps {
   fixture: LightingFixture;
@@ -66,30 +61,46 @@ export function EditLightingDialog({ fixture, onFixtureUpdated }: EditLightingDi
     }
   };
 
+  const contextInfo = [
+    { label: "Current Status", value: fixture.status, icon: <Lightbulb className="h-3 w-3" /> },
+    { label: "Location", value: fixture.room_number || 'Unassigned', icon: <MapPin className="h-3 w-3" /> },
+    { label: "Technology", value: fixture.technology || 'Unknown', icon: <Lightbulb className="h-3 w-3" /> },
+    { label: "Last Updated", value: new Date(fixture.updated_at || Date.now()).toLocaleDateString(), icon: <Clock className="h-3 w-3" /> }
+  ];
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => setOpen(true)}
+    <BaseLightingDialog
+      open={open}
+      onOpenChange={setOpen}
+      title={`Edit Fixture: ${fixture.name}`}
+      description="Update the configuration and settings for this lighting fixture."
+      status={fixture.status}
+      contextInfo={contextInfo}
+      trigger={
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setOpen(true)}
+          className="text-blue-600 border-blue-200 hover:bg-blue-50"
+        >
+          <Edit className="h-4 w-4 mr-1" />
+          Edit
+        </Button>
+      }
+    >
+      <StandardFormSection
+        title="Fixture Configuration"
+        description="Update the technical specifications, location, and status of this lighting fixture."
+        icon={<Edit className="h-4 w-4 text-primary" />}
+        variant="accent"
       >
-        <Edit className="h-4 w-4" />
-      </Button>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Edit Fixture: {fixture.name}</DialogTitle>
-          <DialogDescription>
-            Update the details for this lighting fixture.
-          </DialogDescription>
-        </DialogHeader>
-        
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
             <CreateFixtureFields 
               form={form}
             />
             
-            <div className="flex justify-end gap-2 pt-4">
+            <div className="flex justify-end gap-2 pt-4 border-t">
               <Button 
                 type="button" 
                 variant="outline" 
@@ -101,13 +112,15 @@ export function EditLightingDialog({ fixture, onFixtureUpdated }: EditLightingDi
               <Button 
                 type="submit" 
                 disabled={isSubmitting}
+                className="flex items-center gap-2"
               >
+                <Edit className="h-4 w-4" />
                 {isSubmitting ? "Updating..." : "Update Fixture"}
               </Button>
             </div>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+      </StandardFormSection>
+    </BaseLightingDialog>
   );
 }
