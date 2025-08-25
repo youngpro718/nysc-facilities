@@ -3,12 +3,15 @@ import {
   stringToRoomType, 
   stringToStatus, 
   stringToStorageType,
+  stringToSimplifiedStorageType,
   roomTypeToString,
   statusToString,
   storageTypeToString,
+  simplifiedStorageTypeToString,
   RoomTypeEnum,
   StatusEnum,
-  StorageTypeEnum
+  StorageTypeEnum,
+  SimplifiedStorageTypeEnum
 } from "../../rooms/types/roomEnums";
 
 // Database room type (what comes from Supabase)
@@ -66,6 +69,7 @@ export function dbToFormRoom(dbRoom: Partial<DatabaseRoom>, roomId?: string): Pa
     currentFunction: dbRoom.current_function || "",
     isStorage: dbRoom.is_storage || false,
     storageType: dbRoom.storage_type ? stringToStorageType(dbRoom.storage_type) : null,
+    simplifiedStorageType: dbRoom.storage_type ? stringToSimplifiedStorageType(dbRoom.storage_type) : null,
     storageCapacity: dbRoom.storage_capacity || null,
     storageNotes: dbRoom.storage_notes || "",
     parentRoomId: dbRoom.parent_room_id || null,
@@ -90,7 +94,7 @@ export function formToDbRoom(formData: RoomFormData): Partial<DatabaseRoom> {
     floor_id: formData.floorId,
     is_storage: formData.isStorage || false,
     storage_capacity: formData.storageCapacity || null,
-    storage_type: formData.storageType ? storageTypeToString(formData.storageType) : null,
+    storage_type: formData.simplifiedStorageType ? simplifiedStorageTypeToString(formData.simplifiedStorageType) : null,
     storage_notes: formData.storageNotes || null,
     phone_number: formData.phoneNumber || null,
     // If marked as storage, do not persist a current_function
