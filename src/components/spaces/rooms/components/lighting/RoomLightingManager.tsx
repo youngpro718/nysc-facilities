@@ -47,9 +47,9 @@ export function RoomLightingManager({ room, trigger }: RoomLightingManagerProps)
 
         if (data && data.length > 0) {
           // Convert database fixtures to our format
-          const convertedFixtures: LightingFixture[] = data.map(fixture => ({
+          const convertedFixtures: LightingFixture[] = data.map((fixture, index) => ({
             id: fixture.id,
-            name: fixture.name || `Light ${fixture.sequence_number || 1}`,
+            name: fixture.name || `Light ${index + 1}`,
             location: fixture.position || 'ceiling',
             bulbType: fixture.technology || 'LED',
             status: fixture.status === 'functional' ? 'functional' : 
@@ -59,15 +59,17 @@ export function RoomLightingManager({ room, trigger }: RoomLightingManagerProps)
             outageDate: fixture.reported_out_date || undefined
           }));
           setFixtures(convertedFixtures);
+          setTotalBulbs(convertedFixtures.length);
         } else {
           // Create default fixtures if none exist
           const defaultFixtures: LightingFixture[] = [];
-          for (let i = 1; i <= 4; i++) {
+          const initialCount = totalBulbs || 4;
+          for (let i = 1; i <= initialCount; i++) {
             defaultFixtures.push({
               id: `temp-${i}`,
               name: `Light ${i}`,
               location: i <= 2 ? 'Ceiling Main' : 'Ceiling Corner',
-              bulbType: 'LED',
+              bulbType: defaultBulbType,
               status: 'functional',
               ballastIssue: false
             });
@@ -78,12 +80,13 @@ export function RoomLightingManager({ room, trigger }: RoomLightingManagerProps)
         console.error('Error fetching fixtures:', error);
         // Fallback to default fixtures
         const defaultFixtures: LightingFixture[] = [];
-        for (let i = 1; i <= 4; i++) {
+        const initialCount = totalBulbs || 4;
+        for (let i = 1; i <= initialCount; i++) {
           defaultFixtures.push({
             id: `temp-${i}`,
             name: `Light ${i}`,
             location: 'Ceiling',
-            bulbType: 'LED',
+            bulbType: defaultBulbType,
             status: 'functional',
             ballastIssue: false
           });
@@ -95,7 +98,33 @@ export function RoomLightingManager({ room, trigger }: RoomLightingManagerProps)
     if (isOpen && room.id) {
       fetchFixtures();
     }
-  }, [isOpen, room.id]);
+  }, [isOpen, room.id, totalBulbs, defaultBulbType]);
+
+  // Handle total fixtures count change
+  useEffect(() => {
+    if (totalBulbs && fixtures.length > 0) {
+      const currentCount = fixtures.length;
+      
+      if (totalBulbs > currentCount) {
+        // Add fixtures
+        const newFixtures = [...fixtures];
+        for (let i = currentCount + 1; i <= totalBulbs; i++) {
+          newFixtures.push({
+            id: `temp-${i}`,
+            name: `Light ${i}`,
+            location: 'Ceiling',
+            bulbType: defaultBulbType,
+            status: 'functional',
+            ballastIssue: false
+          });
+        }
+        setFixtures(newFixtures);
+      } else if (totalBulbs < currentCount) {
+        // Remove fixtures (keep existing ones, remove from end)
+        setFixtures(prev => prev.slice(0, totalBulbs));
+      }
+    }
+  }, [totalBulbs, defaultBulbType]);
 
   const statusStats = useMemo(() => {
     const functional = fixtures.filter(f => f.status === 'functional').length;
@@ -180,7 +209,6 @@ export function RoomLightingManager({ room, trigger }: RoomLightingManagerProps)
             .insert({
               name: fixture.name,
               room_number: room.room_number || null,
-              space_name: room.name,
               space_id: room.id,
               space_type: 'room' as const,
               type: 'standard' as const,
@@ -233,9 +261,9 @@ export function RoomLightingManager({ room, trigger }: RoomLightingManagerProps)
 
   const addFixture = () => {
     const newFixture: LightingFixture = {
-      id: `fixture-${fixtures.length + 1}`,
+      id: `temp-${fixtures.length + 1}`,
       name: `Light ${fixtures.length + 1}`,
-      location: 'New Location',
+      location: 'Ceiling',
       bulbType: defaultBulbType,
       status: 'functional',
       ballastIssue: false
