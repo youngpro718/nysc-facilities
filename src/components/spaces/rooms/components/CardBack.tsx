@@ -14,6 +14,8 @@ import { ParentRoomHierarchy } from "../ParentRoomHierarchy";
 import { LightingStatusWheel } from "@/components/spaces/LightingStatusWheel";
 import { useNavigate } from "react-router-dom";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
+import { RoomHistoryTimeline } from "./history/RoomHistoryTimeline";
+import { RoomLightingManager } from "./lighting/RoomLightingManager";
 
 interface CardBackProps {
   room: EnhancedRoom;
@@ -115,56 +117,16 @@ export function CardBack({ room, onFlip }: CardBackProps) {
             </div>
           </div>
           
-          {/* Enhanced History Overview with Visual Elements */}
-          {room.history_stats && (
-            <div className="space-y-3">
-              <h4 className="text-sm font-medium flex items-center gap-1">
-                <HistoryIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                Room History & Analytics
-              </h4>
-              <div className="rounded-lg border bg-gradient-to-br from-muted/30 to-muted/10 p-4">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-foreground mb-1">{room.history_stats.total_issues}</div>
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Total Issues</p>
-                    <div className="w-full bg-muted h-1 rounded-full mt-2">
-                      <div 
-                        className="h-1 rounded-full bg-red-400" 
-                        style={{ width: `${Math.min(100, (room.history_stats.total_issues / 10) * 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-foreground mb-1">{room.history_stats.unique_occupants}</div>
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">People Ever</p>
-                    <div className="w-full bg-muted h-1 rounded-full mt-2">
-                      <div 
-                        className="h-1 rounded-full bg-blue-400" 
-                        style={{ width: `${Math.min(100, (room.history_stats.unique_occupants / 5) * 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-foreground mb-1">{room.history_stats.current_occupants}</div>
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Currently</p>
-                    <div className="w-full bg-muted h-1 rounded-full mt-2">
-                      <div 
-                        className="h-1 rounded-full bg-green-400" 
-                        style={{ width: `${Math.min(100, (room.history_stats.current_occupants / 3) * 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-                {room.history_stats.last_issue_date && (
-                  <div className="mt-3 pt-3 border-t border-muted text-center">
-                    <p className="text-xs text-muted-foreground">
-                      Last issue: <span className="font-medium">{format(new Date(room.history_stats.last_issue_date), 'MMM d, yyyy')}</span>
-                    </p>
-                  </div>
-                )}
-              </div>
+          {/* Enhanced Room History Timeline */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium flex items-center gap-1">
+              <HistoryIcon className="h-3.5 w-3.5 text-muted-foreground" />
+              Room History & Resolution Timeline
+            </h4>
+            <div className="rounded-lg border bg-gradient-to-br from-muted/30 to-muted/10 p-4">
+              <RoomHistoryTimeline room={room} />
             </div>
-          )}
+          </div>
           
           {/* Contact Information */}
           {room.phone_number && (
@@ -357,12 +319,17 @@ export function CardBack({ room, onFlip }: CardBackProps) {
               </h4>
               <div className="bg-muted/30 p-4 rounded-lg">
                 <div className="flex items-center justify-between mb-3">
-                  <LightingStatusWheel
-                    functional={functionalLights}
-                    total={totalLights}
-                    size={48}
-                    title={`${functionalLights}/${totalLights} lights functional`}
-                    onClick={() => navigate(`/lighting?room=${encodeURIComponent(room.name ?? room.room_number ?? room.id)}`)}
+                  <RoomLightingManager
+                    room={room}
+                    trigger={
+                      <LightingStatusWheel
+                        functional={functionalLights}
+                        total={totalLights}
+                        size={48}
+                        title={`${functionalLights}/${totalLights} lights functional - Click to manage`}
+                        onClick={() => {}}
+                      />
+                    }
                   />
                   <div className="text-right">
                     <div className="text-lg font-bold text-foreground">

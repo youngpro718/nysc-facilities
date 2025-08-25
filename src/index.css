@@ -46,6 +46,19 @@
     
     --info: 217 91% 60%;
     --info-foreground: 0 0% 98%;
+
+    /* Enhanced lighting status colors */
+    --lighting-functional: 142 71% 45%;
+    --lighting-functional-foreground: 0 0% 98%;
+    
+    --lighting-partial: 38 92% 50%;
+    --lighting-partial-foreground: 0 0% 0%;
+    
+    --lighting-critical: 0 84% 60%;
+    --lighting-critical-foreground: 0 0% 98%;
+    
+    --lighting-maintenance: 217 91% 60%;
+    --lighting-maintenance-foreground: 0 0% 98%;
   }
 
   .dark {
@@ -86,6 +99,19 @@
     
     --info: 217 91% 60%;
     --info-foreground: 0 0% 98%;
+
+    /* Enhanced lighting status colors for dark mode */
+    --lighting-functional: 142 71% 45%;
+    --lighting-functional-foreground: 0 0% 98%;
+    
+    --lighting-partial: 38 92% 50%;
+    --lighting-partial-foreground: 0 0% 0%;
+    
+    --lighting-critical: 0 84% 60%;
+    --lighting-critical-foreground: 0 0% 98%;
+    
+    --lighting-maintenance: 217 91% 60%;
+    --lighting-maintenance-foreground: 0 0% 98%;
   }
 
   /* Theme Variants */

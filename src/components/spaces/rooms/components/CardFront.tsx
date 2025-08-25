@@ -10,7 +10,7 @@ import { CourtroomPhotoThumbnail } from './CourtroomPhotoThumbnail';
 import { ParentRoomHierarchy } from "../ParentRoomHierarchy";
 import { RoomAccessSummary } from "@/components/access/RoomAccessSummary";
 import { SmartBadges } from "./badges/SmartBadges";
-import { LightingReportDialog } from "./lighting/LightingReportDialog";
+import { RoomLightingManager } from "./lighting/RoomLightingManager";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
 import { getNormalizedCurrentUse } from "../utils/currentUse";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -87,8 +87,8 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false }: CardFro
                   <TooltipContent>More details</TooltipContent>
                 </Tooltip>
 
-                {/* Report lighting issue */}
-                <LightingReportDialog
+                {/* Room lighting management */}
+                <RoomLightingManager
                   room={room}
                   trigger={
                     <Tooltip>
@@ -102,7 +102,7 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false }: CardFro
                           <Lightbulb className="h-3 w-3" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>Report light out</TooltipContent>
+                      <TooltipContent>Manage lighting</TooltipContent>
                     </Tooltip>
                   }
                 />
