@@ -4,9 +4,9 @@ import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { BasicRoomFields } from "./BasicRoomFields";
+import { FunctionFields } from "./FunctionFields";
 import { StorageFields } from "./StorageFields";
 import { ParentRoomField } from "./ParentRoomField";
-import { CapacityFields } from "./CapacityFields";
 import RoomAccessFields from "./RoomAccessFields";
 import { RoomSizeFields } from "./RoomSizeFields";
 import { type RoomFormData } from "./RoomFormSchema";
@@ -111,6 +111,9 @@ export function RoomFormContent({
       <form onSubmit={handleFormSubmit} className="space-y-6">
         <BasicRoomFields form={form} />
         
+        <Separator />
+        <FunctionFields form={form} />
+        
         {/* Add parent room field if floor is selected */}
         {floorId && (
           <>
@@ -121,9 +124,6 @@ export function RoomFormContent({
         
         <Separator />
         <RoomSizeFields form={form} />
-        
-        <Separator />
-        <CapacityFields form={form} />
 
         <Separator />
         <RoomAccessFields form={form} />
