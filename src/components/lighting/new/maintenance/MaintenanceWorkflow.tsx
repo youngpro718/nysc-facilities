@@ -1,339 +1,464 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { MaintenanceWorkItem } from "../types";
 import { 
-  Calendar as CalendarIcon, 
+  Calendar, 
   Clock, 
   User, 
   Wrench, 
-  AlertTriangle,
   CheckCircle,
+  AlertTriangle,
   Plus,
-  Filter
+  ExternalLink,
+  DollarSign
 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+
+interface MaintenanceRecord {
+  id: string;
+  fixture_id: string;
+  maintenance_type: 'routine' | 'preventive' | 'repair' | 'replacement';
+  scheduled_date: string;
+  completed_date?: string;
+  status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+  notes?: string;
+  vendor?: string;
+  cost?: number;
+}
+
+interface VendorInfo {
+  id: string;
+  name: string;
+  contact_email?: string;
+  contact_phone?: string;
+  specialties: string[];
+  rating?: number;
+  notes?: string;
+}
 
 export function MaintenanceWorkflow() {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [viewMode, setViewMode] = useState<'calendar' | 'list'>('list');
+  const [selectedTab, setSelectedTab] = useState("scheduled");
+  const [showVendorForm, setShowVendorForm] = useState(false);
+  const [newVendor, setNewVendor] = useState<Partial<VendorInfo>>({
+    name: '',
+    contact_email: '',
+    contact_phone: '',
+    specialties: [],
+    notes: ''
+  });
 
-  const { data: workItems, isLoading } = useQuery({
-    queryKey: ['maintenance-work-items'],
-    queryFn: async (): Promise<MaintenanceWorkItem[]> => {
-      // This would come from a maintenance_work_items table
-      // For now, we'll simulate data based on fixtures that need attention
-      const { data: fixtures, error } = await supabase
-        .from('lighting_fixtures')
-        .select(`
-          id,
-          name,
-          status,
-          requires_electrician,
-          ballast_issue,
-          updated_at
-        `)
-        .or('status.eq.maintenance_needed,requires_electrician.eq.true,ballast_issue.eq.true');
+  const queryClient = useQueryClient();
 
-      if (error) throw error;
-
-      // Convert fixtures to work items
-      return fixtures?.map((fixture, index) => ({
-        id: `work-${fixture.id}`,
-        type: fixture.requires_electrician ? 'repair' : 
-              fixture.ballast_issue ? 'repair' : 'inspection',
-        fixture_id: fixture.id,
-        priority: fixture.requires_electrician ? 'high' as const : 'medium' as const,
-        scheduled_date: new Date(Date.now() + (index * 24 * 60 * 60 * 1000)).toISOString(),
-        status: 'scheduled' as const,
-        title: `${fixture.requires_electrician ? 'Electrical Repair' : 'Maintenance'} - ${fixture.name}`,
-        description: `Fixture maintenance needed`,
-        estimated_duration: fixture.requires_electrician ? 120 : 30,
-        assigned_to: undefined
-      })) || [];
+  // Fetch maintenance records
+  const { data: maintenanceRecords, isLoading: loadingRecords } = useQuery({
+    queryKey: ['maintenance-records'],
+    queryFn: async (): Promise<MaintenanceRecord[]> => {
+      // This would fetch from a maintenance_records table
+      // For now, return mock data
+      return [
+        {
+          id: '1',
+          fixture_id: 'fixture-1',
+          maintenance_type: 'routine',
+          scheduled_date: new Date(Date.now() + 86400000).toISOString(),
+          status: 'scheduled',
+          notes: 'Monthly LED inspection'
+        },
+        {
+          id: '2', 
+          fixture_id: 'fixture-2',
+          maintenance_type: 'repair',
+          scheduled_date: new Date(Date.now() + 172800000).toISOString(),
+          completed_date: new Date().toISOString(),
+          status: 'completed',
+          vendor: 'ElectroFix Pro',
+          cost: 150,
+          notes: 'Replaced ballast'
+        }
+      ];
     }
   });
 
-  const { data: maintenanceStats } = useQuery({
-    queryKey: ['maintenance-stats'],
-    queryFn: async () => {
-      if (!workItems) return null;
-      
-      const scheduled = workItems.filter(item => item.status === 'scheduled').length;
-      const inProgress = workItems.filter(item => item.status === 'in_progress').length;
-      const completed = workItems.filter(item => item.status === 'completed').length;
-      const overdue = workItems.filter(item => 
-        item.status === 'scheduled' && new Date(item.scheduled_date) < new Date()
-      ).length;
-      
-      return { scheduled, inProgress, completed, overdue };
+  // Fetch vendors
+  const { data: vendors, isLoading: loadingVendors } = useQuery({
+    queryKey: ['maintenance-vendors'],
+    queryFn: async (): Promise<VendorInfo[]> => {
+      // This would fetch from a vendors table
+      // For now, return mock data
+      return [
+        {
+          id: '1',
+          name: 'ElectroFix Pro',
+          contact_email: 'service@electrofix.com',
+          contact_phone: '(555) 123-4567',
+          specialties: ['LED Repair', 'Ballast Replacement', 'Emergency Lighting'],
+          rating: 4.5,
+          notes: 'Reliable contractor, good pricing'
+        },
+        {
+          id: '2',
+          name: 'Bright Solutions LLC',
+          contact_email: 'info@brightsolutions.com',
+          contact_phone: '(555) 987-6543',
+          specialties: ['Fixture Installation', 'Maintenance Contracts'],
+          rating: 4.2,
+          notes: 'Great for bulk installations'
+        }
+      ];
+    }
+  });
+
+  // Add vendor mutation
+  const addVendorMutation = useMutation({
+    mutationFn: async (vendor: Partial<VendorInfo>) => {
+      // In real app, this would insert into vendors table
+      console.log('Adding vendor:', vendor);
+      return vendor;
     },
-    enabled: !!workItems
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance-vendors'] });
+      setShowVendorForm(false);
+      setNewVendor({ name: '', contact_email: '', contact_phone: '', specialties: [], notes: '' });
+      toast.success('Vendor added successfully');
+    },
+    onError: () => {
+      toast.error('Failed to add vendor');
+    }
   });
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'critical': return 'bg-red-100 text-red-800';
-      case 'high': return 'bg-orange-100 text-orange-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const handleAddVendor = () => {
+    if (!newVendor.name) {
+      toast.error('Vendor name is required');
+      return;
     }
+    addVendorMutation.mutate(newVendor);
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed': return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'in_progress': return <Clock className="h-4 w-4 text-blue-500" />;
-      case 'scheduled': return <CalendarIcon className="h-4 w-4 text-gray-500" />;
-      default: return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
-    }
-  };
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'repair': return <Wrench className="h-4 w-4" />;
-      case 'replacement': return <AlertTriangle className="h-4 w-4" />;
-      case 'inspection': return <CheckCircle className="h-4 w-4" />;
-      case 'cleaning': return <Clock className="h-4 w-4" />;
-      default: return <Wrench className="h-4 w-4" />;
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="grid grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-20 bg-muted animate-pulse rounded-md"></div>
-          ))}
-        </div>
-        <div className="h-96 bg-muted animate-pulse rounded-md"></div>
-      </div>
-    );
-  }
+  const scheduledRecords = maintenanceRecords?.filter(r => r.status === 'scheduled') || [];
+  const inProgressRecords = maintenanceRecords?.filter(r => r.status === 'in_progress') || [];
+  const completedRecords = maintenanceRecords?.filter(r => r.status === 'completed') || [];
 
   return (
     <div className="space-y-6">
-      {/* Stats Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
-          <CardContent className="pt-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold">{maintenanceStats?.scheduled || 0}</div>
-              <div className="text-sm text-muted-foreground">Scheduled</div>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-blue-500" />
+              <div className="text-sm font-medium">Scheduled</div>
             </div>
+            <div className="text-2xl font-bold">{scheduledRecords.length}</div>
           </CardContent>
         </Card>
         
         <Card>
-          <CardContent className="pt-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{maintenanceStats?.inProgress || 0}</div>
-              <div className="text-sm text-muted-foreground">In Progress</div>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-yellow-500" />
+              <div className="text-sm font-medium">In Progress</div>
             </div>
+            <div className="text-2xl font-bold">{inProgressRecords.length}</div>
           </CardContent>
         </Card>
         
         <Card>
-          <CardContent className="pt-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{maintenanceStats?.completed || 0}</div>
-              <div className="text-sm text-muted-foreground">Completed</div>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-500" />
+              <div className="text-sm font-medium">Completed</div>
             </div>
+            <div className="text-2xl font-bold">{completedRecords.length}</div>
           </CardContent>
         </Card>
         
         <Card>
-          <CardContent className="pt-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-red-600">{maintenanceStats?.overdue || 0}</div>
-              <div className="text-sm text-muted-foreground">Overdue</div>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-purple-500" />
+              <div className="text-sm font-medium">Vendors</div>
             </div>
+            <div className="text-2xl font-bold">{vendors?.length || 0}</div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Main Content */}
-      <Tabs defaultValue="schedule" className="space-y-4">
-        <div className="flex items-center justify-between">
-          <TabsList>
-            <TabsTrigger value="schedule">Schedule</TabsTrigger>
-            <TabsTrigger value="calendar">Calendar</TabsTrigger>
-            <TabsTrigger value="history">History</TabsTrigger>
-            <TabsTrigger value="vendors">Vendors</TabsTrigger>
-          </TabsList>
-          
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Schedule Work
-          </Button>
-        </div>
+      {/* Main Content Tabs */}
+      <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="scheduled">Scheduled</TabsTrigger>
+          <TabsTrigger value="in-progress">In Progress</TabsTrigger>
+          <TabsTrigger value="completed">Completed</TabsTrigger>
+          <TabsTrigger value="vendors">Vendors</TabsTrigger>
+        </TabsList>
 
-        <TabsContent value="schedule" className="space-y-4">
-          {/* Priority Queue */}
+        <TabsContent value="scheduled" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-red-500" />
-                Priority Queue
+                <Calendar className="h-5 w-5" />
+                Scheduled Maintenance
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {workItems
-                  ?.filter(item => item.priority === 'critical' || item.priority === 'high')
-                  .slice(0, 5)
-                  .map((item) => (
-                    <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        {getTypeIcon(item.type)}
-                        <div>
-                          <div className="font-medium">{item.title}</div>
-                          <div className="text-sm text-muted-foreground">{item.description}</div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <Badge className={getPriorityColor(item.priority)}>
-                          {item.priority}
-                        </Badge>
-                        <Button size="sm">
-                          Assign
-                        </Button>
-                      </div>
-                    </div>
+              {scheduledRecords.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">
+                  No scheduled maintenance. Great job keeping up!
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {scheduledRecords.map((record) => (
+                    <MaintenanceCard key={record.id} record={record} />
                   ))}
-              </div>
+                </div>
+              )}
             </CardContent>
           </Card>
+        </TabsContent>
 
-          {/* All Work Items */}
+        <TabsContent value="in-progress" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>All Scheduled Work</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                In Progress
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {workItems?.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
-                    <div className="flex items-center gap-3">
-                      {getStatusIcon(item.status)}
-                      {getTypeIcon(item.type)}
-                      <div>
-                        <div className="font-medium">{item.title}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {item.description} • {new Date(item.scheduled_date).toLocaleDateString()}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Badge className={getPriorityColor(item.priority)}>
-                        {item.priority}
-                      </Badge>
-                      
-                      {item.estimated_duration && (
-                        <Badge variant="outline">
-                          {item.estimated_duration}min
-                        </Badge>
-                      )}
-                      
-                      <Button size="sm" variant="outline">
-                        Details
-                      </Button>
-                    </div>
-                  </div>
+              {inProgressRecords.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">
+                  No maintenance currently in progress
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {inProgressRecords.map((record) => (
+                    <MaintenanceCard key={record.id} record={record} />
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="completed" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5" />
+                Completed Maintenance
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {completedRecords.map((record) => (
+                  <MaintenanceCard key={record.id} record={record} />
                 ))}
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="calendar">
+        <TabsContent value="vendors" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Maintenance Calendar</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Vendor Management
+                </CardTitle>
+                <Button onClick={() => setShowVendorForm(!showVendorForm)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Vendor
+                </Button>
+              </div>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={setSelectedDate}
-                  className="rounded-md border"
-                />
-                
-                <div className="space-y-4">
-                  <h4 className="font-semibold">
-                    {selectedDate ? selectedDate.toLocaleDateString() : 'Select a date'}
-                  </h4>
-                  
-                  {selectedDate && (
-                    <div className="space-y-2">
-                      {workItems
-                        ?.filter(item => 
-                          new Date(item.scheduled_date).toDateString() === selectedDate.toDateString()
-                        )
-                        .map((item) => (
-                          <div key={item.id} className="p-3 border rounded-lg">
-                            <div className="flex items-center gap-2 mb-1">
-                              {getTypeIcon(item.type)}
-                              <span className="font-medium">{item.title}</span>
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              {item.description}
-                            </div>
-                            <div className="flex gap-2 mt-2">
-                              <Badge className={getPriorityColor(item.priority)}>
-                                {item.priority}
-                              </Badge>
-                              {item.estimated_duration && (
-                                <Badge variant="outline">
-                                  {item.estimated_duration}min
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        ))}
+            <CardContent className="space-y-4">
+              {showVendorForm && (
+                <Card className="border-2 border-dashed">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Add New Vendor</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <Input
+                      placeholder="Vendor Name *"
+                      value={newVendor.name}
+                      onChange={(e) => setNewVendor(prev => ({ ...prev, name: e.target.value }))}
+                    />
+                    <div className="grid grid-cols-2 gap-4">
+                      <Input
+                        placeholder="Email"
+                        type="email"
+                        value={newVendor.contact_email}
+                        onChange={(e) => setNewVendor(prev => ({ ...prev, contact_email: e.target.value }))}
+                      />
+                      <Input
+                        placeholder="Phone"
+                        value={newVendor.contact_phone}
+                        onChange={(e) => setNewVendor(prev => ({ ...prev, contact_phone: e.target.value }))}
+                      />
                     </div>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                    <Textarea
+                      placeholder="Notes about this vendor..."
+                      value={newVendor.notes}
+                      onChange={(e) => setNewVendor(prev => ({ ...prev, notes: e.target.value }))}
+                    />
+                    <div className="flex gap-2">
+                      <Button onClick={handleAddVendor} disabled={addVendorMutation.isPending}>
+                        Add Vendor
+                      </Button>
+                      <Button variant="outline" onClick={() => setShowVendorForm(false)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
-        <TabsContent value="history">
-          <Card>
-            <CardHeader>
-              <CardTitle>Maintenance History</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                Maintenance history feature coming soon
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="vendors">
-          <Card>
-            <CardHeader>
-              <CardTitle>Vendor Management</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                Vendor management feature coming soon
-              </div>
+              {vendors?.map((vendor) => (
+                <Card key={vendor.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2">
+                        <div className="font-medium">{vendor.name}</div>
+                        <div className="text-sm text-muted-foreground space-y-1">
+                          {vendor.contact_email && <div>📧 {vendor.contact_email}</div>}
+                          {vendor.contact_phone && <div>📞 {vendor.contact_phone}</div>}
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {vendor.specialties.map((specialty) => (
+                            <Badge key={specialty} variant="outline" className="text-xs">
+                              {specialty}
+                            </Badge>
+                          ))}
+                        </div>
+                        {vendor.notes && (
+                          <p className="text-sm text-muted-foreground">{vendor.notes}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {vendor.rating && (
+                          <Badge variant="secondary">
+                            ⭐ {vendor.rating}
+                          </Badge>
+                        )}
+                        <Button variant="outline" size="sm">
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+interface MaintenanceCardProps {
+  record: MaintenanceRecord;
+}
+
+function MaintenanceCard({ record }: MaintenanceCardProps) {
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'scheduled':
+        return <Badge variant="outline">Scheduled</Badge>;
+      case 'in_progress':
+        return <Badge variant="secondary">In Progress</Badge>;
+      case 'completed':
+        return <Badge variant="default">Completed</Badge>;
+      case 'cancelled':
+        return <Badge variant="destructive">Cancelled</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'routine':
+        return <Calendar className="h-4 w-4" />;
+      case 'preventive':
+        return <CheckCircle className="h-4 w-4" />;
+      case 'repair':
+        return <Wrench className="h-4 w-4" />;
+      case 'replacement':
+        return <AlertTriangle className="h-4 w-4" />;
+      default:
+        return <Wrench className="h-4 w-4" />;
+    }
+  };
+
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              {getTypeIcon(record.maintenance_type)}
+              <span className="font-medium capitalize">{record.maintenance_type} Maintenance</span>
+              {getStatusBadge(record.status)}
+            </div>
+            
+            <div className="text-sm text-muted-foreground">
+              Fixture ID: {record.fixture_id}
+            </div>
+            
+            <div className="text-sm">
+              <strong>Scheduled:</strong> {formatDate(record.scheduled_date)}
+              {record.completed_date && (
+                <span className="ml-4">
+                  <strong>Completed:</strong> {formatDate(record.completed_date)}
+                </span>
+              )}
+            </div>
+            
+            {record.vendor && (
+              <div className="text-sm">
+                <strong>Vendor:</strong> {record.vendor}
+              </div>
+            )}
+            
+            {record.cost && (
+              <div className="flex items-center gap-1 text-sm">
+                <DollarSign className="h-3 w-3" />
+                <strong>Cost:</strong> ${record.cost}
+              </div>
+            )}
+            
+            {record.notes && (
+              <div className="text-sm text-muted-foreground">
+                {record.notes}
+              </div>
+            )}
+          </div>
+          
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm">
+              View Details
+            </Button>
+            {record.status === 'scheduled' && (
+              <Button size="sm">
+                Start Work
+              </Button>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

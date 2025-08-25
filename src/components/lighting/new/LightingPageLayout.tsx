@@ -78,7 +78,11 @@ export function LightingPageLayout() {
         </div>
         
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setActiveTab('overview')}
+          >
             <Bell className="h-4 w-4 mr-2" />
             Alerts
             <Badge variant="destructive" className="ml-2">3</Badge>

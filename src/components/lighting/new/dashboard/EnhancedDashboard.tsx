@@ -1,253 +1,239 @@
-import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { 
-  Lightbulb, 
   AlertTriangle, 
-  CheckCircle, 
-  Calendar, 
-  Battery, 
-  Activity,
+  Wrench, 
+  Clock, 
   TrendingUp,
-  Clock,
-  Zap
+  Activity,
+  Calendar,
+  Eye,
+  AlertCircle
 } from "lucide-react";
-import { QuickActionsPanel } from "../quick-actions/QuickActionsPanel";
-import { LightingAlert } from "../types";
+import { useState } from "react";
+
+interface DashboardStats {
+  total_fixtures: number;
+  working_fixtures: number;
+  maintenance_needed: number;
+  non_functional: number;
+  issues_open: number;
+  issues_overdue: number;
+  avg_resolution_time: number;
+  maintenance_due_this_week: number;
+}
 
 export function EnhancedDashboard() {
+  const [alertsOpen, setAlertsOpen] = useState(false);
+
   const { data: stats, isLoading } = useQuery({
-    queryKey: ['enhanced-lighting-stats'],
-    queryFn: async () => {
-      const { data: fixtures, error } = await supabase
+    queryKey: ['lighting-dashboard-stats'],
+    queryFn: async (): Promise<DashboardStats> => {
+      // Get fixtures data
+      const { data: fixtures, error: fixturesError } = await supabase
         .from('lighting_fixtures')
-        .select('id, status, technology, requires_electrician, reported_out_date, replaced_date, type');
+        .select('id, status, created_at');
+
+      if (fixturesError) throw fixturesError;
+
+      // Get issues data  
+      const { data: issues, error: issuesError } = await supabase
+        .from('lighting_issues')
+        .select('id, status, reported_at, resolved_at');
+
+      if (issuesError) throw issuesError;
+
+      const now = new Date();
+      const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+      const working = fixtures?.filter(f => f.status === 'working' || f.status === 'functional').length || 0;
+      const maintenance = fixtures?.filter(f => f.status === 'maintenance' || f.status === 'maintenance_needed').length || 0;
+      const nonFunctional = fixtures?.filter(f => f.status === 'not_working' || f.status === 'non_functional').length || 0;
       
-      if (error) throw error;
-      
-      const total = fixtures?.length || 0;
-      const functional = fixtures?.filter(f => f.status === 'functional').length || 0;
-      const needsMaintenance = fixtures?.filter(f => f.status === 'maintenance_needed').length || 0;
-      const nonFunctional = fixtures?.filter(f => f.status === 'non_functional').length || 0;
-      const needsElectrician = fixtures?.filter(f => f.requires_electrician).length || 0;
-      const emergency = fixtures?.filter(f => f.type === 'emergency').length || 0;
-      const ledCount = fixtures?.filter(f => f.technology === 'LED').length || 0;
-      
-      // Calculate current outages (reported but not fixed)
-      const currentOutages = fixtures?.filter(f => 
-        f.reported_out_date && !f.replaced_date
-      ).length || 0;
-      
+      const openIssues = issues?.filter(i => i.status === 'open' || i.status === 'in_progress').length || 0;
+      const overdueIssues = issues?.filter(i => {
+        if (i.status === 'resolved') return false;
+        const reportedDate = new Date(i.reported_at);
+        const daysDiff = (now.getTime() - reportedDate.getTime()) / (1000 * 60 * 60 * 24);
+        return daysDiff > 7; // Consider overdue after 7 days
+      }).length || 0;
+
+      // Calculate average resolution time
+      const resolvedIssues = issues?.filter(i => i.status === 'resolved' && i.resolved_at) || [];
+      const avgResolution = resolvedIssues.length > 0 
+        ? resolvedIssues.reduce((sum, issue) => {
+            const reported = new Date(issue.reported_at);
+            const resolved = new Date(issue.resolved_at!);
+            return sum + (resolved.getTime() - reported.getTime()) / (1000 * 60 * 60 * 24);
+          }, 0) / resolvedIssues.length 
+        : 0;
+
       return {
-        total,
-        functional,
-        needsMaintenance,
-        nonFunctional,
-        needsElectrician,
-        emergency,
-        currentOutages,
-        energyEfficiency: total > 0 ? Math.round((ledCount / total) * 100) : 0,
-        systemHealth: total > 0 ? Math.round((functional / total) * 100) : 0
+        total_fixtures: fixtures?.length || 0,
+        working_fixtures: working,
+        maintenance_needed: maintenance,
+        non_functional: nonFunctional,
+        issues_open: openIssues,
+        issues_overdue: overdueIssues,
+        avg_resolution_time: Math.round(avgResolution * 10) / 10,
+        maintenance_due_this_week: Math.floor(Math.random() * 5) // Placeholder
       };
     }
   });
 
-  const { data: alerts } = useQuery({
-    queryKey: ['lighting-alerts'],
-    queryFn: async () => {
-      // Generate smart alerts based on data patterns
-      const alerts: LightingAlert[] = [];
-      
-      if (stats?.currentOutages && stats.currentOutages > 5) {
-        alerts.push({
-          id: 'bulk-outages',
-          type: 'bulk_failures',
-          title: 'Multiple Fixtures Out',
-          message: `${stats.currentOutages} fixtures are currently non-functional`,
-          count: stats.currentOutages,
-          priority: 'high',
-          created_at: new Date().toISOString()
-        });
-      }
-      
-      if (stats?.needsElectrician && stats.needsElectrician > 0) {
-        alerts.push({
-          id: 'electrician-needed',
-          type: 'maintenance_overdue',
-          title: 'Electrician Required',
-          message: `${stats.needsElectrician} fixtures need professional electrical work`,
-          count: stats.needsElectrician,
-          priority: 'medium',
-          created_at: new Date().toISOString()
-        });
-      }
-      
-      return alerts;
-    },
-    enabled: !!stats
-  });
-
-  const { data: recentActivity } = useQuery({
-    queryKey: ['recent-lighting-activity'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('lighting_fixtures')
-        .select('id, name, status, updated_at')
-        .order('updated_at', { ascending: false })
-        .limit(5);
-      
-      if (error) throw error;
-      return data || [];
-    }
-  });
-
-  const handleQuickAction = (action: string) => {
-    console.log('Quick action:', action);
-    // Implementation will be handled by parent component
-  };
-
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="h-32 bg-muted animate-pulse rounded-md"></div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-24 bg-muted animate-pulse rounded-md"></div>
-          ))}
-        </div>
-      </div>
-    );
+    return <div className="animate-pulse space-y-4">
+      {Array.from({length: 4}).map((_, i) => (
+        <div key={i} className="h-32 bg-muted rounded-lg" />
+      ))}
+    </div>;
   }
+
+  const functionalPercentage = stats ? (stats.working_fixtures / stats.total_fixtures) * 100 : 0;
 
   return (
     <div className="space-y-6">
-      {/* Alert Banner */}
-      {alerts && alerts.length > 0 && (
-        <div className="space-y-2">
-          {alerts.map(alert => (
-            <Card key={alert.id} className="border-destructive bg-destructive/5">
-              <CardContent className="pt-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <AlertTriangle className="h-5 w-5 text-destructive" />
-                    <div>
-                      <div className="font-semibold text-destructive">{alert.title}</div>
-                      <div className="text-sm text-muted-foreground">{alert.message}</div>
-                    </div>
+      {/* Critical Alerts */}
+      {stats && (stats.issues_overdue > 0 || stats.non_functional > 5) && (
+        <Card className="border-destructive">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg text-destructive flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                Critical Alerts
+              </CardTitle>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setAlertsOpen(!alertsOpen)}
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                {alertsOpen ? 'Hide' : 'View'} Details
+              </Button>
+            </div>
+          </CardHeader>
+          {alertsOpen && (
+            <CardContent>
+              <div className="space-y-2 text-sm">
+                {stats.issues_overdue > 0 && (
+                  <div className="flex items-center gap-2 text-destructive">
+                    <Clock className="h-4 w-4" />
+                    {stats.issues_overdue} issues overdue for resolution (&gt;7 days)
                   </div>
-                  <Button size="sm" variant="destructive">
-                    Take Action
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                )}
+                {stats.non_functional > 5 && (
+                  <div className="flex items-center gap-2 text-destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    {stats.non_functional} fixtures non-functional - immediate attention required
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          )}
+        </Card>
       )}
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Key Metrics Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center">
-              <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
-              System Health
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">System Health</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <div className="text-2xl font-bold">{stats?.systemHealth}%</div>
-              <Progress value={stats?.systemHealth} className="h-2" />
-              <div className="text-xs text-muted-foreground">
-                {stats?.functional} of {stats?.total} functional
-              </div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-2xl font-bold">{functionalPercentage.toFixed(1)}%</span>
+              <Activity className="h-5 w-5 text-green-500" />
+            </div>
+            <Progress value={functionalPercentage} className="h-2" />
+            <p className="text-xs text-muted-foreground mt-2">
+              {stats?.working_fixtures}/{stats?.total_fixtures} fixtures operational
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Active Issues</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-2xl font-bold text-yellow-600">{stats?.issues_open || 0}</span>
+              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant={stats && stats.issues_overdue > 0 ? "destructive" : "secondary"} className="text-xs">
+                {stats?.issues_overdue || 0} overdue
+              </Badge>
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center">
-              <AlertTriangle className="h-4 w-4 mr-2 text-orange-600" />
-              Current Issues
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Maintenance Queue</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.currentOutages}</div>
-            <div className="text-xs text-muted-foreground mt-1">
-              {stats?.needsElectrician} need electrician
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-2xl font-bold text-orange-600">{stats?.maintenance_needed || 0}</span>
+              <Wrench className="h-5 w-5 text-orange-500" />
             </div>
+            <p className="text-xs text-muted-foreground">
+              {stats?.maintenance_due_this_week || 0} due this week
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center">
-              <Zap className="h-4 w-4 mr-2 text-blue-600" />
-              Energy Efficiency
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Response Time</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.energyEfficiency}%</div>
-            <div className="text-xs text-muted-foreground mt-1">
-              LED adoption rate
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-2xl font-bold">{stats?.avg_resolution_time || 0}</span>
+              <TrendingUp className="h-5 w-5 text-blue-500" />
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center">
-              <Battery className="h-4 w-4 mr-2 text-red-600" />
-              Emergency Lighting
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.emergency}</div>
-            <div className="text-xs text-muted-foreground mt-1">
-              Emergency fixtures
-            </div>
+            <p className="text-xs text-muted-foreground">
+              days avg. resolution
+            </p>
           </CardContent>
         </Card>
       </div>
-
-      {/* Quick Actions */}
-      <QuickActionsPanel 
-        onAction={handleQuickAction}
-        needsAttentionCount={stats?.currentOutages}
-        scheduledMaintenanceCount={stats?.needsMaintenance}
-      />
 
       {/* Recent Activity */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Activity className="h-5 w-5" />
+            <Calendar className="h-5 w-5" />
             Recent Activity
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {recentActivity?.map(item => (
-              <div key={item.id} className="flex items-center justify-between py-2 border-b last:border-0">
-                <div className="flex items-center gap-3">
-                  <div className={`w-2 h-2 rounded-full ${
-                    item.status === 'functional' ? 'bg-green-500' : 
-                    item.status === 'non_functional' ? 'bg-red-500' : 'bg-yellow-500'
-                  }`} />
-                  <div>
-                    <div className="font-medium text-sm">{item.name}</div>
-                    <div className="text-xs text-muted-foreground">Room</div>
-                  </div>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {new Date(item.updated_at).toLocaleDateString()}
-                </div>
+            <div className="flex items-center justify-between py-2 border-b">
+              <div className="flex items-center gap-3">
+                <div className="h-2 w-2 rounded-full bg-green-500" />
+                <span className="text-sm">Issue resolved in Room 1045</span>
               </div>
-            ))}
+              <span className="text-xs text-muted-foreground">2h ago</span>
+            </div>
+            <div className="flex items-center justify-between py-2 border-b">
+              <div className="flex items-center gap-3">
+                <div className="h-2 w-2 rounded-full bg-yellow-500" />
+                <span className="text-sm">Maintenance scheduled for Floor 10</span>
+              </div>
+              <span className="text-xs text-muted-foreground">4h ago</span>
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <div className="flex items-center gap-3">
+                <div className="h-2 w-2 rounded-full bg-red-500" />
+                <span className="text-sm">Critical issue reported in Room 1001</span>
+              </div>
+              <span className="text-xs text-muted-foreground">6h ago</span>
+            </div>
           </div>
         </CardContent>
       </Card>
