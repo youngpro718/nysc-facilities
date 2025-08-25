@@ -8,19 +8,14 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/componen
 import { FilterBar } from "../rooms/components/FilterBar";
 import { MobileFilterBar } from "../rooms/components/MobileFilterBar";
 import { RoomsContent } from "../rooms/components/RoomsContent";
-import { HierarchyFilters } from "../rooms/components/HierarchyFilters";
-import { GroupedRoomsView } from "../rooms/components/GroupedRoomsView";
 import { RoomDetailsDialog } from "../rooms/components/RoomDetailsDialog";
 import { MobileInventoryDialog } from "../rooms/components/MobileInventoryDialog";
 import { RoomsSidebarList } from "../rooms/components/RoomsSidebarList";
-import { RoomDetailsPanel } from "../rooms/components/RoomDetailsPanel";
-import { RoomDetailPanel } from "../components/RoomDetailPanel";
-import { CompactRoomList } from "../components/CompactRoomList";
 import { RoomCard } from "../rooms/RoomCard";
 import { Building } from "lucide-react";
 import { useRoomFilters } from "../hooks/useRoomFilters";
-import { useHierarchyFilters } from "../hooks/useHierarchyFilters";
-import { useRoomsQuery } from "../hooks/queries/useRoomsQuery";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 import { deleteSpace } from "../services/deleteSpace";
 import { Room } from "../rooms/types/RoomTypes";
 
@@ -37,12 +32,7 @@ export type SortOption =
 
 
 
-interface RoomsPageProps {
-  selectedBuilding: string;
-  selectedFloor: string;
-}
-
-const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
+const RoomsPage = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
@@ -66,14 +56,20 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
     window.addEventListener('resize', checkIsMobile);
     return () => window.removeEventListener('resize', checkIsMobile);
   }, []);
-  // Hierarchy filter states
-  const [showOnlyParents, setShowOnlyParents] = useState(false);
-  const [showOnlyChildren, setShowOnlyChildren] = useState(false);
-  const [groupByParent, setGroupByParent] = useState(false);
 
-  const { data: rooms, isLoading, error, refetch } = useRoomsQuery({
-    buildingId: selectedBuilding === 'all' ? undefined : selectedBuilding,
-    floorId: selectedFloor === 'all' ? undefined : selectedFloor,
+  const { data: rooms, isLoading, error, refetch } = useQuery({
+    queryKey: ['rooms'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('rooms')
+        .select(`
+          *,
+          floors!inner(*)
+        `)
+        .order('room_number');
+      if (error) throw error;
+      return (data || []) as any[];
+    },
   });
   
   const { filteredAndSortedRooms } = useRoomFilters({
@@ -81,20 +77,9 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
     searchQuery,
     sortBy,
     statusFilter,
-    selectedBuilding,
-    selectedFloor,
+    selectedBuilding: "all",
+    selectedFloor: "all",
     roomTypeFilter,
-  });
-
-  const { 
-    filteredRooms: hierarchyFilteredRooms, 
-    groupedRooms, 
-    hierarchyStats 
-  } = useHierarchyFilters({
-    rooms: filteredAndSortedRooms,
-    showOnlyParents,
-    showOnlyChildren,
-    groupByParent,
   });
 
 
@@ -179,26 +164,13 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
         />
       )}
 
-      {/* Hierarchy Filters */}
-      {!isMobile && (
-        <HierarchyFilters
-          showOnlyParents={showOnlyParents}
-          onShowOnlyParentsChange={setShowOnlyParents}
-          showOnlyChildren={showOnlyChildren}
-          onShowOnlyChildrenChange={setShowOnlyChildren}
-          groupByParent={groupByParent}
-          onGroupByParentChange={setGroupByParent}
-          hierarchyStats={hierarchyStats}
-        />
-      )}
-
       {/* Main Content Area - Master Detail View */}
       {!isMobile ? (
         <ResizablePanelGroup direction="horizontal" className="min-h-[600px] rounded-lg border">
           <ResizablePanel defaultSize={30} minSize={25} maxSize={40}>
             <div className="h-full">
               <RoomsSidebarList
-                rooms={hierarchyFilteredRooms}
+                rooms={filteredAndSortedRooms}
                 selectedRoomId={selectedRoomForPanel?.id}
                 onSelect={handleRoomSelect}
               />
@@ -231,22 +203,11 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
-      ) : groupByParent ? (
-        <GroupedRoomsView
-          groupedRooms={groupedRooms}
-          onDelete={(id) => {
-            if (window.confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
-              deleteRoomMutation.mutate(id);
-            }
-          }}
-          view="grid"
-          onRoomClick={handleRoomClick}
-        />
       ) : (
         <RoomsContent
           isLoading={isLoading}
           rooms={rooms || []}
-          filteredRooms={hierarchyFilteredRooms}
+          filteredRooms={filteredAndSortedRooms}
           view="grid"
           onDelete={(id) => {
             if (window.confirm('Are you sure you want to delete this room? This action cannot be undone.')) {

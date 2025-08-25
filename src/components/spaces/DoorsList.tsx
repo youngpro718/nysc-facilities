@@ -11,10 +11,6 @@ import { TableCell } from "@/components/ui/table";
 import { format } from "date-fns";
 import { AlertTriangle, Wrench, ArrowLeftRight } from "lucide-react";
 
-interface DoorsListProps {
-  selectedBuilding: string;
-  selectedFloor: string;
-}
 
 type Door = {
   id: string;
@@ -31,7 +27,7 @@ type Door = {
   issue_notes: string | null;
 };
 
-const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
+const DoorsList = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
@@ -40,29 +36,18 @@ const DoorsList = ({ selectedBuilding, selectedFloor }: DoorsListProps) => {
   
 
   const { data: doors, isLoading } = useQuery({
-    queryKey: ['doors', selectedFloor],
+    queryKey: ['doors'],
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await supabase
         .from('doors')
-        .select('*, floor:floors!inner(id)');
-
-      if (selectedFloor !== 'all') {
-        query = query.eq('floor_id', selectedFloor);
-      }
-
-      const { data, error } = await query;
-      
-      if (error) {
-        console.error('Error fetching doors:', error);
-        throw error;
-      }
-
-      return data.map((door: any) => ({
-        ...door,
-        floor_id: door.floor?.id
-      })) as Door[];
+        .select(`
+          *,
+          floor:floors!inner(*)
+        `)
+        .order('name');
+      if (error) throw error;
+      return data as Door[];
     },
-    enabled: true
   });
 
   const groupedDoors = useMemo(() => {

@@ -21,12 +21,7 @@ import DoorsList from './DoorsList';
 import { ModernFloorPlanView } from './floorplan/ModernFloorPlanView';
 import { RoomAccessManager } from './RoomAccessManager';
 
-interface SpaceViewProps {
-  selectedBuilding: string | null;
-  selectedFloor: string | null;
-}
-
-const SpacesTabs = ({ selectedBuilding, selectedFloor }: SpaceViewProps) => {
+const SpacesTabs = () => {
   const [activeView, setActiveView] = useState("rooms");
   const [floorPlanExpanded, setFloorPlanExpanded] = useState(false);
 
@@ -210,7 +205,7 @@ const SpacesTabs = ({ selectedBuilding, selectedFloor }: SpaceViewProps) => {
             
             {/* Room content - Direct integration without card wrapper */}
             <div className="min-h-[500px]">
-              <RoomsPage selectedBuilding={selectedBuilding} selectedFloor={selectedFloor} />
+              <RoomsPage />
             </div>
           </div>
         )}
@@ -240,10 +235,10 @@ const SpacesTabs = ({ selectedBuilding, selectedFloor }: SpaceViewProps) => {
                 </TabsList>
                 <div className="min-h-[400px]">
                   <TabsContent value="hallways" className="mt-0">
-                    <HallwaysList selectedBuilding={selectedBuilding} selectedFloor={selectedFloor} />
+                    <HallwaysList />
                   </TabsContent>
                   <TabsContent value="doors" className="mt-0">
-                    <DoorsList selectedBuilding={selectedBuilding} selectedFloor={selectedFloor} />
+                    <DoorsList />
                   </TabsContent>
                 </div>
               </Tabs>

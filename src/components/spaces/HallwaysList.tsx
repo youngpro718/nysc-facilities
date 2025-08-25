@@ -11,20 +11,15 @@ import { filterSpaces, sortSpaces } from "./utils/spaceFilters";
 import { Hallway } from "./types/hallwayTypes";
 import { Shield, ArrowRight, Accessibility } from "lucide-react";
 
-interface HallwaysListProps {
-  selectedBuilding: string;
-  selectedFloor: string;
-}
-
-const HallwaysList = ({ selectedBuilding, selectedFloor }: HallwaysListProps) => {
+const HallwaysList = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("name_asc");
   const [statusFilter, setStatusFilter] = useState("all");
   
 
   const { hallways, isLoading, deleteHallway } = useHallwayData({
-    selectedBuilding,
-    selectedFloor
+    selectedBuilding: "all",
+    selectedFloor: "all"
   });
 
   const filteredAndSortedHallways = useMemo(() => {
