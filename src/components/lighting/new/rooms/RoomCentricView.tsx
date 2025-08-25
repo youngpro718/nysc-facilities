@@ -1,5 +1,5 @@
-import { ZoneManagementGuide } from "../zones/ZoneManagementGuide";
+import { RoomManagementView } from "./RoomManagementView";
 
 export function RoomCentricView() {
-  return <ZoneManagementGuide />;
+  return <RoomManagementView />;
 }

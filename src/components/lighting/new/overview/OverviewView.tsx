@@ -1,5 +1,5 @@
-import { AlertsPanel } from "./AlertsPanel";
+import { LightingDashboard } from "./LightingDashboard";
 
 export function OverviewView() {
-  return <AlertsPanel />;
+  return <LightingDashboard />;
 }
