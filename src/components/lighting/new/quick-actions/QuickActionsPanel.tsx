@@ -1,12 +1,17 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { BulkStatusUpdateDialog } from "../dialogs/BulkStatusUpdateDialog";
+import { WalkThroughInspectionDialog } from "../dialogs/WalkThroughInspectionDialog";
+import { ExportWorkOrdersDialog } from "../dialogs/ExportWorkOrdersDialog";
+import { DCASCoordinationDialog } from "../dialogs/DCASCoordinationDialog";
 import { 
   AlertTriangle, 
   Zap, 
   Calendar, 
   ClipboardList, 
-  Users, 
+  Building, 
   Download,
   RotateCcw,
   Settings
@@ -25,6 +30,10 @@ export function QuickActionsPanel({
   scheduledMaintenanceCount = 0,
   overdueInspectionsCount = 0 
 }: QuickActionsPanel) {
+  const [bulkUpdateOpen, setBulkUpdateOpen] = useState(false);
+  const [walkThroughOpen, setWalkThroughOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [dcasOpen, setDcasOpen] = useState(false);
   const actions = [
     {
       id: 'needs-attention',
@@ -65,10 +74,10 @@ export function QuickActionsPanel({
       variant: 'outline' as const
     },
     {
-      id: 'vendor-management',
-      title: 'Vendor Management',
-      description: 'Manage external contractors',
-      icon: Users,
+      id: 'dcas-coordination',
+      title: 'DCAS Coordination',
+      description: 'Coordinate with DCAS on electrical work',
+      icon: Building,
       variant: 'outline' as const
     }
   ];
@@ -87,7 +96,24 @@ export function QuickActionsPanel({
             <Button
               key={action.id}
               variant={action.variant}
-              onClick={() => onAction(action.id)}
+              onClick={() => {
+                switch (action.id) {
+                  case 'bulk-update':
+                    setBulkUpdateOpen(true);
+                    break;
+                  case 'report-multiple':
+                    setWalkThroughOpen(true);
+                    break;
+                  case 'export-work-orders':
+                    setExportOpen(true);
+                    break;
+                  case 'dcas-coordination':
+                    setDcasOpen(true);
+                    break;
+                  default:
+                    onAction(action.id);
+                }
+              }}
               className="h-auto p-3 justify-start text-left relative"
             >
               <div className="flex items-start gap-3 w-full">
@@ -127,6 +153,27 @@ export function QuickActionsPanel({
           </div>
         )}
       </CardContent>
+      
+      {/* Dialogs */}
+      <BulkStatusUpdateDialog 
+        open={bulkUpdateOpen} 
+        onOpenChange={setBulkUpdateOpen} 
+      />
+      
+      <WalkThroughInspectionDialog 
+        open={walkThroughOpen} 
+        onOpenChange={setWalkThroughOpen} 
+      />
+      
+      <ExportWorkOrdersDialog 
+        open={exportOpen} 
+        onOpenChange={setExportOpen} 
+      />
+      
+      <DCASCoordinationDialog 
+        open={dcasOpen} 
+        onOpenChange={setDcasOpen} 
+      />
     </Card>
   );
 }
