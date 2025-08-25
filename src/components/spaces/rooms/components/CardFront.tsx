@@ -98,10 +98,6 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false }: CardFro
                           variant="secondary"
                           size="sm"
                           className="bg-black/80 hover:bg-black text-white border-0 shadow-lg transition-all duration-200 h-8 w-8 p-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            console.log('Lighting button clicked!');
-                          }}
                         >
                           <Lightbulb className="h-3 w-3" />
                         </Button>
