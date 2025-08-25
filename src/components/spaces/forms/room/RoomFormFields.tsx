@@ -1,7 +1,6 @@
 import { RoomFormProps } from "./types";
 import { BasicRoomFields } from "./BasicRoomFields";
 import { FunctionFields } from "./FunctionFields";
-import { CapacityFields } from "./CapacityFields";
 import { StorageFields } from "./StorageFields";
 import { StatusField } from "./StatusField";
 import { ParentRoomField } from "./ParentRoomField";
@@ -16,8 +15,6 @@ export function RoomFormFields({ form }: RoomFormProps) {
       <BasicRoomFields form={form} />
       
       <FunctionFields form={form} />
-      
-      <CapacityFields form={form} />
       
       <ParentRoomField form={form} floorId={floorId} currentRoomId={roomIdValue} />
       

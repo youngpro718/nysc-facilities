@@ -3,7 +3,6 @@ import { UseFormReturn } from "react-hook-form";
 import { RoomFormData } from "./room/RoomFormSchema";
 import { BasicRoomFields } from "./room/BasicRoomFields";
 import { FunctionFields } from "./room/FunctionFields";
-import { CapacityFields } from "./room/CapacityFields";
 import { StorageFields } from "./room/StorageFields";
 import { StatusField } from "./room/StatusField";
 import { CourtroomFields } from "./room/CourtroomFields";
@@ -21,8 +20,6 @@ export function RoomFormFields({ form, floorId }: FormFieldsProps) {
       <BasicRoomFields form={form} />
       
       <FunctionFields form={form} />
-      
-      <CapacityFields form={form} />
       
       <StorageFields form={form} />
       
