@@ -50,9 +50,9 @@ export function EnhancedDashboard() {
       const now = new Date();
       const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-      const working = fixtures?.filter(f => f.status === 'working' || f.status === 'functional').length || 0;
-      const maintenance = fixtures?.filter(f => f.status === 'maintenance' || f.status === 'maintenance_needed').length || 0;
-      const nonFunctional = fixtures?.filter(f => f.status === 'not_working' || f.status === 'non_functional').length || 0;
+      const working = fixtures?.filter(f => f.status === 'functional').length || 0;
+      const maintenance = fixtures?.filter(f => f.status === 'maintenance_needed').length || 0;
+      const nonFunctional = fixtures?.filter(f => f.status === 'non_functional').length || 0;
       
       const openIssues = issues?.filter(i => i.status === 'open' || i.status === 'in_progress').length || 0;
       const overdueIssues = issues?.filter(i => {

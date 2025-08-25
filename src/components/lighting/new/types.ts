@@ -48,3 +48,18 @@ export interface VendorInfo {
   rating?: number;
   notes?: string;
 }
+
+export interface RoomLightingSummary {
+  room_id: string;
+  room_name: string;
+  room_number: string;
+  building_name: string;
+  floor_name: string;
+  total_fixtures: number;
+  functional_fixtures: number;
+  issues_count: number;
+  maintenance_needed: number;
+  health_score: number;
+  last_inspection?: string;
+  next_maintenance?: string;
+}
