@@ -8,7 +8,6 @@ import { FunctionFields } from "./FunctionFields";
 import { StorageFields } from "./StorageFields";
 import { ParentRoomField } from "./ParentRoomField";
 import RoomAccessFields from "./RoomAccessFields";
-import { RoomSizeFields } from "./RoomSizeFields";
 import { type RoomFormData } from "./RoomFormSchema";
 import { Separator } from "@/components/ui/separator";
 import { CourtroomPhotoUpload } from "./CourtroomPhotoUpload";
@@ -122,9 +121,6 @@ export function RoomFormContent({
           </>
         )}
         
-        <Separator />
-        <RoomSizeFields form={form} />
-
         <Separator />
         <RoomAccessFields form={form} />
 
