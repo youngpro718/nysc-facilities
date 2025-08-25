@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,8 +20,11 @@ import { RoomCentricView } from "./rooms/RoomCentricView";
 import { MaintenanceWorkflow } from "./maintenance/MaintenanceWorkflow";
 import { ReportsView } from "./reports/ReportsView";
 import { CreateLightingDialog } from "../CreateLightingDialog";
+import { SettingsDialog } from "./settings/SettingsDialog";
 
 export function LightingPageLayout() {
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [alertsExpanded, setAlertsExpanded] = useState(false);
   const { state, setActiveTab } = useLightingTabs();
 
   const tabConfig = [
@@ -93,8 +97,13 @@ export function LightingPageLayout() {
             onZoneCreated={() => console.log('Zone created')}
           />
           
-          <Button variant="outline" size="sm">
-            <Settings className="h-4 w-4" />
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setSettingsOpen(true)}
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            Settings
           </Button>
         </div>
       </div>
@@ -121,6 +130,8 @@ export function LightingPageLayout() {
           </TabsContent>
         ))}
       </Tabs>
+
+      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </div>
   );
 }

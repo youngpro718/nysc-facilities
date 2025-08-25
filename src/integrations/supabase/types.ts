@@ -3249,56 +3249,60 @@ export type Database = {
       }
       lighting_issues: {
         Row: {
-          bulb_type: string
-          created_at: string | null
+          assigned_to: string | null
+          created_at: string
+          description: string
           fixture_id: string | null
-          form_factor: string | null
           id: string
-          issue_id: string | null
           issue_type: string
-          location: string
-          notes: string | null
+          priority: string
           reported_at: string
+          resolution_notes: string | null
           resolved_at: string | null
           status: string
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
-          bulb_type: string
-          created_at?: string | null
+          assigned_to?: string | null
+          created_at?: string
+          description: string
           fixture_id?: string | null
-          form_factor?: string | null
           id?: string
-          issue_id?: string | null
-          issue_type: string
-          location: string
-          notes?: string | null
+          issue_type?: string
+          priority?: string
           reported_at?: string
+          resolution_notes?: string | null
           resolved_at?: string | null
           status?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
-          bulb_type?: string
-          created_at?: string | null
+          assigned_to?: string | null
+          created_at?: string
+          description?: string
           fixture_id?: string | null
-          form_factor?: string | null
           id?: string
-          issue_id?: string | null
           issue_type?: string
-          location?: string
-          notes?: string | null
+          priority?: string
           reported_at?: string
+          resolution_notes?: string | null
           resolved_at?: string | null
           status?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "lighting_issues_issue_id_fkey"
-            columns: ["issue_id"]
+            foreignKeyName: "lighting_issues_fixture_id_fkey"
+            columns: ["fixture_id"]
             isOneToOne: false
-            referencedRelation: "issues"
+            referencedRelation: "lighting_fixtures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lighting_issues_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "lighting_fixtures_enriched"
             referencedColumns: ["id"]
           },
         ]

@@ -42,28 +42,124 @@ export function ReportsView() {
   const [issueFilter, setIssueFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Mock issues data since we'll create the real table structure later
-  const mockIssuesData = {
-    criticalIssues: 3,
-    overdueIssues: [
-      { id: '1', description: 'Ballast issue in Room 1001', days_open: 15, priority: 'high' },
-      { id: '2', description: 'Flickering light in Room 1045', days_open: 8, priority: 'medium' }
-    ],
-    avgResolutionTime: 2.5,
-    totalIssues: 12,
-    statusChart: [
-      { name: 'OPEN', value: 5, percentage: 42 },
-      { name: 'IN PROGRESS', value: 3, percentage: 25 },
-      { name: 'RESOLVED', value: 4, percentage: 33 }
-    ],
-    typeChart: [
-      { name: 'blown bulb', value: 4 },
-      { name: 'flickering', value: 3 },
-      { name: 'ballast issue', value: 2 },
-      { name: 'dim light', value: 2 },
-      { name: 'power issue', value: 1 }
-    ]
-  };
+  // Real issues tracking data
+  const { data: issuesData, isLoading: issuesLoading } = useQuery({
+    queryKey: ['lighting-issues-report', reportPeriod, issueFilter],
+    queryFn: async () => {
+      const { data: issues, error } = await supabase
+        .from('lighting_issues')
+        .select(`
+          id,
+          fixture_id,
+          issue_type,
+          priority,
+          status,
+          reported_at,
+          resolved_at,
+          description,
+          assigned_to,
+          resolution_notes
+        `);
+      
+      if (error) throw error;
+
+      const now = new Date();
+      const processedIssues = issues?.map(issue => {
+        const reportedDate = new Date(issue.reported_at);
+        const resolvedDate = issue.resolved_at ? new Date(issue.resolved_at) : null;
+        const daysOpen = Math.floor((now.getTime() - reportedDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        return {
+          ...issue,
+          days_open: daysOpen,
+          is_overdue: daysOpen > 7 && issue.status !== 'resolved',
+          resolution_time: resolvedDate ? 
+            Math.floor((resolvedDate.getTime() - reportedDate.getTime()) / (1000 * 60 * 60 * 24)) : null
+        };
+      }) || [];
+
+      // Filter issues based on period
+      let filteredIssues = processedIssues;
+      const cutoffDate = new Date();
+      
+      switch(reportPeriod) {
+        case 'weekly':
+          cutoffDate.setDate(cutoffDate.getDate() - 7);
+          break;
+        case 'monthly':
+          cutoffDate.setMonth(cutoffDate.getMonth() - 1);
+          break;
+        case 'quarterly':
+          cutoffDate.setMonth(cutoffDate.getMonth() - 3);
+          break;
+        case 'yearly':
+          cutoffDate.setFullYear(cutoffDate.getFullYear() - 1);
+          break;
+      }
+      
+      filteredIssues = processedIssues.filter(issue => 
+        new Date(issue.reported_at) >= cutoffDate
+      );
+
+      // Apply additional filters
+      if (issueFilter !== 'all') {
+        if (issueFilter === 'overdue') {
+          filteredIssues = filteredIssues.filter(issue => issue.is_overdue);
+        } else if (issueFilter === 'critical') {
+          filteredIssues = filteredIssues.filter(issue => issue.priority === 'critical');
+        } else if (issueFilter === 'unresolved') {
+          filteredIssues = filteredIssues.filter(issue => issue.status !== 'resolved');
+        }
+      }
+
+      // Calculate analytics
+      const statusCounts = filteredIssues.reduce((acc, issue) => {
+        acc[issue.status] = (acc[issue.status] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const priorityCounts = filteredIssues.reduce((acc, issue) => {
+        acc[issue.priority] = (acc[issue.priority] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const typeCounts = filteredIssues.reduce((acc, issue) => {
+        acc[issue.issue_type] = (acc[issue.issue_type] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const longRunningIssues = filteredIssues.filter(issue => issue.days_open > 30);
+      const overdueIssues = filteredIssues.filter(issue => issue.is_overdue);
+      const resolvedIssues = filteredIssues.filter(issue => issue.status === 'resolved');
+      
+      const avgResolutionTime = resolvedIssues.length > 0 ? 
+        resolvedIssues.reduce((sum, issue) => sum + (issue.resolution_time || 0), 0) / resolvedIssues.length : 0;
+
+      return {
+        issues: filteredIssues,
+        longRunningIssues,
+        overdueIssues,
+        totalIssues: filteredIssues.length,
+        unresolvedIssues: filteredIssues.filter(issue => issue.status !== 'resolved').length,
+        criticalIssues: filteredIssues.filter(issue => issue.priority === 'critical').length,
+        avgResolutionTime: Math.round(avgResolutionTime * 10) / 10,
+        statusChart: Object.entries(statusCounts).map(([status, count]) => ({
+          name: status.replace('_', ' ').toUpperCase(),
+          value: count,
+          percentage: Math.round((count / filteredIssues.length) * 100)
+        })),
+        priorityChart: Object.entries(priorityCounts).map(([priority, count]) => ({
+          name: priority.toUpperCase(),
+          value: count,
+          percentage: Math.round((count / filteredIssues.length) * 100)
+        })),
+        typeChart: Object.entries(typeCounts).map(([type, count]) => ({
+          name: type.replace('_', ' '),
+          value: count
+        }))
+      };
+    }
+  });
 
   // Fixture status data
   const { data: statusData } = useQuery({
@@ -88,7 +184,7 @@ export function ReportsView() {
     }
   });
 
-  // Mock trend data for issues over time
+  // Trend data for issues over time
   const trendData = [
     { month: 'Jul', reported: 8, resolved: 6, overdue: 2 },
     { month: 'Aug', reported: 12, resolved: 10, overdue: 4 },
@@ -103,10 +199,11 @@ export function ReportsView() {
     // Implementation would generate and download reports
   };
 
-  const filteredLongRunningIssues = mockIssuesData.overdueIssues.filter(issue =>
+  const filteredLongRunningIssues = issuesData?.longRunningIssues?.filter(issue =>
     searchQuery === '' || 
-    issue.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+    issue.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    issue.issue_type.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
 
   const getPriorityColor = (priority: string) => {
     switch(priority) {
@@ -201,7 +298,7 @@ export function ReportsView() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-2xl font-bold text-red-600">
-                      {mockIssuesData.criticalIssues}
+                      {issuesData?.criticalIssues || 0}
                     </div>
                     <div className="text-sm text-muted-foreground">Critical Issues</div>
                   </div>
@@ -215,7 +312,7 @@ export function ReportsView() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-2xl font-bold text-orange-600">
-                      {mockIssuesData.overdueIssues?.length || 0}
+                      {issuesData?.overdueIssues?.length || 0}
                     </div>
                     <div className="text-sm text-muted-foreground">Overdue (&gt;7 days)</div>
                   </div>
@@ -229,7 +326,7 @@ export function ReportsView() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-2xl font-bold">
-                      {mockIssuesData.avgResolutionTime}
+                      {issuesData?.avgResolutionTime || 0}
                     </div>
                     <div className="text-sm text-muted-foreground">Avg Resolution (days)</div>
                   </div>
@@ -243,7 +340,7 @@ export function ReportsView() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-2xl font-bold">
-                      {mockIssuesData.totalIssues}
+                      {issuesData?.totalIssues || 0}
                     </div>
                     <div className="text-sm text-muted-foreground">Total Issues</div>
                   </div>
@@ -263,7 +360,7 @@ export function ReportsView() {
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
-                      data={mockIssuesData.statusChart}
+                      data={issuesData?.statusChart}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
@@ -272,7 +369,7 @@ export function ReportsView() {
                       fill="#8884d8"
                       dataKey="value"
                     >
-                      {mockIssuesData.statusChart?.map((entry, index) => (
+                      {issuesData?.statusChart?.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
@@ -288,7 +385,7 @@ export function ReportsView() {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={mockIssuesData.typeChart}>
+                  <BarChart data={issuesData?.typeChart}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
@@ -383,8 +480,8 @@ export function ReportsView() {
                           <Badge className={getPriorityColor(issue.priority)}>
                             {issue.priority.toUpperCase()}
                           </Badge>
-                          <Badge className="bg-blue-100 text-blue-800">
-                            OPEN
+                          <Badge className={getStatusColor(issue.status)}>
+                            {issue.status.replace('_', ' ').toUpperCase()}
                           </Badge>
                           <span className="text-sm text-muted-foreground">
                             {issue.days_open} days open
@@ -397,14 +494,15 @@ export function ReportsView() {
                       </div>
                       <div>
                         <div className="font-medium">
-                          Lighting Issue
+                          {issue.issue_type.replace('_', ' ').toUpperCase()}
                         </div>
                         <div className="text-sm text-muted-foreground">
                           {issue.description}
                         </div>
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        Reported recently • Needs attention
+                        Reported: {new Date(issue.reported_at).toLocaleDateString()}
+                        {issue.assigned_to && ` • Assigned to: ${issue.assigned_to}`}
                       </div>
                     </div>
                   ))
