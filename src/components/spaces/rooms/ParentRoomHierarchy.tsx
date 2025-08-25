@@ -77,13 +77,8 @@ export function ParentRoomHierarchy({
   if (compact) {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        {roomData.parent_room_id && showParent && (
-          <div className="flex items-center gap-1">
-            <Building2 className="h-3 w-3" />
-            <span>Sub room of suite</span>
-          </div>
-        )}
-        {showChildren && (
+        {/* Only show if room is a child but don't duplicate "sub room" info */}
+        {showChildren && children && children.length > 0 && (
           <div className="flex items-center gap-1">
             <Users className="h-3 w-3" />
             <Badge variant="secondary" className="text-xs">

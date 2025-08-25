@@ -35,8 +35,8 @@ export function SmartBadges({ room, className }: SmartBadgesProps) {
       <div className="flex flex-wrap gap-1.5">
         <RoomSizeDot room={room} />
         
-        {/* Storage Badge */}
-        {room.is_storage && <StorageBadge room={room} />}
+        {/* Storage details badge - only show if storage has specific type/capacity info */}
+        {room.is_storage && (room.storage_type || room.storage_capacity) && <StorageBadge room={room} />}
         
         {/* Persistent Issues Alert */}
         {room.has_persistent_issues && <PersistentIssuesBadge room={room} />}

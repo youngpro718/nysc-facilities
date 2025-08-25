@@ -238,26 +238,11 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false }: CardFro
             variant="secondary" 
             className="text-[11px] whitespace-nowrap"
           >
-            {room.room_type.replace(/_/g, ' ')}
+            {room.is_storage 
+              ? `${room.room_type.replace(/_/g, ' ')} Storage`
+              : room.room_type.replace(/_/g, ' ')
+            }
           </Badge>
-          
-          {room.is_storage && (
-            <Badge 
-              variant="secondary" 
-              className="text-[11px] whitespace-nowrap"
-            >
-              Storage
-            </Badge>
-          )}
-
-          {room.room_size_category && (
-            <Badge 
-              variant="outline" 
-              className="text-[11px] capitalize whitespace-nowrap"
-            >
-              Size: {room.room_size_category}
-            </Badge>
-          )}
 
           {/* Enhanced Temporary Usage Badge */}
           {(room.temporary_storage_use || (room.original_room_type && room.original_room_type !== room.room_type)) && (
