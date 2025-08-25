@@ -69,7 +69,7 @@ export function dbToFormRoom(dbRoom: Partial<DatabaseRoom>, roomId?: string): Pa
     currentFunction: dbRoom.current_function || "",
     isStorage: dbRoom.is_storage || false,
     storageType: dbRoom.storage_type ? stringToStorageType(dbRoom.storage_type) : null,
-    simplifiedStorageType: dbRoom.storage_type ? stringToSimplifiedStorageType(dbRoom.storage_type) : null,
+    simplifiedStorageType: dbRoom.storage_type ? mapDbToSimplifiedStorageType(dbRoom.storage_type) : null,
     storageCapacity: dbRoom.storage_capacity || null,
     storageNotes: dbRoom.storage_notes || "",
     parentRoomId: dbRoom.parent_room_id || null,
@@ -94,7 +94,7 @@ export function formToDbRoom(formData: RoomFormData): Partial<DatabaseRoom> {
     floor_id: formData.floorId,
     is_storage: formData.isStorage || false,
     storage_capacity: formData.storageCapacity || null,
-    storage_type: formData.simplifiedStorageType ? simplifiedStorageTypeToString(formData.simplifiedStorageType) : null,
+    storage_type: formData.simplifiedStorageType ? mapSimplifiedToDbStorageType(formData.simplifiedStorageType) : null,
     storage_notes: formData.storageNotes || null,
     phone_number: formData.phoneNumber || null,
     // If marked as storage, do not persist a current_function
@@ -105,4 +105,28 @@ export function formToDbRoom(formData: RoomFormData): Partial<DatabaseRoom> {
     size: formData.size ? { width: formData.size.width || 150, height: formData.size.height || 100 } : { width: 150, height: 100 },
     rotation: formData.rotation || 0,
   };
+}
+
+// Helper functions to map between simplified storage types and database storage types
+function mapSimplifiedToDbStorageType(simplifiedType: string): string {
+  switch (simplifiedType) {
+    case SimplifiedStorageTypeEnum.FILES: return 'file_storage';
+    case SimplifiedStorageTypeEnum.EQUIPMENT: return 'equipment_storage';
+    case SimplifiedStorageTypeEnum.SUPPLIES: return 'supply_storage';
+    case SimplifiedStorageTypeEnum.FURNITURE: return 'general_storage'; // Map furniture to general storage
+    case SimplifiedStorageTypeEnum.GENERAL: return 'general_storage';
+    default: return 'general_storage';
+  }
+}
+
+function mapDbToSimplifiedStorageType(dbType: string): SimplifiedStorageTypeEnum {
+  switch (dbType) {
+    case 'file_storage': return SimplifiedStorageTypeEnum.FILES;
+    case 'equipment_storage': return SimplifiedStorageTypeEnum.EQUIPMENT;
+    case 'supply_storage': return SimplifiedStorageTypeEnum.SUPPLIES;
+    case 'evidence_storage': return SimplifiedStorageTypeEnum.GENERAL; // Map evidence to general for simplicity
+    case 'record_storage': return SimplifiedStorageTypeEnum.FILES; // Records are similar to files
+    case 'general_storage': return SimplifiedStorageTypeEnum.GENERAL;
+    default: return SimplifiedStorageTypeEnum.GENERAL;
+  }
 }
