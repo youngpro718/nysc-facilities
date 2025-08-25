@@ -3,8 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { LightingFixture, LightStatus, LightingFixtureFormData, LightingZoneFormData, RoomLightingStats } from '@/types/lighting';
 
 // Feature flags to optionally use database views if available
-const USE_ENRICHED_LIGHTING_VIEW = import.meta.env.VITE_USE_ENRICHED_LIGHTING_VIEW === 'true';
-const USE_ROOM_LIGHTING_STATS_VIEW = import.meta.env.VITE_USE_ROOM_LIGHTING_STATS_VIEW === 'true';
+const USE_ENRICHED_LIGHTING_VIEW = true; // Always use enriched view for location data
+const USE_ROOM_LIGHTING_STATS_VIEW = false; // Keep this disabled for now
 
 // Compute durations in minutes for outage (open) and repair (closed)
 function computeDurations(reported_out_date?: string | null, replaced_date?: string | null) {
