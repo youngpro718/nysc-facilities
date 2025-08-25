@@ -67,7 +67,7 @@ export function RoomCard({ room, onDelete, onRoomClick, variant = "default" }: R
 
   return (
     <Card 
-      className={`relative ${variant === 'panel' ? 'h-[520px] md:h-[560px] lg:h-[600px]' : 'h-[320px]'} group overflow-hidden ${variant === 'panel' ? 'cursor-default' : 'cursor-pointer'} transition-all duration-200 ease-out ${
+      className={`relative ${variant === 'panel' ? 'h-full w-full max-w-none' : 'h-[320px]'} group overflow-hidden ${variant === 'panel' ? 'cursor-default' : 'cursor-pointer'} transition-all duration-200 ease-out ${
         isHovered 
           ? 'shadow-2xl shadow-black/20 dark:shadow-black/40' 
           : 'shadow-md hover:shadow-lg'

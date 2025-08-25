@@ -206,7 +206,7 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
           </ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={70}>
-            <div className="p-6 h-full flex items-center justify-center">
+            <div className="p-4 h-full">
               {selectedRoomForPanel ? (
                 <RoomCard
                   room={selectedRoomForPanel}
@@ -218,12 +218,14 @@ const RoomsPage = ({ selectedBuilding, selectedFloor }: RoomsPageProps) => {
                   variant="panel"
                 />
               ) : (
-                <div className="text-center text-muted-foreground">
-                  <div className="mb-4">
-                    <Building className="h-12 w-12 mx-auto opacity-50" />
+                <div className="h-full flex items-center justify-center text-center text-muted-foreground">
+                  <div>
+                    <div className="mb-4">
+                      <Building className="h-12 w-12 mx-auto opacity-50" />
+                    </div>
+                    <h3 className="text-lg font-medium mb-2">Select a room</h3>
+                    <p>Choose a room from the list to view details</p>
                   </div>
-                  <h3 className="text-lg font-medium mb-2">Select a room</h3>
-                  <p>Choose a room from the list to view details</p>
                 </div>
               )}
             </div>
