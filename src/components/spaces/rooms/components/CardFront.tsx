@@ -259,31 +259,37 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false }: CardFro
             </Badge>
           )}
 
-          {room.temporary_storage_use && (
-            <Badge 
-              variant="outline" 
-              className="text-[11px] whitespace-nowrap"
-              title="Temporarily used as storage"
-            >
-              Temporary use
-            </Badge>
-          )}
-
-          {room.original_room_type && room.original_room_type !== room.room_type && (
-            <RoomRepurposingDialog
-              room={room}
-              onUpdate={() => window.location.reload()}
-              trigger={
+          {/* Enhanced Temporary Usage Badge */}
+          {(room.temporary_storage_use || (room.original_room_type && room.original_room_type !== room.room_type)) && (
+            <div className="flex flex-wrap gap-1">
+              {room.temporary_storage_use && (
                 <Badge 
-                  variant="outline" 
-                  className="text-[11px] flex items-center gap-1 whitespace-nowrap cursor-pointer hover:bg-muted/50"
-                  title={`Originally ${String(room.original_room_type).replace(/_/g, ' ')} - Click to manage`}
+                  variant="secondary" 
+                  className="text-[11px] flex items-center gap-1 bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800"
+                  title="Room is temporarily repurposed"
                 >
-                  <History className="h-3 w-3" />
-                  Original: {String(room.original_room_type).replace(/_/g, ' ')}
+                  <AlertTriangle className="h-3 w-3" />
+                  Temporary Storage
                 </Badge>
-              }
-            />
+              )}
+              
+              {room.original_room_type && room.original_room_type !== room.room_type && (
+                <RoomRepurposingDialog
+                  room={room}
+                  onUpdate={() => window.location.reload()}
+                  trigger={
+                    <Badge 
+                      variant="outline" 
+                      className="text-[11px] flex items-center gap-1 cursor-pointer hover:bg-muted/50 bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800"
+                      title={`Originally ${String(room.original_room_type).replace(/_/g, ' ')} - Click to manage repurposing`}
+                    >
+                      <History className="h-3 w-3" />
+                      Originally {String(room.original_room_type).replace(/_/g, ' ')}
+                    </Badge>
+                  }
+                />
+              )}
+            </div>
           )}
         </div>
 

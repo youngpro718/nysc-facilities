@@ -1,7 +1,7 @@
 import { EnhancedRoom } from "../../types/EnhancedRoomTypes";
 import { LightingStatusBadge } from "../lighting/LightingStatusBadge";
 import { OccupancyStatusBadge } from "../occupancy/OccupancyStatusBadge";
-import { EnhancedCapacityBadge } from "./EnhancedCapacityBadge";
+
 import { AssignmentsBadge } from "./AssignmentsBadge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,6 @@ export function SmartBadges({ room, className }: SmartBadgesProps) {
       <div className="flex flex-wrap gap-1.5">
         <LightingStatusBadge roomId={room.id} roomNumber={room.room_number} />
         <OccupancyStatusBadge room={room} />
-        <EnhancedCapacityBadge room={room} />
         <AssignmentsBadge room={room} />
         <IssuesBadge room={room} />
       </div>
