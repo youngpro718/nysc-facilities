@@ -49,63 +49,30 @@ export function BasicRoomFields({ form }: BasicRoomFieldsProps) {
           />
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <FormField
-            control={form.control}
-            name="roomType"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Room Type</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select room type" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {[
-                      { value: RoomTypeEnum.COURTROOM, label: "Courtroom" },
-                      { value: RoomTypeEnum.CHAMBER, label: "Chamber" },
-                      { value: RoomTypeEnum.MALE_LOCKER_ROOM, label: "Male Locker Room" },
-                      { value: RoomTypeEnum.FEMALE_LOCKER_ROOM, label: "Female Locker Room" },
-                      { value: RoomTypeEnum.OFFICE, label: "Office" }
-                    ].map(option => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Status</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {Object.values(StatusEnum).map((status) => (
-                      <SelectItem key={status} value={status}>
-                        {status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        <FormField
+          control={form.control}
+          name="roomType"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Room Type</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select room type" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {Object.values(RoomTypeEnum).map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}
