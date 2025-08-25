@@ -244,6 +244,15 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false }: CardFro
             }
           </Badge>
 
+          {room.room_size_category && (
+            <Badge 
+              variant="outline" 
+              className="text-[11px] capitalize whitespace-nowrap"
+            >
+              {room.room_size_category}
+            </Badge>
+          )}
+
           {/* Enhanced Temporary Usage Badge */}
           {(room.temporary_storage_use || (room.original_room_type && room.original_room_type !== room.room_type)) && (
             <div className="flex flex-wrap gap-1">

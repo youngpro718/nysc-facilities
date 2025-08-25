@@ -33,7 +33,6 @@ export function SmartBadges({ room, className }: SmartBadgesProps) {
       
       {/* Secondary Information Badges */}
       <div className="flex flex-wrap gap-1.5">
-        <RoomSizeDot room={room} />
         
         {/* Storage details badge - only show if storage has specific type/capacity info */}
         {room.is_storage && (room.storage_type || room.storage_capacity) && <StorageBadge room={room} />}
