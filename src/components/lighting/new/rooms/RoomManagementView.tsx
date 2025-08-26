@@ -257,11 +257,27 @@ export function RoomManagementView() {
                   </div>
                   
                   <div className="grid grid-cols-2 gap-2 mt-3">
-                    <Button variant="outline" size="sm" className="text-xs">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-xs"
+                      onClick={() => {
+                        // Navigate to lighting page with room filter
+                        window.location.href = `/lighting?room=${room.id}`;
+                      }}
+                    >
                       <Eye className="h-3 w-3 mr-1" />
                       View Details
                     </Button>
-                    <Button variant="outline" size="sm" className="text-xs">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-xs"
+                      onClick={() => {
+                        // Navigate to lighting page with room management
+                        window.location.href = `/lighting?tab=fixtures&room=${room.id}`;
+                      }}
+                    >
                       <Wrench className="h-3 w-3 mr-1" />
                       Manage
                     </Button>

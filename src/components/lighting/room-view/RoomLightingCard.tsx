@@ -86,34 +86,34 @@ export const RoomLightingCard = ({
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div
-            className="flex items-center gap-2 cursor-pointer select-none"
+            className="flex items-center gap-2 cursor-pointer select-none flex-1 min-w-0"
             onClick={() => setIsExpanded((v) => !v)}
             role="button"
             aria-expanded={isExpanded}
           >
-            <MapPin className="h-4 w-4 text-muted-foreground" />
-            <div>
-              <CardTitle className="text-lg">{roomNumber}</CardTitle>
-              <p className="text-sm text-muted-foreground">{roomName}</p>
+            <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <div className="min-w-0 flex-1">
+              <CardTitle className="text-lg truncate">{roomNumber}</CardTitle>
+              <p className="text-sm text-muted-foreground truncate">{roomName}</p>
               {buildingName && floorName && (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground truncate">
                   {buildingName} • {floorName}
                 </p>
               )}
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
-            <Badge variant={getStatusColor()} className="font-medium">
+          <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+            <Badge variant={getStatusColor()} className="font-medium text-xs">
               {getStatusText()}
             </Badge>
-            <Badge variant="outline" className="font-medium">
-              {totalFixtures} fixture{totalFixtures !== 1 ? 's' : ''}
+            <Badge variant="outline" className="font-medium text-xs">
+              {totalFixtures}
             </Badge>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreVertical className="h-4 w-4" />
+                <Button variant="ghost" size="icon" className="h-7 w-7">
+                  <MoreVertical className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -144,33 +144,33 @@ export const RoomLightingCard = ({
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-2">
-          <div className="flex items-center gap-4 text-sm">
+        <div className="flex items-center justify-between pt-2 gap-2">
+          <div className="flex items-center gap-3 text-sm flex-wrap">
             <div className="flex items-center gap-1">
-              <CheckCircle className="h-4 w-4 text-success" />
-              <span>{functionalFixtures} working</span>
+              <CheckCircle className="h-3 w-3 text-success" />
+              <span className="text-xs">{functionalFixtures} working</span>
             </div>
             {issueFixtures > 0 && (
               <div className="flex items-center gap-1">
-                <AlertTriangle className="h-4 w-4 text-warning" />
-                <span>{issueFixtures} issues</span>
+                <AlertTriangle className="h-3 w-3 text-warning" />
+                <span className="text-xs">{issueFixtures} issues</span>
               </div>
             )}
             {emergencyFixtures > 0 && (
               <div className="flex items-center gap-1">
-                <Lightbulb className="h-4 w-4 text-primary" />
-                <span>{emergencyFixtures} emergency</span>
+                <Lightbulb className="h-3 w-3 text-primary" />
+                <span className="text-xs">{emergencyFixtures} emergency</span>
               </div>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 flex-shrink-0">
             {totalFixtures > 0 && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={toggleSelectAllRoom}
-                className="h-8"
+                className="h-7 text-xs px-2"
               >
                 <input
                   type="checkbox"
@@ -179,19 +179,19 @@ export const RoomLightingCard = ({
                     if (input) input.indeterminate = someSelected && !allSelected;
                   }}
                   onChange={() => {}} // Controlled by onClick
-                  className="mr-2"
+                  className="mr-1 scale-75"
                 />
-                Select All
+                All
               </Button>
             )}
 
             <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
               <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
                   {isExpanded ? (
-                    <ChevronDown className="h-4 w-4" />
+                    <ChevronDown className="h-3 w-3" />
                   ) : (
-                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="h-3 w-3" />
                   )}
                 </Button>
               </CollapsibleTrigger>

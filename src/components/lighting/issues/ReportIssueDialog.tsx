@@ -45,14 +45,10 @@ export function ReportIssueDialog({ fixture }: ReportIssueDialogProps) {
       status={fixture.status}
       contextInfo={contextInfo}
       trigger={
-        <Button 
-          variant="outline" 
-          size="sm"
-          className="text-amber-600 border-amber-200 hover:bg-amber-50"
-        >
+        <span className="w-full">
           <AlertTriangle className="h-4 w-4 mr-1" />
           Report Issue
-        </Button>
+        </span>
       }
     >
       <StandardFormSection

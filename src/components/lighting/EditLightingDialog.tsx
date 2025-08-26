@@ -77,15 +77,10 @@ export function EditLightingDialog({ fixture, onFixtureUpdated }: EditLightingDi
       status={fixture.status}
       contextInfo={contextInfo}
       trigger={
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setOpen(true)}
-          className="text-blue-600 border-blue-200 hover:bg-blue-50"
-        >
+        <span className="w-full">
           <Edit className="h-4 w-4 mr-1" />
           Edit
-        </Button>
+        </span>
       }
     >
       <StandardFormSection

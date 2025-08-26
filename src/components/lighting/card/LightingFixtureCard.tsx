@@ -26,7 +26,7 @@ export const LightingFixtureCard = ({
     <div 
       id={`fixture-card-${fixture.id}`}
       data-fixture-id={fixture.id}
-      className="relative w-full h-[260px]"
+      className="relative w-full h-[280px]"
       style={{ perspective: '1000px', WebkitPerspective: '1000px' as any }}
     >
       <div 

@@ -18,7 +18,7 @@ import { EnhancedDashboard } from "./dashboard/EnhancedDashboard";
 import { OverviewView } from "./overview/OverviewView";
 import { CompactFixturesView } from "./fixtures/CompactFixturesView";
 import { RoomCentricView } from "./rooms/RoomCentricView";
-import { MaintenanceWorkflow } from "./maintenance/MaintenanceWorkflow";
+import { MaintenanceView } from "./maintenance/MaintenanceView";
 import { ReportsView } from "./reports/ReportsView";
 import { CreateLightingDialog } from "../CreateLightingDialog";
 import { SettingsDialog } from "./settings/SettingsDialog";
@@ -54,7 +54,7 @@ export function LightingPageLayout() {
       id: 'maintenance',
       label: 'Maintenance',
       icon: Wrench,
-      component: MaintenanceWorkflow,
+      component: MaintenanceView,
       description: 'Schedule and track maintenance work'
     },
     {

@@ -143,7 +143,7 @@ export function CardFront({
 
   return (
     <Card className={cn(
-      "w-full h-full min-h-[240px] flex flex-col rounded-xl border bg-card/80 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5",
+      "w-full h-[280px] flex flex-col rounded-xl border bg-card/80 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5",
       isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background"
     )}>
       <div className="absolute top-4 left-4 z-10">
@@ -318,17 +318,13 @@ export function CardFront({
                       Issues
                     </DropdownMenuItem>
                   ) : (
-                    <DropdownMenuItem asChild>
-                      <div>
-                        <ReportIssueDialog fixture={fixture} />
-                      </div>
+                    <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+                      <ReportIssueDialog fixture={fixture} />
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <div>
-                      <EditLightingDialog fixture={fixture} onFixtureUpdated={onFixtureUpdated} />
-                    </div>
+                  <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+                    <EditLightingDialog fixture={fixture} onFixtureUpdated={onFixtureUpdated} />
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)}>
                     <Trash2 className="h-4 w-4 mr-2" /> Delete

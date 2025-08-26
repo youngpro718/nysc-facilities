@@ -32,7 +32,7 @@ export function CardBack({ fixture, onFlip }: CardBackProps) {
   };
 
   return (
-    <Card className="w-full h-full rounded-xl border bg-card shadow-sm relative">
+    <Card className="w-full h-[280px] rounded-xl border bg-card shadow-sm relative overflow-hidden">
       <Button
         variant="ghost"
         size="icon"
@@ -47,7 +47,7 @@ export function CardBack({ fixture, onFlip }: CardBackProps) {
         <p className="text-sm text-muted-foreground">{fixture.name}</p>
       </CardHeader>
 
-      <CardContent className="px-4 space-y-6 pb-4">
+      <CardContent className="px-4 space-y-4 pb-4 h-full overflow-y-auto">
         {/* Quick Info Grid */}
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="space-y-1">
