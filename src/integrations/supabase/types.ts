@@ -5358,6 +5358,45 @@ export type Database = {
         }
         Relationships: []
       }
+      role_change_audit: {
+        Row: {
+          approved_by: string | null
+          changed_by: string | null
+          created_at: string | null
+          id: string
+          ip_address: string | null
+          new_role: string | null
+          old_role: string | null
+          reason: string | null
+          target_user_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          approved_by?: string | null
+          changed_by?: string | null
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          new_role?: string | null
+          old_role?: string | null
+          reason?: string | null
+          target_user_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          approved_by?: string | null
+          changed_by?: string | null
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          new_role?: string | null
+          old_role?: string | null
+          reason?: string | null
+          target_user_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       room_assignment_audit_log: {
         Row: {
           action_type: string
@@ -8075,6 +8114,17 @@ export type Database = {
         }
         Relationships: []
       }
+      security_monitoring: {
+        Row: {
+          actor_id: string | null
+          created_at: string | null
+          event_data: Json | null
+          event_type: string | null
+          ip_address: string | null
+          target_user_id: string | null
+        }
+        Relationships: []
+      }
       spaces: {
         Row: {
           building_address: string | null
@@ -8265,6 +8315,15 @@ export type Database = {
         Args: { action_type: string; details?: Json; target_resource: string }
         Returns: undefined
       }
+      audit_user_role_change: {
+        Args: {
+          new_role: string
+          old_role: string
+          reason?: string
+          target_user_id: string
+        }
+        Returns: undefined
+      }
       begin_transaction: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -8292,6 +8351,10 @@ export type Database = {
       check_admin_status: {
         Args: { user_email?: string } | { user_id: string }
         Returns: boolean
+      }
+      check_production_security: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       check_rate_limit: {
         Args:
@@ -8359,6 +8422,10 @@ export type Database = {
           p_recipient_id?: string
           p_requestor_id: string
         }
+        Returns: string
+      }
+      create_security_alert: {
+        Args: { alert_type: string; details?: Json; severity?: string }
         Returns: string
       }
       create_user_notification: {

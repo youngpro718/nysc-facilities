@@ -1,6 +1,7 @@
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { BuildingsGrid } from "@/components/dashboard/BuildingsGrid";
 import { ModuleCards } from "@/components/dashboard/ModuleCards";
+import { ProductionSecurityGuard } from "@/components/security/ProductionSecurityGuard";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
@@ -47,6 +48,8 @@ const AdminDashboard = () => {
   return (
     <div className="space-y-6 sm:space-y-8">
       <DashboardHeader onRefresh={refreshData} isLoading={isLoading || buildingsLoading} />
+      
+      <ProductionSecurityGuard />
       
       <ModuleCards />
       
