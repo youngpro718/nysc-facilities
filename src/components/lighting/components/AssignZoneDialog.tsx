@@ -61,10 +61,12 @@ export function AssignZoneDialog({ selectedFixtures, onComplete }: AssignZoneDia
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Layers className="h-4 w-4 mr-2" />
-          Assign to Zone
-        </Button>
+        <div className="w-full">
+          <div className="flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer rounded-sm">
+            <Layers className="h-4 w-4" />
+            Assign to Zone
+          </div>
+        </div>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

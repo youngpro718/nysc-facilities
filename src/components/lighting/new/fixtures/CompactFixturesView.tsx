@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Search, MoreVertical, RefreshCw, Filter, Lightbulb } from "lucide-react";
 import { CreateLightingDialog } from "../../CreateLightingDialog";
 import { LightingFixturesList } from "../../LightingFixturesList";
+import { AssignZoneDialog } from "../../components/AssignZoneDialog";
 import { useLightingFixtures } from "@/hooks/useLightingFixtures";
 import { toast } from "sonner";
 
@@ -52,13 +53,13 @@ export function CompactFixturesView() {
           await handleBulkStatusUpdate(selectedFixtures, "non_functional");
           break;
         case "assign-zone":
-          toast.info("Zone assignment feature coming soon");
+          // This will be handled by the AssignZoneDialog component
           break;
         case "delete":
           await handleBulkDelete(selectedFixtures);
           break;
         case "export":
-          toast.info("Export feature coming soon");
+          await handleExportSelected();
           break;
         default:
           toast.error("Unknown action");
@@ -67,6 +68,41 @@ export function CompactFixturesView() {
       setSelectedFixtures([]);
     } catch (error) {
       toast.error("Failed to perform bulk action");
+    }
+  };
+
+  const handleExportSelected = async () => {
+    try {
+      const selectedFixtureData = fixtures.filter(f => selectedFixtures.includes(f.id));
+      
+      // Create CSV content
+      const headers = ["Name", "Type", "Status", "Space", "Position", "Technology", "Bulb Count"];
+      const csvContent = [
+        headers.join(","),
+        ...selectedFixtureData.map(fixture => [
+          `"${fixture.name}"`,
+          fixture.type,
+          fixture.status,
+          `"${fixture.space_name || 'N/A'}"`,
+          fixture.position,
+          fixture.technology || 'N/A',
+          fixture.bulb_count
+        ].join(","))
+      ].join("\n");
+
+      // Download CSV
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `lighting-fixtures-${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success(`Exported ${selectedFixtures.length} fixtures`);
+    } catch (error: any) {
+      toast.error("Failed to export fixtures");
     }
   };
 
@@ -127,9 +163,13 @@ export function CompactFixturesView() {
                 <DropdownMenuItem onClick={() => handleBulkAction("mark-broken")}>
                   Mark as Broken
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleBulkAction("assign-zone")}>
-                  Assign to Zone
-                </DropdownMenuItem>
+                <AssignZoneDialog 
+                  selectedFixtures={selectedFixtures}
+                  onComplete={() => {
+                    setSelectedFixtures([]);
+                    refetch();
+                  }}
+                />
                 <DropdownMenuItem onClick={() => handleBulkAction("export")}>
                   Export Selected
                 </DropdownMenuItem>

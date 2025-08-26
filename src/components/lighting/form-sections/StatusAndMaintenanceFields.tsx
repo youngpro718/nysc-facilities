@@ -1,4 +1,3 @@
-
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,7 +26,7 @@ export function StatusAndMaintenanceFields({ form }: StatusAndMaintenanceFieldsP
               <SelectContent>
                 <SelectItem value="functional">Functional</SelectItem>
                 <SelectItem value="maintenance_needed">Maintenance Needed</SelectItem>
-                <SelectItem value="non_functional">Non Functional</SelectItem>
+                <SelectItem value="non_functional">Non-Functional</SelectItem>
                 <SelectItem value="pending_maintenance">Pending Maintenance</SelectItem>
                 <SelectItem value="scheduled_replacement">Scheduled Replacement</SelectItem>
               </SelectContent>
@@ -43,7 +42,7 @@ export function StatusAndMaintenanceFields({ form }: StatusAndMaintenanceFieldsP
         render={({ field }) => (
           <FormItem>
             <FormLabel>Maintenance Priority</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value || ''}>
+            <Select onValueChange={field.onChange} value={field.value || ""}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Select priority" />
@@ -67,21 +66,12 @@ export function StatusAndMaintenanceFields({ form }: StatusAndMaintenanceFieldsP
           <FormItem>
             <FormLabel>Maintenance Notes</FormLabel>
             <FormControl>
-              <Textarea {...field} value={field.value || ''} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={form.control}
-        name="ballast_check_notes"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Ballast Check Notes</FormLabel>
-            <FormControl>
-              <Textarea {...field} value={field.value || ''} />
+              <Textarea 
+                {...field} 
+                value={field.value || ""}
+                placeholder="Enter any maintenance notes or observations..."
+                className="min-h-[80px]"
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
