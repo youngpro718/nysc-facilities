@@ -8,6 +8,12 @@ interface BaseLightingDialogProps {
   description?: string;
   trigger: ReactNode;
   children: ReactNode;
+  status?: string;
+  contextInfo?: Array<{
+    label: string;
+    value: string;
+    icon: ReactNode;
+  }>;
 }
 
 export function BaseLightingDialog({ 

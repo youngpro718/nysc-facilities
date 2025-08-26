@@ -6,6 +6,7 @@ interface StandardFormSectionProps {
   description?: string;
   icon?: ReactNode;
   children: ReactNode;
+  variant?: string;
 }
 
 export function StandardFormSection({ 
