@@ -9,10 +9,16 @@ import { StandardFormSection } from '../shared/StandardFormSection';
 
 interface ReportIssueDialogProps {
   fixture: LightingFixture;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function ReportIssueDialog({ fixture }: ReportIssueDialogProps) {
-  const [open, setOpen] = useState(false);
+export function ReportIssueDialog({ fixture, open: externalOpen, onOpenChange: externalOnOpenChange }: ReportIssueDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  
+  // Use external state if provided, otherwise use internal state
+  const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setOpen = externalOnOpenChange || setInternalOpen;
   
   // Generate location string from fixture details via shared util
   const getLocationFromFixture = () => locationUtil.getFixtureFullLocationText(fixture);
@@ -45,10 +51,12 @@ export function ReportIssueDialog({ fixture }: ReportIssueDialogProps) {
       status={fixture.status}
       contextInfo={contextInfo}
       trigger={
-        <Button variant="ghost" className="w-full justify-start px-2 py-1.5 h-auto text-sm font-normal">
-          <AlertTriangle className="h-4 w-4 mr-2" />
-          Report Issue
-        </Button>
+        externalOpen === undefined ? (
+          <Button variant="ghost" className="w-full justify-start px-2 py-1.5 h-auto text-sm font-normal">
+            <AlertTriangle className="h-4 w-4 mr-2" />
+            Report Issue
+          </Button>
+        ) : null
       }
     >
       <StandardFormSection

@@ -8,7 +8,7 @@ import { LightingFixture } from "@/types/lighting";
 import { EditLightingDialog } from "../EditLightingDialog";
 import { ReportIssueDialog } from "../issues/ReportIssueDialog";
 import { cn } from "@/lib/utils";
-import { Lightbulb, RotateCw, Trash2, Calendar, Clock, MoreHorizontal } from "lucide-react";
+import { Lightbulb, RotateCw, Trash2, Calendar, Clock, MoreHorizontal, Edit, AlertTriangle } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +31,8 @@ interface CardFrontProps {
   onFlip: () => void;
 }
 
+type DialogType = 'edit' | 'report' | null;
+
 export function CardFront({ 
   fixture, 
   isSelected, 
@@ -40,6 +42,7 @@ export function CardFront({
   onFlip
 }: CardFrontProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [openDialog, setOpenDialog] = useState<DialogType>(null);
   const navigate = useNavigate();
 
   // Mock issues query since the service was removed
@@ -316,17 +319,15 @@ export function CardFront({
                       Issues
                     </DropdownMenuItem>
                   ) : (
-                    <DropdownMenuItem asChild>
-                      <div className="w-full">
-                        <ReportIssueDialog fixture={fixture} />
-                      </div>
+                    <DropdownMenuItem onClick={() => setOpenDialog('report')}>
+                      <AlertTriangle className="h-4 w-4 mr-2" />
+                      Report Issue
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <div className="w-full">
-                      <EditLightingDialog fixture={fixture} onFixtureUpdated={onFixtureUpdated} />
-                    </div>
+                  <DropdownMenuItem onClick={() => setOpenDialog('edit')}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)}>
                     <Trash2 className="h-4 w-4 mr-2" /> Delete
@@ -337,6 +338,19 @@ export function CardFront({
           )}
         </div>
       </CardContent>
+
+      {/* Dialogs rendered outside dropdown to prevent conflicts */}
+      <ReportIssueDialog 
+        fixture={fixture} 
+        open={openDialog === 'report'} 
+        onOpenChange={(open) => setOpenDialog(open ? 'report' : null)} 
+      />
+      <EditLightingDialog 
+        fixture={fixture} 
+        onFixtureUpdated={onFixtureUpdated}
+        open={openDialog === 'edit'} 
+        onOpenChange={(open) => setOpenDialog(open ? 'edit' : null)} 
+      />
     </Card>
   );
 }

@@ -15,11 +15,17 @@ import { StandardFormSection } from "./shared/StandardFormSection";
 interface EditLightingDialogProps {
   fixture: LightingFixture;
   onFixtureUpdated: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function EditLightingDialog({ fixture, onFixtureUpdated }: EditLightingDialogProps) {
-  const [open, setOpen] = useState(false);
+export function EditLightingDialog({ fixture, onFixtureUpdated, open: externalOpen, onOpenChange: externalOnOpenChange }: EditLightingDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Use external state if provided, otherwise use internal state
+  const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setOpen = externalOnOpenChange || setInternalOpen;
 
   const form = useForm<LightingFixtureFormData>({
     resolver: zodResolver(lightingFixtureSchema),
@@ -77,10 +83,12 @@ export function EditLightingDialog({ fixture, onFixtureUpdated }: EditLightingDi
       status={fixture.status}
       contextInfo={contextInfo}
       trigger={
-        <Button variant="ghost" className="w-full justify-start px-2 py-1.5 h-auto text-sm font-normal">
-          <Edit className="h-4 w-4 mr-2" />
-          Edit
-        </Button>
+        externalOpen === undefined ? (
+          <Button variant="ghost" className="w-full justify-start px-2 py-1.5 h-auto text-sm font-normal">
+            <Edit className="h-4 w-4 mr-2" />
+            Edit
+          </Button>
+        ) : null
       }
     >
       <StandardFormSection
