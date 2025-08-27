@@ -36,7 +36,7 @@ export function CardBack({ fixture, onFlip }: CardBackProps) {
       <Button
         variant="ghost"
         size="icon"
-        className="absolute top-3 right-3 z-10 rounded-md hover:bg-muted/60"
+        className="absolute top-3 right-3 z-10 rounded-md hover:bg-muted/60 bg-background/90 backdrop-blur-sm border border-border/50"
         onClick={onFlip}
       >
         <RotateCw className="h-4 w-4" />

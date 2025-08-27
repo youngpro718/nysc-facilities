@@ -143,32 +143,30 @@ export function CardFront({
 
   return (
     <Card className={cn(
-      "w-full h-[280px] flex flex-col rounded-xl border bg-card/80 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5",
+      "w-full h-[280px] flex flex-col rounded-xl border bg-card shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5",
       isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background"
     )}>
-      <div className="absolute top-4 left-4 z-10">
-        <Checkbox 
-          checked={isSelected}
-          onCheckedChange={onSelect}
-          className="rounded-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-        />
-      </div>
-      
-      <div className="absolute top-4 right-4 z-10">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="rounded-md hover:bg-muted/60"
-          onClick={onFlip}
-        >
-          <RotateCw className="h-4 w-4" />
-        </Button>
-      </div>
-
-      <CardHeader className="pt-4 pb-2">
+      <CardHeader className="pt-4 pb-2 px-4">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="font-semibold text-[15px] truncate">{fixture.name}</h3>
-          <StatusBadge status={fixture.status} />
+          <div className="flex items-center gap-2">
+            <Checkbox 
+              checked={isSelected}
+              onCheckedChange={onSelect}
+              className="rounded-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+            />
+            <h3 className="font-semibold text-[15px] truncate">{fixture.name}</h3>
+          </div>
+          <div className="flex items-center gap-2">
+            <StatusBadge status={fixture.status} />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-md hover:bg-muted/60 bg-background/80 backdrop-blur-sm"
+              onClick={onFlip}
+            >
+              <RotateCw className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </CardHeader>
 
@@ -304,7 +302,7 @@ export function CardFront({
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="bg-background/95 backdrop-blur-sm border border-border shadow-lg">
                   {fixture.status === 'non_functional' && (
                     <DropdownMenuItem onClick={() => handleToggleElectrician()} disabled={isActing}>
                       {fixture.requires_electrician ? 'Unset Electrician' : 'Needs Electrician'}
@@ -318,13 +316,17 @@ export function CardFront({
                       Issues
                     </DropdownMenuItem>
                   ) : (
-                    <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
-                      <ReportIssueDialog fixture={fixture} />
+                    <DropdownMenuItem asChild>
+                      <div className="w-full">
+                        <ReportIssueDialog fixture={fixture} />
+                      </div>
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
-                    <EditLightingDialog fixture={fixture} onFixtureUpdated={onFixtureUpdated} />
+                  <DropdownMenuItem asChild>
+                    <div className="w-full">
+                      <EditLightingDialog fixture={fixture} onFixtureUpdated={onFixtureUpdated} />
+                    </div>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)}>
                     <Trash2 className="h-4 w-4 mr-2" /> Delete
