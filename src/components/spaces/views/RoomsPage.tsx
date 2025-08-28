@@ -80,7 +80,12 @@ const RoomsPage = () => {
     selectedFloor: "all",
     roomTypeFilter,
   });
-
+  // Auto-select the first room when data loads so the card always shows
+  useEffect(() => {
+    if (!selectedRoomForPanel && filteredAndSortedRooms && filteredAndSortedRooms.length > 0) {
+      setSelectedRoomForPanel(filteredAndSortedRooms[0] as Room);
+    }
+  }, [filteredAndSortedRooms, selectedRoomForPanel]);
 
   const deleteRoomMutation = useMutation({
     mutationFn: (roomId: string) => deleteSpace(roomId, 'room'),
@@ -163,10 +168,10 @@ const RoomsPage = () => {
         />
       )}
 
-      {/* Main Content Area - Master Detail View */}
+      {/* Main Content Area - Master Detail View with left sidebar */}
       {!isMobile ? (
         <ResizablePanelGroup direction="horizontal" className="min-h-[600px] rounded-lg border">
-          <ResizablePanel defaultSize={30} minSize={25} maxSize={40}>
+          <ResizablePanel defaultSize={28} minSize={22} maxSize={38}>
             <div className="h-full">
               <RoomsSidebarList
                 rooms={filteredAndSortedRooms}
@@ -176,11 +181,11 @@ const RoomsPage = () => {
             </div>
           </ResizablePanel>
           <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={70}>
-            <div className="p-4 h-full">
-              {selectedRoomForPanel ? (
+          <ResizablePanel defaultSize={72}>
+            <div className="p-6 h-full min-h-[520px] flex items-center justify-center">
+              { (selectedRoomForPanel ?? (filteredAndSortedRooms && filteredAndSortedRooms[0])) ? (
                 <RoomCard
-                  room={selectedRoomForPanel}
+                  room={(selectedRoomForPanel ?? (filteredAndSortedRooms && filteredAndSortedRooms[0])) as Room}
                   onDelete={(id) => {
                     if (window.confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
                       deleteRoomMutation.mutate(id);
@@ -189,14 +194,12 @@ const RoomsPage = () => {
                   variant="panel"
                 />
               ) : (
-                <div className="h-full flex items-center justify-center text-center text-muted-foreground">
-                  <div>
-                    <div className="mb-4">
-                      <Building className="h-12 w-12 mx-auto opacity-50" />
-                    </div>
-                    <h3 className="text-lg font-medium mb-2">Select a room</h3>
-                    <p>Choose a room from the list to view details</p>
+                <div className="text-center text-muted-foreground">
+                  <div className="mb-4">
+                    <Building className="h-12 w-12 mx-auto opacity-50" />
                   </div>
+                  <h3 className="text-lg font-medium mb-2">No rooms found</h3>
+                  <p>Adjust your search or filters to see rooms</p>
                 </div>
               )}
             </div>
