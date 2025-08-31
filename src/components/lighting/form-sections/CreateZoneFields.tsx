@@ -11,6 +11,16 @@ interface CreateZoneFieldsProps {
 }
 
 export function CreateZoneFields({ form }: CreateZoneFieldsProps) {
+  const fetchFloorsForZones = async () => {
+    const { data, error } = await supabase
+      .from('floors')
+      .select('id, name, floor_number')
+      .order('floor_number');
+    
+    if (error) throw error;
+    return data || [];
+  };
+
   const { data: floors } = useQuery({
     queryKey: ['floors'],
     queryFn: fetchFloorsForZones
