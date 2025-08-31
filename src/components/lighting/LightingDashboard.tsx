@@ -54,18 +54,18 @@ export const LightingDashboard = () => {
 
       if (error) throw error;
 
-      const fixturesByType = fixtures.reduce((acc: Record<string, any[]>, fixture) => {
+      const fixturesByType = (fixtures || []).reduce((acc: Record<string, any[]>, fixture) => {
         if (!acc[fixture.type]) acc[fixture.type] = [];
         acc[fixture.type].push(fixture);
         return acc;
       }, {});
 
-      const totalFixtures = fixtures.length;
-      const workingFixtures = fixtures.filter(f => isWorkingStatus(f.status)).length;
+      const totalFixtures = (fixtures || []).length;
+      const workingFixtures = (fixtures || []).filter(f => isWorkingStatus(f.status)).length;
 
       const stats: LightingStats = {
         functionalPercentage: (workingFixtures / totalFixtures) * 100,
-        byType: Object.entries(fixturesByType).map(([type, fixtures]) => ({
+        byType: Object.entries(fixturesByType).map(([type, fixtures]: [string, any[]]) => ({
           type,
           total: fixtures.length,
           functional_count: fixtures.filter(f => isWorkingStatus(f.status)).length,

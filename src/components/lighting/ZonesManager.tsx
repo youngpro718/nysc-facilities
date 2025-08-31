@@ -4,6 +4,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 
+const fetchLightingZones = async () => {
+  const { data, error } = await supabase
+    .from('lighting_zones')
+    .select('*')
+    .order('name');
+  
+  if (error) throw error;
+  return data || [];
+};
+
 interface ZonesManagerProps {
   onCreateZoneClick?: () => void;
   onZoneSelected?: (zoneId: string) => void;

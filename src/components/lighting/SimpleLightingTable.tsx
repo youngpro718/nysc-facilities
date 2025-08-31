@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { LightingFixture } from "@/types/lighting";
 import { formatDistanceToNow } from "date-fns";
 import { Lightbulb, Zap, AlertTriangle, CheckCircle, Search } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { supabase, markLightsOut, markLightsFixed, toggleElectricianRequired } from "@/lib/supabase";
 import { toast } from "sonner";
 
 interface SimpleLightingTableProps {
