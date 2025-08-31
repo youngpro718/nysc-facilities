@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { ReportCallback } from '../types';
 import { handleReportError, validateReportData, createRetryableQuery } from './reportErrorHandler';
 
