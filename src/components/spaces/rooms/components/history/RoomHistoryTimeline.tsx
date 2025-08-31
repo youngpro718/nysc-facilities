@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, CheckCircle, AlertCircle, Settings, History, Lightbulb } from "lucide-react";
 import { format, differenceInDays, isAfter, isWithinInterval, subDays } from "date-fns";
 import { EnhancedRoom } from "../../types/EnhancedRoomTypes";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
 
 interface RoomHistoryTimelineProps {

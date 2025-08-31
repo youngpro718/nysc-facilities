@@ -9,7 +9,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { calculateRoomLightingStatus } from "@/utils/dashboardUtils";
 
 interface LightingStatusIndicatorProps {

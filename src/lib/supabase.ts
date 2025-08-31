@@ -2,14 +2,14 @@
 // All other files should import from '@/lib/supabase'
 
 // Re-export the existing supabase client
-export { supabase, supabaseWithRetry } from '../integrations/supabase/client';
+export { supabase, supabaseWithRetry } from '@/integrations/supabase/client';
 
 // For TypeScript compatibility
-import type { Database } from '../integrations/supabase/types';
+import type { Database } from '@/integrations/supabase/types';
 export type { Database };
 
 // Import supabase instance for use in service functions
-import { supabase } from '../integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import type { LightStatus } from '@/types/lighting';
 
 // Export lighting service functions for compatibility  
@@ -174,4 +174,23 @@ export const fetchFloorsForZones = async () => {
   
   if (error) throw error;
   return data || [];
+};
+
+// Placeholder supply request service functions
+export const createSupplyRequest = async (requestData: any) => {
+  console.log('Supply request service not implemented yet:', requestData);
+  throw new Error('Supply request service not implemented');
+};
+
+// Placeholder auth service functions  
+export const authService = {
+  signIn: async (email: string, password: string) => {
+    return supabase.auth.signInWithPassword({ email, password });
+  },
+  signUp: async (email: string, password: string) => {
+    return supabase.auth.signUp({ email, password });
+  },
+  signOut: async () => {
+    return supabase.auth.signOut();
+  }
 };
