@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { LightingIssue, LightingIssueStatus } from '@/types/lightingIssue';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Clock, AlertCircle, Loader2, Building, Layers } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';

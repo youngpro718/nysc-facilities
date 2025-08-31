@@ -7,7 +7,7 @@ import {
   deleteLightingFixture, 
   deleteLightingFixtures, 
   updateLightingFixturesStatus 
-} from '@/services/supabase';
+} from '@/lib/supabase';
 
 export function useLightingFixtures() {
   const queryClient = useQueryClient();

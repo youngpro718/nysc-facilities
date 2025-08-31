@@ -18,7 +18,10 @@ export function ZonesManagementView() {
 
   const { data: zones, isLoading, refetch } = useQuery({
     queryKey: ['lighting_zones'],
-    queryFn: () => fetchLightingZones()
+    queryFn: async () => {
+      const { fetchLightingZones } = await import('@/lib/supabase');
+      return fetchLightingZones();
+    }
   });
 
   const filteredZones = zones?.filter(zone =>
