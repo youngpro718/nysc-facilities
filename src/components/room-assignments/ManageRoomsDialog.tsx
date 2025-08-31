@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Plus, Edit2, Trash2, MapPin, Star } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { AddRoomAssignmentForm } from "./AddRoomAssignmentForm";
 import { EditRoomAssignmentDialog } from "../occupants/components/EditRoomAssignmentDialog";

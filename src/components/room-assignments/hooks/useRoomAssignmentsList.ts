@@ -81,11 +81,11 @@ export function useRoomAssignmentsList() {
           const searchTerm = searchQuery.toLowerCase();
           
           return (
-            occupant?.first_name?.toLowerCase().includes(searchTerm) ||
-            occupant?.last_name?.toLowerCase().includes(searchTerm) ||
-            occupant?.email?.toLowerCase().includes(searchTerm) ||
-            room?.room_number?.toLowerCase().includes(searchTerm) ||
-            room?.name?.toLowerCase().includes(searchTerm)
+            (occupant as any)?.first_name?.toLowerCase().includes(searchTerm) ||
+            (occupant as any)?.last_name?.toLowerCase().includes(searchTerm) ||
+            (occupant as any)?.email?.toLowerCase().includes(searchTerm) ||
+            (room as any)?.room_number?.toLowerCase().includes(searchTerm) ||
+            (room as any)?.name?.toLowerCase().includes(searchTerm)
           );
         });
       }
@@ -93,7 +93,7 @@ export function useRoomAssignmentsList() {
       if (departmentFilter && departmentFilter !== "all") {
         filteredData = filteredData.filter(assignment => {
           const occupant = occupantsMap.get(assignment.occupant_id);
-          return occupant?.department === departmentFilter;
+          return (occupant as any)?.department === departmentFilter;
         });
       }
 
@@ -106,7 +106,7 @@ export function useRoomAssignmentsList() {
       if (statusFilter && statusFilter !== "all") {
         filteredData = filteredData.filter(assignment => {
           const occupant = occupantsMap.get(assignment.occupant_id);
-          return occupant?.status === statusFilter;
+          return (occupant as any)?.status === statusFilter;
         });
       }
 
@@ -128,11 +128,11 @@ export function useRoomAssignmentsList() {
           schedule: assignment.schedule,
           notes: assignment.notes,
           updated_at: assignment.updated_at,
-          occupant_name: occupant ? `${occupant.first_name} ${occupant.last_name}` : 'Unknown',
-          occupant_email: occupant?.email || '',
-          department: occupant?.department,
-          room_number: room?.room_number || '',
-          room_name: room?.name || '',
+          occupant_name: occupant ? `${(occupant as any).first_name} ${(occupant as any).last_name}` : 'Unknown',
+          occupant_email: (occupant as any)?.email || '',
+          department: (occupant as any)?.department,
+          room_number: (room as any)?.room_number || '',
+          room_name: (room as any)?.name || '',
           floor_name: (room as any)?.floors?.name || '',
           building_name: (room as any)?.floors?.buildings?.name || '',
         };
