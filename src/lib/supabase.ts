@@ -10,6 +10,31 @@ export type { Database };
 
 // Import supabase instance for use in service functions
 import { supabase } from '@/integrations/supabase/client';
+
+// Re-export all supply request service functions
+export {
+  submitSupplyRequest,
+  getSupplyRequests,
+  updateSupplyRequestStatus,
+  updateSupplyRequestItems,
+  startSupplyRequestWork,
+  completeSupplyRequestWork,
+  getFulfillmentLog,
+  getInventoryItems
+} from '@/services/supabase/supplyRequestService';
+
+// Auth service functions
+export const authService = {
+  signIn: async (email: string, password: string) => {
+    return supabase.auth.signInWithPassword({ email, password });
+  },
+  signUp: async (email: string, password: string) => {
+    return supabase.auth.signUp({ email, password });
+  },
+  signOut: async () => {
+    return supabase.auth.signOut();
+  }
+};
 import type { LightStatus } from '@/types/lighting';
 
 // Export lighting service functions for compatibility  
@@ -174,23 +199,4 @@ export const fetchFloorsForZones = async () => {
   
   if (error) throw error;
   return data || [];
-};
-
-// Placeholder supply request service functions
-export const createSupplyRequest = async (requestData: any) => {
-  console.log('Supply request service not implemented yet:', requestData);
-  throw new Error('Supply request service not implemented');
-};
-
-// Placeholder auth service functions  
-export const authService = {
-  signIn: async (email: string, password: string) => {
-    return supabase.auth.signInWithPassword({ email, password });
-  },
-  signUp: async (email: string, password: string) => {
-    return supabase.auth.signUp({ email, password });
-  },
-  signOut: async () => {
-    return supabase.auth.signOut();
-  }
 };

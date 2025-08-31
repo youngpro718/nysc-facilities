@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getSupplyRequests } from '@/services/supabase/supplyRequestService';
+import { getSupplyRequests } from '@/lib/supabase';
 
 export function useSupplyRequests(userId?: string) {
   return useQuery({
