@@ -1,5 +1,5 @@
 
-import type { Json } from '@/integrations/supabase/types';
+import type { Json } from '@/types/supabase';
 
 export function parseJsonField<T>(field: Json | null, defaultValue: T): T {
   if (!field) return defaultValue;

@@ -9,7 +9,7 @@ import { ModalFrame } from "@/components/common/ModalFrame";
 import { Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { RoomFormContent } from "./forms/room/RoomFormContent";
 import { RoomFormSchema, type RoomFormData, ConnectionDirections } from "./forms/room/RoomFormSchema";
 import { EditHallwayForm } from "./forms/hallway/EditHallwayForm";

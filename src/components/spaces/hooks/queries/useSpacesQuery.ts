@@ -1,6 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { SpaceOption } from "../../forms/room/connections/types";
 
 export function useSpacesQuery(floorId: string) {

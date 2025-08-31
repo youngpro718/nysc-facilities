@@ -5,7 +5,7 @@ import { EditPropertiesPanel } from './components/EditPropertiesPanel';
 import { ThreeDViewer } from './components/ThreeDViewer';
 import { useDialogManager } from '@/hooks/useDialogManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { ZoomIn, ZoomOut, Maximize, RefreshCw } from 'lucide-react';

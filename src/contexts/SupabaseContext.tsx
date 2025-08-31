@@ -1,7 +1,7 @@
 import { createContext, useContext, useMemo } from 'react';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { Database } from '@/types/supabase';
-import { supabase as supabaseClient } from '@/integrations/supabase/client';
+import { Database } from '@/lib/supabase';
+import { supabase as supabaseClient } from '@/lib/supabase';
 
 const SupabaseContext = createContext<SupabaseClient<Database> | null>(null);
 
