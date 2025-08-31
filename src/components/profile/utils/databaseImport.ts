@@ -1,8 +1,8 @@
 
 import * as XLSX from 'xlsx';
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { ExportableTable } from "../backupUtils";
-import { TablesInsert } from "@/integrations/supabase/types";
+import { TablesInsert } from "@/types/supabase";
 
 export async function importDatabase(file: File, exportableTables: readonly ExportableTable[]) {
   const data = await file.arrayBuffer();
