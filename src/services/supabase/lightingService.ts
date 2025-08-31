@@ -1,7 +1,3 @@
-// Re-export supabase client for compatibility
-export { supabase, supabaseWithRetry } from '@/lib/supabase';
-export type { Database } from '@/lib/supabase';
-
 // Import supabase for the service functions
 import { supabase } from '@/lib/supabase';
 import type { LightStatus } from '@/types/lighting';
@@ -100,31 +96,49 @@ export const updateLightingFixturesStatus = async (fixtureIds: string[], status:
   return true;
 };
 
-export const markLightsOut = async (fixtureId: string) => {
+export const markLightsOut = async (fixtureIds: string[], requiresElectrician: boolean = false) => {
+  const updateData: any = { 
+    status: 'out' as LightStatus,
+    reported_out_date: new Date().toISOString()
+  };
+  
+  if (requiresElectrician) {
+    updateData.requires_electrician = true;
+    updateData.electrical_issues = true;
+  }
+
   const { error } = await supabase
     .from('lighting_fixtures')
-    .update({ status: 'out' as LightStatus })
-    .eq('id', fixtureId);
+    .update(updateData)
+    .in('id', fixtureIds);
   
   if (error) throw error;
   return true;
 };
 
-export const markLightsFixed = async (fixtureId: string) => {
+export const markLightsFixed = async (fixtureIds: string[]) => {
   const { error } = await supabase
     .from('lighting_fixtures')
-    .update({ status: 'working' as LightStatus })
-    .eq('id', fixtureId);
+    .update({ 
+      status: 'working' as LightStatus,
+      replaced_date: new Date().toISOString(),
+      requires_electrician: false,
+      electrical_issues: false
+    })
+    .in('id', fixtureIds);
   
   if (error) throw error;
   return true;
 };
 
-export const toggleElectricianRequired = async (fixtureId: string, required: boolean) => {
+export const toggleElectricianRequired = async (fixtureIds: string[], required: boolean) => {
   const { error } = await supabase
     .from('lighting_fixtures')
-    .update({ electrical_issues: required })
-    .eq('id', fixtureId);
+    .update({ 
+      requires_electrician: required,
+      electrical_issues: required 
+    })
+    .in('id', fixtureIds);
   
   if (error) throw error;
   return true;
@@ -138,4 +152,26 @@ export const assignFixturesToZone = async (fixtureIds: string[], zoneId: string)
   
   if (error) throw error;
   return true;
+};
+
+export const createLightingFixture = async (fixtureData: any) => {
+  const { data, error } = await supabase
+    .from('lighting_fixtures')
+    .insert(fixtureData)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const createLightingZone = async (zoneData: any) => {
+  const { data, error } = await supabase
+    .from('lighting_zones')
+    .insert(zoneData)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
 };
