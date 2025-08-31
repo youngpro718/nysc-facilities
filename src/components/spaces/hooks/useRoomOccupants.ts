@@ -39,13 +39,13 @@ export function useRoomOccupants(roomId?: string) {
         isPrimary: assignment.is_primary,
         schedule: assignment.schedule,
         occupant: assignment.occupants ? {
-          id: assignment.occupants.id,
-          firstName: assignment.occupants.first_name,
-          lastName: assignment.occupants.last_name,
-          title: assignment.occupants.title,
-          email: assignment.occupants.email,
-          phone: assignment.occupants.phone,
-          status: assignment.occupants.status
+          id: (assignment.occupants as any)?.id,
+          firstName: (assignment.occupants as any)?.first_name,
+          lastName: (assignment.occupants as any)?.last_name,
+          title: (assignment.occupants as any)?.title,
+          email: (assignment.occupants as any)?.email,
+          phone: (assignment.occupants as any)?.phone,
+          status: (assignment.occupants as any)?.status
         } : null
       })).filter(assignment => assignment.occupant !== null) || [];
     },
