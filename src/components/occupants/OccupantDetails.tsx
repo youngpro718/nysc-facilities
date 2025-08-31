@@ -42,10 +42,10 @@ export function OccupantDetails({ occupant, onClose }: OccupantDetailsProps) {
     return fetchedKeyAssignments.map(assignment => ({
       id: assignment.id,
       key: {
-        id: assignment.keys?.id || '',
-        name: assignment.keys?.name || 'Unknown Key',
-        type: assignment.keys?.type || 'physical_key',
-        is_passkey: assignment.keys?.is_passkey || false,
+        id: (assignment.keys as any)?.id || '',
+        name: (assignment.keys as any)?.name || 'Unknown Key',
+        type: (assignment.keys as any)?.type || 'physical_key',
+        is_passkey: (assignment.keys as any)?.is_passkey || false,
         key_door_locations: [] // Simplified for now since the relationship query was removed
       },
       assigned_at: assignment.assigned_at,

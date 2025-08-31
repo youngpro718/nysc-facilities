@@ -44,9 +44,9 @@ export function useRoomOccupants(selectedRoom: string, authError: boolean | null
       const mappedOccupants = occupantsData
         .filter(assignment => assignment.occupants)
         .map(assignment => ({
-          id: assignment.occupants.id,
-          first_name: assignment.occupants.first_name,
-          last_name: assignment.occupants.last_name,
+          id: (assignment.occupants as any)?.id,
+          first_name: (assignment.occupants as any)?.first_name,
+          last_name: (assignment.occupants as any)?.last_name,
           is_primary: assignment.is_primary
         }));
 

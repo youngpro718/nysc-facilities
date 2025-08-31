@@ -39,7 +39,7 @@ export function useRoomData(authError: boolean | null) {
       }
 
       console.log('Available rooms fetched:', roomsData);
-      return roomsData as RoomDetails[];
+      return roomsData as any;
     },
   });
 }
