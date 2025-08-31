@@ -7846,23 +7846,25 @@ export type Database = {
       key_assignments_view: {
         Row: {
           assigned_at: string | null
-          assignment_meta: Json | null
-          created_at: string | null
           department: string | null
-          email: string | null
-          first_name: string | null
+          expected_return_at: string | null
           id: string | null
+          is_elevator_card: boolean | null
+          is_passkey: boolean | null
           is_spare: boolean | null
           key_id: string | null
           key_name: string | null
           key_type: Database["public"]["Enums"]["key_type_enum"] | null
-          last_name: string | null
+          occupant_email: string | null
           occupant_id: string | null
+          occupant_name: string | null
+          recipient_email: string | null
+          recipient_name: string | null
+          recipient_type: string | null
           return_reason: string | null
           returned_at: string | null
           spare_key_reason: string | null
           status: string | null
-          updated_at: string | null
         }
         Relationships: [
           {
@@ -7897,25 +7899,15 @@ export type Database = {
       }
       key_inventory_view: {
         Row: {
-          active_assignments: number | null
           available_quantity: number | null
-          captain_office_assigned_date: string | null
-          captain_office_copy: boolean | null
-          captain_office_notes: string | null
-          created_at: string | null
-          current_assignments: number | null
+          currently_assigned: number | null
           id: string | null
+          is_elevator_card: boolean | null
           is_passkey: boolean | null
-          key_scope: string | null
-          location_data: Json | null
-          lost_count: number | null
           name: string | null
-          properties: Json | null
-          status: Database["public"]["Enums"]["key_status_enum"] | null
-          total_assignment_history: number | null
+          total_assignments: number | null
           total_quantity: number | null
           type: Database["public"]["Enums"]["key_type_enum"] | null
-          updated_at: string | null
         }
         Relationships: []
       }
@@ -8947,6 +8939,10 @@ export type Database = {
           space_type: string
         }[]
       }
+      secure_admin_promotion: {
+        Args: { target_email: string }
+        Returns: Json
+      }
       secure_promote_to_admin: {
         Args: { target_email: string }
         Returns: Json
@@ -8954,6 +8950,10 @@ export type Database = {
       secure_role_assignment: {
         Args: { new_role: string; target_user_id: string }
         Returns: boolean
+      }
+      security_health_check: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       setup_emergency_admin: {
         Args: { user_email: string }
