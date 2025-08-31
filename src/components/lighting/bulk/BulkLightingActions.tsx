@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Trash2, Download, Upload, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { useLightingFixtures } from "@/hooks/useLightingFixtures";
 
 interface BulkLightingActionsProps {

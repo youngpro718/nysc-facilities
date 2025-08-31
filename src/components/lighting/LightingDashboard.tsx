@@ -13,7 +13,7 @@ import {
   Radar,
   ShieldAlert
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { getTypeIcon } from "./utils/iconUtils.tsx";
 
 interface LightingStats {

@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Calendar, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { MaintenanceScheduleCalendar } from "./maintenance/MaintenanceScheduleCalendar";
 import { MaintenanceHistoryTable } from "./maintenance/MaintenanceHistoryTable";
 import { MaintenanceStats } from "./maintenance/MaintenanceStats";
