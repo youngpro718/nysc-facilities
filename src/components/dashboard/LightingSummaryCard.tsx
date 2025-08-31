@@ -25,6 +25,9 @@ export function LightingSummaryCard() {
         .select('status, ballast_issue');
       
       if (error) throw error;
+      if (!data) return { total_fixtures: 0, functional: 0, non_functional: 0, maintenance_needed: 0, critical_issues: 0 };
+
+      console.log('Lighting fixtures data:', data);
 
       const stats = {
         total_fixtures: data.length,
@@ -34,6 +37,7 @@ export function LightingSummaryCard() {
         critical_issues: data.filter(f => f.ballast_issue || f.status === 'non_functional').length,
       };
 
+      console.log('Calculated stats:', stats);
       return stats;
     },
   });
