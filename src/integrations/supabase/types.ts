@@ -6534,6 +6534,63 @@ export type Database = {
         }
         Relationships: []
       }
+      security_incidents: {
+        Row: {
+          affected_users: string[] | null
+          assigned_to: string | null
+          created_at: string | null
+          description: string
+          detection_method: string | null
+          escalated: boolean | null
+          first_detected_at: string
+          id: string
+          incident_data: Json | null
+          incident_type: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          severity: string
+          status: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          affected_users?: string[] | null
+          assigned_to?: string | null
+          created_at?: string | null
+          description: string
+          detection_method?: string | null
+          escalated?: boolean | null
+          first_detected_at?: string
+          id?: string
+          incident_data?: Json | null
+          incident_type: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          severity: string
+          status?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          affected_users?: string[] | null
+          assigned_to?: string | null
+          created_at?: string | null
+          description?: string
+          detection_method?: string | null
+          escalated?: boolean | null
+          first_detected_at?: string
+          id?: string
+          incident_data?: Json | null
+          incident_type?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          severity?: string
+          status?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       security_logs: {
         Row: {
           created_at: string | null
@@ -8106,6 +8163,18 @@ export type Database = {
         }
         Relationships: []
       }
+      security_dashboard: {
+        Row: {
+          active_critical_incidents: number | null
+          admin_users: number | null
+          approved_users: number | null
+          blocked_login_attempts: number | null
+          dashboard_generated_at: string | null
+          recent_admin_actions: number | null
+          security_events_24h: number | null
+        }
+        Relationships: []
+      }
       security_monitoring: {
         Row: {
           actor_id: string | null
@@ -8379,6 +8448,10 @@ export type Database = {
       }
       cleanup_old_backups: {
         Args: { policy_id: string }
+        Returns: undefined
+      }
+      cleanup_rate_limits: {
+        Args: Record<PropertyKey, never>
         Returns: undefined
       }
       clear_app_cache: {
@@ -8705,6 +8778,18 @@ export type Database = {
         Args: { room_size_data: Json }
         Returns: string
       }
+      get_security_dashboard: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          active_critical_incidents: number
+          admin_users: number
+          approved_users: number
+          blocked_login_attempts: number
+          dashboard_generated_at: string
+          recent_admin_actions: number
+          security_events_24h: number
+        }[]
+      }
       get_spaces_dashboard: {
         Args: {
           p_building_id?: string
@@ -9000,6 +9085,10 @@ export type Database = {
       validate_password_strength: {
         Args: { password: string }
         Returns: Json
+      }
+      validate_session_security: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
       validate_simple_password: {
         Args: { password: string }
