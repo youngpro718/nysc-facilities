@@ -146,13 +146,13 @@ export default function MyIssues() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {(issue.rooms?.name || issue.buildings?.name) && (
+                  {(issue.unified_spaces?.name || issue.buildings?.name) && (
                     <div>
                       <p className="font-medium text-sm text-muted-foreground mb-1">Location</p>
                       <p className="text-sm">
                         {issue.buildings?.name && `${issue.buildings.name}`}
-                        {issue.rooms?.name && ` - ${issue.rooms.name}`}
-                        {issue.rooms?.room_number && ` (${issue.rooms.room_number})`}
+                        {issue.unified_spaces?.name && ` - ${issue.unified_spaces.name}`}
+                        {issue.unified_spaces?.room_number && ` (${issue.unified_spaces.room_number})`}
                       </p>
                     </div>
                   )}

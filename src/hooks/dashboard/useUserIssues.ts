@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 
 interface UserIssue {
@@ -78,9 +79,29 @@ export function useUserIssues(userId: string | undefined) {
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
+  const handleMarkAsSeen = useCallback(async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('issues')
+        .update({ seen: true })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      queryClient.setQueryData(['userIssues', userId], (old: UserIssue[] | undefined) =>
+        old?.map(issue =>
+          issue.id === id ? { ...issue, seen: true } : issue
+        )
+      );
+    } catch (error) {
+      console.error('Error marking issue as seen:', error);
+    }
+  }, [queryClient, userId]);
+
   return {
     userIssues,
     refetchIssues,
+    handleMarkAsSeen,
     isLoading: false, // You can add proper loading state here if needed
   };
 }

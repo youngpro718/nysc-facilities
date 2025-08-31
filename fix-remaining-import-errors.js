@@ -1,18 +1,9 @@
+// Script to fix all remaining import path errors
+
 const fs = require('fs');
 const path = require('path');
 
-// All files with import issues based on the build errors
 const filesToFix = [
-  'src/hooks/dashboard/useAdminIssuesData.ts',
-  'src/hooks/dashboard/useEnhancedRoomAssignments.ts', 
-  'src/hooks/occupants/useOccupantAssignments.ts',
-  'src/hooks/useAdminDashboardData.ts',
-  'src/hooks/useAdminNotifications.ts',
-  'src/hooks/useAuth.tsx',
-  'src/hooks/useCourtPersonnel.ts',
-  'src/hooks/useDashboardData.ts',
-  'src/hooks/useDashboardSubscriptions.ts',
-  'src/hooks/useEnhancedRoomData.ts',
   'src/hooks/useKeyAssignment.ts',
   'src/hooks/useKeyOrders.ts',
   'src/hooks/useKeyRequestWorkflow.ts',
@@ -24,7 +15,7 @@ const filesToFix = [
   'src/hooks/usePhotoUpload.ts',
   'src/hooks/useRealtimeNotifications.ts',
   'src/hooks/useRequestActions.ts',
-  'src/hooks/useUnifiedPersonnel.ts',
+  'src/hooks/useRoomAccess.ts',
   'src/hooks/useUserRoomAssignments.ts',
   'src/pages/InventoryDashboard.tsx',
   'src/pages/Keys.tsx',
@@ -39,49 +30,48 @@ const filesToFix = [
   'src/services/storage.ts'
 ];
 
-// Import replacements
-const replacements = [
+const fixes = [
   {
-    from: "import { supabase } from '@/integrations/supabase/client';",
-    to: "import { supabase } from '@/lib/supabase';"
+    find: "from '@/integrations/supabase/client'",
+    replace: "from '@/lib/supabase'"
   },
   {
-    from: "import authService from '@/services/supabase/authService';",
-    to: "import { authService } from '@/lib/supabase';"
+    find: "from '@/services/supabase'",
+    replace: "from '@/lib/supabase'"
   },
   {
-    from: "import { getKeyRequests } from '@/services/supabase/keyRequestService';",
-    to: "import { supabase } from '@/lib/supabase';"
+    find: "from '@/services/supabase/keyRequestService'",
+    replace: "from '@/lib/supabase'"
   },
   {
-    from: "import { getSupplyRequests, updateSupplyRequestStatus } from '@/services/supabase/supplyRequestService';",
-    to: "import { getSupplyRequests, updateSupplyRequestStatus } from '@/lib/supabase';"
-  },
-  {
-    from: "import { markLightsOut, markLightsFixed } from '@/services/supabase';",
-    to: "import { markLightsOut, markLightsFixed } from '@/lib/supabase';"
+    find: "from '@/services/supabase/supplyRequestService'",
+    replace: "from '@/lib/supabase'"
   }
 ];
 
-console.log('Fixing import errors...');
-
 filesToFix.forEach(filePath => {
-  if (fs.existsSync(filePath)) {
-    let content = fs.readFileSync(filePath, 'utf8');
+  const fullPath = path.join(process.cwd(), filePath);
+  
+  if (fs.existsSync(fullPath)) {
+    let content = fs.readFileSync(fullPath, 'utf8');
     let modified = false;
-
-    replacements.forEach(replacement => {
-      if (content.includes(replacement.from)) {
-        content = content.replace(replacement.from, replacement.to);
+    
+    fixes.forEach(fix => {
+      if (content.includes(fix.find)) {
+        content = content.replace(new RegExp(fix.find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), fix.replace);
         modified = true;
       }
     });
-
+    
     if (modified) {
-      fs.writeFileSync(filePath, content, 'utf8');
-      console.log(`Fixed imports in: ${filePath}`);
+      fs.writeFileSync(fullPath, content);
+      console.log(`✓ Fixed imports in ${filePath}`);
+    } else {
+      console.log(`- No changes needed in ${filePath}`);
     }
+  } else {
+    console.log(`- File not found: ${filePath}`);
   }
 });
 
-console.log('Import fixes complete!');
+console.log('\n✓ Import path fixes completed!');

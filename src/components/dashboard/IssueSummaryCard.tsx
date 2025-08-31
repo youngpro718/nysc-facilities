@@ -85,7 +85,7 @@ export function IssueSummaryCard({ userId }: IssueSummaryCardProps) {
                 <div className="flex-1 min-w-0">
                   <div className="font-medium truncate">{issue.title}</div>
                   <div className="text-sm text-muted-foreground truncate">
-                    {issue.buildings?.name} • {issue.rooms?.name}
+                    {issue.buildings?.name} • {issue.unified_spaces?.name}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
                     Reported {formatDistanceToNow(new Date(issue.created_at), { addSuffix: true })}
