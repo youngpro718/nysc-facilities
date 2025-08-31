@@ -1,7 +1,7 @@
 
 import React, { useEffect } from 'react';
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { KeyData, KeyType, KeyStatus } from "./types/KeyTypes";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { useForm } from "react-hook-form";

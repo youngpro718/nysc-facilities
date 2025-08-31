@@ -1,6 +1,6 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { Issue } from '../../types/IssueTypes';
 import { IssueFilters } from '../../types/FilterTypes';
 import { transformIssue, DatabaseIssue } from '../../utils/IssueTransformers';

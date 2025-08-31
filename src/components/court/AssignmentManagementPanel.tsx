@@ -52,9 +52,9 @@ export const AssignmentManagementPanel = () => {
         // Check if room has a part assigned using room_id key
         const hasAssignment = assignedRoomIds.has(room.room_id);
 
-        if (roomShutdown && (roomShutdown.status === "in_progress" || roomShutdown.status === "scheduled")) {
+        if (roomShutdown && ((roomShutdown as any).status === "in_progress" || (roomShutdown as any).status === "scheduled")) {
           shutdownCount++;
-          if (roomShutdown.temporary_location) {
+          if ((roomShutdown as any).temporary_location) {
             relocatedCount++;
           }
         } else if (!room.is_active) {

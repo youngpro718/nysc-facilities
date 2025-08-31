@@ -69,7 +69,7 @@ export const PdfUploadArea = ({ onPdfParsed, onFileUploaded, disabled }: PdfUplo
     try {
       // Step 1: Upload the PDF first
       console.log('☁️ Step 1: Uploading PDF to storage...');
-      const { supabase } = await import('@/integrations/supabase/client');
+      const { supabase } = await import('@/lib/supabase');
       const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
       const filePath = fileName;
 

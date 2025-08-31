@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -529,11 +529,11 @@ export const EnhancedCourtAssignmentTable = () => {
       
       // Update sort_order for all affected assignments
       newAssignments.forEach(async (assignment, index) => {
-        if (assignment.assignment_id) {
+        if ((assignment as any).assignment_id) {
           await supabase
             .from('court_assignments')
             .update({ sort_order: index + 1 })
-            .eq('id', assignment.assignment_id);
+            .eq('id', (assignment as any).assignment_id);
         }
       });
 

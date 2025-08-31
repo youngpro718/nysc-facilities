@@ -23,7 +23,7 @@ import { useOccupantAssignments } from "@/hooks/occupants/useOccupantAssignments
 import { IssuePhotoForm } from "./IssuePhotoForm";
 import { usePhotoUpload } from "../hooks/usePhotoUpload";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Form } from "@/components/ui/form";

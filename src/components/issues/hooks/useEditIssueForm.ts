@@ -5,7 +5,7 @@ import { z } from "zod";
 import { Issue } from "../types/IssueTypes";
 import { FormData } from "../types/formTypes";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 
