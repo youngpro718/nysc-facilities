@@ -17,7 +17,7 @@ import {
 import { MobileAdminCard } from "./MobileAdminCard";
 import { EnhancedUserManagementModal } from "../modals/EnhancedUserManagementModal";
 import { SystemSecurityModal } from "../modals/SystemSecurityModal";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 

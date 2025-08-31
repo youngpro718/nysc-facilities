@@ -14,7 +14,7 @@ import {
   Crown
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { ProfileEditModal } from "@/components/profile/modals/ProfileEditModal";
 import { AvatarUploadModal } from "@/components/profile/modals/AvatarUploadModal";

@@ -1,5 +1,5 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { format } from "date-fns";
 import { Content, TDocumentDefinitions, TableCell } from "pdfmake/interfaces";
 import { FloorplanReportData, ReportCallback } from "./types";

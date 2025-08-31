@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 import { format } from "date-fns";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { ExportableTable, createBackupVersion } from "../backupUtils";
 
 // Sanitize string values to prevent Excel formula injection
