@@ -8450,6 +8450,15 @@ export type Database = {
           occupant_name: string
         }[]
       }
+      enhanced_check_rate_limit: {
+        Args: {
+          p_attempt_type: string
+          p_identifier: string
+          p_max_attempts?: number
+          p_window_minutes?: number
+        }
+        Returns: boolean
+      }
       ensure_admin_user: {
         Args: { user_email: string }
         Returns: {
@@ -8896,6 +8905,10 @@ export type Database = {
       rollback_transaction: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      run_security_health_check: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       safe_current_setting: {
         Args: { setting_name: string }
