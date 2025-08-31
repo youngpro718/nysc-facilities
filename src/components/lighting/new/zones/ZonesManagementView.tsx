@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Plus, MapPin, Search, Settings, Users } from "lucide-react";
-import { fetchLightingZones, assignFixturesToZone } from "@/services/supabase/lightingService";
+import { supabase } from "@/lib/supabase";
 import { CreateLightingDialog } from "../../CreateLightingDialog";
 import { AssignZoneDialog } from "../../components/AssignZoneDialog";
 import { ZoneControls } from "../../components/ZoneControls";

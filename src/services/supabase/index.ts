@@ -5,10 +5,9 @@ export type { Database } from '@/lib/supabase';
 // Re-export all lighting service functions
 export * from './lightingService';
 
-// Import supabase for additional service functions
+// Additional service functions that are commonly used
 import { supabase } from '@/lib/supabase';
 
-// Additional service functions that are commonly used
 export const createLightingFixture = async (fixtureData: any) => {
   const { data, error } = await supabase
     .from('lighting_fixtures')

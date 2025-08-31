@@ -20,7 +20,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import * as locationUtil from "@/components/lighting/utils/location";
 import { StatusBadge } from "@/components/lighting/components/StatusBadge";
-import { markLightsFixed, markLightsOut, toggleElectricianRequired } from "@/services/supabase/lightingService";
+import { supabase } from "@/lib/supabase";
 
 interface CardFrontProps {
   fixture: LightingFixture;

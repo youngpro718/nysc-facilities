@@ -10,9 +10,24 @@ import { CreateFixtureFields } from "./form-sections/CreateFixtureFields";
 import { CreateZoneFields } from "./form-sections/CreateZoneFields";
 import { useLightingSubmit } from "./hooks/useLightingSubmit";
 import { useQuery } from "@tanstack/react-query";
-import { fetchLightingZones } from "@/services/supabase/lightingService";
+import { supabase } from "@/lib/supabase";
 import { BaseLightingDialog } from "./shared/BaseLightingDialog";
 import { StandardFormSection } from "./shared/StandardFormSection";
+
+console.log("CreateLightingDialog: Supabase client loaded:", !!supabase);
+
+// Direct function to fetch lighting zones
+const fetchLightingZones = async () => {
+  console.log("fetchLightingZones: Starting fetch");
+  const { data, error } = await supabase
+    .from('lighting_zones')
+    .select('*')
+    .order('name');
+  
+  console.log("fetchLightingZones: Result", { data, error });
+  if (error) throw error;
+  return data || [];
+};
 
 interface CreateLightingDialogProps {
   onFixtureCreated: () => void;
@@ -60,10 +75,11 @@ export function CreateLightingDialog({ onFixtureCreated, onZoneCreated }: Create
   // Fetch zones for fixture form
   const { data: zones } = useQuery({
     queryKey: ['lighting_zones'],
-    queryFn: () => fetchLightingZones()
+    queryFn: fetchLightingZones
   });
 
   const handleFixtureSubmit = async (data: LightingFixtureFormData) => {
+    console.log("handleFixtureSubmit: Data", data);
     const success = await onSubmitFixture(data);
     if (success) {
       fixtureForm.reset();
@@ -71,6 +87,7 @@ export function CreateLightingDialog({ onFixtureCreated, onZoneCreated }: Create
   };
 
   const handleZoneSubmit = async (data: LightingZoneFormData) => {
+    console.log("handleZoneSubmit: Data", data);
     const success = await onSubmitZone(data);
     if (success) {
       zoneForm.reset();

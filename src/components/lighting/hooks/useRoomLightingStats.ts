@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchRoomLightingStats } from "@/services/supabase/lightingService";
+import { supabase } from "@/lib/supabase";
 import { RoomLightingStats } from "@/types/lighting";
 
 export function useRoomLightingStats() {
