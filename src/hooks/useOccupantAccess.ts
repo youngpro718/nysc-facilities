@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 export interface OccupantAccessSummary {
   occupant_id: string;
@@ -102,17 +102,23 @@ export const useOccupantAccess = (occupantId?: string) => {
 
       console.log('Key assignments found:', keyAssignments);
 
-      const room_assignments = roomAssignments?.map(assignment => ({
-        id: assignment.id,
-        room_id: assignment.room_id,
-        room_name: assignment.rooms?.name || '',
-        room_number: assignment.rooms?.room_number || '',
-        building_name: assignment.rooms?.floors?.buildings?.name || '',
-        floor_name: assignment.rooms?.floors?.name || '',
-        is_primary: assignment.is_primary,
-        assignment_type: assignment.assignment_type || '',
-        assigned_at: assignment.assigned_at
-      })) || [];
+      const room_assignments = roomAssignments?.map(assignment => {
+        const room = Array.isArray(assignment.rooms) ? assignment.rooms[0] : assignment.rooms;
+        const floor = Array.isArray(room?.floors) ? room.floors[0] : room?.floors;
+        const building = Array.isArray(floor?.buildings) ? floor.buildings[0] : floor?.buildings;
+        
+        return {
+          id: assignment.id,
+          room_id: assignment.room_id,
+          room_name: room?.name || '',
+          room_number: room?.room_number || '',
+          building_name: building?.name || '',
+          floor_name: floor?.name || '',
+          is_primary: assignment.is_primary,
+          assignment_type: assignment.assignment_type || '',
+          assigned_at: assignment.assigned_at
+        };
+      }) || [];
 
       // Helper function to generate access note based on key
       const getAccessNote = (keyName: string, isPasskey: boolean): string => {
@@ -135,14 +141,18 @@ export const useOccupantAccess = (occupantId?: string) => {
         }
       };
       
-      const key_assignments = keyAssignments?.map(assignment => ({
-        id: assignment.id,
-        key_id: assignment.key_id,
-        key_name: assignment.keys?.name || '',
-        is_passkey: assignment.keys?.is_passkey || false,
-        assigned_at: assignment.assigned_at,
-        access_note: getAccessNote(assignment.keys?.name || '', assignment.keys?.is_passkey || false)
-      })) || [];
+      const key_assignments = keyAssignments?.map(assignment => {
+        const key = Array.isArray(assignment.keys) ? assignment.keys[0] : assignment.keys;
+        
+        return {
+          id: assignment.id,
+          key_id: assignment.key_id,
+          key_name: key?.name || '',
+          is_passkey: key?.is_passkey || false,
+          assigned_at: assignment.assigned_at,
+          access_note: getAccessNote(key?.name || '', key?.is_passkey || false)
+        };
+      }) || [];
 
       const result = {
         occupant_id: occupant.id,

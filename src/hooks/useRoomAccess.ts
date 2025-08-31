@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 export interface RoomAccessInfo {
   room_id: string;
@@ -124,9 +124,12 @@ export const useRoomAccess = (roomId?: string) => {
         const locationData = key?.location_data as any;
         
         // Only include keys that specifically grant access to this room
+        const floor = Array.isArray(room.floors) ? room.floors[0] : room.floors;
+        const building = Array.isArray(floor?.buildings) ? floor.buildings[0] : floor?.buildings;
+        
         return (locationData && typeof locationData === 'object' && locationData.room_id === roomId) ||
                (key?.is_passkey && locationData && typeof locationData === 'object' && 
-                locationData.access_scope === 'building' && locationData.building_id === room.floors?.buildings?.id);
+                locationData.access_scope === 'building' && locationData.building_id === building?.id);
       });
 
       // Create a lookup map for key occupants
@@ -182,13 +185,15 @@ export const useRoomAccess = (roomId?: string) => {
       }));
 
       const totalOccupants = primary_occupants.length + secondary_occupants.length;
+      const floor = Array.isArray(room.floors) ? room.floors[0] : room.floors;
+      const building = Array.isArray(floor?.buildings) ? floor.buildings[0] : floor?.buildings;
 
       return {
         room_id: room.id,
         room_name: room.name,
         room_number: room.room_number || '',
-        building_name: room.floors?.buildings?.name || '',
-        floor_name: room.floors?.name || '',
+        building_name: building?.name || '',
+        floor_name: floor?.name || '',
         room_capacity: undefined,
         current_occupancy: totalOccupants,
         primary_occupants,

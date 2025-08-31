@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 export interface UserRoomAssignment {
   id: string;
@@ -11,7 +11,7 @@ export interface UserRoomAssignment {
     name: string;
     room_number: string;
     floor_id: string;
-  };
+  } | null;
 }
 
 export const useUserRoomAssignments = (userId?: string) => {
@@ -38,7 +38,11 @@ export const useUserRoomAssignments = (userId?: string) => {
         .order('is_primary', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      return (data || []).map(assignment => ({
+        ...assignment,
+        rooms: Array.isArray(assignment.rooms) ? assignment.rooms[0] || null : assignment.rooms
+      }));
     },
     enabled: !!userId,
   });

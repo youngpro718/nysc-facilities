@@ -107,6 +107,74 @@ export const authService = {
   },
   signOut: async () => {
     return supabase.auth.signOut();
+  },
+  getSession: async () => {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error) throw error;
+    return session;
+  },
+  signInWithEmail: async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    return data;
+  },
+  signUpWithEmail: async (email: string, password: string, userData: any) => {
+    const { data, error } = await supabase.auth.signUp({ 
+      email, 
+      password,
+      options: {
+        data: userData
+      }
+    });
+    if (error) throw error;
+    return data;
+  },
+  fetchUserProfile: async (userId: string) => {
+    // Get user roles to determine admin status
+    const { data: userRoles, error: rolesError } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId);
+
+    if (rolesError) {
+      console.error('Error fetching user roles:', rolesError);
+      return { isAdmin: false, profile: null };
+    }
+
+    const isAdmin = userRoles?.some(role => role.role === 'admin') || false;
+
+    // Get user profile if exists
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    return { isAdmin, profile };
+  },
+  updateSessionTracking: async (userId: string, deviceInfo: any) => {
+    // Simple session tracking - just update last seen
+    const { error } = await supabase
+      .from('user_sessions')
+      .upsert({
+        user_id: userId,
+        device_info: deviceInfo,
+        last_activity: new Date().toISOString()
+      });
+    
+    if (error) {
+      console.error('Session tracking error:', error);
+    }
+  },
+  deleteUserSession: async (userId: string) => {
+    const { error } = await supabase
+      .from('user_sessions')
+      .delete()
+      .eq('user_id', userId);
+    
+    if (error) {
+      console.error('Error deleting user session:', error);
+    }
   }
 };
 
