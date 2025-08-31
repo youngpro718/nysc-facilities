@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Mail, Lock, Building2, Loader2, User, Users, Phone, Camera } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "../../lib/supabase";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { useSecureAuth } from '@/hooks/security/useSecureAuth';

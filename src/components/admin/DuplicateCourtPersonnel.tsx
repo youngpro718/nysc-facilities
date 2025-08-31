@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '../../lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { Users, Copy, CheckCircle, AlertCircle } from 'lucide-react';
 

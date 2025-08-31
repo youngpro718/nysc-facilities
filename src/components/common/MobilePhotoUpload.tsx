@@ -5,7 +5,7 @@ import { Loader2, Upload, X, AlertTriangle, Eye, RotateCw } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "../../lib/supabase";
 
 interface UploadState {
   file: File | null;

@@ -3,7 +3,7 @@ import { Check, Clock, AlertTriangle, MessageCircle, UserPlus } from "lucide-rea
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "../../lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import type { EnhancedIssue } from "@/hooks/dashboard/useAdminIssuesData";
 
