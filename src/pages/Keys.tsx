@@ -8,7 +8,7 @@ import { KeyStatisticsCards } from "@/components/keys/KeyStatisticsCards";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Package, Users, History, ShoppingCart, KeyRound } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { KeyData } from "@/components/keys/types/KeyTypes";
 
 export default function Keys() {

@@ -9,7 +9,7 @@ import { LowStockPanel } from "@/components/inventory/LowStockPanel";
 import { InventoryAuditsPanel } from "@/components/inventory/InventoryAuditsPanel";
 import { Button } from "@/components/ui/button";
 import { Package, Plus, TrendingDown, History, Boxes, BarChart3 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 export const InventoryDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
