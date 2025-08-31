@@ -33,10 +33,6 @@ export function ProductionSecurityGuard() {
     }
   };
 
-  // Check for development bypass flags
-  const hasDevBypasses = 
-    import.meta.env.VITE_DISABLE_AUTH_GUARD === 'true' ||
-    import.meta.env.VITE_DISABLE_RATE_LIMIT === 'true';
 
   if (isLoading) {
     return (
@@ -50,7 +46,7 @@ export function ProductionSecurityGuard() {
   const hasCriticalIssues = securityStatus?.critical && securityStatus.critical.length > 0;
   const hasWarnings = securityStatus?.warnings && securityStatus.warnings.length > 0;
 
-  if (!hasCriticalIssues && !hasWarnings && !hasDevBypasses) {
+  if (!hasCriticalIssues && !hasWarnings) {
     return null; // No security issues to display
   }
 
