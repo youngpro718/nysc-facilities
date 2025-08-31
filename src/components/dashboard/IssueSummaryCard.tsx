@@ -15,9 +15,9 @@ export function IssueSummaryCard({ userId }: IssueSummaryCardProps) {
   const { userIssues } = useUserIssues(userId);
   const navigate = useNavigate();
 
-  const openIssues = userIssues?.filter(issue => issue.status === 'open') || [];
-  const inProgressIssues = userIssues?.filter(issue => issue.status === 'in_progress') || [];
-  const resolvedIssues = userIssues?.filter(issue => issue.status === 'resolved') || [];
+  const openIssues = Array.isArray(userIssues) ? userIssues.filter(issue => issue.status === 'open') : [];
+  const inProgressIssues = Array.isArray(userIssues) ? userIssues.filter(issue => issue.status === 'in_progress') : [];
+  const resolvedIssues = Array.isArray(userIssues) ? userIssues.filter(issue => issue.status === 'resolved') : [];
 
   const handleReportIssue = () => {
     navigate('/my-issues');
@@ -36,7 +36,7 @@ export function IssueSummaryCard({ userId }: IssueSummaryCardProps) {
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="secondary" className="font-normal">
-            {userIssues?.length || 0} total
+            {Array.isArray(userIssues) ? userIssues.length : 0} total
           </Badge>
           <Button
             variant="ghost"
@@ -75,7 +75,7 @@ export function IssueSummaryCard({ userId }: IssueSummaryCardProps) {
           </div>
         </div>
 
-        {userIssues && userIssues.length > 0 ? (
+        {Array.isArray(userIssues) && userIssues.length > 0 ? (
           <div className="space-y-2">
             {userIssues.slice(0, 3).map((issue) => (
               <div
@@ -104,7 +104,7 @@ export function IssueSummaryCard({ userId }: IssueSummaryCardProps) {
                 </div>
               </div>
             ))}
-            {userIssues.length > 3 && (
+            {Array.isArray(userIssues) && userIssues.length > 3 && (
               <div className="text-center py-2 text-sm text-muted-foreground">
                 +{userIssues.length - 3} more issues
               </div>

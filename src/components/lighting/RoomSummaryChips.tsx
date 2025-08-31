@@ -52,16 +52,16 @@ export function RoomSummaryChips() {
       return { roomsWithIssues: 0, bulbOutages: 0, electricianOutages: 0, longestOpen: null, mttrAvg: null };
     }
     
-    const roomsWithIssues = list.filter(r => (r.open_issues_total || 0) > 0).length;
-    const bulbOutages = list.reduce((acc, r) => acc + (r.open_replaceable || 0), 0);
-    const electricianOutages = list.reduce((acc, r) => acc + (r.open_electrician || 0), 0);
+    const roomsWithIssues = list.filter(r => ((r as any)?.open_issues_total || 0) > 0).length;
+    const bulbOutages = list.reduce((acc, r) => acc + ((r as any)?.open_replaceable || 0), 0);
+    const electricianOutages = list.reduce((acc, r) => acc + ((r as any)?.open_electrician || 0), 0);
     const longestOpen = list.reduce<number | null>((max, r) => {
-      const v = r.longest_open_minutes;
+      const v = (r as any)?.longest_open_minutes;
       if (v === null || v === undefined) return max;
       if (max === null) return v;
       return Math.max(max, v);
     }, null);
-    const mttrValues = list.map(r => r.mttr_minutes).filter((v): v is number => v !== null && v !== undefined);
+    const mttrValues = list.map(r => (r as any)?.mttr_minutes).filter((v): v is number => v !== null && v !== undefined);
     const mttrAvg = mttrValues.length ? Math.round(mttrValues.reduce((a, b) => a + b, 0) / mttrValues.length) : null;
     return { roomsWithIssues, bulbOutages, electricianOutages, longestOpen, mttrAvg };
   }, [stats]);

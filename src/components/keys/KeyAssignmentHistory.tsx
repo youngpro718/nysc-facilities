@@ -84,11 +84,11 @@ export default function KeyAssignmentHistory({ keyId }: { keyId: string }) {
             assignments.map((assignment) => (
               <TableRow key={assignment.id}>
                 <TableCell>
-                  {assignment.occupant ? 
-                    `${assignment.occupant.first_name} ${assignment.occupant.last_name}` : 
+                  {(assignment.occupant as any) ? 
+                    `${(assignment.occupant as any)?.first_name || ''} ${(assignment.occupant as any)?.last_name || ''}`.trim() : 
                     "N/A"}
                 </TableCell>
-                <TableCell>{assignment.occupant?.department || "N/A"}</TableCell>
+                <TableCell>{(assignment.occupant as any)?.department || "N/A"}</TableCell>
                 <TableCell>
                   {format(new Date(assignment.assigned_at), "MMM d, yyyy")}
                 </TableCell>

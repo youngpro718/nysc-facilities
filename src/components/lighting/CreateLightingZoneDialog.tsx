@@ -156,7 +156,7 @@ export function CreateLightingZoneDialog({ onZoneCreated }: { onZoneCreated: () 
                     <SelectContent>
                       {floors?.map((floor) => (
                         <SelectItem key={floor.id} value={floor.id}>
-                          {floor.buildings?.name} - {floor.name}
+                          {(floor.buildings as any)?.name || floor.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

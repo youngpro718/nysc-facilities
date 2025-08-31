@@ -98,8 +98,8 @@ export const RoomShutdownTracker = ({ onSetTemporaryLocation }: RoomShutdownTrac
       // Transform the data to match our interface
       return data?.map(shutdown => ({
         id: shutdown.id,
-        room_id: shutdown.court_rooms.id,
-        room_number: shutdown.court_rooms.room_number,
+        room_id: (shutdown.court_rooms as any)?.id || '',
+        room_number: (shutdown.court_rooms as any)?.room_number || '',
         reason: shutdown.reason.charAt(0).toUpperCase() + shutdown.reason.slice(1) as ShutdownReason,
         start_date: shutdown.start_date,
         end_date: shutdown.end_date || "",

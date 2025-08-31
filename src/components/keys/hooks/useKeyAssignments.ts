@@ -40,7 +40,7 @@ export function useKeyAssignments() {
         throw assignmentError;
       }
 
-      return assignments as KeyAssignment[];
+      return assignments as any;
     },
   });
 }

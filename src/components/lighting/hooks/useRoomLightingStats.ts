@@ -22,9 +22,9 @@ const fetchRoomLightingStats = async () => {
 };
 
 export function useRoomLightingStats() {
-  return useQuery<RoomLightingStats[]>({
+  return useQuery({
     queryKey: ["room-lighting-stats"],
-    queryFn: fetchRoomLightingStats,
+    queryFn: fetchRoomLightingStats as any,
     staleTime: 60_000,
   });
 }
