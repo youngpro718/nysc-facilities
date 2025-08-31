@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { UseFormReturn } from "react-hook-form";
 import { KeyFormData } from "../types/KeyTypes";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 interface LocationFieldsProps {
   form: UseFormReturn<KeyFormData>;
