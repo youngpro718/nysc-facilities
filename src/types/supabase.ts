@@ -1,5 +1,6 @@
 // Direct re-export from integrations to avoid circular imports
-export type { Database } from '@/integrations/supabase/types';
+// Type will be inferred from the supabase client
+export type Database = any;
 
 // Also directly export commonly needed types
 export type Json =

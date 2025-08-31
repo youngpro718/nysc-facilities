@@ -3,12 +3,12 @@
 
 // Direct import from the actual supabase client - avoiding circular imports
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@/integrations/supabase/types';
+// Types will be inferred from createClient
 
 const SUPABASE_URL = 'https://fmymhtuiqzhupjyopfvi.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZteW1odHVpcXpodXBqeW9wZnZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgyNDc4OTYsImV4cCI6MjA1MzgyMzg5Nn0.1OvOXiLEj3QKGjAEZCSWqw8zzewsYgfTlVDcDEdfCjE';
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     persistSession: true,
     storageKey: 'app-auth',
@@ -42,7 +42,8 @@ export const supabaseWithRetry = {
   }
 };
 
-export type { Database };
+// Export the supabase client type for use in other files
+export type SupabaseClient = typeof supabase;
 
 // Supply request service functions (implemented directly with supabase client)
 export const submitSupplyRequest = async (requestData: any) => {
