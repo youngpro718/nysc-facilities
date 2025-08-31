@@ -65,7 +65,10 @@ export function RoomAccessManager() {
         .order('room_number');
 
       if (error) throw error;
-      return data as Room[];
+      return (data as any)?.map((room: any) => ({
+        ...room,
+        floors: room.floors?.[0] || { name: 'Unknown Floor', buildings: { name: 'Unknown Building' } }
+      })) || [];
     },
   });
 

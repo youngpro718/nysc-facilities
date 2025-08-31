@@ -209,7 +209,7 @@ export function EnhancedSupplyManagement() {
         totalItems,
         totalValue,
         lowStockCount: lowStock.length,
-        categories: [...new Set(data.map(item => item.inventory_categories?.name).filter(Boolean))].length
+        categories: [...new Set(data.map(item => (item.inventory_categories as any)?.name).filter(Boolean))].length
       };
     },
   });

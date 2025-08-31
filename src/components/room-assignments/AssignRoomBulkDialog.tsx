@@ -181,7 +181,7 @@ export function AssignRoomBulkDialog({
                     {room.room_number} - {room.name}
                     {room.floors && (
                       <span className="text-muted-foreground">
-                        {" "} ({room.floors.buildings?.name}, {room.floors.name})
+                        {" "} ({(room.floors as any)?.[0]?.buildings?.[0]?.name || 'Unknown Building'}, {(room.floors as any)?.[0]?.name || 'Unknown Floor'})
                       </span>
                     )}
                   </SelectItem>
