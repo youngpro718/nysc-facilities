@@ -1,6 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import type { UserAssignment } from "@/types/dashboard";
 
 export const useRoomAssignments = (userId?: string) => {

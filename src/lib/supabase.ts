@@ -1,15 +1,48 @@
 // IMPORTANT: This is the ONLY file that should import directly from integrations
 // All other files should import from '@/lib/supabase'
 
-// Re-export the existing supabase client
-export { supabase, supabaseWithRetry } from '@/integrations/supabase/client';
-
-// For TypeScript compatibility
+// Direct import from the actual supabase client - avoiding circular imports
+import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
-export type { Database };
 
-// Import supabase instance for use in service functions
-import { supabase } from '@/integrations/supabase/client';
+const SUPABASE_URL = 'https://fmymhtuiqzhupjyopfvi.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZteW1odHVpcXpodXBqeW9wZnZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgyNDc4OTYsImV4cCI6MjA1MzgyMzg5Nn0.1OvOXiLEj3QKGjAEZCSWqw8zzewsYgfTlVDcDEdfCjE';
+
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: true,
+    storageKey: 'app-auth',
+    storage: localStorage,
+    autoRefreshToken: true,
+    detectSessionInUrl: false,
+  },
+});
+
+export const supabaseWithRetry = {
+  async query<T>(queryFn: () => Promise<T>, maxRetries = 3): Promise<T> {
+    let lastError;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await queryFn();
+      } catch (error: any) {
+        lastError = error;
+        if (error?.message?.includes('Failed to fetch') || 
+            error?.message?.includes('ERR_CONNECTION_CLOSED') ||
+            error?.message?.includes('Network Error')) {
+          if (attempt < maxRetries) {
+            const delay = Math.pow(2, attempt - 1) * 1000;
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          }
+        }
+        throw error;
+      }
+    }
+    throw lastError;
+  }
+};
+
+export type { Database };
 
 // Supply request service functions (implemented directly with supabase client)
 export const submitSupplyRequest = async (requestData: any) => {
@@ -75,6 +108,7 @@ export const authService = {
     return supabase.auth.signOut();
   }
 };
+
 import type { LightStatus } from '@/types/lighting';
 
 // Export lighting service functions for compatibility  

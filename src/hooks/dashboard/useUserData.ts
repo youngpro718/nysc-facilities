@@ -1,6 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { UserDataError } from "./types/errors";
 import type { UserProfile } from "@/types/dashboard";
 
