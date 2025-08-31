@@ -16,6 +16,7 @@ import { MobileRequestForm } from "@/components/mobile/MobileRequestForm";
 import { RequestDetailsModal } from "@/components/requests/RequestDetailsModal";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/lib/supabase";
 
 const statusConfig = {
   pending: { 
@@ -111,9 +112,9 @@ export default function MyRequests() {
     setShowRequestForm(false);
     setShowMobileForm(false);
     try {
-      const { submitKeyRequest } = await import('@/services/supabase/keyRequestService');
+      // Using direct supabase call instead
       
-      await submitKeyRequest({
+      const { error } = await supabase.from('key_requests').insert({
         reason: data.reason,
         user_id: user!.id,
         request_type: data.request_type,

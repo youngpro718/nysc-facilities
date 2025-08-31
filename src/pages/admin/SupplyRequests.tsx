@@ -15,7 +15,7 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { FulfillmentWorkflow } from "@/components/supply/FulfillmentWorkflow";
 import { useToast } from "@/hooks/use-toast";
-import { getSupplyRequests, updateSupplyRequestStatus, updateSupplyRequestItems } from "@/services/supabase/supplyRequestService";
+import { getSupplyRequests, updateSupplyRequestStatus, updateSupplyRequestItems } from "@/lib/supabase";
 
 interface SupplyRequestWithUser {
   id: string;
@@ -130,7 +130,7 @@ export default function AdminSupplyRequests() {
           break;
       }
 
-      await updateSupplyRequestStatus(selectedRequest.id, newStatus, notes);
+      await updateSupplyRequestStatus(selectedRequest.id, newStatus);
 
       // If approving, update item quantities
       if (actionType === 'approve' && Object.keys(itemQuantities).length > 0) {
