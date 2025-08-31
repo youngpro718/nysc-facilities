@@ -17,7 +17,7 @@ import { CurrentOccupantsSection } from "./components/CurrentOccupantsSection";
 import { useRoomData } from "./hooks/useRoomData";
 import { useRoomOccupants } from "./hooks/useRoomOccupants";
 import type { AssignRoomsDialogProps } from "./types/assignmentTypes";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 export function AssignRoomsDialog({
   open,
