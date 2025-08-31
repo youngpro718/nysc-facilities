@@ -64,7 +64,7 @@ export function SupplyRequestForm({ onSuccess }: SupplyRequestFormProps) {
   });
 
   const submitMutation = useMutation({
-    mutationFn: submitSupplyRequest,
+    mutationFn: (payload: any) => submitSupplyRequest(payload),
     onSuccess: () => {
       toast({
         title: 'Success',
