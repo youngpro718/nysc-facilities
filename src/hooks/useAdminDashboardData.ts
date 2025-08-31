@@ -22,7 +22,7 @@ export const useAdminDashboardData = () => {
           status,
           created_at,
           updated_at,
-          floors (
+          floors!floors_building_id_fkey (
             id,
             name,
             floor_number

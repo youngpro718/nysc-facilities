@@ -6534,6 +6534,39 @@ export type Database = {
         }
         Relationships: []
       }
+      security_configurations: {
+        Row: {
+          configuration: Json
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          configuration?: Json
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          configuration?: Json
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       security_incidents: {
         Row: {
           affected_users: string[] | null
@@ -6618,6 +6651,72 @@ export type Database = {
         }
         Relationships: []
       }
+      security_metrics: {
+        Row: {
+          id: string
+          metadata: Json | null
+          metric_name: string
+          metric_type: string
+          metric_value: number
+          recorded_at: string | null
+        }
+        Insert: {
+          id?: string
+          metadata?: Json | null
+          metric_name: string
+          metric_type: string
+          metric_value: number
+          recorded_at?: string | null
+        }
+        Update: {
+          id?: string
+          metadata?: Json | null
+          metric_name?: string
+          metric_type?: string
+          metric_value?: number
+          recorded_at?: string | null
+        }
+        Relationships: []
+      }
+      security_notifications: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          metadata: Json | null
+          notification_type: string
+          severity: string
+          target_users: string[] | null
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          metadata?: Json | null
+          notification_type: string
+          severity: string
+          target_users?: string[] | null
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          metadata?: Json | null
+          notification_type?: string
+          severity?: string
+          target_users?: string[] | null
+          title?: string
+        }
+        Relationships: []
+      }
       security_operations_audit: {
         Row: {
           created_at: string | null
@@ -6654,6 +6753,33 @@ export type Database = {
           target_resource?: string | null
           user_agent?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      security_policy_compliance: {
+        Row: {
+          compliance_status: string
+          details: Json | null
+          id: string
+          last_checked: string | null
+          next_check_due: string | null
+          policy_name: string
+        }
+        Insert: {
+          compliance_status: string
+          details?: Json | null
+          id?: string
+          last_checked?: string | null
+          next_check_due?: string | null
+          policy_name: string
+        }
+        Update: {
+          compliance_status?: string
+          details?: Json | null
+          id?: string
+          last_checked?: string | null
+          next_check_due?: string | null
+          policy_name?: string
         }
         Relationships: []
       }
@@ -8446,6 +8572,10 @@ export type Database = {
           conflicting_relocation_id: string
         }[]
       }
+      check_security_compliance: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       cleanup_old_backups: {
         Args: { policy_id: string }
         Returns: undefined
@@ -8532,6 +8662,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      enhanced_security_monitor: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       ensure_admin_user: {
         Args: { user_email: string }
         Returns: {
@@ -8577,6 +8711,17 @@ export type Database = {
       }
       generate_issue_number: {
         Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_security_alert: {
+        Args: {
+          alert_type: string
+          message: string
+          metadata?: Json
+          severity: string
+          target_admins?: boolean
+          title: string
+        }
         Returns: string
       }
       get_building_hierarchy: {
