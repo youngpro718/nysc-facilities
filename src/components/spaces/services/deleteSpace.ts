@@ -1,5 +1,5 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 export async function deleteSpace(id: string, type: 'room' | 'hallway' | 'door') {
   console.log(`Deleting ${type} with ID: ${id}`);

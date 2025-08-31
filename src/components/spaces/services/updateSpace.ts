@@ -1,5 +1,5 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { StatusEnum } from "../rooms/types/roomEnums";
 
 interface UpdateSpaceData {

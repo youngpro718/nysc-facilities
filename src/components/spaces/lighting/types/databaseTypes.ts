@@ -1,5 +1,5 @@
 
-import type { Json } from '@/integrations/supabase/types';
+import type { Json } from '@/types/supabase';
 import { 
   LightingPosition,
   LightingTechnology,
