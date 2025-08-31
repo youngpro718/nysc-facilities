@@ -56,23 +56,6 @@ export function ProductionSecurityGuard() {
 
   return (
     <div className="space-y-4">
-      {hasDevBypasses && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Development Bypasses Detected:</strong>
-            <ul className="mt-2 list-disc list-inside">
-              {import.meta.env.VITE_DISABLE_AUTH_GUARD === 'true' && (
-                <li>Authentication guard is disabled</li>
-              )}
-              {import.meta.env.VITE_DISABLE_RATE_LIMIT === 'true' && (
-                <li>Rate limiting is disabled</li>
-              )}
-            </ul>
-            <p className="mt-2">These settings should be disabled in production environments.</p>
-          </AlertDescription>
-        </Alert>
-      )}
 
       {hasCriticalIssues && (
         <Alert variant="destructive">
