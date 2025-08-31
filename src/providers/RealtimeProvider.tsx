@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { supabase } from '../integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 import { invalidateForTable } from '@/hooks/cache/invalidationMap';
 
