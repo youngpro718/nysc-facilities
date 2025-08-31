@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Clock, Play, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { startSupplyRequestWork, completeSupplyRequestWork, getFulfillmentLog } from "@/services/supabase/supplyRequestService";
+import { startSupplyRequestWork, completeSupplyRequestWork, getFulfillmentLog } from "@/lib/supabase";
 
 interface FulfillmentWorkflowProps {
   request: any;

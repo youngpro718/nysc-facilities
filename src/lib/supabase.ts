@@ -11,17 +11,57 @@ export type { Database };
 // Import supabase instance for use in service functions
 import { supabase } from '@/integrations/supabase/client';
 
-// Re-export all supply request service functions
-export {
-  submitSupplyRequest,
-  getSupplyRequests,
-  updateSupplyRequestStatus,
-  updateSupplyRequestItems,
-  startSupplyRequestWork,
-  completeSupplyRequestWork,
-  getFulfillmentLog,
-  getInventoryItems
-} from '@/services/supabase/supplyRequestService';
+// Supply request service functions (implemented directly with supabase client)
+export const submitSupplyRequest = async (requestData: any) => {
+  const { data, error } = await supabase.from('supply_requests').insert(requestData).select().single();
+  if (error) throw error;
+  return data;
+};
+
+export const getSupplyRequests = async () => {
+  const { data, error } = await supabase.from('supply_requests').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  return data;
+};
+
+export const updateSupplyRequestStatus = async (id: string, status: string) => {
+  const { error } = await supabase.from('supply_requests').update({ status }).eq('id', id);
+  if (error) throw error;
+};
+
+export const updateSupplyRequestItems = async (id: string, items: any[]) => {
+  const { error } = await supabase.from('supply_requests').update({ items }).eq('id', id);
+  if (error) throw error;
+};
+
+export const startSupplyRequestWork = async (id: string) => {
+  const { error } = await supabase.from('supply_requests').update({ 
+    work_started_at: new Date().toISOString(),
+    status: 'in_progress'
+  }).eq('id', id);
+  if (error) throw error;
+};
+
+export const completeSupplyRequestWork = async (id: string, notes?: string) => {
+  const { error } = await supabase.from('supply_requests').update({ 
+    work_completed_at: new Date().toISOString(),
+    status: 'completed',
+    completion_notes: notes
+  }).eq('id', id);
+  if (error) throw error;
+};
+
+export const getFulfillmentLog = async (requestId: string) => {
+  const { data, error } = await supabase.from('fulfillment_logs').select('*').eq('request_id', requestId).order('created_at', { ascending: false });
+  if (error) throw error;
+  return data;
+};
+
+export const getInventoryItems = async () => {
+  const { data, error } = await supabase.from('inventory_items').select('*').order('name');
+  if (error) throw error;
+  return data;
+};
 
 // Auth service functions
 export const authService = {
