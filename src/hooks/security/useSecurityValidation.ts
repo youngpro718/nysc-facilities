@@ -29,8 +29,10 @@ export function useSecurityValidation() {
   }, []);
 
   const validatePassword = useCallback(async (password: string): Promise<ValidationResult> => {
+    setIsValidating(true);
     try {
-      const { data, error } = await supabase.rpc('validate_password_strength', { password });
+      // Use the new strong password validation function
+      const { data, error } = await supabase.rpc('validate_strong_password', { password });
       
       if (error) throw error;
       
@@ -56,6 +58,8 @@ export function useSecurityValidation() {
         isValid: false,
         errors: ['Password validation failed']
       };
+    } finally {
+      setIsValidating(false);
     }
   }, []);
 
