@@ -93,7 +93,7 @@ export function ReportIssueWizard({ onSuccess, onCancel, assignedRooms }: Report
       const { error } = await supabase
         .from('issues')
         .insert({
-          title: data.title || `${data.issue_type} Issue ${data.problem_type ? `- ${data.problem_type}` : ''} - ${isEmergency ? 'HIGH' : data.priority?.toUpperCase()} Priority`,
+          title: data.title || `${data.issue_type} Issue - ${isEmergency ? 'HIGH' : (data.priority?.toUpperCase() || 'MEDIUM')} Priority`,
           description: data.description,
           issue_type: data.issue_type,
           priority: isEmergency ? 'high' : (data.priority || 'medium'),

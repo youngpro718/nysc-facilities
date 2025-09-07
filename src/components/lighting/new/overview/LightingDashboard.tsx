@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,10 +21,11 @@ import { toast } from "sonner";
 
 export function LightingDashboard() {
   const navigate = useNavigate();
-  const { data: fixtures, isLoading, error, refetch } = useQuery({
+  const { data: fixtures, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['lighting-fixtures'],
     queryFn: () => supabaseWithRetry.query(fetchLightingFixtures),
   });
+  const [checking, setChecking] = useState(false);
 
   if (isLoading) {
     return (
@@ -202,13 +204,25 @@ export function LightingDashboard() {
             <Button
               variant="outline"
               className="justify-start gap-2"
+              disabled={checking || isFetching}
               onClick={async () => {
-                await refetch();
-                toast.success('System check complete', { description: 'Fixture data refreshed.' });
+                try {
+                  setChecking(true);
+                  const result = await refetch();
+                  if ((result as any)?.error) {
+                    throw (result as any).error;
+                  }
+                  toast.success('System check complete', { description: 'Fixture data refreshed.' });
+                } catch (err) {
+                  const message = err instanceof Error ? err.message : 'Unable to refresh fixtures. Please try again.';
+                  toast.error('System check failed', { description: message });
+                } finally {
+                  setChecking(false);
+                }
               }}
             >
               <RefreshCw className="h-4 w-4" />
-              System Check
+              {checking || isFetching ? 'Checking…' : 'System Check'}
             </Button>
             
             <Button

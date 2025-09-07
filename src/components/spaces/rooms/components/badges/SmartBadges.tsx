@@ -100,7 +100,7 @@ function StorageBadge({ room }: { room: EnhancedRoom }) {
       className="text-xs flex items-center gap-1 bg-amber-500/20 text-amber-700 ring-1 ring-amber-500/30"
     >
       <Package className="h-3 w-3" />
-      {storageType.replace('_', ' ')} {capacity && `(${capacity})`}
+      {storageType.replace(/_/g, ' ')} {typeof capacity === 'number' && capacity > 0 ? `(${capacity})` : ''}
     </Badge>
   );
 }

@@ -12,7 +12,7 @@ export const AssignmentManagementPanel = () => {
   const impactSummary = getCourtImpactSummary();
   const recentlyAffectedRooms = getRecentlyAffectedRooms();
 
-  const { data: assignmentStats } = useQuery({
+  const { data: assignmentStats, isLoading, error } = useQuery({
     queryKey: ["assignment-stats"],
     queryFn: async () => {
       // Get all court rooms with their availability status
@@ -77,7 +77,18 @@ export const AssignmentManagementPanel = () => {
     },
   });
 
+  // Loading & error states for better UX
+  if (isLoading) {
+    return (
+      <div className="p-4 text-sm text-muted-foreground">Loading assignment stats…</div>
+    );
+  }
 
+  if (error) {
+    return (
+      <div className="p-4 text-sm text-red-600">Error loading assignment stats: {(error as Error).message}</div>
+    );
+  }
 
   return (
     <div className="space-y-6">

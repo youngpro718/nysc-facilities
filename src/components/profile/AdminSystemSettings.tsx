@@ -214,10 +214,18 @@ export function AdminSystemSettings() {
           </div>
 
           <div className="flex gap-2">
-            <Button variant="outline" size="sm">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => toast({ title: 'System Logs', description: 'Logs viewer coming soon' })}
+            >
               View System Logs
             </Button>
-            <Button variant="outline" size="sm">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => toast({ title: 'Export Settings', description: 'Export functionality coming soon' })}
+            >
               Export Settings
             </Button>
           </div>

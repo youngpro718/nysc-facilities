@@ -419,8 +419,13 @@ export function InteractiveOperationsDashboard() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => toggleRoomStatus(selectedRoom!.room.id, selectedRoom!.room.is_active)}
+                    onClick={() => {
+                      if (selectedRoom?.room) {
+                        toggleRoomStatus(selectedRoom.room.id, selectedRoom.room.is_active);
+                      }
+                    }}
                     className="text-xs"
+                    disabled={!selectedRoom?.room}
                   >
                     {selectedRoom?.room.is_active ? <PowerOff className="h-3 w-3" /> : <Power className="h-3 w-3" />}
                   </Button>
@@ -625,8 +630,13 @@ export function InteractiveOperationsDashboard() {
           <DialogFooter className="mt-4">
             <Button
               variant={selectedRoom?.room.is_active ? "destructive" : "default"}
-              onClick={() => toggleRoomStatus(selectedRoom!.room.id, selectedRoom!.room.is_active)}
+              onClick={() => {
+                if (selectedRoom?.room) {
+                  toggleRoomStatus(selectedRoom.room.id, selectedRoom.room.is_active);
+                }
+              }}
               className="w-full"
+              disabled={!selectedRoom?.room}
             >
               {selectedRoom?.room.is_active ? (
                 <>

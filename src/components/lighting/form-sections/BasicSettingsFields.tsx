@@ -197,7 +197,7 @@ export function BasicSettingsFields({ form, onSpaceOrPositionChange }: BasicSett
               <Input {...field} readOnly className="bg-muted text-foreground" />
             </FormControl>
             <div className="text-xs text-muted-foreground mt-1">
-              Auto-generated from the selected {spaceType} and position (e.g., "Room 1317 — Ceiling Light 1").
+              Auto-generated from the chosen space and position (e.g., "Room 1317 — Ceiling Light 1").
             </div>
             <FormMessage />
           </FormItem>

@@ -17,10 +17,17 @@ interface CourtMaintenance {
   scheduled_start_date: string | null;
   scheduled_end_date: string | null;
   schedule_status: string | null;
+  // Additional fields used by the component/UI
+  maintenance_status_detail: string | null;
+  impact_level: string | null;
+  priority: string | null;
+  courtroom_number: string | null;
+  maintenance_type: string | null;
+  temporary_location: string | null;
 };
 
 export const CourtMaintenancePanel = () => {
-  const { data: maintenanceData, isLoading } = useQuery({
+  const { data: maintenanceData, isLoading } = useQuery<CourtMaintenance[]>({
     queryKey: ["court-maintenance-v2"],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
@@ -29,7 +36,7 @@ export const CourtMaintenancePanel = () => {
         .not("schedule_id", "is", null)
         .order("scheduled_start_date", { ascending: true });
       if (error) throw error;
-      return data as any[];
+      return (data || []) as CourtMaintenance[];
     },
   });
 
@@ -107,7 +114,7 @@ export const CourtMaintenancePanel = () => {
               <div className="flex items-start justify-between">
                 <div>
                   <CardTitle className="text-lg flex items-center gap-2">
-                    {getImpactIcon(maintenance.impact_level)}
+                    {getImpactIcon(maintenance.impact_level || '')}
                     {maintenance.maintenance_title}
                   </CardTitle>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
@@ -124,11 +131,11 @@ export const CourtMaintenancePanel = () => {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Badge className={getPriorityColor(maintenance.priority)}>
-                    {maintenance.priority}
+                  <Badge className={getPriorityColor(maintenance.priority || '')}>
+                    {maintenance.priority ?? 'normal'}
                   </Badge>
-                  <Badge className={getStatusColor(maintenance.maintenance_status_detail)}>
-                    {maintenance.maintenance_status_detail?.replace("_", " ")}
+                  <Badge className={getStatusColor(maintenance.maintenance_status_detail || '')}>
+                    {(maintenance.maintenance_status_detail ?? '').replace("_", " ")}
                   </Badge>
                 </div>
               </div>

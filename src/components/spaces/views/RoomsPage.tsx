@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -80,12 +80,29 @@ const RoomsPage = () => {
     selectedFloor: "all",
     roomTypeFilter,
   });
-  // Auto-select the first room when data loads so the card always shows
+  // Ensure the selected panel room remains valid as filters/data change
   useEffect(() => {
-    if (!selectedRoomForPanel && filteredAndSortedRooms && filteredAndSortedRooms.length > 0) {
-      setSelectedRoomForPanel(filteredAndSortedRooms[0] as Room);
+    const list = filteredAndSortedRooms ?? [];
+    // If current selection exists and is still present in the list, keep it
+    if (selectedRoomForPanel && list.some((r: any) => r.id === selectedRoomForPanel.id)) {
+      return;
+    }
+    // Otherwise, pick the first available room or clear selection for empty state
+    if (list.length > 0) {
+      setSelectedRoomForPanel(list[0] as Room);
+    } else {
+      setSelectedRoomForPanel(null);
     }
   }, [filteredAndSortedRooms, selectedRoomForPanel]);
+
+  // Single source of truth for the panel room
+  const panelRoom = useMemo(() => {
+    const list = filteredAndSortedRooms ?? [];
+    if (selectedRoomForPanel && list.some((r: any) => r.id === selectedRoomForPanel.id)) {
+      return selectedRoomForPanel as Room;
+    }
+    return (list[0] as Room) ?? null;
+  }, [filteredAndSortedRooms, selectedRoomForPanel?.id]);
 
   const deleteRoomMutation = useMutation({
     mutationFn: (roomId: string) => deleteSpace(roomId, 'room'),
@@ -183,9 +200,9 @@ const RoomsPage = () => {
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={72}>
             <div className="p-6 h-full min-h-[520px] flex items-center justify-center">
-              { (selectedRoomForPanel ?? (filteredAndSortedRooms && filteredAndSortedRooms[0])) ? (
+              { panelRoom ? (
                 <RoomCard
-                  room={(selectedRoomForPanel ?? (filteredAndSortedRooms && filteredAndSortedRooms[0])) as Room}
+                  room={panelRoom}
                   onDelete={(id) => {
                     if (window.confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
                       deleteRoomMutation.mutate(id);

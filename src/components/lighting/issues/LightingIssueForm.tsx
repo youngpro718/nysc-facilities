@@ -65,7 +65,8 @@ export function LightingIssueForm({ onSubmitted, prefillData, onSuccess }: Light
     setLoading(true);
     setError(null);
     
-    // Insert into unified issues table
+    // Insert into unified issues table (schema verified: no bulbType/formFactor columns)
+    // Persist bulbType and formFactor in tags for downstream filtering/analytics
     const { error } = await supabase
       .from('issues')
       .insert({
@@ -73,9 +74,10 @@ export function LightingIssueForm({ onSubmitted, prefillData, onSuccess }: Light
         description: notes || `${issueType} issue with ${bulbType} bulb`,
         issue_type: 'lighting',
         priority: 'medium',
-        status: 'open',
-        location_description: location
-      } as any);
+        status: status, // use selected status from form
+        location_description: location,
+        tags: [`bulb_type:${bulbType}`, `form_factor:${formFactor}`]
+      });
 
     setLoading(false);
     

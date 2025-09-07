@@ -566,7 +566,16 @@ export function EnhancedUserSettings() {
                     <Label>Session Timeout (minutes)</Label>
                     <Select
                       value={settings.session_timeout.toString()}
-                      onValueChange={(value) => updateSetting('session_timeout', parseInt(value))}
+                      onValueChange={(value) => {
+                        const n = Number(value);
+                        if (Number.isFinite(n) && !Number.isNaN(n)) {
+                          updateSetting('session_timeout', n as any);
+                        } else {
+                          // Gracefully handle invalid input (shouldn't occur with Select)
+                          // Optionally notify the user
+                          // toast({ title: 'Invalid timeout value', variant: 'destructive' });
+                        }
+                      }}
                     >
                       <SelectTrigger className="mt-2">
                         <SelectValue />

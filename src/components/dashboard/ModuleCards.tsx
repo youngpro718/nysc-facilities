@@ -48,6 +48,10 @@ const ModuleCard = ({ title, icon, count, status, description, route, color = "p
         return 'border-green-200 hover:border-green-300 bg-green-50';
       case 'blue':
         return 'border-blue-200 hover:border-blue-300 bg-blue-50';
+      case 'purple':
+        return 'border-purple-200 hover:border-purple-300 bg-purple-50';
+      case 'orange':
+        return 'border-orange-200 hover:border-orange-300 bg-orange-50';
       default:
         return 'border-gray-200 hover:border-gray-300';
     }

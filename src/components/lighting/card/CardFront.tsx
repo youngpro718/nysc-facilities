@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -101,6 +101,7 @@ export function CardFront({
   // Local overrides so the UI reflects changes immediately
   const [localStatuses, setLocalStatuses] = useState<Record<string, { status: 'functional' | 'non_functional'; requires_electrician?: boolean }>>({});
   const [showOutChoice, setShowOutChoice] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   const handleMarkOut = async (requiresElectrician: boolean) => {
     try {
       setIsActing(true);
@@ -119,16 +120,29 @@ export function CardFront({
 
   // When clicking a visual bar, decide how to classify outage
   const handleBarClick = async (index: number) => {
+    if (isActing) return; // avoid repeated clicks while in-flight
     setBarChoiceIndex(index);
     const target = roomFixtures[index] || fixture;
     setSelectedFixtureId(target.id);
     const tech = (target.technology || '').toString().toLowerCase();
     if (tech === 'led') {
-      // Optimistic UI update
-      setLocalStatuses(prev => ({ ...prev, [target.id]: { status: 'non_functional', requires_electrician: true } }));
-      await markLightsOut([target.id], true);
-      onFixtureUpdated();
-      setShowOutChoice(false);
+      // Optimistic UI update with rollback on failure
+      const prevStatuses = localStatuses;
+      setIsActing(true);
+      setActionError(null);
+      try {
+        setLocalStatuses(prev => ({ ...prev, [target.id]: { status: 'non_functional', requires_electrician: true } }));
+        await markLightsOut([target.id], true);
+        onFixtureUpdated();
+        setShowOutChoice(false);
+      } catch (e) {
+        // Roll back optimistic changes and surface error
+        setLocalStatuses(prevStatuses);
+        setActionError('Failed to mark light as out. Please try again.');
+        setShowOutChoice(true);
+      } finally {
+        setIsActing(false);
+      }
       return;
     }
     setShowOutChoice(true);
@@ -145,6 +159,41 @@ export function CardFront({
       setIsActing(false);
     }
   };
+  
+  // Handle inline outage choice with rollback on failure
+  const handleOutChoice = useCallback(async (requiresElectrician: boolean) => {
+    if (!selectedFixtureId || isActing) return;
+    const targetId = selectedFixtureId;
+    const prevStatuses = localStatuses;
+    setIsActing(true);
+    setActionError(null);
+    try {
+      setLocalStatuses(prev => ({ ...prev, [targetId]: { status: 'non_functional', requires_electrician: requiresElectrician } }));
+      await markLightsOut([targetId], requiresElectrician);
+      onFixtureUpdated();
+      setShowOutChoice(false);
+    } catch (e) {
+      setLocalStatuses(prevStatuses);
+      setActionError('Failed to update fixture status. Please try again.');
+      setShowOutChoice(true);
+    } finally {
+      setIsActing(false);
+    }
+  }, [selectedFixtureId, isActing, localStatuses, onFixtureUpdated]);
+
+  const handleBulbIssue = useCallback(async () => {
+    if (!selectedFixtureId || isActing) return;
+    await handleOutChoice(false);
+  }, [selectedFixtureId, isActing, handleOutChoice]);
+
+  const handleBallastIssue = useCallback(async () => {
+    if (!selectedFixtureId || isActing) return;
+    await handleOutChoice(true);
+  }, [selectedFixtureId, isActing, handleOutChoice]);
+
+  const handleCancel = useCallback(() => {
+    setShowOutChoice(false);
+  }, []);
   const handleToggleElectrician = async () => {
     try {
       setIsActing(true);
@@ -206,6 +255,10 @@ export function CardFront({
     return fixture.name;
   };
 
+  // Compute safe fixtures list and columns for grid rendering
+  const fixtures = (roomFixtures && roomFixtures.length ? roomFixtures : [fixture]).slice(0, 4);
+  const columns = Math.max(1, Math.min(4, fixtures.length || 1));
+
   return (
     <Card className={cn(
       "w-full h-[280px] flex flex-col rounded-2xl border border-border/40 bg-card/80 backdrop-blur-sm shadow-sm transition-all duration-300 hover:shadow-md",
@@ -252,8 +305,8 @@ export function CardFront({
           <div className="flex-1 rounded-xl border border-border/50 bg-muted/10 p-3">
             <div className="flex items-center gap-3">
               {/* simple two-bar representation */}
-              <div className={`flex-1 grid gap-3`} style={{ gridTemplateColumns: `repeat(${Math.max(1, Math.min(4, roomFixtures.length || 1))}, minmax(0, 1fr))` }}>
-                {(roomFixtures.length ? roomFixtures : [fixture]).slice(0, 4).map((fx, idx) => {
+              <div className={`flex-1 grid gap-3`} style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
+                {fixtures.map((fx, idx) => {
                   const override = localStatuses[fx.id];
                   const statusNow = override?.status ?? fx.status;
                   const reqElecNow = override?.requires_electrician ?? fx.requires_electrician;
@@ -302,13 +355,16 @@ export function CardFront({
         {showOutChoice && (
           <div className="flex items-center gap-2 text-sm">
             <span className="text-muted-foreground">Mark selected fixture as:</span>
-            <Button size="sm" variant="secondary" disabled={isActing} onClick={async () => { if(selectedFixtureId) { setLocalStatuses(prev => ({ ...prev, [selectedFixtureId]: { status: 'non_functional', requires_electrician: false } })); await markLightsOut([selectedFixtureId], false); onFixtureUpdated(); } setShowOutChoice(false); }}>
+            <Button size="sm" variant="secondary" disabled={isActing || !selectedFixtureId} onClick={handleBulbIssue}>
               Bulb issue
             </Button>
-            <Button size="sm" variant="destructive" disabled={isActing} onClick={async () => { if(selectedFixtureId) { setLocalStatuses(prev => ({ ...prev, [selectedFixtureId]: { status: 'non_functional', requires_electrician: true } })); await markLightsOut([selectedFixtureId], true); onFixtureUpdated(); } setShowOutChoice(false); }}>
+            <Button size="sm" variant="destructive" disabled={isActing || !selectedFixtureId} onClick={handleBallastIssue}>
               Ballast issue (Electrician)
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => setShowOutChoice(false)}>Cancel</Button>
+            <Button size="sm" variant="ghost" onClick={handleCancel}>Cancel</Button>
+            {actionError && (
+              <span className="text-xs text-destructive ml-2">{actionError}</span>
+            )}
           </div>
         )}
 

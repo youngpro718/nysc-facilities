@@ -22,7 +22,21 @@ export function createHallwayLayout(
     startPosition: { x: 0, y: 0 }
   }
 ): LayoutResult {
+  // Input validation: guard against invalid/empty inputs
+  if (!rooms || rooms.length === 0) {
+    return { rooms: [], hallways: [], connections: [] };
+  }
+
   const { hallwayWidth, roomSpacing, hallwayLength, startPosition } = options;
+  if (!(hallwayWidth > 0)) {
+    throw new Error("createHallwayLayout: 'hallwayWidth' must be a positive number");
+  }
+  if (!(hallwayLength > 0)) {
+    throw new Error("createHallwayLayout: 'hallwayLength' must be a positive number");
+  }
+  if (!(roomSpacing >= 0)) {
+    throw new Error("createHallwayLayout: 'roomSpacing' must be a non-negative number");
+  }
   
   // Create main hallway
   const mainHallway: RoomData = {
@@ -94,6 +108,9 @@ export function createMultiHallwayLayout(
   hallwayCount: number = 2,
   options: Partial<HallwayLayoutOptions> = {}
 ): LayoutResult {
+  if (!(hallwayCount > 0)) {
+    throw new Error("createMultiHallwayLayout: 'hallwayCount' must be a positive integer");
+  }
   const defaultOptions: HallwayLayoutOptions = {
     hallwayWidth: 80,
     roomSpacing: 180,

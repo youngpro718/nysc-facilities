@@ -72,33 +72,19 @@ export const InventoryOverviewPanel = () => {
         txCountQuery,
       ]);
 
-      // Get all items; compute low stock client-side using forced minimum
-      const {
-        data: allItems,
-        error: itemsError
-      } = await supabase
+      // Count low stock items directly in the database (0 < quantity <= threshold)
+      const { count: lowStockCount, error: lowStockError } = await supabase
         .from("inventory_items")
-        .select("*");
-      console.log('Inventory query error:', itemsError);
-      console.log('Inventory items found:', allItems);
-      if (itemsError) {
-        console.error('Error fetching inventory items:', itemsError);
-        // Return empty data if table doesn't exist
-        return {
-          total_items: 0,
-          total_categories: 0,
-          low_stock_count: 0,
-          recent_transactions: 0
-        } as InventoryStats;
+        .select("id", { count: "exact", head: true })
+        .gt("quantity", 0)
+        .lte("quantity", FORCED_MINIMUM);
+      if (lowStockError) {
+        console.error('Error counting low stock items:', lowStockError);
       }
-
-      // Filter for items that are low stock (0 < qty <= FORCED_MINIMUM)
-      const lowStockItems = (allItems || []).filter(item => (item?.quantity || 0) > 0 && (item?.quantity || 0) <= FORCED_MINIMUM);
-      console.log('Low stock items found:', lowStockItems);
       return {
         total_items: itemsResult.count || 0,
         total_categories: categoriesResult.count || 0,
-        low_stock_count: lowStockItems.length || 0,
+        low_stock_count: lowStockCount || 0,
         recent_transactions: transactionsResult.count || 0
       } as InventoryStats;
     },
@@ -244,23 +230,30 @@ export const InventoryOverviewPanel = () => {
         return [];
       }
 
-      // Get item names separately
-      const transactionsWithNames = await Promise.all((data || []).map(async t => {
-        let itemName = "Unknown Item";
-        if (t.item_id) {
-          const {
-            data: item
-          } = await supabase.from("inventory_items").select("name").eq("id", t.item_id).single();
-          itemName = item?.name || "Unknown Item";
+      // Batch fetch item names to avoid N+1 queries
+      const itemIds = Array.from(new Set((data || []).map((t) => t.item_id).filter(Boolean)));
+      const itemsById = new Map<string, { name: string }>();
+      if (itemIds.length > 0) {
+        const { data: itemsData, error: itemsError } = await supabase
+          .from("inventory_items")
+          .select("id,name")
+          .in("id", itemIds as string[]);
+        if (!itemsError) {
+          for (const it of itemsData || []) {
+            itemsById.set(it.id, { name: it.name });
+          }
+        } else {
+          console.error('Error fetching item names for recent transactions:', itemsError);
         }
-        return {
-          id: t.id,
-          item_name: itemName,
-          transaction_type: t.transaction_type,
-          quantity: t.quantity,
-          created_at: t.created_at,
-          performed_by: t.performed_by
-        };
+      }
+
+      const transactionsWithNames = (data || []).map((t) => ({
+        id: t.id,
+        item_name: t.item_id ? (itemsById.get(t.item_id)?.name || "Unknown Item") : "Unknown Item",
+        transaction_type: t.transaction_type,
+        quantity: t.quantity,
+        created_at: t.created_at,
+        performed_by: t.performed_by,
       }));
       return transactionsWithNames as RecentTransaction[];
     },
