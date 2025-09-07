@@ -1,6 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Connection, Direction, Position, ConnectionStatus, ConnectionType } from "../../connections/types/ConnectionTypes";
 import { toast } from "sonner";
 

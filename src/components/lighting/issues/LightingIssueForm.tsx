@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { LightingIssue, LightingIssueStatus } from '@/types/lightingIssue';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 const BULB_TYPES = ['LED', 'Fluorescent', 'Incandescent', 'Other'];
 const FORM_FACTORS = ['Long', 'Short', 'Round', 'Other'];

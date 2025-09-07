@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Package, Clock, CheckCircle, XCircle, User, Calendar, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,7 +15,7 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { FulfillmentWorkflow } from "@/components/supply/FulfillmentWorkflow";
 import { useToast } from "@/hooks/use-toast";
-import { getSupplyRequests, updateSupplyRequestStatus, updateSupplyRequestItems } from "@/services/supabase/supplyRequestService";
+import { getSupplyRequests, updateSupplyRequestStatus, updateSupplyRequestItems } from "@/lib/supabase";
 
 interface SupplyRequestWithUser {
   id: string;
@@ -130,7 +130,7 @@ export default function AdminSupplyRequests() {
           break;
       }
 
-      await updateSupplyRequestStatus(selectedRequest.id, newStatus, notes);
+      await updateSupplyRequestStatus(selectedRequest.id, newStatus);
 
       // If approving, update item quantities
       if (actionType === 'approve' && Object.keys(itemQuantities).length > 0) {

@@ -3,17 +3,9 @@ import { useState, useCallback, useEffect, useContext, createContext, ReactNode 
 import { Session, User } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { 
-  getSession, 
-  fetchUserProfile, 
-  signInWithEmail, 
-  signUpWithEmail, 
-  signOut as authSignOut, 
-  updateSessionTracking,
-  deleteUserSession
-} from '@/services/supabase/authService';
+import { authService } from '@/lib/supabase';
 import { UserProfile, UserSignupData } from '@/types/auth';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 // Define the shape of our auth context
 export interface AuthContextType {
@@ -54,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Function to fetch user profile data
   const getUserProfile = useCallback(async (userId: string) => {
     try {
-      const userData = await fetchUserProfile(userId);
+      const userData = await authService.fetchUserProfile(userId);
       
       setIsAdmin(userData.isAdmin);
       setProfile(userData.profile);
@@ -71,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true);
 
-      const currentSession = await getSession();
+      const currentSession = await authService.getSession();
       
       if (!currentSession) {
         setSession(null);
@@ -85,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(currentSession);
       setUser(currentSession.user);
       
-      const userData = await getUserProfile(currentSession.user.id);
+      const userData = await authService.fetchUserProfile(currentSession.user.id);
       setIsAdmin(userData.isAdmin);
       setProfile(userData.profile);
 
@@ -97,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
 
       // Using void to execute without awaiting
-      void updateSessionTracking(currentSession.user.id, deviceInfo);
+      void authService.updateSessionTracking(currentSession.user.id, deviceInfo);
 
     } catch (error) {
       console.error('Session refresh error:', error);
@@ -114,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = async (email: string, password: string) => {
     try {
       console.log('useAuth: Starting sign in process');
-      await signInWithEmail(email, password);
+      await authService.signInWithEmail(email, password);
 
       toast.success('Welcome back!', {
         description: "You've successfully signed in."
@@ -145,7 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = async (email: string, password: string, userData: UserSignupData) => {
     try {
       console.log('useAuth: Starting sign up process');
-      await signUpWithEmail(email, password, userData);
+      await authService.signUpWithEmail(email, password, userData);
       
       // Set onboarding flags to trigger onboarding after verification for this user only
       try {
@@ -199,7 +191,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Delete user session from database if it exists
       if (user) {
         console.log('Deleting user session for user:', user.id);
-        await deleteUserSession(user.id);
+        await authService.deleteUserSession(user.id);
       }
 
       // Clear storage and sign out
@@ -208,7 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sessionStorage.clear();
       
       console.log('Calling authSignOut...');
-      await authSignOut();
+      await authService.signOut();
       
       // Clear state
       console.log('Clearing auth state...');
@@ -276,7 +268,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         console.log('useAuth: Initializing authentication...');
         setIsLoading(true);
-        const currentSession = await getSession();
+        const currentSession = await authService.getSession();
         
         if (!mounted) return;
 
@@ -286,7 +278,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(currentSession.user);
           
           // Fetch user profile and role - critical for consistent admin status
-          const userData = await getUserProfile(currentSession.user.id);
+          const userData = await authService.fetchUserProfile(currentSession.user.id);
           
           if (!mounted) return;
           
@@ -300,7 +292,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               platform: navigator.platform,
               language: navigator.language,
             };
-            await updateSessionTracking(currentSession.user.id, deviceInfo);
+            await authService.updateSessionTracking(currentSession.user.id, deviceInfo);
           } catch (error) {
             console.error('Session tracking error:', error);
           }
@@ -356,7 +348,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (!mounted) return;
             
             try {
-              const userData = await getUserProfile(newSession.user.id);
+              const userData = await authService.fetchUserProfile(newSession.user.id);
               
               if (!mounted) return;
               

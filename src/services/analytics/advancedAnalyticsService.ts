@@ -4,7 +4,7 @@
  * Leverages materialized views and stored procedures for real-time insights
  */
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { OptimizedSpacesService } from '@/services/optimized/spacesService';
 
 // Analytics interfaces

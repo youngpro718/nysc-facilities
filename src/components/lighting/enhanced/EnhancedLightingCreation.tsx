@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { useLightingFixtures } from "@/hooks/useLightingFixtures";
 import { LightingPosition, LightingType, LightStatus, LightingTechnology } from "@/types/lighting";
 

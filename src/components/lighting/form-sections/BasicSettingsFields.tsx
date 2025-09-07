@@ -6,7 +6,7 @@ import { UseFormReturn } from "react-hook-form";
 import { LightingFixtureFormData } from "../schemas/lightingSchema";
 import { Space } from "@/types/lighting";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { generateFixtureName } from "../schemas/lightingSchema";
 import { useEffect } from "react";
 

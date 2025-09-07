@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Trash2, Download, Upload, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { useLightingFixtures } from "@/hooks/useLightingFixtures";
 
 interface BulkLightingActionsProps {
@@ -37,7 +37,7 @@ export function BulkLightingActions({ onClearComplete, onImportComplete }: BulkL
 
       if (error) throw error;
 
-      toast.success(`Successfully cleared ${fixtures.length} lighting fixtures`);
+      toast.success(`Successfully cleared ${((fixtures as any) || []).length} lighting fixtures`);
       refetch();
       onClearComplete?.();
     } catch (error: any) {
@@ -145,7 +145,7 @@ export function BulkLightingActions({ onClearComplete, onImportComplete }: BulkL
               Manage lighting fixtures database with proper naming conventions
             </p>
           </div>
-          <Badge variant="secondary">{fixtures.length} fixtures</Badge>
+          <Badge variant="secondary">{((fixtures as any) || []).length} fixtures</Badge>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -153,7 +153,7 @@ export function BulkLightingActions({ onClearComplete, onImportComplete }: BulkL
             variant="destructive"
             size="sm"
             onClick={() => setShowClearDialog(true)}
-            disabled={isClearing || fixtures.length === 0}
+            disabled={isClearing || ((fixtures as any) || []).length === 0}
             className="flex items-center gap-2"
           >
             <Trash2 className="h-4 w-4" />
@@ -194,7 +194,7 @@ export function BulkLightingActions({ onClearComplete, onImportComplete }: BulkL
           <AlertDialogHeader>
             <AlertDialogTitle>Clear All Lighting Fixtures</AlertDialogTitle>
             <AlertDialogDescription>
-              This action will permanently delete all {fixtures.length} lighting fixtures from the database. 
+              This action will permanently delete all {((fixtures as any) || []).length} lighting fixtures from the database. 
               This cannot be undone. Are you sure you want to continue?
             </AlertDialogDescription>
           </AlertDialogHeader>

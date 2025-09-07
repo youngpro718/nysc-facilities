@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -130,10 +130,10 @@ export const UnifiedOperationsPanel = () => {
           ...byNameItems,
         ]);
 
-        if (roomShutdown && (roomShutdown.status === "in_progress" || roomShutdown.status === "scheduled")) {
+        if (roomShutdown && ((roomShutdown as any).status === "in_progress" || (roomShutdown as any).status === "scheduled")) {
           status = "shutdown";
-          issueDescription = roomShutdown.reason || "Temporarily closed";
-          temporaryLocation = roomShutdown.temporary_location || "";
+          issueDescription = (roomShutdown as any).reason || "Temporarily closed";
+          temporaryLocation = (roomShutdown as any).temporary_location || "";
         } else if (!room.is_active) {
           status = "inactive";
           issueDescription = "Room inactive";

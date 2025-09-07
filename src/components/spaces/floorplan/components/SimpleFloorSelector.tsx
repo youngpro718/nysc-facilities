@@ -1,6 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import {
   Select,
   SelectContent,
@@ -50,19 +50,22 @@ export function SimpleFloorSelector({
         .order("floor_number", { ascending: false });
 
       if (error) throw error;
-      return data as Floor[];
+      return (data as any)?.map((floor: any) => ({
+        ...floor,
+        building: floor.building?.[0] || { name: 'Unknown Building' }
+      })) || [];
     },
   });
 
   // Group floors by building
-  const groupedFloors = floors?.reduce<GroupedFloors>((acc, floor) => {
+  const groupedFloors = floors?.reduce((acc: GroupedFloors, floor) => {
     const buildingName = floor.building?.name ?? "";
     if (!acc[buildingName]) {
       acc[buildingName] = [];
     }
     acc[buildingName].push(floor);
     return acc;
-  }, {});
+  }, {} as GroupedFloors);
 
   if (isLoading) {
     return (
@@ -90,7 +93,7 @@ export function SimpleFloorSelector({
               {buildingName && (
                 <SelectLabel className="font-semibold">{buildingName}</SelectLabel>
               )}
-              {buildingFloors.map((floor) => (
+              {buildingFloors && Array.isArray(buildingFloors) && buildingFloors.map((floor) => (
                 <SelectItem key={floor.id} value={floor.id}>
                   {floor.name}
                 </SelectItem>

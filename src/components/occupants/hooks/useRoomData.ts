@@ -1,6 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import type { RoomDetails } from "../types/assignmentTypes";
 
 export function useRoomData(authError: boolean | null) {
@@ -39,7 +39,7 @@ export function useRoomData(authError: boolean | null) {
       }
 
       console.log('Available rooms fetched:', roomsData);
-      return roomsData as RoomDetails[];
+      return roomsData as any;
     },
   });
 }

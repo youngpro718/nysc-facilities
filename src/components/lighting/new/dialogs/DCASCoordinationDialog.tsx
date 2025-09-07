@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useLightingFixtures } from "@/hooks/useLightingFixtures";
+import { useLightingFixtures } from "@/components/lighting/hooks/useLightingFixtures";
 import { Building, Users, Clock, AlertTriangle, CheckCircle, Send, FileText } from "lucide-react";
 import { toast } from "sonner";
 
@@ -52,7 +52,7 @@ export function DCASCoordinationDialog({ open, onOpenChange }: DCASCoordinationD
     }
   ];
 
-  const electricianFixtures = fixtures?.filter(f => f.requires_electrician) || [];
+  const electricianFixtures = (fixtures || []).filter(f => f.requires_electrician);
 
   const handleCreateAssignment = () => {
     if (!newAssignment.description.trim()) {

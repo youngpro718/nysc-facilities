@@ -9,7 +9,7 @@ import { QuickAdminActionsWidget } from "./widgets/QuickAdminActionsWidget";
 import { RecentActivityWidget } from "./widgets/RecentActivityWidget";
 import { EnhancedUserManagementModal } from "../modals/EnhancedUserManagementModal";
 import { SystemSecurityModal } from "../modals/SystemSecurityModal";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 

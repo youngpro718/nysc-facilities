@@ -1,8 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchLightingZones } from "@/services/supabase/lightingService";
+import { supabase } from "@/lib/supabase";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
+
+const fetchLightingZones = async () => {
+  const { data, error } = await supabase
+    .from('lighting_zones')
+    .select('*')
+    .order('name');
+  
+  if (error) throw error;
+  return data || [];
+};
 
 interface ZonesManagerProps {
   onCreateZoneClick?: () => void;

@@ -4,10 +4,38 @@ import { toast } from "sonner";
 import { LightStatus } from "@/types/lighting";
 import {
   fetchLightingFixtures,
-  deleteLightingFixture,
-  deleteLightingFixtures,
-  updateLightingFixturesStatus,
-} from "@/services/supabase";
+  supabase
+} from "@/lib/supabase";
+
+const deleteLightingFixture = async (id: string) => {
+  const { error } = await supabase
+    .from('lighting_fixtures')
+    .delete()
+    .eq('id', id);
+  
+  if (error) throw error;
+  return true;
+};
+
+const deleteLightingFixtures = async (fixtureIds: string[]) => {
+  const { error } = await supabase
+    .from('lighting_fixtures')
+    .delete()
+    .in('id', fixtureIds);
+  
+  if (error) throw error;
+  return true;
+};
+
+const updateLightingFixturesStatus = async (fixtureIds: string[], status: LightStatus) => {
+  const { error } = await supabase
+    .from('lighting_fixtures')
+    .update({ status })
+    .in('id', fixtureIds);
+  
+  if (error) throw error;
+  return true;
+};
 
 export function useLightingFixtures() {
   const queryClient = useQueryClient();

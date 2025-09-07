@@ -1,5 +1,5 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { format, subDays, subWeeks, subMonths, differenceInDays, differenceInHours } from "date-fns";
 import { IssueReportDetail, IssueReportMetrics, IssueReportSection, FormattedIssueReport, ReportCallback } from "./types";
 import { executeCustomQuery } from "./utils/databaseQueries";

@@ -1,8 +1,30 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchRoomLightingStats } from "@/services/supabase/lightingService";
+import { supabase } from "@/lib/supabase";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+
+// Direct function definition to avoid import issues
+const fetchRoomLightingStats = async () => {
+  console.log("fetchRoomLightingStats: Starting fetch");
+  const { data, error } = await supabase
+    .from('unified_spaces')
+    .select(`
+      id,
+      name,
+      room_number,
+      lighting_fixtures (
+        id,
+        status,
+        electrical_issues,
+        ballast_issue
+      )
+    `);
+  
+  console.log("fetchRoomLightingStats: Result", { data, error });
+  if (error) throw error;
+  return data || [];
+};
 
 function formatDurationMinutes(mins: number | null | undefined) {
   if (!mins && mins !== 0) return "—";
@@ -22,16 +44,24 @@ export function RoomSummaryChips() {
 
   const summary = useMemo(() => {
     const list = stats || [];
-    const roomsWithIssues = list.filter(r => (r.open_issues_total || 0) > 0).length;
-    const bulbOutages = list.reduce((acc, r) => acc + (r.open_replaceable || 0), 0);
-    const electricianOutages = list.reduce((acc, r) => acc + (r.open_electrician || 0), 0);
+    console.log("RoomSummaryChips: Processing stats", { list, statsType: typeof stats, statsLength: Array.isArray(stats) ? stats.length : 'not array' });
+    
+    // Ensure list is an array
+    if (!Array.isArray(list)) {
+      console.warn("RoomSummaryChips: stats is not an array", list);
+      return { roomsWithIssues: 0, bulbOutages: 0, electricianOutages: 0, longestOpen: null, mttrAvg: null };
+    }
+    
+    const roomsWithIssues = list.filter(r => ((r as any)?.open_issues_total || 0) > 0).length;
+    const bulbOutages = list.reduce((acc, r) => acc + ((r as any)?.open_replaceable || 0), 0);
+    const electricianOutages = list.reduce((acc, r) => acc + ((r as any)?.open_electrician || 0), 0);
     const longestOpen = list.reduce<number | null>((max, r) => {
-      const v = r.longest_open_minutes;
+      const v = (r as any)?.longest_open_minutes;
       if (v === null || v === undefined) return max;
       if (max === null) return v;
       return Math.max(max, v);
     }, null);
-    const mttrValues = list.map(r => r.mttr_minutes).filter((v): v is number => v !== null && v !== undefined);
+    const mttrValues = list.map(r => (r as any)?.mttr_minutes).filter((v): v is number => v !== null && v !== undefined);
     const mttrAvg = mttrValues.length ? Math.round(mttrValues.reduce((a, b) => a + b, 0) / mttrValues.length) : null;
     return { roomsWithIssues, bulbOutages, electricianOutages, longestOpen, mttrAvg };
   }, [stats]);

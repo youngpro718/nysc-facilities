@@ -1,5 +1,5 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 export const fetchRoomsData = async (buildingId?: string, floorId?: string) => {
   console.log("Fetching rooms with filters:", { buildingId, floorId });

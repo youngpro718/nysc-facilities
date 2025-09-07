@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { CreateSpaceFormData } from "../schemas/createSpaceSchema";
 import { 
   RoomTypeEnum, 

@@ -1,7 +1,7 @@
 
 import React, { createContext, useState, useContext, ReactNode } from 'react';
 import { UserAssignment } from '@/types/dashboard';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 type WizardStep = 'type' | 'location' | 'details' | 'review';
 

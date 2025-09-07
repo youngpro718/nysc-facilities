@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { LightingFixture } from "@/types/lighting";
 import { CreateFixtureFields } from "./form-sections/CreateFixtureFields";
 import { lightingFixtureSchema, type LightingFixtureFormData } from "./schemas/lightingSchema";
-import { updateLightingFixturesStatus } from "@/services/supabase/lightingService";
+import { supabase } from "@/lib/supabase";
 import { BaseLightingDialog } from "./shared/BaseLightingDialog";
 import { StandardFormSection } from "./shared/StandardFormSection";
 

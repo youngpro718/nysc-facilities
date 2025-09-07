@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Lightbulb, AlertTriangle, Wrench, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,6 +25,9 @@ export function LightingSummaryCard() {
         .select('status, ballast_issue');
       
       if (error) throw error;
+      if (!data) return { total_fixtures: 0, functional: 0, non_functional: 0, maintenance_needed: 0, critical_issues: 0 };
+
+      console.log('Lighting fixtures data:', data);
 
       const stats = {
         total_fixtures: data.length,
@@ -34,6 +37,7 @@ export function LightingSummaryCard() {
         critical_issues: data.filter(f => f.ballast_issue || f.status === 'non_functional').length,
       };
 
+      console.log('Calculated stats:', stats);
       return stats;
     },
   });

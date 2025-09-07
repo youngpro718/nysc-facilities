@@ -4,13 +4,23 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
-import { fetchFloorsForZones } from "@/services/supabase/lightingService";
+import { supabase } from "@/lib/supabase";
 
 interface CreateZoneFieldsProps {
   form: UseFormReturn<LightingZoneFormData>;
 }
 
 export function CreateZoneFields({ form }: CreateZoneFieldsProps) {
+  const fetchFloorsForZones = async () => {
+    const { data, error } = await supabase
+      .from('floors')
+      .select('id, name, floor_number')
+      .order('floor_number');
+    
+    if (error) throw error;
+    return data || [];
+  };
+
   const { data: floors } = useQuery({
     queryKey: ['floors'],
     queryFn: fetchFloorsForZones

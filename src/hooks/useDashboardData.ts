@@ -1,6 +1,6 @@
 
 import { useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { useUserData } from "./dashboard/useUserData";
 import { useRoomAssignments } from "./dashboard/useRoomAssignments";
 import { useUserIssues } from "./dashboard/useUserIssues";

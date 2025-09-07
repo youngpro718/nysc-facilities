@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { useInventoryItems } from '@/hooks/useInventoryItems';
-import { submitSupplyRequest } from '@/services/supabase/supplyRequestService';
+import { submitSupplyRequest } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { Package, Plus, Search, X } from 'lucide-react';
 
@@ -64,7 +64,7 @@ export function SupplyRequestForm({ onSuccess }: SupplyRequestFormProps) {
   });
 
   const submitMutation = useMutation({
-    mutationFn: submitSupplyRequest,
+    mutationFn: (payload: any) => submitSupplyRequest(payload),
     onSuccess: () => {
       toast({
         title: 'Success',
@@ -83,7 +83,7 @@ export function SupplyRequestForm({ onSuccess }: SupplyRequestFormProps) {
     },
   });
 
-  const filteredItems = inventoryItems.filter(item => {
+  const filteredItems = (inventoryItems as any[]).filter(item => {
     // Only show Office Supplies and Furniture
     const allowedCategories = ['Office Supplies', 'Furniture'];
     const isAllowedCategory = allowedCategories.includes(item.inventory_categories?.name || '');
@@ -125,12 +125,12 @@ export function SupplyRequestForm({ onSuccess }: SupplyRequestFormProps) {
   };
 
   const getItemName = (itemId: string) => {
-    const item = inventoryItems.find(i => i.id === itemId);
+    const item = (inventoryItems as any[]).find(i => i.id === itemId);
     return item?.name || 'Unknown Item';
   };
 
   const getItemUnit = (itemId: string) => {
-    const item = inventoryItems.find(i => i.id === itemId);
+    const item = (inventoryItems as any[]).find(i => i.id === itemId);
     return item?.unit || 'units';
   };
 

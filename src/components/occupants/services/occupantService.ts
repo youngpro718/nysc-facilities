@@ -1,6 +1,6 @@
 
 import { OccupantFormData } from "../schemas/occupantSchema";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import type { OccupantAssignments } from "../types/occupantTypes";
 
 interface UpdateOccupantParams {

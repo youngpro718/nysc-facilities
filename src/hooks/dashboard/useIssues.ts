@@ -1,6 +1,6 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { useCallback } from "react";
 import { toast } from "sonner";
 import type { UserIssue } from "@/types/dashboard";
@@ -40,7 +40,12 @@ export const useIssues = (userId?: string) => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+      return (data as any)?.map((issue: any) => ({
+        ...issue,
+        buildings: issue.buildings?.[0] || { name: 'Unknown Building' },
+        floors: issue.floors?.[0] || { name: 'Unknown Floor' },
+        unified_spaces: issue.unified_spaces?.[0] || { id: '', name: 'Unknown Space', room_number: '' }
+      })) || [];
     },
     enabled: !!userId,
     staleTime: 30000, // Cache for 30 seconds

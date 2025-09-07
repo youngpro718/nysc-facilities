@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Power, PowerOff, AlertTriangle } from "lucide-react";
 import {

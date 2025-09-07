@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Lightbulb, Plus, Settings, Zap, AlertTriangle, CheckCircle, Clock } from "lucide-react";
 import { EnhancedRoom } from "../../types/EnhancedRoomTypes";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 interface RoomLightingManagerProps {
   room: EnhancedRoom;

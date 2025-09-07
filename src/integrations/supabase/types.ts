@@ -6534,6 +6534,96 @@ export type Database = {
         }
         Relationships: []
       }
+      security_configurations: {
+        Row: {
+          configuration: Json
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          configuration?: Json
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          configuration?: Json
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      security_incidents: {
+        Row: {
+          affected_users: string[] | null
+          assigned_to: string | null
+          created_at: string | null
+          description: string
+          detection_method: string | null
+          escalated: boolean | null
+          first_detected_at: string
+          id: string
+          incident_data: Json | null
+          incident_type: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          severity: string
+          status: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          affected_users?: string[] | null
+          assigned_to?: string | null
+          created_at?: string | null
+          description: string
+          detection_method?: string | null
+          escalated?: boolean | null
+          first_detected_at?: string
+          id?: string
+          incident_data?: Json | null
+          incident_type: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          severity: string
+          status?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          affected_users?: string[] | null
+          assigned_to?: string | null
+          created_at?: string | null
+          description?: string
+          detection_method?: string | null
+          escalated?: boolean | null
+          first_detected_at?: string
+          id?: string
+          incident_data?: Json | null
+          incident_type?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          severity?: string
+          status?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       security_logs: {
         Row: {
           created_at: string | null
@@ -6558,6 +6648,72 @@ export type Database = {
           id?: string
           metadata?: Json | null
           severity?: string
+        }
+        Relationships: []
+      }
+      security_metrics: {
+        Row: {
+          id: string
+          metadata: Json | null
+          metric_name: string
+          metric_type: string
+          metric_value: number
+          recorded_at: string | null
+        }
+        Insert: {
+          id?: string
+          metadata?: Json | null
+          metric_name: string
+          metric_type: string
+          metric_value: number
+          recorded_at?: string | null
+        }
+        Update: {
+          id?: string
+          metadata?: Json | null
+          metric_name?: string
+          metric_type?: string
+          metric_value?: number
+          recorded_at?: string | null
+        }
+        Relationships: []
+      }
+      security_notifications: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          metadata: Json | null
+          notification_type: string
+          severity: string
+          target_users: string[] | null
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          metadata?: Json | null
+          notification_type: string
+          severity: string
+          target_users?: string[] | null
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          metadata?: Json | null
+          notification_type?: string
+          severity?: string
+          target_users?: string[] | null
+          title?: string
         }
         Relationships: []
       }
@@ -6597,6 +6753,33 @@ export type Database = {
           target_resource?: string | null
           user_agent?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      security_policy_compliance: {
+        Row: {
+          compliance_status: string
+          details: Json | null
+          id: string
+          last_checked: string | null
+          next_check_due: string | null
+          policy_name: string
+        }
+        Insert: {
+          compliance_status: string
+          details?: Json | null
+          id?: string
+          last_checked?: string | null
+          next_check_due?: string | null
+          policy_name: string
+        }
+        Update: {
+          compliance_status?: string
+          details?: Json | null
+          id?: string
+          last_checked?: string | null
+          next_check_due?: string | null
+          policy_name?: string
         }
         Relationships: []
       }
@@ -7846,23 +8029,25 @@ export type Database = {
       key_assignments_view: {
         Row: {
           assigned_at: string | null
-          assignment_meta: Json | null
-          created_at: string | null
           department: string | null
-          email: string | null
-          first_name: string | null
+          expected_return_at: string | null
           id: string | null
+          is_elevator_card: boolean | null
+          is_passkey: boolean | null
           is_spare: boolean | null
           key_id: string | null
           key_name: string | null
           key_type: Database["public"]["Enums"]["key_type_enum"] | null
-          last_name: string | null
+          occupant_email: string | null
           occupant_id: string | null
+          occupant_name: string | null
+          recipient_email: string | null
+          recipient_name: string | null
+          recipient_type: string | null
           return_reason: string | null
           returned_at: string | null
           spare_key_reason: string | null
           status: string | null
-          updated_at: string | null
         }
         Relationships: [
           {
@@ -7897,25 +8082,15 @@ export type Database = {
       }
       key_inventory_view: {
         Row: {
-          active_assignments: number | null
           available_quantity: number | null
-          captain_office_assigned_date: string | null
-          captain_office_copy: boolean | null
-          captain_office_notes: string | null
-          created_at: string | null
-          current_assignments: number | null
+          currently_assigned: number | null
           id: string | null
+          is_elevator_card: boolean | null
           is_passkey: boolean | null
-          key_scope: string | null
-          location_data: Json | null
-          lost_count: number | null
           name: string | null
-          properties: Json | null
-          status: Database["public"]["Enums"]["key_status_enum"] | null
-          total_assignment_history: number | null
+          total_assignments: number | null
           total_quantity: number | null
           type: Database["public"]["Enums"]["key_type_enum"] | null
-          updated_at: string | null
         }
         Relationships: []
       }
@@ -8111,6 +8286,18 @@ export type Database = {
           name: string | null
           room_number: string | null
           room_type: Database["public"]["Enums"]["room_type_enum"] | null
+        }
+        Relationships: []
+      }
+      security_dashboard: {
+        Row: {
+          active_critical_incidents: number | null
+          admin_users: number | null
+          approved_users: number | null
+          blocked_login_attempts: number | null
+          dashboard_generated_at: string | null
+          recent_admin_actions: number | null
+          security_events_24h: number | null
         }
         Relationships: []
       }
@@ -8385,8 +8572,16 @@ export type Database = {
           conflicting_relocation_id: string
         }[]
       }
+      check_security_compliance: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       cleanup_old_backups: {
         Args: { policy_id: string }
+        Returns: undefined
+      }
+      cleanup_rate_limits: {
+        Args: Record<PropertyKey, never>
         Returns: undefined
       }
       clear_app_cache: {
@@ -8458,6 +8653,19 @@ export type Database = {
           occupant_name: string
         }[]
       }
+      enhanced_check_rate_limit: {
+        Args: {
+          p_attempt_type: string
+          p_identifier: string
+          p_max_attempts?: number
+          p_window_minutes?: number
+        }
+        Returns: boolean
+      }
+      enhanced_security_monitor: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       ensure_admin_user: {
         Args: { user_email: string }
         Returns: {
@@ -8503,6 +8711,17 @@ export type Database = {
       }
       generate_issue_number: {
         Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_security_alert: {
+        Args: {
+          alert_type: string
+          message: string
+          metadata?: Json
+          severity: string
+          target_admins?: boolean
+          title: string
+        }
         Returns: string
       }
       get_building_hierarchy: {
@@ -8703,6 +8922,18 @@ export type Database = {
       get_room_size_from_data: {
         Args: { room_size_data: Json }
         Returns: string
+      }
+      get_security_dashboard: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          active_critical_incidents: number
+          admin_users: number
+          approved_users: number
+          blocked_login_attempts: number
+          dashboard_generated_at: string
+          recent_admin_actions: number
+          security_events_24h: number
+        }[]
       }
       get_spaces_dashboard: {
         Args: {
@@ -8905,6 +9136,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      run_security_health_check: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       safe_current_setting: {
         Args: { setting_name: string }
         Returns: string
@@ -8947,6 +9182,10 @@ export type Database = {
           space_type: string
         }[]
       }
+      secure_admin_promotion: {
+        Args: { target_email: string }
+        Returns: Json
+      }
       secure_promote_to_admin: {
         Args: { target_email: string }
         Returns: Json
@@ -8954,6 +9193,10 @@ export type Database = {
       secure_role_assignment: {
         Args: { new_role: string; target_user_id: string }
         Returns: boolean
+      }
+      security_health_check: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       setup_emergency_admin: {
         Args: { user_email: string }
@@ -8987,6 +9230,10 @@ export type Database = {
       validate_password_strength: {
         Args: { password: string }
         Returns: Json
+      }
+      validate_session_security: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
       validate_simple_password: {
         Args: { password: string }

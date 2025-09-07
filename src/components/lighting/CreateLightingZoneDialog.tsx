@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -156,7 +156,7 @@ export function CreateLightingZoneDialog({ onZoneCreated }: { onZoneCreated: () 
                     <SelectContent>
                       {floors?.map((floor) => (
                         <SelectItem key={floor.id} value={floor.id}>
-                          {floor.buildings?.name} - {floor.name}
+                          {(floor.buildings as any)?.name || floor.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

@@ -4,7 +4,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { format } from "date-fns";
 
 // Define the proper type for the DayContent props
@@ -161,7 +161,7 @@ export function MaintenanceScheduleCalendar() {
                 <div key={task.id} className="flex items-start gap-2 p-2 hover:bg-muted/50 rounded-md">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium">{task.lighting_fixtures?.name || 'Unknown Fixture'}</span>
+                      <span className="font-medium">{(task.lighting_fixtures as any)?.name || 'Unknown Fixture'}</span>
                       <Badge variant={task.priority_level === 'high' ? 'destructive' : task.priority_level === 'medium' ? 'default' : 'secondary'}>
                         {task.priority_level}
                       </Badge>

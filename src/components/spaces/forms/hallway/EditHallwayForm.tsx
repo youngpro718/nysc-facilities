@@ -8,7 +8,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { EditSpaceFormData, editSpaceSchema } from "../../schemas/editSpaceSchema";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { CreateHallwayFields } from "../../forms/space/CreateHallwayFields";
 
 interface EditHallwayFormProps {

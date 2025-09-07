@@ -12,7 +12,7 @@ import {
   Plus,
   RefreshCw
 } from "lucide-react";
-import { fetchLightingFixtures } from "@/services/supabase";
+import { fetchLightingFixtures } from "@/lib/supabase";
 import { LightStatus } from "@/types/lighting";
 import { CreateLightingDialog } from "../../CreateLightingDialog";
 
@@ -40,7 +40,7 @@ export function LightingDashboard() {
     );
   }
 
-  const fixtureStats = fixtures?.reduce((acc, fixture) => {
+  const fixtureStats = (fixtures || []).reduce((acc, fixture) => {
     acc.total++;
     
     switch (fixture.status as LightStatus) {

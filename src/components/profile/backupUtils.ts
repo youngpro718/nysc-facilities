@@ -1,5 +1,5 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 export type ExportableTable = 'buildings' | 'floors' | 'rooms' | 'occupants' | 'keys' | 
   'key_assignments' | 'lighting_fixtures' | 'lighting_zones' | 'issues';

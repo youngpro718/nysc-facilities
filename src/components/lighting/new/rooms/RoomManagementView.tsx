@@ -15,7 +15,7 @@ import {
   Building,
   Layers
 } from "lucide-react";
-import { fetchLightingFixtures } from "@/services/supabase";
+import { fetchLightingFixtures } from "@/lib/supabase";
 import { LightStatus } from "@/types/lighting";
 
 interface RoomData {
@@ -41,7 +41,7 @@ export function RoomManagementView() {
   });
 
   // Group fixtures by room
-  const roomData: RoomData[] = fixtures?.reduce((acc: RoomData[], fixture) => {
+  const roomData: RoomData[] = (fixtures || []).reduce((acc: RoomData[], fixture) => {
     const roomId = `${fixture.building_name}-${fixture.floor_name}-${fixture.space_name || fixture.room_number || 'Unknown'}`;
     const roomName = fixture.space_name || fixture.room_number || 'Unknown Room';
     const building = fixture.building_name || 'Unknown Building';

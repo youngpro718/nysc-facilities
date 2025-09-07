@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { invalidateForTable } from '@/hooks/cache/invalidationMap';
 import type { AnyQueryKey } from '@/hooks/cache/invalidationMap';

@@ -15,10 +15,10 @@ export function KeyAssignmentCard({ userId }: KeyAssignmentCardProps) {
   const { keyAssignments, isLoading } = useKeyAssignments(userId);
   const navigate = useNavigate();
 
-  const totalDoorAccess = keyAssignments?.reduce((count, assignment) => {
-    if (assignment.keys?.is_passkey) return count + 5;
+  const totalDoorAccess = Array.isArray(keyAssignments) ? keyAssignments.reduce((count, assignment) => {
+    if ((assignment.keys as any)?.is_passkey) return count + 5;
     return count + 1; // Default door access count per key
-  }, 0) || 0;
+  }, 0) : 0;
 
   const handleViewAllKeys = () => {
     navigate('/my-requests');
@@ -73,13 +73,13 @@ export function KeyAssignmentCard({ userId }: KeyAssignmentCardProps) {
                   className="flex items-center justify-between p-3 bg-muted rounded-lg"
                 >
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm">{assignment.keys?.name || 'Unknown Key'}</div>
+                    <div className="font-medium text-sm">{(assignment.keys as any)?.name || 'Unknown Key'}</div>
                     <div className="text-xs text-muted-foreground">
                       Assigned {format(new Date(assignment.assigned_at), "MMM d, yyyy")}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {assignment.keys?.is_passkey && (
+                    {(assignment.keys as any)?.is_passkey && (
                       <Badge variant="secondary" className="text-xs">
                         Passkey
                       </Badge>

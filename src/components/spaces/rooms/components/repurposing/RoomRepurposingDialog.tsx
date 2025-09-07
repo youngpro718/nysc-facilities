@@ -11,7 +11,7 @@ import { History, RotateCcw, Clock, AlertTriangle, CheckCircle } from "lucide-re
 import { EnhancedRoom } from "../../types/EnhancedRoomTypes";
 import { RoomTypeEnum } from "../../types/roomEnums";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { format } from "date-fns";
 
 interface RoomRepurposingDialogProps {

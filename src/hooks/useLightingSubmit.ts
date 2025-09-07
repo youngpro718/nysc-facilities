@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { LightingFixtureFormData, LightingZoneFormData } from '@/types/lighting';
-import { createLightingFixture, createLightingZone } from '@/services/supabase';
+import { createLightingFixture, createLightingZone } from '@/lib/supabase';
 
 export const useLightingSubmit = (onFixtureCreated: () => void, onZoneCreated: () => void) => {
   const [open, setOpen] = useState(false);

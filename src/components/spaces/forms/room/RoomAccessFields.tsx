@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Plus, Key, Lock, FileBox, Package, Archive, MapPin } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { RoomFormData, RoomAccessData } from "./RoomFormSchema";
 
 interface RoomAccessFieldsProps {

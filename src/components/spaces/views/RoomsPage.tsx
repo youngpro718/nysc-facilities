@@ -14,7 +14,7 @@ import { RoomsSidebarList } from "../rooms/components/RoomsSidebarList";
 import { RoomCard } from "../rooms/RoomCard";
 import { Building } from "lucide-react";
 import { useRoomFilters } from "../hooks/useRoomFilters";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
 import { deleteSpace } from "../services/deleteSpace";
 import { Room } from "../rooms/types/RoomTypes";

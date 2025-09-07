@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Lightbulb, AlertTriangle, CheckCircle, Calendar, Battery, Activity } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { LightingIssuesCard } from "./LightingIssuesCard";

@@ -6,7 +6,7 @@
 
 import { AdvancedAnalyticsService } from '@/services/analytics/advancedAnalyticsService';
 import { OptimizedSpacesService } from '@/services/optimized/spacesService';
-import { fetchLightingFixtures } from '@/services/supabase/lightingService';
+import { fetchLightingFixtures } from '@/lib/supabase';
 import type { LightingFixture, LightStatus } from '@/types/lighting';
 
 // Report interfaces

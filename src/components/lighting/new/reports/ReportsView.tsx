@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { 
   BarChart, 
   Bar, 
@@ -146,12 +146,12 @@ export function ReportsView() {
         statusChart: Object.entries(statusCounts).map(([status, count]) => ({
           name: status.replace('_', ' ').toUpperCase(),
           value: count,
-          percentage: Math.round((count / filteredIssues.length) * 100)
+          percentage: Math.round(((count as number) / (filteredIssues?.length || 1)) * 100)
         })),
         priorityChart: Object.entries(priorityCounts).map(([priority, count]) => ({
           name: priority.toUpperCase(),
           value: count,
-          percentage: Math.round((count / filteredIssues.length) * 100)
+          percentage: Math.round(((count as number) / (filteredIssues?.length || 1)) * 100)
         })),
         typeChart: Object.entries(typeCounts).map(([type, count]) => ({
           name: type.replace('_', ' '),

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Eye, Trash2, BarChart3, RefreshCw } from "lucide-react";
 import { useMonitoring, MonitoredItem } from "@/hooks/useMonitoring";
 import { formatDistanceToNow } from "date-fns";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 
 export const MonitoringDashboard = () => {

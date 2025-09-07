@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import type { Building, UserIssue, Activity } from "@/types/dashboard";
 
 export const useAdminDashboardData = () => {
@@ -22,7 +22,7 @@ export const useAdminDashboardData = () => {
           status,
           created_at,
           updated_at,
-          floors (
+          floors!floors_building_id_fkey (
             id,
             name,
             floor_number
@@ -121,13 +121,13 @@ export const useAdminDashboardData = () => {
         console.log('Issues data:', issuesData);
         const transformedIssues = (issuesData || []).map(issue => ({
           ...issue,
-          rooms: issue.unified_spaces ? {
-            id: issue.unified_spaces.id,
-            name: issue.unified_spaces.name,
-            room_number: issue.unified_spaces.room_number
+          rooms: issue.unified_spaces && Array.isArray(issue.unified_spaces) && issue.unified_spaces.length > 0 ? {
+            id: issue.unified_spaces[0].id,
+            name: issue.unified_spaces[0].name,
+            room_number: issue.unified_spaces[0].room_number
           } : null,
-          buildings: issue.buildings || null,
-          floors: issue.floors || null
+          buildings: issue.buildings && Array.isArray(issue.buildings) && issue.buildings.length > 0 ? { name: issue.buildings[0].name } : null,
+          floors: issue.floors && Array.isArray(issue.floors) && issue.floors.length > 0 ? { name: issue.floors[0].name } : null
         }));
         setIssues(transformedIssues);
       }

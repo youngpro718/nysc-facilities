@@ -47,7 +47,7 @@ import { ReportIssueDialog } from "@/components/maintenance/ReportIssueDialog";
 import { useAdminIssuesData } from "@/hooks/dashboard/useAdminIssuesData";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
 export default function Operations() {

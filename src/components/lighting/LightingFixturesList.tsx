@@ -65,7 +65,7 @@ export const LightingFixturesList = ({
 
   // Apply combined filters: external props + toolbar
   const filteredFixtures = useMemo(() => {
-    const list = fixtures || [];
+    const list = (fixtures || []) as LightingFixture[];
     const search = (filters.search || '').toLowerCase();
     return list.filter((f) => {
       // Support friendly status in URL like 'out' meaning any non-functional fixture
@@ -205,11 +205,11 @@ export const LightingFixturesList = ({
 
       {/* Filters toolbar */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b py-2 -mx-6 px-6 mb-4">
-        <LightingFiltersToolbar
-          fixtures={fixtures || []}
-          value={filters}
-          onChange={setFilters}
-        />
+      <LightingFiltersToolbar
+        fixtures={(fixtures || []) as LightingFixture[]}
+        value={filters}
+        onChange={setFilters}
+      />
       </div>
 
       {/* View mode toggle */}
@@ -261,7 +261,7 @@ export const LightingFixturesList = ({
       {/* Render based on view mode when data exists */}
       {!isLoading && filteredFixtures.length > 0 && (viewMode === 'by-room' ? (
         <RoomLightingView
-          fixtures={fixtures || []}
+          fixtures={(fixtures || []) as LightingFixture[]}
           selectedFixtures={selectedFixtures}
           onFixtureSelect={handleFixtureSelect}
           onFixtureDelete={handleDelete}

@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 // Service to integrate lighting issues with operations issue tracking
 export class LightingOperationsIntegration {

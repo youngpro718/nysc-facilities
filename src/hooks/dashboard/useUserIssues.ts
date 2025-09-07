@@ -1,12 +1,30 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
+import { supabase } from '@/lib/supabase';
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useCallback } from "react";
-import { toast } from "sonner";
-import { IssueError } from "./types/errors";
-import type { UserIssue } from "@/types/dashboard";
+interface UserIssue {
+  id: string;
+  title: string;
+  description: string;
+  status: string;
+  created_at: string;
+  priority: string;
+  building_id: string;
+  seen: boolean;
+  photos: string[];
+  buildings: { name: string };
+  floors: { name: string };
+  unified_spaces: { id: string; name: string; room_number: string };
+}
 
-export const useUserIssues = (userId?: string) => {
+class IssueError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'IssueError';
+  }
+}
+
+export function useUserIssues(userId: string | undefined) {
   const queryClient = useQueryClient();
 
   const { data: userIssues = [], refetch: refetchIssues } = useQuery<UserIssue[]>({
@@ -43,14 +61,22 @@ export const useUserIssues = (userId?: string) => {
 
         if (error) throw new IssueError(`Failed to fetch user issues: ${error.message}`);
         if (!data) throw new IssueError('No issues data returned');
-        return data;
+        
+        return (data as any)?.map((issue: any) => ({
+          ...issue,
+          buildings: issue.buildings?.[0] || { name: 'Unknown Building' },
+          floors: issue.floors?.[0] || { name: 'Unknown Floor' },
+          unified_spaces: issue.unified_spaces?.[0] || { id: '', name: 'Unknown Space', room_number: '' },
+          created_at: new Date(issue.created_at).toISOString(),
+        })) || [];
       } catch (error) {
         console.error('Error fetching user issues:', error);
-        throw new IssueError(error instanceof Error ? error.message : 'Failed to fetch user issues');
+        throw error;
       }
     },
     enabled: !!userId,
-    staleTime: 30000,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   const handleMarkAsSeen = useCallback(async (id: string) => {
@@ -60,19 +86,22 @@ export const useUserIssues = (userId?: string) => {
         .update({ seen: true })
         .eq('id', id);
 
-      if (error) throw new IssueError(`Failed to mark issue as seen: ${error.message}`);
+      if (error) throw error;
 
       queryClient.setQueryData(['userIssues', userId], (old: UserIssue[] | undefined) =>
         old?.map(issue =>
           issue.id === id ? { ...issue, seen: true } : issue
         )
       );
-      toast.success('Issue marked as seen');
     } catch (error) {
       console.error('Error marking issue as seen:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to mark issue as seen');
     }
   }, [queryClient, userId]);
 
-  return { userIssues, handleMarkAsSeen, refetchIssues };
-};
+  return {
+    userIssues,
+    refetchIssues,
+    handleMarkAsSeen,
+    isLoading: false, // You can add proper loading state here if needed
+  };
+}

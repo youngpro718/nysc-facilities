@@ -6,7 +6,7 @@ import { AlertCircle } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
 import { KeyFormData } from "../types/KeyTypes";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 interface OccupantFieldProps {
   form: UseFormReturn<KeyFormData>;

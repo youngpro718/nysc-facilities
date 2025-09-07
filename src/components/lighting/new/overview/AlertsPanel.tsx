@@ -13,7 +13,7 @@ import {
   Calendar
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchLightingFixtures } from "@/services/supabase";
+import { fetchLightingFixtures } from "@/lib/supabase";
 
 interface AlertItem {
   id: string;
@@ -40,7 +40,7 @@ export function AlertsPanel() {
     
     const alerts: AlertItem[] = [];
 
-    fixtures.forEach(fixture => {
+    (fixtures || []).forEach(fixture => {
       // Critical alerts for non-functional fixtures
       if (fixture.status === 'non_functional') {
         alerts.push({

@@ -20,7 +20,7 @@ import {
   Download,
   Eye
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 
 interface InventoryTransaction {
@@ -97,7 +97,7 @@ export function InventoryAuditsPanel() {
 
       const hydrated = (txData || []).map((t: any) => {
         const item = itemsById.get(t.item_id);
-        const cat = item ? catsById.get(item.category_id) : undefined;
+        const cat = item ? catsById.get((item as any).category_id) : undefined;
         const user = usersById.get(t.performed_by);
         return {
           id: t.id,
@@ -107,11 +107,11 @@ export function InventoryAuditsPanel() {
           new_quantity: t.new_quantity ?? t.quantity,
           reason: t.reason ?? '',
           performed_by: t.performed_by,
-          performed_by_name: user ? `${user.first_name} ${user.last_name}` : 'Unknown User',
+          performed_by_name: user ? `${(user as any).first_name} ${(user as any).last_name}` : 'Unknown User',
           created_at: t.created_at,
           item_id: t.item_id,
-          item_name: item?.name ?? 'Unknown Item',
-          category_name: cat?.name,
+          item_name: (item as any)?.name ?? 'Unknown Item',
+          category_name: (cat as any)?.name,
         } as InventoryTransaction;
       });
 

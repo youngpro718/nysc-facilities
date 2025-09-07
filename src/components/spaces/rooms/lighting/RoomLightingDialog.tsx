@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Settings2, Home, Lightbulb, MapPin, Clock } from "lucide-react";
 import { LightingFixture, LightingTechnology } from "@/types/lighting";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { roomLightingSchema, type RoomLightingFormData } from "./schemas/roomLightingSchema";

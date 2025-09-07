@@ -20,7 +20,55 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import * as locationUtil from "@/components/lighting/utils/location";
 import { StatusBadge } from "@/components/lighting/components/StatusBadge";
-import { markLightsFixed, markLightsOut, toggleElectricianRequired } from "@/services/supabase/lightingService";
+import { supabase } from "@/lib/supabase";
+
+const markLightsOut = async (fixtureIds: string[], requiresElectrician: boolean = false) => {
+  const updateData: any = { 
+    status: 'non_functional',
+    reported_out_date: new Date().toISOString()
+  };
+  
+  if (requiresElectrician) {
+    updateData.requires_electrician = true;
+    updateData.electrical_issues = true;
+  }
+
+  const { error } = await supabase
+    .from('lighting_fixtures')
+    .update(updateData)
+    .in('id', fixtureIds);
+  
+  if (error) throw error;
+  return true;
+};
+
+const markLightsFixed = async (fixtureIds: string[]) => {
+  const { error } = await supabase
+    .from('lighting_fixtures')
+    .update({ 
+      status: 'functional',
+      replaced_date: new Date().toISOString(),
+      requires_electrician: false,
+      electrical_issues: false
+    })
+    .in('id', fixtureIds);
+  
+  if (error) throw error;
+  return true;
+};
+
+const toggleElectricianRequired = async (fixtureIds: string[], required: boolean) => {
+  const { error } = await supabase
+    .from('lighting_fixtures')
+    .update({ 
+      requires_electrician: required,
+      electrical_issues: required 
+    })
+    .in('id', fixtureIds);
+  
+  if (error) throw error;
+  return true;
+};
 
 interface CardFrontProps {
   fixture: LightingFixture;

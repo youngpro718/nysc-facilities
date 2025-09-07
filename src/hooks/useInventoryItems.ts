@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getInventoryItems } from '@/services/supabase/supplyRequestService';
+import { getInventoryItems } from '@/lib/supabase';
 
 export function useInventoryItems() {
   return useQuery({

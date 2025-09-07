@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useLightingFixtures } from "@/hooks/useLightingFixtures";
+import { useLightingFixtures } from "@/components/lighting/hooks/useLightingFixtures";
 import { LightStatus } from "@/types/lighting";
 import { CheckCircle, AlertTriangle, Wrench } from "lucide-react";
 import { toast } from "sonner";
@@ -93,7 +93,7 @@ export function BulkStatusUpdateDialog({ open, onOpenChange }: BulkStatusUpdateD
           {/* Fixture List */}
           <div className="h-96 border rounded-md p-4 overflow-y-auto">
             <div className="space-y-2">
-              {fixtures?.map((fixture) => (
+              {(fixtures || []).map((fixture) => (
                 <div key={fixture.id} className="flex items-center space-x-3 p-2 hover:bg-muted rounded-md">
                   <Checkbox
                     checked={selectedFixtures.includes(fixture.id)}
@@ -129,7 +129,7 @@ export function BulkStatusUpdateDialog({ open, onOpenChange }: BulkStatusUpdateD
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setSelectedFixtures(fixtures?.map(f => f.id) || [])}
+                onClick={() => setSelectedFixtures((fixtures || []).map(f => f.id))}
               >
                 Select All
               </Button>

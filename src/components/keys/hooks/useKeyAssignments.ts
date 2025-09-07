@@ -1,6 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { KeyAssignment } from "../types/assignmentTypes";
 
 export function useKeyAssignments() {
@@ -40,7 +40,7 @@ export function useKeyAssignments() {
         throw assignmentError;
       }
 
-      return assignments as KeyAssignment[];
+      return assignments as any;
     },
   });
 }

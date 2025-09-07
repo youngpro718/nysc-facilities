@@ -5,7 +5,7 @@ import { editLightingFormSchema, type EditLightingFormData } from "../schemas/ed
 import { type LightingFixture, LightingTechnology } from "@/types/lighting";
 import { type Space } from "@/components/lighting/types";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { generateFixtureName } from "../schemas/lightingSchema";
 
 export function useEditLightingForm(

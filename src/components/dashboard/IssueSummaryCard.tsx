@@ -15,9 +15,9 @@ export function IssueSummaryCard({ userId }: IssueSummaryCardProps) {
   const { userIssues } = useUserIssues(userId);
   const navigate = useNavigate();
 
-  const openIssues = userIssues?.filter(issue => issue.status === 'open') || [];
-  const inProgressIssues = userIssues?.filter(issue => issue.status === 'in_progress') || [];
-  const resolvedIssues = userIssues?.filter(issue => issue.status === 'resolved') || [];
+  const openIssues = Array.isArray(userIssues) ? userIssues.filter(issue => issue.status === 'open') : [];
+  const inProgressIssues = Array.isArray(userIssues) ? userIssues.filter(issue => issue.status === 'in_progress') : [];
+  const resolvedIssues = Array.isArray(userIssues) ? userIssues.filter(issue => issue.status === 'resolved') : [];
 
   const handleReportIssue = () => {
     navigate('/my-issues');
@@ -36,7 +36,7 @@ export function IssueSummaryCard({ userId }: IssueSummaryCardProps) {
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="secondary" className="font-normal">
-            {userIssues?.length || 0} total
+            {Array.isArray(userIssues) ? userIssues.length : 0} total
           </Badge>
           <Button
             variant="ghost"
@@ -75,7 +75,7 @@ export function IssueSummaryCard({ userId }: IssueSummaryCardProps) {
           </div>
         </div>
 
-        {userIssues && userIssues.length > 0 ? (
+        {Array.isArray(userIssues) && userIssues.length > 0 ? (
           <div className="space-y-2">
             {userIssues.slice(0, 3).map((issue) => (
               <div
@@ -85,7 +85,7 @@ export function IssueSummaryCard({ userId }: IssueSummaryCardProps) {
                 <div className="flex-1 min-w-0">
                   <div className="font-medium truncate">{issue.title}</div>
                   <div className="text-sm text-muted-foreground truncate">
-                    {issue.buildings?.name} • {issue.rooms?.name}
+                    {issue.buildings?.name} • {issue.unified_spaces?.name}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
                     Reported {formatDistanceToNow(new Date(issue.created_at), { addSuffix: true })}
@@ -104,7 +104,7 @@ export function IssueSummaryCard({ userId }: IssueSummaryCardProps) {
                 </div>
               </div>
             ))}
-            {userIssues.length > 3 && (
+            {Array.isArray(userIssues) && userIssues.length > 3 && (
               <div className="text-center py-2 text-sm text-muted-foreground">
                 +{userIssues.length - 3} more issues
               </div>

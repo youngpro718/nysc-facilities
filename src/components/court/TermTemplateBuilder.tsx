@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Copy, Plus, Trash2, FileCheck, Users, Upload, Download, AlertTriangle, CheckCircle, Wand2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useRealtime } from "@/hooks/useRealtime";
 
@@ -419,7 +419,7 @@ export const TermTemplateBuilder = ({ open, onOpenChange, onAssignmentsCreated }
                           />
                           <datalist id={`parts-list-${index}`}>
                             {commonValues?.parts.map((part) => (
-                              <option key={part} value={part} />
+                              <option key={part as string} value={part as string} />
                             ))}
                           </datalist>
                         </div>
@@ -436,7 +436,7 @@ export const TermTemplateBuilder = ({ open, onOpenChange, onAssignmentsCreated }
                           />
                           <datalist id={`justices-list-${index}`}>
                             {commonValues?.justices.map((justice) => (
-                              <option key={justice} value={justice} />
+                              <option key={justice as string} value={justice as string} />
                             ))}
                           </datalist>
                         </div>
@@ -453,7 +453,7 @@ export const TermTemplateBuilder = ({ open, onOpenChange, onAssignmentsCreated }
                           />
                           <datalist id={`rooms-list-${index}`}>
                             {commonValues?.rooms.map((room) => (
-                              <option key={room} value={room} />
+                              <option key={room as string} value={room as string} />
                             ))}
                           </datalist>
                         </div>
