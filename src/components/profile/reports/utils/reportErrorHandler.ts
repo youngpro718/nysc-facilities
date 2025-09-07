@@ -91,9 +91,12 @@ export function createRetryableQuery<T>(
 ): Promise<T> {
   return new Promise((resolve, reject) => {
     const run = async () => {
-      // Interpret maxRetries as the number of retries after the first attempt.
-      // Ensure at least one attempt even if maxRetries is 0 or negative.
-      const attempts = Math.max(1, (maxRetries ?? 0) + 1);
+      // Interpret maxRetries as the number of retries AFTER the first attempt.
+      // Normalize to a finite, non-negative integer (floor fractional, clamp negatives to 0, treat NaN/Infinity as 0)
+      const raw = Number(maxRetries);
+      let normalizedMaxRetries = Number.isFinite(raw) ? Math.floor(raw) : 0;
+      if (Number.isNaN(normalizedMaxRetries) || normalizedMaxRetries < 0) normalizedMaxRetries = 0;
+      const attempts = Math.max(1, normalizedMaxRetries + 1);
       for (let attempt = 1; attempt <= attempts; attempt++) {
         try {
           const result = await queryFn();

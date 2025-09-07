@@ -90,6 +90,12 @@ export function useEnhancedRoomData(roomId: string) {
         }
       }
 
+      // If no room data could be loaded via RPC or fallback, exit early to avoid null dereferences
+      if (!room) {
+        logger.warn('Enhanced room data unavailable after RPC/fallback', { roomId });
+        return null;
+      }
+
       // Get lighting fixtures data
       const { data: lightingFixtures } = await supabase
         .from('lighting_fixtures')
