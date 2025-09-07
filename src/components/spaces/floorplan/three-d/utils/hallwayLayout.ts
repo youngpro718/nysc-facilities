@@ -59,14 +59,28 @@ export function createHallwayLayout(
   const connections: ConnectionData[] = [];
   
   const roomsPerSide = Math.ceil(rooms.length / 2);
-  const effectiveSpacing = Math.min(roomSpacing, hallwayLength / roomsPerSide);
+  // Account for total widths of rooms on each side to prevent overlaps
+  const leftRooms = rooms.filter((_, idx) => idx % 2 === 0);
+  const rightRooms = rooms.filter((_, idx) => idx % 2 === 1);
+  const totalWidthLeft = leftRooms.reduce((sum, r) => sum + (r.size?.width || 0), 0);
+  const totalWidthRight = rightRooms.reduce((sum, r) => sum + (r.size?.width || 0), 0);
+  const availableLengthLeft = Math.max(0, hallwayLength - totalWidthLeft);
+  const availableLengthRight = Math.max(0, hallwayLength - totalWidthRight);
+  const spacingLeft = roomsPerSide > 0 ? availableLengthLeft / roomsPerSide : 0;
+  const spacingRight = roomsPerSide > 0 ? availableLengthRight / roomsPerSide : 0;
+  const effectiveSpacing = Math.max(0, Math.min(roomSpacing, spacingLeft, spacingRight));
   
   rooms.forEach((room, index) => {
     const isLeftSide = index % 2 === 0;
     const positionIndex = Math.floor(index / 2);
     
-    // Calculate position along the hallway
-    const xPosition = startPosition.x - hallwayLength/2 + (positionIndex * effectiveSpacing) + effectiveSpacing/2;
+    // Calculate nominal center position along the hallway
+    const nominalCenter = startPosition.x - hallwayLength / 2 + (positionIndex * effectiveSpacing) + effectiveSpacing / 2;
+    // Clamp center so the room stays fully within hallway horizontal bounds
+    const halfWidth = Math.max(0, (room.size?.width || 0) / 2);
+    const hallMinX = startPosition.x - hallwayLength / 2 + halfWidth;
+    const hallMaxX = startPosition.x + hallwayLength / 2 - halfWidth;
+    const xPosition = Math.min(hallMaxX, Math.max(hallMinX, nominalCenter));
     
     // Position rooms on either side of the hallway
     const yOffset = hallwayWidth/2 + room.size.height/2 + 20; // 20px gap from hallway
@@ -152,20 +166,48 @@ export function createMultiHallwayLayout(
   // Create connections between hallways if there are multiple
   if (hallwayCount > 1) {
     for (let i = 0; i < allHallways.length - 1; i++) {
-      const currentHallway = allHallways[i];
-      const nextHallway = allHallways[i + 1];
-      
-      // Connect the end of current hallway to the start of next hallway
+      const cur = allHallways[i];
+      const nxt = allHallways[i + 1];
+
+      // Right edge (current) and left edge (next)
+      const curRightX = cur.position.x + cur.size.width / 2;
+      const nxtLeftX = nxt.position.x - nxt.size.width / 2;
+
+      // Vertical ranges
+      const curMinY = cur.position.y - cur.size.height / 2;
+      const curMaxY = cur.position.y + cur.size.height / 2;
+      const nxtMinY = nxt.position.y - nxt.size.height / 2;
+      const nxtMaxY = nxt.position.y + nxt.size.height / 2;
+
+      // Compute closest vertical alignment between edges
+      const overlapMin = Math.max(curMinY, nxtMinY);
+      const overlapMax = Math.min(curMaxY, nxtMaxY);
+
+      let yFrom: number;
+      let yTo: number;
+      if (overlapMin <= overlapMax) {
+        // There is vertical overlap: connect through the midpoint of the overlap
+        const yMid = (overlapMin + overlapMax) / 2;
+        yFrom = yMid;
+        yTo = yMid;
+      } else {
+        // No overlap: connect the closest endpoints
+        // Choose the pair of edge points with minimum vertical distance
+        const candidates: Array<{ y1: number; y2: number; d: number }> = [
+          { y1: curMinY, y2: nxtMaxY, d: Math.abs(curMinY - nxtMaxY) },
+          { y1: curMaxY, y2: nxtMinY, d: Math.abs(curMaxY - nxtMinY) },
+          { y1: curMinY, y2: nxtMinY, d: Math.abs(curMinY - nxtMinY) },
+          { y1: curMaxY, y2: nxtMaxY, d: Math.abs(curMaxY - nxtMaxY) },
+        ];
+        candidates.sort((a, b) => a.d - b.d);
+        yFrom = candidates[0].y1;
+        yTo = candidates[0].y2;
+      }
+
       allConnections.push({
         id: `hallway-connector-${i}`,
-        from: { 
-          x: currentHallway.position.x + currentHallway.size.width/2, 
-          y: currentHallway.position.y 
-        },
-        to: { 
-          x: nextHallway.position.x - nextHallway.size.width/2, 
-          y: nextHallway.position.y 
-        }
+        from: { x: curRightX, y: yFrom },
+        to: { x: nxtLeftX, y: yTo },
       });
     }
   }

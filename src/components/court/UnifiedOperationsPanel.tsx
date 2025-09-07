@@ -10,18 +10,18 @@ interface UnifiedCourtStatus {
   id: string;
   room_number: string;
   courtroom_number: string | null;
-  status: "available" | "maintenance" | "inactive" | "shutdown" | "assigned";
+  status: "available" | "inactive" | "shutdown" | "assigned";
   current_location: string;
   temporary_location?: string;
   issue_description?: string;
   maintenance_start?: string;
   maintenance_end?: string;
+  is_under_maintenance?: boolean;
 }
 
 interface OperationsSummary {
   total_rooms: number;
   available_now: number;
-  occupied_now: number;
   under_maintenance: number;
   temporarily_relocated: number;
   shutdown_rooms: number;
@@ -138,7 +138,8 @@ export const UnifiedOperationsPanel = () => {
           status = "inactive";
           issueDescription = "Room inactive";
         } else if (activeWindow) {
-          status = "maintenance";
+          // Treat maintenance as available but flagged separately
+          status = "available";
           issueDescription = "Under maintenance";
           maintenanceStart = activeWindow.start || "";
           maintenanceEnd = activeWindow.end || "";
@@ -150,7 +151,7 @@ export const UnifiedOperationsPanel = () => {
           issueDescription = "Ready for use";
         }
 
-        return {
+        const result: UnifiedCourtStatus = {
           id: room.id,
           room_number: room.room_number,
           courtroom_number: room.courtroom_number,
@@ -161,13 +162,16 @@ export const UnifiedOperationsPanel = () => {
           maintenance_start: maintenanceStart,
           maintenance_end: maintenanceEnd
         };
+        if (activeWindow) {
+          result.is_under_maintenance = true;
+        }
+        return result;
       });
 
       const summary: OperationsSummary = {
         total_rooms: courtrooms?.length || 0,
         available_now: unifiedData.filter(r => r.status === "available").length,
-        occupied_now: unifiedData.filter(r => r.status === "assigned").length,
-        under_maintenance: unifiedData.filter(r => r.status === "maintenance").length,
+        under_maintenance: unifiedData.filter(r => r.is_under_maintenance).length,
         temporarily_relocated: unifiedData.filter(r => r.temporary_location).length,
         shutdown_rooms: unifiedData.filter(r => r.status === "shutdown").length,
         assigned_rooms: unifiedData.filter(r => r.status === "assigned").length
@@ -179,21 +183,31 @@ export const UnifiedOperationsPanel = () => {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "available": return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case "maintenance": return <Clock className="h-4 w-4 text-orange-600" />;
-      case "shutdown": return <AlertTriangle className="h-4 w-4 text-red-600" />;
-      case "temporary_relocation": return <MapPin className="h-4 w-4 text-blue-600" />;
-      default: return <CheckCircle className="h-4 w-4 text-gray-400" />;
+      case "available":
+        return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case "assigned":
+        return <Users className="h-4 w-4 text-blue-600" />;
+      case "shutdown":
+        return <AlertTriangle className="h-4 w-4 text-red-600" />;
+      case "inactive":
+        return <Clock className="h-4 w-4 text-gray-500" />;
+      default:
+        return <CheckCircle className="h-4 w-4 text-gray-400" />;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "available": return "bg-green-100 text-green-800";
-      case "maintenance": return "bg-orange-100 text-orange-800";
-      case "shutdown": return "bg-red-100 text-red-800";
-      case "temporary_relocation": return "bg-blue-100 text-blue-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "available":
+        return "bg-green-100 text-green-800";
+      case "assigned":
+        return "bg-blue-100 text-blue-800";
+      case "shutdown":
+        return "bg-red-100 text-red-800";
+      case "inactive":
+        return "bg-gray-100 text-gray-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -220,12 +234,23 @@ export const UnifiedOperationsPanel = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Occupied (Assigned)</CardTitle>
+            <Users className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{summary.assigned_rooms}</div>
+            <p className="text-xs text-muted-foreground">Currently assigned</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Under Maintenance</CardTitle>
             <Clock className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">{summary.under_maintenance}</div>
-            <p className="text-xs text-muted-foreground">Currently unavailable</p>
+            <p className="text-xs text-muted-foreground">Available but flagged</p>
           </CardContent>
         </Card>
 
@@ -264,9 +289,16 @@ export const UnifiedOperationsPanel = () => {
                     <CardTitle className="text-lg">
                       Room {room.room_number} {room.courtroom_number && `(${room.courtroom_number})`}
                     </CardTitle>
-                    <Badge className={getStatusColor(room.status)}>
-                      {room.status.replace("_", " ")}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge className={getStatusColor(room.status)}>
+                        {room.status.replace("_", " ")}
+                      </Badge>
+                      {room.is_under_maintenance && (
+                        <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-300">
+                          Under maintenance
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
 

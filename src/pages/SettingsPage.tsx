@@ -19,6 +19,7 @@ export default function SettingsPage() {
             size="icon"
             onClick={() => navigate(-1)}
             className="h-9 w-9"
+            aria-label="Go back"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>

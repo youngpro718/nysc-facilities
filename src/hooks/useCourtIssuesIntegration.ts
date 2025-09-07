@@ -94,36 +94,51 @@ export const useCourtIssuesIntegration = () => {
 
       if (error) throw error;
 
-      // Then get court room and assignment data separately to avoid complex joins
-      const issuesWithCourtData = await Promise.all(
-        (data || []).map(async (issue) => {
-          // Get court room data
-          const { data: courtRoom } = await supabase
+      // Batch-fetch court room and assignment data to avoid N+1 queries
+      const roomIds = Array.from(new Set((data || []).map((i: any) => i.room_id).filter(Boolean)));
+
+      let roomsByRoomId = new Map<string, { courtroom_number: string | null }>();
+      let assignmentsByRoomId = new Map<string, { justice: string; clerks: string[]; sergeant: string }>();
+
+      if (roomIds.length > 0) {
+        const [{ data: courtRooms }, { data: courtAssignments }] = await Promise.all([
+          supabase
             .from("court_rooms")
-            .select("courtroom_number")
-            .eq("room_id", issue.room_id)
-            .maybeSingle();
-
-          // Get court assignment data
-          const { data: courtAssignment } = await supabase
+            .select("room_id, courtroom_number")
+            .in("room_id", roomIds as string[]),
+          supabase
             .from("court_assignments")
-            .select("justice, clerks, sergeant")
-            .eq("room_id", issue.room_id)
-            .maybeSingle();
+            .select("room_id, justice, clerks, sergeant")
+            .in("room_id", roomIds as string[]),
+        ]);
 
-          return {
-            ...issue,
-            courtroom_number: courtRoom?.courtroom_number,
-            assignments: courtAssignment ? {
-              justice: courtAssignment.justice,
-              clerks: courtAssignment.clerks || [],
-              sergeant: courtAssignment.sergeant
-            } : undefined
-          };
-        })
-      );
+        for (const r of courtRooms || []) {
+          roomsByRoomId.set(r.room_id, { courtroom_number: r.courtroom_number });
+        }
+        for (const a of courtAssignments || []) {
+          assignmentsByRoomId.set(a.room_id, {
+            justice: a.justice,
+            clerks: a.clerks || [],
+            sergeant: a.sergeant,
+          });
+        }
+      }
 
-      if (error) throw error;
+      const issuesWithCourtData = (data || []).map((issue: any) => {
+        const roomInfo = issue.room_id ? roomsByRoomId.get(issue.room_id) : undefined;
+        const assignmentInfo = issue.room_id ? assignmentsByRoomId.get(issue.room_id) : undefined;
+        return {
+          ...issue,
+          courtroom_number: roomInfo?.courtroom_number,
+          assignments: assignmentInfo
+            ? {
+                justice: assignmentInfo.justice,
+                clerks: assignmentInfo.clerks || [],
+                sergeant: assignmentInfo.sergeant,
+              }
+            : undefined,
+        };
+      });
 
       return issuesWithCourtData.map(issue => ({
         id: issue.id,

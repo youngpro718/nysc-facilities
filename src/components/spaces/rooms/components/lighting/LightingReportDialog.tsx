@@ -26,9 +26,23 @@ export function LightingReportDialog({ room, trigger }: LightingReportDialogProp
     
     try {
       // Create issue in the issues table
-      const user = await supabase.auth.getUser();
-      const userId = user.data.user?.id;
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      const userId = authData?.user?.id;
+      if (!userId) throw new Error('Not authenticated');
       
+      // Guard: ensure building_id exists to satisfy non-nullable FK constraints
+      const buildingId = room.floor?.building?.id;
+      if (!buildingId) {
+        toast({
+          title: 'Missing building information',
+          description: 'Unable to report lighting issue: building is not associated with this room.',
+          variant: 'destructive',
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
       const { error } = await supabase
         .from('issues')
         .insert({
@@ -37,7 +51,7 @@ export function LightingReportDialog({ room, trigger }: LightingReportDialogProp
           priority: issueType === 'light_out' ? 'high' : 'medium',
           status: 'open',
           issue_type: 'lighting',
-          building_id: room.floor?.building?.id,
+          building_id: buildingId,
           floor_id: room.floor_id,
           room_id: room.id,
           location_description: location,

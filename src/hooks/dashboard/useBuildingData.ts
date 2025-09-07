@@ -3,11 +3,23 @@ import { supabase } from "@/lib/supabase";
 import { BuildingError } from "./types/errors";
 import type { Building, Activity } from "@/types/dashboard";
 
+export type BuildingWithLighting = Building & {
+  lightingTotalFixtures: number;
+  lightingWorkingFixtures: number;
+  _lightingDebug?: {
+    floorIdsCount: number;
+    roomsCount: number;
+    fixturesMapKeys: number;
+    lightingTotalFixtures: number;
+    lightingWorkingFixtures: number;
+  };
+};
+
 export const useBuildingData = (userId?: string) => {
   const enabled = !!userId;
   // Fetch buildings with caching
-  const { data: buildings = [], isLoading: buildingsIsLoading, refetch: refetchBuildings } = useQuery<Building[]>({
-    queryKey: ['buildings-v2'],
+  const { data: buildings = [], isLoading: buildingsIsLoading, refetch: refetchBuildings } = useQuery<BuildingWithLighting[]>({
+    queryKey: ['buildings-v2', userId ?? null],
     queryFn: async () => {
       try {
         // First fetch buildings with floors
