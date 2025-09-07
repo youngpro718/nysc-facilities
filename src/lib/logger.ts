@@ -1,7 +1,10 @@
 type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'silent';
 
-const envLevel: LogLevel = (import.meta?.env?.VITE_LOG_LEVEL as LogLevel) ||
-  (import.meta?.env?.MODE === 'production' ? 'info' : 'debug');
+// In a Vite browser environment, process.env is undefined.
+// Read only from import.meta.env and provide safe fallbacks.
+const viteEnv = (import.meta as any)?.env ?? {};
+const envLevel: LogLevel = (viteEnv.VITE_LOG_LEVEL as LogLevel) ||
+  (viteEnv.MODE === 'production' ? 'info' : 'debug');
 
 const levelPriority: Record<Exclude<LogLevel, 'silent'>, number> = {
   debug: 10,
