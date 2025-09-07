@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Building2, Users, Wrench, AlertTriangle, MapPin, Phone, Calendar, Power, PowerOff } from 'lucide-react';
 import { QuickActionsPanel } from './QuickActionsPanel';
+import { useToast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useCourtIssuesIntegration } from '@/hooks/useCourtIssuesIntegration';
 import { CreateShutdownDialog } from './CreateShutdownDialog';
@@ -58,28 +60,41 @@ export function InteractiveOperationsDashboard() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { hasUrgentIssues, getCourtImpactSummary, getIssuesForRoom } = useCourtIssuesIntegration();
+  const { toast } = useToast();
 
-  const { data: roomsData, isLoading } = useQuery({
+  const { data: roomsData, isLoading, isError, error } = useQuery<RoomDetails[]>({
     queryKey: ['interactive-operations'],
     queryFn: async () => {
       // Get all court rooms
-      const { data: courtrooms } = await supabase
+      const { data: courtrooms, error: courtroomsError } = await supabase
         .from("court_rooms")
         .select("id, room_id, room_number, courtroom_number, is_active")
         .order("room_number");
+      if (courtroomsError) {
+        logger.error('Failed to load court rooms', courtroomsError);
+        throw new Error('Unable to load court rooms');
+      }
 
       // Get all assignments with parts
-      const { data: assignments } = await supabase
+      const { data: assignments, error: assignmentsError } = await supabase
         .from("court_assignments")
         .select("room_id, id, sort_order, room_number, part, justice, clerks, sergeant, tel, fax, calendar_day")
         .not("part", "is", null)
         .not("part", "eq", "");
+      if (assignmentsError) {
+        logger.error('Failed to load court assignments', assignmentsError);
+        throw new Error('Unable to load court assignments');
+      }
 
       // Get all shutdowns
-      const { data: shutdowns } = await supabase
+      const { data: shutdowns, error: shutdownsError } = await supabase
         .from("room_shutdowns")
         .select("court_room_id, status, temporary_location, reason")
         .or("status.eq.in_progress,status.eq.scheduled");
+      if (shutdownsError) {
+        logger.error('Failed to load room shutdowns', shutdownsError);
+        throw new Error('Unable to load room shutdowns');
+      }
 
       const assignmentMap = new Map(assignments?.map(a => [a.room_id, a]) || []);
       const shutdownMap = new Map(shutdowns?.map(s => [s.court_room_id, s]) || []);
@@ -100,8 +115,8 @@ export function InteractiveOperationsDashboard() {
           assignment,
           shutdown,
           status
-        };
-      });
+        } as RoomDetails;
+      }) as RoomDetails[];
     }
   });
 
@@ -127,6 +142,11 @@ export function InteractiveOperationsDashboard() {
 
     if (error) {
       console.error('Error updating room status:', error);
+      toast({
+        title: 'Failed to update room status',
+        description: 'Please try again or contact support if the problem persists.',
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -163,6 +183,7 @@ export function InteractiveOperationsDashboard() {
     available: roomsData?.filter(r => r.status === 'available').length || 0,
     occupied: roomsData?.filter(r => r.status === 'occupied').length || 0,
     shutdown: roomsData?.filter(r => r.status === 'shutdown').length || 0,
+    maintenance: roomsData?.filter(r => r.status === 'maintenance').length || 0,
     inactive: roomsData?.filter(r => r.status === 'inactive').length || 0,
     urgent: urgentRoomsCount,
   };
@@ -172,6 +193,7 @@ export function InteractiveOperationsDashboard() {
       case 'available': return 'bg-green-100 text-green-800 border-green-200';
       case 'occupied': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'shutdown': return 'bg-red-100 text-red-800 border-red-200';
+      case 'maintenance': return 'bg-amber-100 text-amber-800 border-amber-200';
       case 'inactive': return 'bg-gray-100 text-gray-800 border-gray-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
@@ -182,6 +204,7 @@ export function InteractiveOperationsDashboard() {
       case 'available': return <Building2 className="h-4 w-4" />;
       case 'occupied': return <Users className="h-4 w-4" />;
       case 'shutdown': return <AlertTriangle className="h-4 w-4" />;
+      case 'maintenance': return <Wrench className="h-4 w-4" />;
       case 'inactive': return <Wrench className="h-4 w-4" />;
       default: return <Building2 className="h-4 w-4" />;
     }
@@ -192,6 +215,7 @@ export function InteractiveOperationsDashboard() {
       case 'available': return 'bg-green-500';
       case 'occupied': return 'bg-blue-500';
       case 'shutdown': return 'bg-red-500';
+      case 'maintenance': return 'bg-amber-500';
       case 'inactive': return 'bg-gray-500';
       default: return 'bg-gray-500';
     }
@@ -199,6 +223,17 @@ export function InteractiveOperationsDashboard() {
 
   if (isLoading) {
     return <div className="p-8 text-center">Loading court operations...</div>;
+  }
+
+  if (isError) {
+    return (
+      <div className="p-8 text-center text-destructive">
+        Failed to load court operations. Please try again later.
+        {process.env.NODE_ENV !== 'production' && (
+          <div className="mt-2 text-xs text-muted-foreground">{String(error)}</div>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -290,7 +325,12 @@ export function InteractiveOperationsDashboard() {
                 onClick={() => setFilter(filterType)}
                 className="capitalize"
               >
-                {filterType} ({filterType === 'all' ? statusCounts.total : statusCounts[filterType as keyof typeof statusCounts]})
+                {(() => {
+                  const count = filterType === 'all'
+                    ? statusCounts.total
+                    : (statusCounts[filterType as keyof typeof statusCounts] ?? 0);
+                  return `${filterType} (${count})`;
+                })()}
               </Button>
             ))}
           </div>
@@ -409,6 +449,10 @@ export function InteractiveOperationsDashboard() {
               )}
             </DialogTitle>
           </DialogHeader>
+          {/* Screen-reader only description for accessibility to match aria-describedby */}
+          <p id="room-details-description" className="sr-only">
+            Detailed status, assignment information, shutdown details, and quick actions for the selected courtroom.
+          </p>
           
           <ScrollArea className="max-h-[60vh]">
             <div className="space-y-4">
@@ -512,12 +556,14 @@ export function InteractiveOperationsDashboard() {
                         <span className="font-medium text-foreground">{selectedRoom.assignment.justice}</span>
                       </div>
                     )}
-                    {selectedRoom.assignment.clerks && (
-                      <div className="flex justify-between items-start">
-                        <span className="text-muted-foreground">Clerks:</span>
-                        <span className="font-medium text-right text-foreground">{selectedRoom.assignment.clerks.join(', ')}</span>
-                      </div>
-                    )}
+                    <div className="flex justify-between items-start">
+                      <span className="text-muted-foreground">Clerks:</span>
+                      <span className="font-medium text-right text-foreground">
+                        {Array.isArray(selectedRoom.assignment.clerks) && selectedRoom.assignment.clerks.length > 0
+                          ? selectedRoom.assignment.clerks.join(', ')
+                          : '—'}
+                      </span>
+                    </div>
                     {selectedRoom.assignment.sergeant && (
                       <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Sergeant:</span>

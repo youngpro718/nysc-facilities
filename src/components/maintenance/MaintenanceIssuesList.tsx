@@ -18,8 +18,8 @@ type MaintenanceIssue = {
   issue_type: string;
   severity: string;
   status: string;
-  temporary_fix_description: string;
-  temporary_fix_date: string;
+  notes?: string;
+  updated_at?: string;
   permanent_solution_needed: boolean;
   created_at: string;
   recurring_issue: boolean;
@@ -66,7 +66,7 @@ export const MaintenanceIssuesList = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "reported": return "bg-red-100 text-red-800";
-      case "temporary_fix": return "bg-yellow-100 text-yellow-800";
+      case "in_progress": return "bg-yellow-100 text-yellow-800";
       case "scheduled": return "bg-blue-100 text-blue-800";
       case "resolved": return "bg-green-100 text-green-800";
       default: return "bg-gray-100 text-gray-800";
@@ -120,7 +120,7 @@ export const MaintenanceIssuesList = () => {
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value="reported">Reported</SelectItem>
-            <SelectItem value="temporary_fix">Temporary Fix</SelectItem>
+            <SelectItem value="in_progress">In Progress</SelectItem>
             <SelectItem value="scheduled">Scheduled</SelectItem>
             <SelectItem value="resolved">Resolved</SelectItem>
           </SelectContent>
@@ -182,16 +182,16 @@ export const MaintenanceIssuesList = () => {
                   <strong>Issue Type:</strong> <span className="capitalize">{issue.issue_type}</span>
                 </div>
 
-                {issue.temporary_fix_description && (
+                {issue.notes && issue.notes.startsWith('Temporary fix:') && (
                   <div className="bg-yellow-50 p-3 rounded-lg">
                     <div className="flex items-center gap-2 text-yellow-800 font-medium">
                       <CheckCircle className="h-4 w-4" />
                       Temporary Fix Applied
                     </div>
-                    <p className="text-sm mt-1 text-yellow-700">{issue.temporary_fix_description}</p>
-                    {issue.temporary_fix_date && (
+                    <p className="text-sm mt-1 text-yellow-700">{issue.notes.replace('Temporary fix: ', '')}</p>
+                    {issue.updated_at && (
                       <p className="text-xs text-yellow-600 mt-1">
-                        Applied on {format(new Date(issue.temporary_fix_date), "MMM dd, yyyy")}
+                        Applied on {format(new Date(issue.updated_at), "MMM dd, yyyy")}
                       </p>
                     )}
                   </div>
@@ -233,7 +233,7 @@ export const MaintenanceIssuesList = () => {
                   </div>
                 )}
 
-                {issue.status === "temporary_fix" && (
+                {issue.status === "in_progress" && (
                   <div className="flex gap-2 pt-2">
                     <Button 
                       size="sm" 

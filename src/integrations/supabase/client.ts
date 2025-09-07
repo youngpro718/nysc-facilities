@@ -1,73 +1,112 @@
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from './types';
+import { logger } from '@/lib/logger';
 
-// SECURITY: Use environment variables exclusively - no hardcoded fallbacks
-const SUPABASE_URL = 'https://fmymhtuiqzhupjyopfvi.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZteW1odHVpcXpodXBqeW9wZnZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgyNDc4OTYsImV4cCI6MjA1MzgyMzg5Nn0.1OvOXiLEj3QKGjAEZCSWqw8zzewsYgfTlVDcDEdfCjE';
+// Read from env (Vite)
+const url = import.meta.env.VITE_SUPABASE_URL;
+const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Validate required configuration
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  throw new Error('Missing required Supabase configuration. Please ensure SUPABASE_URL and SUPABASE_ANON_KEY are set.');
+if (!url) {
+  throw new Error('Missing VITE_SUPABASE_URL environment variable.');
+}
+if (!anonKey) {
+  throw new Error('Missing VITE_SUPABASE_ANON_KEY environment variable.');
 }
 
-export const supabase = createClient<Database>(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY,
-  {
-    auth: {
-      persistSession: true,
-      storageKey: 'app-auth',
-      storage: localStorage,
-      autoRefreshToken: true,
-      detectSessionInUrl: false,
-    },
-    global: {
-      headers: {
-        Connection: 'keep-alive',
-      },
-    },
-    db: {
-      schema: 'public',
-    },
-    realtime: {
-      params: {
-        eventsPerSecond: 10,
-      },
-    },
-  }
-);
+export const supabase = createClient(url, anonKey);
 
-// Enhanced query wrapper with retry logic
-export const supabaseWithRetry = {
-  async query<T>(queryFn: () => Promise<T>, maxRetries = 3): Promise<T> {
-    let lastError;
-    
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        return await queryFn();
-      } catch (error: any) {
-        lastError = error;
-        
-        // Check if it's a connection error
-        if (error?.message?.includes('Failed to fetch') || 
-            error?.message?.includes('ERR_CONNECTION_CLOSED') ||
-            error?.message?.includes('Network Error')) {
-          
-          console.warn(`Supabase connection attempt ${attempt}/${maxRetries} failed:`, error.message);
-          
-          if (attempt < maxRetries) {
-            // Exponential backoff: 1s, 2s, 4s
-            const delay = Math.pow(2, attempt - 1) * 1000;
-            await new Promise(resolve => setTimeout(resolve, delay));
-            continue;
-          }
-        }
-        
-        // If it's not a connection error, throw immediately
-        throw error;
+type RetryOptions = {
+  retries?: number;
+  baseDelayMs?: number;
+  maxDelayMs?: number;
+  timeoutMs?: number;
+  onRetry?: (attempt: number, err: unknown) => void;
+};
+
+const DEFAULT_RETRY = {
+  retries: 3,
+  baseDelayMs: 300,
+  maxDelayMs: 5000,
+};
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function getHttpStatus(err: unknown): number | undefined {
+  const e = err as any;
+  if (typeof e?.status === 'number') return e.status;
+  if (typeof e?.response?.status === 'number') return e.response.status;
+  if (typeof e?.httpStatusCode === 'number') return e.httpStatusCode;
+  return undefined;
+}
+
+function isNetworkLikeError(err: unknown): boolean {
+  if (err instanceof TypeError) return true; // browser network failure
+  const e = err as any;
+  const msg = (e?.message || '').toString().toLowerCase();
+  if (msg.includes('failed to fetch') || msg.includes('networkerror') || msg.includes('load failed')) return true;
+
+  const code = (e?.code || '').toString().toUpperCase();
+  if (['ENOTFOUND', 'ECONNRESET', 'ETIMEDOUT', 'EAI_AGAIN', 'EHOSTUNREACH'].includes(code)) return true;
+
+  return false;
+}
+
+function isRetriable(err: unknown): boolean {
+  if (isNetworkLikeError(err)) return true;
+
+  const status = getHttpStatus(err);
+  if (status == null) return false;
+  return [408, 425, 429, 500, 502, 503, 504].includes(status);
+}
+
+async function withRetry<T>(fn: () => Promise<T>, options?: RetryOptions): Promise<T> {
+  const retries = options?.retries ?? DEFAULT_RETRY.retries;
+  const baseDelayMs = options?.baseDelayMs ?? DEFAULT_RETRY.baseDelayMs;
+  const maxDelayMs = options?.maxDelayMs ?? DEFAULT_RETRY.maxDelayMs;
+  const deadline = options?.timeoutMs ? Date.now() + options.timeoutMs : undefined;
+
+  let attempt = 0;
+  for (;;) {
+    try {
+      return await fn();
+    } catch (err) {
+      attempt++;
+
+      // Secure logging
+      const status = getHttpStatus(err);
+      const code = (err as any)?.code;
+      const safeMeta = { status, code, attempt };
+      if (import.meta.env.MODE === 'production') {
+        logger.warn('supabase retry: attempt failed', safeMeta);
+      } else {
+        logger.warn('supabase retry: attempt failed (dev detail)', { ...safeMeta, err });
       }
+
+      if (attempt > retries || !isRetriable(err)) {
+        throw err;
+      }
+      if (deadline && Date.now() >= deadline) {
+        throw err;
+      }
+
+      const jitter = Math.random() * 100;
+      const delay = Math.min(maxDelayMs, baseDelayMs * 2 ** (attempt - 1)) + jitter;
+      if (deadline) {
+        const remaining = deadline - Date.now();
+        if (remaining <= 0) throw err;
+        await sleep(Math.min(delay, remaining));
+      } else {
+        await sleep(delay);
+      }
+
+      options?.onRetry?.(attempt, err);
     }
-    
-    throw lastError;
   }
+}
+
+export const supabaseWithRetry = {
+  async query<T>(fn: () => Promise<T>, opts?: RetryOptions) {
+    return withRetry(fn, opts);
+  },
 };

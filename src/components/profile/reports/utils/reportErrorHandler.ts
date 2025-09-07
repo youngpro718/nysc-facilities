@@ -91,7 +91,10 @@ export function createRetryableQuery<T>(
 ): Promise<T> {
   return new Promise((resolve, reject) => {
     const run = async () => {
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      // Interpret maxRetries as the number of retries after the first attempt.
+      // Ensure at least one attempt even if maxRetries is 0 or negative.
+      const attempts = Math.max(1, (maxRetries ?? 0) + 1);
+      for (let attempt = 1; attempt <= attempts; attempt++) {
         try {
           const result = await queryFn();
           resolve(result);
@@ -99,7 +102,8 @@ export function createRetryableQuery<T>(
         } catch (error) {
           console.log(`Query attempt ${attempt} failed:`, error);
 
-          if (attempt === maxRetries) {
+          // Reject on the final attempt
+          if (attempt === attempts) {
             reject(error);
             return;
           }

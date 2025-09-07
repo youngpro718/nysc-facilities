@@ -1,74 +1,93 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { logger } from "@/lib/logger";
 import { EnhancedRoom, LightingFixtureStatus } from "@/components/spaces/rooms/types/EnhancedRoomTypes";
 
 export function useEnhancedRoomData(roomId: string) {
   return useQuery({
     queryKey: ['enhanced-room', roomId],
     queryFn: async (): Promise<EnhancedRoom | null> => {
-      // Get base room data
-      const { data: room, error: roomError } = await supabase
-        .from('rooms')
-        .select(`
-          *,
-          floor:floors(
-            id,
-            name,
-            building:buildings!floors_building_id_fkey(
-              id,
-              name
-            )
-          ),
-          current_occupants:occupant_room_assignments!occupant_room_assignments_room_id_fkey(
-            occupant:occupants!occupant_room_assignments_occupant_id_fkey(
-              id,
-              first_name,
-              last_name
-            ),
-            assignment_type,
-            is_primary
-          )
-        `)
-        .eq('id', roomId)
-        .single();
-
-      if (roomError || !room) {
-        console.error('Error fetching room:', roomError);
-        return null;
-      }
-
-      // Get issues data separately
-      const { data: issues } = await supabase
-        .from('issues')
-        .select(`
-          id,
-          title,
-          description,
-          status,
-          priority,
-          created_at
-        `)
-        .eq('room_id', roomId);
-
-      // Get courtroom data if applicable
-      let courtRoomData = null;
+      // Try optimized RPC to reduce round trips (room + issues + court data)
+      let room: any = null;
+      let issues: any[] | null = null;
+      let courtRoomData: any = null;
       let courtAssignment: { id: string } | null = null;
-      if (room.room_type === 'courtroom') {
-        const { data: courtRoom } = await supabase
-          .from('court_rooms')
-          .select('*')
-          .eq('room_id', roomId)
+      try {
+        const { data: rpcData, error: rpcError } = await supabase.rpc('get_enhanced_room', { p_room_id: roomId });
+        if (rpcError) throw rpcError;
+        if (rpcData) {
+          room = (rpcData as any).room;
+          issues = (rpcData as any).issues ?? [];
+          courtRoomData = (rpcData as any).court_room ?? null;
+          courtAssignment = (rpcData as any).court_assignment ?? null;
+        }
+      } catch (e) {
+        logger.warn('RPC get_enhanced_room failed, falling back to separate queries', { roomId, error: e });
+        // Fallback: Get base room data
+        const { data: roomData, error: roomError } = await supabase
+          .from('rooms')
+          .select(`
+            *,
+            floor:floors(
+              id,
+              name,
+              building:buildings!floors_building_id_fkey(
+                id,
+                name
+              )
+            ),
+            current_occupants:occupant_room_assignments!occupant_room_assignments_room_id_fkey(
+              occupant:occupants!occupant_room_assignments_occupant_id_fkey(
+                id,
+                first_name,
+                last_name
+              ),
+              assignment_type,
+              is_primary
+            )
+          `)
+          .eq('id', roomId)
           .single();
-        
-        courtRoomData = courtRoom;
 
-        // Fetch any active assignment for this courtroom to drive occupancy status
-        const { data: assignment } = await supabase
-          .from('court_assignments')
-          .select('id')
-          .eq('room_id', roomId)
-          .maybeSingle();
-        courtAssignment = assignment;
+        if (roomError || !roomData) {
+          console.error('Error fetching room:', roomError);
+          return null;
+        }
+        room = roomData;
+
+        // Separate issues query (kept separate to avoid reverse relationship cache issues)
+        const { data: issuesData, error: issuesError } = await supabase
+          .from('issues')
+          .select(`
+            id,
+            title,
+            description,
+            status,
+            priority,
+            created_at
+          `)
+          .eq('room_id', roomId);
+        if (issuesError) {
+          logger.error('Failed to load issues for room', { roomId, error: issuesError });
+        }
+        issues = issuesData ?? [];
+
+        // Get courtroom data if applicable
+        if (room.room_type === 'courtroom') {
+          const { data: courtRoom } = await supabase
+            .from('court_rooms')
+            .select('*')
+            .eq('room_id', roomId)
+            .single();
+          courtRoomData = courtRoom;
+  
+          const { data: assignment } = await supabase
+            .from('court_assignments')
+            .select('id')
+            .eq('room_id', roomId)
+            .maybeSingle();
+          courtAssignment = assignment;
+        }
       }
 
       // Get lighting fixtures data
@@ -94,7 +113,8 @@ export function useEnhancedRoomData(roomId: string) {
       }
 
       // Check for persistent issues
-      const openIssues = issues?.filter((issue: any) => ['open', 'in_progress'].includes(issue.status)) || [];
+      const safeIssues = Array.isArray(issues) ? issues : [];
+      const openIssues = safeIssues.filter((issue: any) => ['open', 'in_progress'].includes(issue.status));
       const hasPersistentIssues = openIssues.length >= 3;
 
       // Calculate vacancy status
@@ -128,9 +148,9 @@ export function useEnhancedRoomData(roomId: string) {
 
       // Build history stats
       // 1) Total issues and last issue date
-      const totalIssues = issues?.length || 0;
-      const lastIssueDate = issues && issues.length > 0
-        ? issues
+      const totalIssues = safeIssues.length || 0;
+      const lastIssueDate = safeIssues.length > 0
+        ? safeIssues
             .map((i: any) => new Date(i.created_at).getTime())
             .reduce((a: number, b: number) => Math.max(a, b), 0)
         : undefined;
@@ -165,7 +185,7 @@ export function useEnhancedRoomData(roomId: string) {
         vacancy_status: vacancyStatus,
         persistent_issues: hasPersistentIssues ? {
           room_id: roomId,
-          issue_count: issues?.length || 0,
+          issue_count: safeIssues.length || 0,
           open_issues: openIssues.length,
           latest_issue_date: openIssues[0]?.created_at || new Date().toISOString()
         } : undefined,
