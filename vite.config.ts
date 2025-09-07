@@ -10,7 +10,13 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
     strictPort: true,
-    allowedHosts: ["e785d8ca-c2d1-4fcc-af24-583a7e48eaa6.lovableproject.com"]
+    allowedHosts: [
+      "localhost",
+      "127.0.0.1",
+      // Windsurf/Windsurf build preview proxies often use 127.0.0.1
+      // Keep lovable preview hostname for cloud previews
+      "e785d8ca-c2d1-4fcc-af24-583a7e48eaa6.lovableproject.com",
+    ]
   },
   plugins: [
     react(),

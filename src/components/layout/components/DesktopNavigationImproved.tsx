@@ -1,10 +1,12 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { LogOut } from "lucide-react";
+import { LogOut, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NavigationTab } from "../types";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdminNotifications } from "@/hooks/useAdminNotifications";
+import { useAdminRealtimeNotifications } from "@/hooks/useAdminRealtimeNotifications";
 
 interface DesktopNavigationImprovedProps {
   navigation: NavigationTab[];
@@ -17,7 +19,25 @@ export const DesktopNavigationImproved = ({
 }: DesktopNavigationImprovedProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
+  const { data: adminNotifications = [] } = useAdminNotifications();
+  useAdminRealtimeNotifications();
+  // Use a simple "last seen" timestamp to compute new notifications
+  const [lastSeenAt, setLastSeenAt] = React.useState<string>(() => {
+    try { return localStorage.getItem('admin.notifications.lastSeen') || ''; } catch { return ''; }
+  });
+  const unreadCount = React.useMemo(() => {
+    try {
+      if (!isAdmin) return 0;
+      const uid = user?.id;
+      return (adminNotifications || []).filter((n: any) => {
+        const readers: string[] = Array.isArray(n.read_by) ? n.read_by : [];
+        return !uid || !readers.includes(uid);
+      }).length;
+    } catch {
+      return 0;
+    }
+  }, [adminNotifications, isAdmin, user?.id]);
   
 
   const handleNavigation = (title: string) => {
@@ -82,6 +102,34 @@ export const DesktopNavigationImproved = ({
           );
         })}
         
+        {/* Notifications (Admins) */}
+        {isAdmin && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => {
+                  const now = new Date().toISOString();
+                  try { localStorage.setItem('admin.notifications.lastSeen', now); } catch {}
+                  setLastSeenAt(now);
+                  navigate('/admin-profile');
+                }}
+                className="relative flex items-center justify-center w-10 h-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 hover:scale-[1.02] active:scale-95"
+                aria-label={unreadCount > 0 ? `${unreadCount} unread notifications` : 'Notifications'}
+              >
+                <Bell className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 inline-flex min-w-[18px] h-[18px] px-1 items-center justify-center rounded-full bg-red-500 text-white text-[10px] leading-none font-semibold shadow">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="text-sm">
+              {unreadCount > 0 ? `${unreadCount} unread` : 'No new notifications'}
+            </TooltipContent>
+          </Tooltip>
+        )}
+
         {/* Sign Out Button */}
         <div className="ml-2 pl-2 border-l border-border">
           <Tooltip>
@@ -110,7 +158,7 @@ function getNavigationPath(title: string, isAdmin?: boolean): string {
     'Dashboard': isAdmin ? '/' : '/dashboard',
     'Spaces': '/spaces',
     'Operations': '/operations',
-    'Issues': '/issues',
+    'Issues': '/operations',
     'Occupants': '/occupants',
     'Inventory': '/inventory',
     'Supply Requests': isAdmin ? '/admin/supply-requests' : '/supply-requests',

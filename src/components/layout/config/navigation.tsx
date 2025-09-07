@@ -47,7 +47,7 @@ export const navigationItems: NavigationItem[] = [
     moduleKey: 'spaces',
   },
   {
-    title: 'Operations',
+    title: 'Issues',
     href: '/operations',
     icon: AlertTriangle,
     adminOnly: true,
@@ -150,7 +150,7 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
     return [
       { title: 'Dashboard', icon: LayoutDashboard },
       { title: 'Spaces', icon: Building2 },
-      { title: 'Operations', icon: AlertTriangle },
+      { title: 'Issues', icon: AlertTriangle },
       { title: 'Occupants', icon: Users },
       { title: 'Keys', icon: KeyRound },
       { title: 'Inventory', icon: Package2 },
@@ -191,7 +191,7 @@ export function getAdminNavigation(): NavigationTab[] {
   return [
     { title: 'Dashboard', icon: LayoutDashboard },
     { title: 'Spaces', icon: Building2 },
-    { title: 'Operations', icon: AlertTriangle },
+    { title: 'Issues Management', icon: AlertTriangle },
     { type: "separator" },
     { title: 'Admin Profile', icon: UserCog },
   ];

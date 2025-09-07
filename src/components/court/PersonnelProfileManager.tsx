@@ -43,18 +43,37 @@ export const PersonnelProfileManager: React.FC = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
-  // Fetch all personnel profiles
+  // Fetch all personnel profiles (via RPC to bypass RLS/PostgREST quirks)
   const { data: profiles, isLoading } = useQuery({
     queryKey: ['personnel-profiles'],
     queryFn: async () => {
-      const { data, error } = (supabase as any)
-        .from('personnel_profiles')
-        .select('*')
-        .order('primary_role')
-        .order('last_name');
-      
+      const { data, error } = await (supabase as any).rpc('list_personnel_profiles_minimal');
       if (error) throw error;
-      return data as PersonnelProfile[];
+      // Map minimal RPC fields into local type with safe defaults
+      const rows = (data || []).map((r: any) => ({
+        id: r.id,
+        first_name: '',
+        last_name: '',
+        display_name: r.display_name || r.full_name || '',
+        primary_role: (r.primary_role || 'clerk') as PersonnelProfile['primary_role'],
+        title: r.title || '',
+        department: r.department || '',
+        phone: '',
+        extension: '',
+        fax: '',
+        email: '',
+        room_number: '',
+        floor: '',
+        building: '',
+        is_active: (r.is_active ?? true) as boolean,
+        is_available_for_assignment: true,
+        notes: '',
+        specializations: [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })) as PersonnelProfile[];
+      // Client-side sort by display_name for consistency
+      return rows.sort((a, b) => (a.display_name || '').localeCompare(b.display_name || ''));
     },
   });
 

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -62,16 +62,33 @@ export default function Operations() {
   const viewParam = searchParams.get('view');
 
   // Issues tab local state
-  const [groupingMode, setGroupingMode] = useState<GroupingMode>('priority');
+  // Load persisted settings
+  const persistedView = ((): ViewMode | null => {
+    try { return (localStorage.getItem('issues.viewMode') as ViewMode) || null; } catch { return null; }
+  })();
+  const persistedGrouping = ((): GroupingMode | null => {
+    try { return (localStorage.getItem('issues.groupingMode') as GroupingMode) || null; } catch { return null; }
+  })();
+  const persistedStatus = ((): StatusFilter | null => {
+    try { return (localStorage.getItem('issues.statusFilter') as StatusFilter) || null; } catch { return null; }
+  })();
+  const persistedPriority = ((): PriorityFilter | null => {
+    try { return (localStorage.getItem('issues.priorityFilter') as PriorityFilter) || null; } catch { return null; }
+  })();
+
+  const [groupingMode, setGroupingMode] = useState<GroupingMode>(persistedGrouping || 'priority');
   const [viewMode, setViewMode] = useState<ViewMode>(
     viewParam && ['cards','table','timeline','board'].includes(viewParam)
       ? (viewParam as ViewMode)
-      : 'table'
+      : (persistedView || 'table')
   );
   const [selectedIssues, setSelectedIssues] = useState<string[]>([]);
+  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(persistedStatus || 'all');
+  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>(persistedPriority || 'all');
+  const [autoRefresh, setAutoRefresh] = useState<boolean>(false);
+  const refreshTimerRef = useRef<number | null>(null);
 
   // Clear building filter
   const clearBuildingFilter = () => {
@@ -79,6 +96,28 @@ export default function Operations() {
     newParams.delete('building');
     setSearchParams(newParams);
   };
+
+  // Persist preferences
+  useEffect(() => {
+    try { localStorage.setItem('issues.viewMode', viewMode); } catch {}
+  }, [viewMode]);
+  useEffect(() => {
+    try { localStorage.setItem('issues.groupingMode', groupingMode); } catch {}
+  }, [groupingMode]);
+  useEffect(() => {
+    try { localStorage.setItem('issues.statusFilter', statusFilter); } catch {}
+  }, [statusFilter]);
+  useEffect(() => {
+    try { localStorage.setItem('issues.priorityFilter', priorityFilter); } catch {}
+  }, [priorityFilter]);
+
+  // Debounce search input -> searchQuery
+  useEffect(() => {
+    const id = window.setTimeout(() => setSearchQuery(searchInput), 300);
+    return () => window.clearTimeout(id);
+  }, [searchInput]);
+
+  // (moved) Auto-refresh toggle is defined after refreshIssues is available
 
   // Set building filter
   const setBuildingFilter = (buildingId: string) => {
@@ -157,6 +196,24 @@ export default function Operations() {
     refreshData: refreshIssues
   } = useAdminIssuesData();
 
+  // Auto-refresh toggle (now that refreshIssues is defined)
+  useEffect(() => {
+    if (autoRefresh) {
+      refreshTimerRef.current = window.setInterval(() => {
+        refreshIssues();
+      }, 30000) as unknown as number;
+    } else if (refreshTimerRef.current) {
+      window.clearInterval(refreshTimerRef.current);
+      refreshTimerRef.current = null;
+    }
+    return () => {
+      if (refreshTimerRef.current) {
+        window.clearInterval(refreshTimerRef.current);
+        refreshTimerRef.current = null;
+      }
+    };
+  }, [autoRefresh, refreshIssues]);
+
   // Fetch maintenance data
   const { data: maintenanceData = [], isLoading: maintenanceLoading } = useQuery({
     queryKey: ['maintenanceOverview'],
@@ -221,7 +278,7 @@ export default function Operations() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
-            <h2 className="text-3xl font-bold tracking-tight">Operations Management</h2>
+            <h2 className="text-3xl font-bold tracking-tight">Issues Management</h2>
             {buildingId && (
               <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                 <Building2 className="w-3 h-3 mr-1" />
@@ -295,14 +352,14 @@ export default function Operations() {
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold">Operations Center</h1>
+            <h1 className="text-3xl font-bold">Issues Management</h1>
             <Badge variant="secondary" className="text-xs">
               <Activity className="h-3 w-3 mr-1" />
               Live Data
             </Badge>
           </div>
           <p className="text-muted-foreground">
-            Unified management for issues, maintenance, and key operations
+            Unified management for issues and maintenance
           </p>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <span className="flex items-center gap-1">
@@ -644,6 +701,13 @@ export default function Operations() {
                 <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
                 Refresh
               </Button>
+              <Button
+                onClick={() => setAutoRefresh(v => !v)}
+                variant={autoRefresh ? 'default' : 'outline'}
+                size="sm"
+              >
+                {autoRefresh ? 'Auto-refresh: On' : 'Auto-refresh: Off'}
+              </Button>
               <Button onClick={() => setShowCreateIssue(true)} size="sm">
                 <Plus className="h-4 w-4 mr-2" />
                 Report Issue
@@ -705,8 +769,8 @@ export default function Operations() {
             viewMode={viewMode}
             onGroupingChange={setGroupingMode}
             onViewModeChange={handleViewModeChange}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
+            searchQuery={searchInput}
+            onSearchChange={setSearchInput}
             totalIssues={allIssues?.length || 0}
             selectedCount={selectedIssues.length}
             statusFilter={statusFilter}
@@ -714,6 +778,13 @@ export default function Operations() {
             onStatusFilterChange={setStatusFilter}
             onPriorityFilterChange={setPriorityFilter}
           />
+
+          {/* Quick filter presets */}
+          <div className="flex flex-wrap gap-2">
+            <Button variant={statusFilter === 'open' ? 'default' : 'outline'} size="sm" onClick={() => setStatusFilter('open')}>Open</Button>
+            <Button variant={priorityFilter === 'high' ? 'default' : 'outline'} size="sm" onClick={() => setPriorityFilter('high')}>High Priority</Button>
+            <Button variant="outline" size="sm" onClick={() => { setStatusFilter('all'); setPriorityFilter('all'); setGroupingMode('priority'); setSearchInput(''); }}>Clear</Button>
+          </div>
 
           {/* Issues Table */}
           <Card>

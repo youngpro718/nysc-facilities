@@ -23,8 +23,9 @@ export function useKeyAssignment(
       
       const { data, error } = await supabase
         .from("key_inventory_view")
-        .select("id, name, type, available_quantity, is_passkey")
-        .eq("status", "available");
+        .select("id, name, available_quantity, is_passkey")
+        // Some environments don't expose a status column on the view; instead, rely on availability count
+        .gt("available_quantity", 0);
 
       if (error) {
         console.error("Error fetching keys:", error);

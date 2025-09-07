@@ -74,19 +74,74 @@ export const PersonnelProfilesTab: React.FC = () => {
   const { data: profiles, isLoading } = useQuery({
     queryKey: ['personnel-profiles'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('personnel_profiles')
-        .select('*')
-        .order('primary_role')
-        .order('last_name');
-      
-      if (error) throw error;
-      return data as PersonnelProfile[];
+      try {
+        // Primary: RPC to avoid RLS/PostgREST issues
+        const { data, error } = await supabase.rpc('list_personnel_profiles_minimal');
+        if (error) throw error;
+        const rows = (data || []).map((r: any) => ({
+          id: r.id,
+          display_name: r.display_name || r.full_name || '',
+          first_name: null,
+          last_name: null,
+          primary_role: r.primary_role || 'clerk',
+          title: r.title || '',
+          department: r.department || '',
+          phone: '',
+          extension: '',
+          fax: '',
+          email: '',
+          room_number: '',
+          floor: '',
+          building: '',
+          is_active: r.is_active ?? true,
+          is_available_for_assignment: true,
+          notes: '',
+          specializations: [],
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })) as PersonnelProfile[];
+        return rows;
+      } catch (e1) {
+        try {
+          // Fallback: minimal occupants via RPC
+          const { data: occ, error: occErr } = await supabase.rpc('list_occupants_minimal');
+          if (occErr) throw occErr;
+          const rows4 = (occ || []).map((o: any) => ({
+            id: o.id,
+            display_name: `${o.first_name || ''} ${o.last_name || ''}`.trim(),
+            first_name: o.first_name || null,
+            last_name: o.last_name || null,
+            primary_role: 'clerk' as any,
+            title: o.title || '',
+            department: o.department || '',
+            phone: '',
+            extension: '',
+            fax: '',
+            email: '',
+            room_number: '',
+            floor: '',
+            building: '',
+            is_active: true,
+            is_available_for_assignment: true,
+            notes: '',
+            specializations: [],
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })) as PersonnelProfile[];
+          return rows4;
+        } catch {
+          return [] as PersonnelProfile[];
+        }
+      }
     },
   });
 
   // Filter profiles based on role and search
-  const filteredProfiles = profiles?.filter(profile => {
+  const filteredProfiles = (profiles || [])
+    // Client-side sort to avoid server 500s on order
+    .slice()
+    .sort((a, b) => (a.display_name || '').localeCompare(b.display_name || ''))
+    .filter(profile => {
     const matchesRole = selectedRole === 'all' || profile.primary_role === selectedRole;
     const matchesSearch = searchTerm === '' || 
       profile.display_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
