@@ -1,6 +1,5 @@
 // Re-export supabase client for compatibility
 export { supabase, supabaseWithRetry } from '@/lib/supabase';
-export type { Database } from '@/lib/supabase';
 
 // Re-export all lighting service functions
 export * from './lightingService';

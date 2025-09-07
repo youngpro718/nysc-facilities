@@ -15,7 +15,7 @@ let currentLevel: LogLevel = envLevel;
 
 function shouldLog(level: Exclude<LogLevel, 'silent'>) {
   if (currentLevel === 'silent') return false;
-  return levelPriority[level] >= levelPriority[(currentLevel as Exclude<LogLevel, 'silent'>)] ?? 10;
+  return levelPriority[level] >= (levelPriority[currentLevel as Exclude<LogLevel, 'silent'>] ?? 10);
 }
 
 function formatMessage(level: string, message: string, context?: unknown) {
