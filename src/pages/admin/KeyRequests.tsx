@@ -35,7 +35,7 @@ interface KeyRequestWithUser {
     email: string;
     phone: string | null;
   };
-  rooms?: {
+  unified_spaces?: {
     name: string;
     room_number: string;
   };
@@ -152,8 +152,8 @@ export default function AdminKeyRequests() {
             ? 'Key Request Approved' 
             : 'Key Request Denied';
           
-          const roomInfo = selectedRequest.rooms 
-            ? `${selectedRequest.rooms.room_number} - ${selectedRequest.rooms.name}`
+          const roomInfo = selectedRequest.unified_spaces 
+            ? `${selectedRequest.unified_spaces.room_number} - ${selectedRequest.unified_spaces.name}`
             : selectedRequest.room_other || 'unspecified room';
 
           const notificationMessage = updates.status === 'approved'
@@ -300,8 +300,8 @@ export default function AdminKeyRequests() {
                     <div>
                       <p className="font-medium text-sm text-muted-foreground mb-1">Room</p>
                       <p className="text-sm">
-                        {request.rooms 
-                          ? `${request.rooms.room_number} - ${request.rooms.name}`
+                        {request.unified_spaces 
+                          ? `${request.unified_spaces.room_number} - ${request.unified_spaces.name}`
                           : request.room_other || "Not specified"
                         }
                       </p>

@@ -72,7 +72,7 @@ export const useBuildingData = (userId?: string) => {
                 if (!acc[key]) acc[key] = [];
                 acc[key].push({
                   ...fx,
-                  bulb_count: fx.bulb_count || 1,
+                  bulb_count: fx.bulb_count ?? 1,
                 });
                 return acc;
               }, {} as Record<string, any[]>);
@@ -87,7 +87,7 @@ export const useBuildingData = (userId?: string) => {
                 ...room,
                 lighting_fixtures: (fixturesByRoom[room.id] || []).map((fixture: any) => ({
                   ...fixture,
-                  bulb_count: fixture.bulb_count || 1,
+                  bulb_count: fixture.bulb_count ?? 1,
                 })),
               });
               return acc;
@@ -95,11 +95,11 @@ export const useBuildingData = (userId?: string) => {
 
             // Precompute building-level lighting stats
             const allFixtures = Object.values(fixturesByRoom).flat();
-            const lightingTotalFixtures = allFixtures.reduce((acc: number, fx: any) => acc + (fx.bulb_count || 1), 0);
+            const lightingTotalFixtures = allFixtures.reduce((acc: number, fx: any) => acc + (fx.bulb_count ?? 1), 0);
             const lightingWorkingFixtures = allFixtures.reduce((acc: number, fx: any) => {
               const status = (fx.status ?? '').toString().toLowerCase();
               const isWorking = status === 'working' || status === 'functional';
-              return acc + (isWorking ? (fx.bulb_count || 1) : 0);
+              return acc + (isWorking ? (fx.bulb_count ?? 1) : 0);
             }, 0);
 
             // Combine everything
