@@ -1,7 +1,6 @@
 type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'silent';
 
 const envLevel: LogLevel = (import.meta?.env?.VITE_LOG_LEVEL as LogLevel) ||
-  (process?.env?.VITE_LOG_LEVEL as LogLevel) ||
   (import.meta?.env?.MODE === 'production' ? 'info' : 'debug');
 
 const levelPriority: Record<Exclude<LogLevel, 'silent'>, number> = {
