@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Filter, MapPin, Lightbulb, AlertTriangle } from "lucide-react";
 import { LightingFixture } from "@/types/lighting";
 import { RoomLightingCard } from "./RoomLightingCard";
+import * as locationUtil from "@/components/lighting/utils/location";
 import { cn } from "@/lib/utils";
 
 interface RoomLightingViewProps {
@@ -51,9 +52,16 @@ export const RoomLightingView = ({
     
     fixtures.forEach(fixture => {
       const roomKey = fixture.space_id || `unknown-${fixture.room_number || 'no-room'}`;
-      const roomNumber = fixture.room_number || 'Unknown Room';
-      const roomName = fixture.space_name || 'Unnamed Room';
-      
+      // Clean placeholders and avoid forcing Unknown/Unnamed in UI
+      const rawNumber = fixture.room_number || "";
+      const rawName = fixture.space_name || "";
+      const isPlaceholder = (v?: string | null) => {
+        const s = (v || '').trim().toLowerCase();
+        return s === 'unknown' || s === 'unnamed' || s === 'unknown room' || s === 'unnamed room';
+      };
+      const roomNumber = isPlaceholder(rawNumber) ? "" : rawNumber;
+      const roomName = isPlaceholder(rawName) ? "" : rawName;
+
       if (!groups.has(roomKey)) {
         groups.set(roomKey, {
           roomId: roomKey,

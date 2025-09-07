@@ -20,55 +20,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import * as locationUtil from "@/components/lighting/utils/location";
 import { StatusBadge } from "@/components/lighting/components/StatusBadge";
-import { supabase } from "@/lib/supabase";
+import { markLightsOut, markLightsFixed, toggleElectricianRequired, fetchSiblingFixturesForFixture } from "@/lib/supabase";
 
-const markLightsOut = async (fixtureIds: string[], requiresElectrician: boolean = false) => {
-  const updateData: any = { 
-    status: 'non_functional',
-    reported_out_date: new Date().toISOString()
-  };
-  
-  if (requiresElectrician) {
-    updateData.requires_electrician = true;
-    updateData.electrical_issues = true;
-  }
 
-  const { error } = await supabase
-    .from('lighting_fixtures')
-    .update(updateData)
-    .in('id', fixtureIds);
-  
-  if (error) throw error;
-  return true;
-};
-
-const markLightsFixed = async (fixtureIds: string[]) => {
-  const { error } = await supabase
-    .from('lighting_fixtures')
-    .update({ 
-      status: 'functional',
-      replaced_date: new Date().toISOString(),
-      requires_electrician: false,
-      electrical_issues: false
-    })
-    .in('id', fixtureIds);
-  
-  if (error) throw error;
-  return true;
-};
-
-const toggleElectricianRequired = async (fixtureIds: string[], required: boolean) => {
-  const { error } = await supabase
-    .from('lighting_fixtures')
-    .update({ 
-      requires_electrician: required,
-      electrical_issues: required 
-    })
-    .in('id', fixtureIds);
-  
-  if (error) throw error;
-  return true;
-};
 
 interface CardFrontProps {
   fixture: LightingFixture;
@@ -100,6 +54,13 @@ export function CardFront({
       // Return empty array since we're not using this functionality
       return [];
     }
+  });
+
+  // Fetch sibling fixtures within the same room/space to represent as bars
+  const { data: roomFixtures = [] } = useQuery({
+    queryKey: ["lighting-room-fixtures", fixture.id],
+    enabled: !!fixture.id,
+    queryFn: async () => fetchSiblingFixturesForFixture(fixture.id)
   });
 
   const openIssue = (fixtureIssues || []).find((i: any) => i.status !== "resolved" && (i.issue_id || i.id));
@@ -134,19 +95,51 @@ export function CardFront({
   // Quick actions
   const [isActing, setIsActing] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  // Inline UI for choosing outage type when clicking a bar
+  const [barChoiceIndex, setBarChoiceIndex] = useState<number | null>(null);
+  const [selectedFixtureId, setSelectedFixtureId] = useState<string | null>(null);
+  // Local overrides so the UI reflects changes immediately
+  const [localStatuses, setLocalStatuses] = useState<Record<string, { status: 'functional' | 'non_functional'; requires_electrician?: boolean }>>({});
+  const [showOutChoice, setShowOutChoice] = useState(false);
   const handleMarkOut = async (requiresElectrician: boolean) => {
     try {
       setIsActing(true);
+      // Optimistic UI for the card's own fixture and ensure pill is visible
+      setSelectedFixtureId(fixture.id);
+      setLocalStatuses(prev => ({
+        ...prev,
+        [fixture.id]: { status: 'non_functional', requires_electrician: requiresElectrician }
+      }));
       await markLightsOut([fixture.id], requiresElectrician);
       onFixtureUpdated();
     } finally {
       setIsActing(false);
     }
   };
+
+  // When clicking a visual bar, decide how to classify outage
+  const handleBarClick = async (index: number) => {
+    setBarChoiceIndex(index);
+    const target = roomFixtures[index] || fixture;
+    setSelectedFixtureId(target.id);
+    const tech = (target.technology || '').toString().toLowerCase();
+    if (tech === 'led') {
+      // Optimistic UI update
+      setLocalStatuses(prev => ({ ...prev, [target.id]: { status: 'non_functional', requires_electrician: true } }));
+      await markLightsOut([target.id], true);
+      onFixtureUpdated();
+      setShowOutChoice(false);
+      return;
+    }
+    setShowOutChoice(true);
+  };
   const handleMarkFixed = async () => {
     try {
       setIsActing(true);
-      await markLightsFixed([fixture.id]);
+      const ids = selectedFixtureId ? [selectedFixtureId] : [fixture.id];
+      // Optimistic UI update
+      setLocalStatuses(prev => ({ ...prev, [ids[0]]: { status: 'functional', requires_electrician: false } }));
+      await markLightsFixed(ids);
       onFixtureUpdated();
     } finally {
       setIsActing(false);
@@ -192,55 +185,130 @@ export function CardFront({
   // Use shared location formatter for consistency across the module
   const getLocationText = () => locationUtil.getFixtureFullLocationText(fixture);
 
+  // Map position to human-friendly mounting label
+  const getMountLabel = () => {
+    const map: Record<string, string> = {
+      ceiling: 'Ceiling-mounted',
+      wall: 'Wall-mounted',
+      floor: 'Floor-mounted',
+      desk: 'Desk-mounted',
+    };
+    return map[String(fixture.position)] ?? 'Ceiling-mounted';
+  };
+
+  // Prefer room/space label for title with robust fallbacks
+  const getTitle = () => {
+    // Use shared short formatter to ensure we include room name and number when present
+    const short = locationUtil.getFixtureLocationText(fixture);
+    if (short && !/^unknown room$/i.test(short)) return short;
+    if (fixture.building_name && fixture.floor_name) return `${fixture.building_name} • ${fixture.floor_name}`;
+    if (fixture.building_name) return fixture.building_name!;
+    return fixture.name;
+  };
+
   return (
     <Card className={cn(
-      "w-full h-[280px] flex flex-col rounded-xl border bg-card shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5",
+      "w-full h-[280px] flex flex-col rounded-2xl border border-border/40 bg-card/80 backdrop-blur-sm shadow-sm transition-all duration-300 hover:shadow-md",
       isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background"
     )}>
-      <CardHeader className="pt-4 pb-2 px-4">
+      <CardHeader className="pt-4 pb-1 px-4">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Checkbox 
+          <div className="flex items-center gap-2 min-w-0">
+            <Checkbox
               checked={isSelected}
               onCheckedChange={onSelect}
-              className="rounded-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+              className="rounded-sm data-[state=checked]:bg-primary"
             />
-            <h3 className="font-semibold text-[15px] truncate">{fixture.name}</h3>
+            <h3 className="font-semibold text-[17px] tracking-[-0.01em] truncate">{getTitle()}</h3>
           </div>
-          <div className="flex items-center gap-2">
-            <StatusBadge status={fixture.status} />
+          <div className="flex items-center gap-1.5">
             <Button
               variant="ghost"
               size="icon"
-              className="rounded-md hover:bg-muted/60 bg-background/80 backdrop-blur-sm"
+              className="rounded-md hover:bg-muted/60"
               onClick={onFlip}
+              title="Flip"
             >
               <RotateCw className="h-4 w-4" />
             </Button>
+            <StatusBadge status={fixture.status} />
           </div>
         </div>
       </CardHeader>
 
       <CardContent className="px-4 pb-3 space-y-3 flex flex-col h-full">
-        {/* Meta: two lines */}
-        <div className="text-xs text-muted-foreground truncate">
-          {getLocationText()}
-        </div>
-        <div className="text-xs text-muted-foreground truncate">
-          <span>{fixture.technology || 'N/A'}</span>
-          <span className="mx-1">•</span>
-          <span className="inline-flex items-center gap-1"><Lightbulb className="h-3 w-3" />{fixture.bulb_count ?? '—'}</span>
-          <span className="mx-1">•</span>
-          <span>{fixture.zone_name || 'Unassigned'}</span>
+        {/* Meta */}
+        <div className="text-sm text-muted-foreground flex items-center gap-2">
+          <span className="inline-flex items-center gap-1">
+            <Lightbulb className="h-4 w-4 opacity-80" />
+            {Math.max(1, Math.min(4, Number(fixture.bulb_count || 2)))}× {fixture.technology || 'Fluorescent Tube'}
+          </span>
+          <span className="text-muted-foreground/60">•</span>
+          <span className="truncate">{getMountLabel()}</span>
         </div>
 
-        {fixture.next_maintenance_date && (
-          <div className={cn(
-            "flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ring-1 ring-border",
-            isMaintenanceSoon() ? "bg-yellow-50 text-yellow-800" : "bg-blue-50 text-blue-800"
-          )}>
-            <Calendar className="h-3 w-3" />
-            <span>Maintenance: {formatMaintenanceDate(fixture.next_maintenance_date)}</span>
+        {/* Middle row: bulb visual + status pill */}
+        <div className="flex items-stretch gap-3">
+          <div className="flex-1 rounded-xl border border-border/50 bg-muted/10 p-3">
+            <div className="flex items-center gap-3">
+              {/* simple two-bar representation */}
+              <div className={`flex-1 grid gap-3`} style={{ gridTemplateColumns: `repeat(${Math.max(1, Math.min(4, roomFixtures.length || 1))}, minmax(0, 1fr))` }}>
+                {(roomFixtures.length ? roomFixtures : [fixture]).slice(0, 4).map((fx, idx) => {
+                  const override = localStatuses[fx.id];
+                  const statusNow = override?.status ?? fx.status;
+                  const reqElecNow = override?.requires_electrician ?? fx.requires_electrician;
+                  const isOut = statusNow === 'non_functional';
+                  const isSelected = barChoiceIndex === idx;
+                  return (
+                    <button
+                      key={fx.id}
+                      type="button"
+                      onClick={() => handleBarClick(idx)}
+                      disabled={isActing}
+                      title={`Select fixture #${idx + 1}`}
+                      className={`h-4 rounded-md relative overflow-hidden cursor-pointer focus:outline-none focus:ring-2 border border-border/60 ${isOut ? 'bg-muted/20 opacity-70' : 'bg-foreground/5'} focus:ring-ring ${isSelected ? 'ring-2 ring-primary' : ''}`}
+                    >
+                      {/* simple fill to mimic design - neutral only */}
+                      {!isOut && (
+                        <div className="absolute inset-0 flex items-center">
+                          <div className="h-4 w-[85%] rounded-md bg-foreground/60" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <div className="shrink-0 self-center">
+            {(() => {
+              // Show pill based on selected fixture if any; else fall back to card fixture
+              const baseId = selectedFixtureId || fixture.id;
+              const fallbackFx = selectedFixtureId ? roomFixtures.find(rf => rf.id === selectedFixtureId) : fixture;
+              const override = localStatuses[baseId];
+              const statusNow = override?.status ?? fallbackFx?.status;
+              const reqElecNow = override?.requires_electrician ?? (fallbackFx as any)?.requires_electrician;
+              if (statusNow !== 'non_functional') return null;
+              return (
+                <div className={`px-3 py-2 rounded-md text-sm font-medium shadow-sm ${reqElecNow ? 'bg-destructive text-destructive-foreground' : 'bg-amber-500/90 text-black'}`}>
+                  {reqElecNow ? 'Ballast issue' : 'Bulb out'}
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+
+        {showOutChoice && (
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-muted-foreground">Mark selected fixture as:</span>
+            <Button size="sm" variant="secondary" disabled={isActing} onClick={async () => { if(selectedFixtureId) { setLocalStatuses(prev => ({ ...prev, [selectedFixtureId]: { status: 'non_functional', requires_electrician: false } })); await markLightsOut([selectedFixtureId], false); onFixtureUpdated(); } setShowOutChoice(false); }}>
+              Bulb issue
+            </Button>
+            <Button size="sm" variant="destructive" disabled={isActing} onClick={async () => { if(selectedFixtureId) { setLocalStatuses(prev => ({ ...prev, [selectedFixtureId]: { status: 'non_functional', requires_electrician: true } })); await markLightsOut([selectedFixtureId], true); onFixtureUpdated(); } setShowOutChoice(false); }}>
+              Ballast issue (Electrician)
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setShowOutChoice(false)}>Cancel</Button>
           </div>
         )}
 
@@ -276,11 +344,21 @@ export function CardFront({
                     Out for {formatDuration(fixture.reported_out_date)}
                   </span>
                   {fixture.requires_electrician ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-secondary text-secondary-foreground ring-1 ring-border/50 px-2 py-0.5">
+                    <span
+                      role="button"
+                      title="Toggle electrician required"
+                      onClick={() => handleToggleElectrician()}
+                      className="inline-flex items-center gap-1 rounded-full bg-secondary text-secondary-foreground ring-1 ring-border/50 px-2 py-0.5 cursor-pointer hover:opacity-90"
+                    >
                       Issue: Ballast (Electrician)
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-secondary text-secondary-foreground ring-1 ring-border/50 px-2 py-0.5">
+                    <span
+                      role="button"
+                      title="Mark as out - bulb"
+                      onClick={() => handleMarkOut(false)}
+                      className="inline-flex items-center gap-1 rounded-full bg-secondary text-secondary-foreground ring-1 ring-border/50 px-2 py-0.5 cursor-pointer hover:opacity-90"
+                    >
                       Issue: Bulb
                     </span>
                   )}
@@ -307,46 +385,22 @@ export function CardFront({
           )}
         </div>
 
-        <div className="mt-auto flex justify-between items-center gap-2 pt-2 border-t bg-muted/30 rounded-b-xl backdrop-blur supports-[backdrop-filter]:bg-muted/20">
+        {/* Footer actions */}
+        <div className="mt-auto pt-2">
           {showDeleteConfirm ? (
             <div className="flex items-center gap-2">
               <span className="text-xs text-red-600">Confirm?</span>
-              <Button 
-                variant="destructive" 
-                size="sm"
-                onClick={onDelete}
-              >
-                Yes
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setShowDeleteConfirm(false)}
-              >
-                No
-              </Button>
+              <Button variant="destructive" size="sm" onClick={onDelete}>Yes</Button>
+              <Button variant="outline" size="sm" onClick={() => setShowDeleteConfirm(false)}>No</Button>
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              {/* Quick actions for outage / repair */}
-              {fixture.status !== 'non_functional' ? (
-                <>
-                  <Button size="sm" variant="secondary" disabled={isActing} onClick={() => handleMarkOut(false)}>
-                    Out - Bulb
-                  </Button>
-                  <Button size="sm" variant="destructive" disabled={isActing} onClick={() => handleMarkOut(true)}>
-                    Out - Electrician
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button size="sm" variant="default" disabled={isActing} onClick={handleMarkFixed}>
-                    Mark Repaired
-                  </Button>
-                </>
+              {fixture.status === 'non_functional' && (
+                <Button className="w-full" size="sm" variant="default" disabled={isActing} onClick={handleMarkFixed}>
+                  Mark Repaired
+                </Button>
               )}
 
-              {/* Secondary actions in menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="rounded-md hover:bg-muted/60">

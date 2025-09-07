@@ -10,6 +10,7 @@ import { CreateFixtureFields } from "./form-sections/CreateFixtureFields";
 import { lightingFixtureSchema, type LightingFixtureFormData } from "./schemas/lightingSchema";
 import { supabase } from "@/lib/supabase";
 import { BaseLightingDialog } from "./shared/BaseLightingDialog";
+import * as locationUtil from "@/components/lighting/utils/location";
 import { StandardFormSection } from "./shared/StandardFormSection";
 
 interface EditLightingDialogProps {
@@ -69,7 +70,7 @@ export function EditLightingDialog({ fixture, onFixtureUpdated, open: externalOp
 
   const contextInfo = [
     { label: "Current Status", value: fixture.status, icon: <Lightbulb className="h-3 w-3" /> },
-    { label: "Location", value: fixture.room_number || 'Unassigned', icon: <MapPin className="h-3 w-3" /> },
+    { label: "Location", value: locationUtil.getFixtureFullLocationText(fixture), icon: <MapPin className="h-3 w-3" /> },
     { label: "Technology", value: fixture.technology || 'Unknown', icon: <Lightbulb className="h-3 w-3" /> },
     { label: "Last Updated", value: new Date(fixture.updated_at || Date.now()).toLocaleDateString(), icon: <Clock className="h-3 w-3" /> }
   ];

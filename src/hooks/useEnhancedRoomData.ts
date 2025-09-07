@@ -14,7 +14,7 @@ export function useEnhancedRoomData(roomId: string) {
           floor:floors(
             id,
             name,
-            building:buildings(
+            building:buildings!floors_building_id_fkey(
               id,
               name
             )
@@ -75,7 +75,8 @@ export function useEnhancedRoomData(roomId: string) {
       const { data: lightingFixtures } = await supabase
         .from('lighting_fixtures')
         .select('*')
-        .eq('room_id', roomId);
+        .eq('space_type', 'room')
+        .eq('space_id', roomId);
 
       // Calculate lighting status
       const totalFixtures = lightingFixtures?.length || 0;
@@ -113,13 +114,13 @@ export function useEnhancedRoomData(roomId: string) {
       // Transform lighting fixtures with outage duration
       const enhancedLightingFixtures: LightingFixtureStatus[] = lightingFixtures?.map(fixture => ({
         id: fixture.id,
-        room_id: fixture.room_id,
+        room_id: roomId,
         fixture_name: fixture.name || 'Unknown',
-        location: fixture.room_number || fixture.position || 'General Area',
+        location: fixture.position || 'General Area',
         status: fixture.status as 'functional' | 'out' | 'flickering' | 'maintenance',
         reported_out_date: fixture.reported_out_date,
         ballast_issue: fixture.ballast_issue || false,
-        last_serviced: fixture.last_maintenance_date,
+        last_serviced: fixture.replaced_date,
         outage_duration_days: fixture.reported_out_date 
           ? Math.floor((Date.now() - new Date(fixture.reported_out_date).getTime()) / (1000 * 60 * 60 * 24))
           : undefined

@@ -26,7 +26,8 @@ export function LightingStatusBadge({ roomId, roomNumber }: LightingStatusBadgeP
       const { data, error } = await supabase
         .from('lighting_fixtures')
         .select('status, ballast_issue')
-        .eq('room_id', roomId);
+        .eq('space_type', 'room')
+        .eq('space_id', roomId);
       
       if (error) throw error;
 

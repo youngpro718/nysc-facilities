@@ -7,6 +7,7 @@ import { LightingFixture } from "@/types/lighting";
 import { formatDistanceToNow } from "date-fns";
 import { Lightbulb, Zap, AlertTriangle, CheckCircle, Search } from "lucide-react";
 import { supabase, markLightsOut, markLightsFixed, toggleElectricianRequired } from "@/lib/supabase";
+import * as locationUtil from "@/components/lighting/utils/location";
 import { toast } from "sonner";
 
 interface SimpleLightingTableProps {
@@ -33,9 +34,8 @@ export function SimpleLightingTable({ fixtures, onRefresh }: SimpleLightingTable
 
   // Filter fixtures based on search and status
   const filteredFixtures = fixtures.filter(fixture => {
-    const matchesSearch = fixture.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         fixture.room_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         '';
+    const hay = `${fixture.name} ${locationUtil.getFixtureFullLocationText(fixture)}`.toLowerCase();
+    const matchesSearch = hay.includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === 'all' ||
                          (statusFilter === 'functional' && fixture.status === 'functional') ||
@@ -233,7 +233,7 @@ export function SimpleLightingTable({ fixtures, onRefresh }: SimpleLightingTable
                       onCheckedChange={(checked) => handleSelectFixture(fixture.id, checked as boolean)}
                     />
                   </td>
-                  <td className="p-3 font-medium">{fixture.room_number || 'No Room'}</td>
+                  <td className="p-3 font-medium">{locationUtil.getFixtureLocationText(fixture)}</td>
                   <td className="p-3">{fixture.name}</td>
                   <td className="p-3">
                     {getTechnologyBadge(fixture.technology, fixture.bulb_count)}

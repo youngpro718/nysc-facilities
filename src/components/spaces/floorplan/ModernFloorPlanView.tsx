@@ -80,7 +80,7 @@ export function ModernFloorPlanView() {
       try {
         const { data, error } = await supabase
           .from('floors')
-          .select('*, buildings(name)')
+          .select('*, buildings!floors_building_id_fkey(name)')
           .order('floor_number', { ascending: false });
 
         if (error) throw error;

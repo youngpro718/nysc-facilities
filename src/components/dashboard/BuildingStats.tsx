@@ -46,6 +46,10 @@ export const BuildingStats = ({
     }
   };
 
+  const percentOperational = totalFixtures > 0
+    ? Math.round((workingFixtures / totalFixtures) * 100)
+    : 0;
+
   return (
     <div className="grid gap-3 md:grid-cols-3">
       <TooltipProvider>
@@ -125,7 +129,7 @@ export const BuildingStats = ({
       </div>
       <div className="flex items-baseline justify-between">
         <span className="text-xl font-bold">{workingFixtures}</span>
-        <span className="text-xs text-muted-foreground">Working Fixtures</span>
+        <span className="text-xs text-muted-foreground">Operational</span>
       </div>
       <div className="space-y-1">
         <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
@@ -139,7 +143,7 @@ export const BuildingStats = ({
         <div className="flex justify-between text-[10px]">
           <span className="text-muted-foreground">Total: {totalFixtures}</span>
           <span className="font-medium text-green-500">
-            {Math.round((workingFixtures / totalFixtures) * 100)}% Operational
+            {percentOperational}% Operational
           </span>
         </div>
       </div>

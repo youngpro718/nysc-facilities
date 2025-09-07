@@ -12,14 +12,17 @@ import {
   Plus,
   RefreshCw
 } from "lucide-react";
-import { fetchLightingFixtures } from "@/lib/supabase";
+import { fetchLightingFixtures, supabaseWithRetry } from "@/lib/supabase";
 import { LightStatus } from "@/types/lighting";
 import { CreateLightingDialog } from "../../CreateLightingDialog";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 export function LightingDashboard() {
-  const { data: fixtures, isLoading, refetch } = useQuery({
+  const navigate = useNavigate();
+  const { data: fixtures, isLoading, error, refetch } = useQuery({
     queryKey: ['lighting-fixtures'],
-    queryFn: fetchLightingFixtures,
+    queryFn: () => supabaseWithRetry.query(fetchLightingFixtures),
   });
 
   if (isLoading) {
@@ -37,6 +40,27 @@ export function LightingDashboard() {
           </Card>
         ))}
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="border-destructive">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-destructive">
+            <AlertTriangle className="h-5 w-5" />
+            Failed to load lighting data
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">Please try again.</p>
+            <Button size="sm" variant="outline" onClick={() => refetch()}>
+              Retry
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -157,27 +181,50 @@ export function LightingDashboard() {
               onZoneCreated={() => refetch()}
             />
             
-            <Button variant="outline" className="justify-start gap-2">
+            <Button
+              variant="outline"
+              className="justify-start gap-2"
+              onClick={() => navigate('/operations?tab=maintenance')}
+            >
               <Wrench className="h-4 w-4" />
               Schedule Maintenance
             </Button>
             
-            <Button variant="outline" className="justify-start gap-2">
+            <Button
+              variant="outline"
+              className="justify-start gap-2"
+              onClick={() => navigate('/spaces')}
+            >
               <MapPin className="h-4 w-4" />
               Manage Rooms
             </Button>
             
-            <Button variant="outline" className="justify-start gap-2">
+            <Button
+              variant="outline"
+              className="justify-start gap-2"
+              onClick={async () => {
+                await refetch();
+                toast.success('System check complete', { description: 'Fixture data refreshed.' });
+              }}
+            >
               <RefreshCw className="h-4 w-4" />
               System Check
             </Button>
             
-            <Button variant="outline" className="justify-start gap-2">
+            <Button
+              variant="outline"
+              className="justify-start gap-2"
+              onClick={() => navigate('/operations?tab=issues')}
+            >
               <AlertTriangle className="h-4 w-4" />
               View All Issues
             </Button>
             
-            <Button variant="outline" className="justify-start gap-2">
+            <Button
+              variant="outline"
+              className="justify-start gap-2"
+              onClick={() => navigate('/operations?tab=analytics')}
+            >
               <TrendingUp className="h-4 w-4" />
               Energy Report
             </Button>

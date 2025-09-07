@@ -9,7 +9,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
+import { fetchRoomWithLightingFixtures } from "@/lib/supabase";
 import { calculateRoomLightingStatus } from "@/utils/dashboardUtils";
 
 interface LightingStatusIndicatorProps {
@@ -21,28 +21,7 @@ export function LightingStatusIndicator({ roomId }: LightingStatusIndicatorProps
     queryKey: ['room', roomId],
     queryFn: async () => {
       if (!roomId) return null;
-      
-      const { data: room, error } = await supabase
-        .from('rooms')
-        .select(`
-          id,
-          name,
-          room_number,
-          lighting_fixtures (
-            id,
-            status,
-            bulb_count
-          )
-        `)
-        .eq('id', roomId)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error fetching room data:', error);
-        return null;
-      }
-
-      return room;
+      return await fetchRoomWithLightingFixtures(roomId);
     },
     enabled: !!roomId
   });

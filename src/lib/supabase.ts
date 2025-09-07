@@ -178,7 +178,7 @@ export const authService = {
   }
 };
 
-import type { LightStatus } from '@/types/lighting';
+import type { LightStatus, LightingFixture } from '@/types/lighting';
 
 // Export lighting service functions for compatibility  
 export const markLightsOut = async (fixtureIds: string[], requiresElectrician: boolean = false) => {
@@ -250,7 +250,99 @@ export const fetchLightingFixtures = async () => {
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return data || [];
+
+  const fixtures = data || [];
+
+  // Enrich fixtures with location info by explicitly fetching spatial_assignments and joining to rooms/unified_spaces
+  try {
+    if (!fixtures.length) return fixtures;
+    const fixtureIds = fixtures.map((f: any) => f.id);
+
+    // 1) Fetch spatial assignments by fixture ids (avoids relying on FK relationship in nested select)
+    const { data: assignments, error: assignError } = await supabase
+      .from('spatial_assignments')
+      .select('fixture_id, space_id, space_type, position, sequence_number')
+      .in('fixture_id', fixtureIds);
+    if (assignError) throw assignError;
+
+    const assignmentsByFixture = new Map<string, any[]>();
+    for (const a of (assignments || [])) {
+      const arr = assignmentsByFixture.get(a.fixture_id) || [];
+      arr.push(a);
+      assignmentsByFixture.set(a.fixture_id, arr);
+    }
+
+    // 2) Collect room ids and generic space ids
+    const roomIds = new Set<string>();
+    const genericSpaceIds = new Set<string>();
+    for (const arr of assignmentsByFixture.values()) {
+      for (const a of arr) {
+        if (!a?.space_id) continue;
+        if (a.space_type === 'room') roomIds.add(a.space_id);
+        else genericSpaceIds.add(a.space_id);
+      }
+    }
+
+    // 3) Fetch rooms and (optionally) unified_spaces for non-room types
+    const [roomsRes, spacesRes] = await Promise.all([
+      roomIds.size
+        ? supabase.from('rooms').select('id, name, room_number').in('id', Array.from(roomIds))
+        : Promise.resolve({ data: [], error: null } as any),
+      genericSpaceIds.size
+        ? supabase.from('unified_spaces').select('id, name, room_number, building_name, floor_name').in('id', Array.from(genericSpaceIds))
+        : Promise.resolve({ data: [], error: null } as any)
+    ]);
+
+    if (roomsRes.error) throw roomsRes.error;
+    if (spacesRes.error) throw spacesRes.error;
+
+    const roomsMap = new Map((roomsRes.data as any[]).map((r: any) => [r.id, r]));
+    const spaceMap = new Map((spacesRes.data as any[]).map((s: any) => [s.id, s]));
+
+    // 4) Merge onto fixtures
+    const enriched = fixtures.map((f: any) => {
+      const arr = assignmentsByFixture.get(f.id) || [];
+      const sa = arr.find((x: any) => x && x.space_id) || null;
+      let sName: string | null = null;
+      let rNumber: string | null = null;
+      let bName: string | null = null;
+      let flName: string | null = null;
+
+      if (sa?.space_type === 'room') {
+        const r = sa.space_id ? roomsMap.get(sa.space_id) : null;
+        if (r) {
+          sName = r.name ?? null;
+          rNumber = r.room_number ?? null;
+        }
+      } else if (sa?.space_id) {
+        const s = spaceMap.get(sa.space_id);
+        if (s) {
+          sName = s.name ?? null;
+          rNumber = s.room_number ?? null;
+          bName = s.building_name ?? null;
+          flName = s.floor_name ?? null;
+        }
+      }
+
+      return {
+        ...f,
+        spatial_assignments: arr,
+        space_id: f.space_id ?? sa?.space_id ?? null,
+        space_type: f.space_type ?? sa?.space_type ?? null,
+        space_name: f.space_name ?? sName ?? null,
+        room_number: f.room_number ?? rNumber ?? null,
+        building_name: f.building_name ?? bName ?? null,
+        floor_name: f.floor_name ?? flName ?? null,
+        zone_name: f.zone_name ?? (f.lighting_zones ? (f.lighting_zones as any).name : null),
+      };
+    });
+
+    return enriched;
+  } catch (e) {
+    console.warn('Lighting fixtures enrichment failed:', e);
+  }
+
+  return fixtures;
 };
 
 export const fetchRoomLightingStats = async () => {
@@ -270,6 +362,96 @@ export const fetchRoomLightingStats = async () => {
   
   if (error) throw error;
   return data || [];
+};
+
+// Explicitly fetch a room and its lighting fixtures without using reverse relationship shorthand.
+// Resolves fixture IDs via spatial_assignments where space_type='room' and space_id=roomId,
+// then loads minimal fixture fields required by UI calculators.
+export const fetchRoomWithLightingFixtures = async (
+  roomId: string
+): Promise<{ id: string; name: string; room_number: string | null; lighting_fixtures: Array<{ id: string; status: any; bulb_count: number }> } | null> => {
+  // Fetch basic room info
+  const { data: room, error: roomErr } = await supabase
+    .from('rooms')
+    .select('id, name, room_number')
+    .eq('id', roomId)
+    .maybeSingle();
+  if (roomErr) throw roomErr;
+  if (!room) return null;
+
+  // Resolve fixture IDs via spatial assignments
+  const { data: assignments, error: assignErr } = await supabase
+    .from('spatial_assignments')
+    .select('fixture_id')
+    .eq('space_id', roomId)
+    .eq('space_type', 'room');
+  if (assignErr) throw assignErr;
+
+  const fixtureIds = Array.from(new Set((assignments || []).map((a: any) => a.fixture_id))).filter(Boolean) as string[];
+
+  let fixtures: Array<{ id: string; status: any; bulb_count: number }> = [];
+  if (fixtureIds.length) {
+    const { data: fx, error: fxErr } = await supabase
+      .from('lighting_fixtures')
+      .select('id, status, bulb_count')
+      .in('id', fixtureIds);
+    if (fxErr) throw fxErr;
+    fixtures = (fx || []) as Array<{ id: string; status: any; bulb_count: number }>;
+  }
+
+  return {
+    id: room.id,
+    name: room.name,
+    room_number: room.room_number ?? null,
+    lighting_fixtures: fixtures,
+  };
+};
+
+// Fetch sibling fixtures for a given fixture by resolving its space via spatial_assignments.
+// Avoids relying on lighting_fixtures.space_id and sorts by spatial_assignments.sequence_number (nulls first).
+export const fetchSiblingFixturesForFixture = async (
+  fixtureId: string
+): Promise<Array<Pick<LightingFixture, 'id' | 'technology' | 'status' | 'requires_electrician'>>> => {
+  // 1) Resolve space_id for this fixture
+  const { data: ownAssn, error: ownAssnErr } = await supabase
+    .from('spatial_assignments')
+    .select('space_id')
+    .eq('fixture_id', fixtureId)
+    .limit(1);
+  if (ownAssnErr) throw ownAssnErr;
+  const spaceId = ownAssn?.[0]?.space_id as string | null | undefined;
+  if (!spaceId) return [];
+
+  // 2) Fetch all assignments in the same space and build sequence map
+  const { data: assignments, error: assignError } = await supabase
+    .from('spatial_assignments')
+    .select('fixture_id, sequence_number')
+    .eq('space_id', spaceId);
+  if (assignError) throw assignError;
+
+  const fixtureIds = Array.from(new Set((assignments || []).map((a: any) => a.fixture_id)));
+  const seqMap = new Map<string, number | null>(
+    (assignments || []).map((a: any) => [a.fixture_id, a.sequence_number ?? null])
+  );
+  if (!fixtureIds.length) return [];
+
+  // 3) Fetch minimal fields for sibling fixtures
+  const { data, error } = await supabase
+    .from('lighting_fixtures')
+    .select('id, technology, status, requires_electrician')
+    .in('id', fixtureIds);
+  if (error) throw error;
+
+  // 4) Sort by sequence_number (nulls first)
+  const sorted = (data || []).slice().sort((a: any, b: any) => {
+    const sa = seqMap.get(a.id);
+    const sb = seqMap.get(b.id);
+    const va = sa == null ? Number.NEGATIVE_INFINITY : Number(sa);
+    const vb = sb == null ? Number.NEGATIVE_INFINITY : Number(sb);
+    return va - vb;
+  });
+
+  return sorted as Array<Pick<LightingFixture, 'id' | 'technology' | 'status' | 'requires_electrician'>>;
 };
 
 export const deleteLightingFixture = async (id: string) => {

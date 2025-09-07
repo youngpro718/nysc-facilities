@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchLightingFixtures } from "@/lib/supabase";
+import * as locationUtil from "@/components/lighting/utils/location";
 
 interface AlertItem {
   id: string;
@@ -50,7 +51,7 @@ export function AlertsPanel() {
           description: `${fixture.name} is currently non-functional and requires immediate attention.`,
           fixtureId: fixture.id,
           fixtureName: fixture.name,
-          location: `${fixture.building_name || 'Unknown Building'} - ${fixture.floor_name || 'Unknown Floor'} - ${fixture.space_name || fixture.room_number || 'Unknown Room'}`,
+          location: locationUtil.getFixtureFullLocationText(fixture),
           timestamp: new Date()
         });
       }
@@ -64,7 +65,7 @@ export function AlertsPanel() {
           description: `${fixture.name} requires scheduled maintenance.`,
           fixtureId: fixture.id,
           fixtureName: fixture.name,
-          location: `${fixture.building_name || 'Unknown Building'} - ${fixture.floor_name || 'Unknown Floor'} - ${fixture.space_name || fixture.room_number || 'Unknown Room'}`,
+          location: locationUtil.getFixtureFullLocationText(fixture),
           timestamp: new Date()
         });
       }
@@ -81,7 +82,7 @@ export function AlertsPanel() {
             description: `${fixture.name} maintenance was due on ${nextMaintenance.toLocaleDateString()}.`,
             fixtureId: fixture.id,
             fixtureName: fixture.name,
-            location: `${fixture.building_name || 'Unknown Building'} - ${fixture.floor_name || 'Unknown Floor'} - ${fixture.space_name || fixture.room_number || 'Unknown Room'}`,
+            location: locationUtil.getFixtureFullLocationText(fixture),
             timestamp: nextMaintenance
           });
         }

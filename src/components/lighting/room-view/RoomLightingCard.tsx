@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import * as locationUtil from "@/components/lighting/utils/location";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -60,9 +61,9 @@ export const RoomLightingCard = ({
   };
 
   const getStatusColor = () => {
+    // Keep header neutral; use subtle warning when there are any issues
     if (issueFixtures === 0) return "secondary";
-    if (issueFixtures > functionalFixtures) return "destructive";
-    return "outline";
+    return "destructive" as const;
   };
 
   const getStatusText = () => {
@@ -93,8 +94,13 @@ export const RoomLightingCard = ({
           >
             <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <div className="min-w-0 flex-1">
-              <CardTitle className="text-lg truncate">{roomNumber}</CardTitle>
-              <p className="text-sm text-muted-foreground truncate">{roomName}</p>
+              <CardTitle className="text-lg truncate">
+                {fixtures.length > 0
+                  ? locationUtil.getFixtureLocationText(fixtures[0])
+                  : (roomName && roomNumber
+                      ? `${roomName} (${roomNumber.startsWith('#') ? roomNumber : `#${roomNumber}`})`
+                      : roomName || roomNumber || 'Room')}
+              </CardTitle>
               {buildingName && floorName && (
                 <p className="text-xs text-muted-foreground truncate">
                   {buildingName} • {floorName}

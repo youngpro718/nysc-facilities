@@ -60,6 +60,26 @@ export function BuildingsGrid({
       {buildings?.filter(building => building != null && building.id)?.map((building, index) => {
         const { floorCount, roomCount, workingFixtures, totalFixtures } = calculateBuildingStats(building);
 
+        // Prefer precomputed values from the loader if present
+        const effectiveWorking = typeof (building as any).lightingWorkingFixtures === 'number'
+          ? (building as any).lightingWorkingFixtures
+          : workingFixtures;
+        const effectiveTotal = typeof (building as any).lightingTotalFixtures === 'number'
+          ? (building as any).lightingTotalFixtures
+          : totalFixtures;
+
+        // Debug: log computed lighting counts per building
+        try {
+          // eslint-disable-next-line no-console
+          console.debug('LightingCounts', {
+            buildingId: building.id,
+            buildingName: (building as any)?.name,
+            effectiveWorking,
+            effectiveTotal,
+            _lightingDebug: (building as any)?._lightingDebug,
+          });
+        } catch {}
+
         const buildingIssues =
           issues?.filter(
             (issue) =>
@@ -82,8 +102,8 @@ export function BuildingsGrid({
             buildingImage={buildingImages[index % buildingImages.length]}
             floorCount={floorCount}
             roomCount={roomCount}
-            workingFixtures={workingFixtures}
-            totalFixtures={totalFixtures}
+            workingFixtures={effectiveWorking}
+            totalFixtures={effectiveTotal}
             buildingIssues={buildingIssues}
             buildingActivities={buildingActivities}
             onMarkAsSeen={onMarkAsSeen}

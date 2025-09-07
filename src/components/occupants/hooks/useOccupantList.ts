@@ -92,7 +92,7 @@ export function useOccupantList() {
               room_number,
               floors(
                 name,
-                buildings(name)
+                buildings!floors_building_id_fkey(name)
               )
             )
           )

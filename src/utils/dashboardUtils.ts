@@ -42,8 +42,9 @@ export interface RoomLightingStatus {
   non_working_fixtures: number;
 }
 
-const isWorkingStatus = (status: string) => {
-  return status === 'working' || status === 'functional';
+const isWorkingStatus = (status: string | null | undefined) => {
+  const s = (status ?? '').toString().toLowerCase();
+  return s === 'working' || s === 'functional';
 };
 
 export const calculateRoomLightingStatus = (room: Room): RoomLightingStatus => {

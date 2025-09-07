@@ -7,7 +7,7 @@ export const useBuildingData = (userId?: string) => {
   const enabled = !!userId;
   // Fetch buildings with caching
   const { data: buildings = [], isLoading: buildingsIsLoading, refetch: refetchBuildings } = useQuery<Building[]>({
-    queryKey: ['buildings'],
+    queryKey: ['buildings-v2'],
     queryFn: async () => {
       try {
         // First fetch buildings with floors
@@ -20,7 +20,7 @@ export const useBuildingData = (userId?: string) => {
             status,
             created_at,
             updated_at,
-            floors (
+            floors!floors_building_id_fkey (
               id,
               name,
               floor_number,
@@ -46,32 +46,75 @@ export const useBuildingData = (userId?: string) => {
                 name,
                 room_number,
                 floor_id,
-                status,
-                lighting_fixtures (
-                  id,
-                  name,
-                  type,
-                  status,
-                  bulb_count
-                )
+                status
               `)
               .in('floor_id', floorIds)
-              .eq('status', 'active');
+              // Include all rooms; some rooms may not have 'active' status but still contain fixtures we need
+              // to compute building lighting stats
+              // .eq('status', 'active')
 
             if (roomsError) throw roomsError;
 
-            // Group rooms by floor
+            // Build fixtures by room via a direct query (more reliable than nested selects)
+            const roomIds = (roomsData || []).map(r => r.id);
+            let fixturesByRoom: Record<string, any[]> = {};
+            if (roomIds.length > 0) {
+              const { data: fixturesData, error: fixturesError } = await supabase
+                .from('lighting_fixtures')
+                .select('id, status, bulb_count, space_id, space_type')
+                .eq('space_type', 'room')
+                .in('space_id', roomIds);
+
+              if (fixturesError) throw fixturesError;
+
+              fixturesByRoom = (fixturesData || []).reduce((acc: Record<string, any[]>, fx: any) => {
+                const key = fx.space_id;
+                if (!acc[key]) acc[key] = [];
+                acc[key].push({
+                  ...fx,
+                  bulb_count: fx.bulb_count || 1,
+                });
+                return acc;
+              }, {} as Record<string, any[]>);
+            }
+
+            // Group rooms by floor and attach fixtures fetched above
             const roomsByFloor = roomsData?.reduce((acc, room) => {
               if (!acc[room.floor_id]) {
                 acc[room.floor_id] = [];
               }
-              acc[room.floor_id].push(room);
+              acc[room.floor_id].push({
+                ...room,
+                lighting_fixtures: (fixturesByRoom[room.id] || []).map((fixture: any) => ({
+                  ...fixture,
+                  bulb_count: fixture.bulb_count || 1,
+                })),
+              });
               return acc;
             }, {} as Record<string, any[]>) || {};
+
+            // Precompute building-level lighting stats
+            const allFixtures = Object.values(fixturesByRoom).flat();
+            const lightingTotalFixtures = allFixtures.reduce((acc: number, fx: any) => acc + (fx.bulb_count || 1), 0);
+            const lightingWorkingFixtures = allFixtures.reduce((acc: number, fx: any) => {
+              const status = (fx.status ?? '').toString().toLowerCase();
+              const isWorking = status === 'working' || status === 'functional';
+              return acc + (isWorking ? (fx.bulb_count || 1) : 0);
+            }, 0);
 
             // Combine everything
             return {
               ...building,
+              lightingTotalFixtures,
+              lightingWorkingFixtures,
+              // debug fields (non-breaking)
+              _lightingDebug: {
+                floorIdsCount: floorIds.length,
+                roomsCount: (roomsData || []).length,
+                fixturesMapKeys: Object.keys(fixturesByRoom).length,
+                lightingTotalFixtures,
+                lightingWorkingFixtures,
+              },
               building_floors: building.floors?.map(floor => ({
                 id: floor.id,
                 name: floor.name,
@@ -79,13 +122,7 @@ export const useBuildingData = (userId?: string) => {
               })) || [],
               floors: building.floors?.map(floor => ({
                 ...floor,
-                rooms: (roomsByFloor[floor.id] || []).map(room => ({
-                  ...room,
-                  lighting_fixtures: (room.lighting_fixtures || []).map(fixture => ({
-                    ...fixture,
-                    bulb_count: fixture.bulb_count || 1
-                  }))
-                }))
+                rooms: (roomsByFloor[floor.id] || [])
               })) || []
             };
           })

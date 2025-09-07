@@ -51,6 +51,7 @@ export function BasicSettingsFields({ form, onSpaceOrPositionChange }: BasicSett
   const spaceId = form.watch('space_id');
   const position = form.watch('position');
   const spaceType = form.watch('space_type');
+  const selectedSpace = (spaces || [])?.find(s => s.id === spaceId);
 
   useEffect(() => {
     updateName();
@@ -127,7 +128,7 @@ export function BasicSettingsFields({ form, onSpaceOrPositionChange }: BasicSett
         name="space_id"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Space</FormLabel>
+            <FormLabel>{spaceType === 'room' ? 'Room' : 'Hallway'}</FormLabel>
             <Select 
               onValueChange={field.onChange} 
               value={field.value}
@@ -140,11 +141,20 @@ export function BasicSettingsFields({ form, onSpaceOrPositionChange }: BasicSett
               <SelectContent>
                 {spaces?.filter(space => space.type === spaceType).map((space) => (
                   <SelectItem key={space.id} value={space.id}>
-                    {space.type === 'room' ? `Room ${space.room_number}` : space.name}
+                    {space.type === 'room'
+                      ? `Room ${space.room_number || ''}${space.name ? `— ${space.name}` : ''}`
+                      : space.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {selectedSpace && (
+              <div className="text-xs text-muted-foreground mt-1">
+                Selected: {selectedSpace.type === 'room'
+                  ? `Room ${selectedSpace.room_number || ''}${selectedSpace.name ? ` — ${selectedSpace.name}` : ''}`
+                  : selectedSpace.name}
+              </div>
+            )}
             <FormMessage />
           </FormItem>
         )}
@@ -186,6 +196,9 @@ export function BasicSettingsFields({ form, onSpaceOrPositionChange }: BasicSett
             <FormControl>
               <Input {...field} readOnly className="bg-muted text-foreground" />
             </FormControl>
+            <div className="text-xs text-muted-foreground mt-1">
+              Auto-generated from the selected {spaceType} and position (e.g., "Room 1317 — Ceiling Light 1").
+            </div>
             <FormMessage />
           </FormItem>
         )}

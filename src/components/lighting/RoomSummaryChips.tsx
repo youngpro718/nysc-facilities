@@ -1,30 +1,10 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
+import { fetchRoomLightingStats } from "@/lib/supabase";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-// Direct function definition to avoid import issues
-const fetchRoomLightingStats = async () => {
-  console.log("fetchRoomLightingStats: Starting fetch");
-  const { data, error } = await supabase
-    .from('unified_spaces')
-    .select(`
-      id,
-      name,
-      room_number,
-      lighting_fixtures (
-        id,
-        status,
-        electrical_issues,
-        ballast_issue
-      )
-    `);
-  
-  console.log("fetchRoomLightingStats: Result", { data, error });
-  if (error) throw error;
-  return data || [];
-};
+// Using centralized service from lib/supabase
 
 function formatDurationMinutes(mins: number | null | undefined) {
   if (!mins && mins !== 0) return "—";

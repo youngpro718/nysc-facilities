@@ -8,7 +8,7 @@ export const useLightingQueries = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('floors')
-        .select('id, name, buildings(name)')
+        .select('id, name, buildings!floors_building_id_fkey(name)')
         .order('name');
       
       if (error) throw error;
