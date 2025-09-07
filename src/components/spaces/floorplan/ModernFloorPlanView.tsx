@@ -45,9 +45,23 @@ interface FloorPlanObject {
   position: { x: number; y: number };
   data: {
     size: { width: number; height: number };
-    properties: any;
+    properties: FloorPlanObjectProperties;
   };
-  properties?: any;
+}
+
+// Properties stored with each floor plan object. Add known keys as needed while
+// keeping an index signature for extensibility coming from the editor.
+interface FloorPlanObjectProperties {
+  rotation?: number;
+  label?: string;
+  [key: string]: string | number | boolean | null | undefined;
+}
+
+interface FloorPlanPreview {
+  id: string;
+  position: { x: number; y: number };
+  rotation: number;
+  data: { size: { width: number; height: number }; properties: FloorPlanObjectProperties };
 }
 
 export function ModernFloorPlanView() {
@@ -56,7 +70,7 @@ export function ModernFloorPlanView() {
     '2d2c3a20-4b7f-4583-8de1-543120a72b94'
   );
   const [selectedObject, setSelectedObject] = useState<FloorPlanObject | null>(null);
-  const [previewData, setPreviewData] = useState<any | null>(null);
+  const [previewData, setPreviewData] = useState<FloorPlanPreview | null>(null);
   const [floors, setFloors] = useState<Floor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [zoom, setZoom] = useState<number>(1);
@@ -116,7 +130,7 @@ export function ModernFloorPlanView() {
   }, []);
 
   // Handle property updates with real-time preview
-  const handlePropertyUpdate = useCallback((updates: any) => {
+  const handlePropertyUpdate = useCallback((updates: FloorPlanObjectProperties) => {
     if (!selectedObject) return;
 
     const position = {
@@ -129,7 +143,7 @@ export function ModernFloorPlanView() {
       height: parseFloat(updates.height || selectedObject.data.size.height)
     };
 
-    const rotation = parseFloat(updates.rotation || 0);
+    const rotation = parseFloat((updates.rotation as number | string | undefined) || 0);
 
     setPreviewData({
       id: selectedObject.id,

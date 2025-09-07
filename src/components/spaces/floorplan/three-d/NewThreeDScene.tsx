@@ -2,9 +2,32 @@ import React, { useMemo } from 'react';
 import { Scene3DErrorBoundary } from './core/Scene3DErrorBoundary';
 import FloorPlanRenderer from './core/FloorPlanRenderer';
 
+interface FloorPlanObject {
+  id: string;
+  position: {
+    x: number;
+    y: number;
+    z?: number;
+  };
+  // Add other object properties as needed
+}
+
+interface FloorPlanConnection {
+  id: string;
+  from: {
+    x: number;
+    y: number;
+  };
+  to: {
+    x: number;
+    y: number;
+  };
+  // Add other connection properties as needed
+}
+
 interface NewThreeDSceneProps {
-  objects: any[];
-  connections: any[];
+  objects: FloorPlanObject[];
+  connections: FloorPlanConnection[];
   selectedObjectId?: string | null;
   hoveredObjectId?: string | null;
   onObjectClick?: (objectId: string) => void;
@@ -52,8 +75,16 @@ const NewThreeDScene: React.FC<NewThreeDSceneProps> = ({
     return connections.filter(conn => {
       if (!conn || typeof conn !== 'object') return false;
       if (!conn.id) return false;
-      if (!conn.from || typeof conn.from.x !== 'number' || typeof conn.from.y !== 'number') return false;
-      if (!conn.to || typeof conn.to.x !== 'number' || typeof conn.to.y !== 'number') return false;
+      if (
+        !conn.from ||
+        typeof conn.from.x !== 'number' || !Number.isFinite(conn.from.x) ||
+        typeof conn.from.y !== 'number' || !Number.isFinite(conn.from.y)
+      ) return false;
+      if (
+        !conn.to ||
+        typeof conn.to.x !== 'number' || !Number.isFinite(conn.to.x) ||
+        typeof conn.to.y !== 'number' || !Number.isFinite(conn.to.y)
+      ) return false;
       return true;
     });
   }, [connections, showConnections]);
