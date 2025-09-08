@@ -200,11 +200,14 @@ export function useFloorPlanData(floorId: string | null) {
     createEdgesFromConnections(safeSpaceData.connections) : 
     [];
   
-  console.log('Transformed objects:', objects);
-  console.log('Created edges:', edges);
+  const FP_DEBUG = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_FLOORPLAN_DEBUG === 'true';
+  if (FP_DEBUG) {
+    console.log('Transformed objects:', objects);
+    console.log('Created edges:', edges);
+  }
   
   // Detailed object analysis for 3D rendering
-  if (objects.length > 0) {
+  if (FP_DEBUG && objects.length > 0) {
     console.log('=== DETAILED OBJECT ANALYSIS ===');
     objects.forEach((obj, index) => {
       console.log(`Object ${index + 1}:`, {
@@ -352,13 +355,15 @@ export function useFloorPlanData(floorId: string | null) {
   // Don't block loading on lighting data since it's optional
   const finalIsLoading = isLoadingLayers || isLoadingObjects;
   
-  console.log('useFloorPlanData - Loading states:', {
-    isLoadingLayers,
-    isLoadingObjects, 
-    isLoadingLighting,
-    finalIsLoading,
-    objectsCount: processedObjects.length
-  });
+  if (FP_DEBUG) {
+    console.log('useFloorPlanData - Loading states:', {
+      isLoadingLayers,
+      isLoadingObjects, 
+      isLoadingLighting,
+      finalIsLoading,
+      objectsCount: processedObjects.length
+    });
+  }
 
   return {
     layers: layers || [],

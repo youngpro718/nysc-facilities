@@ -1,6 +1,23 @@
 import React, { useRef, useState, useMemo } from 'react';
 import * as THREE from 'three';
 import { Text } from '@react-three/drei';
+import type { ThreeEvent } from '@react-three/fiber';
+
+// More precise typing for properties and click payload
+type SpaceStatus = 'active' | 'maintenance' | 'inactive' | string;
+interface SpaceProperties {
+  status?: SpaceStatus;
+  [key: string]: unknown;
+}
+
+interface SpaceClickPayload {
+  id: string;
+  type: 'room' | 'hallway' | 'door';
+  position: { x: number; y: number };
+  size: { width: number; height: number };
+  properties?: SpaceProperties;
+  label?: string;
+}
 
 interface ModernSpace3DProps {
   id: string;
@@ -9,12 +26,13 @@ interface ModernSpace3DProps {
   size: { width: number; height: number };
   rotation?: number;
   label?: string;
-  properties?: any;
+  properties?: SpaceProperties;
   isSelected?: boolean;
   isHovered?: boolean;
   isPreview?: boolean;
   showLabels?: boolean;
-  onClick?: (data: any) => void;
+  fontUrl?: string;
+  onClick?: (data?: SpaceClickPayload) => void;
   onHover?: () => void;
   onUnhover?: () => void;
 }
@@ -125,6 +143,7 @@ export function ModernSpace3D({
   isHovered = false,
   isPreview = false,
   showLabels = true,
+  fontUrl = '/fonts/inter-v12-latin-regular.woff',
   onClick,
   onHover,
   onUnhover
@@ -190,7 +209,7 @@ export function ModernSpace3D({
   const displayLabel = !label ? (id || 'Unnamed') : (label.length > 20 ? label.substring(0, 20) + '...' : label);
 
   // Handle click safely
-  const handleClick = (event: any) => {
+  const handleClick = (event: ThreeEvent<MouseEvent>) => {
     event.stopPropagation();
     if (onClick) {
       onClick({
@@ -257,7 +276,7 @@ export function ModernSpace3D({
           color={isSelected ? '#0ea5e9' : '#374151'}
           anchorX="center"
           anchorY="middle"
-          font="/fonts/inter-v12-latin-regular.woff"
+          font={fontUrl}
           maxWidth={dimensions.width * 0.8}
           outlineWidth={0.5}
           outlineColor="#ffffff"
@@ -275,7 +294,7 @@ export function ModernSpace3D({
           color="#6b7280"
           anchorX="center"
           anchorY="middle"
-          font="/fonts/inter-v12-latin-regular.woff"
+          font={fontUrl}
         >
           {type.toUpperCase()}
         </Text>

@@ -1,5 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
+import { Line2 } from 'three/examples/jsm/lines/Line2.js';
+import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
+import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 
 interface ModernConnectionProps {
   from: { x: number; y: number };
@@ -16,51 +19,79 @@ export function ModernConnection({
   isSelected = false, 
   isHovered = false 
 }: ModernConnectionProps) {
-  // Memoize the main connection line
-  const mainLine = useMemo(() => {
-    const material = new THREE.LineBasicMaterial({
-      color: isSelected ? '#0ea5e9' : (isHovered ? '#fbbf24' : '#64748b'),
-      linewidth: isSelected ? 3 : 2,
+  // Reusable Line2 factory to avoid duplication
+  const buildLine = (
+    fromX: number,
+    fromY: number,
+    toX: number,
+    toY: number,
+    color: string,
+    linewidth: number,
+    opacity: number
+  ): { line: Line2; geom: LineGeometry; mat: LineMaterial } => {
+    const geom = new LineGeometry();
+    geom.setPositions([fromX, 0, fromY, toX, 0, toY]);
+    const mat = new LineMaterial({
+      color,
       transparent: true,
-      opacity: isSelected ? 1 : (isHovered ? 0.8 : 0.6)
+      opacity,
+      linewidth,
+      worldUnits: false,
     });
+    mat.resolution = new THREE.Vector2(window.innerWidth, window.innerHeight);
+    const line = new Line2(geom, mat);
+    return { line, geom, mat };
+  };
 
-    const startPoint = new THREE.Vector3();
-    startPoint.set(from.x, 0, from.y);
-    const endPoint = new THREE.Vector3();
-    endPoint.set(to.x, 0, to.y);
-    const points = [startPoint, endPoint];
-
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    return new THREE.Line(geometry, material);
+  // Memoize the main connection line
+  const { line: mainLine, geom: mainGeom, mat: mainMat } = useMemo(() => {
+    const color = isSelected ? '#0ea5e9' : (isHovered ? '#fbbf24' : '#64748b');
+    const opacity = isSelected ? 1 : (isHovered ? 0.8 : 0.6);
+    const width = isSelected ? 3 : 2;
+    return buildLine(from.x, from.y, to.x, to.y, color, width, opacity);
   }, [from.x, from.y, to.x, to.y, isSelected, isHovered]);
 
+  // Keep material resolution in sync and dispose resources on change/unmount
+  useEffect(() => {
+    const handleResize = () => {
+      if (mainMat) {
+        mainMat.resolution = new THREE.Vector2(window.innerWidth, window.innerHeight);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      // Dispose of previous resources
+      try { mainGeom?.dispose(); } catch {}
+      try { mainMat?.dispose(); } catch {}
+    };
+  }, [mainGeom, mainMat]);
+
   // Memoize the selection highlight line
-  const highlightLine = useMemo(() => {
-    if (!isSelected) return null;
-    
-    const startPoint = new THREE.Vector3();
-    startPoint.set(from.x, 0, from.y);
-    const endPoint = new THREE.Vector3();
-    endPoint.set(to.x, 0, to.y);
-    const points = [startPoint, endPoint];
-    
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    const material = new THREE.LineBasicMaterial({ 
-      color: '#0ea5e9', 
-      linewidth: 4, 
-      transparent: true, 
-      opacity: 0.3 
-    });
-    
-    return new THREE.Line(geometry, material);
+  const highlight = useMemo(() => {
+    if (!isSelected) return { line: null as unknown as Line2 | null, geom: null as LineGeometry | null, mat: null as LineMaterial | null };
+    return buildLine(from.x, from.y, to.x, to.y, '#0ea5e9', 4, 0.3);
   }, [from.x, from.y, to.x, to.y, isSelected]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (highlight.mat) {
+        highlight.mat.resolution = new THREE.Vector2(window.innerWidth, window.innerHeight);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      try { highlight.geom?.dispose(); } catch {}
+      try { highlight.mat?.dispose(); } catch {}
+    };
+  }, [highlight.geom, highlight.mat]);
 
   return (
     <group>
       <primitive object={mainLine} />
-      {highlightLine && (
-        <primitive object={highlightLine} />
+      {highlight.line && (
+        <primitive object={highlight.line} />
       )}
     </group>
   );

@@ -257,7 +257,7 @@ export const ThreeDScene = forwardRef<SceneRef, ThreeDSceneProps>(function Three
         console.log('ThreeDScene effect cleanup');
       }
     };
-  }, [camera, visibleObjects.length, sceneState.hasInitialized, enableDebugLogs]); // Remove visibleObjects from dependency
+  }, [camera, sceneState.hasInitialized, enableDebugLogs]); // visibleObjects intentionally omitted
 
   // Simplified camera focus
   useEffect(() => {

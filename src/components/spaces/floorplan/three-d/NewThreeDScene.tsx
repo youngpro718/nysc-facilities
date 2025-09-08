@@ -60,10 +60,15 @@ const NewThreeDScene: React.FC<NewThreeDSceneProps> = ({
 
   // Filter and validate objects
   const validObjects = useMemo(() => {
+    if (!Array.isArray(objects)) return [];
+
     return objects.filter(obj => {
       if (!obj || typeof obj !== 'object') return false;
       if (!obj.id) return false;
-      if (!obj.position || typeof obj.position.x !== 'number' || typeof obj.position.y !== 'number') return false;
+      if (!obj.position) return false;
+      const px = (obj as any).position?.x;
+      const py = (obj as any).position?.y;
+      if (!Number.isFinite(px) || !Number.isFinite(py)) return false;
       return true;
     });
   }, [objects]);

@@ -34,6 +34,7 @@ export function ModernSceneLighting({
             shadow-camera-right={500}
             shadow-camera-top={500}
             shadow-camera-bottom={-500}
+            shadow-bias={-0.0005}
           />
           
           <directionalLight

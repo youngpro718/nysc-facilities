@@ -26,8 +26,8 @@ export interface Scene3DOptions {
 export class Scene3DManager {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
-  private renderer: THREE.WebGLRenderer;
-  private controls: OrbitControls;
+  private renderer: THREE.WebGLRenderer | null = null;
+  private controls: OrbitControls | null = null;
   private container: HTMLElement | null = null;
   private animationId: number | null = null;
   
@@ -106,10 +106,53 @@ export class Scene3DManager {
     this.setupScene();
   }
 
+  // Update selection state and re-apply materials (selected vs hovered vs default)
+  public setRoomSelection(roomId: string | null): void {
+    try {
+      this.selectedRoomId = roomId;
+      this.updateRoomMaterials();
+    } catch (error) {
+      console.error('Scene3DManager: Error setting room selection:', error);
+    }
+  }
+
+  // Update hover state and re-apply materials
+  public setRoomHover(roomId: string | null): void {
+    try {
+      this.hoveredRoomId = roomId;
+      this.updateRoomMaterials();
+    } catch (error) {
+      console.error('Scene3DManager: Error setting room hover:', error);
+    }
+  }
+
+  // Apply materials with priority: hovered > selected > default
+  private updateRoomMaterials(): void {
+    try {
+      this.roomMeshes.forEach((group, id) => {
+        const isHovered = this.hoveredRoomId === id;
+        const isSelected = this.selectedRoomId === id;
+        group.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            if (isHovered) {
+              child.material = this.hoveredMaterial;
+            } else if (isSelected) {
+              child.material = this.selectedMaterial;
+            } else {
+              child.material = this.roomMaterial;
+            }
+          }
+        });
+      });
+    } catch (error) {
+      console.error('Scene3DManager: Error updating room materials:', error);
+    }
+  }
+
   private setupScene(): void {
     try {
-      // Set background to a more professional color
-      this.scene.background = new THREE.Color(0xf8fafc);
+      // Set background using configurable option
+      this.scene.background = new THREE.Color(this.options.backgroundColor!);
 
       // Enhanced lighting setup with dynamic lighting
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -180,10 +223,13 @@ export class Scene3DManager {
       }
 
       // Setup renderer
-      this.renderer.setSize(800, 600); // Default size, will be updated
-      if (this.options.enableShadows) {
-        this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      // Guard renderer calls in case constructor init changes
+      if (this.renderer) {
+        this.renderer.setSize(800, 600); // Default size, will be updated
+        if (this.options.enableShadows) {
+          this.renderer.shadowMap.enabled = true;
+          this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        }
       }
 
       // Setup camera with better initial position
@@ -219,17 +265,19 @@ export class Scene3DManager {
 
     try {
       // Setup renderer with proper context handling
-      this.renderer.setSize(container.clientWidth, container.clientHeight);
-      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      this.renderer?.setSize(container.clientWidth, container.clientHeight);
+      this.renderer?.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       
       if (this.options.enableShadows) {
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       }
       
-      this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-      this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      this.renderer.toneMappingExposure = 1.2;
+      if (this.renderer) {
+        this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        this.renderer.toneMappingExposure = 1.2;
+      }
 
       // Setup camera
       this.camera.aspect = container.clientWidth / container.clientHeight;
@@ -241,7 +289,7 @@ export class Scene3DManager {
       this.camera.updateProjectionMatrix();
 
       // Setup controls
-      this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+      this.controls = new OrbitControls(this.camera, this.renderer!.domElement);
       this.controls.enableDamping = true;
       this.controls.dampingFactor = 0.05;
       this.controls.maxPolarAngle = Math.PI / 2.2; // Allow slight overhead view
@@ -259,9 +307,11 @@ export class Scene3DManager {
       wrapper.setAttribute('data-three-canvas', 'true');
       wrapper.style.width = '100%';
       wrapper.style.height = '100%';
-      this.renderer.domElement.setAttribute('data-three', 'true');
-      wrapper.appendChild(this.renderer.domElement);
-      container.appendChild(wrapper);
+      if (this.renderer) {
+        this.renderer.domElement.setAttribute('data-three', 'true');
+        wrapper.appendChild(this.renderer.domElement);
+        container.appendChild(wrapper);
+      }
 
       // Setup mouse interaction
       this.setupMouseInteraction();
@@ -355,7 +405,7 @@ export class Scene3DManager {
         // Force context loss to free GPU resources and avoid context-type conflicts
         (this.renderer as any)?.forceContextLoss?.();
       } catch {}
-      this.renderer.dispose();
+      this.renderer?.dispose?.();
       
       this.isInitialized = false;
 
@@ -375,18 +425,17 @@ export class Scene3DManager {
 
       this.camera.aspect = width / height;
       this.camera.updateProjectionMatrix();
-      this.renderer.setSize(width, height);
+      this.renderer?.setSize(width, height);
 
     } catch (error) {
       console.error('Scene3DManager: Error handling resize:', error);
     }
   };
-
   private startRenderLoop(): void {
     const render = () => {
       try {
         this.controls?.update();
-        this.renderer.render(this.scene, this.camera);
+        this.renderer?.render(this.scene, this.camera);
         this.animationId = requestAnimationFrame(render);
       } catch (error) {
         console.error('Scene3DManager: Error in render loop:', error);
@@ -980,60 +1029,19 @@ export class Scene3DManager {
         });
       }
     });
-    this.connectionMeshes.clear();
   }
-
-  public setRoomSelection(roomId: string | null): void {
-    try {
-      this.roomMeshes.forEach((group, id) => {
-        group.traverse((child) => {
-          if (child instanceof THREE.Mesh) {
-            if (id === roomId) {
-              child.material = this.selectedMaterial;
-            } else {
-              child.material = this.roomMaterial;
-            }
-          }
-        });
-      });
-    } catch (error) {
-      console.error('Scene3DManager: Error setting room selection:', error);
-    }
-  }
-
-  public setRoomHover(roomId: string | null): void {
-    try {
-      this.roomMeshes.forEach((group, id) => {
-        group.traverse((child) => {
-          if (child instanceof THREE.Mesh) {
-            if (id === roomId) {
-              child.material = this.hoveredMaterial;
-            } else {
-              child.material = this.roomMaterial;
-            }
-          }
-        });
-      });
-    } catch (error) {
-      console.error('Scene3DManager: Error setting room hover:', error);
-    }
-  }
-
+  
   public dispose(): void {
     try {
       this.unmount();
-      
       // Dispose of materials
       this.roomMaterial.dispose();
       this.selectedMaterial.dispose();
       this.hoveredMaterial.dispose();
       this.connectionMaterial.dispose();
-
-      // Dispose of renderer
-      this.renderer.dispose();
-
+      // Dispose of renderer if present
+      this.renderer?.dispose?.();
       console.log('Scene3DManager: Disposed successfully');
-
     } catch (error) {
       console.error('Scene3DManager: Error disposing:', error);
     }

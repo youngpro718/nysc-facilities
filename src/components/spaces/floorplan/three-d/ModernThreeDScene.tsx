@@ -2,18 +2,42 @@ import React, { useRef, useEffect, useState, useImperativeHandle, forwardRef, us
 import { useThree } from '@react-three/fiber';
 import { OrbitControls, Text } from '@react-three/drei';
 import * as THREE from 'three';
-// Using any type for compatibility
 import { ModernSpace3D } from './components/ModernSpace3D';
 import { ModernConnection } from './components/ModernConnection';
 import { ModernGridSystem } from './systems/ModernGridSystem';
 import { ModernSceneLighting } from './ModernSceneLighting';
 
+// Strongly-typed shapes used in this scene
+interface ThreeDPosition { x: number; y: number }
+interface ThreeDSize { width: number; height: number }
+interface ThreeDObject {
+  id: string;
+  type: 'room' | 'hallway' | 'door';
+  position: ThreeDPosition;
+  data: { size: ThreeDSize; properties?: Record<string, unknown> };
+  rotation?: number;
+  properties?: Record<string, unknown>;
+}
+
+interface ThreeDConnection {
+  from: string;
+  to: string;
+  type?: 'default' | 'hallway' | 'emergency' | 'direct';
+}
+
+interface PreviewData {
+  id: string;
+  type: 'room' | 'hallway' | 'door';
+  position: ThreeDPosition;
+  data?: { size?: ThreeDSize; properties?: Record<string, unknown> };
+}
+
 interface ModernThreeDSceneProps {
-  objects: any[];
-  connections: any[];
+  objects: ThreeDObject[];
+  connections: ThreeDConnection[];
   onObjectSelect?: (objectId: string) => void;
   selectedObjectId?: string | null;
-  previewData?: any | null;
+  previewData?: PreviewData | null;
   showLabels?: boolean;
   showConnections?: boolean;
   lightIntensity?: number;
@@ -103,62 +127,49 @@ export const ModernThreeDScene = forwardRef<any, ModernThreeDSceneProps>(functio
     return filtered;
   }, [connections]);
 
-  // Calculate scene bounds safely
+  // Calculate scene bounds safely based on validated objects
   const sceneBounds = useMemo(() => {
-    if (!objects || objects.length === 0) {
+    if (!validObjects || validObjects.length === 0) {
       return { minX: -100, maxX: 100, minY: -100, maxY: 100, centerX: 0, centerY: 0 };
     }
 
-    const positions = objects.map(obj => obj?.position || { x: 0, y: 0 });
-    const sizes = objects.map(obj => obj?.data?.size || { width: 50, height: 50 });
+    const positions = validObjects.map(obj => obj.position);
+    const sizes = validObjects.map(obj => obj.data.size);
 
-    const minX = Math.min(...positions.map(p => p?.x || 0)) - 50;
-    const maxX = Math.max(...positions.map(p => (p?.x || 0) + (sizes.find((_, i) => positions[i] === p)?.width || 50))) + 50;
-    const minY = Math.min(...positions.map(p => p?.y || 0)) - 50;
-    const maxY = Math.max(...positions.map(p => (p?.y || 0) + (sizes.find((_, i) => positions[i] === p)?.height || 50))) + 50;
+    const minX = Math.min(...positions.map((p, i) => (p?.x || 0) - (sizes[i]?.width || 50) / 2)) - 50;
+    const maxX = Math.max(...positions.map((p, i) => (p?.x || 0) + (sizes[i]?.width || 50) / 2)) + 50;
+    const minY = Math.min(...positions.map((p, i) => (p?.y || 0) - (sizes[i]?.height || 50) / 2)) - 50;
+    const maxY = Math.max(...positions.map((p, i) => (p?.y || 0) + (sizes[i]?.height || 50) / 2)) + 50;
 
     const centerX = (minX + maxX) / 2;
     const centerY = (minY + maxY) / 2;
 
     return { minX, maxX, minY, maxY, centerX, centerY };
-  }, [objects]);
-  // Camera positioning effect
+  }, [validObjects]);
+  // General camera positioning effect (handles init and updates with error handling)
   useEffect(() => {
-    if (!hasInitialized && sceneBounds && objects.length > 0) {
-      const { centerX, centerY } = sceneBounds;
-      const distance = Math.max(
-        sceneBounds.maxX - sceneBounds.minX,
-        sceneBounds.maxY - sceneBounds.minY
-      ) * 0.8;
+    if (validObjects.length === 0) return;
+    try {
+      const { centerX, centerY, maxX, minX, maxY, minY } = sceneBounds;
+      const width = Math.max(maxX - minX, 200);
+      const height = Math.max(maxY - minY, 200);
+      const distance = Math.max(width, height) * 1.5;
 
       camera.position.set(centerX + distance, distance * 1.2, centerY + distance);
       camera.lookAt(centerX, 0, centerY);
 
       if (controlsRef.current) {
         controlsRef.current.target.set(centerX, 0, centerY);
+        controlsRef.current.update();
       }
 
-      setHasInitialized(true);
+      if (!hasInitialized) setHasInitialized(true);
+    } catch (error) {
+      console.error('Error positioning camera:', error);
+      camera.position.set(300, 400, 300);
+      camera.lookAt(0, 0, 0);
     }
-  }, [hasInitialized, sceneBounds, objects, camera, controlsRef]);
-
-  // Reset camera on objects change
-  useEffect(() => {
-    if (hasInitialized && sceneBounds) {
-      const { centerX, centerY } = sceneBounds;
-      const distance = Math.max(
-        sceneBounds.maxX - sceneBounds.minX,
-        sceneBounds.maxY - sceneBounds.minY
-      ) * 0.8;
-
-      camera.position.set(centerX + distance, distance * 1.2, centerY + distance);
-      camera.lookAt(centerX, 0, centerY);
-
-      if (controlsRef.current) {
-        controlsRef.current.target.set(centerX, 0, centerY);
-      }
-    }
-  }, [hasInitialized, sceneBounds, camera, controlsRef]);
+  }, [camera, validObjects, sceneBounds, hasInitialized]);
 
   // Preview object calculation
   const previewObject = useMemo(() => {
@@ -277,8 +288,8 @@ export const ModernThreeDScene = forwardRef<any, ModernThreeDSceneProps>(functio
           position={object.position}
           size={object.data?.size || { width: 50, height: 50 }}
           rotation={object.rotation || 0}
-          label={object.properties?.label || object.properties?.name || object.id}
-          properties={object.properties}
+          label={String(((object.data?.properties as any)?.label ?? (object.data?.properties as any)?.name ?? object.id) as any)}
+          properties={object.data?.properties as Record<string, unknown>}
           isSelected={selectedObjectId === object.id}
           isHovered={hoveredObject === object.id}
           showLabels={showLabels}
@@ -292,13 +303,12 @@ export const ModernThreeDScene = forwardRef<any, ModernThreeDSceneProps>(functio
       {previewObject && (
         <ModernSpace3D
           id={previewObject.id}
-          type={previewObject.type as 'room' | 'hallway' | 'door'}
+          type={previewObject.type}
           position={previewObject.position}
           size={previewObject.data?.size}
           properties={previewObject.data?.properties}
           isPreview={true}
           showLabels={showLabels}
-          onClick={() => {}}
         />
       )}
 
@@ -312,9 +322,9 @@ export const ModernThreeDScene = forwardRef<any, ModernThreeDSceneProps>(functio
         return (
           <ModernConnection
             key={`${connection.from}-${connection.to}-${index}`}
-            from={fromObject}
-            to={toObject}
-            type={connection.type || 'default'}
+            from={fromObject.position}
+            to={toObject.position}
+            type={connection.type === 'hallway' ? 'hallway' : 'room'}
           />
         );
       })}

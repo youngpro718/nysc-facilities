@@ -3,7 +3,8 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { 
   ZoomIn, 
@@ -27,6 +28,7 @@ import { EnhancedPropertiesPanel } from './components/EnhancedPropertiesPanel';
 import { EditPropertiesPanel } from './components/EditPropertiesPanel';
 import { ModernThreeDViewer } from './components/ModernThreeDViewer';
 import { FloorSelector } from './components/FloorSelector';
+import { useFloorPlanData } from './hooks/useFloorPlanData';
 import { SearchPanel } from './components/SearchPanel';
 import { AdvancedSearchPanel } from './components/AdvancedSearchPanel';
 import { ViewControls } from './components/ViewControls';
@@ -65,10 +67,8 @@ interface FloorPlanPreview {
 }
 
 export function ModernFloorPlanView() {
-  const [selectedFloor, setSelectedFloor] = useState<string | null>(
-    // Fallback to a known floor ID if available
-    '2d2c3a20-4b7f-4583-8de1-543120a72b94'
-  );
+  const { user, isLoading: authLoading } = useAuth();
+  const [selectedFloor, setSelectedFloor] = useState<string | null>(null);
   const [selectedObject, setSelectedObject] = useState<FloorPlanObject | null>(null);
   const [previewData, setPreviewData] = useState<FloorPlanPreview | null>(null);
   const [floors, setFloors] = useState<Floor[]>([]);
@@ -92,18 +92,29 @@ export function ModernFloorPlanView() {
     const fetchFloors = async () => {
       setIsLoading(true);
       try {
+        // If auth state is still resolving, wait to avoid false negatives
+        if (authLoading) return;
+
         const { data, error } = await supabase
           .from('floors')
           .select('*, buildings!floors_building_id_fkey(name)')
           .order('floor_number', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+          // Only show sign-in message if RLS/auth blocks the request
+          const status = (error as any)?.code || (error as any)?.status || (error as any)?.message;
+          if (String(status).includes('401') || String(status).includes('403')) {
+            toast.message('Sign in required', {
+              description: 'Please sign in to load floors and floorplans.',
+            });
+          } else {
+            throw error;
+          }
+          return;
+        }
         
         setFloors(data || []);
-        console.log('ModernFloorPlanView - Floors loaded:', data?.length || 0, 'floors');
-        console.log('ModernFloorPlanView - Current selectedFloor:', selectedFloor);
         if (data && data.length > 0 && !selectedFloor) {
-          console.log('ModernFloorPlanView - Setting selectedFloor to:', data[0].id);
           setSelectedFloor(data[0].id);
         }
       } catch (error) {
@@ -115,7 +126,7 @@ export function ModernFloorPlanView() {
     };
 
     fetchFloors();
-  }, [selectedFloor]);
+  }, [user, authLoading]);
 
   // Handle object selection with improved UX
   const handleObjectSelect = useCallback((object: FloorPlanObject) => {
@@ -133,17 +144,22 @@ export function ModernFloorPlanView() {
   const handlePropertyUpdate = useCallback((updates: FloorPlanObjectProperties) => {
     if (!selectedObject) return;
 
+    const posXParsed = parseFloat(String((updates as any).positionX ?? ''));
+    const posYParsed = parseFloat(String((updates as any).positionY ?? ''));
     const position = {
-      x: parseFloat(updates.positionX || selectedObject.position.x),
-      y: parseFloat(updates.positionY || selectedObject.position.y)
+      x: Number.isFinite(posXParsed) ? posXParsed : selectedObject.position.x,
+      y: Number.isFinite(posYParsed) ? posYParsed : selectedObject.position.y,
     };
 
+    const widthParsed = parseFloat(String((updates as any).width ?? ''));
+    const heightParsed = parseFloat(String((updates as any).height ?? ''));
     const size = {
-      width: parseFloat(updates.width || selectedObject.data.size.width),
-      height: parseFloat(updates.height || selectedObject.data.size.height)
+      width: Number.isFinite(widthParsed) ? widthParsed : selectedObject.data.size.width,
+      height: Number.isFinite(heightParsed) ? heightParsed : selectedObject.data.size.height,
     };
 
-    const rotation = parseFloat((updates.rotation as number | string | undefined) || 0);
+    const rotParsed = parseFloat(String((updates.rotation as number | string | undefined) ?? ''));
+    const rotation = Number.isFinite(rotParsed) ? rotParsed : 0;
 
     setPreviewData({
       id: selectedObject.id,
@@ -168,11 +184,21 @@ export function ModernFloorPlanView() {
     toast.success('Floor plan refreshed');
   };
 
+  // Load objects/edges for the selected floor (drives 3D and panels)
+  const { objects: sceneObjects = [], edges: sceneEdges = [], isLoading: isObjectsLoading } = useFloorPlanData(selectedFloor);
+
   // Filter objects based on search and type
   const filteredObjects = useMemo(() => {
-    // This would be implemented based on actual data
-    return [];
-  }, [searchQuery, filterType]);
+    const q = (searchQuery || '').toLowerCase().trim();
+    return (sceneObjects as any[]).filter((obj: any) => {
+      if (!obj) return false;
+      if (filterType !== 'all' && obj.type !== filterType) return false;
+      if (!q) return true;
+      const name = String(obj?.data?.properties?.label || obj?.data?.name || obj?.name || '').toLowerCase();
+      const desc = String(obj?.data?.properties?.description || '').toLowerCase();
+      return name.includes(q) || desc.includes(q);
+    });
+  }, [sceneObjects, searchQuery, filterType]);
 
   const currentFloor = useMemo(() => 
     floors.find(f => f.id === selectedFloor), 
@@ -256,7 +282,10 @@ export function ModernFloorPlanView() {
               <ModernThreeDViewer
                 key={`3d-${refreshKey}`}
                 floorId={selectedFloor}
-                onObjectSelect={handleObjectSelect}
+                onObjectSelect={(objectId) => {
+                  const match = (sceneObjects as any[]).find((o: any) => o.id === objectId);
+                  if (match) handleObjectSelect(match as any);
+                }}
                 selectedObjectId={selectedObject?.id}
                 previewData={previewData}
                 showLabels={showLabels}

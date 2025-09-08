@@ -3,6 +3,22 @@ import { supabase } from "@/lib/supabase";
 import { logger } from "@/lib/logger";
 import { EnhancedRoom, LightingFixtureStatus } from "@/components/spaces/rooms/types/EnhancedRoomTypes";
 
+// Safely parse JSON-like inputs (string or object). Returns null on error.
+function safeJsonParse<T = any>(value: unknown): T | null {
+  if (value == null) return null;
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value) as T;
+    } catch {
+      return null;
+    }
+  }
+  if (typeof value === 'object') {
+    return value as T;
+  }
+  return null;
+}
+
 export function useEnhancedRoomData(roomId: string) {
   return useQuery({
     queryKey: ['enhanced-room', roomId],
@@ -111,11 +127,12 @@ export function useEnhancedRoomData(roomId: string) {
       // Calculate room size category using the database function and actual room size data
       let roomSizeCategory: 'small' | 'medium' | 'large' = 'medium';
       if (room.size) {
-        // Use the database function to get accurate size category
-        const sizeData = typeof room.size === 'string' ? JSON.parse(room.size) : room.size;
-        const { data: sizeResult } = await supabase
-          .rpc('get_room_size_from_data', { room_size_data: sizeData });
-        roomSizeCategory = (sizeResult as 'small' | 'medium' | 'large') || 'medium';
+        const sizeData = safeJsonParse<any>(room.size);
+        if (sizeData) {
+          const { data: sizeResult } = await supabase
+            .rpc('get_room_size_from_data', { room_size_data: sizeData });
+          roomSizeCategory = (sizeResult as 'small' | 'medium' | 'large') || 'medium';
+        }
       }
 
       // Check for persistent issues
@@ -177,9 +194,9 @@ export function useEnhancedRoomData(roomId: string) {
         status: room.status as any,
         storage_type: room.storage_type as any,
         simplified_storage_type: room.simplified_storage_type as any,
-        position: room.position ? (typeof room.position === 'string' ? JSON.parse(room.position) : room.position) : undefined,
-        size: room.size ? (typeof room.size === 'string' ? JSON.parse(room.size) : room.size) : undefined,
-        courtroom_photos: room.courtroom_photos ? (typeof room.courtroom_photos === 'string' ? JSON.parse(room.courtroom_photos) : room.courtroom_photos) : undefined,
+        position: room.position ? (safeJsonParse<any>(room.position) ?? undefined) : undefined,
+        size: room.size ? (safeJsonParse<any>(room.size) ?? undefined) : undefined,
+        courtroom_photos: room.courtroom_photos ? (safeJsonParse<any[]>(room.courtroom_photos) ?? undefined) : undefined,
         court_room: courtRoomData,
         lighting_fixtures: enhancedLightingFixtures,
         total_fixtures_count: totalFixtures,

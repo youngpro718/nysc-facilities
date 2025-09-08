@@ -12,17 +12,19 @@ export interface Size3D {
   depth?: number;
 }
 
+export type ObjectKind = 'room' | 'hallway' | 'door';
+
 export interface SpaceData {
   id: string;
   name: string;
-  type: 'room' | 'hallway' | 'door';
+  type: ObjectKind;
   status?: string;
   properties?: Record<string, any>;
 }
 
 export interface FloorPlanObject {
   id: string;
-  type: 'room' | 'hallway' | 'door';
+  type: ObjectKind;
   position: Position3D;
   size: Size3D;
   rotation?: number;

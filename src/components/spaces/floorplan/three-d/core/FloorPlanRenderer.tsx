@@ -45,11 +45,48 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
     isLoading: true
   });
 
+  // Stable ID helpers (deterministic across renders)
+  const hashString = useCallback((input: string): string => {
+    // djb2 hash
+    let hash = 5381;
+    for (let i = 0; i < input.length; i++) {
+      hash = ((hash << 5) + hash) + input.charCodeAt(i);
+      hash = hash & hash; // Convert to 32bit int
+    }
+    return (hash >>> 0).toString(36); // unsigned, base36
+  }, []);
+
+  const stableRoomId = useCallback((room: any): string => {
+    if (room?.id && typeof room.id === 'string') return room.id;
+    const key = JSON.stringify({
+      n: room?.name ?? room?.data?.label ?? room?.room_number ?? 'room',
+      px: room?.position?.x ?? 0,
+      py: room?.position?.y ?? 0,
+      sw: room?.data?.size?.width ?? room?.size?.width ?? 100,
+      sh: room?.data?.size?.height ?? room?.size?.height ?? 100,
+      t: room?.type ?? 'room',
+      r: room?.rotation ?? 0,
+    });
+    return `room-${hashString(key)}`;
+  }, [hashString]);
+
+  const stableConnectionId = useCallback((conn: any): string => {
+    if (conn?.id && typeof conn.id === 'string') return conn.id;
+    const key = JSON.stringify({
+      fx: conn?.from?.x ?? 0,
+      fy: conn?.from?.y ?? 0,
+      tx: conn?.to?.x ?? 0,
+      ty: conn?.to?.y ?? 0,
+      t: conn?.type ?? 'direct'
+    });
+    return `conn-${hashString(key)}`;
+  }, [hashString]);
+
   // Transform room data to the format expected by Scene3DManager
   const transformRoomData = useCallback((rooms: any[]): RoomData[] => {
     try {
       return rooms.map(room => ({
-        id: room.id || String(Math.random()),
+        id: stableRoomId(room),
         name: room.name || room.data?.label || room.room_number || `Room ${room.id?.slice(-4) || 'Unknown'}`,
         position: {
           x: Number(room.position?.x || 0),
@@ -73,13 +110,13 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
       console.error('FloorPlanRenderer: Error transforming room data:', error);
       return [];
     }
-  }, []);
+  }, [stableRoomId]);
 
   // Transform connection data to the format expected by Scene3DManager
   const transformConnectionData = useCallback((connections: any[]): ConnectionData[] => {
     try {
       return connections.map(conn => ({
-        id: conn.id || String(Math.random()),
+        id: stableConnectionId(conn),
         from: {
           x: Number(conn.from?.x || 0),
           y: Number(conn.from?.y || 0)
@@ -98,7 +135,7 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
       console.error('FloorPlanRenderer: Error transforming connection data:', error);
       return [];
     }
-  }, []);
+  }, [stableConnectionId]);
 
   // Initialize 3D scene
   const initialize3DScene = useCallback(async () => {

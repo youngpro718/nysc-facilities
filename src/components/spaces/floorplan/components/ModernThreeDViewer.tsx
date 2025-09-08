@@ -22,11 +22,34 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from '@/lib/utils';
 
+// Minimal object shape used by the 3D viewer and scene
+interface ViewerObject {
+  id: string;
+  type?: string;
+  position: { x: number; y: number; z?: number };
+  data: { size: { width: number; height: number } };
+}
+
+// Preview payload used to render temporary updates
+interface PreviewData {
+  id: string;
+  position: { x: number; y: number };
+  rotation: number;
+  data: { size: { width: number; height: number }; properties: Record<string, unknown> };
+}
+
+// Optional imperative scene handle (if provided by the scene component)
+interface SceneHandle {
+  resetCamera: () => void;
+  zoomIn: () => void;
+  zoomOut: () => void;
+}
+
 interface ModernThreeDViewerProps {
   floorId: string | null;
-  onObjectSelect?: (object: any) => void;
+  onObjectSelect?: (objectId: string) => void;
   selectedObjectId?: string | null;
-  previewData?: any;
+  previewData?: PreviewData;
   showLabels?: boolean;
 }
 
@@ -40,62 +63,58 @@ export function ModernThreeDViewer({
   const { objects, edges, isLoading } = useFloorPlanData(floorId);
   const [showConnections, setShowConnections] = useState<boolean>(true);
   const [cameraPosition, setCameraPosition] = useState<[number, number, number]>([300, 400, 300]);
-  const sceneRef = useRef<any>(null);
+  const sceneRef = useRef<SceneHandle | null>(null);
+
+  // Typed validators and helpers
+  const isValidViewerObject = (obj: any): obj is ViewerObject => {
+    if (!obj || typeof obj !== 'object') return false;
+    const pos = (obj as any).position;
+    const size = (obj as any).data?.size;
+    return (
+      pos &&
+      Number.isFinite(pos.x) &&
+      Number.isFinite(pos.y) &&
+      size &&
+      Number.isFinite(size.width) &&
+      Number.isFinite(size.height)
+    );
+  };
+
+  type ViewerEdge = { id?: string; from: string; to: string; type?: string };
+  const filterValidEdges = (list: any[] | undefined | null): ViewerEdge[] => {
+    if (!Array.isArray(list)) return [];
+    return list.filter((edge: any): edge is ViewerEdge => {
+      return (
+        edge && typeof edge === 'object' &&
+        typeof edge.from === 'string' &&
+        typeof edge.to === 'string' &&
+        edge.from !== edge.to
+      );
+    });
+  };
 
   // Safe data filtering to prevent undefined errors
-  const safeObjects = useMemo(() => {
-    if (!objects) {
-      console.log('ModernThreeDViewer - No objects provided');
-      return [];
-    }
-    
-    console.log('ModernThreeDViewer - Raw objects received:', objects.length);
-    
-    const filtered = objects.filter(obj => {
-      const isValid = obj && 
-        typeof obj === 'object' && 
-        obj.position && 
-        obj.data && 
-        obj.data.size &&
-        typeof obj.position.x === 'number' && 
-        typeof obj.position.y === 'number' &&
-        typeof obj.data.size.width === 'number' &&
-        typeof obj.data.size.height === 'number';
-      
-      if (!isValid) {
-        console.log('ModernThreeDViewer - Filtered out object:', {
-          hasObj: !!obj,
-          hasPosition: !!obj?.position,
-          hasData: !!obj?.data,
-          hasSize: !!obj?.data?.size,
-          positionX: obj?.position?.x,
-          positionY: obj?.position?.y,
-          sizeWidth: obj?.data?.size?.width,
-          sizeHeight: obj?.data?.size?.height,
-          obj: obj
-        });
-      }
-      
-      return isValid;
-    });
-    
-    console.log('ModernThreeDViewer - Safe objects after filtering:', filtered.length);
-    console.log('ModernThreeDViewer - First safe object:', filtered[0]);
-    
-    return filtered;
+  const safeObjects = useMemo<ViewerObject[]>(() => {
+    if (!Array.isArray(objects)) return [];
+    return (objects as any[]).filter(isValidViewerObject) as ViewerObject[];
   }, [objects]);
 
-  const safeEdges = useMemo(() => {
-    if (!edges) return [];
-    
-    return edges.filter(edge => 
-      edge && 
-      typeof edge === 'object' &&
-      (edge as any).from && 
-      (edge as any).to &&
-      (edge as any).from !== (edge as any).to
-    );
-  }, [edges]);
+  const safeEdges = useMemo(() => filterValidEdges(edges as any[]), [edges]);
+
+  // Map string-id edges to geometric connections using object positions
+  const sceneConnections = useMemo(() => {
+    if (!showConnections) return [] as { id: string; from: { x: number; y: number }; to: { x: number; y: number } }[];
+    return safeEdges.flatMap((e) => {
+      const fromObj = safeObjects.find(o => o.id === e.from);
+      const toObj = safeObjects.find(o => o.id === e.to);
+      if (!fromObj || !toObj) return [] as any[];
+      return [{
+        id: e.id ?? `${e.from}-${e.to}`,
+        from: { x: fromObj.position.x, y: fromObj.position.y },
+        to: { x: toObj.position.x, y: toObj.position.y }
+      }];
+    });
+  }, [safeEdges, safeObjects, showConnections]);
 
 
 
@@ -226,7 +245,7 @@ export function ModernThreeDViewer({
       <div className="flex-1">
         <NewThreeDScene
           objects={safeObjects}
-          connections={safeEdges}
+          connections={sceneConnections}
           selectedObjectId={selectedObjectId}
           onObjectClick={onObjectSelect}
           showConnections={showConnections}
