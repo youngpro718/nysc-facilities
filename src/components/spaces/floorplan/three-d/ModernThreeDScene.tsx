@@ -303,7 +303,7 @@ export const ModernThreeDScene = forwardRef<any, ModernThreeDSceneProps>(functio
       {previewObject && (
         <ModernSpace3D
           id={previewObject.id}
-          type={previewObject.type}
+          type={(previewObject.type as "room" | "hallway" | "door")}
           position={previewObject.position}
           size={previewObject.data?.size}
           properties={previewObject.data?.properties}
