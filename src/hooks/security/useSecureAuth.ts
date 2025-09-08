@@ -27,18 +27,8 @@ export function useSecureAuth() {
         throw new Error(emailValidation.errors[0]);
       }
 
-      // Use simplified password validation for login
-      const { data: passwordValidation, error: passwordError } = await supabase.rpc('validate_simple_password', { password });
-      if (passwordError) throw passwordError;
-      
-      const pwdResult = passwordValidation as { is_valid: boolean; errors: string[] };
-      if (!pwdResult.is_valid) {
-        await logSecurityEvent('failed_login_validation', 'authentication', undefined, {
-          reason: 'weak_password',
-          errors: pwdResult.errors
-        });
-        throw new Error(pwdResult.errors.join(', '));
-      }
+      // Do NOT enforce password policy on sign-in; only on sign-up.
+      // Rationale: existing users may have older/shorter passwords; Supabase will handle auth validity.
 
       // Check rate limiting
       const rateLimitOk = await checkRateLimit(email, 'login');
@@ -80,7 +70,7 @@ export function useSecureAuth() {
     } finally {
       setIsLoading(false);
     }
-  }, [validateEmail, validatePassword, sanitizeInput, checkRateLimit, logSecurityEvent]);
+  }, [validateEmail, sanitizeInput, checkRateLimit, logSecurityEvent]);
 
   const secureSignUp = useCallback(async (email: string, password: string, userData: any) => {
     setIsLoading(true);
