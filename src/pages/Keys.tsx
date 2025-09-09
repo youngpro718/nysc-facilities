@@ -15,61 +15,17 @@ export default function Keys() {
   const { data: keyStats, isLoading } = useQuery({
     queryKey: ["keys-stats"],
     queryFn: async () => {
-      // Get key data from base table
+      // Use the new key statistics view for proper data aggregation
       const { data: keysData, error: keysError } = await supabase
-        .from("keys")
-        .select(`
-          id,
-          name,
-          type,
-          status,
-          total_quantity,
-          available_quantity,
-          is_passkey,
-          key_scope,
-          properties,
-          location_data,
-          captain_office_copy,
-          captain_office_assigned_date,
-          captain_office_notes,
-          created_at,
-          updated_at
-        `);
+        .from("key_statistics_view")
+        .select("*");
 
-      if (keysError) throw keysError;
-
-      // Get assignment statistics (aggregated per key)
-      const { data: assignmentData, error: assignmentError } = await supabase
-        .from("key_assignment_stats")
-        .select(`
-          key_id,
-          active_assignments,
-          returned_assignments,
-          lost_count
-        `)
-        .returns<{
-          key_id: string;
-          active_assignments: number | null;
-          returned_assignments: number | null;
-          lost_count: number | null;
-        }[]>();
-
-      if (assignmentError) throw assignmentError;
-
-      // Merge the data
-      const mergedData = keysData?.map(key => {
-        const assignments = assignmentData?.find(a => a.key_id === key.id);
-        return {
-          ...key,
-          active_assignments: assignments?.active_assignments || 0,
-          returned_assignments: assignments?.returned_assignments || 0,
-          lost_count: assignments?.lost_count || 0,
-          assigned_count: assignments?.active_assignments || 0, // For backward compatibility
-          stock_status: key.status // For backward compatibility
-        };
-      }) || [];
+      if (keysError) {
+        console.error("Error fetching key statistics:", keysError);
+        throw keysError;
+      }
       
-      return mergedData as KeyData[];
+      return keysData as KeyData[];
     },
   });
 

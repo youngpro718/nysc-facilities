@@ -40,6 +40,7 @@ import ErrorBoundary from "@/components/error/ErrorBoundary";
 import AuthErrorBoundary from "@/components/error/AuthErrorBoundary";
 import Users from "@/pages/Users";
 import AdminSupplyRequests from "@/pages/admin/SupplyRequests";
+import Notifications from "@/pages/Notifications";
 
 
 // Create a client
@@ -147,6 +148,11 @@ function AppContent() {
             <ModuleProtectedRoute moduleKey="supply_requests" moduleName="Supply Requests">
               <AdminSupplyRequests />
             </ModuleProtectedRoute>
+          </ProtectedRoute>
+        } />
+        <Route path="notifications" element={
+          <ProtectedRoute requireAdmin>
+            <Notifications />
           </ProtectedRoute>
         } />
         {/* Supply Requests now handled by Operations page */}
