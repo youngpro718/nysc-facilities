@@ -47,6 +47,22 @@ export function OccupantImportExport({ occupants = [], onImportSuccess }: Occupa
   }>({ successful: 0, failed: 0, errors: [] });
   const [isProcessing, setIsProcessing] = useState(false);
   
+  // Basic import safety guards
+  const MAX_IMPORT_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  const ALLOWED_EXTENSIONS = [".xlsx", ".xls", ".csv"] as const;
+  const ALLOWED_MIME_PREFIXES = [
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
+    "application/vnd.ms-excel", // .xls
+    "text/csv",
+    "application/csv"
+  ];
+
+  const hasAllowedExtension = (name: string) =>
+    ALLOWED_EXTENSIONS.some(ext => name.toLowerCase().endsWith(ext));
+
+  const hasAllowedMime = (type: string) =>
+    !type || ALLOWED_MIME_PREFIXES.some(prefix => type.toLowerCase().startsWith(prefix));
+
   // Export field selection
   const [exportFields, setExportFields] = useState({
     first_name: true,
@@ -166,12 +182,40 @@ export function OccupantImportExport({ occupants = [], onImportSuccess }: Occupa
       return;
     }
 
+    // File validation guards (size, type, extension)
+    if (importFile.size > MAX_IMPORT_FILE_SIZE) {
+      toast({
+        title: "File too large",
+        description: "Please upload a file smaller than 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!hasAllowedExtension(importFile.name) || !hasAllowedMime(importFile.type)) {
+      toast({
+        title: "Invalid file type",
+        description: "Only .xlsx, .xls, or .csv files are allowed.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsProcessing(true);
     setImportProgress(0);
     setImportResults({ successful: 0, failed: 0, errors: [] });
 
     try {
       const data = await parseExcelFile(importFile);
+      // Basic header validation
+      const requiredHeaders = ["first_name", "last_name", "email"];
+      const firstRow = Array.isArray(data) && data.length > 0 ? data[0] : null;
+      const hasHeaders = firstRow && typeof firstRow === 'object'
+        ? requiredHeaders.every(h => Object.prototype.hasOwnProperty.call(firstRow, h))
+        : false;
+      if (!hasHeaders) {
+        throw new Error("Invalid or missing headers. Required: first_name, last_name, email");
+      }
       
       if (!Array.isArray(data) || data.length === 0) {
         throw new Error('No valid data found in file');

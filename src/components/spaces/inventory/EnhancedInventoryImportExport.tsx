@@ -46,6 +46,22 @@ export function EnhancedInventoryImportExport({
   const [categories, setCategories] = useState<Category[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(false);
   
+  // Basic import safety guards
+  const MAX_IMPORT_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  const ALLOWED_EXTENSIONS = [".xlsx", ".xls", ".csv"] as const;
+  const ALLOWED_MIME_PREFIXES = [
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
+    "application/vnd.ms-excel", // .xls
+    "text/csv",
+    "application/csv"
+  ];
+
+  const hasAllowedExtension = (name: string) =>
+    ALLOWED_EXTENSIONS.some(ext => name.toLowerCase().endsWith(ext));
+
+  const hasAllowedMime = (type: string) =>
+    !type || ALLOWED_MIME_PREFIXES.some(prefix => type.toLowerCase().startsWith(prefix));
+  
   // Export field selection
   const [exportFields, setExportFields] = useState({
     name: true,
@@ -154,6 +170,25 @@ export function EnhancedInventoryImportExport({
       return;
     }
 
+    // File validation guards (size, type, extension)
+    if (importFile.size > MAX_IMPORT_FILE_SIZE) {
+      toast({
+        title: "File too large",
+        description: "Please upload a file smaller than 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!hasAllowedExtension(importFile.name) || !hasAllowedMime(importFile.type)) {
+      toast({
+        title: "Invalid file type",
+        description: "Only .xlsx, .xls, or .csv files are allowed.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsProcessing(true);
     setImportProgress(0);
     setImportResults({ successful: 0, failed: 0, errors: [], categoryIssues: [] });
@@ -161,6 +196,15 @@ export function EnhancedInventoryImportExport({
     try {
       // Parse Excel file
       const rawData = await parseExcelFile(importFile);
+      // Require at least a few expected inventory headers
+      const candidate = Array.isArray(rawData) && rawData.length > 0 ? rawData[0] : null;
+      const expectedAnyOf = ["name", "item_name", "item", "product_name"];
+      const hasNameLike = candidate && typeof candidate === 'object'
+        ? expectedAnyOf.some(h => Object.prototype.hasOwnProperty.call(candidate, h))
+        : false;
+      if (!hasNameLike) {
+        throw new Error("Invalid or missing headers. Expect a name column like 'name' or 'item_name'.");
+      }
       
       if (!Array.isArray(rawData) || rawData.length === 0) {
         throw new Error('No valid data found in file');
