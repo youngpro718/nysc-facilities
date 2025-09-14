@@ -32,16 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
 
-  // Dev-only bypass for auth redirects
-  const devBypass =
-    (import.meta as any)?.env?.VITE_DISABLE_AUTH_GUARD === 'true';
-
-  // Warn if dev bypass enabled
-  useEffect(() => {
-    if (devBypass) {
-      console.warn('[Auth] VITE_DISABLE_AUTH_GUARD is true: authentication guards and redirects are bypassed for development.');
-    }
-  }, [devBypass]);
+  // SECURITY: Authentication bypass removed for production security
 
   // Function to fetch user profile data
   const getUserProfile = useCallback(async (userId: string) => {
@@ -228,7 +219,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Centralized redirect logic
     const handleRedirect = (userData: { isAdmin: boolean; profile: UserProfile | null }) => {
-      if (devBypass) return; // skip redirects in dev bypass
       if (!mounted) return;
 
       const currentPath = window.location.pathname;
@@ -302,10 +292,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           console.log('useAuth: No session found');
           const currentPath = window.location.pathname;
-          if (!devBypass) {
-            if (currentPath !== '/login' && currentPath !== '/verification-pending') {
-              navigate('/login', { replace: true });
-            }
+          if (currentPath !== '/login' && currentPath !== '/verification-pending') {
+            navigate('/login', { replace: true });
           }
         }
       } catch (error: any) {
@@ -371,7 +359,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsAdmin(false);
           
           // Only redirect if not already on login page
-          if (!devBypass && window.location.pathname !== '/login') {
+          if (window.location.pathname !== '/login') {
             navigate('/login', { replace: true });
           }
         }
@@ -388,7 +376,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [getUserProfile, navigate])
 
   // Compute isAuthenticated derived from session
-  const isAuthenticated = devBypass || !!session;
+  const isAuthenticated = !!session;
 
   // Provide the auth context to children
   return (

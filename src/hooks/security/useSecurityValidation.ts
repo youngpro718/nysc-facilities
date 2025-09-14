@@ -78,11 +78,7 @@ export function useSecurityValidation() {
     maxAttempts: number = 5,
     windowMinutes: number = 15
   ): Promise<boolean> => {
-    // Allow bypass of rate limit checks in development
-    if ((import.meta as any)?.env?.VITE_DISABLE_RATE_LIMIT === 'true') {
-      console.warn('[Security] VITE_DISABLE_RATE_LIMIT is true: rate limit checks are bypassed for development.');
-      return true;
-    }
+    // SECURITY: Rate limit bypass removed for production security
     try {
       const { data, error } = await supabase.rpc('check_rate_limit', {
         p_identifier: identifier,

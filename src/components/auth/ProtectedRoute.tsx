@@ -21,13 +21,7 @@ export function ProtectedRoute({
   // Hooks must be called unconditionally at the top level
   const { isAuthenticated, isAdmin, isLoading, profile } = useAuth();
 
-  // Dev-only bypass: allow rendering without auth when explicitly enabled
-  const disableAuthGuard =
-    (import.meta as any)?.env?.VITE_DISABLE_AUTH_GUARD === 'true';
-
-  if (disableAuthGuard) {
-    return <>{children}</>;
-  }
+  // SECURITY: Authentication guard removed - no bypasses allowed in production
 
   // Show loading while auth state is being determined
   if (isLoading) {
