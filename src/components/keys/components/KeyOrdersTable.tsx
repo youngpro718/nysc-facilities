@@ -88,8 +88,8 @@ export function KeyOrdersTable({ orders, isLoading, onReceiveKeys, onCancelOrder
   };
 
   return (
-    <div className="rounded-md border">
-      <Table>
+    <div className="rounded-md border overflow-x-auto">
+      <Table className="min-w-max">
         <TableHeader>
           <TableRow>
             <TableHead>Key</TableHead>
@@ -149,7 +149,7 @@ export function KeyOrdersTable({ orders, isLoading, onReceiveKeys, onCancelOrder
                     <Button 
                       size="sm" 
                       variant="outline" 
-                      className="flex items-center gap-1"
+                      className="flex items-center gap-1 h-11"
                       onClick={() => onReceiveKeys(order)}
                     >
                       <PackageCheck className="h-4 w-4" />
@@ -159,7 +159,7 @@ export function KeyOrdersTable({ orders, isLoading, onReceiveKeys, onCancelOrder
                     <Button 
                       size="sm" 
                       variant="ghost" 
-                      className="text-destructive hover:text-destructive"
+                      className="text-destructive hover:text-destructive h-11"
                       onClick={() => onCancelOrder(order.id)}
                     >
                       Cancel

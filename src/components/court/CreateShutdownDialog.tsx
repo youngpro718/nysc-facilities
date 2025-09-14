@@ -77,7 +77,9 @@ export function CreateShutdownDialog({
         description: `Shutdown scheduled for Room ${roomNumber}`,
         variant: "default",
       });
+      // Keep all dashboards in sync
       queryClient.invalidateQueries({ queryKey: ['room-shutdowns'] });
+      queryClient.invalidateQueries({ queryKey: ['room-shutdowns-active'] });
       queryClient.invalidateQueries({ queryKey: ['courtroom-availability'] });
       queryClient.invalidateQueries({ queryKey: ['interactive-operations'] });
       reset();

@@ -34,6 +34,13 @@ export class Scene3DManager {
   // Object pools for reuse
   private roomMeshes: Map<string, THREE.Group> = new Map();
   private connectionMeshes: Map<string, THREE.Group> = new Map();
+  private pickableObjects: THREE.Object3D[] = [];
+  private labelScaleMultiplier: number = 1;
+  private moveEnabled: boolean = false;
+  private isDragging: boolean = false;
+  private dragRoomId: string | null = null;
+  private dragPlane: THREE.Plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  private dragOffset: THREE.Vector3 = new THREE.Vector3();
   
   // Materials (reused)
   private roomMaterial: THREE.MeshPhongMaterial;
@@ -104,6 +111,14 @@ export class Scene3DManager {
     });
 
     this.setupScene();
+  }
+
+  public setLabelScaleMultiplier(mult: number) {
+    this.labelScaleMultiplier = Math.max(0.5, Math.min(3, mult || 1));
+  }
+
+  public setMoveEnabled(enabled: boolean) {
+    this.moveEnabled = !!enabled;
   }
 
   // Update selection state and re-apply materials (selected vs hovered vs default)
@@ -435,6 +450,24 @@ export class Scene3DManager {
     const render = () => {
       try {
         this.controls?.update();
+        // Dynamically scale label sprites so they remain readable at various zoom levels
+        try {
+          const cameraPos = this.camera.position.clone();
+          this.scene.traverse((obj) => {
+            if ((obj as any).userData?.type === 'label' && obj instanceof THREE.Sprite) {
+              const sprite = obj as THREE.Sprite;
+              const worldPos = new THREE.Vector3();
+              sprite.getWorldPosition(worldPos);
+              const dist = cameraPos.distanceTo(worldPos);
+              // Base width ~60 at cameraDistance, clamp to practical bounds
+              const base = 60;
+              const scaleMult = Math.max(0.8, Math.min(2.0, dist / (this.options.cameraDistance || 500)));
+              const width = base * scaleMult * this.labelScaleMultiplier;
+              const height = width * (10 / 40); // match original 40x10 ratio
+              sprite.scale.set(width, height, 1);
+            }
+          });
+        } catch {}
         this.renderer?.render(this.scene, this.camera);
         this.animationId = requestAnimationFrame(render);
       } catch (error) {
@@ -465,8 +498,31 @@ export class Scene3DManager {
       const rect = this.renderer.domElement.getBoundingClientRect();
       this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-      this.handleMouseHover();
+      if (this.isDragging && this.dragRoomId) {
+        // Drag selected room along ground plane
+        const intersection = new THREE.Vector3();
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+        if (this.raycaster.ray.intersectPlane(this.dragPlane, intersection)) {
+          const target = intersection.sub(this.dragOffset);
+          // Snap to grid (20)
+          const snap = 20;
+          const gx = Math.round(target.x / snap) * snap;
+          const gy = Math.round(target.z / snap) * snap; // z axis is y on floor
+          const group = this.roomMeshes.get(this.dragRoomId);
+          if (group) {
+            // group contains children centered; adjust by difference from current
+            const deltaX = gx - group.userData.snappedPosition?.x || 0;
+            const deltaY = gy - group.userData.snappedPosition?.y || 0;
+            // Move all children by delta in X/Z
+            group.children.forEach(() => {}); // no-op, group transform used instead
+            group.children.forEach(() => {});
+            group.traverse(() => {});
+            group.position.set(gx - (group.userData.snappedPosition?.x || 0), 0, gy - (group.userData.snappedPosition?.y || 0));
+          }
+        }
+      } else {
+        this.handleMouseHover();
+      }
     };
 
     const handleMouseClick = (event: MouseEvent) => {
@@ -477,14 +533,45 @@ export class Scene3DManager {
       this.handleMouseClick();
     };
 
+    const handleMouseDown = (event: MouseEvent) => {
+      if (!this.moveEnabled) return;
+      const rect = this.renderer.domElement.getBoundingClientRect();
+      this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      this.raycaster.setFromCamera(this.mouse, this.camera);
+      const targetList = this.pickableObjects.length > 0 ? this.pickableObjects : this.scene.children;
+      const intersects = this.raycaster.intersectObjects(targetList, true);
+      for (const intersect of intersects) {
+        let parent = intersect.object.parent;
+        while (parent && parent.userData.type !== 'room') parent = parent.parent;
+        if (parent && parent.userData.id) {
+          this.dragRoomId = parent.userData.id;
+          const intersection = new THREE.Vector3();
+          if (this.raycaster.ray.intersectPlane(this.dragPlane, intersection)) {
+            this.dragOffset.copy(intersection).sub(parent.position.clone());
+            this.isDragging = true;
+          }
+          break;
+        }
+      }
+    };
+
+    const handleMouseUp = () => {
+      this.isDragging = false;
+      this.dragRoomId = null;
+    };
+
     this.renderer.domElement.addEventListener('mousemove', handleMouseMove);
     this.renderer.domElement.addEventListener('click', handleMouseClick);
+    this.renderer.domElement.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mouseup', handleMouseUp);
     this.renderer.domElement.style.cursor = 'pointer';
   }
 
   private handleMouseHover(): void {
     this.raycaster.setFromCamera(this.mouse, this.camera);
-    const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+    const targetList = this.pickableObjects.length > 0 ? this.pickableObjects : this.scene.children;
+    const intersects = this.raycaster.intersectObjects(targetList, true);
 
     let hoveredRoom: string | null = null;
 
@@ -529,7 +616,8 @@ export class Scene3DManager {
 
   private handleMouseClick(): void {
     this.raycaster.setFromCamera(this.mouse, this.camera);
-    const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+    const targetList = this.pickableObjects.length > 0 ? this.pickableObjects : this.scene.children;
+    const intersects = this.raycaster.intersectObjects(targetList, true);
 
     for (const intersect of intersects) {
       const object = intersect.object;
@@ -564,6 +652,7 @@ export class Scene3DManager {
       // Clear existing rooms and data
       this.clearRooms();
       this.roomDataMap.clear();
+      this.pickableObjects = [];
 
       // Create new room meshes and store data
       validRooms.forEach(room => {
@@ -572,6 +661,7 @@ export class Scene3DManager {
           this.scene.add(roomGroup);
           this.roomMeshes.set(room.id, roomGroup);
           this.roomDataMap.set(room.id, room);
+          this.pickableObjects.push(roomGroup);
         }
       });
 
@@ -929,7 +1019,8 @@ export class Scene3DManager {
       
       // Position above the room with better scaling
       sprite.position.set(x, y, z);
-      sprite.scale.set(40, 10, 1); // Larger, more readable size
+      // Start larger by default; dynamic scaling in render loop will refine
+      sprite.scale.set(60, 15, 1);
       sprite.userData = { type: 'label', roomId: group.userData.id };
       
       group.add(sprite);

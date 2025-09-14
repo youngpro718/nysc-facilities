@@ -118,25 +118,32 @@ export class UnifiedSpaceService {
     if (data.type !== "hallway") {
       throw new Error("Invalid data type for hallway creation");
     }
-    
+    // Sanitize enums to match DB enum values
+    const TYPE_ALLOWED = new Set(["public_main", "private", "private_main"]);
+    const SECTION_ALLOWED = new Set(["left_wing", "right_wing", "connector"]);
+    const STATUS_ALLOWED = new Set(["active", "inactive", "under_maintenance"]);
+    const type = TYPE_ALLOWED.has((data as any).hallwayType) ? (data as any).hallwayType : "public_main";
+    const section = SECTION_ALLOWED.has((data as any).section) ? (data as any).section : "connector";
+    const status = STATUS_ALLOWED.has((data as any).status) ? (data as any).status : "active";
+
     const hallwayData = {
-      name: data.name,
+      name: data.name ?? 'Hallway',
       floor_id: data.floorId,
-      description: data.description,
-      type: data.hallwayType,
-      section: data.section,
-      traffic_flow: data.trafficFlow,
-      accessibility: data.accessibility,
-      emergency_route: data.emergencyRoute,
-      maintenance_priority: data.maintenancePriority,
-      capacity_limit: data.capacityLimit,
-      width_meters: data.width,
-      length_meters: data.length,
-      status: data.status,
-      position: data.position,
-      size: data.size,
-      rotation: data.rotation
-    };
+      description: data.description ?? null,
+      type,
+      section,
+      traffic_flow: (data as any).trafficFlow ?? null,
+      accessibility: (data as any).accessibility ?? null,
+      emergency_route: (data as any).emergencyRoute ?? null,
+      maintenance_priority: (data as any).maintenancePriority ?? null,
+      capacity_limit: (data as any).capacityLimit ?? null,
+      width_meters: (data as any).width ?? (data as any).size?.width ?? 50,
+      length_meters: (data as any).length ?? (data as any).size?.length ?? null,
+      status,
+      position: data.position ?? { x: 0, y: 0 },
+      size: data.size ?? { width: 300, height: 50 },
+      rotation: data.rotation ?? 0
+    } as any;
 
     console.log('Creating hallway with data:', hallwayData);
 
@@ -158,24 +165,30 @@ export class UnifiedSpaceService {
     if (data.type !== "hallway") {
       throw new Error("Invalid data type for hallway update");
     }
+    const TYPE_ALLOWED = new Set(["public_main", "private", "private_main"]);
+    const SECTION_ALLOWED = new Set(["left_wing", "right_wing", "connector"]);
+    const STATUS_ALLOWED = new Set(["active", "inactive", "under_maintenance"]);
+    const type = TYPE_ALLOWED.has((data as any).hallwayType) ? (data as any).hallwayType : "public_main";
+    const section = SECTION_ALLOWED.has((data as any).section) ? (data as any).section : "connector";
+    const status = STATUS_ALLOWED.has((data as any).status) ? (data as any).status : "active";
 
     const hallwayData = {
-      name: data.name,
-      description: data.description,
-      type: data.hallwayType,
-      section: data.section,
-      traffic_flow: data.trafficFlow,
-      accessibility: data.accessibility,
-      emergency_route: data.emergencyRoute,
-      maintenance_priority: data.maintenancePriority,
-      capacity_limit: data.capacityLimit,
-      width_meters: data.width,
-      length_meters: data.length,
-      status: data.status,
-      position: data.position,
-      size: data.size,
-      rotation: data.rotation
-    };
+      name: data.name ?? 'Hallway',
+      description: data.description ?? null,
+      type,
+      section,
+      traffic_flow: (data as any).trafficFlow ?? null,
+      accessibility: (data as any).accessibility ?? null,
+      emergency_route: (data as any).emergencyRoute ?? null,
+      maintenance_priority: (data as any).maintenancePriority ?? null,
+      capacity_limit: (data as any).capacityLimit ?? null,
+      width_meters: (data as any).width ?? (data as any).size?.width ?? 50,
+      length_meters: (data as any).length ?? (data as any).size?.length ?? null,
+      status,
+      position: data.position ?? { x: 0, y: 0 },
+      size: data.size ?? { width: 300, height: 50 },
+      rotation: data.rotation ?? 0
+    } as any;
 
     console.log('Updating hallway with ID:', id);
     console.log('Update data:', hallwayData);

@@ -51,6 +51,10 @@ interface ModernThreeDViewerProps {
   selectedObjectId?: string | null;
   previewData?: PreviewData;
   showLabels?: boolean;
+  filterType?: 'all' | 'room' | 'hallway' | 'door';
+  showConnectionsExternal?: boolean;
+  commandToken?: { type: 'fit' } | { type: 'focus'; id: string } | null;
+  labelScale?: number;
 }
 
 export function ModernThreeDViewer({ 
@@ -58,10 +62,15 @@ export function ModernThreeDViewer({
   onObjectSelect, 
   selectedObjectId,
   previewData,
-  showLabels = true
+  showLabels = true,
+  filterType = 'all',
+  showConnectionsExternal,
+  commandToken = null,
+  labelScale = 1
 }: ModernThreeDViewerProps) {
   const { objects, edges, isLoading } = useFloorPlanData(floorId);
   const [showConnections, setShowConnections] = useState<boolean>(true);
+  const [isSmallScreen, setIsSmallScreen] = useState<boolean>(false);
   const [cameraPosition, setCameraPosition] = useState<[number, number, number]>([300, 400, 300]);
   const sceneRef = useRef<SceneHandle | null>(null);
 
@@ -96,8 +105,10 @@ export function ModernThreeDViewer({
   // Safe data filtering to prevent undefined errors
   const safeObjects = useMemo<ViewerObject[]>(() => {
     if (!Array.isArray(objects)) return [];
-    return (objects as any[]).filter(isValidViewerObject) as ViewerObject[];
-  }, [objects]);
+    const base = (objects as any[]).filter(isValidViewerObject) as ViewerObject[];
+    if (!filterType || filterType === 'all') return base;
+    return base.filter((o: any) => (o?.type || '') === filterType);
+  }, [objects, filterType]);
 
   const safeEdges = useMemo(() => filterValidEdges(edges as any[]), [edges]);
 
@@ -136,6 +147,26 @@ export function ModernThreeDViewer({
       sceneRef.current.zoomOut();
     }
   };
+
+  // Determine small screens and tune defaults for performance
+  useEffect(() => {
+    const update = () => {
+      const small = typeof window !== 'undefined' ? window.innerWidth < 640 : false;
+      setIsSmallScreen(small);
+      // Default: hide connections on small screens for clarity/perf
+      if (small) setShowConnections(false);
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
+  // Sync with external connections control if provided
+  useEffect(() => {
+    if (typeof showConnectionsExternal === 'boolean') {
+      setShowConnections(showConnectionsExternal);
+    }
+  }, [showConnectionsExternal]);
 
   if (isLoading) {
     return (
@@ -249,8 +280,11 @@ export function ModernThreeDViewer({
           selectedObjectId={selectedObjectId}
           onObjectClick={onObjectSelect}
           showConnections={showConnections}
-          enableShadows={true}
+          // Cut shadows on small screens to improve performance
+          enableShadows={!isSmallScreen}
           backgroundColor={0x1e293b}
+          commandToken={commandToken}
+          labelScale={labelScale}
           className="w-full h-full"
         />
       </div>

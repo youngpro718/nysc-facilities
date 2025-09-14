@@ -1,7 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Command, CommandGroup, CommandItem } from "@/components/ui/command";
+import { Check, Calendar as CalendarIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -71,6 +75,7 @@ interface SortableRowProps {
   isIncomplete: boolean;
   tooltipText?: string;
   isRecentlyAffected: boolean;
+  rowElementId?: string;
 }
 
 const SortableRow = ({ 
@@ -88,7 +93,8 @@ const SortableRow = ({
   hasMaintenance,
   isIncomplete,
   tooltipText,
-  isRecentlyAffected
+  isRecentlyAffected,
+  rowElementId
 }: SortableRowProps) => {
   const {
     attributes,
@@ -119,6 +125,8 @@ const SortableRow = ({
               personnel={personnel.judges}
               placeholder="Select judge..."
               role="judge"
+              allowCustom={true}
+              allowClear={true}
               className="min-w-[200px]"
             />
             <Button size="sm" variant="ghost" onClick={onSave}>
@@ -141,6 +149,8 @@ const SortableRow = ({
               placeholder="Select clerks..."
               role="clerk"
               multiple={true}
+              allowCustom={true}
+              allowClear={true}
               className="min-w-[250px]"
             />
             <Button size="sm" variant="ghost" onClick={onSave}>
@@ -162,6 +172,8 @@ const SortableRow = ({
               personnel={personnel.sergeants}
               placeholder="Select sergeant..."
               role="sergeant"
+              allowCustom={true}
+              allowClear={true}
               className="min-w-[200px]"
             />
             <Button size="sm" variant="ghost" onClick={onSave}>
@@ -176,21 +188,53 @@ const SortableRow = ({
 
       // Calendar day field
       if (field === 'calendar_day') {
+        const days = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+        const selected = Array.isArray(editingValue)
+          ? (editingValue as string[])
+          : (((editingValue as string) || '').split(',').map(s => s.trim()).filter(Boolean));
+        const toggleDay = (d: string) => {
+          const set = new Set(selected);
+          if (set.has(d)) set.delete(d); else set.add(d);
+          setEditingValue(Array.from(set));
+        };
+        const clearDays = () => setEditingValue([]);
         return (
           <div className="flex items-center gap-2">
-            <Select value={(editingValue as string) || 'none'} onValueChange={setEditingValue}>
-              <SelectTrigger className="h-8 w-40">
-                <SelectValue placeholder="Select day" />
-              </SelectTrigger>
-              <SelectContent className="bg-background border shadow-lg z-50">
-                <SelectItem value="none">No calendar day</SelectItem>
-                <SelectItem value="Monday">Monday</SelectItem>
-                <SelectItem value="Tuesday">Tuesday</SelectItem>
-                <SelectItem value="Wednesday">Wednesday</SelectItem>
-                <SelectItem value="Thursday">Thursday</SelectItem>
-                <SelectItem value="Friday">Friday</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="min-w-[260px]">
+              <div className="mb-1 flex flex-wrap gap-1">
+                {selected.length > 0 ? selected.map(d => (
+                  <span key={d} className="text-xs px-2 py-0.5 rounded border bg-muted">{d}</span>
+                )) : <span className="text-xs text-muted-foreground">No calendar days</span>}
+              </div>
+              <div className="flex gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button type="button" size="sm" variant="outline" className="h-7 px-2 text-xs">
+                      <CalendarIcon className="h-3 w-3 mr-1" /> Select days
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-48 p-0" align="start">
+                    <Command>
+                      <CommandGroup>
+                        {days.map(d => {
+                          const isOn = selected.includes(d);
+                          return (
+                            <CommandItem key={d} onSelect={() => toggleDay(d)} className="flex items-center justify-between">
+                              <span className="text-sm">{d}</span>
+                              {isOn && <Check className="h-3.5 w-3.5" />}
+                            </CommandItem>
+                          );
+                        })}
+                        <CommandItem onSelect={clearDays} className="text-destructive">
+                          Clear selection
+                        </CommandItem>
+                      </CommandGroup>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={clearDays}>Clear</Button>
+              </div>
+            </div>
             <Button size="sm" variant="ghost" onClick={onSave}>
               <Save className="h-3 w-3" />
             </Button>
@@ -233,6 +277,46 @@ const SortableRow = ({
       onEdit(row.room_id, field as string, currentValue);
     };
 
+    // Pretty formatting for calendar_day when not editing
+    const prettyCalendar = () => {
+      const dayOrder = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+      const abbr: Record<string,string> = { Monday:'Mon', Tuesday:'Tue', Wednesday:'Wed', Thursday:'Thu', Friday:'Fri' };
+      const canonMap: Record<string,string> = {
+        mon: 'Monday', monday: 'Monday',
+        tue: 'Tuesday', tues: 'Tuesday', tuesday: 'Tuesday',
+        wed: 'Wednesday', weds: 'Wednesday', wednesday: 'Wednesday',
+        thu: 'Thursday', thur: 'Thursday', thurs: 'Thursday', thursday: 'Thursday',
+        fri: 'Friday', friday: 'Friday'
+      };
+      const raw = (displayValue as string) || '';
+      // Handle legacy formats like '["Thursday","Tuesday"]' by attempting JSON parse first
+      let items: string[] = [];
+      try {
+        const maybe = JSON.parse(raw);
+        if (Array.isArray(maybe)) {
+          items = maybe as string[];
+        }
+      } catch {}
+      if (items.length === 0) {
+        const cleaned = raw.replace(/[\[\]"]+/g, '');
+        items = cleaned.split(',').map(s => s.trim()).filter(Boolean);
+      }
+      const parsed = items
+        .map(s => canonMap[s.toLowerCase()] || s)
+        .filter((v, i, a) => a.indexOf(v) === i)
+        .sort((a,b) => dayOrder.indexOf(a) - dayOrder.indexOf(b));
+      if (parsed.length === 0) return <span className="text-muted-foreground italic">No calendar day</span>;
+      return (
+        <div className="flex flex-wrap gap-1">
+          {parsed.map(d => (
+            <Badge key={d} variant="secondary" className="text-xs">
+              {abbr[d] || d}
+            </Badge>
+          ))}
+        </div>
+      );
+    };
+
     return (
       <div 
         className="cursor-pointer hover:bg-muted/50 p-2 rounded min-h-[32px] flex items-center"
@@ -251,11 +335,10 @@ const SortableRow = ({
             <span className="text-muted-foreground italic">Click to add</span>
           )
         ) : (
-          // Special label for calendar_day when empty
-          (field === 'calendar_day' && (!displayValue || (displayValue as string).trim() === '')) ? (
-            <span className="text-muted-foreground italic">No calendar day</span>
+          field === 'calendar_day' ? (
+            prettyCalendar()
           ) : (
-            displayValue || (
+            (displayValue as string) || (
               <span className="text-muted-foreground italic">Click to add</span>
             )
           )
@@ -284,6 +367,7 @@ const SortableRow = ({
 
   const rowElement = (
     <tr
+      id={rowElementId}
       ref={setNodeRef}
       style={style}
       className={`border-b hover:bg-muted/50 ${urgentIssues ? 'bg-red-50 border-red-200' : hasIssues ? 'bg-yellow-50 border-yellow-200' : ''} ${glowClass} ${rowAnimationClass} ${isRecentlyAffected ? 'ring-2 ring-amber-400 animate-pulse' : ''}`}
@@ -389,6 +473,8 @@ export const EnhancedCourtAssignmentTable = () => {
   const [editingValue, setEditingValue] = useState<string | string[]>("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchParams] = useSearchParams();
+  const scrollToRoomId = searchParams.get('room') || undefined;
 
   // Use our custom hooks
   const { personnel, isLoading: personnelLoading } = useCourtPersonnel();
@@ -431,10 +517,19 @@ export const EnhancedCourtAssignmentTable = () => {
       console.log(' Saving assignment:', { roomId, field, value });
       const existingAssignment = assignments?.find(row => row.room_id === roomId);
       console.log(' Existing assignment:', existingAssignment);
-      // Normalize empty/'none' calendar_day to null
-      const normalizedValue = (field === 'calendar_day' && (value === '' || value === undefined || value === 'none'))
-        ? null
-        : value;
+      // Normalize calendar_day for storage
+      let normalizedValue: any;
+      if (field === 'calendar_day') {
+        if (Array.isArray(value)) {
+          normalizedValue = value.join(',');
+        } else if (value === '' || value === undefined || value === 'none') {
+          normalizedValue = null;
+        } else {
+          normalizedValue = value;
+        }
+      } else {
+        normalizedValue = value;
+      }
       
       if (existingAssignment?.assignment_id) {
         // Update existing assignment
@@ -690,6 +785,9 @@ export const EnhancedCourtAssignmentTable = () => {
               return (
                 <SortableRow
                   key={row.room_id}
+                  // Expose DOM id for deep-link scrolling
+                  // @ts-ignore - forwarded via rest props on the <tr/>
+                  rowElementId={`row-${row.room_id}`}
                   row={row}
                   tooltipText={tooltipText}
                   onEdit={(rowId, field, currentValue) => {
@@ -744,6 +842,26 @@ export const EnhancedCourtAssignmentTable = () => {
           </table>
         </div>
       </DndContext>
+      {/* Scroll to specific room if room query param is present */}
+      {scrollToRoomId && (
+        <ScrollHelper targetId={`row-${scrollToRoomId}`} />
+      )}
     </div>
   );
+};
+
+// Small helper component to perform smooth scroll once after mount
+const ScrollHelper = ({ targetId }: { targetId: string }) => {
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const el = document.getElementById(targetId);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('ring-2', 'ring-primary');
+        setTimeout(() => el.classList.remove('ring-2', 'ring-primary'), 2000);
+      }
+    }, 100);
+    return () => clearTimeout(t);
+  }, [targetId]);
+  return null;
 };

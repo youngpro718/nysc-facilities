@@ -42,6 +42,15 @@ interface ModernThreeDSceneProps {
   showConnections?: boolean;
   lightIntensity?: number;
   viewMode?: 'default' | 'rooms' | 'hallways' | 'doors';
+  // Mobile performance tuning
+  performanceMode?: 'auto' | 'mobile' | 'desktop';
+  mobileBehavior?: {
+    showLabels?: boolean;
+    showConnections?: boolean;
+    gridDivisions?: number;
+    enableRotate?: boolean;
+    maxDistance?: number;
+  };
 }
 
 export const ModernThreeDScene = forwardRef<any, ModernThreeDSceneProps>(function ModernThreeDScene({ 
@@ -53,12 +62,23 @@ export const ModernThreeDScene = forwardRef<any, ModernThreeDSceneProps>(functio
   showLabels = true,
   showConnections = true,
   lightIntensity = 0.8,
-  viewMode = 'default'
+  viewMode = 'default',
+  performanceMode = 'auto',
+  mobileBehavior
 }, ref) {
   const { camera } = useThree();
   const controlsRef = useRef<any>(null);
   const [hasInitialized, setHasInitialized] = useState(false);
   const [hoveredObject, setHoveredObject] = useState<string | null>(null);
+
+  // Determine mobile performance mode
+  const isSmallScreen = typeof window !== 'undefined' ? window.innerWidth < 640 : false;
+  const mobileActive = performanceMode === 'mobile' || (performanceMode === 'auto' && isSmallScreen);
+  const effectiveShowLabels = mobileActive ? (mobileBehavior?.showLabels ?? false) : showLabels;
+  const effectiveShowConnections = mobileActive ? (mobileBehavior?.showConnections ?? false) : showConnections;
+  const gridDivisions = mobileActive ? (mobileBehavior?.gridDivisions ?? 10) : 20;
+  const orbitMaxDistance = mobileActive ? (mobileBehavior?.maxDistance ?? 600) : 1000;
+  const orbitEnableRotate = mobileActive ? (mobileBehavior?.enableRotate ?? true) : true;
 
   // Enhanced object validation with detailed logging
   const validObjects = React.useMemo(() => {
@@ -267,16 +287,16 @@ export const ModernThreeDScene = forwardRef<any, ModernThreeDSceneProps>(functio
         ref={controlsRef}
         enablePan={true}
         enableZoom={true}
-        enableRotate={true}
+        enableRotate={orbitEnableRotate}
         minDistance={50}
-        maxDistance={1000}
+        maxDistance={orbitMaxDistance}
         maxPolarAngle={Math.PI / 2.1}
       />
 
       {/* Grid System */}
       <ModernGridSystem 
         size={1000} 
-        divisions={20}
+        divisions={gridDivisions}
       />
 
       {/* Objects */}
@@ -292,7 +312,7 @@ export const ModernThreeDScene = forwardRef<any, ModernThreeDSceneProps>(functio
           properties={object.data?.properties as Record<string, unknown>}
           isSelected={selectedObjectId === object.id}
           isHovered={hoveredObject === object.id}
-          showLabels={showLabels}
+          showLabels={effectiveShowLabels}
           onClick={() => onObjectSelect?.(object.id)}
           onHover={() => setHoveredObject(object.id)}
           onUnhover={() => setHoveredObject(null)}
@@ -308,12 +328,12 @@ export const ModernThreeDScene = forwardRef<any, ModernThreeDSceneProps>(functio
           size={previewObject.data?.size}
           properties={previewObject.data?.properties}
           isPreview={true}
-          showLabels={showLabels}
+          showLabels={effectiveShowLabels}
         />
       )}
 
       {/* Connections */}
-      {showConnections && validConnections.map((connection, index) => {
+      {effectiveShowConnections && validConnections.map((connection, index) => {
         const fromObject = validObjects.find(obj => obj.id === connection.from);
         const toObject = validObjects.find(obj => obj.id === connection.to);
         

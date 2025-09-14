@@ -36,6 +36,12 @@ interface NewThreeDSceneProps {
   showConnections?: boolean;
   enableShadows?: boolean;
   backgroundColor?: number;
+  // Camera commands propagated to FloorPlanRenderer
+  commandToken?: { type: 'fit' } | { type: 'focus'; id: string } | null;
+  // Label scaling multiplier from UI
+  labelScale?: number;
+  // Enable in-scene movement of rooms
+  moveEnabled?: boolean;
 }
 
 const NewThreeDScene: React.FC<NewThreeDSceneProps> = ({
@@ -48,7 +54,10 @@ const NewThreeDScene: React.FC<NewThreeDSceneProps> = ({
   className = '',
   showConnections = true,
   enableShadows = true,
-  backgroundColor = 0xf5f5f5
+  backgroundColor = 0xf5f5f5,
+  commandToken = null,
+  labelScale = 1,
+  moveEnabled = false
 }) => {
   // Memoize scene options to prevent unnecessary re-renders
   const scene3DOptions = useMemo(() => ({
@@ -132,6 +141,10 @@ const NewThreeDScene: React.FC<NewThreeDSceneProps> = ({
           onRoomClick={onObjectClick}
           onRoomHover={onObjectHover}
           scene3DOptions={scene3DOptions}
+          commandToken={commandToken}
+          labelScale={labelScale}
+          moveEnabled={moveEnabled}
+          normalizeLayout={!moveEnabled}
           className="w-full h-full"
         />
       </Scene3DErrorBoundary>

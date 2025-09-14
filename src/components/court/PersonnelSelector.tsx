@@ -26,6 +26,8 @@ interface PersonnelSelectorProps {
   role?: 'judge' | 'clerk' | 'sergeant' | 'all';
   disabled?: boolean;
   className?: string;
+  allowCustom?: boolean;
+  allowClear?: boolean;
 }
 
 export const PersonnelSelector = ({
@@ -37,6 +39,8 @@ export const PersonnelSelector = ({
   role = 'all',
   disabled = false,
   className,
+  allowCustom = true,
+  allowClear = true,
 }: PersonnelSelectorProps) => {
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
@@ -77,6 +81,19 @@ export const PersonnelSelector = ({
       onValueChange(newValue);
     } else {
       onValueChange(selectedPerson.name);
+      setOpen(false);
+    }
+  };
+
+  const handleAddCustom = (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    if (multiple && Array.isArray(value)) {
+      const set = new Set(value);
+      set.add(trimmed);
+      onValueChange(Array.from(set));
+    } else {
+      onValueChange(trimmed);
       setOpen(false);
     }
   };
@@ -166,6 +183,29 @@ export const PersonnelSelector = ({
           />
           <CommandEmpty>No personnel found.</CommandEmpty>
           <CommandGroup className="max-h-[300px] overflow-y-auto">
+            {allowCustom && searchValue.trim().length > 0 && (
+              <CommandItem
+                key={`custom-${searchValue}`}
+                value={searchValue}
+                onSelect={() => handleAddCustom(searchValue)}
+                className="flex items-center justify-between p-3 text-primary"
+              >
+                Add "{searchValue}"
+              </CommandItem>
+            )}
+            {allowClear && ((multiple && Array.isArray(value) && value.length > 0) || (!multiple && typeof value === 'string' && value)) && (
+              <CommandItem
+                key="clear-selection"
+                value="__clear__"
+                onSelect={() => {
+                  onValueChange(multiple ? [] : '');
+                  setSearchValue('');
+                }}
+                className="flex items-center justify-between p-3 text-destructive"
+              >
+                Clear selection
+              </CommandItem>
+            )}
             {filteredPersonnel.map((person) => {
               const isSelected = multiple && Array.isArray(value) 
                 ? value.includes(person.name)

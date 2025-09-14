@@ -13,6 +13,7 @@ import {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { FloorPlanFlow } from './components/FloorPlanFlow';
 import { useFloorPlanData } from "./hooks/useFloorPlanData";
 import { useFloorPlanNodes } from "./hooks/useFloorPlanNodes";
@@ -20,6 +21,7 @@ import { RoomNode } from './nodes/RoomNode';
 import { DoorNode } from './nodes/DoorNode';
 import { HallwayNode } from './nodes/HallwayNode';
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 import { FloorPlanNode } from './types/floorPlanTypes';
 
 interface FloorPlanCanvasProps {
@@ -49,6 +51,10 @@ function FloorPlanCanvasInner({
   const memoizedNodeTypes = useRef(nodeTypes);
   const handleNodesChange = useFloorPlanNodes(onNodesChange);
   const previewingNodeId = useRef<string | null>(null);
+  const [attachMode, setAttachMode] = useState<boolean>(false);
+  const [selectedHallwayId, setSelectedHallwayId] = useState<string | null>(null);
+  const [attachSide, setAttachSide] = useState<'north'|'south'|'east'|'west'>('north');
+  const [offsetPercent, setOffsetPercent] = useState<number>(50);
 
   const initializeNodes = useCallback((objects: any[]) => {
     if (!objects?.length) return [];
@@ -176,6 +182,68 @@ function FloorPlanCanvasInner({
   );
 
   const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+    // Attach-to-hallway workflow
+    if (attachMode) {
+      if (node.type === 'hallway') {
+        setSelectedHallwayId(node.id);
+        toast.success('Hallway selected. Now click a room to attach.');
+        return;
+      }
+      if (node.type === 'room' && selectedHallwayId) {
+        const hallway = nodes.find(n => n.id === selectedHallwayId);
+        if (!hallway) {
+          toast.error('Selected hallway not found');
+          return;
+        }
+        // Compute placement
+        const hallSize = hallway.data?.size || { width: 300, height: 50 };
+        const hallCenter = { x: hallway.position.x + hallSize.width/2, y: hallway.position.y + hallSize.height/2 };
+        const roomSize = node.data?.size || { width: 150, height: 100 };
+        const roomCenterInitial = { x: node.position.x + roomSize.width/2, y: node.position.y + roomSize.height/2 };
+        const gap = 20;
+        const isHorizontal = hallSize.width >= hallSize.height;
+        let newCenter = { x: roomCenterInitial.x, y: roomCenterInitial.y };
+        let newRotation = 0;
+        if (isHorizontal) {
+          // place along X using offset percent
+          const minX = hallway.position.x + roomSize.width/2;
+          const maxX = hallway.position.x + hallSize.width - roomSize.width/2;
+          const targetX = hallway.position.x + (offsetPercent / 100) * hallSize.width;
+          newCenter.x = Math.max(minX, Math.min(maxX, targetX));
+          // perpendicular placement on Y
+          const offsetY = hallSize.height/2 + roomSize.height/2 + gap;
+          if (attachSide === 'north') newCenter.y = hallCenter.y - offsetY; else if (attachSide === 'south') newCenter.y = hallCenter.y + offsetY; else newCenter.y = hallCenter.y - offsetY;
+          newRotation = 0; // face hallway (long edge along X)
+        } else {
+          const minY = hallway.position.y + roomSize.height/2;
+          const maxY = hallway.position.y + hallSize.height - roomSize.height/2;
+          const targetY = hallway.position.y + (offsetPercent / 100) * hallSize.height;
+          newCenter.y = Math.max(minY, Math.min(maxY, targetY));
+          const offsetX = hallSize.width/2 + roomSize.width/2 + gap;
+          if (attachSide === 'west') newCenter.x = hallCenter.x - offsetX; else if (attachSide === 'east') newCenter.x = hallCenter.x + offsetX; else newCenter.x = hallCenter.x + offsetX;
+          newRotation = 90;
+        }
+        const newTopLeft = { x: Math.round(newCenter.x - roomSize.width/2), y: Math.round(newCenter.y - roomSize.height/2) };
+        // Persist to DB
+        (async () => {
+          const { error } = await supabase
+            .from('rooms')
+            .update({ position: newTopLeft, rotation: newRotation })
+            .eq('id', node.id);
+          if (error) {
+            console.error('Failed to update room position', error);
+            toast.error('Failed to attach room');
+            return;
+          }
+          // Optimistic local update
+          setNodes(nodes => nodes.map(n => n.id === node.id ? { ...n, position: newTopLeft, data: { ...n.data, rotation: newRotation } } : n));
+          toast.success('Room attached to hallway');
+        })();
+        return;
+      }
+    }
+
+    // Normal selection behavior
     if (onObjectSelect) {
       onObjectSelect({
         ...node.data,
@@ -186,7 +254,7 @@ function FloorPlanCanvasInner({
         rotation: node.data?.rotation || 0
       });
     }
-  }, [onObjectSelect]);
+  }, [onObjectSelect, attachMode, selectedHallwayId, attachSide, nodes, setNodes]);
 
   if (!floorId) {
     return (
@@ -206,6 +274,99 @@ function FloorPlanCanvasInner({
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+      {/* Topology tools bar */}
+      <div className="absolute top-2 left-2 z-10 flex items-center gap-2 bg-white/90 dark:bg-slate-800/90 rounded-md px-2 py-1 border border-slate-200 dark:border-slate-700 shadow-sm">
+        <Button size="sm" variant={attachMode ? 'default' : 'outline'} onClick={() => setAttachMode(v => !v)}>
+          {attachMode ? 'Attach Mode: On' : 'Attach Mode: Off'}
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={async () => {
+            if (!floorId) {
+              toast.error('Select a floor first');
+              return;
+            }
+            try {
+              const center = { x: 400, y: 400 };
+              const central = {
+                name: 'Central Hallway',
+                floor_id: floorId,
+                position: { x: center.x - 400, y: center.y - 25 },
+                size: { width: 800, height: 50 },
+                rotation: 0,
+                description: null,
+                status: 'active',
+                width_meters: 3,
+                accessibility: 'fully_accessible',
+                type: 'public_main',
+                section: 'connector'
+              } as any;
+              const north = {
+                name: 'North Hallway',
+                floor_id: floorId,
+                position: { x: center.x - 25, y: center.y - 300 - 50 },
+                size: { width: 50, height: 300 },
+                rotation: 0,
+                description: null,
+                status: 'active',
+                width_meters: 3,
+                accessibility: 'fully_accessible',
+                type: 'public_main',
+                section: 'connector'
+              } as any;
+              const south = {
+                name: 'South Hallway',
+                floor_id: floorId,
+                position: { x: center.x - 25, y: center.y + 50 },
+                size: { width: 50, height: 300 },
+                rotation: 0,
+                description: null,
+                status: 'active',
+                width_meters: 3,
+                accessibility: 'fully_accessible',
+                type: 'public_main',
+                section: 'connector'
+              } as any;
+              const { error: e1 } = await supabase.from('hallways').insert(central);
+              if (e1) throw e1;
+              const { error: e2 } = await supabase.from('hallways').insert(north);
+              if (e2) throw e2;
+              const { error: e3 } = await supabase.from('hallways').insert(south);
+              if (e3) throw e3;
+              toast.success('Created central + north + south hallways');
+            } catch (e:any) {
+              console.error('Failed to create default hallways', e);
+              toast.error(`Failed: ${e?.message || 'Unknown error'}`);
+            }
+          }}
+        >
+          Add 3 Hallways
+        </Button>
+        {attachMode && (
+          <>
+            <span className="text-xs text-slate-600 dark:text-slate-300">Side:</span>
+            <Button size="sm" variant={attachSide==='north'?'default':'outline'} onClick={() => setAttachSide('north')}>North</Button>
+            <Button size="sm" variant={attachSide==='south'?'default':'outline'} onClick={() => setAttachSide('south')}>South</Button>
+            <Button size="sm" variant={attachSide==='east'?'default':'outline'} onClick={() => setAttachSide('east')}>East</Button>
+            <Button size="sm" variant={attachSide==='west'?'default':'outline'} onClick={() => setAttachSide('west')}>West</Button>
+            {selectedHallwayId && (
+              <div className="flex items-center gap-1 ml-2">
+                <span className="text-xs text-slate-600 dark:text-slate-300">Offset</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={offsetPercent}
+                  onChange={(e) => setOffsetPercent(parseInt(e.target.value))}
+                />
+                <span className="text-xs w-8 text-right">{offsetPercent}%</span>
+              </div>
+            )}
+          </>
+        )}
+      </div>
       <FloorPlanFlow
         nodes={nodes}
         edges={edges}

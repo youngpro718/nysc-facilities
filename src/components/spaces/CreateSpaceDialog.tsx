@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,20 @@ export function CreateSpaceDialog() {
       connections: [],
     },
   });
+
+  // Ensure valid defaults when switching types, especially for hallway enums
+  const watchType = form.watch('type');
+  useEffect(() => {
+    if (watchType === 'hallway') {
+      if (!form.getValues('hallwayType')) form.setValue('hallwayType', 'public_main' as any, { shouldDirty: true });
+      if (!form.getValues('section')) form.setValue('section', 'connector' as any, { shouldDirty: true });
+      if (!form.getValues('size')) form.setValue('size', { width: 300, height: 50 } as any, { shouldDirty: true });
+      if (!form.getValues('position')) form.setValue('position', { x: 0, y: 0 } as any, { shouldDirty: true });
+    }
+    if (watchType === 'door') {
+      if (!form.getValues('doorType')) form.setValue('doorType', 'standard' as any, { shouldDirty: true });
+    }
+  }, [watchType]);
 
   const createSpaceMutation = useMutation({
     mutationFn: createSpace,

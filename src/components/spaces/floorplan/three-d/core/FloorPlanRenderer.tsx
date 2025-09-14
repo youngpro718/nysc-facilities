@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import * as THREE from 'three';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,6 +16,12 @@ interface FloorPlanRendererProps {
   className?: string;
   fallbackTo2D?: boolean;
   scene3DOptions?: Scene3DOptions;
+  useAutoLayout?: boolean; // generate synthetic hallway layout (defaults to false)
+  gridSnap?: number; // snap incoming positions to grid (defaults to 20)
+  commandToken?: { type: 'fit' } | { type: 'focus'; id: string } | null; // imperative camera commands
+  normalizeLayout?: boolean; // center rooms around origin (defaults to true)
+  labelScale?: number; // label size multiplier
+  moveEnabled?: boolean; // enable drag-to-move in 3D scene
 }
 
 interface FloorPlanState {
@@ -33,7 +40,13 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
   onRoomHover,
   className = '',
   fallbackTo2D = false,
-  scene3DOptions = {}
+  scene3DOptions = {},
+  useAutoLayout = false,
+  gridSnap = 20,
+  commandToken = null,
+  normalizeLayout = true,
+  labelScale = 1,
+  moveEnabled = false
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneManagerRef = useRef<Scene3DManager | null>(null);
@@ -85,12 +98,12 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
   // Transform room data to the format expected by Scene3DManager
   const transformRoomData = useCallback((rooms: any[]): RoomData[] => {
     try {
-      return rooms.map(room => ({
+      const mapped = rooms.map(room => ({
         id: stableRoomId(room),
         name: room.name || room.data?.label || room.room_number || `Room ${room.id?.slice(-4) || 'Unknown'}`,
         position: {
-          x: Number(room.position?.x || 0),
-          y: Number(room.position?.y || 0)
+          x: Math.round(Number(room.position?.x || 0) / gridSnap) * gridSnap,
+          y: Math.round(Number(room.position?.y || 0) / gridSnap) * gridSnap
         },
         size: {
           width: Number(room.data?.size?.width || room.size?.width || 100),
@@ -106,11 +119,38 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
         room.size.width > 0 &&
         room.size.height > 0
       );
+
+      if (!normalizeLayout || mapped.length === 0) return mapped;
+
+      // Center layout around origin for a stable visual frame
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      mapped.forEach(r => {
+        const hw = r.size.width / 2, hh = r.size.height / 2;
+        minX = Math.min(minX, r.position.x - hw);
+        maxX = Math.max(maxX, r.position.x + hw);
+        minY = Math.min(minY, r.position.y - hh);
+        maxY = Math.max(maxY, r.position.y + hh);
+      });
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+      const centered = mapped.map(r => ({
+        ...r,
+        position: {
+          x: Math.round((r.position.x - centerX) / gridSnap) * gridSnap,
+          y: Math.round((r.position.y - centerY) / gridSnap) * gridSnap,
+        },
+        // Optional: round rotation to nearest 5 degrees for cleaner feel
+        rotation: Math.round((r.rotation || 0) / 5) * 5,
+      }));
+      return centered;
     } catch (error) {
       console.error('FloorPlanRenderer: Error transforming room data:', error);
       return [];
     }
   }, [stableRoomId]);
+
+  // Keep latest transformed rooms in a ref for camera operations
+  const latestRoomsRef = useRef<RoomData[]>([]);
 
   // Transform connection data to the format expected by Scene3DManager
   const transformConnectionData = useCallback((connections: any[]): ConnectionData[] => {
@@ -151,6 +191,10 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
       // Mount to container
       sceneManager.mount(containerRef.current);
 
+      // Apply label scale and movement options
+      sceneManager.setLabelScaleMultiplier(labelScale);
+      sceneManager.setMoveEnabled(moveEnabled);
+
       // Setup interaction callbacks
       sceneManager.setRoomClickCallback((roomId: string, roomData: RoomData) => {
         console.log('Room clicked:', roomId, roomData);
@@ -168,24 +212,22 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
 
       // Transform room data first
       const baseRooms = transformRoomData(rooms);
+      latestRoomsRef.current = baseRooms;
       
       // Create hallway layout if we have rooms
       let finalRooms: RoomData[] = baseRooms;
       let finalConnections: ConnectionData[] = transformConnectionData(connections);
       
-      if (baseRooms.length > 0) {
+      if (useAutoLayout && baseRooms.length > 0) {
         const hallwayLayout = createMultiHallwayLayout(baseRooms, Math.ceil(baseRooms.length / 6), {
           hallwayWidth: 80,
           roomSpacing: 180,
           hallwayLength: 800,
           startPosition: { x: 0, y: 0 }
         });
-        
-        // Combine rooms and hallways
         finalRooms = [...hallwayLayout.rooms, ...hallwayLayout.hallways];
         finalConnections = [...finalConnections, ...hallwayLayout.connections];
-        
-        console.log('FloorPlanRenderer: Created hallway layout with', hallwayLayout.hallways.length, 'hallways and', hallwayLayout.rooms.length, 'rooms');
+        console.log('FloorPlanRenderer: Auto layout created', hallwayLayout.hallways.length, 'hallways');
       }
 
       sceneManager.updateRooms(finalRooms);
@@ -256,6 +298,7 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
     if (sceneManagerRef.current && state.is3DMode && !state.hasError) {
       try {
         const transformedRooms = transformRoomData(rooms);
+        latestRoomsRef.current = transformedRooms;
         sceneManagerRef.current.updateRooms(transformedRooms);
       } catch (error) {
         console.error('FloorPlanRenderer: Error updating rooms:', error);
@@ -285,6 +328,49 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
     }
   }, [connections, state.is3DMode, state.hasError, transformConnectionData]);
 
+  // Camera commands: fit to all rooms or focus a specific one
+  useEffect(() => {
+    if (!commandToken || !sceneManagerRef.current || !state.is3DMode || state.hasError) return;
+    const controls = (sceneManagerRef.current as any)['controls'] as any;
+    const camera = (sceneManagerRef.current as any)['camera'] as THREE.PerspectiveCamera;
+    try {
+      const rooms = latestRoomsRef.current;
+      if (!rooms || rooms.length === 0) return;
+      let centerX = 0, centerY = 0, width = 200, height = 200;
+      if (commandToken.type === 'fit') {
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        rooms.forEach(r => {
+          const halfW = r.size.width / 2;
+          const halfH = r.size.height / 2;
+          minX = Math.min(minX, r.position.x - halfW);
+          maxX = Math.max(maxX, r.position.x + halfW);
+          minY = Math.min(minY, r.position.y - halfH);
+          maxY = Math.max(maxY, r.position.y + halfH);
+        });
+        centerX = (minX + maxX) / 2;
+        centerY = (minY + maxY) / 2;
+        width = Math.max(200, maxX - minX);
+        height = Math.max(200, maxY - minY);
+      } else if (commandToken.type === 'focus') {
+        const r = rooms.find(r => r.id === commandToken.id);
+        if (!r) return;
+        centerX = r.position.x;
+        centerY = r.position.y;
+        width = Math.max(150, r.size.width * 2);
+        height = Math.max(150, r.size.height * 2);
+      }
+      const dist = Math.max(width, height) * 1.4;
+      camera.position.set(centerX + dist, dist * 0.9, centerY + dist);
+      camera.lookAt(centerX, 0, centerY);
+      if (controls) {
+        controls.target.set(centerX, 0, centerY);
+        controls.update();
+      }
+    } catch (e) {
+      console.error('FloorPlanRenderer: camera command failed', e);
+    }
+  }, [commandToken, state.is3DMode, state.hasError]);
+
   // Update selection
   useEffect(() => {
     if (sceneManagerRef.current && state.is3DMode && !state.hasError) {
@@ -295,6 +381,18 @@ export const FloorPlanRenderer: React.FC<FloorPlanRendererProps> = ({
       }
     }
   }, [selectedRoomId, state.is3DMode, state.hasError]);
+
+  // React to label scale / move toggle changes post-init
+  useEffect(() => {
+    if (sceneManagerRef.current && state.is3DMode && !state.hasError) {
+      try {
+        sceneManagerRef.current.setLabelScaleMultiplier(labelScale);
+        sceneManagerRef.current.setMoveEnabled(moveEnabled);
+      } catch (e) {
+        console.error('FloorPlanRenderer: failed to apply labelScale/moveEnabled', e);
+      }
+    }
+  }, [labelScale, moveEnabled, state.is3DMode, state.hasError]);
 
   // Update hover
   useEffect(() => {

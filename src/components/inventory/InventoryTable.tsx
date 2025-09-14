@@ -116,8 +116,8 @@ export function InventoryTable({
 
   return (
     <>
-      <div className="rounded-md border">
-        <Table>
+      <div className="rounded-md border overflow-x-auto">
+        <Table className="min-w-max">
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
@@ -181,7 +181,7 @@ export function InventoryTable({
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant="ghost"
-                        className="h-8 w-8 p-0"
+                        className="h-11 w-11 p-0"
                         aria-label="Open menu"
                       >
                         <MoreHorizontal className="h-4 w-4" />

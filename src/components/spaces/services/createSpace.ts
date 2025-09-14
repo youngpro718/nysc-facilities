@@ -118,19 +118,28 @@ export async function createSpace(data: CreateSpaceFormData) {
         capacityLimit: data.capacityLimit
       });
       
+      // Map/normalize to DB enums
+      const TYPE_ALLOWED = new Set(['public_main','private','private_main']);
+      const SECTION_ALLOWED = new Set(['left_wing','right_wing','connector']);
+      const STATUS_ALLOWED = new Set(['active','inactive','under_maintenance']);
+      const type = TYPE_ALLOWED.has((data as any).hallwayType as string) ? (data as any).hallwayType : 'public_main';
+      const section = SECTION_ALLOWED.has((data as any).section as string) ? (data as any).section : 'connector';
+      const status = STATUS_ALLOWED.has((data as any).status as string) ? (data as any).status : 'active';
+
       // Prepare hallway data according to the hallways table schema
       const hallwayData = {
-        name: data.name,
+        name: data.name ?? 'Hallway',
         floor_id: data.floorId,
         position: data.position || { x: 0, y: 0 },
         size: data.size || { width: 300, height: 50 },
         rotation: data.rotation || 0,
         description: data.description || null,
-        status: 'active' as any, // Cast to match enum
-        width_meters: data.width || 2, // Use width from schema as width_meters
-        accessibility: data.accessibility || 'fully_accessible',
-        type: 'hallway' // Required field for the hallways table
-      };
+        status,
+        width_meters: (data as any).width ?? (data as any).size?.width ?? 2,
+        accessibility: (data as any).accessibility || 'fully_accessible',
+        type,        // hallway_type_enum
+        section      // hallway_section_enum
+      } as any;
 
       // Insert into the hallways table
       const { data: hallway, error: hallwayError } = await supabase

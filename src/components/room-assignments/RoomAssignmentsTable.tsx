@@ -227,7 +227,7 @@ export function RoomAssignmentsTable({
       )}
 
       <div className="overflow-x-auto">
-        <Table>
+        <Table className="min-w-max">
           <TableHeader>
             <TableRow>
               <TableHead className="w-12">
@@ -338,7 +338,7 @@ export function RoomAssignmentsTable({
               <TableCell>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
+                    <Button variant="ghost" className="h-11 w-11 p-0">
                       <span className="sr-only">Open menu</span>
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>

@@ -5,21 +5,16 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   Home, 
-  Wrench, 
   Map, 
-  KeyRound, 
   Activity, 
   LayoutPanelLeft,
-  GitFork,
-  DoorClosed,
   Maximize2,
   X
 } from 'lucide-react';
 import RoomsPage from './views/RoomsPage';
-import HallwaysList from './HallwaysList';
-import DoorsList from './DoorsList';
+// Removed Infrastructure views (HallwaysList, DoorsList)
 import { ModernFloorPlanView } from './floorplan/ModernFloorPlanView';
-import { RoomAccessManager } from './RoomAccessManager';
+// Removed Access Control view (RoomAccessManager)
 
 const SpacesTabs = () => {
   const [activeView, setActiveView] = useState("rooms");
@@ -29,12 +24,12 @@ const SpacesTabs = () => {
     <div className="space-y-6">
       {/* Top Navigation Bar - Horizontal Layout */}
       <div className="bg-card border rounded-lg p-4">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-start sm:items-center justify-between mb-4 gap-3">
           <div>
             <h3 className="font-semibold text-lg">Space Management Tools</h3>
             <p className="text-sm text-muted-foreground">Navigate between different space management areas</p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="hidden sm:flex items-center gap-4">
             <div className="text-sm text-muted-foreground">
               <span className="font-medium">Quick Stats:</span>
               <Badge variant="secondary" className="ml-2">94 Total</Badge>
@@ -45,13 +40,13 @@ const SpacesTabs = () => {
         </div>
 
         {/* Horizontal Navigation Buttons */}
-        <div className="flex gap-3 flex-wrap">
+        <div className="flex gap-3 flex-nowrap overflow-x-auto pb-1 -mx-1 px-1">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   onClick={() => setActiveView('rooms')}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                  className={`flex items-center gap-3 px-3 py-2 sm:px-4 sm:py-3 rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                     activeView === 'rooms' 
                       ? 'bg-primary text-primary-foreground shadow-md' 
                       : 'bg-accent hover:bg-accent/80'
@@ -84,44 +79,14 @@ const SpacesTabs = () => {
             </Tooltip>
           </TooltipProvider>
 
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => setActiveView('infrastructure')}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
-                    activeView === 'infrastructure' 
-                      ? 'bg-slate-600 text-white shadow-md' 
-                      : 'bg-accent hover:bg-accent/80'
-                  }`}
-                  aria-pressed={activeView === 'infrastructure'}
-                  aria-current={activeView === 'infrastructure' ? 'page' : undefined}
-                >
-                  <div className={`p-2 rounded-lg ${
-                    activeView === 'infrastructure' ? 'bg-white/20' : 'bg-slate-500'
-                  }`}>
-                    <Wrench className={`h-4 w-4 ${
-                      activeView === 'infrastructure' ? 'text-white' : 'text-white'
-                    }`} />
-                  </div>
-                  <div className="text-left">
-                    <h4 className="font-medium text-sm">Infrastructure</h4>
-                    <p className={`text-xs ${
-                      activeView === 'infrastructure' ? 'text-white/70' : 'text-muted-foreground'
-                    }`}>Hallways & doors</p>
-                  </div>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Hallways & doors</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          {/* Infrastructure removed */}
 
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   onClick={() => setActiveView('floorplan')}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                  className={`flex items-center gap-3 px-3 py-2 sm:px-4 sm:py-3 rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                     activeView === 'floorplan' 
                       ? 'bg-green-600 text-white shadow-md' 
                       : 'bg-accent hover:bg-accent/80'
@@ -148,37 +113,7 @@ const SpacesTabs = () => {
             </Tooltip>
           </TooltipProvider>
 
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => setActiveView('access')}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
-                    activeView === 'access' 
-                      ? 'bg-purple-600 text-white shadow-md' 
-                      : 'bg-accent hover:bg-accent/80'
-                  }`}
-                  aria-pressed={activeView === 'access'}
-                  aria-current={activeView === 'access' ? 'page' : undefined}
-                >
-                  <div className={`p-2 rounded-lg ${
-                    activeView === 'access' ? 'bg-white/20' : 'bg-purple-500'
-                  }`}>
-                    <KeyRound className={`h-4 w-4 ${
-                      activeView === 'access' ? 'text-white' : 'text-white'
-                    }`} />
-                  </div>
-                  <div className="text-left">
-                    <h4 className="font-medium text-sm">Access Control</h4>
-                    <p className={`text-xs ${
-                      activeView === 'access' ? 'text-white/70' : 'text-muted-foreground'
-                    }`}>User permissions</p>
-                  </div>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Manage access permissions</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          {/* Access Control removed */}
         </div>
       </div>
 
@@ -210,41 +145,7 @@ const SpacesTabs = () => {
           </div>
         )}
 
-        {activeView === 'infrastructure' && (
-          <div className="bg-card border rounded-lg">
-            <div className="p-6 border-b">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <Wrench className="h-5 w-5" />
-                Infrastructure Management
-              </h2>
-              <p className="text-muted-foreground mt-1">
-                Manage hallways, doors, and building infrastructure components
-              </p>
-            </div>
-            <div className="p-6">
-              <Tabs defaultValue="hallways" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
-                  <TabsTrigger value="hallways" className="flex items-center gap-2">
-                    <GitFork size={16} />
-                    Hallways
-                  </TabsTrigger>
-                  <TabsTrigger value="doors" className="flex items-center gap-2">
-                    <DoorClosed size={16} />
-                    Doors
-                  </TabsTrigger>
-                </TabsList>
-                <div className="min-h-[400px]">
-                  <TabsContent value="hallways" className="mt-0">
-                    <HallwaysList />
-                  </TabsContent>
-                  <TabsContent value="doors" className="mt-0">
-                    <DoorsList />
-                  </TabsContent>
-                </div>
-              </Tabs>
-            </div>
-          </div>
-        )}
+        {/* Infrastructure view removed */}
 
         {activeView === 'floorplan' && (
           <>
@@ -285,7 +186,7 @@ const SpacesTabs = () => {
               
               {/* Floor Plan Content - No padding to allow full size */}
               <div className={`transition-all ${
-                floorPlanExpanded ? 'h-[calc(100vh-140px)]' : 'h-[700px]'
+                floorPlanExpanded ? 'h-[calc(100vh-140px)]' : 'sm:h-[700px] h-[70vh]'
               }`}>
                 <Suspense fallback={
                   <div className="h-full flex items-center justify-center">
@@ -312,24 +213,7 @@ const SpacesTabs = () => {
           </>
         )}
 
-        {activeView === 'access' && (
-          <div className="bg-card border rounded-lg">
-            <div className="p-6 border-b">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <KeyRound className="h-5 w-5" />
-                Room Access Management
-              </h2>
-              <p className="text-muted-foreground mt-1">
-                Control user permissions and access rights for all rooms
-              </p>
-            </div>
-            <div className="p-6">
-              <div className="min-h-[400px]">
-                <RoomAccessManager />
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Access Control view removed */}
       </div>
     </div>
   );

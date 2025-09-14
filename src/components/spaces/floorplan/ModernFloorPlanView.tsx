@@ -84,8 +84,72 @@ export function ModernFloorPlanView() {
   const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
   const [highlightedObjects, setHighlightedObjects] = useState<string[]>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showProperties, setShowProperties] = useState(true);
+  const SETTINGS_KEY = 'modern_floorplan_settings_v1';
+  const [showConnectionsPref, setShowConnectionsPref] = useState<boolean>(true);
+  const [cameraCommand, setCameraCommand] = useState<null | { type: 'fit' } | { type: 'focus'; id: string }>(null);
+  const [labelScale, setLabelScale] = useState<number>(1);
+  const [moveEnabled, setMoveEnabled] = useState<boolean>(false);
 
   const { dialogState, openDialog, closeDialog } = useDialogManager();
+
+  // Set initial properties panel visibility based on screen size
+  useEffect(() => {
+    const updatePanel = () => {
+      const isSmall = typeof window !== 'undefined' ? window.innerWidth < 640 : false;
+      setShowProperties(!isSmall);
+      // Default to fewer visuals on small screens
+      setShowConnectionsPref(!isSmall);
+    };
+    updatePanel();
+    window.addEventListener('resize', updatePanel);
+    return () => window.removeEventListener('resize', updatePanel);
+  }, []);
+
+  // Load persisted preferences on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(SETTINGS_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as Partial<{
+        viewMode: '2d' | '3d';
+        showLabels: boolean;
+        showGrid: boolean;
+        filterType: 'all' | 'room' | 'hallway' | 'door';
+        showProperties: boolean;
+        selectedFloor: string | null;
+        labelScale: number;
+        moveEnabled: boolean;
+      }>;
+      if (saved.viewMode) setViewMode(saved.viewMode);
+      if (typeof saved.showLabels === 'boolean') setShowLabels(saved.showLabels);
+      if (typeof saved.showGrid === 'boolean') setShowGrid(saved.showGrid);
+      if (saved.filterType) setFilterType(saved.filterType);
+      if (typeof saved.showProperties === 'boolean') setShowProperties(saved.showProperties);
+      if (saved.selectedFloor) setSelectedFloor(saved.selectedFloor);
+      if (typeof (saved as any).showConnectionsPref === 'boolean') setShowConnectionsPref((saved as any).showConnectionsPref);
+      if (typeof saved.labelScale === 'number') setLabelScale(saved.labelScale);
+      if (typeof saved.moveEnabled === 'boolean') setMoveEnabled(saved.moveEnabled);
+    } catch {}
+  }, []);
+
+  // Persist preferences when they change
+  useEffect(() => {
+    try {
+      const toSave = {
+        viewMode,
+        showLabels,
+        showGrid,
+        filterType,
+        showProperties,
+        selectedFloor,
+        showConnectionsPref,
+        labelScale,
+        moveEnabled,
+      };
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(toSave));
+    } catch {}
+  }, [viewMode, showLabels, showGrid, filterType, showProperties, selectedFloor, showConnectionsPref, labelScale, moveEnabled]);
 
   // Fetch floors with improved error handling
   useEffect(() => {
@@ -114,8 +178,10 @@ export function ModernFloorPlanView() {
         }
         
         setFloors(data || []);
-        if (data && data.length > 0 && !selectedFloor) {
-          setSelectedFloor(data[0].id);
+        if (data && data.length > 0) {
+          // If a saved floor exists and is still valid, keep it; otherwise default to first
+          const exists = selectedFloor && data.some((f: any) => f.id === selectedFloor);
+          setSelectedFloor(exists ? selectedFloor : data[0].id);
         }
       } catch (error) {
         console.error('Error fetching floors:', error);
@@ -174,6 +240,13 @@ export function ModernFloorPlanView() {
     setSelectedObject(null);
     setPreviewData(null);
   }, [selectedFloor]);
+
+  // Auto-fit when switching to 3D or changing floors
+  useEffect(() => {
+    if (viewMode === '3d') {
+      setCameraCommand({ type: 'fit' });
+    }
+  }, [viewMode, selectedFloor]);
 
   // Zoom controls
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.25, 3));
@@ -254,6 +327,67 @@ export function ModernFloorPlanView() {
             onSearch={() => setIsSearchOpen(true)}
             onAdvancedSearch={() => setIsAdvancedSearchOpen(true)}
           />
+          {/* Camera Actions */}
+          {viewMode === '3d' && (
+            <div className="ml-2 flex items-center gap-2">
+              <Button size="sm" variant="outline" onClick={() => setCameraCommand({ type: 'fit' })}>
+                Fit
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!selectedObject}
+                onClick={() => selectedObject && setCameraCommand({ type: 'focus', id: selectedObject.id })}
+              >
+                Focus
+              </Button>
+            </div>
+          )}
+          {/* Properties Panel Toggle (visible on small screens) */}
+          <div className="ml-3 sm:hidden">
+            <Button size="sm" variant="outline" onClick={() => setShowProperties((v) => !v)}>
+              {showProperties ? 'Hide' : 'Properties'}
+            </Button>
+          </div>
+        </div>
+
+        {/* Quick Filters for Floorplan */}
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <div className="text-xs text-muted-foreground mr-2">Filter:</div>
+          <Button size="sm" variant={filterType === 'all' ? 'default' : 'outline'} onClick={() => setFilterType('all')}>
+            All
+          </Button>
+          <Button size="sm" variant={filterType === 'room' ? 'default' : 'outline'} onClick={() => setFilterType('room')}>
+            Rooms
+          </Button>
+          <Button size="sm" variant={filterType === 'hallway' ? 'default' : 'outline'} onClick={() => setFilterType('hallway')}>
+            Hallways
+          </Button>
+          <Button size="sm" variant={filterType === 'door' ? 'default' : 'outline'} onClick={() => setFilterType('door')}>
+            Doors
+          </Button>
+          {viewMode === '3d' && (
+            <>
+              <div className="w-px h-6 bg-border mx-2" />
+              <Button size="sm" variant={showConnectionsPref ? 'default' : 'outline'} onClick={() => setShowConnectionsPref((v) => !v)}>
+                {showConnectionsPref ? 'Connections: On' : 'Connections: Off'}
+              </Button>
+              <div className="flex items-center gap-2 ml-2">
+                <span className="text-xs text-muted-foreground">Label Size</span>
+                <input
+                  type="range"
+                  min={0.7}
+                  max={2}
+                  step={0.1}
+                  value={labelScale}
+                  onChange={(e) => setLabelScale(parseFloat(e.target.value))}
+                />
+                <Button size="sm" variant={moveEnabled ? 'default' : 'outline'} onClick={() => setMoveEnabled(v => !v)}>
+                  {moveEnabled ? 'Move: On' : 'Move: Off'}
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -289,6 +423,11 @@ export function ModernFloorPlanView() {
                 selectedObjectId={selectedObject?.id}
                 previewData={previewData}
                 showLabels={showLabels}
+                filterType={filterType}
+                showConnectionsExternal={showConnectionsPref}
+                commandToken={cameraCommand}
+                labelScale={labelScale}
+                moveEnabled={moveEnabled}
               />
             )}
           </div>
@@ -307,23 +446,25 @@ export function ModernFloorPlanView() {
           )}
         </div>
 
-        {/* Enhanced Properties Panel */}
-        <div 
-          id="properties-panel"
-          className="w-96"
-        >
-          <EnhancedPropertiesPanel
-            selectedObject={selectedObject}
-            allObjects={filteredObjects}
-            onUpdate={() => {
-              if (selectedObject) {
-                openDialog('propertyEdit', selectedObject);
-              }
-            }}
-            onPreviewChange={handlePropertyUpdate}
-            selectedFloorName={currentFloor?.name}
-          />
-        </div>
+        {/* Enhanced Properties Panel (hide on small screens unless toggled) */}
+        {showProperties && (
+          <div 
+            id="properties-panel"
+            className="w-96 hidden sm:block"
+          >
+            <EnhancedPropertiesPanel
+              selectedObject={selectedObject}
+              allObjects={filteredObjects}
+              onUpdate={() => {
+                if (selectedObject) {
+                  openDialog('propertyEdit', selectedObject);
+                }
+              }}
+              onPreviewChange={handlePropertyUpdate}
+              selectedFloorName={currentFloor?.name}
+            />
+          </div>
+        )}
       </div>
 
       {/* Search Panel */}

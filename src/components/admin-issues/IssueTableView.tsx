@@ -54,8 +54,8 @@ export function IssueTableView({
   };
 
   return (
-    <div className="border rounded-lg">
-      <Table>
+    <div className="border rounded-lg overflow-x-auto">
+      <Table className="min-w-max">
         <TableHeader>
           <TableRow>
             <TableHead className="w-12">
@@ -141,6 +141,7 @@ export function IssueTableView({
                 <Button
                   variant="ghost"
                   size="sm"
+                  className="h-11"
                   onClick={() => console.log('View issue:', issue.id)}
                 >
                   <Eye className="h-4 w-4" />

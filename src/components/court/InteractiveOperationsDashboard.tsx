@@ -14,6 +14,8 @@ import { useNavigate } from 'react-router-dom';
 import { useCourtIssuesIntegration } from '@/hooks/useCourtIssuesIntegration';
 import { CreateShutdownDialog } from './CreateShutdownDialog';
 import { OpenRoomFlowDialog } from './OpenRoomFlowDialog';
+import { QuickIssueDialog } from './QuickIssueDialog';
+import { QuickAvailabilityDialog } from './QuickAvailabilityDialog';
 
 interface CourtRoom {
   id: string;
@@ -54,9 +56,12 @@ interface RoomDetails {
 
 export function InteractiveOperationsDashboard() {
   const [selectedRoom, setSelectedRoom] = useState<RoomDetails | null>(null);
+  const [showRoomModal, setShowRoomModal] = useState<boolean>(false);
   const [filter, setFilter] = useState<string>('all');
   const [shutdownDialogOpen, setShutdownDialogOpen] = useState(false);
   const [openRoomDialogOpen, setOpenRoomDialogOpen] = useState(false);
+  const [quickIssueOpen, setQuickIssueOpen] = useState(false);
+  const [availabilityOpen, setAvailabilityOpen] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { hasUrgentIssues, getCourtImpactSummary, getIssuesForRoom } = useCourtIssuesIntegration();
@@ -68,7 +73,7 @@ export function InteractiveOperationsDashboard() {
       // Get all court rooms
       const { data: courtrooms, error: courtroomsError } = await supabase
         .from("court_rooms")
-        .select("id, room_id, room_number, courtroom_number, is_active")
+        .select("id, room_id, room_number, courtroom_number, is_active, operational_status")
         .order("room_number");
       if (courtroomsError) {
         logger.error('Failed to load court rooms', courtroomsError);
@@ -96,19 +101,37 @@ export function InteractiveOperationsDashboard() {
         throw new Error('Unable to load room shutdowns');
       }
 
+      // Get active maintenance indicators from issues (non-resolved maintenance-related types)
+      const { data: maintenanceIssues, error: maintenanceError } = await supabase
+        .from('issues')
+        .select('room_id, status, type')
+        .in('type', ['BUILDING_SYSTEMS', 'ELECTRICAL_NEEDS', 'PLUMBING_NEEDS', 'GENERAL_REQUESTS'])
+        .neq('status', 'resolved');
+      if (maintenanceError) {
+        logger.warn('Failed to load maintenance issues for court operations view', maintenanceError);
+      }
+
       const assignmentMap = new Map(assignments?.map(a => [a.room_id, a]) || []);
       const shutdownMap = new Map(shutdowns?.map(s => [s.court_room_id, s]) || []);
+      const maintenanceRoomSet = new Set((maintenanceIssues || []).map(mi => mi.room_id).filter(Boolean) as string[]);
 
       return (courtrooms || []).map(room => {
         const assignment = assignmentMap.get(room.room_id);
         const shutdown = shutdownMap.get(room.id);
-        
+
         let status: RoomDetails['status'] = 'available';
-        if (!room.is_active) status = 'inactive';
-        else if (shutdown && ((shutdown as any).status === 'in_progress' || (shutdown as any).status === 'scheduled')) status = 'shutdown';
-        else if (assignment) status = 'occupied';
-        else if ((room as any).operational_status === 'occupied') status = 'occupied';
-        else status = 'available';
+        // Precedence: inactive > shutdown > maintenance > occupied > available
+        if (!room.is_active) {
+          status = 'inactive';
+        } else if (shutdown && ((shutdown as any).status === 'in_progress' || (shutdown as any).status === 'scheduled')) {
+          status = 'shutdown';
+        } else if (maintenanceRoomSet.has(room.room_id)) {
+          status = 'maintenance';
+        } else if (assignment || (room as any).operational_status === 'occupied') {
+          status = 'occupied';
+        } else {
+          status = 'available';
+        }
 
         return {
           room,
@@ -122,7 +145,6 @@ export function InteractiveOperationsDashboard() {
 
   const filteredRooms = roomsData?.filter(room => {
     if (filter === 'all') return true;
-    if (filter === 'urgent') return hasUrgentIssues(room.room.room_id);
     return room.status === filter;
   }) || [];
 
@@ -317,7 +339,7 @@ export function InteractiveOperationsDashboard() {
 
           {/* Filter Buttons */}
           <div className="flex flex-wrap gap-3 mt-1">
-            {['all', 'available', 'occupied', 'shutdown', 'inactive', 'urgent'].map((filterType) => (
+            {['all', 'available', 'occupied', 'maintenance', 'shutdown', 'inactive'].map((filterType) => (
               <Button
                 key={filterType}
                 variant={filter === filterType ? 'default' : 'outline'}
@@ -347,7 +369,7 @@ export function InteractiveOperationsDashboard() {
           <div
             key={room.room.id}
             className={`group relative bg-card border rounded-lg p-3 cursor-pointer hover:shadow-md transition-all duration-200 hover:border-primary/50 hover:bg-accent/50 ${hasUrgentIssues(room.room.room_id) ? 'ring-1 ring-red-500/40' : ''}`}
-            onClick={() => setSelectedRoom(room)}
+            onClick={() => { setSelectedRoom(room); setShowRoomModal(true); }}
           >
             {/* Compact Header */}
             <div className="flex items-center justify-between mb-2">
@@ -437,8 +459,15 @@ export function InteractiveOperationsDashboard() {
       </div>
 
       {/* Room Details Modal */}
-      <Dialog open={!!selectedRoom} onOpenChange={() => setSelectedRoom(null)}>
-        <DialogContent className="max-w-md" aria-describedby="room-details-description">
+      <Dialog open={!!selectedRoom && showRoomModal} onOpenChange={(open) => {
+        if (!open) {
+          setShowRoomModal(false);
+          // keep selectedRoom to allow re-opening after sub-dialogs
+        } else if (selectedRoom) {
+          setShowRoomModal(true);
+        }
+      }}>
+        <DialogContent className="max-w-xl" aria-describedby="room-details-description">
           <DialogHeader>
             <DialogTitle className="text-xl">
               Room {selectedRoom?.room.room_number}
@@ -473,6 +502,12 @@ export function InteractiveOperationsDashboard() {
                   >
                     {selectedRoom?.room.is_active ? <PowerOff className="h-3 w-3" /> : <Power className="h-3 w-3" />}
                   </Button>
+                  <Button size="sm" variant="outline" className="text-xs" onClick={() => { setQuickIssueOpen(true); setShowRoomModal(false); }}>
+                    Report Issue…
+                  </Button>
+                  <Button size="sm" variant="outline" className="text-xs" onClick={() => { setAvailabilityOpen(true); setShowRoomModal(false); }}>
+                    Availability…
+                  </Button>
                   <Button size="sm" className="text-xs" onClick={() => setOpenRoomDialogOpen(true)}>
                     Open Room…
                   </Button>
@@ -487,13 +522,26 @@ export function InteractiveOperationsDashboard() {
                     {getStatusIcon(selectedRoom?.status || 'available')}
                     <span className="capitalize">{selectedRoom?.status?.replace('_', ' ')}</span>
                   </Badge>
+                  {/* Occupied/Open quick toggle (operational status) */}
+                  {selectedRoom?.room && (
+                    <div className="ml-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-xs"
+                        onClick={() => setOperationalStatus(selectedRoom.room.id, (selectedRoom as any).room.operational_status === 'occupied' ? 'open' : 'occupied')}
+                      >
+                        {(selectedRoom as any).room.operational_status === 'occupied' ? 'Mark Open' : 'Mark Occupied'}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Room Details */}
-              <div>
-                <h4 className="font-medium mb-2 text-sm">Room Details</h4>
-                <div className="space-y-1 text-sm">
+              {/* Room Details (collapsible) */}
+              <details className="rounded-md border p-3 bg-muted/30">
+                <summary className="cursor-pointer text-sm font-medium">Room Details</summary>
+                <div className="mt-2 space-y-1 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Room Number:</span>
                     <span className="font-medium">{selectedRoom?.room.room_number}</span>
@@ -505,13 +553,15 @@ export function InteractiveOperationsDashboard() {
                     </div>
                   )}
                 </div>
-              </div>
+              </details>
 
-              {/* Issues for this Room */}
+              {/* Issues for this Room (collapsible) */}
               {selectedRoom && getIssuesForRoom(selectedRoom.room.room_id).length > 0 && (
-                <div>
-                  <h4 className="font-medium mb-2 text-sm">Issues</h4>
-                  <div className="space-y-2 text-sm bg-amber-50 dark:bg-amber-950 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
+                <details className="rounded-md border p-3 bg-amber-50/50 dark:bg-amber-950/40">
+                  <summary className="cursor-pointer text-sm font-medium flex items-center gap-2">
+                    <AlertTriangle className="h-3.5 w-3.5 text-red-600" /> Issues
+                  </summary>
+                  <div className="mt-2 space-y-2 text-sm">
                     {getIssuesForRoom(selectedRoom.room.room_id).slice(0, 3).map((issue) => (
                       <div key={issue.id} className="flex items-start justify-between">
                         <div>
@@ -524,28 +574,31 @@ export function InteractiveOperationsDashboard() {
                         <Badge variant="outline" className="capitalize">{issue.status}</Badge>
                       </div>
                     ))}
-                  </div>
-                  <div className="mt-2 flex justify-end">
                     <Button
                       variant="link"
                       size="sm"
                       className="text-xs px-0"
                       onClick={() => {
-                        navigate('/operations?tab=issues');
+                        const issues = getIssuesForRoom(selectedRoom!.room.room_id);
+                        if (issues && issues.length > 0) {
+                          navigate(`/operations?tab=issues&issue_id=${issues[0].id}`);
+                        } else {
+                          navigate('/operations?tab=maintenance');
+                        }
                         setSelectedRoom(null);
                       }}
                     >
                       View all issues
                     </Button>
                   </div>
-                </div>
+                </details>
               )}
 
-              {/* Assignment Details - Editable */}
+              {/* Assignment Details - Editable (collapsible) */}
               {selectedRoom?.assignment && (
-                <div>
-                  <h4 className="font-medium mb-2 text-sm text-foreground">Current Assignment</h4>
-                  <div className="space-y-2 text-sm bg-muted border p-3 rounded-lg text-foreground">
+                <details className="rounded-md border p-3 bg-muted/40">
+                  <summary className="cursor-pointer text-sm font-medium text-foreground">Current Assignment</summary>
+                  <div className="mt-2 space-y-2 text-sm text-foreground">
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">Part:</span>
                       <span className="font-medium text-foreground">{selectedRoom.assignment.part}</span>
@@ -589,14 +642,14 @@ export function InteractiveOperationsDashboard() {
                       </div>
                     )}
                   </div>
-                </div>
+                </details>
               )}
 
-              {/* Shutdown Details */}
+              {/* Shutdown Details (collapsible) */}
               {selectedRoom?.shutdown && (
-                <div>
-                  <h4 className="font-medium mb-2 text-sm">Shutdown Details</h4>
-                  <div className="space-y-2 text-sm bg-orange-50 p-3 rounded-lg">
+                <details className="rounded-md border p-3 bg-orange-50/60">
+                  <summary className="cursor-pointer text-sm font-medium">Shutdown Details</summary>
+                  <div className="mt-2 space-y-2 text-sm">
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">Reason:</span>
                       <span className="font-medium">{selectedRoom.shutdown.reason}</span>
@@ -612,7 +665,7 @@ export function InteractiveOperationsDashboard() {
                       </div>
                     )}
                   </div>
-                </div>
+                </details>
               )}
 
               {/* Available Room Actions */}
@@ -626,7 +679,8 @@ export function InteractiveOperationsDashboard() {
                     onClick={() => {
                       if (selectedRoom?.room) {
                         navigate(`/court-operations?tab=assignments&room=${selectedRoom.room.room_id || selectedRoom.room.id}`);
-                        setSelectedRoom(null);
+                        setShowRoomModal(false);
+                        // keep selectedRoom so returning is possible
                       }
                     }}
                   >
@@ -635,40 +689,19 @@ export function InteractiveOperationsDashboard() {
                 </div>
               )}
 
-              {/* Quick Links */}
+              {/* Quick Links (consolidated) */}
               <div className="border-t pt-4">
                 <h4 className="font-medium mb-2 text-sm">Quick Links</h4>
                 <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-xs"
-                    onClick={() => {
-                      if (selectedRoom?.room) {
-                        navigate(`/court-operations?tab=assignments&room=${selectedRoom.room.room_id || selectedRoom.room.id}`);
-                        setSelectedRoom(null);
-                      }
-                    }}
-                  >
-                    <Users className="h-3 w-3 mr-1" />
-                    Assignments
+                  <Button size="sm" variant="outline" className="text-xs" onClick={() => { setQuickIssueOpen(true); setShowRoomModal(false); }}>
+                    <AlertTriangle className="h-3 w-3 mr-1" />
+                    Report Issue
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-xs"
-                    onClick={() => {
-                      navigate('/operations?tab=maintenance');
-                      setSelectedRoom(null);
-                    }}
-                  >
-                    <Wrench className="h-3 w-3 mr-1" />
-                    Maintenance
+                  <Button size="sm" variant="outline" className="text-xs" onClick={() => { setAvailabilityOpen(true); setShowRoomModal(false); }}>
+                    <Users className="h-3 w-3 mr-1" />
+                    Availability
                   </Button>
                 </div>
-                {false && selectedRoom && selectedRoom.status !== 'shutdown' && selectedRoom.room.is_active && (
-                  <div className="mt-3 grid grid-cols-1 gap-2" />
-                )}
               </div>
             </div>
           </ScrollArea>
@@ -702,7 +735,7 @@ export function InteractiveOperationsDashboard() {
       {selectedRoom && (
         <CreateShutdownDialog
           open={shutdownDialogOpen}
-          onOpenChange={setShutdownDialogOpen}
+          onOpenChange={(open) => { setShutdownDialogOpen(open); if (!open) setShowRoomModal(true); }}
           courtroomId={selectedRoom.room.id}
           roomNumber={selectedRoom.room.room_number}
         />
@@ -717,6 +750,22 @@ export function InteractiveOperationsDashboard() {
           onRequestShutdown={() => setShutdownDialogOpen(true)}
         />
       )}
+
+      {/* Quick Issue Reporter */}
+      <QuickIssueDialog
+        open={quickIssueOpen}
+        onOpenChange={(open) => { setQuickIssueOpen(open); if (!open) setShowRoomModal(!!selectedRoom); }}
+        roomId={selectedRoom?.room.room_id ?? null}
+        roomNumber={selectedRoom?.room.room_number}
+      />
+
+      {/* Quick Availability (personnel-based unavailable/relocated) */}
+      <QuickAvailabilityDialog
+        open={availabilityOpen}
+        onOpenChange={(open) => { setAvailabilityOpen(open); if (!open) setShowRoomModal(!!selectedRoom); }}
+        courtRoomId={selectedRoom?.room.id ?? null}
+        roomNumber={selectedRoom?.room.room_number}
+      />
     </div>
   );
 }

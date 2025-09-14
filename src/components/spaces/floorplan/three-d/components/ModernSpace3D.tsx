@@ -2,6 +2,7 @@ import React, { useRef, useState, useMemo } from 'react';
 import * as THREE from 'three';
 import { Text } from '@react-three/drei';
 import type { ThreeEvent } from '@react-three/fiber';
+import { useThree } from '@react-three/fiber';
 
 // More precise typing for properties and click payload
 type SpaceStatus = 'active' | 'maintenance' | 'inactive' | string;
@@ -151,6 +152,7 @@ export function ModernSpace3D({
   // Hoist hooks before any early returns
   const groupRef = useRef<THREE.Group>(null);
   const meshRef = useRef<THREE.Mesh>(null);
+  const { camera } = useThree();
 
   // Prepare validity flags (checked after hooks)
   const hasEssentials = !!id && !!type && !!position && !!size;
@@ -207,6 +209,21 @@ export function ModernSpace3D({
 
   // Safe label text (no hook needed)
   const displayLabel = !label ? (id || 'Unnamed') : (label.length > 20 ? label.substring(0, 20) + '...' : label);
+
+  // Dynamic label sizing based on camera distance (readable without extreme zoom)
+  const labelFontSize = useMemo(() => {
+    try {
+      const camPos = camera?.position || new THREE.Vector3(0, 400, 0);
+      const objPos = new THREE.Vector3(safePosition.x, 0, safePosition.y);
+      const dist = camPos.distanceTo(objPos);
+      // Base size at typical working distance ~500; clamp to keep readable and not overpowering
+      const base = 14; // world units
+      const scaled = base * (dist / 500);
+      return Math.max(10, Math.min(28, scaled));
+    } catch {
+      return 14;
+    }
+  }, [camera, safePosition.x, safePosition.y]);
 
   // Handle click safely
   const handleClick = (event: ThreeEvent<MouseEvent>) => {
@@ -272,15 +289,15 @@ export function ModernSpace3D({
       {showLabels && displayLabel && (
         <Text
           position={[0, 35, 0]}
-          fontSize={12}
+          fontSize={labelFontSize}
           color={isSelected ? '#0ea5e9' : '#374151'}
           anchorX="center"
           anchorY="middle"
           font={fontUrl}
-          maxWidth={dimensions.width * 0.8}
-          outlineWidth={0.5}
+          maxWidth={Math.max(dimensions.width * 0.9, 120)}
+          outlineWidth={0.75}
           outlineColor="#ffffff"
-          outlineOpacity={0.8}
+          outlineOpacity={0.9}
         >
           {displayLabel}
         </Text>
@@ -290,7 +307,7 @@ export function ModernSpace3D({
       {showLabels && (
         <Text
           position={[0, 25, 0]}
-          fontSize={8}
+          fontSize={Math.max(7, Math.min(16, labelFontSize * 0.6))}
           color="#6b7280"
           anchorX="center"
           anchorY="middle"

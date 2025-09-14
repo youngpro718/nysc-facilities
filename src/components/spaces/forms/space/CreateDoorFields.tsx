@@ -31,6 +31,7 @@ export function CreateDoorFields({ form }: CreateDoorFieldsProps) {
                 <SelectItem value="emergency">Emergency</SelectItem>
                 <SelectItem value="secure">Secure</SelectItem>
                 <SelectItem value="maintenance">Maintenance</SelectItem>
+                <SelectItem value="transition">Transition (Public→Private)</SelectItem>
               </SelectContent>
             </Select>
             <FormMessage />
