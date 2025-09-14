@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
 
-  // SECURITY: Authentication bypass removed for production security
+  // SECURITY: Authentication bypass removed for production security - recompile trigger
 
   // Function to fetch user profile data
   const getUserProfile = useCallback(async (userId: string) => {
