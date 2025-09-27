@@ -102,33 +102,7 @@ export const DesktopNavigationImproved = ({
           );
         })}
         
-        {/* Notifications (Admins) */}
-        {isAdmin && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => {
-                  const now = new Date().toISOString();
-                  try { localStorage.setItem('admin.notifications.lastSeen', now); } catch {}
-                  setLastSeenAt(now);
-                  navigate('/admin-profile');
-                }}
-                className="relative flex items-center justify-center w-10 h-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 hover:scale-[1.02] active:scale-95"
-                aria-label={unreadCount > 0 ? `${unreadCount} unread notifications` : 'Notifications'}
-              >
-                <Bell className="h-5 w-5" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 inline-flex min-w-[18px] h-[18px] px-1 items-center justify-center rounded-full bg-red-500 text-white text-[10px] leading-none font-semibold shadow">
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                  </span>
-                )}
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="text-sm">
-              {unreadCount > 0 ? `${unreadCount} unread` : 'No new notifications'}
-            </TooltipContent>
-          </Tooltip>
-        )}
+        {/* Notifications (Admins) - handled by NotificationBox in Layout header to avoid duplicate bells */}
 
         {/* Sign Out Button */}
         <div className="ml-2 pl-2 border-l border-border">

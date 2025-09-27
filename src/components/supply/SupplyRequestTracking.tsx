@@ -12,7 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
+import { requiresApprovalForItems, type InventoryLite } from '@/constants/supplyOrders';
 import { 
   Package, 
   CheckCircle, 
@@ -85,6 +86,7 @@ export function SupplyRequestTracking({ userRole }: SupplyRequestTrackingProps) 
   const [selectedRequest, setSelectedRequest] = useState<SupplyRequest | null>(null);
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
+  const [approvalsOnly, setApprovalsOnly] = useState(false);
   const [showStatusDialog, setShowStatusDialog] = useState(false);
   const [newStatus, setNewStatus] = useState('');
   const [statusNotes, setStatusNotes] = useState('');
@@ -110,7 +112,16 @@ export function SupplyRequestTracking({ userRole }: SupplyRequestTrackingProps) 
             email,
             department
           ),
-          supply_request_items (*),
+          supply_request_items!request_id (
+            id,
+            item_id,
+            item_name,
+            quantity_requested,
+            quantity_fulfilled,
+            unit_cost,
+            notes,
+            inventory_items!item_id (id, name, inventory_categories (name))
+          ),
           status_history:supply_request_status_history (
             *,
             user_profile:changed_by (
@@ -130,7 +141,18 @@ export function SupplyRequestTracking({ userRole }: SupplyRequestTrackingProps) 
       
       if (error) throw error;
       
-      setRequests(data || []);
+      // attach derived approval flags for filtering
+      const enriched = (data || []).map((r: any) => {
+        const invLite: InventoryLite[] = (r.supply_request_items || []).map((it: any) => ({
+          id: it?.inventory_items?.id || it.item_id,
+          name: it?.inventory_items?.name || it.item_name || '',
+          categoryName: it?.inventory_items?.inventory_categories?.name ?? null,
+        }));
+        const approval_required = requiresApprovalForItems(invLite) || (r.approval_notes?.toString() || '').includes('approval_required');
+        return { ...r, approval_required };
+      });
+
+      setRequests(enriched || []);
       
     } catch (error) {
       console.error('Error fetching requests:', error);
@@ -231,7 +253,8 @@ export function SupplyRequestTracking({ userRole }: SupplyRequestTrackingProps) 
   const filteredRequests = requests.filter(request => {
     const matchesStatus = statusFilter === 'all' || request.status === statusFilter;
     const matchesPriority = priorityFilter === 'all' || request.priority === priorityFilter;
-    return matchesStatus && matchesPriority;
+    const matchesApproval = approvalsOnly ? !!request.approval_required : true;
+    return matchesStatus && matchesPriority && matchesApproval;
   });
 
   const getRequestStats = () => {
@@ -301,7 +324,7 @@ export function SupplyRequestTracking({ userRole }: SupplyRequestTrackingProps) 
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder="Filter by status" />
@@ -330,6 +353,17 @@ export function SupplyRequestTracking({ userRole }: SupplyRequestTrackingProps) 
             <SelectItem value="urgent">Urgent</SelectItem>
           </SelectContent>
         </Select>
+
+        <div className="flex items-center gap-2">
+          <input
+            id="approvalsOnly"
+            type="checkbox"
+            className="h-4 w-4"
+            checked={approvalsOnly}
+            onChange={(e) => setApprovalsOnly(e.target.checked)}
+          />
+          <label htmlFor="approvalsOnly" className="text-sm">Approvals only</label>
+        </div>
       </div>
 
       {/* Requests List */}
@@ -384,16 +418,16 @@ export function SupplyRequestTracking({ userRole }: SupplyRequestTrackingProps) 
                 <div>
                   <div className="text-sm text-muted-foreground">Requester</div>
                   <div className="font-medium">
-                    {request.profiles.first_name} {request.profiles.last_name}
+                    {(request.profiles?.first_name || 'Unknown')} {(request.profiles?.last_name || '')}
                   </div>
-                  <div className="text-sm text-muted-foreground">{request.profiles.department}</div>
+                  <div className="text-sm text-muted-foreground">{request.profiles?.department || ''}</div>
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground">Items</div>
-                  <div className="font-medium">{request.supply_request_items.length} items</div>
+                  <div className="font-medium">{(request.supply_request_items?.length || 0)} items</div>
                   <div className="text-sm text-muted-foreground">
-                    {request.supply_request_items.slice(0, 2).map(item => item.item_name).join(', ')}
-                    {request.supply_request_items.length > 2 && '...'}
+                    {(request.supply_request_items || []).slice(0, 2).map(item => item.item_name).join(', ')}
+                    {(request.supply_request_items?.length || 0) > 2 && '...'}
                   </div>
                 </div>
                 <div>
@@ -487,7 +521,7 @@ export function SupplyRequestTracking({ userRole }: SupplyRequestTrackingProps) 
               <div>
                 <h4 className="font-medium mb-2">Requested Items</h4>
                 <div className="border rounded-lg">
-                  {selectedRequest.supply_request_items.map((item, index) => (
+                  {(selectedRequest.supply_request_items || []).map((item, index) => (
                     <div key={item.id} className={`p-3 ${index > 0 ? 'border-t' : ''}`}>
                       <div className="flex justify-between items-center">
                         <div>

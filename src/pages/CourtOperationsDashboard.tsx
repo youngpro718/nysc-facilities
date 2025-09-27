@@ -4,15 +4,17 @@ import { InteractiveOperationsDashboard } from "@/components/court/InteractiveOp
 import { AssignmentManagementPanel } from "@/components/court/AssignmentManagementPanel";
 import { SetTemporaryLocationDialog } from "@/components/court/SetTemporaryLocationDialog";
 import { MapPin, Users } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
 import { useConditionalNotifications } from "@/hooks/useConditionalNotifications";
+import { Button } from "@/components/ui/button";
 
 export const CourtOperationsDashboard = () => {
 
   const [tempLocationOpen, setTempLocationOpen] = useState(false);
   const [selectedCourtRoom, setSelectedCourtRoom] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const tab = searchParams.get('tab') || 'operations';
 
   // Determine when to glow/highlight the Manage Assignments tab
@@ -41,7 +43,11 @@ export const CourtOperationsDashboard = () => {
             Manage courtrooms, terms, and maintenance schedules
           </p>
         </div>
-
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => navigate('/court-live')}>
+            Open Live Grid
+          </Button>
+        </div>
       </div>
 
       <Tabs

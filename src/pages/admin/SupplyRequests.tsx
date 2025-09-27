@@ -134,7 +134,7 @@ export default function AdminSupplyRequests() {
 
       // If approving, update item quantities
       if (actionType === 'approve' && Object.keys(itemQuantities).length > 0) {
-        const itemUpdates = selectedRequest.supply_request_items.map(item => ({
+        const itemUpdates = (selectedRequest.supply_request_items || []).map(item => ({
           item_id: item.item_id,
           quantity_approved: itemQuantities[item.id]?.approved ?? item.quantity_requested,
           notes: item.notes,
@@ -168,9 +168,9 @@ export default function AdminSupplyRequests() {
     const matchesPriority = filterPriority === "all" || request.priority === filterPriority;
     const matchesSearch = searchQuery === "" || 
       request.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      request.profiles.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      request.profiles.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      request.profiles.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (request.profiles?.first_name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (request.profiles?.last_name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (request.profiles?.email || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
       request.supply_request_items.some(item => 
         item.inventory_items.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
@@ -209,7 +209,7 @@ export default function AdminSupplyRequests() {
     // Initialize item quantities for approval
     if (action === 'approve') {
       const quantities: Record<string, { approved?: number; fulfilled?: number }> = {};
-      request.supply_request_items.forEach(item => {
+      (request.supply_request_items || []).forEach(item => {
         quantities[item.id] = {
           approved: item.quantity_requested,
         };
@@ -304,8 +304,8 @@ export default function AdminSupplyRequests() {
                       <div>
                         <CardTitle className="text-lg">{request.title}</CardTitle>
                         <p className="text-sm text-muted-foreground">
-                          Requested by {request.profiles.first_name} {request.profiles.last_name}
-                          {request.profiles.department && ` (${request.profiles.department})`}
+                          Requested by {(request.profiles?.first_name || 'Unknown')} {(request.profiles?.last_name || '')}
+                          {request.profiles?.department ? ` (${request.profiles.department})` : ''}
                         </p>
                       </div>
                     </div>
@@ -336,7 +336,7 @@ export default function AdminSupplyRequests() {
                   <div>
                     <p className="font-medium text-sm text-muted-foreground mb-2">Requested Items</p>
                     <div className="space-y-2">
-                      {request.supply_request_items.map((item) => (
+                      {(request.supply_request_items || []).map((item) => (
                         <div key={item.id} className="flex items-center justify-between p-2 bg-muted rounded">
                           <div className="flex items-center gap-2">
                             <span className="font-medium">{item.inventory_items.name}</span>
@@ -377,7 +377,7 @@ export default function AdminSupplyRequests() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <p className="font-medium text-sm text-muted-foreground mb-1">Contact</p>
-                      <p className="text-sm">{request.profiles.email}</p>
+                      <p className="text-sm">{request.profiles?.email || '—'}</p>
                     </div>
                     
                     {request.requested_delivery_date && (
@@ -466,7 +466,7 @@ export default function AdminSupplyRequests() {
           <div className="space-y-4">
             <p>
               Are you sure you want to {actionType} this supply request from{' '}
-              {selectedRequest?.profiles.first_name} {selectedRequest?.profiles.last_name}?
+              {(selectedRequest?.profiles?.first_name || 'Unknown')} {(selectedRequest?.profiles?.last_name || '')}?
             </p>
 
             {/* Item quantities for approve actions */}
@@ -476,7 +476,7 @@ export default function AdminSupplyRequests() {
                   Approve Quantities
                 </Label>
                 <div className="space-y-3 mt-2">
-                  {selectedRequest.supply_request_items.map((item) => (
+                  {(selectedRequest.supply_request_items || []).map((item) => (
                     <div key={item.id} className="flex items-center justify-between p-3 border rounded">
                       <div>
                         <p className="font-medium">{item.inventory_items.name}</p>

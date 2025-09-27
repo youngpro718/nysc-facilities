@@ -126,7 +126,7 @@ export function MobileFilterBar({
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Status</label>
                     <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full h-11">
                         <SelectValue placeholder="Filter by status" />
                       </SelectTrigger>
                       <SelectContent>
@@ -141,7 +141,7 @@ export function MobileFilterBar({
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Sort by</label>
                     <Select value={sortBy} onValueChange={onSortChange}>
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full h-11">
                         <SelectValue placeholder="Sort by" />
                       </SelectTrigger>
                       <SelectContent>

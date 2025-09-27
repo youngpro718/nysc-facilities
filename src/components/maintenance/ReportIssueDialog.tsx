@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 interface ReportIssueDialogProps {
   open: boolean;
@@ -24,7 +24,6 @@ interface RoomOption {
 }
 
 export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps) => {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     title: "",
@@ -54,17 +53,17 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Issue form submitted with data:', formData);
+    toast.message('Submitting issue…');
     
     // If user selected a room, ensure room_id is set
     if (formData.space_type === 'room' && !formData.room_id) {
-      return toast({
-        title: "Room required",
-        description: "Please select a room for this issue.",
-        variant: "destructive",
-      });
+      return toast.error("Room required", { description: "Please select a room for this issue." });
     }
 
     try {
+      if (!formData.title.trim()) {
+        return toast.error("Title required", { description: "Please enter a brief issue title." });
+      }
       console.log('Inserting into unified issues table...');
       const { error } = await supabase
         .from("issues")
@@ -97,10 +96,7 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
       await queryClient.invalidateQueries({ queryKey: ['assignment-stats'] });
       await queryClient.invalidateQueries({ queryKey: ['courtroom-availability'] });
 
-      toast({
-        title: "Issue Reported",
-        description: "The maintenance issue has been reported successfully.",
-      });
+      toast.success("Issue reported", { description: "The maintenance issue has been reported successfully." });
 
       setFormData({
         title: "",
@@ -116,11 +112,7 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
       onOpenChange(false);
     } catch (error) {
       console.error('Error reporting issue:', error);
-      toast({
-        title: "Error",
-        description: "Failed to report issue. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to report issue", { description: "Please try again." });
     }
   };
 
@@ -136,24 +128,22 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="title">Issue Title *</Label>
+            <Label htmlFor="title">Issue Title</Label>
             <Input
               id="title"
               value={formData.title}
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               placeholder="Brief description of the issue"
-              required
             />
           </div>
 
           <div>
-            <Label htmlFor="description">Description *</Label>
+            <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               placeholder="Detailed description of the problem"
-              required
             />
           </div>
 
@@ -208,8 +198,7 @@ export const ReportIssueDialog = ({ open, onOpenChange }: ReportIssueDialogProps
                   id="space_name"
                   value={formData.space_name}
                   onChange={(e) => setFormData(prev => ({ ...prev, space_name: e.target.value }))}
-                  placeholder="Enter space identifier"
-                  required
+                  placeholder="Enter space identifier (optional)"
                 />
               )}
             </div>

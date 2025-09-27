@@ -7,8 +7,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
 import { useAdminNotifications, useMarkNotificationRead } from "@/hooks/useAdminNotifications";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAdminRealtimeNotifications } from "@/hooks/useAdminRealtimeNotifications";
 import { useCourtIssuesIntegration } from "@/hooks/useCourtIssuesIntegration";
+import { supabase } from "@/lib/supabase";
 
 const notificationIcons = {
   new_key_request: Key,
@@ -30,6 +32,8 @@ const notificationIcons = {
 export const NotificationBox = () => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [recentlyRead, setRecentlyRead] = useState<Set<string>>(() => new Set());
   
   // Use the admin notifications hooks
   const { data: notifications, isLoading } = useAdminNotifications();
@@ -43,20 +47,63 @@ export const NotificationBox = () => {
     ['critical', 'urgent', 'high'].includes((i.priority || '').toLowerCase())
   ).length;
   
-  // Calculate unread count
-  const unreadCount = notifications?.filter(n => 
-    !n.read_by || n.read_by.length === 0
-  ).length || 0;
+  // Last seen tracking to distinguish "New" vs previously seen
+  const [lastSeenAt, setLastSeenAt] = useState<string>(() => {
+    try { return localStorage.getItem('admin.notifications.lastSeen') || ''; } catch { return ''; }
+  });
+
+  // Retention window and hiding expired notifications client-side
+  const RETENTION_DAYS = 30; // adjust as desired
+  const now = new Date();
+  const cutoffIso = new Date(now.getTime() - RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const nowIso = now.toISOString();
+  const visibleNotifications = (notifications || []).filter((n: any) => {
+    const withinRetention = !n.created_at || n.created_at >= cutoffIso;
+    const notExpired = !n.expires_at || n.expires_at > nowIso;
+    return withinRetention && notExpired;
+  });
+  const isServerUnread = (n: any) => !n.read_by || n.read_by.length === 0;
+  const isEffectivelyUnread = (n: any) => isServerUnread(n) && !recentlyRead.has(n.id);
+  const isNewSinceSeen = (n: any) => !!lastSeenAt && n.created_at > lastSeenAt;
+  const rawUnreadNewCount = visibleNotifications.filter(n => isEffectivelyUnread(n) && isNewSinceSeen(n)).length || 0;
+  const unreadCount = isOpen ? 0 : rawUnreadNewCount; // show badge only for NEW unread
 
   // Critical courtroom issues (from admin notifications and live court issues)
-  const criticalIssueUnreadCount = notifications?.filter(n =>
-    (!n.read_by || n.read_by.length === 0) &&
+  const criticalIssueUnreadCount = visibleNotifications?.filter(n =>
+    isEffectivelyUnread(n) && isNewSinceSeen(n) &&
     (["new_issue", "issue_status_change", "issue"].includes(n.notification_type)) &&
     (["high", "urgent", "critical"].includes((n.urgency || "").toLowerCase()))
   ).length || 0;
 
-  const showCriticalPulse = (openHighSeverityIssues > 0) || (criticalIssueUnreadCount > 0);
-  const criticalCount = Math.max(openHighSeverityIssues, criticalIssueUnreadCount);
+  // Only pulse and show red tint when there are UNREAD critical notifications
+  const showCriticalPulse = criticalIssueUnreadCount > 0;
+  const criticalCount = criticalIssueUnreadCount; // numeric badge shows unread critical only
+
+  // Count of items outside retention or expired (for optional purge UX)
+  const oldOrExpiredCount = (notifications || []).filter((n: any) => (n.created_at && n.created_at < cutoffIso) || (n.expires_at && n.expires_at <= nowIso)).length;
+
+  const purgeOldNotifications = async () => {
+    try {
+      // Delete by retention first
+      const { error: delOldErr } = await supabase
+        .from('admin_notifications')
+        .delete()
+        .lt('created_at', cutoffIso);
+      if (delOldErr) throw delOldErr;
+
+      // Delete by expiry
+      const { error: delExpErr } = await supabase
+        .from('admin_notifications')
+        .delete()
+        .lte('expires_at', nowIso);
+      if (delExpErr) throw delExpErr;
+
+      // Refresh queries so UI updates immediately
+      queryClient.invalidateQueries({ queryKey: ['adminNotifications'] });
+    } catch (e) {
+      console.error('NotificationBox: purgeOldNotifications failed', e);
+    }
+  };
 
   const handleNotificationClick = (notification: any) => {
     setIsOpen(false);
@@ -101,7 +148,7 @@ export const NotificationBox = () => {
 
   const clearAllNotifications = () => {
     // Mark all notifications as read
-    notifications?.forEach(notification => {
+    visibleNotifications?.forEach(notification => {
       if (!notification.read_by || notification.read_by.length === 0) {
         markAsReadMutation.mutate(notification.id);
       }
@@ -144,10 +191,33 @@ export const NotificationBox = () => {
   };
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
+    <Popover 
+      open={isOpen} 
+      onOpenChange={(open) => {
+        setIsOpen(open);
+        if (open) {
+          const now = new Date().toISOString();
+          try { localStorage.setItem('admin.notifications.lastSeen', now); } catch {}
+          setLastSeenAt(now);
+          // Auto-mark visible notifications as read on open to clear the red badge immediately
+          visibleNotifications?.forEach((n) => {
+            if (isServerUnread(n)) {
+              setRecentlyRead(prev => {
+                const next = new Set(prev);
+                next.add(n.id);
+                return next;
+              });
+              markAsReadMutation.mutate(n.id);
+            }
+          });
+          // Soft-clean old/expired items in background
+          purgeOldNotifications();
+        }
+      }}
+    >
       <PopoverTrigger asChild>
         <Button variant="ghost" size="sm" className="relative">
-          <Bell className={`h-5 w-5 ${showCriticalPulse ? 'text-red-600 dark:text-red-400' : ''}`} />
+          <Bell className={`h-5 w-5 ${(unreadCount > 0 || showCriticalPulse) ? 'text-red-600 dark:text-red-400' : ''}`} />
           {showCriticalPulse && (
             <>
               <span className="pointer-events-none absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500/70 opacity-75 animate-ping" />
@@ -162,7 +232,7 @@ export const NotificationBox = () => {
               {unreadCount > 99 ? '99+' : unreadCount}
             </Badge>
           )}
-          {criticalCount > 0 && (
+          {criticalIssueUnreadCount > 0 && (
             <Badge 
               variant="destructive" 
               className="absolute -top-1 -left-1 z-10 h-4 min-w-4 px-1 rounded-full p-0 flex items-center justify-center text-[10px]"
@@ -176,11 +246,18 @@ export const NotificationBox = () => {
         <div className="p-4 border-b">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold">Admin Notifications</h3>
-            {notifications && notifications.length > 0 && unreadCount > 0 && (
-              <Button variant="ghost" size="sm" onClick={clearAllNotifications}>
-                Mark All Read
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {oldOrExpiredCount > 0 && (
+                <Button variant="ghost" size="sm" onClick={purgeOldNotifications} title="Remove old notifications">
+                  Clear Old
+                </Button>
+              )}
+              {visibleNotifications.length > 0 && rawUnreadNewCount > 0 && (
+                <Button variant="ghost" size="sm" onClick={clearAllNotifications}>
+                  Mark All Read
+                </Button>
+              )}
+            </div>
           </div>
         </div>
         
@@ -189,23 +266,24 @@ export const NotificationBox = () => {
             <div className="p-4 text-center text-muted-foreground">
               <div className="animate-pulse">Loading notifications...</div>
             </div>
-          ) : !notifications || notifications.length === 0 ? (
+          ) : visibleNotifications.length === 0 ? (
             <div className="p-4 text-center text-muted-foreground">
               <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p>No new notifications</p>
             </div>
           ) : (
             <div className="p-2">
-              {notifications.map((notification) => {
+              {visibleNotifications.map((notification) => {
                 const Icon = getNotificationIcon(notification.notification_type);
-                const isRead = notification.read_by && notification.read_by.length > 0;
+                const isRead = !isEffectivelyUnread(notification);
+                const isNewSinceSeen = lastSeenAt && notification.created_at > lastSeenAt;
                 
                 return (
                   <Card 
                     key={notification.id}
                     className={`mb-2 cursor-pointer transition-colors hover:bg-muted ${
                       !isRead ? 'border-primary bg-primary/5' : 'border-muted'
-                    }`}
+                    } ${isNewSinceSeen ? 'ring-1 ring-primary/50' : ''}`}
                     onClick={() => handleNotificationClick(notification)}
                   >
                     <CardContent className="p-3">
@@ -216,11 +294,16 @@ export const NotificationBox = () => {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
                             <p className="font-medium text-sm">{notification.title}</p>
-                            {notification.urgency === 'high' && (
+                            <div className="flex items-center gap-1">
+                              {isNewSinceSeen && (
+                                <Badge variant="secondary" className="text-[10px]">New</Badge>
+                              )}
+                              {notification.urgency === 'high' && (
                               <Badge variant="destructive" className="text-xs">
                                 {notification.urgency.toUpperCase()}
                               </Badge>
-                            )}
+                              )}
+                            </div>
                           </div>
                           <p className="text-sm text-muted-foreground mt-1">
                             {notification.message}

@@ -88,24 +88,20 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false }: CardFro
                   <TooltipContent>More details</TooltipContent>
                 </Tooltip>
 
-                {/* Room lighting management */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <RoomLightingManager
-                      room={room}
-                      trigger={
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          className="bg-black/80 hover:bg-black text-white border-0 shadow-lg transition-all duration-200 h-8 w-8 p-0"
-                        >
-                          <Lightbulb className="h-3 w-3" />
-                        </Button>
-                      }
-                    />
-                  </TooltipTrigger>
-                  <TooltipContent>Manage lighting</TooltipContent>
-                </Tooltip>
+                {/* Room lighting management - avoid nested Radix triggers on the same element */}
+                <RoomLightingManager
+                  room={room}
+                  trigger={
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="bg-black/80 hover:bg-black text-white border-0 shadow-lg transition-all duration-200 h-8 w-8 p-0"
+                      title="Manage lighting"
+                    >
+                      <Lightbulb className="h-3 w-3" />
+                    </Button>
+                  }
+                />
 
                 {/* Inventory (for storage) */}
                 {room.is_storage && (
@@ -155,51 +151,46 @@ export function CardFront({ room, onFlip, onDelete, isHovered = false }: CardFro
                   </DialogContent>
                 </Dialog>
 
-                {/* Edit room */}
+                {/* Edit room - remove Tooltip to avoid ref conflicts with DialogTrigger */}
                 <div onClick={(e) => e.stopPropagation()}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <EditSpaceDialog
-                        id={room.id}
-                        type="room"
-                        variant="custom"
-                        initialData={{
-                          id: room.id,
-                          name: room.name,
-                          room_number: room.room_number || '',
-                          room_type: room.room_type,
-                          description: room.description || '',
-                          status: room.status,
-                          floor_id: room.floor_id,
-                          is_storage: room.is_storage || false,
-                          storage_type: room.storage_type || null,
-                          storage_capacity: room.storage_capacity || null,
-                          storage_notes: room.storage_notes || null,
-                          parent_room_id: room.parent_room_id || null,
-                          current_function: room.current_function || null,
-                          phone_number: room.phone_number || null,
-                          courtroom_photos: room.courtroom_photos || null,
-                          connections: room.space_connections?.map(conn => ({
-                            id: conn.id,
-                            connectionType: conn.connection_type,
-                            toSpaceId: conn.to_space_id,
-                            direction: conn.direction || null
-                          })) || [],
-                          type: "room"
-                        }}
-                      >
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          className="bg-black/80 hover:bg-black text-white border-0 shadow-lg transition-all duration-200 h-8 w-8 p-0"
-                          title="Edit Room"
-                        >
-                          <Pencil className="h-3 w-3" />
-                        </Button>
-                      </EditSpaceDialog>
-                    </TooltipTrigger>
-                    <TooltipContent>Edit room</TooltipContent>
-                  </Tooltip>
+                  <EditSpaceDialog
+                    id={room.id}
+                    type="room"
+                    variant="custom"
+                    initialData={{
+                      id: room.id,
+                      name: room.name,
+                      room_number: room.room_number || '',
+                      room_type: room.room_type,
+                      description: room.description || '',
+                      status: room.status,
+                      floor_id: room.floor_id,
+                      is_storage: room.is_storage || false,
+                      storage_type: room.storage_type || null,
+                      storage_capacity: room.storage_capacity || null,
+                      storage_notes: room.storage_notes || null,
+                      parent_room_id: room.parent_room_id || null,
+                      current_function: room.current_function || null,
+                      phone_number: room.phone_number || null,
+                      courtroom_photos: room.courtroom_photos || null,
+                      connections: room.space_connections?.map(conn => ({
+                        id: conn.id,
+                        connectionType: conn.connection_type,
+                        toSpaceId: conn.to_space_id,
+                        direction: conn.direction || null
+                      })) || [],
+                      type: "room"
+                    }}
+                  >
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="bg-black/80 hover:bg-black text-white border-0 shadow-lg transition-all duration-200 h-8 w-8 p-0"
+                      title="Edit room"
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                  </EditSpaceDialog>
                 </div>
 
                 {/* Delete room */}

@@ -370,6 +370,7 @@ const SortableRow = ({
       id={rowElementId}
       ref={setNodeRef}
       style={style}
+      title={tooltipText || undefined}
       className={`border-b hover:bg-muted/50 ${urgentIssues ? 'bg-red-50 border-red-200' : hasIssues ? 'bg-yellow-50 border-yellow-200' : ''} ${glowClass} ${rowAnimationClass} ${isRecentlyAffected ? 'ring-2 ring-amber-400 animate-pulse' : ''}`}
     >
       <td className="p-2">
@@ -450,20 +451,7 @@ const SortableRow = ({
     </tr>
   );
 
-  if (!tooltipText) return rowElement;
-
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          {rowElement}
-        </TooltipTrigger>
-        <TooltipContent side="top">
-          {tooltipText}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
+  return rowElement;
 };
 
 export const EnhancedCourtAssignmentTable = () => {

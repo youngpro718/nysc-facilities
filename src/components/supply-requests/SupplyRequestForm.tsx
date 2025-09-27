@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { useInventoryItems } from '@/hooks/useInventoryItems';
-import { submitSupplyRequest } from '@/lib/supabase';
+import { submitSupplyOrder } from '@/services/supplyOrdersService';
 import { useToast } from '@/hooks/use-toast';
 import { Package, Plus, Search, X } from 'lucide-react';
 
@@ -64,20 +64,23 @@ export function SupplyRequestForm({ onSuccess }: SupplyRequestFormProps) {
   });
 
   const submitMutation = useMutation({
-    mutationFn: (payload: any) => submitSupplyRequest(payload),
-    onSuccess: () => {
+    mutationFn: (payload: any) => submitSupplyOrder(payload),
+    onSuccess: (result: any) => {
+      const requiresApproval = !!result?.approval_required;
       toast({
-        title: 'Success',
-        description: 'Supply request submitted successfully',
+        title: 'Request submitted',
+        description: requiresApproval
+          ? 'Your request was submitted and requires manager approval.'
+          : 'Your request was submitted successfully.',
       });
       queryClient.invalidateQueries({ queryKey: ['supply-requests'] });
       form.reset();
       onSuccess?.();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: 'Error',
-        description: error.message || 'Failed to submit supply request',
+        description: error?.message || 'Failed to submit supply request',
         variant: 'destructive',
       });
     },

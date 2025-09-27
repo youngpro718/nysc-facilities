@@ -17,12 +17,13 @@ export function RoomNode({ data, selected }: NodeProps<FloorPlanObjectData>) {
   // Simplified, cleaner styling
   const nodeStyle = {
     ...style,
+    // React Flow sets backgroundColor internally; to avoid conflicts, use backgroundColor exclusively
     backgroundColor: isChildRoom ? 'hsl(var(--muted))' : 'hsl(var(--card))',
     border: isChildRoom ? '2px dashed hsl(var(--muted-foreground))' : '2px solid hsl(var(--border))',
     borderRadius: '8px',
     boxShadow: selected ? '0 0 0 2px hsl(var(--primary))' : '0 1px 3px rgba(0,0,0,0.1)',
     transition: 'all 0.2s ease'
-  };
+  } as React.CSSProperties;
 
   // Connection count for visual feedback
   const connectionCount = data.properties?.connected_spaces?.length || 0;

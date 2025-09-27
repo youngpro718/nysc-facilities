@@ -26,6 +26,7 @@ import AdminKeyRequests from "@/pages/admin/KeyRequests";
 import SupplyRoom from "@/pages/SupplyRoom";
 import { CourtOperationsDashboard } from "@/pages/CourtOperationsDashboard";
 import { InventoryDashboard } from "@/pages/InventoryDashboard";
+import LiveCourtGrid from "@/components/court/LiveCourtGrid";
 import { CardShowcase } from "@/components/spaces/rooms/CardShowcase";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { EnhancedThemeProvider } from "@/providers/EnhancedThemeProvider";
@@ -168,6 +169,13 @@ function AppContent() {
           <ProtectedRoute requireAdmin>
             <ModuleProtectedRoute moduleKey="court_operations" moduleName="Court Operations">
               <CourtOperationsDashboard />
+            </ModuleProtectedRoute>
+          </ProtectedRoute>
+        } />
+        <Route path="court-live" element={
+          <ProtectedRoute requireAdmin>
+            <ModuleProtectedRoute moduleKey="court_operations" moduleName="Court Operations">
+              <LiveCourtGrid />
             </ModuleProtectedRoute>
           </ProtectedRoute>
         } />

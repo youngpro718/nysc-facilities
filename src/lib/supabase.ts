@@ -147,22 +147,44 @@ export const authService = {
     const { data: profile } = await supabase
       .from('profiles')
       .select('*')
-      .eq('user_id', userId)
+      .eq('id', userId)
       .single();
 
     return { isAdmin, profile };
   },
   updateSessionTracking: async (userId: string, deviceInfo: any) => {
-    // Simple session tracking - just update last seen
-    const { error } = await supabase
-      .from('user_sessions')
-      .upsert({
-        user_id: userId,
-        device_info: deviceInfo,
-        last_activity: new Date().toISOString()
-      });
-    
-    if (error) {
+    // Align with schema: use last_active_at instead of last_activity
+    try {
+      // Try update existing row
+      const { data: existing, error: fetchErr } = await supabase
+        .from('user_sessions')
+        .select('id')
+        .eq('user_id', userId)
+        .limit(1)
+        .maybeSingle();
+
+      if (fetchErr) throw fetchErr;
+
+      if (existing?.id) {
+        const { error: upErr } = await supabase
+          .from('user_sessions')
+          .update({
+            device_info: deviceInfo,
+            last_active_at: new Date().toISOString()
+          })
+          .eq('id', existing.id);
+        if (upErr) throw upErr;
+      } else {
+        const { error: insErr } = await supabase
+          .from('user_sessions')
+          .insert({
+            user_id: userId,
+            device_info: deviceInfo,
+            last_active_at: new Date().toISOString()
+          });
+        if (insErr) throw insErr;
+      }
+    } catch (error) {
       console.error('Session tracking error:', error);
     }
   },

@@ -23,11 +23,11 @@ const SpacesTabs = () => {
   return (
     <div className="space-y-6">
       {/* Top Navigation Bar - Horizontal Layout */}
-      <div className="bg-card border rounded-lg p-4">
+      <div className="bg-card border rounded-lg p-4 sm:sticky sm:top-[72px] sticky top-0 z-30 backdrop-blur supports-[backdrop-filter]:bg-card/80">
         <div className="flex items-start sm:items-center justify-between mb-4 gap-3">
           <div>
             <h3 className="font-semibold text-lg">Space Management Tools</h3>
-            <p className="text-sm text-muted-foreground">Navigate between different space management areas</p>
+            <p className="text-sm text-muted-foreground hidden sm:block">Navigate between different space management areas</p>
           </div>
           <div className="hidden sm:flex items-center gap-4">
             <div className="text-sm text-muted-foreground">
@@ -40,13 +40,13 @@ const SpacesTabs = () => {
         </div>
 
         {/* Horizontal Navigation Buttons */}
-        <div className="flex gap-3 flex-nowrap overflow-x-auto pb-1 -mx-1 px-1">
+        <div className="flex gap-2 sm:gap-3 flex-nowrap overflow-x-auto pb-1 -mx-2 px-2">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   onClick={() => setActiveView('rooms')}
-                  className={`flex items-center gap-3 px-3 py-2 sm:px-4 sm:py-3 rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                  className={`flex items-center gap-3 px-3 py-3 sm:px-4 sm:py-3 rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-h-[44px] ${
                     activeView === 'rooms' 
                       ? 'bg-primary text-primary-foreground shadow-md' 
                       : 'bg-accent hover:bg-accent/80'
@@ -57,13 +57,13 @@ const SpacesTabs = () => {
                   <div className={`p-2 rounded-lg ${
                     activeView === 'rooms' ? 'bg-primary-foreground/20' : 'bg-primary'
                   }`}>
-                    <Home className={`h-4 w-4 ${
+                    <Home className={`h-5 w-5 ${
                       activeView === 'rooms' ? 'text-primary-foreground' : 'text-white'
                     }`} />
                   </div>
                   <div className="text-left">
-                    <h4 className="font-medium text-sm">Room Management</h4>
-                    <p className={`text-xs ${
+                    <h4 className="font-medium text-sm sm:text-base">Room Management</h4>
+                    <p className={`text-[11px] sm:text-xs ${
                       activeView === 'rooms' ? 'text-primary-foreground/70' : 'text-muted-foreground'
                     }`}>Primary workspace</p>
                   </div>
@@ -86,7 +86,7 @@ const SpacesTabs = () => {
               <TooltipTrigger asChild>
                 <button
                   onClick={() => setActiveView('floorplan')}
-                  className={`flex items-center gap-3 px-3 py-2 sm:px-4 sm:py-3 rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                  className={`flex items-center gap-3 px-3 py-3 sm:px-4 sm:py-3 rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-h-[44px] ${
                     activeView === 'floorplan' 
                       ? 'bg-green-600 text-white shadow-md' 
                       : 'bg-accent hover:bg-accent/80'
@@ -97,13 +97,13 @@ const SpacesTabs = () => {
                   <div className={`p-2 rounded-lg ${
                     activeView === 'floorplan' ? 'bg-white/20' : 'bg-green-500'
                   }`}>
-                    <Map className={`h-4 w-4 ${
+                    <Map className={`h-5 w-5 ${
                       activeView === 'floorplan' ? 'text-white' : 'text-white'
                     }`} />
                   </div>
                   <div className="text-left">
-                    <h4 className="font-medium text-sm">Floor Plan</h4>
-                    <p className={`text-xs ${
+                    <h4 className="font-medium text-sm sm:text-base">Floor Plan</h4>
+                    <p className={`text-[11px] sm:text-xs ${
                       activeView === 'floorplan' ? 'text-white/70' : 'text-muted-foreground'
                     }`}>Visual overview</p>
                   </div>
@@ -160,7 +160,7 @@ const SpacesTabs = () => {
                     Floor Plan Viewer
                     {floorPlanExpanded && <Badge variant="secondary">Expanded View</Badge>}
                   </h2>
-                  <p className="text-muted-foreground mt-1">
+                  <p className="text-muted-foreground mt-1 hidden sm:block">
                     Interactive visual representation of building layouts and room relationships
                   </p>
                 </div>

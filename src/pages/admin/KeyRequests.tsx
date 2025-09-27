@@ -280,7 +280,7 @@ export default function AdminKeyRequests() {
                           {getRequestTypeLabel(request.request_type)}
                         </CardTitle>
                         <p className="text-sm text-muted-foreground">
-                          Requested by {request.profiles.first_name} {request.profiles.last_name}
+                          Requested by {(request.profiles?.first_name || 'Unknown')} {(request.profiles?.last_name || '')}
                         </p>
                       </div>
                     </div>
@@ -314,7 +314,7 @@ export default function AdminKeyRequests() {
 
                     <div>
                       <p className="font-medium text-sm text-muted-foreground mb-1">Contact</p>
-                      <p className="text-sm">{request.profiles.email}</p>
+                      <p className="text-sm">{request.profiles?.email || '—'}</p>
                       {request.emergency_contact && (
                         <p className="text-xs text-muted-foreground">{request.emergency_contact}</p>
                       )}
@@ -388,7 +388,7 @@ export default function AdminKeyRequests() {
           <div className="space-y-4">
             <p>
               Are you sure you want to {actionType} this {selectedRequest?.request_type} key request 
-              from {selectedRequest?.profiles.first_name} {selectedRequest?.profiles.last_name}?
+              from {(selectedRequest?.profiles?.first_name || 'Unknown')} {(selectedRequest?.profiles?.last_name || '')}?
             </p>
             
             <div>

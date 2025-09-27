@@ -75,32 +75,39 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
       if (!user) throw new Error('No authenticated user found');
 
       const formattedDueDate = data.due_date ? new Date(data.due_date).toISOString() : null;
-      
-      const { error } = await supabase
+
+      // Build a payload that matches the actual issues schema (older schema uses 'type', not 'issue_type')
+      const payload: any = {
+        title: data.title || `${data.issue_type} Issue${data.problem_type ? ` - ${data.problem_type}` : ''}`,
+        description: data.description || null,
+        type: data.issue_type, // align with schema
+        priority: isEmergency ? 'high' : (data.priority || 'medium'),
+        status: 'open',
+        building_id: data.building_id || null,
+        floor_id: data.floor_id || null,
+        room_id: data.room_id || null,
+        due_date: formattedDueDate,
+        created_by: user.id,
+      };
+
+      const { error } = await (supabase as any)
         .from('issues')
-        .insert({
-          title: data.title || `${data.issue_type} Issue ${data.problem_type ? `- ${data.problem_type}` : ''} - ${isEmergency ? 'HIGH' : data.priority.toUpperCase()} Priority`,
-          description: data.description,
-          issue_type: data.issue_type,
-          priority: isEmergency ? 'high' : data.priority,
-          status: 'open',
-          building_id: data.building_id,
-          floor_id: data.floor_id,
-          room_id: data.room_id,
-          photos: selectedPhotos,
-          seen: false,
-          due_date: formattedDueDate,
-          date_info: data.date_info || null,
-          created_by: user.id
-        });
-      
+        .insert(payload);
       if (error) throw error;
 
-      await queryClient.invalidateQueries({ queryKey: ['userIssues'] });
-      await queryClient.invalidateQueries({ queryKey: ['issues'] });
+      // Invalidate all the places that surface issues
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['issues'] }),
+        queryClient.invalidateQueries({ queryKey: ['userIssues'] }),
+        queryClient.invalidateQueries({ queryKey: ['adminIssues'] }),
+        queryClient.invalidateQueries({ queryKey: ['interactive-operations'] }),
+        queryClient.invalidateQueries({ queryKey: ['quick-actions'] }),
+        queryClient.invalidateQueries({ queryKey: ['assignment-stats'] }),
+        queryClient.invalidateQueries({ queryKey: ['court-issues'] }),
+      ]);
     },
     onSuccess: () => {
-      toast.success("Issue reported successfully");
+      toast.success('Issue reported successfully');
       form.reset();
       setSelectedIssueType(null);
       setCurrentStep('type');
@@ -109,13 +116,23 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
     },
     onError: (error: any) => {
       console.error('Error creating issue:', error);
-      toast.error(error.message || "Failed to report issue");
-    }
+      toast.error(error?.message || 'Failed to report issue');
+    },
   });
 
   const handleNext = async () => {
     const isValid = await form.trigger(getFieldsForStep(currentStep));
-    if (!isValid) return;
+    if (!isValid) {
+      // Provide explicit feedback when validations block progression
+      if (currentStep === 'type') {
+        toast.error('Please select an issue type to continue');
+      } else if (currentStep === 'location') {
+        toast.error('Please select Building, Floor, and Room to continue');
+      } else if (currentStep === 'details') {
+        toast.error('Please review the details before submitting');
+      }
+      return;
+    }
     
     if (currentStep === 'type') {
       if (!selectedIssueType) {
@@ -150,13 +167,15 @@ export function IssueWizard({ onSuccess, onCancel, assignedRooms }: IssueWizardP
       case 'location':
         return ['building_id', 'floor_id', 'room_id'];
       case 'details':
-        return ['description', 'problem_type'];
+        // Make details optional to avoid silent blocking; step UI still collects data
+        return [];
       default:
         return [];
     }
   };
 
   const onSubmit = (data: FormData) => {
+    toast.message('Submitting issue…');
     createIssueMutation.mutate(data);
   };
 

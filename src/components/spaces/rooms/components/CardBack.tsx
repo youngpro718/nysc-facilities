@@ -179,12 +179,12 @@ export function CardBack({ room, onFlip }: CardBackProps) {
               {/* Enhanced Key Holders Display */}
               {roomAccess.key_holders.length > 0 && (
                 <div className="bg-muted/50 p-3 rounded-lg">
-                  <p className="text-sm font-medium mb-3 flex items-center justify-between">
-                    Key Holders
+                  <div className="text-sm font-medium mb-3 flex items-center justify-between">
+                    <span>Key Holders</span>
                     <Badge variant="secondary" className="text-xs">
                       {roomAccess.key_holders.length} total
                     </Badge>
-                  </p>
+                  </div>
                   <div className="space-y-2">
                     {roomAccess.key_holders.slice(0, 4).map((holder, index) => (
                       <div key={index} className="flex items-center justify-between p-2 bg-background/50 rounded-md">
@@ -252,15 +252,15 @@ export function CardBack({ room, onFlip }: CardBackProps) {
           {/* Enhanced Occupants Information */}
           {room.current_occupants && room.current_occupants.length > 0 && (
             <div className="space-y-3">
-              <h4 className="text-sm font-medium flex items-center justify-between">
-                <div className="flex items-center gap-1">
+              <div className="text-sm font-medium flex items-center justify-between" role="heading" aria-level={4}>
+                <span className="flex items-center gap-1">
                   <Users className="h-3.5 w-3.5 text-muted-foreground" />
                   Current Occupants
-                </div>
+                </span>
                 <Badge variant="secondary" className="text-xs">
                   {room.current_occupants.length} total
                 </Badge>
-              </h4>
+              </div>
               <div className="bg-muted/30 p-3 rounded-lg space-y-3">
                 {room.current_occupants.map((occupant, index) => (
                   <div key={index} className="p-3 bg-background/50 rounded-md hover:bg-background/70 transition-colors">

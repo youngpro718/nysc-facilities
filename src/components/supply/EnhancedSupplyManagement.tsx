@@ -24,6 +24,7 @@ import {
   ChevronRight,
   Boxes,
   Activity,
+  Archive,
   MapPin
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -50,7 +51,8 @@ interface SupplyRequestWithDetails {
   title: string;
   description?: string;
   priority: 'low' | 'medium' | 'high' | 'urgent';
-  status: 'pending' | 'approved' | 'rejected' | 'fulfilled';
+  // Standardized status model
+  status: 'submitted' | 'received' | 'processing' | 'ready' | 'picked_up' | 'completed' | 'cancelled';
   fulfillment_stage: string;
   requested_delivery_date?: string;
   delivery_location?: string;
@@ -85,18 +87,24 @@ const priorityColors = {
   urgent: 'bg-red-100 text-red-800'
 };
 
-const statusColors = {
-  pending: 'bg-gray-100 text-gray-800',
-  approved: 'bg-green-100 text-green-800',
-  rejected: 'bg-red-100 text-red-800',
-  fulfilled: 'bg-blue-100 text-blue-800'
+const statusColors: Record<SupplyRequestWithDetails['status'], string> = {
+  submitted: 'bg-blue-100 text-blue-800',
+  received: 'bg-purple-100 text-purple-800',
+  processing: 'bg-yellow-100 text-yellow-800',
+  ready: 'bg-green-100 text-green-800',
+  picked_up: 'bg-indigo-100 text-indigo-800',
+  completed: 'bg-gray-100 text-gray-800',
+  cancelled: 'bg-red-100 text-red-800',
 };
 
-const statusIcons = {
-  pending: Clock,
-  approved: CheckCircle,
-  rejected: XCircle,
-  fulfilled: Package
+const statusIcons: Record<SupplyRequestWithDetails['status'], any> = {
+  submitted: Clock,
+  received: CheckCircle,
+  processing: Activity,
+  ready: CheckCircle,
+  picked_up: Package,
+  completed: Archive,
+  cancelled: XCircle,
 };
 
 export function EnhancedSupplyManagement() {
@@ -147,22 +155,38 @@ export function EnhancedSupplyManagement() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      
+      // Map legacy statuses (pending/approved/rejected/fulfilled) to unified lifecycle
+      const normalizeStatus = (s: string): SupplyRequestWithDetails['status'] => {
+        switch (s) {
+          case 'pending':
+            return 'submitted';
+          case 'approved':
+            return 'received';
+          case 'rejected':
+            return 'cancelled';
+          case 'fulfilled':
+            return 'completed';
+          default:
+            return (s as any) as SupplyRequestWithDetails['status'];
+        }
+      };
 
       return data.map((request: any): SupplyRequestWithDetails => ({
         id: request.id,
         title: request.title,
         description: request.description,
         priority: request.priority,
-        status: request.status,
+        status: normalizeStatus(request.status),
         fulfillment_stage: request.fulfillment_stage,
         requested_delivery_date: request.requested_delivery_date,
         delivery_location: request.delivery_location,
         created_at: request.created_at,
         updated_at: request.updated_at,
         requester: {
-          id: request.profiles.id,
-          name: `${request.profiles.first_name} ${request.profiles.last_name}`,
-          email: request.profiles.email,
+          id: request.profiles?.id || '',
+          name: `${request.profiles?.first_name || 'Unknown'} ${request.profiles?.last_name || ''}`.trim(),
+          email: request.profiles?.email || '',
         },
         items: request.supply_request_items.map((item: any) => ({
           id: item.id,
@@ -252,12 +276,13 @@ export function EnhancedSupplyManagement() {
 
   // Statistics
   const stats = useMemo(() => {
-    const pending = requests.filter(r => r.status === 'pending').length;
-    const approved = requests.filter(r => r.status === 'approved').length;
-    const fulfilled = requests.filter(r => r.status === 'fulfilled').length;
+    const submitted = requests.filter(r => r.status === 'submitted').length;
+    const received = requests.filter(r => r.status === 'received').length;
+    const processing = requests.filter(r => r.status === 'processing').length;
+    const ready = requests.filter(r => r.status === 'ready').length;
+    const completed = requests.filter(r => r.status === 'completed').length;
     const urgent = requests.filter(r => r.priority === 'urgent').length;
-    
-    return { pending, approved, fulfilled, urgent };
+    return { submitted, received, processing, ready, completed, urgent };
   }, [requests]);
 
   // Toggle request expansion
@@ -273,14 +298,14 @@ export function EnhancedSupplyManagement() {
 
   // Update request status mutation
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ requestId, status, notes }: { requestId: string; status: string; notes?: string }) => {
+    mutationFn: async ({ requestId, status, notes }: { requestId: string; status: SupplyRequestWithDetails['status']; notes?: string }) => {
       const { error } = await supabase
         .from('supply_requests')
         .update({ 
           status, 
           updated_at: new Date().toISOString(),
-          ...(status === 'approved' && { approved_at: new Date().toISOString(), approved_by: user?.id }),
-          ...(status === 'fulfilled' && { fulfilled_at: new Date().toISOString(), fulfilled_by: user?.id }),
+          ...(status === 'received' && { approved_at: new Date().toISOString(), approved_by: user?.id }),
+          ...(status === 'completed' && { fulfilled_at: new Date().toISOString(), fulfilled_by: user?.id }),
           ...(notes && { approval_notes: notes })
         })
         .eq('id', requestId);
@@ -298,7 +323,7 @@ export function EnhancedSupplyManagement() {
 
   const RequestCard = ({ request }: { request: SupplyRequestWithDetails }) => {
     const isExpanded = expandedRequests.has(request.id);
-    const StatusIcon = statusIcons[request.status];
+    const StatusIcon = statusIcons[request.status] ?? Package;
     const hasStockIssues = request.items.some(item => item.current_stock < item.quantity_requested);
 
     return (
@@ -319,7 +344,7 @@ export function EnhancedSupplyManagement() {
                   <Badge className={priorityColors[request.priority]}>
                     {request.priority}
                   </Badge>
-                  <Badge className={statusColors[request.status]}>
+                  <Badge className={statusColors[request.status] ?? 'bg-gray-100 text-gray-800'}>
                     {request.status}
                   </Badge>
                   {hasStockIssues && (
@@ -351,7 +376,7 @@ export function EnhancedSupplyManagement() {
                   </div>
                 </div>
                 
-                {isAdmin && request.status === 'pending' && (
+                {isAdmin && request.status === 'submitted' && (
                   <div className="flex gap-1">
                     <Button
                       size="sm"
@@ -359,7 +384,7 @@ export function EnhancedSupplyManagement() {
                       className="h-7 px-2 text-green-600 hover:text-green-700"
                       onClick={(e) => {
                         e.stopPropagation();
-                        updateStatusMutation.mutate({ requestId: request.id, status: 'approved' });
+                        updateStatusMutation.mutate({ requestId: request.id, status: 'received' });
                       }}
                     >
                       <CheckCircle className="h-3 w-3 mr-1" />
@@ -371,7 +396,7 @@ export function EnhancedSupplyManagement() {
                       className="h-7 px-2 text-red-600 hover:text-red-700"
                       onClick={(e) => {
                         e.stopPropagation();
-                        updateStatusMutation.mutate({ requestId: request.id, status: 'rejected' });
+                        updateStatusMutation.mutate({ requestId: request.id, status: 'cancelled' });
                       }}
                     >
                       <XCircle className="h-3 w-3 mr-1" />
@@ -471,8 +496,8 @@ export function EnhancedSupplyManagement() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Pending Requests</p>
-                <p className="text-2xl font-bold text-orange-600">{stats.pending}</p>
+                <p className="text-sm text-gray-600">Submitted</p>
+                <p className="text-2xl font-bold text-blue-600">{stats.submitted}</p>
               </div>
               <Clock className="h-8 w-8 text-orange-500" />
             </div>
@@ -483,8 +508,8 @@ export function EnhancedSupplyManagement() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Approved</p>
-                <p className="text-2xl font-bold text-green-600">{stats.approved}</p>
+                <p className="text-sm text-gray-600">Received</p>
+                <p className="text-2xl font-bold text-purple-600">{stats.received}</p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-500" />
             </div>
@@ -495,8 +520,8 @@ export function EnhancedSupplyManagement() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Fulfilled</p>
-                <p className="text-2xl font-bold text-blue-600">{stats.fulfilled}</p>
+                <p className="text-sm text-gray-600">Completed</p>
+                <p className="text-2xl font-bold text-gray-800">{stats.completed}</p>
               </div>
               <Package className="h-8 w-8 text-blue-500" />
             </div>

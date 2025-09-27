@@ -952,6 +952,11 @@ export default function Operations() {
       <IssueDialog 
         open={showCreateIssue} 
         onOpenChange={setShowCreateIssue}
+        onSuccess={() => {
+          // After creating an issue, immediately refresh and take user to Issues tab
+          refreshAllData();
+          handleTabChange('issues');
+        }}
       />
       
       <ScheduleMaintenanceDialog 

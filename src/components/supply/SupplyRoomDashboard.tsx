@@ -453,7 +453,7 @@ export function SupplyRoomDashboard() {
                     <div>
                       <h4 className="font-medium mb-2">Requested Items:</h4>
                       <div className="space-y-2">
-                        {request.supply_request_items.map((item) => (
+                        {(request.supply_request_items || []).map((item) => (
                           <div key={item.id} className="flex items-center justify-between p-2 bg-muted rounded">
                             <div>
                               <span className="font-medium">{item.inventory_items.name}</span>

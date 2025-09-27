@@ -1,6 +1,6 @@
-import React from "react";
+import React, { forwardRef } from "react";
 
-interface LightingStatusWheelProps {
+export interface LightingStatusWheelProps {
   functional: number;
   total: number;
   size?: number; // px
@@ -8,7 +8,8 @@ interface LightingStatusWheelProps {
   title?: string;
 }
 
-export function LightingStatusWheel({ functional, total, size = 36, onClick, title }: LightingStatusWheelProps) {
+export const LightingStatusWheel = forwardRef<HTMLButtonElement, LightingStatusWheelProps>(
+  ({ functional, total, size = 36, onClick, title }, ref) => {
   const clampedTotal = Math.max(0, total || 0);
   const clampedFunctional = Math.min(Math.max(0, functional || 0), clampedTotal);
   const pct = clampedTotal === 0 ? 0 : clampedFunctional / clampedTotal;
@@ -33,6 +34,7 @@ export function LightingStatusWheel({ functional, total, size = 36, onClick, tit
       title={title || `${clampedFunctional}/${clampedTotal} lights functional`}
       className="inline-flex items-center justify-center rounded-full hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
       style={{ width: size, height: size }}
+      ref={ref}
     >
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         <circle
@@ -57,4 +59,6 @@ export function LightingStatusWheel({ functional, total, size = 36, onClick, tit
       </svg>
     </button>
   );
-}
+});
+
+LightingStatusWheel.displayName = 'LightingStatusWheel';

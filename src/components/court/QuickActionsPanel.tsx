@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -119,6 +119,24 @@ export function QuickActionsPanel() {
     }
   });
 
+  // Mutation to quickly mark a room's active shutdown as resolved (available)
+  const { mutate: markAvailable, isPending: isMarking } = useMutation({
+    mutationFn: async (courtRoomId: string) => {
+      if (!courtRoomId) return;
+      const { error } = await supabase
+        .from('room_shutdowns')
+        .update({ status: 'resolved' })
+        .eq('court_room_id', courtRoomId)
+        .in('status', ['in_progress', 'scheduled']);
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['quick-actions'] });
+      await queryClient.invalidateQueries({ queryKey: ['interactive-operations'] });
+      await queryClient.invalidateQueries({ queryKey: ['room-shutdowns-active'] });
+    },
+  });
+
   // Loading and error feedback
   if (isLoading) {
     return (
@@ -211,6 +229,17 @@ export function QuickActionsPanel() {
                     <Badge variant={getUrgencyVariant(item.urgency)} className="capitalize whitespace-nowrap">
                       {item.urgency}
                     </Badge>
+                    {item.type === 'shutdown_ending' && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="text-xs whitespace-nowrap"
+                        onClick={() => markAvailable((item as any).details?.court_rooms?.id || (item as any).details?.court_room_id || '')}
+                        disabled={isMarking}
+                      >
+                        {isMarking ? 'Completing…' : 'Mark Available'}
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant="outline"

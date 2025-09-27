@@ -44,7 +44,8 @@ export const getNodeBaseStyle = (
     borderRadius: '3px',
     width: `${size.width}px`,
     height: `${size.height}px`,
-    backgroundColor: data?.style?.backgroundColor || colors.background,
+    // Standardize on backgroundColor to avoid shorthand/non-shorthand conflicts with React Flow internals
+    backgroundColor: data?.style?.backgroundColor || (data?.style as any)?.background || colors.background,
     border: `${selected ? '2px' : '1px'} solid ${data?.style?.borderColor || colors.border}`,
     transform: data?.rotation ? `rotate(${data.rotation}deg)` : 'none',
     position: 'relative' as const,

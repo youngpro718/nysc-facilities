@@ -47,6 +47,22 @@ export const QuickAvailabilityDialog: React.FC<QuickAvailabilityDialogProps> = (
 
   const canSave = useMemo(() => !!courtRoomId && (!!reason || !!details) && (kind === "unavailable" || tempLocation.trim().length > 0), [courtRoomId, reason, details, kind, tempLocation]);
 
+  // Detect if there is an active/scheduled shutdown for this courtroom so we can offer a "Mark Available" action
+  const { data: activeShutdown } = useQuery({
+    queryKey: ["room-shutdowns-active", courtRoomId],
+    enabled: open && !!courtRoomId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("room_shutdowns")
+        .select("id, court_room_id, status")
+        .eq("court_room_id", courtRoomId)
+        .in("status", ["in_progress", "scheduled"]) // active states
+        .maybeSingle();
+      if (error) throw error;
+      return (data as { id: string; court_room_id: string; status: string } | null);
+    }
+  });
+
   // Load active & available rooms for relocation list
   const { data: availableRooms } = useQuery({
     queryKey: ["availability-available-rooms"],
@@ -120,6 +136,30 @@ export const QuickAvailabilityDialog: React.FC<QuickAvailabilityDialogProps> = (
     },
   });
 
+  // Mark availability restored (complete any active shutdowns for this room)
+  const { mutate: resolveAvailability, isPending: isResolving } = useMutation({
+    mutationFn: async () => {
+      if (!courtRoomId) throw new Error("Missing courtroom id");
+      const { error } = await supabase
+        .from("room_shutdowns")
+        .update({ status: "resolved" })
+        .eq("court_room_id", courtRoomId)
+        .in("status", ["in_progress", "scheduled"]);
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      toast({ title: "Availability restored", description: "Room marked as available" });
+      qc.invalidateQueries({ queryKey: ["interactive-operations"] });
+      qc.invalidateQueries({ queryKey: ["assignment-stats"] });
+      qc.invalidateQueries({ queryKey: ["room-shutdowns-active"] });
+      onOpenChange(false);
+    },
+    onError: (err: any) => {
+      console.error("Failed to resolve availability", err);
+      toast({ title: "Failed to mark available", description: String(err?.message || err), variant: "destructive" });
+    },
+  });
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
@@ -130,6 +170,16 @@ export const QuickAvailabilityDialog: React.FC<QuickAvailabilityDialogProps> = (
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Guidance when save conditions are not met */}
+          {(!canSave) && (
+            <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-md p-2">
+              <div>To continue, please make sure:</div>
+              <ul className="list-disc ml-4 mt-1">
+                {!courtRoomId && (<li>Select a room first.</li>)}
+                {kind === 'relocated' && tempLocation.trim().length === 0 && (<li>Pick a temporary location.</li>)}
+              </ul>
+            </div>
+          )}
           <div className="grid grid-cols-1 gap-3">
             <div className="space-y-1">
               <Label>Action</Label>
@@ -193,8 +243,17 @@ export const QuickAvailabilityDialog: React.FC<QuickAvailabilityDialogProps> = (
           </div>
 
           <DialogFooter className="flex gap-2 justify-end">
-            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>Cancel</Button>
-            <Button onClick={() => saveAvailability()} disabled={!canSave || isPending}>
+            {activeShutdown && (
+              <Button
+                variant="secondary"
+                onClick={() => resolveAvailability()}
+                disabled={isResolving}
+              >
+                {isResolving ? "Marking…" : "Mark Available"}
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending || isResolving}>Cancel</Button>
+            <Button onClick={() => saveAvailability()} disabled={!canSave || isPending || isResolving}>
               {isPending ? "Saving…" : kind === "relocated" ? "Mark Relocated" : "Mark Unavailable"}
             </Button>
           </DialogFooter>

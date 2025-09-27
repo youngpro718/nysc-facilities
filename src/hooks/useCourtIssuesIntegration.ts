@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useRef, useState } from "react";
 
@@ -85,7 +85,7 @@ export const useCourtIssuesIntegration = () => {
         .from("issues")
         .select(`
           *,
-          rooms(room_number)
+          rooms:room_id (room_number)
         `)
         .in("status", ["open", "in_progress"])
         .not("room_id", "is", null)
