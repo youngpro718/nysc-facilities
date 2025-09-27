@@ -22,28 +22,27 @@ export function LocationCentricView() {
   const [expandedFloors, setExpandedFloors] = useState<Set<string>>(new Set());
 
   // Fetch real building and lighting data
-  const { data: buildingData, isLoading } = useQuery({
+  const { data: buildingData, isLoading, error } = useQuery({
     queryKey: ['location-centric-lighting'],
     queryFn: async () => {
-      // Get buildings with floors and lighting fixtures
+      // Get buildings with floors and spaces
       const { data, error } = await supabase
         .from('buildings')
         .select(`
           id,
           name,
-          floors (
+          floors!floors_building_id_fkey (
             id,
             name,
             floor_number,
-            spaces (
+            spaces!spaces_floor_id_fkey (
               id,
               name,
               type,
-              lighting_fixtures (
+              lighting_fixtures!lighting_fixtures_space_id_fkey (
                 id,
                 name,
-                status,
-                space_type
+                status
               )
             )
           )
@@ -51,7 +50,12 @@ export function LocationCentricView() {
         .eq('status', 'active')
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching building data:', error);
+        throw error;
+      }
+      
+      console.log('Building data fetched:', data);
       return data;
     }
   });
@@ -81,58 +85,87 @@ export function LocationCentricView() {
     );
   }
 
+  if (error) {
+    console.error('LocationCentricView error:', error);
+    return (
+      <div className="space-y-6">
+        <Card className="border-destructive">
+          <CardHeader>
+            <CardTitle className="text-destructive">Error Loading Data</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>Failed to load building and floor data. Please try again.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   // Transform data for UI
-  const buildingStructure = (buildingData || []).map(building => ({
-    id: building.id,
-    name: building.name,
-    floors: (building.floors || [])
-      .sort((a, b) => a.floor_number - b.floor_number)
-      .map(floor => {
-        const spaces = floor.spaces || [];
-        const hallways = spaces.filter(s => s.type === 'hallway');
-        const rooms = spaces.filter(s => s.type === 'room');
-        
-        const floorFixtures = spaces.flatMap(s => s.lighting_fixtures || []);
-        const hallwayFixtures = hallways.flatMap(h => h.lighting_fixtures || []);
-        const roomFixtures = rooms.flatMap(r => r.lighting_fixtures || []);
-        
-        return {
-          id: floor.id,
-          number: floor.floor_number,
-          name: floor.name,
-          hasSpecialConfig: [13, 16, 17].includes(floor.floor_number),
-          elevatorBanks: floor.floor_number === 17 ? 0 : 2,
-          totalFixtures: floorFixtures.length,
-          functionalFixtures: floorFixtures.filter(f => f.status === 'functional').length,
-          hallways: hallways.map(hallway => {
-            const fixtures = hallway.lighting_fixtures || [];
-            const functional = fixtures.filter(f => f.status === 'functional').length;
-            
-            return {
-              id: hallway.id,
-              name: hallway.name,
-              section: 'main',
-              fixtures: fixtures.length,
-              functional,
-              status: functional === fixtures.length ? 'excellent' : 
-                     functional >= fixtures.length * 0.8 ? 'good' : 
-                     functional >= fixtures.length * 0.5 ? 'fair' : 'poor'
-            };
-          }),
-          rooms: rooms.map(room => {
-            const fixtures = room.lighting_fixtures || [];
-            const functional = fixtures.filter(f => f.status === 'functional').length;
-            
-            return {
-              id: room.id,
-              name: room.name,
-              fixtures: fixtures.length,
-              functional
-            };
-          })
-        };
-      })
-  }));
+  const buildingStructure = (buildingData || []).map(building => {
+    console.log('Processing building:', building.name, 'floors:', building.floors?.length);
+    
+    return {
+      id: building.id,
+      name: building.name,
+      floors: (building.floors || [])
+        .sort((a, b) => a.floor_number - b.floor_number)
+        .map(floor => {
+          const spaces = floor.spaces || [];
+          const hallways = spaces.filter(s => s.type === 'hallway');
+          const rooms = spaces.filter(s => s.type === 'room');
+          
+          const floorFixtures = spaces.flatMap(s => s.lighting_fixtures || []);
+          const hallwayFixtures = hallways.flatMap(h => h.lighting_fixtures || []);
+          const roomFixtures = rooms.flatMap(r => r.lighting_fixtures || []);
+          
+          console.log(`Floor ${floor.floor_number}:`, {
+            spaces: spaces.length,
+            hallways: hallways.length,
+            rooms: rooms.length,
+            fixtures: floorFixtures.length
+          });
+          
+          return {
+            id: floor.id,
+            number: floor.floor_number,
+            name: floor.name,
+            hasSpecialConfig: [13, 16, 17].includes(floor.floor_number),
+            elevatorBanks: floor.floor_number === 17 ? 0 : 2,
+            totalFixtures: floorFixtures.length,
+            functionalFixtures: floorFixtures.filter(f => f.status === 'functional').length,
+            hallways: hallways.map(hallway => {
+              const fixtures = hallway.lighting_fixtures || [];
+              const functional = fixtures.filter(f => f.status === 'functional').length;
+              
+              return {
+                id: hallway.id,
+                name: hallway.name,
+                section: 'main',
+                fixtures: fixtures.length,
+                functional,
+                status: functional === fixtures.length ? 'excellent' : 
+                       functional >= fixtures.length * 0.8 ? 'good' : 
+                       functional >= fixtures.length * 0.5 ? 'fair' : 'poor'
+              };
+            }),
+            rooms: rooms.map(room => {
+              const fixtures = room.lighting_fixtures || [];
+              const functional = fixtures.filter(f => f.status === 'functional').length;
+              
+              return {
+                id: room.id,
+                name: room.name,
+                fixtures: fixtures.length,
+                functional
+              };
+            })
+          };
+        })
+    };
+  });
+
+  console.log('Final building structure:', buildingStructure);
 
   const toggleFloor = (floorId: string) => {
     const newExpanded = new Set(expandedFloors);
@@ -155,7 +188,7 @@ export function LocationCentricView() {
   };
 
   if (selectedFloor) {
-    const floor = buildingStructure[0].floors.find(f => f.id === selectedFloor);
+    const floor = buildingStructure.flatMap(b => b.floors).find(f => f.id === selectedFloor);
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-4">
@@ -168,6 +201,24 @@ export function LocationCentricView() {
           </div>
         </div>
         <EnhancedHallwayLightingPage />
+      </div>
+    );
+  }
+
+  if (!buildingStructure || buildingStructure.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold">Location-Based Lighting Management</h2>
+          <p className="text-muted-foreground">
+            Navigate through floors, hallways, and rooms in hierarchical view
+          </p>
+        </div>
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-muted-foreground">No buildings found or no floors configured.</p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
