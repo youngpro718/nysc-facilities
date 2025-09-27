@@ -475,6 +475,72 @@ export type Database = {
         }
         Relationships: []
       }
+      clerk_assignments: {
+        Row: {
+          clerk_id: string
+          room_id: string
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          clerk_id: string
+          room_id: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          clerk_id?: string
+          room_id?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clerk_assignments_clerk_id_fkey"
+            columns: ["clerk_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clerk_assignments_clerk_id_fkey"
+            columns: ["clerk_id"]
+            isOneToOne: false
+            referencedRelation: "staff_out_today"
+            referencedColumns: ["staff_id"]
+          },
+        ]
+      }
+      court_activity_log: {
+        Row: {
+          actor_id: string | null
+          created_at: string | null
+          from_room_id: string | null
+          id: string
+          payload: Json | null
+          to_room_id: string | null
+          type: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string | null
+          from_room_id?: string | null
+          id?: string
+          payload?: Json | null
+          to_room_id?: string | null
+          type: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string | null
+          from_room_id?: string | null
+          id?: string
+          payload?: Json | null
+          to_room_id?: string | null
+          type?: string
+        }
+        Relationships: []
+      }
       court_assignments: {
         Row: {
           calendar_day: string | null
@@ -558,6 +624,38 @@ export type Database = {
           },
         ]
       }
+      court_attendance: {
+        Row: {
+          clerks_present_count: number
+          judge_present: boolean
+          last_update_by: string | null
+          room_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          clerks_present_count?: number
+          judge_present?: boolean
+          last_update_by?: string | null
+          room_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          clerks_present_count?: number
+          judge_present?: boolean
+          last_update_by?: string | null
+          room_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "court_attendance_room_fkey"
+            columns: ["room_id"]
+            isOneToOne: true
+            referencedRelation: "court_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       court_parts: {
         Row: {
           created_at: string | null
@@ -581,6 +679,35 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      court_room_status: {
+        Row: {
+          note: string | null
+          room_id: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          note?: string | null
+          room_id: string
+          status: string
+          updated_at?: string | null
+        }
+        Update: {
+          note?: string | null
+          room_id?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "court_room_status_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: true
+            referencedRelation: "court_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       court_rooms: {
         Row: {
@@ -1092,6 +1219,36 @@ export type Database = {
           },
         ]
       }
+      floor_lighting_metadata: {
+        Row: {
+          created_at: string | null
+          elevator_bank_count: number | null
+          floor_id: string
+          has_special_north_config: boolean | null
+          id: string
+          special_config_details: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          elevator_bank_count?: number | null
+          floor_id: string
+          has_special_north_config?: boolean | null
+          id?: string
+          special_config_details?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          elevator_bank_count?: number | null
+          floor_id?: string
+          has_special_north_config?: boolean | null
+          id?: string
+          special_config_details?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       floor_plan_objects: {
         Row: {
           connection_data: Json | null
@@ -1449,6 +1606,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      hallway_connections: {
+        Row: {
+          connected_hallway_id: string
+          connection_point: Json | null
+          created_at: string | null
+          id: string
+          main_hallway_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          connected_hallway_id: string
+          connection_point?: Json | null
+          created_at?: string | null
+          id?: string
+          main_hallway_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          connected_hallway_id?: string
+          connection_point?: Json | null
+          created_at?: string | null
+          id?: string
+          main_hallway_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       hallway_maintenance_logs: {
         Row: {
@@ -3435,6 +3619,42 @@ export type Database = {
           },
         ]
       }
+      lighting_templates: {
+        Row: {
+          bulbs_per_fixture: number
+          created_at: string | null
+          fixture_count: number
+          floor_restrictions: number[] | null
+          id: string
+          name: string
+          special_config: Json | null
+          template_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          bulbs_per_fixture: number
+          created_at?: string | null
+          fixture_count: number
+          floor_restrictions?: number[] | null
+          id?: string
+          name: string
+          special_config?: Json | null
+          template_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          bulbs_per_fixture?: number
+          created_at?: string | null
+          fixture_count?: number
+          floor_restrictions?: number[] | null
+          id?: string
+          name?: string
+          special_config?: Json | null
+          template_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       lighting_zones: {
         Row: {
           created_at: string | null
@@ -4481,6 +4701,67 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      oncall_members: {
+        Row: {
+          pool_id: string
+          priority: number
+          staff_id: string
+        }
+        Insert: {
+          pool_id: string
+          priority?: number
+          staff_id: string
+        }
+        Update: {
+          pool_id?: string
+          priority?: number
+          staff_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oncall_members_pool_id_fkey"
+            columns: ["pool_id"]
+            isOneToOne: false
+            referencedRelation: "oncall_pools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "oncall_members_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "oncall_members_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_out_today"
+            referencedColumns: ["staff_id"]
+          },
+        ]
+      }
+      oncall_pools: {
+        Row: {
+          active: boolean
+          id: string
+          label: string
+          role: string
+        }
+        Insert: {
+          active?: boolean
+          id?: string
+          label: string
+          role: string
+        }
+        Update: {
+          active?: boolean
+          id?: string
+          label?: string
+          role?: string
+        }
+        Relationships: []
       }
       personnel_profiles: {
         Row: {
@@ -6859,6 +7140,78 @@ export type Database = {
           },
         ]
       }
+      staff: {
+        Row: {
+          active: boolean
+          created_at: string | null
+          display_name: string
+          email: string | null
+          id: string
+          role: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string | null
+          display_name: string
+          email?: string | null
+          id?: string
+          role: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string | null
+          display_name?: string
+          email?: string | null
+          id?: string
+          role?: string
+        }
+        Relationships: []
+      }
+      staff_absences: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          ends_on: string
+          id: string
+          kind: Database["public"]["Enums"]["absence_kind"]
+          staff_id: string
+          starts_on: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          ends_on: string
+          id?: string
+          kind: Database["public"]["Enums"]["absence_kind"]
+          staff_id: string
+          starts_on: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          ends_on?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["absence_kind"]
+          staff_id?: string
+          starts_on?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_absences_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_absences_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_out_today"
+            referencedColumns: ["staff_id"]
+          },
+        ]
+      }
       storage_analytics: {
         Row: {
           bucket_name: string
@@ -8121,6 +8474,14 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_out_today: {
+        Row: {
+          kind: Database["public"]["Enums"]["absence_kind"] | null
+          role: string | null
+          staff_id: string | null
+        }
+        Relationships: []
+      }
       storage_room_inventory: {
         Row: {
           category_name: string | null
@@ -8311,7 +8672,15 @@ export type Database = {
       }
       check_admin_status: {
         Args: { user_email?: string } | { user_id: string }
-        Returns: boolean
+        Returns: {
+          access_level_text: string
+          email: string
+          is_admin: boolean
+          is_approved: boolean
+          profile_exists: boolean
+          role_in_user_roles: string
+          user_id: string
+        }[]
       }
       check_production_security: {
         Args: Record<PropertyKey, never>
@@ -8888,8 +9257,26 @@ export type Database = {
         }
         Returns: undefined
       }
+      mark_presence: {
+        Args: {
+          p_actor: string
+          p_present: boolean
+          p_role: string
+          p_room: string
+        }
+        Returns: undefined
+      }
       migrate_spaces_data: {
         Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      move_judge: {
+        Args: {
+          p_actor: string
+          p_from_room: string
+          p_judge_name: string
+          p_to_room: string
+        }
         Returns: undefined
       }
       normalize_email: {
@@ -9053,6 +9440,7 @@ export type Database = {
       }
     }
     Enums: {
+      absence_kind: "vacation" | "sick" | "personal" | "training" | "other"
       access_level_enum: "none" | "read" | "write" | "admin"
       agency_type: "DCAS" | "OCA" | "EMPLOYEE"
       category_color_enum:
@@ -9103,6 +9491,15 @@ export type Database = {
         | "stairs_only"
         | "restricted"
       hallway_section_enum: "left_wing" | "right_wing" | "connector"
+      hallway_section_enum_new:
+        | "main"
+        | "north_east"
+        | "north_west"
+        | "center_east"
+        | "center_west"
+        | "south_east"
+        | "south_west"
+        | "connector"
       hallway_traffic_flow_enum: "one_way" | "two_way" | "restricted"
       hallway_type_enum: "public_main" | "private" | "private_main"
       issue_priority_enum: "low" | "medium" | "high"
@@ -9366,6 +9763,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      absence_kind: ["vacation", "sick", "personal", "training", "other"],
       access_level_enum: ["none", "read", "write", "admin"],
       agency_type: ["DCAS", "OCA", "EMPLOYEE"],
       category_color_enum: [
@@ -9422,6 +9820,16 @@ export const Constants = {
         "restricted",
       ],
       hallway_section_enum: ["left_wing", "right_wing", "connector"],
+      hallway_section_enum_new: [
+        "main",
+        "north_east",
+        "north_west",
+        "center_east",
+        "center_west",
+        "south_east",
+        "south_west",
+        "connector",
+      ],
       hallway_traffic_flow_enum: ["one_way", "two_way", "restricted"],
       hallway_type_enum: ["public_main", "private", "private_main"],
       issue_priority_enum: ["low", "medium", "high"],

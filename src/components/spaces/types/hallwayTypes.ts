@@ -11,7 +11,7 @@ export interface HallwayConnection {
   };
 }
 
-export type HallwaySection = 'left_wing' | 'right_wing' | 'connector';
+export type HallwaySection = 'main' | 'north_east' | 'north_west' | 'center_east' | 'center_west' | 'south_east' | 'south_west' | 'connector';
 export type HallwayType = 'public_main' | 'private' | 'private_main';
 export type HallwayStatus = 'active' | 'inactive' | 'under_maintenance';
 export type TrafficFlow = 'one_way' | 'two_way' | 'restricted';
@@ -48,6 +48,7 @@ export interface Hallway {
   maintenance_status?: string;
   last_inspection_date?: string;
   floor_id: string;
+  main_hallway_id?: string;
   created_at: string;
   updated_at: string;
   maintenance_history?: any[];
