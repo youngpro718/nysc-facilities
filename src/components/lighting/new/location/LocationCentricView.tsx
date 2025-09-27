@@ -35,14 +35,15 @@ export function LocationCentricView() {
             id,
             name,
             floor_number,
-            spaces!spaces_floor_id_fkey (
+            unified_spaces!unified_spaces_floor_id_fkey (
               id,
               name,
               type,
               lighting_fixtures!lighting_fixtures_space_id_fkey (
                 id,
                 name,
-                status
+                status,
+                space_type
               )
             )
           )
@@ -111,7 +112,7 @@ export function LocationCentricView() {
       floors: (building.floors || [])
         .sort((a, b) => a.floor_number - b.floor_number)
         .map(floor => {
-          const spaces = floor.spaces || [];
+          const spaces = floor.unified_spaces || [];
           const hallways = spaces.filter(s => s.type === 'hallway');
           const rooms = spaces.filter(s => s.type === 'room');
           
