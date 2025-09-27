@@ -25,40 +25,90 @@ export function LocationCentricView() {
   const { data: buildingData, isLoading, error } = useQuery({
     queryKey: ['location-centric-lighting'],
     queryFn: async () => {
-      // Get buildings with floors and spaces
-      const { data, error } = await supabase
-        .from('buildings')
-        .select(`
-          id,
-          name,
-          floors!floors_building_id_fkey (
-            id,
-            name,
-            floor_number,
-            unified_spaces!unified_spaces_floor_id_fkey (
-              id,
-              name,
-              type,
-              lighting_fixtures!lighting_fixtures_space_id_fkey (
-                id,
-                name,
-                status,
-                space_type
-              )
-            )
-          )
-        `)
-        .eq('status', 'active')
-        .order('name');
+      console.log("Starting data fetch with separate queries...");
+      
+      try {
+        // Step 1: Fetch buildings
+        const { data: buildingsData, error: buildingsError } = await supabase
+          .from('buildings')
+          .select('id, name, status')
+          .eq('status', 'active')
+          .order('name');
 
-      if (error) {
-        console.error('Error fetching building data:', error);
+        if (buildingsError) throw buildingsError;
+        if (!buildingsData?.length) return [];
+
+        console.log("Buildings fetched:", buildingsData.length);
+
+        // Step 2: Fetch floors for all buildings
+        const buildingIds = buildingsData.map(b => b.id);
+        const { data: floorsData, error: floorsError } = await supabase
+          .from('floors')
+          .select('id, name, floor_number, building_id')
+          .in('building_id', buildingIds)
+          .order('building_id, floor_number');
+
+        if (floorsError) throw floorsError;
+        console.log("Floors fetched:", floorsData?.length || 0);
+
+        // Step 3: Fetch unified_spaces for all floors
+        const floorIds = floorsData?.map(f => f.id) || [];
+        const { data: spacesData, error: spacesError } = floorIds.length > 0 
+          ? await supabase
+              .from('unified_spaces')
+              .select('id, name, type, floor_id')
+              .in('floor_id', floorIds)
+          : { data: [], error: null };
+
+        if (spacesError) throw spacesError;
+        console.log("Spaces fetched:", spacesData?.length || 0);
+
+        // Step 4: Fetch lighting fixtures for all spaces
+        const spaceIds = spacesData?.map(s => s.id) || [];
+        const { data: fixturesData, error: fixturesError } = spaceIds.length > 0
+          ? await supabase
+              .from('lighting_fixtures')
+              .select('id, name, status, space_id, space_type')
+              .in('space_id', spaceIds)
+          : { data: [], error: null };
+
+        if (fixturesError) throw fixturesError;
+        console.log("Fixtures fetched:", fixturesData?.length || 0);
+
+        // Step 5: Manually join the data
+        const result = buildingsData.map(building => {
+          const buildingFloors = (floorsData || [])
+            .filter(floor => floor.building_id === building.id)
+            .map(floor => {
+              const floorSpaces = (spacesData || [])
+                .filter(space => space.floor_id === floor.id)
+                .map(space => ({
+                  ...space,
+                  lighting_fixtures: (fixturesData || [])
+                    .filter(fixture => fixture.space_id === space.id)
+                }));
+
+              return {
+                ...floor,
+                unified_spaces: floorSpaces
+              };
+            });
+
+          return {
+            ...building,
+            floors: buildingFloors
+          };
+        });
+
+        console.log("Final result:", result);
+        return result;
+      } catch (error) {
+        console.error('Error in data fetching:', error);
         throw error;
       }
-      
-      console.log('Building data fetched:', data);
-      return data;
-    }
+    },
+    staleTime: 1000 * 60 * 5,
+    retry: 2
   });
 
   if (isLoading) {
