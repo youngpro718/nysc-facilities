@@ -56,7 +56,7 @@ export function LocationCentricView() {
         const { data: spacesData, error: spacesError } = floorIds.length > 0 
           ? await supabase
               .from('unified_spaces')
-              .select('id, name, type, floor_id')
+              .select('id, name, space_type, floor_id')
               .in('floor_id', floorIds)
           : { data: [], error: null };
 
@@ -163,8 +163,8 @@ export function LocationCentricView() {
         .sort((a, b) => a.floor_number - b.floor_number)
         .map(floor => {
           const spaces = floor.unified_spaces || [];
-          const hallways = spaces.filter(s => s.type === 'hallway');
-          const rooms = spaces.filter(s => s.type === 'room');
+           const hallways = spaces.filter(s => s.space_type === 'hallway');
+           const rooms = spaces.filter(s => s.space_type === 'room');
           
           const floorFixtures = spaces.flatMap(s => s.lighting_fixtures || []);
           const hallwayFixtures = hallways.flatMap(h => h.lighting_fixtures || []);
