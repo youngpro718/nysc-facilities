@@ -17,34 +17,56 @@ interface BasicSettingsFieldsProps {
 
 export function BasicSettingsFields({ form, onSpaceOrPositionChange }: BasicSettingsFieldsProps) {
   const { data: spaces } = useQuery({
-    queryKey: ['spaces'],
+    queryKey: ['spaces-with-building-floor'],
     queryFn: async () => {
-      // Get rooms and hallways separately and combine them
+      // Get rooms and hallways with building and floor information
       const [roomsResult, hallwaysResult] = await Promise.all([
-        supabase.from('rooms').select('id, name, room_number, floor_id').eq('status', 'active'),
-        supabase.from('hallways').select('id, name, floor_id').eq('status', 'active')
+        supabase
+          .from('rooms')
+          .select(`
+            id, name, room_number, floor_id,
+            floors:floor_id (
+              id, name, floor_number,
+              buildings:building_id (id, name)
+            )
+          `)
+          .eq('status', 'active'),
+        supabase
+          .from('hallways')
+          .select(`
+            id, name, floor_id,
+            floors:floor_id (
+              id, name, floor_number,
+              buildings:building_id (id, name)
+            )
+          `)
+          .eq('status', 'active')
       ]);
       
       if (roomsResult.error) throw roomsResult.error;
       if (hallwaysResult.error) throw hallwaysResult.error;
       
-      const rooms = (roomsResult.data || []).map(room => ({
+      const rooms = (roomsResult.data || []).map((room: any) => ({
         id: room.id,
         name: room.name,
         room_number: room.room_number,
         floor_id: room.floor_id,
-        type: 'room' as const
+        type: 'room' as const,
+        floor: room.floors,
+        building: room.floors?.buildings
       }));
       
-      const hallways = (hallwaysResult.data || []).map(hallway => ({
+      const hallways = (hallwaysResult.data || []).map((hallway: any) => ({
         id: hallway.id,
         name: hallway.name,
         room_number: null,
         floor_id: hallway.floor_id,
-        type: 'hallway' as const
+        type: 'hallway' as const,
+        floor: hallway.floors,
+        building: hallway.floors?.buildings
       }));
       
-      return [...rooms, ...hallways] as Space[];
+      return [...rooms, ...hallways];
     }
   });
 
@@ -139,11 +161,18 @@ export function BasicSettingsFields({ form, onSpaceOrPositionChange }: BasicSett
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {spaces?.filter(space => space.type === spaceType).map((space) => (
+                {spaces?.filter(space => space.type === spaceType).map((space: any) => (
                   <SelectItem key={space.id} value={space.id}>
-                    {space.type === 'room'
-                      ? `Room ${space.room_number || ''}${space.name ? `— ${space.name}` : ''}`
-                      : space.name}
+                    <div className="flex flex-col">
+                      <span>
+                        {space.type === 'room'
+                          ? `Room ${space.room_number || ''}${space.name ? ` — ${space.name}` : ''}`
+                          : space.name}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {space.building?.name} • {space.floor?.name}
+                      </span>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
