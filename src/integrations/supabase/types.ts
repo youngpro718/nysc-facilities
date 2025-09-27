@@ -9490,7 +9490,17 @@ export type Database = {
         | "limited_access"
         | "stairs_only"
         | "restricted"
-      hallway_section_enum: "left_wing" | "right_wing" | "connector"
+      hallway_section_enum:
+        | "left_wing"
+        | "right_wing"
+        | "connector"
+        | "main"
+        | "north_east"
+        | "north_west"
+        | "center_east"
+        | "center_west"
+        | "south_east"
+        | "south_west"
       hallway_section_enum_new:
         | "main"
         | "north_east"
@@ -9819,7 +9829,18 @@ export const Constants = {
         "stairs_only",
         "restricted",
       ],
-      hallway_section_enum: ["left_wing", "right_wing", "connector"],
+      hallway_section_enum: [
+        "left_wing",
+        "right_wing",
+        "connector",
+        "main",
+        "north_east",
+        "north_west",
+        "center_east",
+        "center_west",
+        "south_east",
+        "south_west",
+      ],
       hallway_section_enum_new: [
         "main",
         "north_east",
