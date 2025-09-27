@@ -170,7 +170,7 @@ export function useCourtRooms() {
           room_number, 
           courtroom_number, 
           is_active,
-          court_assignments!inner(justice)
+          court_assignments(justice)
         `)
         .order("room_number");
       if (error) throw error;
