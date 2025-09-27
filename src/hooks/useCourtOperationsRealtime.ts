@@ -164,10 +164,20 @@ export function useCourtRooms() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("court_rooms")
-        .select("id, room_id, room_number, courtroom_number, is_active")
+        .select(`
+          id, 
+          room_id, 
+          room_number, 
+          courtroom_number, 
+          is_active,
+          court_assignments!inner(justice)
+        `)
         .order("room_number");
       if (error) throw error;
-      return data || [];
+      return data?.map(room => ({
+        ...room,
+        assigned_judge: room.court_assignments?.[0]?.justice || null
+      })) || [];
     },
   });
 }

@@ -166,7 +166,16 @@ function LiveRow({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent }: {
       <TableCell>
         <div className="flex items-center gap-2">
           <PresenceDot present={judgePresent} />
-          <span className="text-sm">{judgePresent ? 'Present' : 'Absent'}</span>
+          <div className="flex flex-col">
+            {room.assigned_judge ? (
+              <>
+                <span className="text-sm font-medium">{room.assigned_judge}</span>
+                <span className="text-xs text-muted-foreground">{judgePresent ? 'Present' : 'Absent'}</span>
+              </>
+            ) : (
+              <span className="text-sm text-muted-foreground">No judge assigned</span>
+            )}
+          </div>
         </div>
       </TableCell>
       <TableCell>
