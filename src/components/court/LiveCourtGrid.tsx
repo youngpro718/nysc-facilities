@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowRightLeft, AlertTriangle, CheckCircle2, XCircle, Users, Search } from "lucide-react";
+import { ArrowRightLeft, AlertTriangle, CheckCircle2, XCircle, Users, Search, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 function PresenceDot({ present }: { present: boolean }) {
   return (
@@ -103,6 +104,8 @@ function LiveRow({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent }: {
   onMarkAbsent: (roomId: string, role: "judge" | "clerk", actorId: string) => Promise<void>;
   onMarkPresent: (roomId: string, role: "judge" | "clerk", actorId: string) => Promise<void>;
 }) {
+  const { toast } = useToast();
+  
   // Presence + status queries per row
   const presence = useCourtPresence(room.id);
   const status = useRoomStatus(room.id);
@@ -113,6 +116,44 @@ function LiveRow({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent }: {
 
   const [moveOpen, setMoveOpen] = useState(false);
   const [pending, setPending] = useState(false);
+
+  const handleMarkPresent = async () => {
+    setPending(true);
+    try {
+      await onMarkPresent(room.id, 'judge', actorId);
+      toast({
+        title: "Judge marked present",
+        description: `Judge presence updated for room ${room.room_number}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Failed to mark judge present",
+        description: error?.message || "An error occurred while updating judge presence",
+        variant: "destructive",
+      });
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const handleMarkAbsent = async () => {
+    setPending(true);
+    try {
+      await onMarkAbsent(room.id, 'judge', actorId);
+      toast({
+        title: "Judge marked absent",
+        description: `Judge presence updated for room ${room.room_number}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Failed to mark judge absent",
+        description: error?.message || "An error occurred while updating judge presence",
+        variant: "destructive",
+      });
+    } finally {
+      setPending(false);
+    }
+  };
 
   return (
     <TableRow>
@@ -146,12 +187,14 @@ function LiveRow({ room, actorId, onMoveJudge, onMarkAbsent, onMarkPresent }: {
       <TableCell className="text-right">
         <div className="flex items-center justify-end gap-2">
           {judgePresent ? (
-            <Button size="sm" variant="secondary" disabled={pending} onClick={async () => { setPending(true); try { await onMarkAbsent(room.id, 'judge', actorId); } finally { setPending(false); } }}>
-              <XCircle className="h-4 w-4 mr-1" /> Judge Absent
+            <Button size="sm" variant="secondary" disabled={pending} onClick={handleMarkAbsent}>
+              {pending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <XCircle className="h-4 w-4 mr-1" />}
+              Judge Absent
             </Button>
           ) : (
-            <Button size="sm" variant="default" disabled={pending} onClick={async () => { setPending(true); try { await onMarkPresent(room.id, 'judge', actorId); } finally { setPending(false); } }}>
-              <CheckCircle2 className="h-4 w-4 mr-1" /> Judge Present
+            <Button size="sm" variant="default" disabled={pending} onClick={handleMarkPresent}>
+              {pending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
+              Judge Present
             </Button>
           )}
 
@@ -173,10 +216,38 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, actorId, onMoveJud
   actorId: string;
   onMoveJudge: (fromRoomId: string | null, toRoomId: string, judgeName: string, actorId: string) => Promise<void>;
 }) {
+  const { toast } = useToast();
   const { data: rooms } = useCourtRooms();
   const [judgeName, setJudgeName] = useState("");
   const [toRoom, setToRoom] = useState<string>("");
   const [saving, setSaving] = useState(false);
+
+  const handleMoveJudge = async () => {
+    setSaving(true);
+    try {
+      const fromRoom = rooms?.find(r => r.id === currentRoomId);
+      const toRoomData = rooms?.find(r => r.id === toRoom);
+      
+      await onMoveJudge(currentRoomId, toRoom, judgeName, actorId);
+      
+      toast({
+        title: "Judge moved successfully",
+        description: `${judgeName} moved from ${fromRoom?.room_number} to ${toRoomData?.room_number}`,
+      });
+      
+      onOpenChange(false);
+      setJudgeName("");
+      setToRoom("");
+    } catch (error: any) {
+      toast({
+        title: "Failed to move judge",
+        description: error?.message || "An error occurred while moving the judge",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -206,20 +277,13 @@ function MoveJudgeDialog({ open, onOpenChange, currentRoomId, actorId, onMoveJud
             </Select>
           </div>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="button" disabled={!judgeName || !toRoom || saving} onClick={async () => {
-              setSaving(true);
-              try {
-                await onMoveJudge(currentRoomId, toRoom, judgeName, actorId);
-                onOpenChange(false);
-              } catch (e: any) {
-                console.error(e);
-                // Fallback toast-less error indicator
-                alert(e?.message || 'Move failed');
-              } finally {
-                setSaving(false);
-              }
-            }}>Confirm Move</Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+              Cancel
+            </Button>
+            <Button type="button" disabled={!judgeName || !toRoom || saving} onClick={handleMoveJudge}>
+              {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              Confirm Move
+            </Button>
           </div>
         </div>
       </DialogContent>
