@@ -16,9 +16,9 @@ import {
 import { useLightingTabs } from "./hooks/useLightingTabs";
 import { EnhancedDashboard } from "./dashboard/EnhancedDashboard";
 import { OverviewView } from "./overview/OverviewView";
-import { CompactFixturesView } from "./fixtures/CompactFixturesView";
-import { RoomCentricView } from "./rooms/RoomCentricView";
-import { MaintenanceView } from "./maintenance/MaintenanceView";
+import { LocationCentricView } from "./location/LocationCentricView";
+import { StatusCentricView } from "./status/StatusCentricView";
+import { TemplatesBulkView } from "./templates/TemplatesBulkView";
 import { ReportsView } from "./reports/ReportsView";
 import { CreateLightingDialog } from "../CreateLightingDialog";
 import { SettingsDialog } from "./settings/SettingsDialog";
@@ -34,35 +34,35 @@ export function LightingPageLayout() {
       label: 'Overview',
       icon: LayoutDashboard,
       component: OverviewView,
-      description: 'Executive dashboard with key metrics and alerts'
+      description: 'Executive dashboard with hallway status summaries'
     },
     {
-      id: 'fixtures',
-      label: 'Fixtures',
-      icon: Lightbulb,
-      component: CompactFixturesView,
-      description: 'Manage individual lighting fixtures by room or status'
-    },
-    {
-      id: 'rooms',
-      label: 'Rooms',
+      id: 'location',
+      label: 'By Location',
       icon: MapPin,
-      component: RoomCentricView,
-      description: 'Manage fixtures by room location and floor'
+      component: LocationCentricView,
+      description: 'Hierarchical view: floors → hallways → rooms'
     },
     {
-      id: 'maintenance',
-      label: 'Maintenance',
-      icon: Wrench,
-      component: MaintenanceView,
-      description: 'Schedule and track maintenance work'
+      id: 'status',
+      label: 'By Status',
+      icon: Lightbulb,
+      component: StatusCentricView,
+      description: 'Fixtures organized by functional status across hallways'
+    },
+    {
+      id: 'templates',
+      label: 'Templates & Bulk',
+      icon: Settings,
+      component: TemplatesBulkView,
+      description: 'Template management and bulk operations by hallway'
     },
     {
       id: 'reports',
       label: 'Reports',
       icon: BarChart3,
       component: ReportsView,
-      description: 'Analytics and insights for facilities management'
+      description: 'Multi-dimensional reporting (room, hallway, floor, status)'
     }
   ];
 
