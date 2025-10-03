@@ -162,22 +162,30 @@ export function useCourtRooms() {
   return useQuery({
     queryKey: K.rooms,
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Fetch court rooms
+      const { data: rooms, error: roomsError } = await supabase
         .from("court_rooms")
-        .select(`
-          id, 
-          room_id, 
-          room_number, 
-          courtroom_number, 
-          is_active,
-          court_assignments!left(justice)
-        `)
+        .select("id, room_id, room_number, courtroom_number, is_active")
         .order("room_number");
-      if (error) throw error;
-      return data?.map(room => ({
-        ...room,
-        assigned_judge: room.court_assignments?.[0]?.justice || null
-      })) || [];
+      
+      if (roomsError) throw roomsError;
+      if (!rooms) return [];
+
+      // Fetch court assignments
+      const { data: assignments, error: assignmentsError } = await supabase
+        .from("court_assignments")
+        .select("room_id, justice");
+      
+      if (assignmentsError) throw assignmentsError;
+
+      // Join the data manually
+      return rooms.map(room => {
+        const assignment = assignments?.find(a => a.room_id === room.room_id);
+        return {
+          ...room,
+          assigned_judge: assignment?.justice || null
+        };
+      });
     },
   });
 }
