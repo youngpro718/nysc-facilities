@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useEffect, useContext, createContext, ReactNode } from 'react';
+import { useState, useCallback, useEffect, useContext, createContext, ReactNode, useRef } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -215,7 +215,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Setup auth state listener and initialization
   useEffect(() => {
     let mounted = true;
-    let isInitialized = false;
+    const hasCompletedInitialAuth = useRef(false);
 
     // Centralized redirect logic - ONLY runs on initial load or explicit sign in
     const handleRedirect = (userData: { isAdmin: boolean; profile: UserProfile | null }, isExplicitSignIn: boolean = false) => {
@@ -234,7 +234,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Only enforce redirect if:
         // 1. This is an explicit sign in event, OR
         // 2. This is initial page load AND we're not already on an allowed page
-        if (isExplicitSignIn || (!isInitialized && !allowlist.has(currentPath))) {
+        if (isExplicitSignIn || (!hasCompletedInitialAuth.current && !allowlist.has(currentPath))) {
           console.log('handleRedirect: Redirecting to verification pending (explicit sign in or initial load)');
           navigate('/verification-pending', { replace: true });
         }
@@ -320,7 +320,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } finally {
         if (mounted) {
           setIsLoading(false);
-          isInitialized = true;
+          hasCompletedInitialAuth.current = true;
         }
       }
     };
@@ -348,9 +348,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               setIsAdmin(userData.isAdmin);
               setProfile(userData.profile);
               
-              // Only redirect after explicit sign in (isInitialized = true means this is NOT initial load)
+              // Only redirect after explicit sign in (hasCompletedInitialAuth.current = true means this is NOT initial load)
               // Pass true to indicate this is an explicit sign in event
-              if (isInitialized) {
+              if (hasCompletedInitialAuth.current) {
                 handleRedirect(userData, true);
               }
             } catch (error) {
