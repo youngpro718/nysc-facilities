@@ -217,20 +217,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let mounted = true;
     let isInitialized = false;
 
-    // Centralized redirect logic
-    const handleRedirect = (userData: { isAdmin: boolean; profile: UserProfile | null }) => {
+    // Centralized redirect logic - ONLY runs on initial load or explicit sign in
+    const handleRedirect = (userData: { isAdmin: boolean; profile: UserProfile | null }, isExplicitSignIn: boolean = false) => {
       if (!mounted) return;
 
       const currentPath = window.location.pathname;
 
-      console.log('handleRedirect: Current path:', currentPath, 'isAdmin:', userData.isAdmin);
+      console.log('handleRedirect: Current path:', currentPath, 'isAdmin:', userData.isAdmin, 'isExplicitSignIn:', isExplicitSignIn);
 
-      // Always enforce verification flow
+      // Always enforce verification flow ON INITIAL LOAD or EXPLICIT SIGN IN ONLY
+      // Do NOT redirect during background token refreshes
       if (userData.profile?.verification_status === 'pending') {
         // Allowlist public routes where unverified users can browse
         const allowlist = new Set(['/verification-pending', '/features-preview']);
-        if (!allowlist.has(currentPath)) {
-          console.log('handleRedirect: Redirecting to verification pending');
+        
+        // Only enforce redirect if:
+        // 1. This is an explicit sign in event, OR
+        // 2. This is initial page load AND we're not already on an allowed page
+        if (isExplicitSignIn || (!isInitialized && !allowlist.has(currentPath))) {
+          console.log('handleRedirect: Redirecting to verification pending (explicit sign in or initial load)');
           navigate('/verification-pending', { replace: true });
         }
         return;
@@ -287,8 +292,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.error('Session tracking error:', error);
           }
           
-          // Handle redirects based on current page and user role
-          handleRedirect(userData);
+          // Handle redirects based on current page and user role (initial load)
+          handleRedirect(userData, false);
         } else {
           console.log('useAuth: No session found');
           const currentPath = window.location.pathname;
@@ -343,9 +348,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               setIsAdmin(userData.isAdmin);
               setProfile(userData.profile);
               
-              // Only redirect after explicit sign in, not during initialization
+              // Only redirect after explicit sign in (isInitialized = true means this is NOT initial load)
+              // Pass true to indicate this is an explicit sign in event
               if (isInitialized) {
-                handleRedirect(userData);
+                handleRedirect(userData, true);
               }
             } catch (error) {
               console.error('useAuth: Error fetching user data after sign in:', error);
