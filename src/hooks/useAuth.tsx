@@ -30,6 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const hasCompletedInitialAuth = useRef(false);
   const navigate = useNavigate();
 
   // Enhanced hallway lighting system - build trigger v2
@@ -215,7 +216,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Setup auth state listener and initialization
   useEffect(() => {
     let mounted = true;
-    const hasCompletedInitialAuth = useRef(false);
 
     // Centralized redirect logic - ONLY runs on initial load or explicit sign in
     const handleRedirect = (userData: { isAdmin: boolean; profile: UserProfile | null }, isExplicitSignIn: boolean = false) => {
