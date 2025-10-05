@@ -8,10 +8,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { ZoomIn, ZoomOut, Maximize, RefreshCw } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize, RefreshCw, Layers, Box } from 'lucide-react';
 import { SimpleFloorSelector } from './components/SimpleFloorSelector';
+import { MobileFloorSelector } from './components/MobileFloorSelector';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { ResponsiveDialog } from '@/components/ui/responsive-dialog';
 
 export function FloorPlanView() {
+  const isMobile = useIsMobile();
   const [selectedFloor, setSelectedFloor] = useState<string | null>(null);
   const [selectedObject, setSelectedObject] = useState<any | null>(null);
   const [previewData, setPreviewData] = useState<any | null>(null);
@@ -21,6 +25,7 @@ export function FloorPlanView() {
   const [isLoading, setIsLoading] = useState(true);
   const [zoom, setZoom] = useState<number>(1);
   const [refreshKey, setRefreshKey] = useState<number>(0);
+  const [showPropertiesPanel, setShowPropertiesPanel] = useState(false);
 
   // Fetch floors data
   useEffect(() => {
@@ -56,7 +61,11 @@ export function FloorPlanView() {
     setSelectedObject(object);
     // Reset preview data when selecting a new object
     setPreviewData(null);
-  }, []);
+    // On mobile, open properties panel when object is selected
+    if (isMobile && object) {
+      setShowPropertiesPanel(true);
+    }
+  }, [isMobile]);
 
   // Reset selected object when floor changes
   useEffect(() => {
@@ -153,44 +162,90 @@ export function FloorPlanView() {
     <div className="h-full flex flex-col">
       {/* Top Bar with Controls */}
       <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
-        <div className="flex items-center justify-between px-4 h-14">
-          <div className="flex items-center space-x-4">
-            <SimpleFloorSelector
+        {isMobile ? (
+          /* Mobile Header */
+          <div className="flex items-center justify-between px-3 h-14">
+            <MobileFloorSelector
               selectedFloorId={selectedFloor}
               onFloorSelect={setSelectedFloor}
             />
-            <div className="h-6 w-px bg-border" />
-            <Tabs 
-              value={viewMode} 
-              onValueChange={(value) => setViewMode(value as '2d' | '3d')}
-              className="w-full"
-            >
-              <TabsList className="h-9 bg-muted/50">
-                <TabsTrigger value="2d">2D View</TabsTrigger>
-                <TabsTrigger value="3d">3D View</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <div className="bg-muted/50 rounded-md p-1 flex items-center space-x-1">
-              <Button variant="ghost" size="sm" onClick={handleZoomOut} disabled={zoom <= 0.5} className="h-7 px-2">
-                <ZoomOut className="h-4 w-4" />
+            
+            <div className="flex items-center gap-1">
+              {/* View Mode Toggle */}
+              <Button
+                variant={viewMode === '2d' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('2d')}
+                className="h-9 w-9 p-0 touch-target"
+                title="2D View"
+              >
+                <Layers className="h-4 w-4" />
               </Button>
-              <span className="text-sm px-2 min-w-[3rem] text-center">{(zoom * 100).toFixed(0)}%</span>
-              <Button variant="ghost" size="sm" onClick={handleZoomIn} disabled={zoom >= 2} className="h-7 px-2">
-                <ZoomIn className="h-4 w-4" />
+              <Button
+                variant={viewMode === '3d' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('3d')}
+                className="h-9 w-9 p-0 touch-target"
+                title="3D View"
+              >
+                <Box className="h-4 w-4" />
+              </Button>
+              
+              <div className="h-6 w-px bg-border mx-1" />
+              
+              {/* Refresh */}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleRefresh}
+                className="h-9 w-9 p-0 touch-target"
+                title="Refresh"
+              >
+                <RefreshCw className="h-4 w-4" />
               </Button>
             </div>
-            <Button variant="ghost" size="sm" onClick={handleZoomReset} className="h-7 px-2">
-              <Maximize className="h-4 w-4" />
-            </Button>
-            <div className="h-6 w-px bg-border" />
-            <Button variant="ghost" size="sm" onClick={handleRefresh} title="Refresh floor plan" className="h-7 px-2">
-              <RefreshCw className="h-4 w-4" />
-            </Button>
           </div>
-        </div>
+        ) : (
+          /* Desktop Header */
+          <div className="flex items-center justify-between px-4 h-14">
+            <div className="flex items-center space-x-4">
+              <SimpleFloorSelector
+                selectedFloorId={selectedFloor}
+                onFloorSelect={setSelectedFloor}
+              />
+              <div className="h-6 w-px bg-border" />
+              <Tabs 
+                value={viewMode} 
+                onValueChange={(value) => setViewMode(value as '2d' | '3d')}
+                className="w-full"
+              >
+                <TabsList className="h-9 bg-muted/50">
+                  <TabsTrigger value="2d">2D View</TabsTrigger>
+                  <TabsTrigger value="3d">3D View</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <div className="bg-muted/50 rounded-md p-1 flex items-center space-x-1">
+                <Button variant="ghost" size="sm" onClick={handleZoomOut} disabled={zoom <= 0.5} className="h-7 px-2">
+                  <ZoomOut className="h-4 w-4" />
+                </Button>
+                <span className="text-sm px-2 min-w-[3rem] text-center">{(zoom * 100).toFixed(0)}%</span>
+                <Button variant="ghost" size="sm" onClick={handleZoomIn} disabled={zoom >= 2} className="h-7 px-2">
+                  <ZoomIn className="h-4 w-4" />
+                </Button>
+              </div>
+              <Button variant="ghost" size="sm" onClick={handleZoomReset} className="h-7 px-2">
+                <Maximize className="h-4 w-4" />
+              </Button>
+              <div className="h-6 w-px bg-border" />
+              <Button variant="ghost" size="sm" onClick={handleRefresh} title="Refresh floor plan" className="h-7 px-2">
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Main Content Area */}
@@ -218,21 +273,47 @@ export function FloorPlanView() {
           </div>
         </div>
 
-        {/* Properties Panel */}
-        <div className="w-80 border-l bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="h-full overflow-auto">
-            <PropertiesPanel 
-              selectedObject={selectedObject}
-              onUpdate={() => {
-                if (selectedObject) {
-                  openDialog('propertyEdit', selectedObject);
-                }
-              }}
-              onPreviewChange={handlePropertyUpdate}
-            />
+        {/* Properties Panel - Desktop Only */}
+        {!isMobile && (
+          <div className="w-80 border-l bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="h-full overflow-auto">
+              <PropertiesPanel 
+                selectedObject={selectedObject}
+                onUpdate={() => {
+                  if (selectedObject) {
+                    openDialog('propertyEdit', selectedObject);
+                  }
+                }}
+                onPreviewChange={handlePropertyUpdate}
+              />
+            </div>
           </div>
-        </div>
+        )}
       </div>
+
+      {/* Mobile Properties Panel as Bottom Sheet */}
+      {isMobile && (
+        <ResponsiveDialog
+          open={showPropertiesPanel && !!selectedObject}
+          onOpenChange={(open) => {
+            setShowPropertiesPanel(open);
+            if (!open) {
+              setSelectedObject(null);
+            }
+          }}
+          title="Object Properties"
+        >
+          <PropertiesPanel 
+            selectedObject={selectedObject}
+            onUpdate={() => {
+              if (selectedObject) {
+                openDialog('propertyEdit', selectedObject);
+              }
+            }}
+            onPreviewChange={handlePropertyUpdate}
+          />
+        </ResponsiveDialog>
+      )}
 
       {dialogState.isOpen && dialogState.type === 'propertyEdit' && (
         <EditPropertiesPanel

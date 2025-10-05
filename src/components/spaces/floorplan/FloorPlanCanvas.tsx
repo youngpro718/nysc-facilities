@@ -275,13 +275,14 @@ function FloorPlanCanvasInner({
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       {/* Topology tools bar */}
-      <div className="absolute top-2 left-2 z-10 flex items-center gap-2 bg-white/90 dark:bg-slate-800/90 rounded-md px-2 py-1 border border-slate-200 dark:border-slate-700 shadow-sm">
-        <Button size="sm" variant={attachMode ? 'default' : 'outline'} onClick={() => setAttachMode(v => !v)}>
-          {attachMode ? 'Attach Mode: On' : 'Attach Mode: Off'}
+      <div className="absolute top-2 left-2 z-10 flex flex-wrap items-center gap-1 bg-white/90 dark:bg-slate-800/90 rounded-md px-2 py-1 border border-slate-200 dark:border-slate-700 shadow-sm max-w-[calc(100vw-1rem)] md:max-w-none">
+        <Button size="sm" variant={attachMode ? 'default' : 'outline'} onClick={() => setAttachMode(v => !v)} className="touch-target text-xs">
+          {attachMode ? 'Attach On' : 'Attach Off'}
         </Button>
         <Button
           size="sm"
           variant="outline"
+          className="touch-target text-xs"
           onClick={async () => {
             if (!floorId) {
               toast.error('Select a floor first');
@@ -341,17 +342,17 @@ function FloorPlanCanvasInner({
             }
           }}
         >
-          Add 3 Hallways
+          Add Hallways
         </Button>
         {attachMode && (
           <>
-            <span className="text-xs text-slate-600 dark:text-slate-300">Side:</span>
-            <Button size="sm" variant={attachSide==='north'?'default':'outline'} onClick={() => setAttachSide('north')}>North</Button>
-            <Button size="sm" variant={attachSide==='south'?'default':'outline'} onClick={() => setAttachSide('south')}>South</Button>
-            <Button size="sm" variant={attachSide==='east'?'default':'outline'} onClick={() => setAttachSide('east')}>East</Button>
-            <Button size="sm" variant={attachSide==='west'?'default':'outline'} onClick={() => setAttachSide('west')}>West</Button>
+            <span className="text-xs text-slate-600 dark:text-slate-300 hidden sm:inline">Side:</span>
+            <Button size="sm" variant={attachSide==='north'?'default':'outline'} onClick={() => setAttachSide('north')} className="touch-target text-xs px-2">N</Button>
+            <Button size="sm" variant={attachSide==='south'?'default':'outline'} onClick={() => setAttachSide('south')} className="touch-target text-xs px-2">S</Button>
+            <Button size="sm" variant={attachSide==='east'?'default':'outline'} onClick={() => setAttachSide('east')} className="touch-target text-xs px-2">E</Button>
+            <Button size="sm" variant={attachSide==='west'?'default':'outline'} onClick={() => setAttachSide('west')} className="touch-target text-xs px-2">W</Button>
             {selectedHallwayId && (
-              <div className="flex items-center gap-1 ml-2">
+              <div className="flex items-center gap-1 w-full sm:w-auto mt-1 sm:mt-0 sm:ml-2">
                 <span className="text-xs text-slate-600 dark:text-slate-300">Offset</span>
                 <input
                   type="range"
@@ -360,6 +361,7 @@ function FloorPlanCanvasInner({
                   step={1}
                   value={offsetPercent}
                   onChange={(e) => setOffsetPercent(parseInt(e.target.value))}
+                  className="flex-1 sm:flex-initial"
                 />
                 <span className="text-xs w-8 text-right">{offsetPercent}%</span>
               </div>

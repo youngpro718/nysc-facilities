@@ -71,26 +71,27 @@ export function FloorPlanFlow({
       onNodeClick={onNodeClick}
       nodeTypes={nodeTypes}
       defaultViewport={defaultViewport}
-      minZoom={0.1}
-      maxZoom={4}
+      minZoom={0.2}
+      maxZoom={3}
       fitView
       fitViewOptions={{ 
         padding: 0.3,
         duration: 800,
         includeHiddenNodes: false,
-        minZoom: 0.1,
+        minZoom: 0.2,
         maxZoom: 2
       }}
       snapGrid={[10, 10]}
       snapToGrid
-      selectNodesOnDrag={false}
-      panOnDrag={isPanning ? [0, 1, 2] : [1, 2]}
-      zoomOnScroll={!isPanning}
+      selectNodesOnDrag={true}
+      panOnDrag={isPanning ? [0, 1, 2] : true}
+      zoomOnScroll={true}
       zoomOnPinch={true}
+      zoomOnDoubleClick={true}
       preventScrolling={true}
       nodesDraggable={!isPanning}
       nodesConnectable={!isPanning}
-      elementsSelectable={!isPanning}
+      elementsSelectable={true}
       style={{ width: '100%', height: '100%' }}
       onNodeDragStop={(event, node) => {
         // This ensures the final position is saved after dragging stops
