@@ -158,7 +158,6 @@ export function getRoleBasedNavigation(permissions: RolePermissions, userRole: C
       { title: 'Court Operations', icon: Gavel },
       { type: "separator" },
       { title: 'Admin Profile', icon: UserCog },
-      { title: 'System Settings', icon: Settings },
     ];
   }
   
@@ -226,7 +225,6 @@ export const getNavigationRoutes = (permissions: RolePermissions, userRole: Cour
       '/lighting',
       '/court-operations',
       '/admin-profile',
-      '/system-settings',
     ];
   }
   
