@@ -11,7 +11,6 @@ import { StorageRoomCard } from "@/components/dashboard/StorageRoomCard";
 import { SupplyRequestCard } from "@/components/dashboard/SupplyRequestCard";
 import { ProfileCompletionCard } from "@/components/profile/ProfileCompletionCard";
 import { ReportIssueWizard } from "@/components/issues/wizard/ReportIssueWizard";
-import { MobileFABs } from "@/components/ui/MobileFABs";
 import { BottomTabNavigation } from "@/components/ui/BottomTabNavigation";
 import { KeyRequestForm } from "@/components/requests/KeyRequestForm";
 import { useOccupantAssignments } from "@/hooks/occupants/useOccupantAssignments";
@@ -92,10 +91,10 @@ export default function UserDashboard() {
   return (
     <div className="space-y-6 sm:space-y-8 pb-20">
       <div className="space-y-1">
-        <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">
+        <h2 className="text-lg sm:text-xl font-semibold tracking-tight">
           Welcome, {firstName} {lastName}!
         </h2>
-        <p className="text-sm sm:text-base text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Here's what's happening in your organization today.
         </p>
       </div>
@@ -165,10 +164,7 @@ export default function UserDashboard() {
           />
         )}
       </div>
-      <MobileFABs 
-        onRequestKey={() => setShowKeyRequest(true)} 
-        onReportIssue={() => setShowIssueReport(true)}
-      />
+      
       <KeyRequestForm 
         open={showKeyRequest} 
         onClose={() => setShowKeyRequest(false)}

@@ -275,67 +275,76 @@ export default function Operations() {
   };
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <h2 className="text-3xl font-bold tracking-tight">Operations</h2>
-            <Badge variant="secondary" className="text-xs">
-              <Activity className="h-3 w-3 mr-1" />
-              Live Data
-            </Badge>
+    <div className="space-y-6 sm:space-y-8">
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl sm:text-3xl font-bold tracking-tight">Operations</h2>
+              <Badge variant="secondary" className="text-xs">
+                <Activity className="h-3 w-3 mr-1" />
+                Live
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Monitor and manage facility operations
+            </p>
           </div>
-          <p className="text-muted-foreground">
-            Monitor and manage facility operations
-          </p>
-        </div>
-        <div className="flex gap-2">
-          {buildingId && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={clearBuildingFilter}
-              className="text-sm"
-            >
-              <X className="w-4 h-4 mr-1" />
-              Clear Filter
+          <div className="flex flex-wrap gap-2">
+            {buildingId && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearBuildingFilter}
+                className="text-sm"
+              >
+                <X className="w-4 h-4 mr-1" />
+                Clear Filter
+              </Button>
+            )}
+            <Button onClick={() => setShowCreateIssue(true)} variant="outline" size="sm" className="touch-target">
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">Report Issue</span>
+              <span className="sm:hidden">Report</span>
             </Button>
-          )}
-          <Button onClick={() => setShowCreateIssue(true)} variant="outline" size="sm">
-            <AlertTriangle className="h-4 w-4 mr-2" />
-            Report Issue
-          </Button>
-          <Button onClick={() => setShowScheduleMaintenance(true)} size="sm">
-            <Calendar className="h-4 w-4 mr-2" />
-            Schedule Maintenance
-          </Button>
+            <Button onClick={() => setShowScheduleMaintenance(true)} size="sm" className="touch-target">
+              <Calendar className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">Schedule Maintenance</span>
+              <span className="sm:hidden">Schedule</span>
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Building Filter Toggles */}
-      <div className="flex items-center gap-2 p-4 border rounded-lg bg-muted/50">
-        <span className="text-sm font-medium text-muted-foreground">Filter by building:</span>
-        <Button
-          variant={!buildingId ? "default" : "outline"}
-          size="sm"
-          onClick={clearBuildingFilter}
-        >
-          All Buildings
-        </Button>
-        <Button
-          variant={buildingId === '7a9d7532-ebe7-496f-b5f1-10887f91edd5' ? "default" : "outline"}
-          size="sm"
-          onClick={() => setBuildingFilter('7a9d7532-ebe7-496f-b5f1-10887f91edd5')}
-        >
-          100 Centre Street
-        </Button>
-        <Button
-          variant={buildingId === 'c735c6a8-7c61-4417-b2e3-3ebbb3045db7' ? "default" : "outline"}
-          size="sm"
-          onClick={() => setBuildingFilter('c735c6a8-7c61-4417-b2e3-3ebbb3045db7')}
-        >
-          111 Centre Street
-        </Button>
+      {/* Building Filter - Converted to dropdown for mobile */}
+      <div className="flex items-center gap-2 p-3 sm:p-4 border rounded-lg bg-muted/50">
+        <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">Building:</span>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant={!buildingId ? "default" : "outline"}
+            size="sm"
+            onClick={clearBuildingFilter}
+            className="text-xs sm:text-sm"
+          >
+            All
+          </Button>
+          <Button
+            variant={buildingId === '7a9d7532-ebe7-496f-b5f1-10887f91edd5' ? "default" : "outline"}
+            size="sm"
+            onClick={() => setBuildingFilter('7a9d7532-ebe7-496f-b5f1-10887f91edd5')}
+            className="text-xs sm:text-sm"
+          >
+            100 Centre
+          </Button>
+          <Button
+            variant={buildingId === 'c735c6a8-7c61-4417-b2e3-3ebbb3045db7' ? "default" : "outline"}
+            size="sm"
+            onClick={() => setBuildingFilter('c735c6a8-7c61-4417-b2e3-3ebbb3045db7')}
+            className="text-xs sm:text-sm"
+          >
+            111 Centre
+          </Button>
+        </div>
       </div>
 
 

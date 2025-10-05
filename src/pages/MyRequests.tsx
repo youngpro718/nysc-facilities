@@ -160,10 +160,10 @@ export default function MyRequests() {
         title="My Requests" 
         description="Track and manage your key requests"
       >
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-32">
-              <Filter className="h-4 w-4 mr-2" />
+            <SelectTrigger className="w-full sm:w-32 touch-target">
+              <Filter className="h-4 w-4 mr-2 flex-shrink-0" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -174,9 +174,10 @@ export default function MyRequests() {
               <SelectItem value="fulfilled">Fulfilled</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={() => isMobile ? setShowMobileForm(true) : setShowRequestForm(true)}>
+          <Button onClick={() => isMobile ? setShowMobileForm(true) : setShowRequestForm(true)} className="w-full sm:w-auto touch-target">
             <Plus className="h-4 w-4 mr-2" />
-            New Request
+            <span className="hidden sm:inline">New Request</span>
+            <span className="sm:hidden">New</span>
           </Button>
         </div>
       </PageHeader>
@@ -207,16 +208,22 @@ export default function MyRequests() {
 
       {filteredRequests.length === 0 ? (
         <Card>
-          <CardContent className="text-center py-8">
-            <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">No requests yet</h3>
-            <p className="text-muted-foreground mb-4">
-              You haven't submitted any key requests. Get started by creating your first request.
+          <CardContent className="flex flex-col items-center text-center py-12 px-4">
+            <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-base sm:text-lg font-medium mb-2">
+              {statusFilter === "all" ? "No requests yet" : `No ${statusFilter} requests`}
+            </h3>
+            <p className="text-sm text-muted-foreground mb-6 max-w-sm">
+              {statusFilter === "all" 
+                ? "Get started by creating your first request." 
+                : `You don't have any ${statusFilter} requests at the moment.`}
             </p>
-            <Button onClick={() => isMobile ? setShowMobileForm(true) : setShowRequestForm(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create First Request
-            </Button>
+            {statusFilter === "all" && (
+              <Button onClick={() => isMobile ? setShowMobileForm(true) : setShowRequestForm(true)} className="touch-target">
+                <Plus className="h-4 w-4 mr-2" />
+                Create First Request
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (
