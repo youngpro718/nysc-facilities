@@ -682,7 +682,6 @@ export const PersonnelProfilesTab: React.FC = () => {
                           value: checked
                         })
                       }
-                      size="sm"
                     />
                     <span className="text-xs text-gray-600">Active</span>
                   </div>
@@ -696,7 +695,6 @@ export const PersonnelProfilesTab: React.FC = () => {
                           value: checked
                         })
                       }
-                      size="sm"
                     />
                     <span className="text-xs text-gray-600">Available</span>
                   </div>
