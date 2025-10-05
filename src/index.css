@@ -1,6 +1,7 @@
 
 @import "./styles/mobile-safe-area.css";
 @import './styles/design-tokens.css';
+@import './styles/ios-compatibility.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

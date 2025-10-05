@@ -42,6 +42,7 @@ import AuthErrorBoundary from "@/components/error/AuthErrorBoundary";
 import Users from "@/pages/Users";
 import AdminSupplyRequests from "@/pages/admin/SupplyRequests";
 import Notifications from "@/pages/Notifications";
+import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 
 
 // Create a client
@@ -258,6 +259,7 @@ function App() {
                   </AuthErrorBoundary>
                 </BrowserRouter>
                 <Toaster />
+                <InstallPrompt />
               </SimpleDashboardProvider>
             </EnhancedThemeProvider>
           </ThemeProvider>
