@@ -76,8 +76,8 @@ const Layout = () => {
             <div className="flex h-12 sm:h-16 items-center justify-between">
               <div className="flex items-center gap-2 sm:gap-3">
                 <img 
-                  src="/lovable-uploads/ca12c24b-cc46-4318-b46d-8af88c0deae9.png" 
-                  alt="NYSC Logo" 
+                  src="/nysc-logo.png" 
+                  alt="NYSC Facilities Hub Logo" 
                   className="h-8 w-8 sm:h-10 sm:w-10"
                 />
                 <h1 className="text-lg sm:text-xl font-bold text-foreground truncate">
