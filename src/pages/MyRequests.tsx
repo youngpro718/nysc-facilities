@@ -17,6 +17,7 @@ import { RequestDetailsModal } from "@/components/requests/RequestDetailsModal";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/lib/supabase";
+import { SkeletonList } from "@/components/ui/SkeletonCard";
 
 const statusConfig = {
   pending: { 
@@ -147,9 +148,7 @@ export default function MyRequests() {
     return (
       <PageContainer>
         <PageHeader title="My Requests" description="Track your key requests" />
-        <div className="flex items-center justify-center py-8">
-          <div className="text-muted-foreground">Loading your requests...</div>
-        </div>
+        <SkeletonList count={3} variant="detailed" />
       </PageContainer>
     );
   }
@@ -253,7 +252,7 @@ export default function MyRequests() {
               );
               
               return (
-                <Card key={request.id} className="transition-all hover:shadow-md">
+                <Card key={request.id} className="transition-all duration-200 hover:shadow-md active:scale-[0.99]">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <div>
@@ -338,6 +337,7 @@ export default function MyRequests() {
                           variant="ghost" 
                           size="sm" 
                           onClick={() => handleViewDetails(request)}
+                          className="touch-target active:scale-95 transition-transform"
                         >
                           <Eye className="h-4 w-4 mr-1" />
                           Details
@@ -348,6 +348,7 @@ export default function MyRequests() {
                             size="sm" 
                             onClick={() => handleCancelRequest(request.id)}
                             disabled={isCancelling}
+                            className="touch-target active:scale-95 transition-transform"
                           >
                             Cancel
                           </Button>

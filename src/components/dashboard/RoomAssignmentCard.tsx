@@ -40,7 +40,7 @@ export function RoomAssignmentCard({
             <Button 
               size="sm" 
               onClick={() => onReportIssue?.(primaryRoom.room_id)}
-              className="w-full"
+              className="w-full touch-target active:scale-95 transition-transform"
             >
               <AlertCircle className="h-3 w-3 mr-2" />
               Report Issue
@@ -49,12 +49,17 @@ export function RoomAssignmentCard({
         )}
         
         {roomAssignments.filter(r => !r.is_primary).map((room) => (
-          <div key={room.id} className="flex items-center justify-between p-3 border rounded">
+          <div key={room.id} className="flex items-center justify-between p-3 border rounded transition-colors hover:bg-accent/50">
             <div>
               <div className="font-medium text-sm">{room.room_name}</div>
               <div className="text-xs text-muted-foreground">{room.building_name}</div>
             </div>
-            <Button size="sm" variant="ghost" onClick={() => onReportIssue?.(room.room_id)}>
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              onClick={() => onReportIssue?.(room.room_id)}
+              className="touch-target active:scale-95 transition-transform"
+            >
               <AlertCircle className="h-3 w-3" />
             </Button>
           </div>

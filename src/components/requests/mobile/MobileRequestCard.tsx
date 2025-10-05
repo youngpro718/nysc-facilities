@@ -136,7 +136,7 @@ export function MobileRequestCard({
         }
       ]}
       onCardClick={onViewDetails}
-      className="hover:shadow-md transition-shadow"
+      className="hover:shadow-md active:scale-[0.99] transition-all duration-200"
     >
       <div className="space-y-4">
         {/* Timeline Progress */}

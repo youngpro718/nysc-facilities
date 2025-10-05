@@ -156,10 +156,12 @@ export function NotificationCard({ notifications, onMarkAsRead, onMarkAllAsRead,
                 key={notification.id}
                 className={cn(
                   "group relative rounded-lg border p-3 sm:p-4",
-                  "transition-colors hover:bg-accent",
+                  "transition-all duration-200",
+                  "hover:bg-accent hover:shadow-sm",
+                  "active:scale-[0.98]",
                   !notification.read ? 'bg-muted/50' : '',
                   getNotificationStyle(notification),
-                  "cursor-pointer"
+                  "cursor-pointer touch-target"
                 )}
                 onClick={() => handleNotificationClick(notification)}
               >
