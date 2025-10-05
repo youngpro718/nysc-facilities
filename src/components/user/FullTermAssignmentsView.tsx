@@ -22,6 +22,7 @@ interface CourtAssignment {
   id: string;
   room_id: string;
   part: string | null;
+  sort_order: number | null;
   justice_id: string | null;
   clerk_id: string | null;
   sergeant_id: string | null;
@@ -77,7 +78,7 @@ export function FullTermAssignmentsView({
   const { data: assignments = [], isLoading, error: queryError } = useQuery({
     queryKey: ['full-term-assignments'],
     queryFn: async () => {
-      // Try query with join first
+      // Try query with join first - IMPORTANT: Include sort_order for proper ordering
       let { data, error } = await supabase
         .from('court_assignments')
         .select(`
@@ -141,8 +142,45 @@ export function FullTermAssignmentsView({
         } : null
       })) as CourtAssignment[];
       
-      console.log('Transformed assignments:', transformed.length);
-      return transformed;
+      // Sort by sort_order (same as admin view), fallback to room_number
+      const sorted = transformed.sort((a, b) => {
+        const aOrder = a.sort_order || 0;
+        const bOrder = b.sort_order || 0;
+        
+        // If both have sort_order, use that
+        if (aOrder > 0 && bOrder > 0) {
+          return aOrder - bOrder;
+        }
+        
+        // Otherwise sort by room number
+        const aRoom = a.court_rooms?.room_number || '';
+        const bRoom = b.court_rooms?.room_number || '';
+        return aRoom.localeCompare(bRoom);
+      });
+      
+      console.log('Sorted assignments:', sorted.length);
+      console.log('First 5 assignments:', sorted.slice(0, 5).map(a => ({ 
+        part: a.part, 
+        sort_order: a.sort_order, 
+        room: a.court_rooms?.room_number,
+        floor: a.court_rooms?.floor,
+        justice: a.justice?.display_name
+      })));
+      
+      // Log Part 37 specifically if it exists
+      const part37 = sorted.find(a => a.part === '37');
+      if (part37) {
+        console.log('Part 37 details:', {
+          part: part37.part,
+          room: part37.court_rooms?.room_number,
+          floor: part37.court_rooms?.floor,
+          justice: part37.justice?.display_name,
+          sort_order: part37.sort_order,
+          id: part37.id
+        });
+      }
+      
+      return sorted;
     },
     refetchInterval: 30000, // Refresh every 30 seconds
   });
