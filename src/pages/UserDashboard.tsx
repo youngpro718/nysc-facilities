@@ -218,8 +218,6 @@ export default function UserDashboard() {
           setShowAvatarPrompt(false);
         }}
       />
-      
-      <BottomTabNavigation />
     </div>
   );
 }

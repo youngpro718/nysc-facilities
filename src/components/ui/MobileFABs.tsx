@@ -8,7 +8,7 @@ interface MobileFABsProps {
 
 export const MobileFABs: React.FC<MobileFABsProps> = ({ onRequestKey, onReportIssue }) => {
   return (
-    <div className="fixed bottom-20 right-4 flex flex-col gap-3 z-50 md:hidden pb-safe">
+    <div className="fixed bottom-28 right-4 flex flex-col gap-3 z-50 md:hidden pb-safe">
       <button
         aria-label="Request Key"
         className="bg-primary text-primary-foreground rounded-full shadow-lg w-14 h-14 flex items-center justify-center active:scale-95 transition-all duration-200 hover:shadow-xl"

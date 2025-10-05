@@ -73,7 +73,7 @@ const Layout = () => {
       {!isLoginPage && isAuthenticated && (
         <header className="bg-card shadow sticky top-0 z-50 safe-area-top">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex h-14 sm:h-16 items-center justify-between">
+            <div className="flex h-12 sm:h-16 items-center justify-between">
               <div className="flex items-center gap-2 sm:gap-3">
                 <img 
                   src="/lovable-uploads/ca12c24b-cc46-4318-b46d-8af88c0deae9.png" 

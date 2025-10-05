@@ -28,7 +28,7 @@
 
 /* Enhanced bottom navigation spacing */
 .pb-nav-safe {
-  padding-bottom: calc(env(safe-area-inset-bottom) + 5rem);
+  padding-bottom: calc(env(safe-area-inset-bottom) + 4rem + 1rem);
 }
 
 /* Improved scrolling indicators */
