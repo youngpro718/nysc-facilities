@@ -236,10 +236,10 @@ export const LowStockPanel = () => {
         <Card className="shrink-0 w-[280px] snap-start sm:w-auto">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Out of Stock</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-600" />
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{outOfStockItems?.length || 0}</div>
+            <div className="text-2xl font-bold text-destructive">{outOfStockItems?.length || 0}</div>
             <p className="text-xs text-muted-foreground">Immediate action needed</p>
           </CardContent>
         </Card>
@@ -247,10 +247,10 @@ export const LowStockPanel = () => {
         <Card className="shrink-0 w-[280px] snap-start sm:w-auto">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Critical Stock</CardTitle>
-            <TrendingDown className="h-4 w-4 text-orange-600" />
+            <TrendingDown className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{criticalItems.length}</div>
+            <div className="text-2xl font-bold text-destructive">{criticalItems.length}</div>
             <p className="text-xs text-muted-foreground">Very low levels</p>
           </CardContent>
         </Card>
@@ -258,10 +258,10 @@ export const LowStockPanel = () => {
         <Card className="shrink-0 w-[280px] snap-start sm:w-auto">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Low Stock</CardTitle>
-            <Package className="h-4 w-4 text-yellow-600" />
+            <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{lowItems.length}</div>
+            <div className="text-2xl font-bold text-destructive">{lowItems.length}</div>
             <p className="text-xs text-muted-foreground">Need restocking soon</p>
           </CardContent>
         </Card>
@@ -271,12 +271,12 @@ export const LowStockPanel = () => {
       {outOfStockItems && outOfStockItems.length > 0 && (
         <div>
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-red-600" />
+            <AlertTriangle className="h-5 w-5 text-destructive" />
             Out of Stock Items
           </h3>
           <div className="grid gap-4">
             {outOfStockItems.map((item) => (
-              <Card key={item.id} className="border-destructive/20">
+              <Card key={item.id} className="border-destructive/20 bg-card">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-2">
@@ -332,14 +332,14 @@ export const LowStockPanel = () => {
       {lowStockItems && lowStockItems.length > 0 && (
         <div>
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <TrendingDown className="h-5 w-5 text-orange-600" />
+            <TrendingDown className="h-5 w-5 text-destructive" />
             Low Stock Items
           </h3>
           <div className="grid gap-4">
             {lowStockItems.map((item) => {
               const stockLevel = getStockLevel(item.quantity, item.minimum_quantity);
               return (
-                <Card key={item.id} className={stockLevel.level === "critical" ? "border-destructive/20" : "border-orange-200"}>
+                <Card key={item.id} className="border-destructive/20 bg-card hover:bg-accent/50 transition-colors">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="space-y-2">
@@ -393,9 +393,9 @@ export const LowStockPanel = () => {
 
       {/* No Low Stock Items */}
       {(!lowStockItems || lowStockItems.length === 0) && (!outOfStockItems || outOfStockItems.length === 0) && (
-        <Card className="p-8 text-center">
-          <Package className="h-12 w-12 mx-auto mb-4 text-green-600 opacity-50" />
-          <h3 className="text-lg font-semibold mb-2 text-green-800">All Items Well Stocked!</h3>
+        <Card className="p-8 text-center bg-card">
+          <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+          <h3 className="text-lg font-semibold mb-2 text-foreground">All Items Well Stocked!</h3>
           <p className="text-muted-foreground">
             No items are currently below their minimum stock levels.
           </p>

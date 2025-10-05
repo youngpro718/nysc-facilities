@@ -24,6 +24,7 @@ type InventoryItem = {
   location_details: string;
   photo_url: string;
   preferred_vendor: string;
+  vendor_sku: string;
   notes: string;
   category_id: string;
   storage_room_id: string;
@@ -255,9 +256,9 @@ export const InventoryItemsPanel = () => {
   };
 
   const getStockStatus = (quantity: number) => {
-    if (quantity === 0) return { label: "Out of Stock", color: "bg-red-100 text-red-800" };
-    if (quantity > 0 && quantity <= FORCED_MINIMUM) return { label: "Low Stock", color: "bg-orange-100 text-orange-800" };
-    return { label: "In Stock", color: "bg-green-100 text-green-800" };
+    if (quantity === 0) return { label: "Out of Stock", color: "bg-destructive text-destructive-foreground" };
+    if (quantity > 0 && quantity <= FORCED_MINIMUM) return { label: "Low Stock", color: "bg-destructive/10 text-destructive" };
+    return { label: "In Stock", color: "bg-secondary text-secondary-foreground" };
   };
 
   if (isLoading) {

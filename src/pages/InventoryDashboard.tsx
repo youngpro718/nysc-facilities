@@ -7,8 +7,9 @@ import { EnhancedSupplyManagement } from "@/components/supply/EnhancedSupplyMana
 import { InventoryTransactionsPanel } from "@/components/inventory/InventoryTransactionsPanel";
 import { LowStockPanel } from "@/components/inventory/LowStockPanel";
 import { InventoryAuditsPanel } from "@/components/inventory/InventoryAuditsPanel";
+import { StorageRoomsPanel } from "@/components/inventory/StorageRoomsPanel";
 import { Button } from "@/components/ui/button";
-import { Package, Plus, TrendingDown, History, Boxes, BarChart3 } from "lucide-react";
+import { Package, Plus, TrendingDown, History, Boxes, BarChart3, MapPin } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 export const InventoryDashboard = () => {
@@ -81,30 +82,26 @@ export const InventoryDashboard = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="flex overflow-x-auto scrollbar-hide w-full gap-1 sm:grid sm:grid-cols-6 bg-muted">
-          <TabsTrigger value="overview" className="flex items-center gap-1 sm:gap-2 shrink-0 min-w-[60px] sm:min-w-0">
+        <TabsList className="grid w-full grid-cols-5 bg-muted">
+          <TabsTrigger value="overview" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             <span className="hidden sm:inline">Overview</span>
           </TabsTrigger>
-          <TabsTrigger value="items" className="flex items-center gap-1 sm:gap-2 shrink-0 min-w-[60px] sm:min-w-0">
+          <TabsTrigger value="items" className="flex items-center gap-2">
             <Package className="h-4 w-4" />
             <span className="hidden sm:inline">Items</span>
           </TabsTrigger>
-          <TabsTrigger value="supplies" className="flex items-center gap-1 sm:gap-2 shrink-0 min-w-[60px] sm:min-w-0">
+          <TabsTrigger value="storage-rooms" className="flex items-center gap-2">
+            <MapPin className="h-4 w-4" />
+            <span className="hidden sm:inline">Storage Rooms</span>
+          </TabsTrigger>
+          <TabsTrigger value="supplies" className="flex items-center gap-2">
             <Boxes className="h-4 w-4" />
             <span className="hidden sm:inline">Supplies</span>
           </TabsTrigger>
-          <TabsTrigger value="low-stock" className="flex items-center gap-1 sm:gap-2 shrink-0 min-w-[60px] sm:min-w-0">
-            <TrendingDown className="h-4 w-4" />
-            <span className="hidden sm:inline">Low Stock</span>
-          </TabsTrigger>
-          <TabsTrigger value="transactions" className="flex items-center gap-1 sm:gap-2 shrink-0 min-w-[60px] sm:min-w-0">
+          <TabsTrigger value="history" className="flex items-center gap-2">
             <History className="h-4 w-4" />
-            <span className="hidden sm:inline">Transactions</span>
-          </TabsTrigger>
-          <TabsTrigger value="audits" className="flex items-center gap-1 sm:gap-2 shrink-0 min-w-[60px] sm:min-w-0">
-            <History className="h-4 w-4" />
-            <span className="hidden sm:inline">Audits</span>
+            <span className="hidden sm:inline">History</span>
           </TabsTrigger>
         </TabsList>
 
@@ -116,20 +113,19 @@ export const InventoryDashboard = () => {
           <InventoryItemsPanel />
         </TabsContent>
 
+        <TabsContent value="storage-rooms" className="space-y-4">
+          <StorageRoomsPanel />
+        </TabsContent>
+
         <TabsContent value="supplies" className="space-y-4">
           <EnhancedSupplyManagement />
         </TabsContent>
 
-        <TabsContent value="low-stock" className="space-y-4">
-          <LowStockPanel />
-        </TabsContent>
-
-        <TabsContent value="transactions" className="space-y-4">
-          <InventoryTransactionsPanel />
-        </TabsContent>
-
-        <TabsContent value="audits" className="space-y-4">
-          <InventoryAuditsPanel />
+        <TabsContent value="history" className="space-y-4">
+          <div className="space-y-6">
+            <InventoryTransactionsPanel />
+            <InventoryAuditsPanel />
+          </div>
         </TabsContent>
       </Tabs>
     </div>

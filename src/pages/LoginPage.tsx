@@ -52,11 +52,20 @@ const LoginPage = () => {
 
       <Card className="w-full max-w-md p-6 sm:p-7 bg-card shadow-sm border border-border">
         <div className="flex items-center gap-3 mb-4">
-          <img
-            src="/lovable-uploads/ca12c24b-cc46-4318-b46d-8af88c0deae9.png"
-            alt="NYSC Logo"
-            className="h-10 w-10"
-          />
+          <div className="relative h-12 w-12">
+            {/* Light mode logo - navy blue */}
+            <img
+              src="/nysc-logo-light.png"
+              alt="NYSC Logo"
+              className="h-full w-full object-contain dark:hidden"
+            />
+            {/* Dark mode logo - light/white */}
+            <img
+              src="/nysc-logo-dark.png"
+              alt="NYSC Logo"
+              className="h-full w-full object-contain hidden dark:block"
+            />
+          </div>
           <div>
             <h1 className="text-xl md:text-2xl font-semibold text-foreground">
               NYSC Facilities Hub

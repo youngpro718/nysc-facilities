@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { IssueElevatorPassDialog } from "@/components/keys/dialogs/IssueElevatorPassDialog";
+import { EditElevatorPassDialog } from "@/components/keys/dialogs/EditElevatorPassDialog";
 import AllocateElevatorCardsToOfficeDialog from "@/components/keys/dialogs/AllocateElevatorCardsToOfficeDialog";
 
 interface ElevatorPassAssignment {
@@ -55,6 +56,8 @@ export function ElevatorPassSection() {
   const [department, setDepartment] = useState<string>("all");
   const [overdueOnly, setOverdueOnly] = useState(false);
   const [issueOpen, setIssueOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingAssignment, setEditingAssignment] = useState<ElevatorPassAssignment | null>(null);
   const [allocateOpen, setAllocateOpen] = useState(false);
   const queryClient = useQueryClient();
 
@@ -185,9 +188,14 @@ export function ElevatorPassSection() {
 
   const handleReturn = (assignmentId: string) => {
     setCurrentAssignmentId(assignmentId);
-    setSingleReason("normal_return");
+    setSingleReason("employee_separated");
     setSingleNotes("");
     setReasonOpen(true);
+  };
+
+  const handleEdit = (assignment: ElevatorPassAssignment) => {
+    setEditingAssignment(assignment);
+    setEditOpen(true);
   };
 
   const handleBulkReturn = async () => {
@@ -196,9 +204,7 @@ export function ElevatorPassSection() {
   };
 
   const getStatusBadge = (assignment: ElevatorPassAssignment) => {
-    if (assignment.is_overdue) {
-      return <Badge variant="destructive">Overdue ({assignment.days_since_assigned} days)</Badge>;
-    }
+    // Elevator passes don't expire - they're permanent until returned
     return <Badge variant="secondary">Active</Badge>;
   };
 
@@ -236,10 +242,7 @@ export function ElevatorPassSection() {
           </Select>
         </div>
         <div className="col-span-1 flex items-end gap-2">
-          <div className="flex items-center gap-2">
-            <Switch id="overdue-only" checked={overdueOnly} onCheckedChange={setOverdueOnly} />
-            <Label htmlFor="overdue-only">Overdue only</Label>
-          </div>
+          {/* Elevator passes don't have due dates - removed overdue filter */}
         </div>
       </div>
       </div>
@@ -273,10 +276,8 @@ export function ElevatorPassSection() {
                 assigned_at: format(new Date(a.assigned_at), "yyyy-MM-dd HH:mm:ss"),
                 status: a.status,
                 is_spare: a.is_spare ? "yes" : "no",
-                days_since_assigned: a.days_since_assigned,
-                is_overdue: a.is_overdue ? "yes" : "no",
               }));
-              const headers = Object.keys(rows[0] || { assignment_id: "", key_name: "", occupant: "", department: "", email: "", recipient_type: "", recipient_name: "", assigned_at: "", status: "", is_spare: "", days_since_assigned: "", is_overdue: "" });
+              const headers = Object.keys(rows[0] || { assignment_id: "", key_name: "", occupant: "", department: "", email: "", recipient_type: "", recipient_name: "", assigned_at: "", status: "", is_spare: "" });
               const csv = [
                 headers.join(","),
                 ...rows.map(r =>
@@ -322,8 +323,8 @@ export function ElevatorPassSection() {
           const emailStr = a.occupant_id ? (a.email || "") : (a.recipient_email || "");
           const matchesSearch = !search || nameStr.toLowerCase().includes(search.toLowerCase()) || a.key_name.toLowerCase().includes(search.toLowerCase()) || emailStr.toLowerCase().includes(search.toLowerCase());
           const matchesDept = a.occupant_id ? (department === "all" || (a.department || "—") === department) : (department === "all");
-          const matchesOverdue = !overdueOnly || a.is_overdue;
-          return matchesSearch && matchesDept && matchesOverdue;
+          // Removed overdue filter - elevator passes don't expire
+          return matchesSearch && matchesDept;
         });
         return filtered.length > 0 ? (
         <div className="border rounded-lg">
@@ -397,15 +398,24 @@ export function ElevatorPassSection() {
                     {getStatusBadge(assignment)}
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleReturn(assignment.assignment_id)}
-                      disabled={returnAssignmentMutation.isPending}
-                    >
-                      <RotateCcw className="h-4 w-4 mr-2" />
-                      Return with reason
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(assignment)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleReturn(assignment.assignment_id)}
+                        disabled={returnAssignmentMutation.isPending}
+                      >
+                        <RotateCcw className="h-4 w-4 mr-2" />
+                        Return
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -436,11 +446,11 @@ export function ElevatorPassSection() {
                 value={singleReason}
                 onChange={(e) => setSingleReason(e.target.value)}
               >
-                <option value="normal_return">Normal return</option>
-                <option value="replacement">Replacement</option>
-                <option value="status_change">Status change (promotion/resignation)</option>
-                <option value="lost_found">Lost/Found</option>
-                <option value="manual">Manual</option>
+                <option value="employee_separated">Employee Separated/Left</option>
+                <option value="employee_retired">Employee Retired</option>
+                <option value="replacement">Lost - Replacement Issued</option>
+                <option value="transfer">Transferred to Different Location</option>
+                <option value="other">Other Reason</option>
               </select>
             </div>
             <div className="space-y-2">
@@ -495,11 +505,10 @@ export function ElevatorPassSection() {
                 value={bulkReasonStr}
                 onChange={(e) => setBulkReasonStr(e.target.value)}
               >
-                <option value="Bulk return">Bulk return</option>
-                <option value="status_change">Status change (promotion/resignation)</option>
-                <option value="replacement">Replacement</option>
-                <option value="lost_found">Lost/Found</option>
-                <option value="manual">Manual</option>
+                <option value="employees_separated">Employees Separated/Left</option>
+                <option value="employees_retired">Employees Retired</option>
+                <option value="bulk_replacement">Bulk Replacement</option>
+                <option value="other">Other Reason</option>
               </select>
             </div>
             <div className="space-y-2">
@@ -579,6 +588,18 @@ export function ElevatorPassSection() {
         open={issueOpen}
         onOpenChange={setIssueOpen}
         onIssued={() => queryClient.invalidateQueries({ queryKey: ["elevator-pass-assignments"] })}
+      />
+
+      {/* Edit Elevator Pass */}
+      <EditElevatorPassDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        assignment={editingAssignment as any}
+        onUpdated={() => {
+          queryClient.invalidateQueries({ queryKey: ["elevator-pass-assignments"] });
+          setEditOpen(false);
+          setEditingAssignment(null);
+        }}
       />
 
       <AllocateElevatorCardsToOfficeDialog

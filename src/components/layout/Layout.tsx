@@ -74,13 +74,22 @@ const Layout = () => {
         <header className="bg-card shadow sticky top-0 z-50 safe-area-top">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex h-12 sm:h-16 items-center justify-between">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <img 
-                  src="/nysc-logo.png" 
-                  alt="NYSC Facilities Hub Logo" 
-                  className="h-8 w-8 sm:h-10 sm:w-10"
-                />
-                <h1 className="text-lg sm:text-xl font-bold text-foreground truncate">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="relative h-12 w-12 sm:h-14 sm:w-14">
+                  {/* Light mode logo - navy blue */}
+                  <img 
+                    src="/nysc-logo-light.png" 
+                    alt="NYSC Facilities Hub Logo" 
+                    className="h-full w-full object-contain dark:hidden"
+                  />
+                  {/* Dark mode logo - light/white */}
+                  <img 
+                    src="/nysc-logo-dark.png" 
+                    alt="NYSC Facilities Hub Logo" 
+                    className="h-full w-full object-contain hidden dark:block"
+                  />
+                </div>
+                <h1 className="text-xl sm:text-2xl font-bold text-foreground truncate">
                   NYSC Facilities Hub
                 </h1>
               </div>

@@ -398,10 +398,10 @@ export const InventoryOverviewPanel = () => {
         <Card className="shrink-0 w-[280px] snap-start sm:w-auto">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Low Stock Items</CardTitle>
-            <TrendingDown className="h-4 w-4 text-orange-600" />
+            <TrendingDown className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{stats?.low_stock_count || 0}</div>
+            <div className="text-2xl font-bold text-destructive">{stats?.low_stock_count || 0}</div>
             <p className="text-xs text-muted-foreground">Need attention</p>
           </CardContent>
         </Card>
@@ -485,7 +485,7 @@ export const InventoryOverviewPanel = () => {
               <div className="space-y-2">
                 {analytics.topItemsRemoved.map((it) => (
                   <div key={it.item_id} className="flex items-center justify-between">
-                    <span className="text-sm text-zinc-950">{it.name}</span>
+                    <span className="text-sm text-foreground">{it.name}</span>
                     <Badge variant="outline">{it.quantity}</Badge>
                   </div>
                 ))}
@@ -506,7 +506,7 @@ export const InventoryOverviewPanel = () => {
               <div className="space-y-2">
                 {analytics.topCategoriesRemoved.map((c) => (
                   <div key={c.category_id ?? "uncategorized"} className="flex items-center justify-between">
-                    <span className="text-sm text-zinc-950">{c.name}</span>
+                    <span className="text-sm text-foreground">{c.name}</span>
                     <Badge variant="outline">{c.quantity}</Badge>
                   </div>
                 ))}
@@ -527,11 +527,11 @@ export const InventoryOverviewPanel = () => {
           </CardHeader>
           <CardContent>
             {recentTransactions?.length === 0 ? <p className="text-muted-foreground text-center py-4">No recent transactions</p> : <div className="space-y-3">
-                {recentTransactions?.map(transaction => <div key={transaction.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                {recentTransactions?.map(transaction => <div key={transaction.id} className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-accent/50 transition-colors">
                     <div className="flex items-center gap-3">
                       <span className="text-lg">{getTransactionIcon(transaction.transaction_type)}</span>
                       <div>
-                        <p className="font-medium">{transaction.item_name}</p>
+                        <p className="font-medium text-foreground">{transaction.item_name}</p>
                         <p className="text-sm text-muted-foreground">
                           {format(new Date(transaction.created_at), "MMM dd, HH:mm")}
                         </p>
@@ -554,24 +554,24 @@ export const InventoryOverviewPanel = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-orange-600" />
+              <AlertTriangle className="h-5 w-5 text-destructive" />
               Low Stock Alerts
             </CardTitle>
           </CardHeader>
           <CardContent>
             {lowStockItems?.length === 0 ? <p className="text-muted-foreground text-center py-4">All items are well stocked!</p> : <div className="space-y-3">
-                {lowStockItems?.map(item => <div key={item.id} className="flex items-center justify-between p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                {lowStockItems?.map(item => <div key={item.id} className="flex items-center justify-between p-3 bg-destructive/5 border border-destructive/20 rounded-lg hover:bg-destructive/10 transition-colors">
                     <div>
-                      <p className="font-medium text-zinc-950">{item.name}</p>
+                      <p className="font-medium text-foreground">{item.name}</p>
                       {item.category_name && (
                         <p className="text-sm text-muted-foreground">{item.category_name}</p>
                       )}
                     </div>
                     <div className="text-right">
-                      <Badge variant="outline" className="text-orange-700 border-orange-300">
+                      <Badge variant="destructive">
                         {item.quantity}/{item.minimum_quantity}
                       </Badge>
-                      <p className="text-xs text-orange-600 mt-1">Low Stock</p>
+                      <p className="text-xs text-destructive mt-1">Low Stock</p>
                     </div>
                   </div>)}
               </div>}

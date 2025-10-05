@@ -42,50 +42,43 @@ export default function Keys() {
 
       <Tabs defaultValue="inventory" className="space-y-4 sm:space-y-6">
         <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-          <TabsList className="w-full min-w-max inline-flex h-auto p-1 bg-muted rounded-lg">
+          <TabsList className="grid w-full grid-cols-4 bg-muted">
             <TabsTrigger 
               value="inventory" 
-              className="flex-1 min-w-[70px] flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-xs sm:text-sm whitespace-nowrap"
+              className="flex items-center justify-center gap-2"
             >
-              <Package className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
-              <span className="hidden xs:inline">Inventory</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="orders" 
-              className="flex-1 min-w-[70px] flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-xs sm:text-sm whitespace-nowrap"
-            >
-              <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
-              <span className="hidden xs:inline">Orders</span>
+              <Package className="h-4 w-4 flex-shrink-0" />
+              <span className="hidden sm:inline">Inventory & Orders</span>
+              <span className="sm:hidden">Keys</span>
             </TabsTrigger>
             <TabsTrigger 
               value="assignments" 
-              className="flex-1 min-w-[70px] flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-xs sm:text-sm whitespace-nowrap"
+              className="flex items-center justify-center gap-2"
             >
-              <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
-              <span className="hidden xs:inline">Assign</span>
+              <Users className="h-4 w-4 flex-shrink-0" />
+              <span className="hidden sm:inline">Assignments</span>
+              <span className="sm:hidden">Assign</span>
             </TabsTrigger>
             <TabsTrigger 
               value="history" 
-              className="flex-1 min-w-[70px] flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-xs sm:text-sm whitespace-nowrap"
+              className="flex items-center justify-center gap-2"
             >
-              <History className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
-              <span className="hidden xs:inline">History</span>
+              <History className="h-4 w-4 flex-shrink-0" />
+              <span className="hidden sm:inline">History</span>
             </TabsTrigger>
             <TabsTrigger 
               value="elevator-passes" 
-              className="flex-1 min-w-[70px] flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-xs sm:text-sm whitespace-nowrap"
+              className="flex items-center justify-center gap-2"
             >
-              <KeyRound className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
-              <span className="hidden xs:inline">Elevator</span>
+              <KeyRound className="h-4 w-4 flex-shrink-0" />
+              <span className="hidden sm:inline">Elevator Passes</span>
+              <span className="sm:hidden">Elevator</span>
             </TabsTrigger>
           </TabsList>
         </div>
 
-        <TabsContent value="inventory" className="space-y-4 mt-4">
+        <TabsContent value="inventory" className="space-y-6 mt-4">
           <KeyInventorySection />
-        </TabsContent>
-
-        <TabsContent value="orders" className="space-y-4 mt-4">
           <KeyOrderSection />
         </TabsContent>
 

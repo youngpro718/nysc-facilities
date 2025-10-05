@@ -81,20 +81,20 @@ interface SupplyRequestWithDetails {
 }
 
 const priorityColors = {
-  low: 'bg-blue-100 text-blue-800',
-  medium: 'bg-yellow-100 text-yellow-800',
-  high: 'bg-orange-100 text-orange-800',
-  urgent: 'bg-red-100 text-red-800'
+  low: 'bg-secondary text-secondary-foreground',
+  medium: 'bg-secondary text-secondary-foreground',
+  high: 'bg-destructive/10 text-destructive',
+  urgent: 'bg-destructive text-destructive-foreground'
 };
 
 const statusColors: Record<SupplyRequestWithDetails['status'], string> = {
-  submitted: 'bg-blue-100 text-blue-800',
-  received: 'bg-purple-100 text-purple-800',
-  processing: 'bg-yellow-100 text-yellow-800',
-  ready: 'bg-green-100 text-green-800',
-  picked_up: 'bg-indigo-100 text-indigo-800',
-  completed: 'bg-gray-100 text-gray-800',
-  cancelled: 'bg-red-100 text-red-800',
+  submitted: 'bg-secondary text-secondary-foreground',
+  received: 'bg-secondary text-secondary-foreground',
+  processing: 'bg-secondary text-secondary-foreground',
+  ready: 'bg-secondary text-secondary-foreground',
+  picked_up: 'bg-secondary text-secondary-foreground',
+  completed: 'bg-secondary text-secondary-foreground',
+  cancelled: 'bg-destructive text-destructive-foreground',
 };
 
 const statusIcons: Record<SupplyRequestWithDetails['status'], any> = {
@@ -330,7 +330,7 @@ export function EnhancedSupplyManagement() {
       <Card className="mb-4 transition-all duration-200 hover:shadow-md">
         <Collapsible open={isExpanded} onOpenChange={() => toggleExpanded(request.id)}>
           <CollapsibleTrigger asChild>
-            <CardHeader className="cursor-pointer hover:bg-gray-50/50 transition-colors">
+            <CardHeader className="cursor-pointer hover:bg-accent/50 transition-colors">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
@@ -344,11 +344,11 @@ export function EnhancedSupplyManagement() {
                   <Badge className={priorityColors[request.priority]}>
                     {request.priority}
                   </Badge>
-                  <Badge className={statusColors[request.status] ?? 'bg-gray-100 text-gray-800'}>
+                  <Badge className={statusColors[request.status] ?? 'bg-secondary text-secondary-foreground'}>
                     {request.status}
                   </Badge>
                   {hasStockIssues && (
-                    <Badge variant="outline" className="text-orange-600 border-orange-200">
+                    <Badge variant="destructive">
                       <AlertTriangle className="h-3 w-3 mr-1" />
                       Stock Issue
                     </Badge>
@@ -356,7 +356,7 @@ export function EnhancedSupplyManagement() {
                 </div>
               </div>
               
-              <div className="flex items-center justify-between text-sm text-gray-600 mt-2">
+              <div className="flex items-center justify-between text-sm text-muted-foreground mt-2">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
                     <Avatar className="h-6 w-6">
@@ -415,12 +415,12 @@ export function EnhancedSupplyManagement() {
               {/* Request Details */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
-                  <h4 className="font-medium text-sm text-gray-700 mb-1">Delivery Location</h4>
-                  <p className="text-sm">{request.delivery_location || 'Not specified'}</p>
+                  <h4 className="font-medium text-sm text-foreground mb-1">Delivery Location</h4>
+                  <p className="text-sm text-muted-foreground">{request.delivery_location || 'Not specified'}</p>
                 </div>
                 <div>
-                  <h4 className="font-medium text-sm text-gray-700 mb-1">Requested Date</h4>
-                  <p className="text-sm">
+                  <h4 className="font-medium text-sm text-foreground mb-1">Requested Date</h4>
+                  <p className="text-sm text-muted-foreground">
                     {request.requested_delivery_date 
                       ? format(new Date(request.requested_delivery_date), 'MMM dd, yyyy')
                       : 'ASAP'
@@ -428,17 +428,17 @@ export function EnhancedSupplyManagement() {
                   </p>
                 </div>
                 <div>
-                  <h4 className="font-medium text-sm text-gray-700 mb-1">Fulfillment Stage</h4>
-                  <p className="text-sm capitalize">{request.fulfillment_stage}</p>
+                  <h4 className="font-medium text-sm text-foreground mb-1">Fulfillment Stage</h4>
+                  <p className="text-sm capitalize text-muted-foreground">{request.fulfillment_stage}</p>
                 </div>
               </div>
 
               {/* Items List */}
               <div>
-                <h4 className="font-medium text-sm text-gray-700 mb-2">Requested Items</h4>
+                <h4 className="font-medium text-sm text-foreground mb-2">Requested Items</h4>
                 <div className="space-y-2">
                   {request.items.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div key={item.id} className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{item.name}</span>
@@ -446,11 +446,11 @@ export function EnhancedSupplyManagement() {
                             <Badge variant="outline" className="text-xs">{item.category}</Badge>
                           )}
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
                           <span>Requested: {item.quantity_requested} {item.unit || 'units'}</span>
                           <span>In Stock: {item.current_stock}</span>
                           {item.current_stock < item.quantity_requested && (
-                            <span className="text-orange-600 flex items-center gap-1">
+                            <span className="text-destructive flex items-center gap-1">
                               <TrendingDown className="h-3 w-3" />
                               Insufficient Stock
                             </span>

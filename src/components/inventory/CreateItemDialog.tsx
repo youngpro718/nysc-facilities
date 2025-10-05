@@ -50,6 +50,7 @@ export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) 
     storage_room_id: "",
     location_details: "",
     preferred_vendor: "",
+    vendor_sku: "",
     notes: "",
   });
 
@@ -95,6 +96,7 @@ export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) 
           storage_room_id: data.storage_room_id || null,
           location_details: data.location_details || null,
           preferred_vendor: data.preferred_vendor || null,
+          vendor_sku: data.vendor_sku || null,
           notes: data.notes || null,
           status: "active",
         });
@@ -128,7 +130,6 @@ export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) 
         title: "Missing field",
         description: "Item name is required.",
       });
-      return;
     }
 
     createItemMutation.mutate(formData);
@@ -145,6 +146,7 @@ export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) 
       storage_room_id: "",
       location_details: "",
       preferred_vendor: "",
+      vendor_sku: "",
       notes: "",
     });
     onOpenChange(false);
@@ -282,16 +284,28 @@ export const CreateItemDialog = ({ open, onOpenChange }: CreateItemDialogProps) 
 
           {/* Additional Information */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium">Additional Information</h3>
+            <h3 className="text-lg font-medium">Vendor & Ordering</h3>
             
-            <div className="space-y-2">
-              <Label htmlFor="preferred_vendor">Preferred Vendor</Label>
-              <Input
-                id="preferred_vendor"
-                value={formData.preferred_vendor}
-                onChange={(e) => setFormData({ ...formData, preferred_vendor: e.target.value })}
-                placeholder="Vendor or supplier name"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="preferred_vendor">Preferred Vendor</Label>
+                <Input
+                  id="preferred_vendor"
+                  value={formData.preferred_vendor}
+                  onChange={(e) => setFormData({ ...formData, preferred_vendor: e.target.value })}
+                  placeholder="Vendor or supplier name"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="vendor_sku">Vendor SKU</Label>
+                <Input
+                  id="vendor_sku"
+                  value={formData.vendor_sku}
+                  onChange={(e) => setFormData({ ...formData, vendor_sku: e.target.value })}
+                  placeholder="SKU or product code"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
