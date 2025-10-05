@@ -44,6 +44,7 @@ import { KeyAssignmentCard } from "@/components/dashboard/KeyAssignmentCard";
 import { EnhancedSupplyTracker } from "@/components/user/EnhancedSupplyTracker";
 import { FullTermAssignmentsView } from "@/components/user/FullTermAssignmentsView";
 import { QuickIssueReportButton } from "@/components/user/QuickIssueReportButton";
+import { NotificationDropdown } from "@/components/user/NotificationDropdown";
 import { useUserPersonnelInfo } from "@/hooks/user/useUserPersonnelInfo";
 import { AvatarPromptModal } from "@/components/auth/AvatarPromptModal";
 import { PullToRefresh } from "@/components/ui/PullToRefresh";
@@ -167,22 +168,14 @@ export default function UserDashboard() {
             </p>
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">
-            {/* Notifications Bell Icon - Touch Optimized */}
-            <button 
-              className="relative p-3 hover:bg-accent rounded-lg transition-colors touch-manipulation"
-              onClick={() => {
-                // TODO: Open notifications panel/dropdown
-                console.log('Open notifications');
-              }}
-              aria-label="Notifications"
-            >
-              <Bell className="h-5 w-5" />
-              {notifications.length > 0 && (
-                <span className="absolute top-1 right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-semibold">
-                  {notifications.length > 9 ? '9+' : notifications.length}
-                </span>
-              )}
-            </button>
+            {/* Notifications Dropdown */}
+            <NotificationDropdown
+              notifications={notifications}
+              onMarkAsRead={markAsRead}
+              onMarkAllAsRead={markAllAsRead}
+              onClearNotification={clearNotification}
+              onClearAllNotifications={clearAllNotifications}
+            />
             
             {/* Report Issue Button - Mobile Optimized */}
             <QuickIssueReportButton 
