@@ -212,9 +212,17 @@ export function useRolePermissions() {
   };
 
   const fetchUserRoleAndPermissions = async () => {
+    const startTime = Date.now();
+    console.log('[useRolePermissions] Fetch started at:', new Date().toISOString());
+    
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.log('[useRolePermissions] No user found, finishing');
+        return;
+      }
+
+      console.log('[useRolePermissions] User found:', user.id);
 
       // Get user role with fallback to secure function
       const roleQuery = await supabase
@@ -224,7 +232,7 @@ export function useRolePermissions() {
         .maybeSingle();
 
       if (roleQuery.error) {
-        console.error('Error fetching user role (RLS likely):', roleQuery.error);
+        console.error('[useRolePermissions] Error fetching user role (RLS likely):', roleQuery.error);
       }
 
       let role = (roleQuery.data?.role as CourtRole | null) || null;
@@ -232,24 +240,26 @@ export function useRolePermissions() {
       if (!role) {
         // Fallback to secure RPC that bypasses RLS
         try {
+          console.log('[useRolePermissions] Attempting RPC fallback...');
           const { data: secureRole, error: rpcError } = await supabase.rpc('get_current_user_role');
           if (rpcError) {
-            console.error('Error in get_current_user_role RPC:', rpcError);
+            console.error('[useRolePermissions] Error in get_current_user_role RPC:', rpcError);
           } else if (secureRole) {
             role = secureRole as CourtRole;
-            console.log('useRolePermissions - Role from secure RPC:', role);
+            console.log('[useRolePermissions] Role from secure RPC:', role);
           }
         } catch (e) {
-          console.error('Exception calling get_current_user_role:', e);
+          console.error('[useRolePermissions] Exception calling get_current_user_role:', e);
         }
       }
 
       // Default to standard if still unknown
       if (!role) {
+        console.log('[useRolePermissions] No role found, defaulting to standard');
         role = 'standard';
       }
 
-      console.log('useRolePermissions - Final role from role lookup layer:', role);
+      console.log('[useRolePermissions] Final role from role lookup layer:', role);
       
       // Check if user is assigned to Supply Department and override role if needed
       const { data: profileData } = await supabase
@@ -322,14 +332,24 @@ export function useRolePermissions() {
       
       setUserRole(effectiveRole);
       setPermissions(finalPermissions);
+      
+      const elapsed = Date.now() - startTime;
+      console.log(`[useRolePermissions] Fetch completed in ${elapsed}ms`);
     } catch (error) {
-      console.error('Error in fetchUserRoleAndPermissions:', error);
+      console.error('[useRolePermissions] Error in fetchUserRoleAndPermissions:', error);
+      
+      // Set fallback to standard user on error
+      setUserRole('standard');
+      setPermissions(rolePermissionsMap.standard);
+      
       toast({
         title: "Error",
-        description: "Failed to load user permissions",
+        description: "Failed to load user permissions. Using default access.",
         variant: "destructive",
       });
     } finally {
+      const elapsed = Date.now() - startTime;
+      console.log(`[useRolePermissions] Loading state set to false after ${elapsed}ms`);
       setLoading(false);
     }
   };
@@ -358,7 +378,30 @@ export function useRolePermissions() {
   const isJudge = userRole === 'judge';
 
   useEffect(() => {
-    fetchUserRoleAndPermissions();
+    console.log('[useRolePermissions] Initial mount - fetching permissions');
+    
+    // Set timeout to force loading=false if fetch takes too long
+    const timeout = setTimeout(() => {
+      console.warn('[useRolePermissions] Timeout: forcing loading=false after 5 seconds');
+      setLoading(false);
+      
+      // Set fallback permissions if still loading
+      if (loading) {
+        setUserRole('standard');
+        setPermissions(rolePermissionsMap.standard);
+        toast({
+          title: "Loading Timeout",
+          description: "Using default permissions due to slow connection",
+          variant: "destructive",
+        });
+      }
+    }, 5000);
+    
+    fetchUserRoleAndPermissions().finally(() => {
+      clearTimeout(timeout);
+    });
+    
+    return () => clearTimeout(timeout);
   }, []);
 
   // Listen for preview role changes and storage updates to refresh permissions across the app

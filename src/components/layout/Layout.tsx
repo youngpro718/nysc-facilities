@@ -1,6 +1,6 @@
 
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { getRoleBasedNavigation, getNavigationRoutes } from "./config/navigation";
@@ -11,17 +11,19 @@ import { DesktopNavigationImproved } from "./components/DesktopNavigationImprove
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { NotificationBox } from "@/components/admin/NotificationBox";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
+import { Button } from "@/components/ui/button";
 
 const Layout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const isLoginPage = location.pathname === '/login';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showRefreshButton, setShowRefreshButton] = useState(false);
   const { isAuthenticated, isAdmin, isLoading, signOut, user } = useAuth();
-  const { permissions, userRole, profile, loading: permissionsLoading } = useRolePermissions();
+  const { permissions, userRole, profile, loading: permissionsLoading, refetch } = useRolePermissions();
   const { showOnboarding, completeOnboarding, skipOnboarding } = useOnboarding();
 
   // Only build navigation once permissions are ready to avoid flashing the wrong menu after login
@@ -35,6 +37,20 @@ const Layout = () => {
   console.log('Layout - user:', user?.id);
   console.log('Layout - profile:', profile);
   console.log('Layout - navigation:', navigation);
+
+  // Show refresh button if permissions are stuck loading for >8 seconds
+  useEffect(() => {
+    if (!navReady && isAuthenticated && !isLoginPage) {
+      const timer = setTimeout(() => {
+        console.warn('[Layout] Navigation stuck loading for 8s, showing refresh button');
+        setShowRefreshButton(true);
+      }, 8000);
+      
+      return () => clearTimeout(timer);
+    } else {
+      setShowRefreshButton(false);
+    }
+  }, [navReady, isAuthenticated, isLoginPage]);
 
   const handleNavigationChange = (index: number | null) => {
     if (index === null) return;
@@ -121,6 +137,18 @@ const Layout = () => {
                       onNavigationChange={handleNavigationChange}
                       onSignOut={signOut}
                     />
+                  ) : showRefreshButton ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        console.log('[Layout] Manual refresh triggered');
+                        refetch();
+                        setShowRefreshButton(false);
+                      }}
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
                   ) : (
                     // Minimal placeholder to avoid flicker
                     <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -134,6 +162,19 @@ const Layout = () => {
                       navigation={navigation}
                       onSignOut={signOut}
                     />
+                  ) : showRefreshButton ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        console.log('[Layout] Manual refresh triggered');
+                        refetch();
+                        setShowRefreshButton(false);
+                      }}
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Retry
+                    </Button>
                   ) : (
                     // Minimal placeholder to avoid flicker
                     <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
