@@ -18,6 +18,8 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/lib/supabase";
 import { SkeletonList } from "@/components/ui/SkeletonCard";
+import { PullToRefresh } from "@/components/ui/PullToRefresh";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const statusConfig = {
   pending: { 
@@ -85,9 +87,10 @@ const getRequestTypeLabel = (type: string) => {
 export default function MyRequests() {
   const [showRequestForm, setShowRequestForm] = useState(false);
   const [showMobileForm, setShowMobileForm] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const isMobile = useIsMobile();
   const { user } = useAuth();
   const { data: requests = [], isLoading, refetch } = useKeyRequests(user?.id);
   const { data: orders = [] } = useKeyOrders(user?.id);
@@ -96,13 +99,18 @@ export default function MyRequests() {
   // Check if device is mobile
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+      setIsMobileDevice(window.innerWidth < 768);
     };
     
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Handle refresh for pull-to-refresh
+  const handleRefresh = async () => {
+    await refetch();
+  };
 
   // Filter requests based on status
   const filteredRequests = requests.filter(request => 
@@ -154,7 +162,8 @@ export default function MyRequests() {
   }
 
   return (
-    <PageContainer>
+    <PullToRefresh onRefresh={handleRefresh} enabled={isMobile}>
+      <PageContainer>
       <PageHeader 
         title="My Requests" 
         description="Track and manage your key requests"
@@ -165,7 +174,7 @@ export default function MyRequests() {
               <Filter className="h-4 w-4 mr-2 flex-shrink-0" />
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-background z-50">
               <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="approved">Approved</SelectItem>
@@ -173,7 +182,7 @@ export default function MyRequests() {
               <SelectItem value="fulfilled">Fulfilled</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={() => isMobile ? setShowMobileForm(true) : setShowRequestForm(true)} className="w-full sm:w-auto touch-target">
+          <Button onClick={() => isMobileDevice ? setShowMobileForm(true) : setShowRequestForm(true)} className="w-full sm:w-auto touch-target">
             <Plus className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">New Request</span>
             <span className="sm:hidden">New</span>
@@ -218,7 +227,7 @@ export default function MyRequests() {
                 : `You don't have any ${statusFilter} requests at the moment.`}
             </p>
             {statusFilter === "all" && (
-              <Button onClick={() => isMobile ? setShowMobileForm(true) : setShowRequestForm(true)} className="touch-target">
+              <Button onClick={() => isMobileDevice ? setShowMobileForm(true) : setShowRequestForm(true)} className="touch-target">
                 <Plus className="h-4 w-4 mr-2" />
                 Create First Request
               </Button>
@@ -227,7 +236,7 @@ export default function MyRequests() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {isMobile ? (
+          {isMobileDevice ? (
             // Mobile view with enhanced cards
             filteredRequests.map((request) => (
               <MobileRequestCard
@@ -362,6 +371,7 @@ export default function MyRequests() {
           )}
         </div>
       )}
-    </PageContainer>
+      </PageContainer>
+    </PullToRefresh>
   );
 }

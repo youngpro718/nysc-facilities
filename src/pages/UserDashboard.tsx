@@ -16,12 +16,15 @@ import { KeyRequestForm } from "@/components/requests/KeyRequestForm";
 import { useOccupantAssignments } from "@/hooks/occupants/useOccupantAssignments";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { AvatarPromptModal } from "@/components/auth/AvatarPromptModal";
+import { PullToRefresh } from "@/components/ui/PullToRefresh";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function UserDashboard() {
   const { user, profile, isLoading, isAuthenticated, isAdmin } = useAuth();
   const navigate = useNavigate();
-  const { notifications = [], isLoading: notificationsLoading, markAsRead, markAllAsRead, clearNotification, clearAllNotifications } = useNotifications(user?.id);
-  const { data: occupantData } = useOccupantAssignments(user?.id || '');
+  const isMobile = useIsMobile();
+  const { notifications = [], isLoading: notificationsLoading, markAsRead, markAllAsRead, clearNotification, clearAllNotifications, refetch: refetchNotifications } = useNotifications(user?.id);
+  const { data: occupantData, refetch: refetchOccupant } = useOccupantAssignments(user?.id || '');
 
   const [showKeyRequest, setShowKeyRequest] = useState(false);
   const [showIssueReport, setShowIssueReport] = useState(false);
@@ -57,6 +60,14 @@ export default function UserDashboard() {
     }
   }, [isLoading, isAuthenticated, profile, avatarPromptDismissed, showAvatarPrompt]);
 
+  // Handle refresh for pull-to-refresh
+  const handleRefresh = async () => {
+    await Promise.all([
+      refetchNotifications(),
+      refetchOccupant()
+    ]);
+  };
+
   // Show loading state while authentication is being determined
   if (isLoading) {
     return (
@@ -89,7 +100,8 @@ export default function UserDashboard() {
   const hasContent = hasAssignments || (notifications?.length || 0) > 0;
 
   return (
-    <div className="space-y-6 sm:space-y-8 pb-20">
+    <PullToRefresh onRefresh={handleRefresh} enabled={isMobile}>
+      <div className="space-y-6 sm:space-y-8 pb-20">
       <div className="space-y-1">
         <h2 className="text-lg sm:text-xl font-semibold tracking-tight">
           Welcome, {firstName} {lastName}!
@@ -214,6 +226,7 @@ export default function UserDashboard() {
           setShowAvatarPrompt(false);
         }}
       />
-    </div>
+      </div>
+    </PullToRefresh>
   );
 }
