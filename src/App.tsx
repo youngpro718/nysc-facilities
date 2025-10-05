@@ -43,6 +43,7 @@ import Users from "@/pages/Users";
 import AdminSupplyRequests from "@/pages/admin/SupplyRequests";
 import Notifications from "@/pages/Notifications";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
+import InstallApp from "@/pages/InstallApp";
 
 
 // Create a client
@@ -227,6 +228,7 @@ function AppContent() {
         <Route path="login" element={<LoginPage />} />
         <Route path="verification-pending" element={<VerificationPending />} />
         <Route path="features-preview" element={<FeaturesPreview />} />
+        <Route path="install" element={<InstallApp />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
