@@ -13,7 +13,6 @@ import { useToast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useCourtIssuesIntegration } from '@/hooks/useCourtIssuesIntegration';
 import { CreateShutdownDialog } from './CreateShutdownDialog';
-import { OpenRoomFlowDialog } from './OpenRoomFlowDialog';
 import { QuickIssueDialog } from './QuickIssueDialog';
 import { QuickAvailabilityDialog } from './QuickAvailabilityDialog';
 
@@ -59,7 +58,6 @@ export function InteractiveOperationsDashboard() {
   const [showRoomModal, setShowRoomModal] = useState<boolean>(false);
   const [filter, setFilter] = useState<string>('all');
   const [shutdownDialogOpen, setShutdownDialogOpen] = useState(false);
-  const [openRoomDialogOpen, setOpenRoomDialogOpen] = useState(false);
   const [quickIssueOpen, setQuickIssueOpen] = useState(false);
   const [availabilityOpen, setAvailabilityOpen] = useState(false);
   const queryClient = useQueryClient();
@@ -485,56 +483,61 @@ export function InteractiveOperationsDashboard() {
           
           <ScrollArea className="max-h-[60vh]">
             <div className="space-y-4">
-              {/* Quick Actions Header */}
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold">Quick Actions</h3>
-                <div className="flex gap-2 flex-wrap md:flex-nowrap">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      if (selectedRoom?.room) {
-                        toggleRoomStatus(selectedRoom.room.id, selectedRoom.room.is_active);
-                      }
-                    }}
-                    className="text-xs"
-                    disabled={!selectedRoom?.room}
-                  >
-                    {selectedRoom?.room.is_active ? <PowerOff className="h-3 w-3" /> : <Power className="h-3 w-3" />}
-                  </Button>
-                  <Button size="sm" variant="outline" className="text-xs" onClick={() => { setQuickIssueOpen(true); setShowRoomModal(false); }}>
-                    Report Issue…
-                  </Button>
-                  <Button size="sm" variant="outline" className="text-xs" onClick={() => { setAvailabilityOpen(true); setShowRoomModal(false); }}>
-                    Availability…
-                  </Button>
-                  <Button size="sm" className="text-xs" onClick={() => setOpenRoomDialogOpen(true)}>
-                    Open Room…
-                  </Button>
-                </div>
-              </div>
-
-              {/* Status with Toggle */}
-              <div>
-                <h4 className="font-medium mb-2 text-sm text-foreground">Status</h4>
-                <div className="flex items-center">
+              {/* Room Header */}
+              <div className="border-b pb-3 mb-4">
+                <h3 className="font-semibold text-lg mb-2">Room {selectedRoom?.room.room_number}</h3>
+                <div className="flex items-center gap-2">
                   <Badge variant="outline" className="flex items-center gap-1">
                     {getStatusIcon(selectedRoom?.status || 'available')}
                     <span className="capitalize">{selectedRoom?.status?.replace('_', ' ')}</span>
                   </Badge>
-                  {/* Occupied/Open quick toggle (operational status) */}
-                  {selectedRoom?.room && (
-                    <div className="ml-2">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-xs"
-                        onClick={() => setOperationalStatus(selectedRoom.room.id, (selectedRoom as any).room.operational_status === 'occupied' ? 'open' : 'occupied')}
-                      >
-                        {(selectedRoom as any).room.operational_status === 'occupied' ? 'Mark Open' : 'Mark Occupied'}
-                      </Button>
-                    </div>
+                  {selectedRoom?.room.is_active ? (
+                    <Badge variant="outline" className="bg-success/10 text-success-foreground border-success/30">Active</Badge>
+                  ) : (
+                    <Badge variant="outline" className="bg-muted text-muted-foreground">Inactive</Badge>
                   )}
+                </div>
+              </div>
+
+              {/* Status Actions - Prominent */}
+              <div className="mb-4">
+                <h4 className="font-medium mb-2 text-sm">Room Status</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    size="sm"
+                    variant={(selectedRoom as any)?.room.operational_status === 'open' ? 'default' : 'outline'}
+                    onClick={() => setOperationalStatus(selectedRoom?.room.id || '', 'open')}
+                    disabled={!selectedRoom?.room}
+                    className="text-xs"
+                  >
+                    <Power className="h-3 w-3 mr-1" />
+                    Set as Open
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={(selectedRoom as any)?.room.operational_status === 'occupied' ? 'default' : 'outline'}
+                    onClick={() => setOperationalStatus(selectedRoom?.room.id || '', 'occupied')}
+                    disabled={!selectedRoom?.room}
+                    className="text-xs"
+                  >
+                    <Users className="h-3 w-3 mr-1" />
+                    Set as Occupied
+                  </Button>
+                </div>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="mb-4">
+                <h4 className="font-medium mb-2 text-sm">Quick Actions</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button size="sm" variant="outline" className="text-xs" onClick={() => { setQuickIssueOpen(true); setShowRoomModal(false); }}>
+                    <AlertTriangle className="h-3 w-3 mr-1" />
+                    Report Issue
+                  </Button>
+                  <Button size="sm" variant="outline" className="text-xs" onClick={() => { setAvailabilityOpen(true); setShowRoomModal(false); }}>
+                    <Users className="h-3 w-3 mr-1" />
+                    Availability
+                  </Button>
                 </div>
               </div>
 
@@ -689,20 +692,6 @@ export function InteractiveOperationsDashboard() {
                 </div>
               )}
 
-              {/* Quick Links (consolidated) */}
-              <div className="border-t pt-4">
-                <h4 className="font-medium mb-2 text-sm">Quick Links</h4>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button size="sm" variant="outline" className="text-xs" onClick={() => { setQuickIssueOpen(true); setShowRoomModal(false); }}>
-                    <AlertTriangle className="h-3 w-3 mr-1" />
-                    Report Issue
-                  </Button>
-                  <Button size="sm" variant="outline" className="text-xs" onClick={() => { setAvailabilityOpen(true); setShowRoomModal(false); }}>
-                    <Users className="h-3 w-3 mr-1" />
-                    Availability
-                  </Button>
-                </div>
-              </div>
             </div>
           </ScrollArea>
           
@@ -740,17 +729,6 @@ export function InteractiveOperationsDashboard() {
           roomNumber={selectedRoom.room.room_number}
         />
       )}
-      {selectedRoom && (
-        <OpenRoomFlowDialog
-          open={openRoomDialogOpen}
-          onOpenChange={setOpenRoomDialogOpen}
-          room={{ id: selectedRoom.room.id, room_id: selectedRoom.room.room_id, room_number: selectedRoom.room.room_number }}
-          hasAssignment={!!selectedRoom.assignment}
-          availableTargets={availableTargets.filter(t => t.id !== selectedRoom.room.id)}
-          onRequestShutdown={() => setShutdownDialogOpen(true)}
-        />
-      )}
-
       {/* Quick Issue Reporter */}
       <QuickIssueDialog
         open={quickIssueOpen}
