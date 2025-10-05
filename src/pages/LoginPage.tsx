@@ -1,13 +1,16 @@
 
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { AuthForm } from "@/components/auth/AuthForm";
-import { Loader2 } from "lucide-react";
+import { Loader2, QrCode, Smartphone } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
   const { isLoading, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   // Force light theme while on the login page to ensure input backgrounds and text
   // use light variables (prevents dark inputs on light backgrounds)
@@ -50,6 +53,17 @@ const LoginPage = () => {
         className="pointer-events-none select-none absolute right-6 top-6 opacity-10 w-24 h-24 -z-10"
       />
 
+      {/* Install App Button - Floating */}
+      <Button
+        onClick={() => navigate('/install')}
+        variant="outline"
+        size="sm"
+        className="absolute top-4 right-4 gap-2 shadow-lg"
+      >
+        <Smartphone className="h-4 w-4" />
+        <span className="hidden sm:inline">Install App</span>
+      </Button>
+
       <Card className="w-full max-w-md p-6 sm:p-7 bg-card shadow-sm border border-border">
         <div className="flex items-center gap-3 mb-4">
           <div className="relative h-12 w-12">
@@ -80,6 +94,19 @@ const LoginPage = () => {
           isLogin={isLogin}
           setIsLogin={setIsLogin}
         />
+
+        {/* Install App Link */}
+        <div className="mt-4 text-center">
+          <Button
+            onClick={() => navigate('/install')}
+            variant="link"
+            size="sm"
+            className="text-xs gap-1.5"
+          >
+            <QrCode className="h-3 w-3" />
+            Get the app on your phone
+          </Button>
+        </div>
 
         <p className="mt-6 text-[11px] text-slate-500 text-center">
           Authorized use only. Activity may be monitored.

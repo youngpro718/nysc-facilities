@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Settings, Database, Server, Shield, Activity, HardDrive } from "lucide-react";
+import { ChevronLeft, Settings, Database, Server, Shield, Activity, HardDrive, QrCode } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdminSystemSettings } from "@/components/profile/AdminSystemSettings";
@@ -26,21 +26,32 @@ export default function SystemSettings() {
 
   return (
     <div className="space-y-4 sm:space-y-6 pb-nav-safe">
-      <div className="flex items-center gap-3 sm:gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate(-1)}
-          className="h-9 w-9 sm:h-10 sm:w-10"
-        >
-          <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-        </Button>
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-semibold">System Settings</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Configure system-wide settings and administrative tools
-          </p>
+      <div className="flex items-center justify-between gap-3 sm:gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(-1)}
+            className="h-9 w-9 sm:h-10 sm:w-10"
+          >
+            <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-semibold">System Settings</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Configure system-wide settings and administrative tools
+            </p>
+          </div>
         </div>
+        <Button
+          onClick={() => navigate('/install')}
+          variant="outline"
+          size="sm"
+          className="gap-2"
+        >
+          <QrCode className="h-4 w-4" />
+          <span className="hidden sm:inline">App Install</span>
+        </Button>
       </div>
 
       {/* System Status Overview */}
