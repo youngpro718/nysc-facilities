@@ -1,10 +1,12 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
 export function useKeyAssignments(occupantId: string) {
-  const { data: keyAssignments, isLoading, refetch } = useQuery({
+  const queryClient = useQueryClient();
+  
+  const { data: keyAssignments, isLoading } = useQuery({
     queryKey: ["occupant-keys", occupantId],
     queryFn: async () => {
       console.log("Fetching key assignments for occupant:", occupantId);
@@ -42,36 +44,17 @@ export function useKeyAssignments(occupantId: string) {
       }
 
       console.log("Fetched key assignments:", assignments);
-      if (!assignments || assignments.length === 0) {
-        console.warn('No key assignments returned for occupant:', occupantId);
-      } else {
-        assignments.forEach((a: any) => {
-          console.log('Assignment:', a);
-        });
-      }
-      return assignments;
+      return assignments || [];
     },
     enabled: !!occupantId,
     refetchOnWindowFocus: false
   });
 
-  const handleReturnKey = async (assignmentId: string) => {
-    try {
-      const { data: assignment, error: fetchError } = await supabase
-        .from("key_assignments")
-        .select("key_id")
-        .eq("id", assignmentId)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      const { data: newQuantity, error: rpcError } = await supabase
-        .rpc('increment_key_quantity', {
-          key_id: assignment.key_id
-        });
-
-      if (rpcError) throw rpcError;
-
+  const returnKeyMutation = useMutation({
+    mutationFn: async (assignmentId: string) => {
+      // Mark the assignment as returned
+      // The trigger 'update_key_quantities_on_assignment' will automatically
+      // increment the available_quantity when returned_at is set
       const { error: assignmentError } = await supabase
         .from("key_assignments")
         .update({
@@ -82,17 +65,28 @@ export function useKeyAssignments(occupantId: string) {
 
       if (assignmentError) throw assignmentError;
 
+      return assignmentId;
+    },
+    onSuccess: () => {
+      // Invalidate and refetch key assignments
+      queryClient.invalidateQueries({ queryKey: ["occupant-keys", occupantId] });
+      queryClient.invalidateQueries({ queryKey: ["keys"] });
       toast.success("Key returned successfully");
-      refetch();
-    } catch (error: any) {
+    },
+    onError: (error: any) => {
       console.error("Error returning key:", error);
       toast.error(error.message || "Failed to return key");
     }
+  });
+
+  const handleReturnKey = async (assignmentId: string) => {
+    await returnKeyMutation.mutateAsync(assignmentId);
   };
 
   return {
     keyAssignments,
     isLoading,
-    handleReturnKey
+    handleReturnKey,
+    isReturning: returnKeyMutation.isPending
   };
 }

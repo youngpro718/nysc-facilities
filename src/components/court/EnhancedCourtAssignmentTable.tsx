@@ -9,7 +9,7 @@ import { Check, Calendar as CalendarIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Save, X, Filter, Download, GripVertical, AlertTriangle, Bell } from "lucide-react";
+import { Save, X, Filter, Download, GripVertical, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useRealtime } from "@/hooks/useRealtime";
 import { useCourtPersonnel } from "@/hooks/useCourtPersonnel";
@@ -52,6 +52,8 @@ interface CourtAssignmentRow {
   calendar_day: string | null;
   is_active: boolean;
   sort_order: number;
+  judge_present?: boolean;
+  clerks_present_count?: number;
 }
 
 interface EditingCell {
@@ -371,7 +373,7 @@ const SortableRow = ({
       ref={setNodeRef}
       style={style}
       title={tooltipText || undefined}
-      className={`border-b hover:bg-muted/50 ${urgentIssues ? 'bg-red-50 border-red-200' : hasIssues ? 'bg-yellow-50 border-yellow-200' : ''} ${glowClass} ${rowAnimationClass} ${isRecentlyAffected ? 'ring-2 ring-amber-400 animate-pulse' : ''}`}
+      className={`border-b hover:bg-muted/50 ${urgentIssues ? 'bg-red-50 border-red-200' : ''} ${glowClass} ${rowAnimationClass} ${isRecentlyAffected ? 'ring-2 ring-amber-400 animate-pulse' : ''}`}
     >
       <td className="p-2">
         <div className="flex items-center gap-2">
@@ -390,11 +392,6 @@ const SortableRow = ({
                   <AlertTriangle className="h-4 w-4 text-red-500" />
                 </div>
               )}
-              {hasIssues && !urgentIssues && (
-                <div title="Issues reported in this courtroom">
-                  <Bell className="h-4 w-4 text-yellow-500" />
-                </div>
-              )}
             </div>
             {row.courtroom_number && (
               <div className="text-sm text-muted-foreground">
@@ -408,7 +405,13 @@ const SortableRow = ({
         {renderEditableCell("part", row.part || "")}
       </td>
       <td className="p-2">
-        {renderEditableCell("justice", row.justice || "")}
+        <div className="flex items-center gap-2">
+          {row.justice && (
+            <span className={`inline-block h-2 w-2 rounded-full ${row.judge_present ? 'bg-emerald-500' : 'bg-gray-400'}`} 
+                  title={row.judge_present ? 'Present' : 'Status unknown'} />
+          )}
+          {renderEditableCell("justice", row.justice || "")}
+        </div>
       </td>
       <td className="p-2">
         {renderEditableCell("clerks", row.clerks || [])}
@@ -435,14 +438,11 @@ const SortableRow = ({
           } else if (!row.is_active) {
             text = "Inactive";
             variant = "outline";
-          } else if (urgentIssues || hasIssues) {
-            text = urgentIssues ? "Urgent issues" : "Open issues";
-            variant = urgentIssues ? "destructive" : "default";
           } else if (!row.assignment_id) {
             text = "No assignment";
             variant = "secondary";
-          } else if (isIncomplete) {
-            text = "No justice assigned";
+          } else if (!row.justice || !row.justice.trim()) {
+            text = "Available";
             variant = "secondary";
           }
           return <Badge variant={variant}>{text}</Badge>;
@@ -670,14 +670,28 @@ export const EnhancedCourtAssignmentTable = () => {
 
       if (assignmentsError) throw assignmentsError;
 
-      // Create a map of assignments by room_id (authoritative key)
+      // Fetch attendance data for real-time presence
+      const { data: attendanceData, error: attendanceError } = await supabase
+        .from("court_attendance")
+        .select("room_id, judge_present, clerks_present_count");
+
+      if (attendanceError) console.error("Attendance fetch error:", attendanceError);
+
+      // Create maps for quick lookup
       const assignmentMap = new Map();
       assignmentsData?.forEach(assignment => {
         assignmentMap.set(assignment.room_id, assignment);
       });
 
+      const attendanceMap = new Map();
+      attendanceData?.forEach(attendance => {
+        attendanceMap.set(attendance.room_id, attendance);
+      });
+
       const mappedData = (roomsData || []).map((room, index) => {
         const assignment = assignmentMap.get(room.room_id);
+        const attendance = attendanceMap.get(room.room_id);
+        
         return {
           room_id: room.room_id,
           room_number: room.room_number,
@@ -695,6 +709,8 @@ export const EnhancedCourtAssignmentTable = () => {
           calendar_day: assignment?.calendar_day || null,
           is_active: (room as any)?.is_active ?? true,
           sort_order: assignment?.sort_order ?? index + 1,
+          judge_present: attendance?.judge_present || false,
+          clerks_present_count: attendance?.clerks_present_count || 0,
         } as CourtAssignmentRow;
       });
 
@@ -712,17 +728,6 @@ export const EnhancedCourtAssignmentTable = () => {
 
   return (
     <div className="space-y-4">
-      {/* Impact Summary Alert */}
-      {impactSummary && impactSummary.totalAffectedRooms > 0 && (
-        <Alert className="border-yellow-200 bg-yellow-50">
-          <AlertTriangle className="h-4 w-4 text-yellow-600" />
-          <AlertDescription className="text-yellow-800">
-            <strong>Court Operations Alert:</strong> {impactSummary.totalAffectedRooms} courtroom(s) affected by issues
-            {impactSummary.urgentIssues > 0 && `, including ${impactSummary.urgentIssues} urgent issue(s)`}.
-            {impactSummary.affectedAssignments > 0 && ` ${impactSummary.affectedAssignments} assignment(s) may be impacted.`}
-          </AlertDescription>
-        </Alert>
-      )}
 
       {/* Enhanced table with personnel dropdowns and issue indicators */}
       <DndContext
@@ -759,15 +764,22 @@ export const EnhancedCourtAssignmentTable = () => {
               const isIncomplete = row.is_active && !(row.justice && row.justice.trim());
               const isRecentlyAffected = recentlyAffectedRooms.includes(row.room_id);
 
+              // Build detailed tooltip with issue summary
               let tooltipText: string | undefined = undefined;
               if (hasMaintenance) {
-                tooltipText = 'Under maintenance';
+                tooltipText = '🔧 MAINTENANCE\nRoom is under maintenance and unavailable';
               } else if (!row.is_active) {
-                tooltipText = 'Inactive courtroom';
+                tooltipText = '⭕ INACTIVE\nRoom is temporarily closed';
               } else if (hasIssues) {
-                tooltipText = urgentIssues ? 'Urgent issues' : 'Open issues';
+                const issueList = roomIssues
+                  .slice(0, 3)
+                  .map((issue: any) => `• ${issue.title || issue.description}`)
+                  .join('\n');
+                const moreCount = roomIssues.length > 3 ? `\n...and ${roomIssues.length - 3} more` : '';
+                const severity = urgentIssues ? '🚨 URGENT ISSUES' : '⚠️ OPEN ISSUES';
+                tooltipText = `${severity}\n${issueList}${moreCount}`;
               } else if (isIncomplete) {
-                tooltipText = row.assignment_id ? 'No justice assigned' : 'No assignment';
+                tooltipText = row.assignment_id ? '⚠️ No justice assigned to this room' : 'No assignment created yet';
               }
 
               return (

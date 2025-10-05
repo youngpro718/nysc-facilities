@@ -105,18 +105,10 @@ export function OccupantDetails({ occupant, onClose }: OccupantDetailsProps) {
     try {
       setReturningKey(assignmentId);
       await handleReturnKey(assignmentId);
-      toast({
-        title: "Success",
-        description: "Key returned successfully",
-      });
-      // Refresh the data
-      window.location.reload();
+      // handleReturnKey already shows toast and refetches data
+      // No need for window.location.reload()
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to return key",
-        variant: "destructive",
-      });
+      console.error("Error in handleKeyReturn:", error);
     } finally {
       setReturningKey(null);
     }

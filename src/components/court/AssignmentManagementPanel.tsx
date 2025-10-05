@@ -97,24 +97,10 @@ export const AssignmentManagementPanel = () => {
         <div>
           <h2 className="text-2xl font-bold">Assignment Management</h2>
           <p className="text-muted-foreground">
-            Manage court assignments with dropdown personnel selection and real-time issue monitoring
+            Manage court assignments with real-time presence tracking and personnel selection
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {impactSummary && (
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="flex items-center gap-1">
-                <Users className="h-3 w-3" />
-                {impactSummary.totalAffectedRooms} Affected
-              </Badge>
-              {impactSummary.urgentIssues > 0 && (
-                <Badge variant="destructive" className="flex items-center gap-1">
-                  <AlertTriangle className="h-3 w-3" />
-                  {impactSummary.urgentIssues} Urgent
-                </Badge>
-              )}
-            </div>
-          )}
           <Button variant="outline" size="sm">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
@@ -122,16 +108,6 @@ export const AssignmentManagementPanel = () => {
         </div>
       </div>
 
-      {/* New Issue Banner (auto-clears via hook state) */}
-      {recentlyAffectedRooms.length > 0 && (
-        <div className="flex items-center gap-2 border border-amber-200 bg-amber-50 text-amber-900 rounded px-3 py-2">
-          <AlertTriangle className="h-4 w-4 text-amber-600" />
-          <div className="text-sm">
-            <strong>New issue reported:</strong> Affected room{recentlyAffectedRooms.length > 1 ? 's' : ''} {recentlyAffectedRooms.slice(0, 3).join(', ')}
-            {recentlyAffectedRooms.length > 3 ? ` and ${recentlyAffectedRooms.length - 3} more` : ''}
-          </div>
-        </div>
-      )}
 
       {/* Quick Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -234,25 +210,19 @@ export const AssignmentManagementPanel = () => {
           <div className="flex items-start gap-2">
             <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
             <p className="text-sm">
-              <strong>Personnel Selection:</strong> Click on Justice, Clerks, or Sergeant fields to open dropdown menus with available personnel from the database.
+              <strong>Personnel Selection:</strong> Click on Justice, Clerks, or Sergeant fields to open dropdown menus with available personnel.
             </p>
           </div>
           <div className="flex items-start gap-2">
             <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
             <p className="text-sm">
-              <strong>Real-time Integration:</strong> Rooms with issues are automatically highlighted. Urgent issues show red backgrounds, regular issues show yellow.
+              <strong>Presence Tracking:</strong> Green dot next to judge name means they are checked in via Live Grid.
             </p>
           </div>
           <div className="flex items-start gap-2">
             <div className="w-2 h-2 bg-orange-500 rounded-full mt-2"></div>
             <p className="text-sm">
               <strong>Drag & Drop:</strong> Use the grip handle to reorder assignments. Changes are saved automatically.
-            </p>
-          </div>
-          <div className="flex items-start gap-2">
-            <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
-            <p className="text-sm">
-              <strong>Notifications:</strong> You'll receive alerts when new issues affect assigned courtrooms.
             </p>
           </div>
         </CardContent>

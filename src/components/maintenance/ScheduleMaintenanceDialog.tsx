@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ interface ScheduleMaintenanceDialogProps {
 
 export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMaintenanceDialogProps) => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -43,39 +44,38 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
     },
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log('Form submitted with data:', formData);
-    
-    try {
-      console.log('Inserting into maintenance_schedules...');
+  // Mutation for creating maintenance schedule
+  const createMaintenance = useMutation({
+    mutationFn: async (data: typeof formData) => {
       const { error } = await supabase
         .from("maintenance_schedules")
         .insert({
-          title: formData.title,
-          description: formData.description || '',
-          maintenance_type: formData.maintenance_type,
-          space_name: formData.space_name,
-          space_type: formData.space_type,
-          scheduled_start_date: new Date(formData.scheduled_start_date).toISOString(),
-          scheduled_end_date: formData.scheduled_end_date 
-            ? new Date(formData.scheduled_end_date).toISOString() 
+          title: data.title,
+          description: data.description || '',
+          maintenance_type: data.maintenance_type,
+          space_name: data.space_name,
+          space_type: data.space_type,
+          scheduled_start_date: new Date(data.scheduled_start_date).toISOString(),
+          scheduled_end_date: data.scheduled_end_date 
+            ? new Date(data.scheduled_end_date).toISOString() 
             : null,
           status: 'scheduled',
-          priority: formData.priority,
-          impact_level: formData.impact_level,
-          notes: formData.notes || '',
-          special_instructions: formData.special_instructions || '',
+          priority: data.priority,
+          impact_level: data.impact_level,
+          notes: data.notes || '',
+          special_instructions: data.special_instructions || '',
           estimated_cost: null,
           notification_sent: false
         });
 
-      if (error) {
-        console.error('Database error:', error);
-        throw error;
-      }
-      console.log('Successfully inserted maintenance schedule');
-
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      // Invalidate and refetch maintenance schedules
+      queryClient.invalidateQueries({ queryKey: ["maintenance-schedules"] });
+      queryClient.invalidateQueries({ queryKey: ["maintenance-calendar"] });
+      queryClient.invalidateQueries({ queryKey: ["maintenance-stats"] });
+      
       toast({
         title: "Maintenance Scheduled",
         description: "The maintenance has been scheduled successfully.",
@@ -95,14 +95,20 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
         special_instructions: "",
       });
       onOpenChange(false);
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error('Error scheduling maintenance:', error);
       toast({
         title: "Error",
         description: "Failed to schedule maintenance. Please try again.",
         variant: "destructive",
       });
-    }
+    },
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    createMaintenance.mutate(formData);
   };
 
   return (
@@ -290,11 +296,11 @@ export const ScheduleMaintenanceDialog = ({ open, onOpenChange }: ScheduleMainte
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={createMaintenance.isPending}>
               Cancel
             </Button>
-            <Button type="submit">
-              Schedule Maintenance
+            <Button type="submit" disabled={createMaintenance.isPending}>
+              {createMaintenance.isPending ? "Scheduling..." : "Schedule Maintenance"}
             </Button>
           </div>
         </form>

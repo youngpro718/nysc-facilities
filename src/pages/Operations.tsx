@@ -30,6 +30,7 @@ import { IssueAnalyticsPanel } from "@/components/admin-issues/IssueAnalyticsPan
 import { IssueGroupingControls } from "@/components/admin-issues/IssueGroupingControls";
 import { MaintenanceScheduleList } from "@/components/maintenance/MaintenanceScheduleList";
 import { MaintenanceIssuesList } from "@/components/maintenance/MaintenanceIssuesList";
+import { MaintenanceCalendar } from "@/components/maintenance/MaintenanceCalendar";
 import AdvancedAnalyticsDashboard from "@/components/analytics/AdvancedAnalyticsDashboard";
 import type { GroupingMode, ViewMode, StatusFilter, PriorityFilter } from "@/types/issues";
 
@@ -278,21 +279,14 @@ export default function Operations() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
-            <h2 className="text-3xl font-bold tracking-tight">Issues Management</h2>
-            {buildingId && (
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                <Building2 className="w-3 h-3 mr-1" />
-                {buildingId === '7a9d7532-ebe7-496f-b5f1-10887f91edd5' ? '100 Centre Street' : 
-                 buildingId === 'c735c6a8-7c61-4417-b2e3-3ebbb3045db7' ? '111 Centre Street' : 
-                 'Building Filtered'}
-              </span>
-            )}
+            <h2 className="text-3xl font-bold tracking-tight">Operations</h2>
+            <Badge variant="secondary" className="text-xs">
+              <Activity className="h-3 w-3 mr-1" />
+              Live Data
+            </Badge>
           </div>
           <p className="text-muted-foreground">
-            {buildingId 
-              ? `Showing issues for ${buildingId === '7a9d7532-ebe7-496f-b5f1-10887f91edd5' ? '100 Centre Street' : '111 Centre Street'}`
-              : 'Monitor and manage facility operations across all buildings'
-            }
+            Monitor and manage facility operations
           </p>
         </div>
         <div className="flex gap-2">
@@ -311,13 +305,9 @@ export default function Operations() {
             <AlertTriangle className="h-4 w-4 mr-2" />
             Report Issue
           </Button>
-          <Button onClick={() => setShowScheduleMaintenance(true)} variant="outline" size="sm">
+          <Button onClick={() => setShowScheduleMaintenance(true)} size="sm">
             <Calendar className="h-4 w-4 mr-2" />
             Schedule Maintenance
-          </Button>
-          <Button onClick={() => setShowReportIssue(true)} size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Quick Action
           </Button>
         </div>
       </div>
@@ -348,56 +338,6 @@ export default function Operations() {
         </Button>
       </div>
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold">Issues Management</h1>
-            <Badge variant="secondary" className="text-xs">
-              <Activity className="h-3 w-3 mr-1" />
-              Live Data
-            </Badge>
-          </div>
-          <p className="text-muted-foreground">
-            Unified management for issues and maintenance
-          </p>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <AlertCircle className="h-3 w-3" />
-              {enhancedMetrics.activeIssues} Active Issues
-            </span>
-            <span className="flex items-center gap-1">
-              <Wrench className="h-3 w-3" />
-              {enhancedMetrics.maintenanceInProgress} In Progress
-            </span>
-
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button 
-            onClick={refreshAllData} 
-            variant="ghost" 
-            size="sm"
-            disabled={isRefreshing}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-            {isRefreshing ? 'Refreshing...' : 'Refresh'}
-          </Button>
-          <div className="h-6 w-px bg-border" />
-          <Button onClick={() => setShowCreateIssue(true)} variant="outline" size="sm">
-            <AlertTriangle className="h-4 w-4 mr-2" />
-            Report Issue
-          </Button>
-          <Button onClick={() => setShowScheduleMaintenance(true)} variant="outline" size="sm">
-            <Calendar className="h-4 w-4 mr-2" />
-            Schedule Maintenance
-          </Button>
-          <Button onClick={() => setShowReportIssue(true)} size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Quick Action
-          </Button>
-        </div>
-      </div>
 
       {/* Enhanced Quick Stats Overview */}
       {isLoading ? (
@@ -883,6 +823,9 @@ export default function Operations() {
           </div>
 
           <div className="space-y-6">
+            {/* Calendar View */}
+            <MaintenanceCalendar />
+
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
