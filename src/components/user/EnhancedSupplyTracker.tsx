@@ -57,11 +57,11 @@ const getCurrentStageIndex = (status: string): number => {
 
 const getPriorityColor = (priority: string) => {
   switch (priority) {
-    case 'urgent': return 'bg-red-100 text-red-800 border-red-300';
-    case 'high': return 'bg-orange-100 text-orange-800 border-orange-300';
-    case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-    case 'low': return 'bg-green-100 text-green-800 border-green-300';
-    default: return 'bg-gray-100 text-gray-800 border-gray-300';
+    case 'urgent': return 'bg-destructive/10 text-destructive border-destructive/30';
+    case 'high': return 'bg-warning/10 text-warning-foreground border-warning/30';
+    case 'medium': return 'bg-warning/5 text-warning-foreground border-warning/20';
+    case 'low': return 'bg-success/10 text-success-foreground border-success/30';
+    default: return 'bg-muted text-muted-foreground border-border';
   }
 };
 
@@ -69,19 +69,19 @@ const getStatusColor = (status: string) => {
   switch (status) {
     case 'pending':
     case 'under_review':
-      return 'bg-yellow-500';
+      return 'bg-warning';
     case 'approved':
     case 'picking':
     case 'packing':
-      return 'bg-blue-500';
+      return 'bg-info';
     case 'ready':
     case 'fulfilled':
-      return 'bg-green-500';
+      return 'bg-success';
     case 'rejected':
     case 'cancelled':
-      return 'bg-red-500';
+      return 'bg-destructive';
     default:
-      return 'bg-gray-500';
+      return 'bg-muted';
   }
 };
 
@@ -197,7 +197,7 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
                     <div className="flex items-center gap-1 sm:gap-2 mb-1">
                       <h3 className="font-semibold text-sm sm:text-base truncate flex-1">{request.title}</h3>
                       {isActive && (
-                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300 text-xs flex-shrink-0">
+                        <Badge variant="outline" className="bg-success/10 text-success-foreground border-success/30 text-xs flex-shrink-0">
                           Active
                         </Badge>
                       )}
@@ -314,8 +314,8 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
 
                   {/* Status Message */}
                   {isActive && request.status === 'ready' && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                      <div className="flex items-center gap-2 text-green-800">
+                    <div className="bg-success/10 border border-success/30 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-success-foreground">
                         <CheckCircle className="h-5 w-5" />
                         <div>
                           <div className="font-semibold">Ready for Pickup!</div>
@@ -328,8 +328,8 @@ export function EnhancedSupplyTracker({ requests, featured = false }: EnhancedSu
                   )}
 
                   {request.status === 'fulfilled' && (
-                    <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
-                      <div className="flex items-center gap-2 text-emerald-800">
+                    <div className="bg-success/10 border border-success/30 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-success-foreground">
                         <CheckCircle className="h-5 w-5" />
                         <div className="font-semibold">Request Completed</div>
                       </div>

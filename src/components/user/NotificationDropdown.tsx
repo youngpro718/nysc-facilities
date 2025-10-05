@@ -43,13 +43,13 @@ export function NotificationDropdown({
   const getUrgencyColor = (urgency?: string) => {
     switch (urgency) {
       case 'high':
-        return 'bg-red-100 border-red-300';
+        return 'border-destructive/20 bg-destructive/5';
       case 'medium':
-        return 'bg-yellow-100 border-yellow-300';
+        return 'border-warning/20 bg-warning/5';
       case 'low':
-        return 'bg-blue-100 border-blue-300';
+        return 'border-info/20 bg-info/5';
       default:
-        return 'bg-gray-100 border-gray-300';
+        return 'border-border bg-background';
     }
   };
 
@@ -62,7 +62,7 @@ export function NotificationDropdown({
         >
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <span className="absolute top-1 right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-semibold">
+            <span className="absolute top-1 right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-semibold">
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
