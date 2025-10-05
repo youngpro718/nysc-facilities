@@ -231,9 +231,9 @@ export const LowStockPanel = () => {
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
+      {/* Summary Cards - Horizontal Scroll on Mobile */}
+      <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory sm:grid sm:grid-cols-3 sm:overflow-visible">
+        <Card className="shrink-0 w-[280px] snap-start sm:w-auto">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Out of Stock</CardTitle>
             <AlertTriangle className="h-4 w-4 text-red-600" />
@@ -244,7 +244,7 @@ export const LowStockPanel = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="shrink-0 w-[280px] snap-start sm:w-auto">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Critical Stock</CardTitle>
             <TrendingDown className="h-4 w-4 text-orange-600" />
@@ -255,7 +255,7 @@ export const LowStockPanel = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="shrink-0 w-[280px] snap-start sm:w-auto">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Low Stock</CardTitle>
             <Package className="h-4 w-4 text-yellow-600" />

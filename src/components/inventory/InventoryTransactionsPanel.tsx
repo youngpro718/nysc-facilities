@@ -144,8 +144,8 @@ export const InventoryTransactionsPanel = () => {
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      {/* Filters - Mobile Optimized */}
+      <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
@@ -157,10 +157,10 @@ export const InventoryTransactionsPanel = () => {
         </div>
         
         <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px] bg-background z-50">
             <SelectValue placeholder="Filter by type" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-background z-50">
             <SelectItem value="all">All Types</SelectItem>
             <SelectItem value="add">Added Stock</SelectItem>
             <SelectItem value="remove">Removed Stock</SelectItem>
@@ -169,10 +169,10 @@ export const InventoryTransactionsPanel = () => {
         </Select>
 
         <Select value={dateFilter} onValueChange={setDateFilter}>
-          <SelectTrigger className="w-[150px]">
+          <SelectTrigger className="w-full sm:w-[150px] bg-background z-50">
             <SelectValue placeholder="Filter by date" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-background z-50">
             <SelectItem value="all">All Time</SelectItem>
             <SelectItem value="today">Today</SelectItem>
             <SelectItem value="week">This Week</SelectItem>

@@ -265,81 +265,71 @@ export const InventoryItemsPanel = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
         <Input
           placeholder="Search items..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="max-w-sm"
+          className="w-full sm:max-w-sm"
         />
-        <Button onClick={() => setCreateDialogOpen(true)}>
+        <Button onClick={() => setCreateDialogOpen(true)} className="w-full sm:w-auto touch-target">
           <Plus className="mr-2 h-4 w-4" />
-          Add Item
+          <span className="hidden sm:inline">Add Item</span>
+          <span className="sm:hidden">Add</span>
         </Button>
       </div>
 
-      {/* Pagination Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <div className="text-sm text-muted-foreground">
+      {/* Pagination Controls - Mobile Optimized */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-2">
+        <div className="text-sm text-muted-foreground text-center sm:text-left">
           {total > 0 ? (
             <span>
-              Showing {Math.min((page - 1) * pageSize + 1, total)}–
-              {Math.min(page * pageSize, total)} of {total}
+              <span className="hidden sm:inline">Showing {Math.min((page - 1) * pageSize + 1, total)}–{Math.min(page * pageSize, total)} of </span>
+              {total}<span className="hidden sm:inline"> items</span>
             </span>
           ) : (
             <span>No results</span>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <label className="text-sm text-muted-foreground">Rows:</label>
-          <select
-            className="h-9 rounded-md border bg-background px-2 text-sm"
-            value={pageSize}
-            onChange={(e) => {
-              setPageSize(Number(e.target.value));
-              setPage(1);
-            }}
+        <div className="flex items-center justify-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1 || isLoading}
+            className="touch-target"
           >
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-            <option value={50}>50</option>
-          </select>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1 || isLoading}
-            >
-              Prev
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              Page {page} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages || isLoading}
-            >
-              Next
-            </Button>
-          </div>
+            <span className="hidden sm:inline">Prev</span>
+            <span className="sm:hidden">←</span>
+          </Button>
+          <span className="text-sm text-muted-foreground min-w-[80px] text-center">
+            <span className="hidden sm:inline">Page </span>{page}<span className="hidden sm:inline"> of {totalPages}</span>
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page >= totalPages || isLoading}
+            className="touch-target"
+          >
+            <span className="hidden sm:inline">Next</span>
+            <span className="sm:hidden">→</span>
+          </Button>
         </div>
       </div>
 
-      {/* Filters & Sort */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full sm:max-w-3xl">
+      {/* Filters & Sort - Collapsible on Mobile */}
+      <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           <div>
             <label className="mb-1 block text-xs text-muted-foreground">Category</label>
             <Select value={selectedCategory} onValueChange={(v) => setSelectedCategory(v)}>
-              <SelectTrigger className="h-9">
+              <SelectTrigger className="h-9 bg-background z-50">
                 <SelectValue placeholder="All categories" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-background z-50">
                 <SelectItem value="all">All</SelectItem>
                 {(categories ?? []).map((c) => (
                   <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
@@ -350,10 +340,10 @@ export const InventoryItemsPanel = () => {
           <div>
             <label className="mb-1 block text-xs text-muted-foreground">Room</label>
             <Select value={selectedRoom} onValueChange={(v) => setSelectedRoom(v)}>
-              <SelectTrigger className="h-9">
+              <SelectTrigger className="h-9 bg-background z-50">
                 <SelectValue placeholder="All rooms" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-background z-50">
                 <SelectItem value="all">All</SelectItem>
                 {(rooms ?? []).map((r) => (
                   <SelectItem key={r.id} value={r.id}>{r.name} {r.room_number ? `(${r.room_number})` : ''}</SelectItem>
@@ -365,32 +355,36 @@ export const InventoryItemsPanel = () => {
             <label className="mb-1 block text-xs text-muted-foreground">Sort</label>
             <div className="flex gap-2">
               <Select value={sortKey} onValueChange={(v) => setSortKey(v as any)}>
-                <SelectTrigger className="h-9 min-w-[8rem]">
+                <SelectTrigger className="h-9 flex-1 bg-background z-50">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-background z-50">
                   <SelectItem value="name">Name</SelectItem>
                   <SelectItem value="quantity">Quantity</SelectItem>
-                  <SelectItem value="updated_at">Last Updated</SelectItem>
+                  <SelectItem value="updated_at">Updated</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={sortDir} onValueChange={(v) => setSortDir(v as any)}>
-                <SelectTrigger className="h-9 min-w-[6.5rem]">
+                <SelectTrigger className="h-9 w-20 bg-background z-50">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="asc">Asc</SelectItem>
-                  <SelectItem value="desc">Desc</SelectItem>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="asc">↑</SelectItem>
+                  <SelectItem value="desc">↓</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => { setSelectedCategory("all"); setSelectedRoom("all"); setSortKey("name"); setSortDir("asc"); setSearchQuery(""); }}>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => { setSelectedCategory("all"); setSelectedRoom("all"); setSortKey("name"); setSortDir("asc"); setSearchQuery(""); }}
+            className="w-full sm:w-auto touch-target"
+          >
             Reset
           </Button>
-          <Button variant="outline" onClick={handleExportCsv} disabled={exporting}>
+          <Button variant="outline" onClick={handleExportCsv} disabled={exporting} className="w-full sm:w-auto touch-target">
             <Download className="h-4 w-4 mr-2" />
             {exporting ? "Exporting..." : "Export CSV"}
           </Button>
