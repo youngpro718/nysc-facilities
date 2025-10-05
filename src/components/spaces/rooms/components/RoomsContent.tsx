@@ -61,13 +61,6 @@ export function RoomsContent({
 
   return (
     <div className="space-y-4">
-      <SearchResultsInfo 
-        totalCount={rooms.length}
-        filteredCount={filteredRooms.length}
-        searchQuery={searchQuery}
-        roomTypeCounts={roomTypeCounts}
-      />
-
       {view === 'grid' ? (
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredRooms.map((room) => (
